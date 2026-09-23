@@ -1,737 +1,165 @@
-# Dataset arms are an explicit allow-list; {} inherits the named arm.
-# bca: true also inherits the BCA defaults at algorithm and dataset scope.
-host: rebrac
-defaults:
-  host: rebrac
-  environment: '{environment}'
-  native_args:
-    actor_ln: false
-    actor_n_hiddens: 3
-    algorithm: corl_rebrac
-    allow_off_config: true
-    critic_ln: true
-    critic_n_hiddens: 3
-    dataset: '{environment}'
-    eval_final_episodes: '{experiment.final_episodes}'
-    eval_interval: '{experiment.eval_interval}'
-    eval_workers: 10
-    gamma: 0.99
-    hidden_dim: 256
-    log: false
-    noise_clip: 0.5
-    normalize_q: true
-    normalize_reward: false
-    normalize_states: false
-    num_updates: '{experiment.num_updates}'
-    policy_freq: 2
-    policy_noise: 0.2
-    reward_bias: -5.0
-    reward_scale: 10.0
-    reward_transform: rebrac_x100
-    seed: '{seed}'
-    tau: 0.005
-    wandb_group: debug
-    wandb_project: unifloral
-    wandb_team: flair
-  specification:
-    configuration_class: declared_deviation
-    purpose: comparison
-  protocol:
-    eval_final_episodes: '{experiment.final_episodes}'
-    eval_interval: '{experiment.eval_interval}'
-    eval_periodic_episodes: 10
-    eval_workers: 10
-    evaluation_events:
-      bank: '{evaluation_bank}'
-    num_updates: '{experiment.num_updates}'
-    scan_block_size: '{experiment.scan_block_size}'
-    seed: '{seed}'
-  action_bound: 1.0
-  expected_counts:
-    host_updates: 1000000
-    updates_per_critic: 1000000
-    actor_updates: 500000
-    periodic_evaluations: 200
-    final_episodes: '{experiment.final_episodes}'
-    checkpoint_steps: [10000, 50000, 1000000]
-  cache: {}
-  training_seed: '{seed}'
-bca_defaults:
-  specification:
-    constant_bc_multiplier: null
-    posterior:
-      affinity: {}
-      alpha: 0.1
-      blend: 0.5
-      cal_beta: 20.0
-      cal_lr: 0.001
-      credibility: 0.95
-      draws: 128
-      scale_ema: 0.99
-      width_penalty: 0.005
-  protocol:
-    reference:
-      seed: 912
-      size: 1024
-    refresh_events: {}
-    reservation:
-      dependency_contract: raw_effective_finite_targets_next_actions_v1
-      max_fraction: 0.1
-      seed: 911
-  expected_counts:
-    refresh_events: 198
-  seed_overrides:
-    202609171:
-      protocol:
-        refresh_events:
-          bank: refresh_seed_1
-    202609172:
-      protocol:
-        refresh_events:
-          bank: refresh_seed_2
-    202609173:
-      protocol:
-        refresh_events:
-          bank: refresh_seed_3
-    202609174:
-      protocol:
-        refresh_events:
-          bank: refresh_seed_4
-    202609175:
-      protocol:
-        refresh_events:
-          bank: refresh_seed_5
-arms:
-  constant_1p5:
-    identity: constant_bc_pool
-    specification:
-      constant_bc_multiplier: 1.5
-      identity: constant_bc_pool
-      posterior: null
-    protocol:
-      reference: null
-      refresh_events: []
-      reservation:
-        dependency_contract: raw_effective_finite_targets_next_actions_v1
-        max_fraction: 0.1
-        seed: 911
-    expected_counts:
-      refresh_events: 0
-  fixed_after_warmup:
-    identity: constant_bc_pool
-    specification:
-      deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison; unchanged
-        prior host and calibration settings.
-      identity: constant_bc_pool
-      posterior: null
-      constant_bc_start_step: 10000
-    protocol:
-      reference: null
-      refresh_events: []
-      reservation:
-        dependency_contract: raw_effective_finite_targets_next_actions_v1
-        max_fraction: 0.1
-        seed: 911
-        target_size: 1024
-      run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-    expected_counts:
-      refresh_events: 0
-    run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-  native_full:
-    identity: native_full
-    specification:
-      constant_bc_multiplier: null
-      identity: native_full
-      posterior: null
-    protocol:
-      reference: null
-      refresh_events: []
-      reservation: null
-    expected_counts:
-      refresh_events: 0
-  native_pool:
-    identity: native_pool
-    specification:
-      constant_bc_multiplier: null
-      identity: native_pool
-      posterior: null
-    protocol:
-      reference: null
-      refresh_events: []
-      reservation:
-        dependency_contract: raw_effective_finite_targets_next_actions_v1
-        max_fraction: 0.1
-        seed: 911
-    expected_counts:
-      refresh_events: 0
-  posterior_affinity:
-    bca: true
-    identity: posterior_affinity
-    specification:
-      identity: posterior_affinity
-      posterior:
-        affinity:
-          ess_floor: 0.25
-          iterations: 32
-          mode: affinity
-          tau_min: 0.0
-        width_objective: matched
-  posterior_affinity_dose_permuted:
-    bca: true
-    identity: posterior_affinity_dose_permuted
-    specification:
-      deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison; unchanged
-        prior host and calibration settings.
-      identity: posterior_affinity_dose_permuted
-      posterior:
-        affinity:
-          ess_floor: 0.25
-          iterations: 32
-          mode: affinity
-          tau_min: 0.0
-        width_objective: matched
-      constant_bc_start_step: 0
-    protocol:
-      reservation:
-        target_size: 1024
-      run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_affinity_dose_permuted
-    run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_affinity_dose_permuted
-  posterior_affinity_permuted:
-    bca: true
-    identity: posterior_affinity_permuted
-    specification:
-      identity: posterior_affinity_permuted
-      posterior:
-        affinity:
-          ess_floor: 0.25
-          iterations: 32
-          mode: affinity_permuted
-          tau_min: 0.0
-        width_objective: matched
-  posterior_matched:
-    bca: true
-    identity: posterior_matched
-    specification:
-      identity: posterior_matched
-      posterior:
-        affinity:
-          bandwidth: null
-          ess_floor: null
-          iterations: null
-          mode: 'off'
-          tau_min: null
-        width_objective: matched
-  posterior_original:
-    bca: true
-    identity: posterior_original
-    specification:
-      identity: posterior_original
-      posterior:
-        affinity:
-          bandwidth: null
-          ess_floor: null
-          iterations: null
-          mode: 'off'
-          tau_min: null
-        width_objective: original
+algorithm: rebrac
+host:
+  actor_ln: false
+  actor_n_hiddens: 3
+  critic_ln: true
+  critic_n_hiddens: 3
+  gamma: 0.99
+  hidden_dim: 256
+  noise_clip: 0.5
+  normalize_q: true
+  normalize_reward: false
+  normalize_states: false
+  policy_freq: 2
+  policy_noise: 0.2
+  reward_bias: -5.0
+  reward_scale: 10.0
+  reward_transform: rebrac_x100
+  tau: 0.005
+bca:
+  alpha: 0.1
+  blend: 0.5
+  cal_beta: 20.0
+  cal_lr: 0.001
+  credibility: 0.95
+  draws: 128
+  scale_ema: 0.99
+  width_penalty: 0.005
+  affinity:
+    ess_floor: 0.25
+    iterations: 32
+    tau_min: 0.0
+    mode: affinity
+reservation:
+  max_fraction: 0.1
+  seed: 911
+reference:
+  seed: 912
+  size: 1024
 datasets:
   halfcheetah:
     environment: halfcheetah-medium-expert-v2
-    defaults:
-      native_args:
-        actor_bc_coef: 0.01
-        actor_learning_rate: 0.001
-        batch_size: 1024
-        critic_bc_coef: 0.1
-        critic_learning_rate: 0.001
-      specification:
-        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
-          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
-      action_dimension: 6
-      max_episode_steps: 1000
-      cache:
-        sha256: 015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06
-        filename: halfcheetah_medium_expert-v2.hdf5
-    bca_defaults:
-      protocol:
-        reservation:
-          target_size: 1024
-    arms:
-      constant_1p5:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      native_full:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.36742346141747667
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.36742346141747667
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: 015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06
+      filename: halfcheetah_medium_expert-v2.hdf5
+    host:
+      actor_bc_coef: 0.01
+      actor_learning_rate: 0.001
+      batch_size: 1024
+      critic_bc_coef: 0.1
+      critic_learning_rate: 0.001
+    bca:
+      affinity:
+        bandwidth: 0.36742346141747667
+    reservation:
+      size: 1024
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 1000
   hopper:
     environment: hopper-medium-v2
-    defaults:
-      native_args:
-        actor_bc_coef: 0.01
-        actor_learning_rate: 0.001
-        batch_size: 1024
-        critic_bc_coef: 0.01
-        critic_learning_rate: 0.001
-      action_dimension: 3
-      max_episode_steps: 1000
-      cache:
-        sha256: 5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0
-        filename: hopper_medium-v2.hdf5
-    bca_defaults:
-      specification: {}
-    arms:
-      constant_1p5:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      fixed_after_warmup:
-        specification:
-          constant_bc_multiplier: 1.2620131447911263
-      native_full:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-        protocol:
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        specification:
-          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
-            unchanged prior host and calibration settings.
-          constant_bc_start_step: 0
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
-            unchanged prior host and calibration settings.
-          posterior:
-            affinity:
-              bandwidth: 0.25980762113533157
-          constant_bc_start_step: 0
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_dose_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.25980762113533157
-      posterior_affinity_permuted:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-          posterior:
-            affinity:
-              bandwidth: 0.25980762113533157
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        specification:
-          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
-            unchanged prior host and calibration settings.
-          constant_bc_start_step: 0
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: 5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0
+      filename: hopper_medium-v2.hdf5
+    host:
+      actor_bc_coef: 0.01
+      actor_learning_rate: 0.001
+      batch_size: 1024
+      critic_bc_coef: 0.01
+      critic_learning_rate: 0.001
+    bca:
+      affinity:
+        bandwidth: 0.25980762113533157
+    reservation:
+      size: 1024
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 1000
   maze2d:
     environment: maze2d-large-v1
-    defaults:
-      native_args:
-        actor_bc_coef: 0.003
-        actor_learning_rate: 0.0003
-        batch_size: 256
-        critic_bc_coef: 0.001
-        critic_learning_rate: 0.0003
-      specification:
-        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
-          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
-      action_dimension: 2
-      max_episode_steps: 800
-      cache:
-        sha256: a80dddbd0158abc6cd85ec3ec88fc3099c288f3141e9bf92bb2c1c11f1876d12
-        filename: maze2d-large-sparse-v1.hdf5
-    bca_defaults:
-      protocol:
-        reservation:
-          target_size: 1024
-    arms:
-      constant_1p5:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      native_full:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.21213203435596426
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.21213203435596426
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: a80dddbd0158abc6cd85ec3ec88fc3099c288f3141e9bf92bb2c1c11f1876d12
+      filename: maze2d-large-sparse-v1.hdf5
+    host:
+      actor_bc_coef: 0.003
+      actor_learning_rate: 0.0003
+      batch_size: 256
+      critic_bc_coef: 0.001
+      critic_learning_rate: 0.0003
+    bca:
+      affinity:
+        bandwidth: 0.21213203435596426
+    reservation:
+      size: 1024
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 800
   pen-cloned:
     environment: pen-cloned-v1
-    defaults:
-      native_args:
-        actor_bc_coef: 0.05
-        actor_learning_rate: 0.0003
-        batch_size: 256
-        critic_bc_coef: 0.5
-        critic_learning_rate: 0.0003
-      specification:
-        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
-          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
-      action_dimension: 24
-      max_episode_steps: 100
-      cache:
-        sha256: 6d1a982cee1950501bedebbddedbcbb377e6284d379986c83abac8a6c0be0c22
-        filename: '{environment}.hdf5'
-    bca_defaults:
-      protocol:
-        reservation:
-          target_size: 1024
-    arms:
-      constant_1p5:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      native_full:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.7348469228349533
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.7348469228349533
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: 6d1a982cee1950501bedebbddedbcbb377e6284d379986c83abac8a6c0be0c22
+      filename: pen-cloned-v1.hdf5
+    host:
+      actor_bc_coef: 0.05
+      actor_learning_rate: 0.0003
+      batch_size: 256
+      critic_bc_coef: 0.5
+      critic_learning_rate: 0.0003
+    bca:
+      affinity:
+        bandwidth: 0.7348469228349533
+    reservation:
+      size: 1024
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 100
   pen-expert:
     environment: pen-expert-v1
-    defaults:
-      native_args:
-        actor_bc_coef: 0.01
-        actor_learning_rate: 0.0003
-        batch_size: 256
-        critic_bc_coef: 0.01
-        critic_learning_rate: 0.0003
-      specification:
-        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
-          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
-      action_dimension: 24
-      max_episode_steps: 100
-      cache:
-        sha256: 3791b8ca6a802061770af2977c051ac3ae261488210ce73788760a5b8308f374
-        filename: '{environment}.hdf5'
-    bca_defaults:
-      protocol:
-        reservation:
-          target_size: 1024
-    arms:
-      constant_1p5:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      native_full:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.7348469228349533
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.7348469228349533
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: 3791b8ca6a802061770af2977c051ac3ae261488210ce73788760a5b8308f374
+      filename: pen-expert-v1.hdf5
+    host:
+      actor_bc_coef: 0.01
+      actor_learning_rate: 0.0003
+      batch_size: 256
+      critic_bc_coef: 0.01
+      critic_learning_rate: 0.0003
+    bca:
+      affinity:
+        bandwidth: 0.7348469228349533
+    reservation:
+      size: 1024
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 100
   pen-human:
     environment: pen-human-v1
-    defaults:
-      native_args:
-        actor_bc_coef: 0.1
-        actor_learning_rate: 0.0003
-        batch_size: 256
-        critic_bc_coef: 0.5
-        critic_learning_rate: 0.0003
-      specification:
-        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
-          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
-      action_dimension: 24
-      max_episode_steps: 100
-      cache:
-        sha256: 209e345b2150b633f30a11612612c60f49e941f127ce6c4dc0cd790501c46f9f
-        filename: '{environment}.hdf5'
-    bca_defaults:
-      protocol:
-        reservation:
-          target_size: 248
-    arms:
-      constant_1p5:
-        protocol:
-          reservation:
-            target_size: 248
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      native_full:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        protocol:
-          reservation:
-            target_size: 248
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.7348469228349533
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.7348469228349533
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        protocol:
-          run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-more-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: 209e345b2150b633f30a11612612c60f49e941f127ce6c4dc0cd790501c46f9f
+      filename: pen-human-v1.hdf5
+    host:
+      actor_bc_coef: 0.1
+      actor_learning_rate: 0.0003
+      batch_size: 256
+      critic_bc_coef: 0.5
+      critic_learning_rate: 0.0003
+    bca:
+      affinity:
+        bandwidth: 0.7348469228349533
+    reservation:
+      size: 248
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 100
   walker2d:
     environment: walker2d-medium-replay-v2
-    defaults:
-      native_args:
-        actor_bc_coef: 0.05
-        actor_learning_rate: 0.001
-        batch_size: 1024
-        critic_bc_coef: 0.01
-        critic_learning_rate: 0.001
-      action_dimension: 6
-      max_episode_steps: 1000
-      cache:
-        sha256: e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db
-        filename: walker2d_medium_replay-v2.hdf5
-    bca_defaults:
-      specification: {}
-    arms:
-      constant_1p5:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-constant_bc_pool
-      fixed_after_warmup:
-        specification:
-          constant_bc_multiplier: 1.3428702503442764
-      native_full:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-        protocol:
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-native_full
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-native_full
-      native_pool:
-        specification:
-          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
-            unchanged prior host and calibration settings.
-          constant_bc_start_step: 0
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-native_pool
-        run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-native_pool
-      posterior_affinity:
-        specification:
-          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
-            unchanged prior host and calibration settings.
-          posterior:
-            affinity:
-              bandwidth: 0.36742346141747667
-          constant_bc_start_step: 0
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_affinity
-        run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_affinity
-      posterior_affinity_dose_permuted:
-        specification:
-          posterior:
-            affinity:
-              bandwidth: 0.36742346141747667
-      posterior_affinity_permuted:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-          posterior:
-            affinity:
-              bandwidth: 0.36742346141747667
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_affinity_permuted
-      posterior_matched:
-        specification:
-          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
-            unchanged prior host and calibration settings.
-          constant_bc_start_step: 0
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_matched
-        run_id: fullwidth-1m-v1-rebrac-{environment}-s{seed}-posterior_matched
-      posterior_original:
-        specification:
-          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
-            paired first100 event banks; no outcome-based tuning.
-        protocol:
-          reservation:
-            target_size: 1024
-          run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_original
-        run_id: fullwidth-1m-hw-v1-rebrac-{environment}-s{seed}-posterior_original
+    cache:
+      sha256: e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db
+      filename: walker2d_medium_replay-v2.hdf5
+    host:
+      actor_bc_coef: 0.05
+      actor_learning_rate: 0.001
+      batch_size: 1024
+      critic_bc_coef: 0.01
+      critic_learning_rate: 0.001
+    bca:
+      affinity:
+        bandwidth: 0.36742346141747667
+    reservation:
+      size: 1024
+    refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
+    max_episode_steps: 1000

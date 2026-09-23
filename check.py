@@ -1,31 +1,33 @@
-"""Check syntax and every declared configuration; --runtime also validates typed protocols."""
+"""Validate every host/BCA configuration; --runtime constructs typed CPU protocols."""
 
-from pathlib import Path
 import argparse
+import ast
 import contextlib
 import hashlib
 import io
 import json
 import os
+from pathlib import Path
 import sys
-
-ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "algorithms"))
-from _config import read_config, resolve, typed, _yaml
+from runtime.config import ALGORITHMS, METHODS, ROOT, _yaml, read_config, resolve, typed
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime", action="store_true")
-    options = parser.parse_args()
-    if options.runtime:
-        os.environ["JAX_PLATFORMS"] = "cpu"
-        os.environ["D4RL_SUPPRESS_IMPORT_ERROR"] = "1"
-        os.environ["MUJOCO_PY_FORCE_CPU"] = "1"
-        os.environ["WANDB_MODE"] = "disabled"
+    opt = parser.parse_args()
+    if opt.runtime:
+        os.environ.update(
+            JAX_PLATFORMS="cpu",
+            MUJOCO_PY_FORCE_CPU="1",
+            WANDB_MODE="disabled",
+            D4RL_SUPPRESS_IMPORT_ERROR="1",
+        )
         location = str(
             Path(
-                os.environ.get("MUJOCO_PY_MUJOCO_PATH", str(Path.home() / ".mujoco/mujoco210"))
+                os.environ.get(
+                    "MUJOCO_PY_MUJOCO_PATH", str(Path.home() / ".mujoco/mujoco210")
+                )
             )
             / "bin"
         )
@@ -36,67 +38,81 @@ def main():
                 filter(None, [location, os.environ.get("LD_LIBRARY_PATH", "")])
             )
             os.execv(sys.executable, [sys.executable, *sys.argv])
-        from _runtime import setup
+        from runtime.environment import setup
 
         setup()
-    for path in [*ROOT.glob("*.py"), *(ROOT / "algorithms").glob("*.py")]:
-        compile(path.read_text(), str(path), "exec")
-    experiment = _yaml(str(ROOT / "configs/experiment.yaml"))
+    paths = [
+        *ROOT.glob("*.py"),
+        *(
+            p
+            for folder in ("algorithms", "calibration", "runtime")
+            for p in (ROOT / folder).glob("*.py")
+        ),
+    ]
+    for path in paths:
+        compile(path.read_text(encoding="utf8"), str(path), "exec")
+    for name in ALGORITHMS:
+        tree = ast.parse((ROOT / "algorithms" / f"{name}.py").read_text())
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module
+                and (node.module.startswith("calibration") or "_bca" in node.module)
+            ):
+                raise ValueError("Plain host imports BCA: " + name)
+            if isinstance(node, ast.Import) and any(
+                a.name.startswith("calibration") or "_bca" in a.name for a in node.names
+            ):
+                raise ValueError("Plain host imports BCA: " + name)
+    seeds = _yaml(str(ROOT / "configs/experiment.yaml"))["seeds"]
     hashes = {}
     actors = 0
-    for host in ("td3_bc", "rebrac", "cql", "iql"):
-        path = ROOT / "configs" / (host + ".yaml")
-        config = read_config(path)
-        for dataset, data in config["datasets"].items():
-            for arm in data["arms"]:
-                for seed in experiment["seeds"]:
-                    row = resolve(path, arm, seed, ROOT / "runs/example", dataset)
-                    if options.runtime:
+    for name in ALGORITHMS:
+        path = ROOT / "configs" / f"{name}.yaml"
+        for dataset in read_config(path)["datasets"]:
+            for seed in seeds:
+                pair = []
+                for method in METHODS:
+                    row = resolve(path, method, seed, ROOT / "runs/example", dataset)
+                    if opt.runtime:
                         with contextlib.redirect_stdout(io.StringIO()):
                             typed(row)
+                    host = (
+                        row["options"]["host_parameters"]
+                        if name == "iql"
+                        else row["native_args"]
+                    )
+                    pair.append(host)
                     if "options" in row:
                         row["options"]["output_dir"] = "{output_dir}"
                     if row["run_id"] in hashes:
-                        raise ValueError("Duplicate declared run ID.")
+                        raise ValueError("Duplicate run identity")
                     hashes[row["run_id"]] = hashlib.sha256(
                         json.dumps(row, sort_keys=True).encode()
                     ).hexdigest()
                     actors += row.get("actor_count", 1)
+                if pair[0] != pair[1]:
+                    raise ValueError(
+                        "Host settings differ between methods: " + name + "/" + dataset
+                    )
     digest = hashlib.sha256(json.dumps(hashes, sort_keys=True).encode()).hexdigest()
-    provenance = ROOT / "configs/sources.json"
-    if provenance.exists():
-        record = json.loads(provenance.read_text())
-        expected = record["configuration_matrix"]
-        if (len(hashes), actors, digest) != (
-            expected["physical_groups"],
-            expected["actor_trajectories"],
-            expected["sha256"],
-        ):
-            raise ValueError(
-                "Configuration matrix differs from the recorded reproduction. Review deliberate changes before updating its provenance."
-            )
-        pins = {
-            "algorithms/" + name: source["new_sha256"]
-            for name, source in record["relocated_sources"].items()
-        }
-        pins.update(record["entrypoint_files"])
-        pins.update(
-            {
-                "configs/" + name: item["new_sha256"]
-                for name, item in record["reference_tables"].items()
-            }
+    record = json.loads((ROOT / "configs/sources.json").read_text())
+    if "matrix_sha256" in record and record["matrix_sha256"] != digest:
+        raise ValueError(
+            "Configuration changed; review before updating the recorded identity."
         )
-        for name, wanted in pins.items():
-            if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != wanted:
-                raise ValueError("Source differs from the recorded reproduction: " + name)
+    for name, wanted in record.get("source_sha256", {}).items():
+        if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != wanted:
+            raise ValueError("Source changed since verification: " + name)
     print(
         json.dumps(
             dict(
                 accepted=True,
-                physical_groups=len(hashes),
+                methods=METHODS,
+                physical_runs=len(hashes),
                 actor_trajectories=actors,
                 matrix_sha256=digest,
-                typed_protocols_checked=options.runtime,
+                typed_protocols_checked=opt.runtime,
                 training_updates=0,
                 simulator_steps=0,
             )

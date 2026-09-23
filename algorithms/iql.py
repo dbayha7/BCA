@@ -1,343 +1,291 @@
-"""IQL: eight actors and five scale variants sharing the same nuisance Q/V.
+"""JAX iql host. BCA is isolated in the corresponding *_bca.py extension."""
 
-Scientific definitions extracted from the recorded BCA source; see configs/sources.json.
-"""
+import collections
+import collections.abc
+from dataclasses import dataclass
+from typing import Optional
+import flax.linen as nn
+import jax
+import jax.numpy as jnp
+import numpy as onp
+import optax
+from flax.training.train_state import TrainState
+import runtime.networks as C
 
-from dataclasses import asdict, dataclass, replace
-from numbers import Real
-from typing import NamedTuple
-import numpy as np
-import _iql_agent as H
-import _iql_shared as S
-import _iql_iw_scale as W
-from _iql_agent import P, jax, jnp
-
-
-def _name(value):
-    if not isinstance(value, str) or not value.strip() or value != value.strip():
-        raise ValueError("names must be nonempty strings without outer whitespace")
-
-
-def _positive(value, name):
-    if isinstance(value, bool) or not isinstance(value, Real):
-        raise ValueError(name + " must be a positive finite float32 scalar")
-    with np.errstate(over="ignore", under="ignore", invalid="ignore"):
-        valid = np.isfinite(np.float32(value)) and np.float32(value) > 0
-    if not valid:
-        raise ValueError(name + " must be a positive finite float32 scalar")
+EXP_ADV_MAX = 100.0
+LOG_STD_MIN = -20.0
+LOG_STD_MAX = 2.0
 
 
-@dataclass(frozen=True)
-class ScaleVariant:
-    name: str
-    iw: W.ScaleIWConfig = W.ScaleIWConfig()
-    weight_width: bool = False
-
-    def __post_init__(self):
-        _name(self.name)
-        if not isinstance(self.iw, W.ScaleIWConfig):
-            raise ValueError("iw must be a ScaleIWConfig")
-        if not isinstance(self.weight_width, bool):
-            raise ValueError("weight_width must be an explicit boolean")
-
-
-@dataclass(frozen=True)
-class IWArm:
-    name: str
-    variant_index: int
-    mode: str
-    beta: float
-    gain: float = 1.0
-
-    def __post_init__(self):
-        _name(self.name)
-        _positive(self.beta, "actor beta")
-        _positive(self.gain, "actor gain")
-        if (
-            not isinstance(self.variant_index, int)
-            or isinstance(self.variant_index, bool)
-            or self.variant_index < -1
-            or (self.mode not in ("off", "full", "floor"))
-        ):
-            raise ValueError("invalid variant index or actor mode")
-        if (self.mode == "off") != (self.variant_index == -1):
-            raise ValueError("only an off baseline uses variant_index=-1")
-        if self.mode == "off" and self.gain != 1.0:
-            raise ValueError("baseline gain is unused and must be one")
+@dataclass
+class Args:
+    seed: int = 0
+    dataset: str = "halfcheetah-medium-expert-v2"
+    algorithm: str = "corl_iql"
+    num_updates: int = 1000000
+    reward_transform: str = C.RT_DEFAULT_MODE
+    reward_scale: float = C.RT_DEFAULT_SCALE
+    reward_bias: float = C.RT_DEFAULT_BIAS
+    allow_off_config: bool = False
+    eval_interval: int = 5000
+    eval_workers: int = 10
+    eval_final_episodes: int = 1000
+    log: bool = False
+    wandb_project: str = "unifloral"
+    wandb_team: str = "flair"
+    wandb_group: str = "debug"
+    vf_lr: float = 0.0003
+    qf_lr: float = 0.0003
+    actor_lr: float = 0.0003
+    batch_size: int = 256
+    discount: float = 0.99
+    tau: float = 0.005
+    normalize: bool = True
+    normalize_reward: bool = False
+    beta: float = 3.0
+    iql_tau: float = 0.7
+    iql_deterministic: bool = False
+    actor_dropout: Optional[float] = None
 
 
-class SharedIWCarry(NamedTuple):
-    rng: object
-    nuisance: object
-    step: object
-    extras: tuple
-    actors: object
+AgentTrainState = collections.namedtuple("AgentTrainState", "actor qf qf_target vf")
 
 
-def default_design(published_beta):
-    _positive(published_beta, "published beta")
-    base = W.ScaleIWConfig(beta=published_beta)
-    variants = (
-        ScaleVariant("noiw_legacy_width", base, False),
-        ScaleVariant("noiw_weighted_width", base, True),
-        ScaleVariant("awr_legacy_width", replace(base, mode="awr"), False),
-        ScaleVariant("awr_weighted_width", replace(base, mode="awr"), True),
-        ScaleVariant("awr_permuted_weighted_width", replace(base, mode="awr_permuted"), True),
+def asymmetric_l2_loss(u, tau):
+    return jnp.mean(jnp.abs(tau - (u < 0.0).astype(jnp.float32)) * u**2)
+
+
+def gaussian_log_prob(mean, std, value):
+    log_scale = jnp.log(std)
+    var = std**2
+    return (
+        -((value - mean) ** 2) / (2.0 * var) - log_scale - 0.5 * jnp.log(2.0 * jnp.pi)
     )
-    arms = (
-        (IWArm("baseline", -1, "off", published_beta),)
-        + tuple(
-            (
-                IWArm("full_" + variant.name, i, "full", published_beta)
-                for i, variant in enumerate(variants)
-            )
+
+
+class MLPTrunk(nn.Module):
+    in_dim: int
+    out_dim: int
+    hidden_dim: int = 256
+    n_hidden: int = 2
+    dropout: float = 0.0
+
+    @nn.compact
+    def __call__(self, x, deterministic=True):
+        fan_in = self.in_dim
+        for _ in range(self.n_hidden):
+            x = C.torch_dense(self.hidden_dim, fan_in)(x)
+            x = nn.relu(x)
+            if self.dropout > 0.0:
+                x = nn.Dropout(rate=self.dropout)(x, deterministic=deterministic)
+            fan_in = self.hidden_dim
+        return C.torch_dense(self.out_dim, fan_in)(x)
+
+
+class GaussianPolicy(nn.Module):
+    obs_dim: int
+    action_dim: int
+    max_action: float
+    dropout: float = 0.0
+
+    @nn.compact
+    def __call__(self, obs, deterministic=True):
+        x = MLPTrunk(self.obs_dim, self.action_dim, dropout=self.dropout)(
+            obs, deterministic=deterministic
         )
-        + (IWArm("floor_awr_weighted_width", 3, "floor", published_beta),)
-    )
-    return (variants, arms)
-
-
-def _validate_variants(args, variants):
-    args.posterior.validate()
-    if args.posterior.mode != "full":
-        raise ValueError("shared references retain the full Bayesian/conformal posterior")
-    _positive(args.beta, "published beta")
-    if not variants or any((not isinstance(v, ScaleVariant) for v in variants)):
-        raise ValueError("explicit scale variants required")
-    if len({v.name for v in variants}) != len(variants):
-        raise ValueError("scale variant names must be unique")
-    common = replace(variants[0].iw, mode="off")
-    if common.beta != args.beta or any((replace(v.iw, mode="off") != common for v in variants)):
-        raise ValueError(
-            "all variants require the same fixed IW settings and published IW beta"
+        mean = jnp.tanh(x)
+        log_std = self.param(
+            "log_std", lambda key: jnp.zeros(self.action_dim, dtype=jnp.float32)
         )
+        std = jnp.exp(jnp.clip(log_std, LOG_STD_MIN, LOG_STD_MAX))
+        return (mean, jnp.broadcast_to(std, mean.shape))
+
+    def act(self, params, obs):
+        mean, _ = self.apply(params, obs, deterministic=True)
+        return jnp.clip(self.max_action * mean, -self.max_action, self.max_action)
 
 
-def _validate_arms(args, arms, count):
-    if not arms or any((not isinstance(a, IWArm) for a in arms)):
-        raise ValueError("explicit IWArm actors required")
-    if len({a.name for a in arms}) != len(arms):
-        raise ValueError("actor names must be unique")
-    if any((a.variant_index >= count for a in arms)):
-        raise ValueError("actor variant index is out of range")
-    if {a.variant_index for a in arms if a.mode != "off"} != set(range(count)):
-        raise ValueError("each scale variant must have a consuming actor")
-    representative = next(
-        (i for i, a in enumerate(arms) if a.mode == "off" and a.beta == args.beta), None
-    )
-    if representative is None:
-        raise ValueError("include a published-beta same-pool baseline actor")
-    return representative
+class DeterministicPolicy(nn.Module):
+    obs_dim: int
+    action_dim: int
+    max_action: float
+    dropout: float = 0.0
 
-
-def _validate_fitters(args, fitters, variants):
-    _validate_variants(args, variants)
-    if len(fitters) != len(variants):
-        raise ValueError("one separately constructed fitter per scale variant required")
-    if len({id(f) for f in fitters}) != len(fitters):
-        raise ValueError("scale variants cannot reuse one fitter instance")
-    for fitter, variant in zip(fitters, variants):
-        if (
-            not isinstance(fitter, W.IWScaleFitter)
-            or fitter.iw != variant.iw
-            or fitter.weight_width != variant.weight_width
-            or (asdict(fitter.args) != asdict(args.posterior))
-        ):
-            raise ValueError(
-                "fitter does not match its declared variant/posterior configuration"
-            )
-
-
-def make_fitters(args, state, obs_dim, action_dim, variants):
-    _validate_variants(args, variants)
-    return tuple(
-        (
-            W.IWScaleFitter(
-                args.posterior,
-                state.qf.apply_fn,
-                obs_dim,
-                action_dim,
-                args.seed,
-                iw=v.iw,
-                weight_width=v.weight_width,
-            )
-            for v in variants
+    @nn.compact
+    def __call__(self, obs, deterministic=True):
+        x = MLPTrunk(self.obs_dim, self.action_dim, dropout=self.dropout)(
+            obs, deterministic=deterministic
         )
-    )
+        return jnp.tanh(x)
+
+    def act(self, params, obs):
+        a = self.apply(params, obs, deterministic=True)
+        return jnp.clip(a * self.max_action, -self.max_action, self.max_action)
 
 
-def initialize_shared(args, state, rng, fitters, arms):
-    variants = tuple(
-        (ScaleVariant(str(i), f.iw, f.weight_width) for i, f in enumerate(fitters))
-    )
-    _validate_fitters(args, fitters, variants)
-    _validate_arms(args, arms, len(fitters))
-    extras = tuple(
-        (
-            H.PosteriorTrainState(
-                f.initial,
-                P.POST.initialize_posterior(
-                    f.initial.calibrator.params, 1, args.posterior.draws
-                ),
-            )
-            for f in fitters
+class Critic(nn.Module):
+    obs_dim: int
+    action_dim: int
+
+    @nn.compact
+    def __call__(self, obs, action):
+        x = jnp.concatenate([obs, action], axis=-1)
+        return MLPTrunk(self.obs_dim + self.action_dim, 1)(x).squeeze(-1)
+
+
+class TwinQ(nn.Module):
+    obs_dim: int
+    action_dim: int
+
+    @nn.compact
+    def __call__(self, obs, action):
+        vmap_critic = nn.vmap(
+            Critic,
+            variable_axes={"params": 0},
+            split_rngs={"params": True},
+            in_axes=None,
+            out_axes=-1,
+            axis_size=2,
         )
-    )
-    return SharedIWCarry(
-        rng, state, jnp.int32(0), extras, S.stack_actors(state.actor, len(arms))
-    )
+        return vmap_critic(self.obs_dim, self.action_dim)(obs, action)
 
 
-def arm_weights(args, arms, extras, predictions, advantage):
-    rows = []
-    for arm in arms:
-        native = S.native_weights(advantage, arm.beta)
-        if arm.mode == "off":
-            row = native
+class ValueFunction(nn.Module):
+    obs_dim: int
+
+    @nn.compact
+    def __call__(self, obs):
+        return MLPTrunk(self.obs_dim, 1)(obs).squeeze(-1)
+
+
+def iql_update(
+    args,
+    actor_apply_fn,
+    q_apply_fn,
+    value_apply_fn,
+    agent_state,
+    batch,
+    it,
+    rng_dropout,
+):
+    agent_state, adv, target, nuisance_metrics = nuisance_update(
+        args, q_apply_fn, value_apply_fn, agent_state, batch
+    )
+    value_loss = nuisance_metrics["value_loss"]
+    q_loss = nuisance_metrics["q_loss"]
+    exp_adv = jnp.minimum(jnp.exp(args.beta * jax.lax.stop_gradient(adv)), EXP_ADV_MAX)
+
+    def _actor_loss_fn(params):
+        out = actor_apply_fn(
+            params, batch.obs, deterministic=False, rngs={"dropout": rng_dropout}
+        )
+        if args.iql_deterministic:
+            bc_losses = jnp.sum((out - batch.action) ** 2, axis=1)
         else:
-            ref = extras[arm.variant_index].posterior
-            config = replace(args.posterior, mode=arm.mode, decision_gain=arm.gain)
-            row = P.weights_at_reference(
-                config, ref, predictions[arm.variant_index], advantage, arm.beta, H.EXP_ADV_MAX
-            )
-            row = jax.tree_util.tree_map(
-                lambda new, old: jnp.where(ref.ready, new, old), row, native
-            )
-        rows.append(row)
-    return jax.tree_util.tree_map(lambda *xs: jnp.stack(xs), *rows)
+            mean, std = out
+            bc_losses = -gaussian_log_prob(mean, std, batch.action).sum(-1)
+        return jnp.mean(exp_adv * bc_losses)
 
-
-def make_shared_train_step(args, dataset, fitters, variants, arms):
-    _validate_fitters(args, fitters, variants)
-    representative = _validate_arms(args, arms, len(variants))
-    n = len(dataset.reward)
-    if n < 1 or any((len(x) != n for x in dataset)):
-        raise ValueError("aligned nonempty training pool required")
-    if (
-        not isinstance(args.batch_size, int)
-        or isinstance(args.batch_size, bool)
-        or args.batch_size < 1
-    ):
-        raise ValueError("positive integer batch size required")
-
-    def step(carry, unused):
-        del unused
-        rng, state, it, extras, actors = carry
-        if len(extras) != len(fitters) or actors.step.shape != (len(arms),):
-            raise ValueError("carry does not match scale/actor dimensions")
-        it = it + 1
-        rng, batch_key, dropout_key = jax.random.split(rng, 3)
-        idx = jax.random.randint(batch_key, (args.batch_size,), 0, n)
-        batch = jax.tree_util.tree_map(lambda x: x[idx], dataset)
-        prior_valid = P.finite_tree((state.qf, state.qf_target, state.vf))
-        state, adv, target, loss = H.nuisance_update(
-            args, state.qf.apply_fn, state.vf.apply_fn, state, batch
-        )
-        nuisance_valid = prior_valid & P.finite_tree(
-            (state.qf, state.qf_target, state.vf, loss, adv, target)
-        )
-        ready = jnp.stack([extra.posterior.ready for extra in extras])
-        if ready.dtype != jnp.bool_ or ready.shape != (len(fitters),):
-            raise ValueError("posterior readiness must be scalar boolean per variant")
-        schedule_valid = jnp.all(ready == ready[0])
-        new_extras, predictions, variant_logs = ([], [], [])
-        for f, extra in zip(fitters, extras):
-            calibration, readout, accepted = f.update(
-                extra.calibration, state, batch, target, adv, dropout_key, it
-            )
-            d = readout.diagnostics
-            numerical = (
-                d.get("numerical_valid", accepted)
-                & P.finite_tree(extra.calibration)
-                & (extra.calibration.resid_scale > 0)
-            )
-            accepted = accepted & numerical & nuisance_valid
-            calibration = jax.lax.cond(
-                accepted, lambda _: calibration, lambda _: extra.calibration, None
-            )
-            new_extras.append(H.PosteriorTrainState(calibration, extra.posterior))
-            predictions.append(
-                f.predictions(extra.calibration, extra.posterior.cal_params, batch)
-            )
-            variant_logs.append(
-                {
-                    "accepted": accepted,
-                    "numerical_valid": numerical,
-                    "ess_feasible": d.get("iw_ess_feasible", jnp.asarray(True)),
-                    "ess_infeasible": d.get("iw_ess_infeasible", jnp.asarray(False)),
-                    "iw_inputs_valid": d.get("iw_inputs_valid", jnp.asarray(True)),
-                    "has_support": d.get("iw_has_support", jnp.asarray(True)),
-                    "step": calibration.calibrator.step,
-                    "loss": d["cal_loss"],
-                    "coverage": readout.coverage,
-                    "width_loss": d["width_loss"],
-                    "eta_mean": d["eta_mean"],
-                    "resid_scale": calibration.resid_scale,
-                    "iw_tau": d.get("iw_tau", jnp.asarray(1.0)),
-                    "iw_raw_ess_fraction": d.get("iw_raw_ess_fraction", jnp.asarray(1.0)),
-                    "iw_ess_fraction": d.get("iw_ess_fraction", jnp.asarray(1.0)),
-                    "prior_ess_fraction": d.get(
-                        "bootstrap_prior_ess_fraction", d["bootstrap_ess_fraction"]
-                    ),
-                    "product_ess_fraction": d["bootstrap_ess_fraction"],
-                    "iw_supported_count": d.get(
-                        "iw_supported_count", jnp.asarray(len(adv), jnp.int32)
-                    ),
-                    "iw_positive_count": d.get(
-                        "iw_positive_count", jnp.asarray(len(adv), jnp.int32)
-                    ),
-                }
-            )
-        detail = jax.tree_util.tree_map(lambda *xs: jnp.stack(xs), *variant_logs)
-        weights = arm_weights(args, arms, extras, predictions, adv)
-        dependency_valid = jnp.stack(
-            [
-                (
-                    nuisance_valid
-                    if a.mode == "off"
-                    else nuisance_valid
-                    & schedule_valid
-                    & detail["numerical_valid"][a.variant_index]
-                )
-                for a in arms
-            ]
-        )
-        weights = weights._replace(
-            inputs_valid=weights.inputs_valid & dependency_valid,
-            has_support=weights.has_support & dependency_valid,
-        )
-        actors, actor_loss, actor_valid = S.update_actors(
-            args, actors, batch, adv, dropout_key, weights
-        )
-        state = state._replace(actor=S.actor_at(actors, representative))
-        mass = jnp.sum(weights.weights, axis=1)
-        calibration_valid = jnp.all(detail["numerical_valid"])
-        diagnostics = {
-            **loss,
-            "inputs_valid": nuisance_valid
-            & calibration_valid
-            & schedule_valid
-            & jnp.all(weights.inputs_valid & actor_valid),
-            "nuisance_valid": nuisance_valid,
-            "calibration_valid": calibration_valid,
-            "posterior_schedule_valid": schedule_valid,
-            "posterior_ready": jnp.all(ready),
-            "actor_inputs_valid": weights.inputs_valid,
-            "actor_proposal_valid": actor_valid,
+    actor_loss, a_grad = jax.value_and_grad(_actor_loss_fn)(agent_state.actor.params)
+    agent_state = agent_state._replace(
+        actor=agent_state.actor.apply_gradients(grads=a_grad)
+    )
+    return (
+        agent_state,
+        {
+            "value_loss": value_loss,
+            "q_loss": q_loss,
             "actor_loss": actor_loss,
-            "actor_updated": weights.has_support & actor_valid,
-            "actor_step": actors.step,
-            "weight_mean": jnp.mean(weights.weights, axis=1),
-            "weight_ess_fraction": mass**2
-            / (len(adv) * jnp.sum(weights.weights**2, axis=1) + 1e-30),
-            "weight_cap_fraction": jnp.mean(
-                (weights.weights >= H.EXP_ADV_MAX).astype(jnp.float32), axis=1
-            ),
-            "supported_fraction": jnp.mean(weights.support_mask.astype(jnp.float32), axis=1),
-            "scale_loss": jnp.mean(detail["loss"]),
-            "scale_coverage": jnp.mean(detail["coverage"]),
-            **{"cal_variant_" + k: v for k, v in detail.items()},
-        }
-        return (SharedIWCarry(rng, state, it, tuple(new_extras), actors), diagnostics)
+            "adv_mean": adv.mean(),
+            "exp_adv_mean": exp_adv.mean(),
+        },
+    )
 
-    return step
+
+def make_train_step(args, actor_apply_fn, q_apply_fn, value_apply_fn, dataset):
+    n = dataset.obs.shape[0]
+
+    def _train_step(runner_state, _):
+        rng, agent_state, it = runner_state
+        it = it + 1
+        rng, rng_batch, rng_dropout = jax.random.split(rng, 3)
+        idx = jax.random.randint(rng_batch, (args.batch_size,), 0, n)
+        batch = jax.tree_util.tree_map(lambda x: x[idx], dataset)
+        agent_state, loss = iql_update(
+            args,
+            actor_apply_fn,
+            q_apply_fn,
+            value_apply_fn,
+            agent_state,
+            batch,
+            it,
+            rng_dropout,
+        )
+        return ((rng, agent_state, it), loss)
+
+    return _train_step
+
+
+def initialize_agent(args, obs_dim, action_dim, max_action):
+    key = jax.random.fold_in(jax.random.PRNGKey(args.seed), 1414676809)
+    key, ka, kq, kv = jax.random.split(key, 4)
+    dropout = 0.0 if args.actor_dropout is None else float(args.actor_dropout)
+    actor = (DeterministicPolicy if args.iql_deterministic else GaussianPolicy)(
+        obs_dim, action_dim, max_action, dropout
+    )
+    q = TwinQ(obs_dim, action_dim)
+    v = ValueFunction(obs_dim)
+    obs = jnp.zeros(obs_dim)
+    action = jnp.zeros(action_dim)
+
+    def make(k, net, inputs, tx):
+        return TrainState.create(apply_fn=net.apply, params=net.init(k, *inputs), tx=tx)
+
+    state = AgentTrainState(
+        make(
+            ka,
+            actor,
+            [obs],
+            C.torch_adam(optax.cosine_decay_schedule(args.actor_lr, args.num_updates)),
+        ),
+        make(kq, q, [obs, action], C.torch_adam(args.qf_lr)),
+        make(kq, q, [obs, action], C.torch_adam(args.qf_lr)),
+        make(kv, v, [obs], C.torch_adam(args.vf_lr)),
+    )
+    return (state, key, actor)
+
+
+def nuisance_update(args, q_apply_fn, value_apply_fn, state, batch):
+    next_v = jax.lax.stop_gradient(value_apply_fn(state.vf.params, batch.next_obs))
+    target_q = jax.lax.stop_gradient(
+        jnp.min(q_apply_fn(state.qf_target.params, batch.obs, batch.action), axis=-1)
+    )
+
+    def value_loss(params):
+        advantage = target_q - value_apply_fn(params, batch.obs)
+        return (asymmetric_l2_loss(advantage, args.iql_tau), advantage)
+
+    (v_loss, adv), grad = jax.value_and_grad(value_loss, has_aux=True)(state.vf.params)
+    state = state._replace(vf=state.vf.apply_gradients(grads=grad))
+    target = batch.reward + (1.0 - batch.done) * args.discount * next_v
+
+    def q_loss(params):
+        q = q_apply_fn(params, batch.obs, batch.action)
+        return jnp.square(q - target[:, None]).mean()
+
+    q_loss, grad = jax.value_and_grad(q_loss)(state.qf.params)
+    state = state._replace(qf=state.qf.apply_gradients(grads=grad))
+    state = state._replace(
+        qf_target=state.qf_target.replace(
+            step=state.qf_target.step + 1,
+            params=optax.incremental_update(
+                state.qf.params, state.qf_target.params, args.tau
+            ),
+        )
+    )
+    return (
+        state,
+        jax.lax.stop_gradient(adv),
+        target,
+        {"value_loss": v_loss, "q_loss": q_loss},
+    )

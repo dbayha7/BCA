@@ -1,160 +1,117 @@
 # Bayesian Conformal Aggregation
 
-The BCA implementations and explicit configurations for IQL, CQL, TD3+BC, and
-ReBRAC. This repository contains code and reproduction settings. Experiment
-outputs and historical research archives live separately.
+Four JAX hosts. Four BCA extensions. Two methods: **`host`** and **`bca`**.
 
-## Structure
+The BCA files import the corresponding host. They reuse its networks, initialization,
+optimizers and update equations. Both methods use the same host hyperparameters.
+
+Read the **[complete pseudocode for all four hosts + BCA](ALGORITHMS.md)**:
+host losses, fitting weights, ESS abstention, Bayesian/conformal radius refresh,
+frozen-width consumption, update order, and evaluation/checkpoint schedules.
+
+| JAX host | Host + BCA | What BCA changes |
+| --- | --- | --- |
+| [IQL](algorithms/iql.py) | [IQL + BCA](algorithms/iql_bca.py) | Actor advantage weights; shared Q/V updates stay the same. |
+| [CQL](algorithms/cql.py) | [CQL + BCA](algorithms/cql_bca.py) | Per-sample conservative critic gap; the dual update uses the original unweighted gap. |
+| [TD3+BC](algorithms/td3_bc.py) | [TD3+BC + BCA](algorithms/td3_bc_bca.py) | Actor behavior-cloning multiplier. |
+| [ReBRAC](algorithms/rebrac.py) | [ReBRAC + BCA](algorithms/rebrac_bca.py) | Actor behavior-cloning multiplier; critic BC stays unchanged. |
+
+## Layout
 
 ```text
-algorithms/
-  iql.py                 # Actors and scale variants sharing nuisance Q/V
-  cql.py                 # BCA on the conservative critic gap
-  td3_bc.py              # BCA on the actor behavior-cloning term
-  rebrac.py              # BCA on actor BC; native critic BC retained
-  _*.py                  # Native hosts, calibration, data and execution helpers
-configs/
-  experiment.yaml        # Seeds, update budget and evaluation/refresh schedules
-  iql.yaml               # IQL defaults, controls and seven dataset overrides
-  cql.yaml
-  td3_bc.yaml
-  rebrac.yaml
-  sources.json           # Source provenance and configuration matrix identity
-  corl_reference_scores.*
-train.py                 # One explicit run
-check.py                 # Configuration and protocol validation
+algorithms/       # Four plain hosts and four *_bca.py extensions
+calibration/      # Shared scale fitting, importance weights and radius math
+runtime/          # Data preparation, evaluation, checkpoints and validation
+configs/          # experiment.yaml plus one YAML per algorithm
+train.py          # Run one selected method
+check.py          # Check all declared configurations
+ALGORITHMS.md     # Complete, source-linked pseudocode for every host + BCA
 requirements.txt
 LICENSE
 NOTICE
 ```
 
-Start with the algorithm file and its matching YAML file. Files beginning with
-`_native_` contain the underlying host equations. The `_bca_`, `_iql_` and other
-private helpers implement shared math or host-specific calibration and execution.
+Start with a host file, then its `_bca.py` counterpart. `calibration/` and `runtime/`
+contain supporting math and execution code.
 
-## Configurations
+## Configuration
 
-There is **one configuration per algorithm**, containing all seven datasets.
-The resolution order is:
+Each algorithm YAML has one `host` block, one `bca` block and dataset overrides.
+Both methods read **exactly the same host hyperparameters**, training reservation,
+normalization and evaluation banks. A host baseline uses the training complement
+of the reserved calibration data; it is not a full-data published baseline.
+Dataset overrides merge into the corresponding block. `--print-config` shows all
+resolved values, seeds and schedules before execution.
 
-1. Algorithm `defaults`.
-2. The selected dataset's `defaults`.
-3. The selected algorithm `arm`.
-4. That dataset's override for the arm, then any explicit seed override.
+`experiment.yaml` declares five seeds and **1,000,000 host updates**. TD3+BC and
+ReBRAC perform 500,000 delayed actor updates. BCA retains its 10k warmup and 198
+posterior refreshes. Evaluation has 200 periodic banks and a separate 20-episode
+final bank; periodic banks contain ten episodes, or two per actor for IQL.
 
-An arm marked `bca: true` takes the algorithm's `bca_defaults` before its arm
-settings, and the dataset's `bca_defaults` before that dataset's arm settings.
-This keeps shared calibration parameters in one place without applying them
-to native controls. There is no recursive chain of configuration files.
+IQL `bca` explicitly trains **two actors: `host` and `bca`**, with one shared Q/V
+state and one AWR-weighted calibrator. Their beta is the native value and decision
+gain is fixed at 1. The standalone `host` option trains only the host actor on the
+same pool. There are no beta sweeps, floor-only actors, permutation arms or fixed-
+strength control arms in the active interface.
 
-Only arms listed under a dataset are enabled there. An empty `{}` means the
-dataset inherits the named arm unchanged. Lists replace lists; mappings merge
-recursively. No additional inheritance framework is required.
+This is a new minimal comparison design. The previous exact reproduction matrix,
+including its IQL beta choices and eight-actor groups, remains available at
+[`reproduction-matrix-v1`](https://github.com/dbayha7/BCA/tree/reproduction-matrix-v1).
+Existing results cannot be relabeled as results of this new design.
 
-`experiment.yaml` defines common values referenced as `{experiment.num_updates}`,
-etc. Evaluation schedules use explicit arithmetic progressions instead of long
-lists of episode seeds. `--print-config` expands every reference and schedule
-so the complete effective configuration can be inspected before a run.
-Distinct reset and refresh banks keep their explicit identities.
+## Run
 
-```bash
-python train.py --config configs/td3_bc.yaml --list
-python train.py --config configs/td3_bc.yaml --dataset hopper \
-  --arm posterior_affinity --seed 202609171 --print-config
-```
-
-The recorded matrix contains four algorithms, seven datasets, five seeds,
-810 physical runs/groups and 1,055 actor trajectories. The number of controls
-differs by algorithm and dataset. IQL `shared` runs contain eight actors with
-shared nuisance Q/V and five scale variants; `native` is a separate full-data
-control. These declarations are **not a claim that the matrix has completed**.
-
-Each run starts from zero and targets 1,000,000 host updates. TD3+BC/ReBRAC use
-500,000 delayed actor updates; CQL uses 1,000,000 actor updates. IQL records
-accepted actor and scale updates separately from attempted updates. BCA arms
-retain Bayesian and conformal components and their declared warmup/refresh
-rules. TD3+BC/ReBRAC/CQL have 200 ten-episode periodic banks and a separate
-20-episode final bank. IQL has 200 two-episode periodic banks per actor and a
-separate 20-episode final bank per actor.
-
-The controls remain distinct: fitting-weight permutation versus consumed-dose
-permutation; constant 1.5 from initialization versus a development-derived fixed
-strength after warmup; original versus matched scale objectives. The YAML files
-retain their actual settings. Reward transforms, reservation sizes, normalization,
-ESS gates and evaluation semantics remain host/dataset-specific.
-
-## Environment
-
-Use **Python 3.10 on Linux or WSL2**. These versions preserve the existing D4RL /
-Gym / MuJoCo setup; this is not a Gymnasium or new-MuJoCo port.
+Use Python 3.10 on Linux/WSL2, with MuJoCo 2.1 installed in
+`~/.mujoco/mujoco210` and the original D4RL HDF5 files in `~/.d4rl/datasets`.
+The pinned cache hashes are checked before training; missing data stops the run.
 
 ```bash
-python3.10 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
-# For NVIDIA training, install the matching CUDA-enabled JAX build:
+# NVIDIA GPU support for this pinned JAX version:
 pip install 'jax[cuda12]==0.6.2'
-```
 
-Install MuJoCo **2.1** in `~/.mujoco/mujoco210` (or set
-`MUJOCO_PY_MUJOCO_PATH`) and the Linux build/OpenGL libraries required by
-[mujoco-py](https://github.com/openai/mujoco-py#install-mujoco).
-On Ubuntu these typically include `build-essential`, `patchelf`,
-`libosmesa6-dev`, `libgl1-mesa-dev`, and `libglfw3`.
-The runner adds the MuJoCo library directory before imports. When exactly one
-compatible prebuilt CPU extension is installed, it loads that binary without
-recompiling it. Otherwise mujoco-py performs its normal build.
-
-Place the original D4RL HDF5 datasets in `~/.d4rl/datasets`, or pass
-`--data-dir`. Every config pins the filename and SHA256. A missing or mismatching
-file stops preparation; training does not silently download or substitute data.
-Obtain datasets using the original [D4RL dataset instructions](https://github.com/Farama-Foundation/D4RL).
-
-## Validate and run
-
-```bash
-# Syntax and all 810 resolved configurations; PyYAML is sufficient.
 python check.py
-# All typed host protocols, on CPU; no learner or simulator steps.
-python check.py --runtime
-# Inspect a real cached split before creating any learner.
-python train.py --config configs/iql.yaml --dataset pen-human \
-  --arm shared --seed 202609171 --prepare-only --output runs/iql-pen-preparation
-# Run one explicitly selected experiment into a new directory.
-python train.py --config configs/td3_bc.yaml --dataset hopper \
-  --arm posterior_affinity --seed 202609171 --output runs/td3-hopper-affinity-s1
+python check.py --runtime  # CPU protocol validation; no training or simulator steps
+python train.py --algorithm td3_bc --list
+python train.py --algorithm td3_bc --dataset hopper --method bca \
+  --seed 202609171 --print-config
+
+python train.py --algorithm td3_bc --dataset hopper --method host \
+  --seed 202609171 --output runs/td3-hopper-host
+python train.py --algorithm td3_bc --dataset hopper --method bca \
+  --seed 202609171 --output runs/td3-hopper-bca
 ```
 
-`check.py` also checks the resolved matrix against the recorded reproduction
-identity. Deliberate experiment changes require a reviewed new identity; editing
-a parameter is not automatically the same reproduction.
+Use `--prepare-only` with a new output directory to verify a real cached split
+without learner updates. `--data-dir`, `--device cpu` and `--lock` are optional.
+Every output directory must be new. Each run records its resolved config, source
+snapshot, data identity, metrics, evaluations, checkpoints and completion/failure.
+There is no automatic retry or queue. Checkpoint counters and event banks are
+validated before completion is recorded.
 
-GPU runs use an exclusive file lock. Set `BCA_GPU_LOCK` or `--lock` to the same
-path used by other workers on the machine. For the existing research machine,
-that path is `/home/dbayha/bca-work/resource-locks/local-rtx5070ti.lock`.
-Use `--device cpu` for CPU execution. There is no automatic queue or retry.
+GPU runs hold an exclusive lock. On the existing research machine set
+`BCA_GPU_LOCK=/home/dbayha/bca-work/resource-locks/local-rtx5070ti.lock` so these
+runs share the existing GPU reservation. Do not edit a checkout while it trains.
 
-Each new output directory records the resolved configuration, code/config
-snapshot, dependency versions, data preparation, journals, checkpoints and
-completion or failure evidence. TD3+BC/ReBRAC/CQL save detached checkpoints at
-10k, 50k and the final update; IQL retains its reference and training-end
-checkpoints. Existing output directories are rejected. Do not edit a checkout
-while one of its runs is active.
+## Calibration and provenance
 
-## Interpretation and provenance
+BCA retains both Bayesian and conformal radii and consumes their maximum.
+TD3+BC/ReBRAC use action-affinity fitting weights, CQL uses policy-density fitting
+weights, and IQL uses capped pre-BCA AWR fitting weights. These weights affect
+scale fitting; posterior residual-score calibration remains unweighted. A fitted
+scale or conformal floor does not by itself guarantee behavioral-harm detection
+or improved return under adaptive training.
 
-The reorganization preserves the declared scientific settings; it does not
-establish new calibration guarantees or reproduce completed 1M results by
-itself. An accepted scale update is not evidence of improved return or reliable
-harm ranking. Bayesian/conformal residual widths and behavioral risk remain
-different quantities. Published reference means, local controls and native
-candidates must be reported separately.
+`configs/sources.json` records source identity and verification limits. The code
+is derived from the JAX CORL hosts used in this research, with attribution to
+[CORL](https://github.com/corl-team/CORL) and
+[Unifloral](https://github.com/EmptyJackson/Unifloral). These host versions must
+remain distinct from other native candidates and published reference means.
+See `LICENSE` and `NOTICE`. Historical outputs and checkpoint weights stay outside
+this repository.
 
-Exact numerical replay also depends on the data, software stack, hardware and
-evaluation banks. `configs/sources.json` records the migration checks and their
-limits. Historical results, failures and checkpoint weights are not imported
-into this clean repository.
-
-Derived from [CORL](https://github.com/corl-team/CORL) and
-[Unifloral](https://github.com/EmptyJackson/Unifloral). See `LICENSE` and `NOTICE`
-for licensing and attribution.
+Validation of this layout covers all 280 resolved run declarations, all 28 cached
+dataset preparations and paired training pools, and CPU numerical parity fixtures
+for all eight host/BCA paths. IQL's paired execution/checkpoint boundary also passes
+with generated data and mock evaluations. These checks do not constitute completed
+1M runs, fresh-environment installation validation, or GPU reproducibility results.

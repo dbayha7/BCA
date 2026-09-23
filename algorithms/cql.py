@@ -1,140 +1,457 @@
-"""CQL: full-width Bayesian/conformal modulation of the conservative gap.
+"""JAX cql host. BCA is isolated in the corresponding *_bca.py extension."""
 
-Scientific definitions extracted from the recorded BCA source; see configs/sources.json.
-"""
-
-from dataclasses import dataclass, field
-from typing import NamedTuple, Any
+import collections
+import collections.abc
+from dataclasses import dataclass
+import flax.linen as nn
 import jax
 import jax.numpy as jnp
-import numpy as np
+import numpy as onp
 import optax
 from flax.training.train_state import TrainState
-import _native_cql as BASE
-from _bca_module import Calibrator, bayesian_bootstrap_weights, soft_coverage
-from _bca_posterior import PosteriorConfig
-from _bca_iql_adapter import initialize_posterior, fit_posterior, reserve_calibration
-from _bca_cql_level import frozen_level_dose, tree_finite
-from _bca_cql_scale_iw import ScaleIWConfig, PolicyLogWeights, fit_weighting
+import runtime.networks as C
 
 
-@dataclass(frozen=True)
-class Config:
-    arm: str = "native_full"
-    attachment: str = "conservative_gap_level"
-    width_objective: str = "original"
-    iw: ScaleIWConfig = field(default_factory=ScaleIWConfig)
-    posterior: PosteriorConfig = field(default_factory=PosteriorConfig)
-    radius_mode: str = "full"
-    blend: float = 1.0
-    cal_lr: float = 0.001
-    cal_beta: float = 20.0
-    width_penalty: float = 0.005
-    scale_ema: float = 0.99
+@dataclass
+class Args:
+    seed: int = 0
+    dataset: str = "halfcheetah-medium-expert-v2"
+    algorithm: str = "corl_cql"
+    num_updates: int = 1000000
+    reward_transform: str = C.RT_DEFAULT_MODE
+    reward_scale: float = C.RT_DEFAULT_SCALE
+    reward_bias: float = C.RT_DEFAULT_BIAS
+    allow_off_config: bool = False
+    eval_interval: int = 5000
+    eval_workers: int = 10
+    eval_final_episodes: int = 1000
+    log: bool = False
+    wandb_project: str = "unifloral"
+    wandb_team: str = "flair"
+    wandb_group: str = "debug"
+    batch_size: int = 256
+    discount: float = 0.99
+    policy_lr: float = 3e-05
+    qf_lr: float = 0.0003
+    soft_target_update_rate: float = 0.005
+    target_update_period: int = 1
+    alpha_multiplier: float = 1.0
+    use_automatic_entropy_tuning: bool = True
+    backup_entropy: bool = False
+    policy_log_std_multiplier: float = 1.0
+    cql_n_actions: int = 10
+    cql_importance_sample: bool = True
+    cql_lagrange: bool = False
+    cql_target_action_gap: float = -1.0
+    cql_temp: float = 1.0
+    cql_alpha: float = 10.0
+    cql_max_target_backup: bool = False
+    cql_clip_diff_min: float = -onp.inf
+    cql_clip_diff_max: float = onp.inf
+    orthogonal_init: bool = True
+    q_n_hidden_layers: int = 3
+    bc_steps: int = 0
+    normalize: bool = True
+    normalize_reward: bool = False
+    cql_reward_scale: float = 5.0
+    cql_reward_bias: float = -1.0
 
-    def __post_init__(self):
-        if self.arm not in ("native_full", "native_pool", "posterior"):
-            raise ValueError(
-                "arm must be native_full/native_pool/posterior; old house BCA is separate"
+
+AgentTrainState = collections.namedtuple(
+    "AgentTrainState",
+    "actor critic1 critic2 critic1_target critic2_target log_alpha log_alpha_prime",
+)
+LOG_STD_MIN = -20.0
+LOG_STD_MAX = 2.0
+
+
+def scalar_value(state):
+    return state.params["constant"]
+
+
+def corl_dense(features, fan_in, fan_out, orthogonal, is_last):
+    zeros = nn.initializers.zeros
+    if is_last:
+        if orthogonal:
+            return nn.Dense(
+                features, kernel_init=C.orthogonal_init(0.01), bias_init=zeros
             )
-        if self.attachment != "conservative_gap_level":
-            raise ValueError(
-                "this adapter has only the explicit conservative_gap_level attachment"
+        bound = 0.01 * float(onp.sqrt(6.0 / (fan_in + fan_out)))
+        return nn.Dense(features, kernel_init=C.uniform_init(bound), bias_init=zeros)
+    if orthogonal:
+        return nn.Dense(
+            features,
+            kernel_init=C.orthogonal_init(float(onp.sqrt(2.0))),
+            bias_init=zeros,
+        )
+    return C.torch_dense(features, fan_in)
+
+
+class TanhGaussianPolicy(nn.Module):
+    obs_dim: int
+    action_dim: int
+    max_action: float
+    orthogonal_init: bool = False
+    log_std_multiplier_init: float = 1.0
+    log_std_offset_init: float = -1.0
+
+    @nn.compact
+    def __call__(self, obs):
+        x = obs
+        fan = self.obs_dim
+        for _ in range(3):
+            x = nn.relu(corl_dense(256, fan, 256, False, False)(x))
+            fan = 256
+        out = corl_dense(2 * self.action_dim, fan, 2 * self.action_dim, False, True)(x)
+        mean, log_std = jnp.split(out, 2, axis=-1)
+        mult = self.param(
+            "log_std_multiplier",
+            lambda k: jnp.asarray(self.log_std_multiplier_init, jnp.float32),
+        )
+        off = self.param(
+            "log_std_offset",
+            lambda k: jnp.asarray(self.log_std_offset_init, jnp.float32),
+        )
+        return (mean, mult * log_std + off)
+
+
+class FullyConnectedQFunction(nn.Module):
+    obs_dim: int
+    action_dim: int
+    orthogonal_init: bool = False
+    n_hidden_layers: int = 3
+
+    @nn.compact
+    def __call__(self, obs, action):
+        if action.ndim == obs.ndim + 1:
+            obs = jnp.broadcast_to(
+                obs[..., None, :], action.shape[:-1] + (obs.shape[-1],)
             )
-        if self.width_objective not in ("original", "matched") or self.radius_mode not in (
-            "full",
-            "floor",
-        ):
-            raise ValueError("invalid fit objective or radius mode")
-        if not isinstance(self.iw, ScaleIWConfig) or not isinstance(
-            self.posterior, PosteriorConfig
-        ):
-            raise ValueError("canonical typed IW/posterior configurations required")
-        for name in ("blend", "cal_lr", "cal_beta", "width_penalty", "scale_ema"):
-            value = getattr(self, name)
-            if isinstance(value, bool) or not np.isfinite(np.float32(value)):
-                raise ValueError(name + " must be a finite float32 scalar")
-        if not 0 <= self.blend <= 1 or not 0 <= self.scale_ema < 1:
-            raise ValueError("invalid blend or EMA")
-        if self.cal_lr <= 0 or self.cal_beta <= 0 or self.width_penalty < 0:
-            raise ValueError("invalid fitting coefficients")
-        if self.iw.mode != "off" and self.width_objective != "matched":
-            raise ValueError("scale IW requires matched coverage and width weights")
-        if self.arm != "posterior" and (
-            self.iw.mode != "off"
-            or self.width_objective != "original"
-            or self.radius_mode != "full"
-        ):
-            raise ValueError("native controls must not carry calibration interventions")
+        x = jnp.concatenate([obs, action], axis=-1)
+        fan = self.obs_dim + self.action_dim
+        for _ in range(self.n_hidden_layers):
+            x = nn.relu(corl_dense(256, fan, 256, self.orthogonal_init, False)(x))
+            fan = 256
+        return corl_dense(1, fan, 1, self.orthogonal_init, True)(x).squeeze(-1)
 
 
-class State(NamedTuple):
-    native: Any
-    calibrator: Any
-    residual_scale: Any
-    posterior: Any
+def tanh_gaussian_sample(mean, log_std, eps, max_action):
+    log_std = jnp.clip(log_std, LOG_STD_MIN, LOG_STD_MAX)
+    std = jnp.exp(log_std)
+    x = mean + eps * std
+    base_log_prob = (
+        -jnp.square(x - mean) / (2.0 * jnp.square(std))
+        - jnp.log(std)
+        - float(onp.log(onp.sqrt(2.0 * onp.pi)))
+    )
+    log_det = 2.0 * (float(onp.log(2.0)) - x - jax.nn.softplus(-2.0 * x))
+    return (max_action * jnp.tanh(x), jnp.sum(base_log_prob - log_det, axis=-1))
 
 
-def select_training_pool(dataset, arm, training_indices=None):
-    n = len(dataset.obs)
-    if n < 1 or any((len(x) != n for x in dataset)):
-        raise ValueError("aligned nonempty native transition arrays required")
-    if arm == "native_full":
-        if training_indices is not None:
-            raise ValueError("native_full cannot silently consume a reserved pool")
-        return dataset
-    if arm not in ("native_pool", "posterior") or training_indices is None:
-        raise ValueError("pool/posterior require explicit training indices")
-    idx = np.asarray(training_indices)
-    if (
-        idx.ndim != 1
-        or not np.issubdtype(idx.dtype, np.integer)
-        or (not 0 < len(idx) < n)
-        or (len(np.unique(idx)) != len(idx))
-        or np.any(idx < 0)
-        or np.any(idx >= n)
-    ):
-        raise ValueError("training indices must be a unique nonempty strict subset")
-    return jax.tree_util.tree_map(lambda x: x[idx], dataset)
+def cql_update(
+    args,
+    actor_apply_fn,
+    critic1_apply_fn,
+    critic2_apply_fn,
+    agent_state,
+    batch,
+    it,
+    rng,
+    max_action,
+    target_entropy,
+    conservative_multiplier=None,
+):
+    batch_size = batch.action.shape[0]
+    action_dim = batch.action.shape[-1]
+    n_act = args.cql_n_actions
+    rng_pi, rng_bc, rng_next, rng_rand, rng_cur, rng_nxt = jax.random.split(rng, 6)
+    eps_pi = jax.random.normal(rng_pi, (batch_size, action_dim))
+    eps_bc = jax.random.normal(rng_bc, (batch_size, action_dim))
+    next_shape = (
+        (batch_size, n_act, action_dim)
+        if args.cql_max_target_backup
+        else (batch_size, action_dim)
+    )
+    eps_next = jax.random.normal(rng_next, next_shape)
+    u_rand = jax.random.uniform(
+        rng_rand, (batch_size, n_act, action_dim), minval=-1.0, maxval=1.0
+    )
+    eps_cur = jax.random.normal(rng_cur, (batch_size, n_act, action_dim))
+    eps_nxt = jax.random.normal(rng_nxt, (batch_size, n_act, action_dim))
 
+    def _repeat(obs):
+        return jnp.broadcast_to(obs[:, None, :], (batch_size, n_act, obs.shape[-1]))
 
-def reserve_pool(dataset, target_size, seed, *, max_fraction=0.25, episode_ids=None):
-    return reserve_calibration(
-        dataset.obs,
-        dataset.next_obs,
-        dataset.done,
-        target_size,
-        seed,
-        max_fraction=max_fraction,
-        episode_ids=episode_ids,
+    _, log_pi_now = tanh_gaussian_sample(
+        *actor_apply_fn(agent_state.actor.params, batch.obs), eps_pi, max_action
+    )
+    if args.use_automatic_entropy_tuning:
+
+        def _alpha_loss_fn(params):
+            return -(
+                params["constant"] * jax.lax.stop_gradient(log_pi_now + target_entropy)
+            ).mean()
+
+        alpha_loss, alpha_grad = jax.value_and_grad(_alpha_loss_fn)(
+            agent_state.log_alpha.params
+        )
+        alpha = jnp.exp(scalar_value(agent_state.log_alpha)) * args.alpha_multiplier
+    else:
+        alpha_loss = jnp.float32(0.0)
+        alpha_grad = jax.tree_util.tree_map(
+            jnp.zeros_like, agent_state.log_alpha.params
+        )
+        alpha = jnp.asarray(args.alpha_multiplier, jnp.float32)
+
+    def _policy_loss_fn(actor_params):
+        mean, log_std = actor_apply_fn(actor_params, batch.obs)
+        new_actions, log_pi = tanh_gaussian_sample(mean, log_std, eps_pi, max_action)
+        _, bc_log_probs = tanh_gaussian_sample(mean, log_std, eps_bc, max_action)
+        bc_loss = (alpha * log_pi - bc_log_probs).mean()
+        q_new = jnp.minimum(
+            critic1_apply_fn(agent_state.critic1.params, batch.obs, new_actions),
+            critic2_apply_fn(agent_state.critic2.params, batch.obs, new_actions),
+        )
+        q_loss = (alpha * log_pi - q_new).mean()
+        return jnp.where(it <= args.bc_steps, bc_loss, q_loss)
+
+    policy_loss, actor_grad = jax.value_and_grad(_policy_loss_fn)(
+        agent_state.actor.params
+    )
+    if args.cql_max_target_backup:
+        next_mean, next_log_std = actor_apply_fn(
+            agent_state.actor.params, _repeat(batch.next_obs)
+        )
+        next_actions, next_log_pi = tanh_gaussian_sample(
+            next_mean, next_log_std, eps_next, max_action
+        )
+        pair_min = jnp.minimum(
+            critic1_apply_fn(
+                agent_state.critic1_target.params, batch.next_obs, next_actions
+            ),
+            critic2_apply_fn(
+                agent_state.critic2_target.params, batch.next_obs, next_actions
+            ),
+        )
+        max_idx = jnp.argmax(pair_min, axis=-1)
+        target_q_values = jnp.max(pair_min, axis=-1)
+        next_log_pi = jnp.take_along_axis(
+            next_log_pi, max_idx[:, None], axis=-1
+        ).squeeze(-1)
+    else:
+        next_mean, next_log_std = actor_apply_fn(
+            agent_state.actor.params, batch.next_obs
+        )
+        next_actions, next_log_pi = tanh_gaussian_sample(
+            next_mean, next_log_std, eps_next, max_action
+        )
+        target_q_values = jnp.minimum(
+            critic1_apply_fn(
+                agent_state.critic1_target.params, batch.next_obs, next_actions
+            ),
+            critic2_apply_fn(
+                agent_state.critic2_target.params, batch.next_obs, next_actions
+            ),
+        )
+    if args.backup_entropy:
+        target_q_values = target_q_values - alpha * next_log_pi
+    td_target = jax.lax.stop_gradient(
+        batch.reward + (1.0 - batch.done) * args.discount * target_q_values
+    )
+    cur_actions, cur_log_pis = tanh_gaussian_sample(
+        *actor_apply_fn(agent_state.actor.params, _repeat(batch.obs)),
+        eps_cur,
+        max_action
+    )
+    nxt_actions, nxt_log_pis = tanh_gaussian_sample(
+        *actor_apply_fn(agent_state.actor.params, _repeat(batch.next_obs)),
+        eps_nxt,
+        max_action
+    )
+    cur_actions = jax.lax.stop_gradient(cur_actions)
+    cur_log_pis = jax.lax.stop_gradient(cur_log_pis)
+    nxt_actions = jax.lax.stop_gradient(nxt_actions)
+    nxt_log_pis = jax.lax.stop_gradient(nxt_log_pis)
+    alpha_prime = jnp.clip(
+        jnp.exp(scalar_value(agent_state.log_alpha_prime)), 0.0, 1000000.0
+    )
+
+    def _one_critic(apply_fn, params):
+        q_pred = apply_fn(params, batch.obs, batch.action)
+        td_loss = jnp.mean(jnp.square(q_pred - td_target))
+        q_rand = apply_fn(params, batch.obs, u_rand)
+        q_cur = apply_fn(params, batch.obs, cur_actions)
+        q_nxt = apply_fn(params, batch.obs, nxt_actions)
+        cat_plain = jnp.concatenate([q_rand, q_pred[:, None], q_nxt, q_cur], axis=1)
+        std_q = jnp.std(cat_plain, axis=1, ddof=1)
+        if args.cql_importance_sample:
+            random_density = float(onp.log(0.5**action_dim))
+            cat = jnp.concatenate(
+                [q_rand - random_density, q_nxt - nxt_log_pis, q_cur - cur_log_pis],
+                axis=1,
+            )
+        else:
+            cat = cat_plain
+        q_ood = jax.scipy.special.logsumexp(cat / args.cql_temp, axis=1) * args.cql_temp
+        q_diff = jnp.mean(
+            jnp.clip(q_ood - q_pred, args.cql_clip_diff_min, args.cql_clip_diff_max)
+        )
+        critic_gap = q_diff
+        if conservative_multiplier is not None:
+            dose = jnp.asarray(conservative_multiplier)
+            if dose.shape != q_pred.shape:
+                raise ValueError("conservative_multiplier must have shape (batch,)")
+            dose = jax.lax.stop_gradient(
+                jnp.where(jnp.all(jnp.isfinite(dose) & (dose >= 0)), dose, jnp.nan)
+            )
+            critic_gap = jnp.mean(
+                dose
+                * jnp.clip(
+                    q_ood - q_pred, args.cql_clip_diff_min, args.cql_clip_diff_max
+                )
+            )
+        if args.cql_lagrange:
+            min_q_loss = (
+                alpha_prime * args.cql_alpha * (critic_gap - args.cql_target_action_gap)
+            )
+        else:
+            min_q_loss = critic_gap * args.cql_alpha
+        return (
+            td_loss + min_q_loss,
+            (td_loss, q_diff, min_q_loss, q_pred, q_rand, q_cur, q_nxt, std_q),
+        )
+
+    def _critic1_loss_fn(params):
+        return _one_critic(critic1_apply_fn, params)
+
+    def _critic2_loss_fn(params):
+        return _one_critic(critic2_apply_fn, params)
+
+    (loss1, aux1), grad1 = jax.value_and_grad(_critic1_loss_fn, has_aux=True)(
+        agent_state.critic1.params
+    )
+    (loss2, aux2), grad2 = jax.value_and_grad(_critic2_loss_fn, has_aux=True)(
+        agent_state.critic2.params
+    )
+    qf1_loss, qf1_diff, cql_min_qf1_loss, q1_pred, q1_rand, q1_cur, q1_nxt, std_q1 = (
+        aux1
+    )
+    qf2_loss, qf2_diff, cql_min_qf2_loss, q2_pred, q2_rand, q2_cur, q2_nxt, std_q2 = (
+        aux2
+    )
+    if args.cql_lagrange:
+
+        def _alpha_prime_loss_fn(params):
+            ap = jnp.clip(jnp.exp(params["constant"]), 0.0, 1000000.0)
+            l1 = ap * args.cql_alpha * (qf1_diff - args.cql_target_action_gap)
+            l2 = ap * args.cql_alpha * (qf2_diff - args.cql_target_action_gap)
+            return (-l1 - l2) * 0.5
+
+        alpha_prime_loss, alpha_prime_grad = jax.value_and_grad(_alpha_prime_loss_fn)(
+            agent_state.log_alpha_prime.params
+        )
+    else:
+        alpha_prime_loss = jnp.float32(0.0)
+        alpha_prime_grad = jax.tree_util.tree_map(
+            jnp.zeros_like, agent_state.log_alpha_prime.params
+        )
+        alpha_prime = jnp.float32(0.0)
+    agent_state = agent_state._replace(
+        actor=agent_state.actor.apply_gradients(grads=actor_grad),
+        critic1=agent_state.critic1.apply_gradients(grads=grad1),
+        critic2=agent_state.critic2.apply_gradients(grads=grad2),
+        log_alpha=agent_state.log_alpha.apply_gradients(grads=alpha_grad),
+        log_alpha_prime=agent_state.log_alpha_prime.apply_gradients(
+            grads=alpha_prime_grad
+        ),
+    )
+
+    def _soft(src, tgt):
+        return tgt.replace(
+            step=tgt.step + 1,
+            params=optax.incremental_update(
+                src.params, tgt.params, args.soft_target_update_rate
+            ),
+        )
+
+    def _do_polyak(state):
+        return state._replace(
+            critic1_target=_soft(state.critic1, state.critic1_target),
+            critic2_target=_soft(state.critic2, state.critic2_target),
+        )
+
+    agent_state = jax.lax.cond(
+        it % args.target_update_period == 0, _do_polyak, lambda s: s, agent_state
+    )
+    return (
+        agent_state,
+        {
+            "log_pi": log_pi_now.mean(),
+            "policy_loss": policy_loss,
+            "alpha_loss": alpha_loss,
+            "alpha": alpha,
+            "qf1_loss": qf1_loss,
+            "qf2_loss": qf2_loss,
+            "average_qf1": q1_pred.mean(),
+            "average_qf2": q2_pred.mean(),
+            "average_target_q": target_q_values.mean(),
+            "cql_std_q1": std_q1.mean(),
+            "cql_std_q2": std_q2.mean(),
+            "cql_q1_rand": q1_rand.mean(),
+            "cql_q2_rand": q2_rand.mean(),
+            "cql_min_qf1_loss": cql_min_qf1_loss,
+            "cql_min_qf2_loss": cql_min_qf2_loss,
+            "cql_qf1_diff": qf1_diff,
+            "cql_qf2_diff": qf2_diff,
+            "cql_q1_current_actions": q1_cur.mean(),
+            "cql_q2_current_actions": q2_cur.mean(),
+            "cql_q1_next_actions": q1_nxt.mean(),
+            "cql_q2_next_actions": q2_nxt.mean(),
+            "alpha_prime_loss": alpha_prime_loss,
+            "alpha_prime": alpha_prime,
+            "qf_loss": loss1 + loss2,
+        },
     )
 
 
-def initialize(args, config, obs_dim, action_dim, max_action=1.0):
-    BASE.C.check_reward_transform(
-        "corl_cql", args.dataset, args.reward_transform, args.reward_scale, args.reward_bias
-    )
-    BASE._published_config.check_published_config(
-        "corl_cql", args.dataset, args, allow_off_config=args.allow_off_config
-    )
-    if (
-        getattr(args, "cal_iw", False)
-        or getattr(args, "acrab_iw_bellman", False)
-        or getattr(args, "acrab_cinf", -1.0) >= 0
-    ):
-        raise ValueError("legacy calibration IW/Bellman/A-Crab are separate interventions")
-    if (
-        BASE.C.is_antmaze(args.dataset)
-        and args.normalize_reward
-        and (args.reward_transform == "cql_scale_bias")
-        and (args.cql_reward_scale != 1.0 or args.cql_reward_bias != 0.0)
-    ):
-        raise ValueError("native antmaze affine reward tail would be applied twice")
-    if config.arm == "posterior" and max_action != 1.0:
-        raise ValueError("posterior actor-density convention currently requires max_action=1")
+def make_train_step(
+    args,
+    actor_apply_fn,
+    critic1_apply_fn,
+    critic2_apply_fn,
+    dataset,
+    max_action,
+    target_entropy,
+):
+    n = dataset.obs.shape[0]
+
+    def _train_step(runner_state, _):
+        rng, agent_state, it = runner_state
+        it = it + 1
+        rng, rng_batch, rng_update = jax.random.split(rng, 3)
+        idx = jax.random.randint(rng_batch, (args.batch_size,), 0, n)
+        batch = jax.tree_util.tree_map(lambda x: x[idx], dataset)
+        agent_state, loss = cql_update(
+            args,
+            actor_apply_fn,
+            critic1_apply_fn,
+            critic2_apply_fn,
+            agent_state,
+            batch,
+            it,
+            rng_update,
+            max_action,
+            target_entropy,
+        )
+        return ((rng, agent_state, it), loss)
+
+    return _train_step
+
+
+def initialize(args, obs_dim, action_dim, max_action=1.0):
     rng = jax.random.fold_in(jax.random.PRNGKey(args.seed), 1414676809)
     rng, ka, k1, k2 = jax.random.split(rng, 4)
-    actor = BASE.TanhGaussianPolicy(
+    actor = TanhGaussianPolicy(
         obs_dim,
         action_dim,
         max_action,
@@ -142,25 +459,25 @@ def initialize(args, config, obs_dim, action_dim, max_action=1.0):
         args.policy_log_std_multiplier,
         -1.0,
     )
-    c1 = BASE.FullyConnectedQFunction(
+    c1 = FullyConnectedQFunction(
         obs_dim, action_dim, args.orthogonal_init, args.q_n_hidden_layers
     )
-    c2 = BASE.FullyConnectedQFunction(obs_dim, action_dim, args.orthogonal_init, 3)
+    c2 = FullyConnectedQFunction(obs_dim, action_dim, args.orthogonal_init, 3)
     obs, action = (jnp.zeros(obs_dim), jnp.zeros(action_dim))
 
     def make(key, net, ins, lr):
         return TrainState.create(
-            apply_fn=net.apply, params=net.init(key, *ins), tx=BASE.C.torch_adam(lr)
+            apply_fn=net.apply, params=net.init(key, *ins), tx=C.torch_adam(lr)
         )
 
     def scalar(v, lr):
         return TrainState.create(
-            apply_fn=BASE.C.identity,
+            apply_fn=C.identity,
             params={"constant": jnp.asarray(v, jnp.float32)},
-            tx=BASE.C.torch_adam(lr),
+            tx=C.torch_adam(lr),
         )
 
-    native = BASE.AgentTrainState(
+    native = AgentTrainState(
         make(ka, actor, [obs], args.policy_lr),
         make(k1, c1, [obs, action], args.qf_lr),
         make(k2, c2, [obs, action], args.qf_lr),
@@ -169,238 +486,4 @@ def initialize(args, config, obs_dim, action_dim, max_action=1.0):
         scalar(0.0, args.policy_lr),
         scalar(1.0, args.qf_lr),
     )
-    if config.arm != "posterior":
-        return (rng, State(native, None, None, None), (actor, c1, c2, None))
-    cal = Calibrator(jnp.zeros(obs_dim), jnp.ones(obs_dim), state_dep=True)
-    cal_state = TrainState.create(
-        apply_fn=cal.apply,
-        params=cal.init(jax.random.fold_in(rng, 1128352841), obs[None], action[None]),
-        tx=optax.adam(config.cal_lr),
-    )
-    post = initialize_posterior(cal_state.params, 1, config.posterior.draws)
-    return (rng, State(native, cal_state, jnp.asarray(1.0), post), (actor, c1, c2, cal))
-
-
-def policy_log_weights(actor_apply, params, obs, actions, max_action=1.0):
-    if max_action != 1.0:
-        raise ValueError("native fitting density currently requires max_action=1")
-    if obs.ndim != 2 or actions.ndim != 2 or obs.shape[0] != actions.shape[0] or (not len(obs)):
-        raise ValueError("aligned nonempty observation/action matrices required")
-    mean, log_std = actor_apply(jax.tree_util.tree_map(jax.lax.stop_gradient, params), obs)
-    if mean.shape != actions.shape or log_std.shape != actions.shape:
-        raise ValueError("native actor must emit one mean/log_std per action coordinate")
-    clipped = jnp.clip(actions, -1.0 + 1e-06, 1.0 - 1e-06)
-    pre = jnp.arctanh(clipped)
-    coordinate_logp = (
-        -0.5 * jnp.square((pre - mean) * jnp.exp(-log_std)) - log_std - 0.5 * np.log(2 * np.pi)
-    )
-    coordinate_logp -= jnp.log1p(-jnp.square(clipped))
-    logp = coordinate_logp.sum(axis=-1)
-    valid = tree_finite(params) & tree_finite((obs, actions, mean, log_std, logp))
-    result = PolicyLogWeights(
-        logp, valid, jnp.mean(jnp.any(actions != clipped, axis=-1).astype(jnp.float32))
-    )
-    return jax.tree_util.tree_map(jax.lax.stop_gradient, result)
-
-
-def native_target(args, models, native, batch, rng, max_action=1.0):
-    actor, c1, c2 = models[:3]
-    b, a = batch.action.shape
-    shape = (b, args.cql_n_actions, a) if args.cql_max_target_backup else (b, a)
-    obs = (
-        jnp.broadcast_to(
-            batch.next_obs[:, None, :], (b, args.cql_n_actions, batch.obs.shape[-1])
-        )
-        if args.cql_max_target_backup
-        else batch.next_obs
-    )
-    action, logp = BASE.tanh_gaussian_sample(
-        *actor.apply(native.actor.params, obs), jax.random.normal(rng, shape), max_action
-    )
-    q = jnp.minimum(
-        c1.apply(native.critic1_target.params, batch.next_obs, action),
-        c2.apply(native.critic2_target.params, batch.next_obs, action),
-    )
-    if args.cql_max_target_backup:
-        idx = jnp.argmax(q, axis=-1)
-        q = jnp.max(q, axis=-1)
-        logp = jnp.take_along_axis(logp, idx[:, None], axis=-1).squeeze(-1)
-    if args.backup_entropy:
-        alpha = (
-            jnp.exp(BASE.scalar_value(native.log_alpha)) * args.alpha_multiplier
-            if args.use_automatic_entropy_tuning
-            else args.alpha_multiplier
-        )
-        q = q - alpha * logp
-    return jax.lax.stop_gradient(batch.reward + (1.0 - batch.done) * args.discount * q)
-
-
-def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
-    target = native_target(
-        args, models, state.native, batch, jax.random.fold_in(rng, 1179210836), max_action
-    )
-    q = jax.lax.stop_gradient(
-        jnp.minimum(
-            models[1].apply(state.native.critic1.params, batch.obs, batch.action),
-            models[2].apply(state.native.critic2.params, batch.obs, batch.action),
-        )
-    )
-    prior = jax.lax.stop_gradient(
-        bayesian_bootstrap_weights(jax.random.fold_in(rng, 1128352850), len(batch.obs))
-    )
-    weights, valid, feasible = (prior, jnp.asarray(True), jnp.asarray(True))
-    diag = {}
-    if config.iw.mode != "off":
-        signal = policy_log_weights(
-            models[0].apply, state.native.actor.params, batch.obs, batch.action, max_action
-        )
-        weighted = fit_weighting(
-            signal.log_weights, prior, jax.random.fold_in(rng, 1129531735), config.iw
-        )
-        weights = weighted.product.weights
-        valid = signal.inputs_valid & weighted.inputs_valid
-        feasible = weighted.fit_feasible
-        diag = {
-            "iw_ess": weighted.iw.ess_fraction,
-            "iw_tau": weighted.iw.tau,
-            "iw_product_ess": weighted.product.product_ess_fraction,
-            "action_clip_fraction": signal.action_clip_fraction,
-        }
-    unit = state.residual_scale
-
-    def objective(params):
-        eta = models[3].apply(params, batch.obs, batch.action)
-        cov = soft_coverage(target / unit, q / unit, eta, config.cal_beta)
-        cov_loss = jnp.square(jnp.sum(cov * weights) - (1.0 - config.posterior.alpha))
-        width = (
-            jnp.sum(jnp.square(eta) * weights)
-            if config.width_objective == "matched"
-            else jnp.mean(jnp.square(eta))
-        )
-        return cov_loss + config.width_penalty * width
-
-    loss, grad = jax.value_and_grad(objective)(state.calibrator.params)
-    proposed = state.calibrator.apply_gradients(grads=grad)
-    proposed_unit = config.scale_ema * unit + (1.0 - config.scale_ema) * jnp.maximum(
-        jnp.std(target - q), 1e-06
-    )
-    valid = (
-        valid
-        & tree_finite((batch, target, q, prior, unit, loss, grad, proposed, proposed_unit))
-        & (unit > 0)
-        & (proposed_unit > 0)
-    )
-    accepted = valid & feasible
-    result = jax.lax.cond(
-        accepted,
-        lambda _: state._replace(calibrator=proposed, residual_scale=proposed_unit),
-        lambda _: state,
-        operand=None,
-    )
-    return (
-        result,
-        dict(
-            diag,
-            scale_inputs_valid=valid,
-            scale_fit_accepted=accepted,
-            scale_ess_abstained=valid & ~feasible,
-            scale_loss=loss,
-        ),
-    )
-
-
-def refresh(args, config, models, state, training_reference, heldout, rng, max_action=1.0):
-    if config.arm != "posterior" or not len(training_reference.obs) or (not len(heldout.obs)):
-        raise ValueError("posterior refresh needs nonempty training and held-out references")
-    target = native_target(
-        args, models, state.native, heldout, jax.random.fold_in(rng, 1213156420), max_action
-    )
-    q = jnp.minimum(
-        models[1].apply(state.native.critic1.params, heldout.obs, heldout.action),
-        models[2].apply(state.native.critic2.params, heldout.obs, heldout.action),
-    )
-    fit_predictions = models[3].apply(
-        state.calibrator.params, training_reference.obs, training_reference.action
-    )
-    cal_predictions = models[3].apply(state.calibrator.params, heldout.obs, heldout.action)
-    post = fit_posterior(
-        state.calibrator.params,
-        state.residual_scale,
-        fit_predictions,
-        cal_predictions,
-        target - q,
-        jax.random.fold_in(rng, 1347375956),
-        config.posterior,
-        groups=1,
-    )
-    valid = tree_finite(state.calibrator) & jnp.all(post.radii.inputs_valid)
-    result = jax.lax.cond(
-        valid, lambda _: state._replace(posterior=post), lambda _: state, operand=None
-    )
-    return (
-        result,
-        {"posterior_inputs_valid": valid, "posterior_supported": jnp.all(post.radii.finite)},
-    )
-
-
-def update(args, config, models, state, batch, it, rng, max_action=1.0):
-    if config.arm != "posterior":
-        native, metrics = BASE.cql_update(
-            args,
-            *(m.apply for m in models[:3]),
-            state.native,
-            batch,
-            it,
-            rng,
-            max_action,
-            -float(batch.action.shape[-1])
-        )
-        return (state._replace(native=native), metrics)
-    fitted, fit_diag = fit_scale(args, config, models, state, batch, rng, max_action)
-    frozen_predictions = models[3].apply(state.posterior.cal_params, batch.obs, batch.action)
-    dose = frozen_level_dose(
-        state.posterior, frozen_predictions, config.radius_mode, config.blend
-    )
-    native, metrics = BASE.cql_update(
-        args,
-        *(m.apply for m in models[:3]),
-        state.native,
-        batch,
-        it,
-        rng,
-        max_action,
-        -float(batch.action.shape[-1]),
-        conservative_multiplier=dose.dose
-    )
-    valid = fit_diag["scale_inputs_valid"] & dose.inputs_valid & tree_finite(native)
-    proposed = fitted._replace(native=native)
-    result = jax.lax.cond(valid, lambda _: proposed, lambda _: state, operand=None)
-    metrics.update(fit_diag)
-    metrics.update(
-        inputs_valid=valid,
-        critic_dose_mean=jnp.mean(dose.dose),
-        critic_support_fraction=jnp.mean(dose.support_mask.astype(jnp.float32)),
-    )
-    return (result, metrics)
-
-
-def make_train_step(args, config, models, dataset, max_action=1.0):
-    if not len(dataset.obs):
-        raise ValueError("training pool must be nonempty")
-
-    def step(carry, _):
-        rng, state, it = carry
-        it = it + 1
-        rng, kb, ku = jax.random.split(rng, 3)
-        idx = jax.random.randint(kb, (args.batch_size,), 0, len(dataset.obs))
-        batch = jax.tree_util.tree_map(lambda x: x[idx], dataset)
-        state, metrics = update(args, config, models, state, batch, it, ku, max_action)
-        return ((rng, state, it), metrics)
-
-    return step
-
-
-def require_valid(metrics):
-    for key in ("inputs_valid", "posterior_inputs_valid", "scale_inputs_valid"):
-        if key in metrics and (not bool(np.all(np.asarray(metrics[key])))):
-            raise FloatingPointError("native CQL posterior invalid transition: " + key)
+    return (rng, native, (actor, c1, c2))

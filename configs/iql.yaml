@@ -1,867 +1,183 @@
-# Dataset arms are an explicit allow-list; {} inherits the named arm.
-# bca: true also inherits the BCA defaults at algorithm and dataset scope.
-host: iql
-defaults:
-  host: iql
-  environment: '{environment}'
-  expected_counts:
-    host_updates: 1000000
-    q_updates: 1000000
-    value_updates: 1000000
-    per_actor_attempted_updates: 1000000
-    per_actor_accepted_updates: measured; valid unsupported inputs may skip
-    periodic_banks_per_actor: 200
-    periodic_episodes_per_actor: 400
-    final_episodes_per_actor: 20
-  cache: {}
-  options:
-    dataset: '{environment}'
-    seed: '{seed}'
-    output_dir: '{output_dir}'
-    scope: development
-    updates: '{experiment.num_updates}'
-    eval_interval: '{experiment.eval_interval}'
-    curve_episodes: 2
-    final_episodes: '{experiment.final_episodes}'
-    warmup: '{experiment.warmup}'
-    refresh_interval: '{experiment.refresh_interval}'
-    eval_seed: 20260920
-    prepare_only: false
-  spaces: {}
-  declared:
-    args:
-      seed: '{seed}'
-      dataset: '{environment}'
-      num_updates: '{experiment.num_updates}'
-      reward_transform: rebrac_x100
-      reward_scale: 10.0
-      reward_bias: -5.0
-      allow_off_config: false
-      eval_interval: '{experiment.eval_interval}'
-      eval_workers: 2
-      eval_final_episodes: '{experiment.final_episodes}'
-      log: false
-      wandb_project: unifloral
-      wandb_team: flair
-      wandb_group: debug
-      vf_lr: 0.0003
-      qf_lr: 0.0003
-      actor_lr: 0.0003
-      batch_size: 256
-      discount: 0.99
-      normalize: true
-      beta: 3.0
-      posterior:
-        reserve_seed: 911
-        reserve_max_fraction: 0.25
-        alpha: 0.1
-        credibility: 0.95
-        draws: 128
-        warmup: '{experiment.warmup}'
-        refresh_interval: '{experiment.refresh_interval}'
-        fit_size: 4096
-        decision_gain: 1.0
-        cond_mode: state_action
-        use_bootstrap: true
-        cal_beta: 20.0
-        cal_lambda_width: 0.005
-        cal_lr: 0.001
-        cal_hidden_dim: 64
-        balance_coverage: true
-        balance_weight: 0.5
-  training_seed: '{seed}'
-arms:
-  native:
-    expected_counts:
-      posterior_refresh_events: 0
-    options:
-      mode: native
-      reserve_size: 0
-    mode: native
-    actor_count: 1
-    scale_variant_count: 0
-    refresh_steps: []
-    run_id: fullwidth-1m-iql-v1-{environment}-s{seed}-native
-    declared:
-      args:
-        algorithm: corl_iql_native_full_data
-        posterior:
-          mode: 'off'
-          reserve_size: 0
-      arms:
-      - name: native_full_data
-        mode: 'off'
-        beta: 3.0
-        gain: 1.0
-      published_differences:
-      - arm: native_full_data
-        actual_differences: []
-        declaration: development horizon and listed native beta control only
-  shared:
-    expected_counts:
-      posterior_refresh_events: 198
-    options:
-      mode: shared
-      decision_gain: 1.0
-    mode: shared
-    actor_count: 8
-    scale_variant_count: 5
-    refresh_steps:
-      bank: refresh_steps
-    run_id: fullwidth-1m-iql-v1-{environment}-s{seed}-shared
-    declared:
-      args:
-        algorithm: corl_iql_shared_scale_iw_matched_host
-        posterior:
-          mode: full
-      variants:
-      - name: noiw_legacy_width
-        iw:
-          mode: 'off'
-          beta: 3.0
-          cap: 100.0
-          mixing: 1.0
-          ess_floor: 0.25
-          tau_min: 0.05
-          iterations: 32
-        weight_width: false
-      - name: noiw_weighted_width
-        iw:
-          mode: 'off'
-          beta: 3.0
-          cap: 100.0
-          mixing: 1.0
-          ess_floor: 0.25
-          tau_min: 0.05
-          iterations: 32
-        weight_width: true
-      - name: awr_legacy_width
-        iw:
-          mode: awr
-          beta: 3.0
-          cap: 100.0
-          mixing: 1.0
-          ess_floor: 0.25
-          tau_min: 0.05
-          iterations: 32
-        weight_width: false
-      - name: awr_weighted_width
-        iw:
-          mode: awr
-          beta: 3.0
-          cap: 100.0
-          mixing: 1.0
-          ess_floor: 0.25
-          tau_min: 0.05
-          iterations: 32
-        weight_width: true
-      - name: awr_permuted_weighted_width
-        iw:
-          mode: awr_permuted
-          beta: 3.0
-          cap: 100.0
-          mixing: 1.0
-          ess_floor: 0.25
-          tau_min: 0.05
-          iterations: 32
-        weight_width: true
+algorithm: iql
+host:
+  reward_transform: rebrac_x100
+  reward_scale: 10.0
+  reward_bias: -5.0
+  vf_lr: 0.0003
+  qf_lr: 0.0003
+  actor_lr: 0.0003
+  batch_size: 256
+  discount: 0.99
+  normalize: true
+  beta: 3.0
+bca:
+  alpha: 0.1
+  credibility: 0.95
+  draws: 128
+  fit_size: 4096
+  decision_gain: 1.0
+  cond_mode: state_action
+  use_bootstrap: true
+  cal_beta: 20.0
+  cal_lambda_width: 0.005
+  cal_lr: 0.001
+  cal_hidden_dim: 64
+  balance_coverage: true
+  balance_weight: 0.5
+  fitting:
+    beta: host beta
+    cap: 100.0
+    mixing: 1.0
+    ess_floor: 0.25
+    tau_min: 0.05
+    iterations: 32
+reservation:
+  seed: 911
+  max_fraction: 0.25
 datasets:
   halfcheetah:
     environment: halfcheetah-medium-expert-v2
-    defaults:
-      cache:
-        bytes: 474567252
-        sha256: 015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06
-        filename: halfcheetah_medium_expert-v2.hdf5
-      spaces:
-        observation_shape: [17]
-        action_shape: [6]
-        action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
-        action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        max_episode_steps: 1000
-      declared:
-        args:
-          tau: 0.005
-          normalize_reward: false
-          iql_tau: 0.7
-          iql_deterministic: false
-          actor_dropout: null
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 8192
-          host_beta_multiplier: 2.0
-        declared:
-          args:
-            posterior:
-              reserve_size: 8192
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 6.0
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 6.0
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 474567252
+      sha256: 015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06
+      filename: halfcheetah_medium_expert-v2.hdf5
+    host:
+      tau: 0.005
+      normalize_reward: false
+      iql_tau: 0.7
+      iql_deterministic: false
+      actor_dropout: null
+    reservation:
+      size: 8192
+    spaces:
+      observation_shape: [17]
+      action_shape: [6]
+      action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+      action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      max_episode_steps: 1000
   hopper:
     environment: hopper-medium-v2
-    defaults:
-      cache:
-        bytes: 152756557
-        sha256: 5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0
-        filename: hopper_medium-v2.hdf5
-      spaces:
-        observation_shape: [11]
-        action_shape: [3]
-        action_low: [-1.0, -1.0, -1.0]
-        action_high: [1.0, 1.0, 1.0]
-        max_episode_steps: 1000
-      declared:
-        args:
-          tau: 0.001
-          normalize_reward: true
-          iql_tau: 0.7
-          iql_deterministic: true
-          actor_dropout: null
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 8192
-          host_beta_multiplier: 0.25
-        declared:
-          args:
-            posterior:
-              reserve_size: 8192
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 0.75
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 0.75
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 0.75
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 0.75
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 0.75
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 0.75
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 0.75
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences:
-            - [beta, 0.75, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 152756557
+      sha256: 5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0
+      filename: hopper_medium-v2.hdf5
+    host:
+      tau: 0.001
+      normalize_reward: true
+      iql_tau: 0.7
+      iql_deterministic: true
+      actor_dropout: null
+    reservation:
+      size: 8192
+    spaces:
+      observation_shape: [11]
+      action_shape: [3]
+      action_low: [-1.0, -1.0, -1.0]
+      action_high: [1.0, 1.0, 1.0]
+      max_episode_steps: 1000
   maze2d:
     environment: maze2d-large-v1
-    defaults:
-      cache:
-        bytes: 138600852
-        sha256: a80dddbd0158abc6cd85ec3ec88fc3099c288f3141e9bf92bb2c1c11f1876d12
-        filename: maze2d-large-sparse-v1.hdf5
-      spaces:
-        observation_shape: [4]
-        action_shape: [2]
-        action_low: [-1.0, -1.0]
-        action_high: [1.0, 1.0]
-        max_episode_steps: 800
-      declared:
-        args:
-          tau: 0.005
-          normalize_reward: false
-          iql_tau: 0.7
-          iql_deterministic: false
-          actor_dropout: null
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 8192
-          host_beta_multiplier: 2.0
-        declared:
-          args:
-            posterior:
-              reserve_size: 8192
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 6.0
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 6.0
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 6.0
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences:
-            - [beta, 6.0, 3.0]
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 138600852
+      sha256: a80dddbd0158abc6cd85ec3ec88fc3099c288f3141e9bf92bb2c1c11f1876d12
+      filename: maze2d-large-sparse-v1.hdf5
+    host:
+      tau: 0.005
+      normalize_reward: false
+      iql_tau: 0.7
+      iql_deterministic: false
+      actor_dropout: null
+    reservation:
+      size: 8192
+    spaces:
+      observation_shape: [4]
+      action_shape: [2]
+      action_low: [-1.0, -1.0]
+      action_high: [1.0, 1.0]
+      max_episode_steps: 800
   pen-cloned:
     environment: pen-cloned-v1
-    defaults:
-      cache:
-        bytes: 155074191
-        sha256: 6d1a982cee1950501bedebbddedbcbb377e6284d379986c83abac8a6c0be0c22
-        filename: '{environment}.hdf5'
-      spaces:
-        observation_shape: [45]
-        action_shape: [24]
-        action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-          -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
-        action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        max_episode_steps: 100
-      declared:
-        args:
-          tau: 0.005
-          normalize_reward: false
-          iql_tau: 0.8
-          iql_deterministic: false
-          actor_dropout: 0.1
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 8192
-          host_beta_multiplier: 1.0
-        declared:
-          args:
-            posterior:
-              reserve_size: 8192
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 3.0
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 155074191
+      sha256: 6d1a982cee1950501bedebbddedbcbb377e6284d379986c83abac8a6c0be0c22
+      filename: pen-cloned-v1.hdf5
+    host:
+      tau: 0.005
+      normalize_reward: false
+      iql_tau: 0.8
+      iql_deterministic: false
+      actor_dropout: 0.1
+    reservation:
+      size: 8192
+    spaces:
+      observation_shape: [45]
+      action_shape: [24]
+      action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+      action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0]
+      max_episode_steps: 100
   pen-expert:
     environment: pen-expert-v1
-    defaults:
-      cache:
-        bytes: 262040663
-        sha256: 3791b8ca6a802061770af2977c051ac3ae261488210ce73788760a5b8308f374
-        filename: '{environment}.hdf5'
-      spaces:
-        observation_shape: [45]
-        action_shape: [24]
-        action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-          -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
-        action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        max_episode_steps: 100
-      declared:
-        args:
-          tau: 0.005
-          normalize_reward: false
-          iql_tau: 0.8
-          iql_deterministic: false
-          actor_dropout: 0.1
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 8192
-          host_beta_multiplier: 1.0
-        declared:
-          args:
-            posterior:
-              reserve_size: 8192
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 3.0
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 262040663
+      sha256: 3791b8ca6a802061770af2977c051ac3ae261488210ce73788760a5b8308f374
+      filename: pen-expert-v1.hdf5
+    host:
+      tau: 0.005
+      normalize_reward: false
+      iql_tau: 0.8
+      iql_deterministic: false
+      actor_dropout: 0.1
+    reservation:
+      size: 8192
+    spaces:
+      observation_shape: [45]
+      action_shape: [24]
+      action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+      action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0]
+      max_episode_steps: 100
   pen-human:
     environment: pen-human-v1
-    defaults:
-      cache:
-        bytes: 2040573
-        sha256: 209e345b2150b633f30a11612612c60f49e941f127ce6c4dc0cd790501c46f9f
-        filename: '{environment}.hdf5'
-      spaces:
-        observation_shape: [45]
-        action_shape: [24]
-        action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-          -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
-        action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        max_episode_steps: 100
-      declared:
-        args:
-          tau: 0.005
-          normalize_reward: false
-          iql_tau: 0.8
-          iql_deterministic: false
-          actor_dropout: 0.1
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 1194
-          host_beta_multiplier: 1.0
-        declared:
-          args:
-            posterior:
-              reserve_size: 1194
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 3.0
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 2040573
+      sha256: 209e345b2150b633f30a11612612c60f49e941f127ce6c4dc0cd790501c46f9f
+      filename: pen-human-v1.hdf5
+    host:
+      tau: 0.005
+      normalize_reward: false
+      iql_tau: 0.8
+      iql_deterministic: false
+      actor_dropout: 0.1
+    reservation:
+      size: 1194
+    spaces:
+      observation_shape: [45]
+      action_shape: [24]
+      action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+      action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0, 1.0, 1.0]
+      max_episode_steps: 100
   walker2d:
     environment: walker2d-medium-replay-v2
-    defaults:
-      cache:
-        bytes: 86323963
-        sha256: e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db
-        filename: walker2d_medium_replay-v2.hdf5
-      spaces:
-        observation_shape: [17]
-        action_shape: [6]
-        action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
-        action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        max_episode_steps: 1000
-      declared:
-        args:
-          tau: 0.005
-          normalize_reward: false
-          iql_tau: 0.7
-          iql_deterministic: false
-          actor_dropout: null
-    arms:
-      native: {}
-      shared:
-        options:
-          reserve_size: 8192
-          host_beta_multiplier: 1.0
-        declared:
-          args:
-            posterior:
-              reserve_size: 8192
-          arms:
-          - name: baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_legacy_width
-            variant_index: 0
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_noiw_weighted_width
-            variant_index: 1
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_legacy_width
-            variant_index: 2
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_weighted_width
-            variant_index: 3
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: full_awr_permuted_weighted_width
-            variant_index: 4
-            mode: full
-            beta: 3.0
-            gain: 1.0
-          - name: floor_awr_weighted_width
-            variant_index: 3
-            mode: floor
-            beta: 3.0
-            gain: 1.0
-          - name: comparison_baseline
-            variant_index: -1
-            mode: 'off'
-            beta: 3.0
-            gain: 1.0
-          published_differences:
-          - arm: baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_noiw_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_legacy_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: full_awr_permuted_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: floor_awr_weighted_width
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
-          - arm: comparison_baseline
-            actual_differences: []
-            declaration: declared horizon; actors1-7 matched host beta; actor0 published
+    cache:
+      bytes: 86323963
+      sha256: e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db
+      filename: walker2d_medium_replay-v2.hdf5
+    host:
+      tau: 0.005
+      normalize_reward: false
+      iql_tau: 0.7
+      iql_deterministic: false
+      actor_dropout: null
+    reservation:
+      size: 8192
+    spaces:
+      observation_shape: [17]
+      action_shape: [6]
+      action_low: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
+      action_high: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      max_episode_steps: 1000

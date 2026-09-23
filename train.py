@@ -11,9 +11,8 @@ import sys
 import traceback
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "algorithms"))
-from _config import read_config, resolve, typed
-from _provenance import sha, source_files, source_identity, write
+from runtime.config import read_config, resolve, typed
+from runtime.provenance import sha, source_files, source_identity, write
 
 
 @contextlib.contextmanager
@@ -48,7 +47,8 @@ def prepare(row, objects):
     runner, args, spec, protocol = objects
     with h5py.File(cache, "r") as f:
         raw = {
-            k: f[k][()] for k in ("observations", "actions", "rewards", "terminals", "timeouts")
+            k: f[k][()]
+            for k in ("observations", "actions", "rewards", "terminals", "timeouts")
         }
     bound = row.get("action_bound", row.get("action", {}).get("max_action", 1.0))
     horizon = row.get(
@@ -80,11 +80,12 @@ def execute(row, objects, out, prepared):
         from dataclasses import asdict
 
         driver, m, options = objects
-        from _iql_checkpoint import checkpoint_counts as iql_counts
+        from runtime.iql_checkpoint import checkpoint_counts as iql_counts
 
         base = driver.IWRuntime if row["mode"] == "shared" else driver.GroupRuntime
 
         class CheckedRuntime(base):
+
             def checkpoint(self, label):
                 entry = super().checkpoint(label)
                 payload = (self.output / entry["path"]).read_bytes()
@@ -117,16 +118,22 @@ def execute(row, objects, out, prepared):
                 "declared": (
                     driver.declaration(options, m)
                     if row["mode"] == "shared"
-                    else row["declared"]
+                    else {
+                        "args": asdict(driver.resolved_arguments(options, m)[0]),
+                        "arms": [
+                            asdict(a) for a in driver.resolved_arguments(options, m)[1]
+                        ],
+                    }
                 ),
                 "source_sha256": source_files(),
             },
         )
-        # Use the already hash-checked preparation; no second data load or changed split.
         original = m.H.load_data
         m.H.load_data = lambda args: prepared
         try:
-            result = driver.execute_group(options, m, out, runtime_factory=CheckedRuntime)
+            result = driver.execute_group(
+                options, m, out, runtime_factory=CheckedRuntime
+            )
         finally:
             m.H.load_data = original
         if result["status"] != "complete":
@@ -134,7 +141,7 @@ def execute(row, objects, out, prepared):
         driver.verify_result(out, result, options, m.np)
         return result
     from flax import serialization
-    from _validation import checkpoint_counts, verify_events
+    from runtime.validation import checkpoint_counts, verify_events
 
     runner, args, spec, protocol = objects
     checkpoints = []
@@ -196,15 +203,23 @@ def execute(row, objects, out, prepared):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--config", type=Path, required=True)
-    p.add_argument("--dataset", help="Dataset name from the algorithm config; use --list.")
-    p.add_argument("--arm")
-    p.add_argument("--seed", type=int)
     p.add_argument(
-        "--list", action="store_true", help="List arms and seeds without loading JAX."
+        "--algorithm", choices=("iql", "cql", "td3_bc", "rebrac"), required=True
     )
     p.add_argument(
-        "--print-config", action="store_true", help="Print the complete resolved declaration."
+        "--dataset", help="Dataset name from the algorithm config; use --list."
+    )
+    p.add_argument("--method", choices=("host", "bca"))
+    p.add_argument("--seed", type=int)
+    p.add_argument(
+        "--list",
+        action="store_true",
+        help="List methods and datasets without loading JAX.",
+    )
+    p.add_argument(
+        "--print-config",
+        action="store_true",
+        help="Print the complete resolved declaration.",
     )
     p.add_argument(
         "--check",
@@ -221,25 +236,29 @@ def main(argv=None):
     p.add_argument("--device", choices=["cpu", "cuda"], default="cuda")
     p.add_argument(
         "--lock",
-        default=os.environ.get("BCA_GPU_LOCK", str(Path.home() / ".cache/bca/gpu.lock")),
+        default=os.environ.get(
+            "BCA_GPU_LOCK", str(Path.home() / ".cache/bca/gpu.lock")
+        ),
     )
     opt = p.parse_args(argv)
-    config = read_config(opt.config)
+    config_path = ROOT / "configs" / (opt.algorithm + ".yaml")
+    config = read_config(config_path)
     if opt.list:
         print(
             json.dumps(
                 {
-                    "host": config["host"],
-                    "datasets": {k: list(v["arms"]) for k, v in config["datasets"].items()},
+                    "algorithm": opt.algorithm,
+                    "methods": ["host", "bca"],
+                    "datasets": list(config["datasets"]),
                 },
                 indent=2,
             )
         )
         return
-    if opt.arm is None or opt.seed is None or opt.dataset is None:
-        p.error("--dataset, --arm and --seed are required; use --list.")
+    if opt.method is None or opt.seed is None or opt.dataset is None:
+        p.error("--dataset, --method and --seed are required; use --list.")
     output = (opt.output or ROOT / "runs/config-inspection").resolve()
-    row = resolve(opt.config, opt.arm, opt.seed, output, opt.dataset)
+    row = resolve(config_path, opt.method, opt.seed, output, opt.dataset)
     if opt.print_config:
         print(json.dumps(row, indent=2, allow_nan=False))
         return
@@ -263,7 +282,11 @@ def main(argv=None):
     }.items():
         os.environ.setdefault(key, value)
     mujoco_bin = str(
-        Path(os.environ.get("MUJOCO_PY_MUJOCO_PATH", str(Path.home() / ".mujoco/mujoco210")))
+        Path(
+            os.environ.get(
+                "MUJOCO_PY_MUJOCO_PATH", str(Path.home() / ".mujoco/mujoco210")
+            )
+        )
         / "bin"
     )
     if sys.platform == "linux" and mujoco_bin not in os.environ.get(
@@ -273,16 +296,18 @@ def main(argv=None):
             filter(None, [mujoco_bin, os.environ.get("LD_LIBRARY_PATH", "")])
         )
         os.execv(sys.executable, [sys.executable, *sys.argv])
-    from _runtime import setup
+    from runtime.environment import setup
 
     setup()
     objects = typed(row)
     if opt.check:
-        print(json.dumps({"valid": True, "run_id": row["run_id"], "training_updates": 0}))
+        print(
+            json.dumps({"valid": True, "run_id": row["run_id"], "training_updates": 0})
+        )
         return
     guard = (
         gpu_lock(opt.lock)
-        if opt.device == "cuda" and not opt.prepare_only
+        if opt.device == "cuda" and (not opt.prepare_only)
         else contextlib.nullcontext()
     )
     with guard:
