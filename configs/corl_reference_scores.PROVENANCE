@@ -1,0 +1,15 @@
+upstream:   corl-team/CORL
+commit:     eeeeef2
+generator:  bca/scripts/corl_verify/_corl_reference.py
+scores:     docs/benchmarks/offline.md, the "## Last Scores" section ONLY
+configs:    configs/offline/<algo>/<domain>/<dataset>.yaml
+
+WHY THIS FILE EXISTS. corl_reference_scores.csv is the provenance boundary for the whole
+configuration chain: _published_config.py reads it to REFUSE a run that does not carry the
+per-environment settings CORL's published number came from, and _corlorig_emit.py generates
+the original-code config yamls from it. The generator records the upstream commit in its own
+docstring and in the markdown it writes, but the CSV carried no revision of any kind, so a
+regeneration against a different CORL revision would be invisible to every consumer.
+
+The scores are CORL's LAST column, not Best. Those are different estimands and this project
+has been burned by conflating them twice.

@@ -1,0 +1,355 @@
+# Dataset arms are an explicit allow-list; {} inherits the named arm.
+# bca: true also inherits the BCA defaults at algorithm and dataset scope.
+host: cql
+defaults:
+  host: cql
+  environment: '{environment}'
+  native_args:
+    algorithm: corl_cql
+    allow_off_config: true
+    alpha_multiplier: 1.0
+    backup_entropy: false
+    batch_size: 256
+    bc_steps: 0
+    cql_clip_diff_max:
+      nonfinite_literal: inf
+    cql_clip_diff_min:
+      nonfinite_literal: -inf
+    cql_importance_sample: true
+    cql_max_target_backup: false
+    cql_n_actions: 10
+    cql_reward_bias: 0.0
+    cql_reward_scale: 1.0
+    cql_temp: 1.0
+    dataset: '{environment}'
+    discount: 0.99
+    eval_final_episodes: '{experiment.final_episodes}'
+    eval_interval: '{experiment.eval_interval}'
+    eval_workers: 10
+    log: false
+    normalize: true
+    num_updates: '{experiment.num_updates}'
+    orthogonal_init: true
+    policy_log_std_multiplier: 1.0
+    q_n_hidden_layers: 3
+    qf_lr: 0.0003
+    reward_bias: -5.0
+    reward_scale: 10.0
+    reward_transform: rebrac_x100
+    seed: '{seed}'
+    soft_target_update_rate: 0.005
+    target_update_period: 1
+    use_automatic_entropy_tuning: true
+    wandb_group: debug
+    wandb_project: unifloral
+    wandb_team: flair
+  config:
+    attachment: conservative_gap_level
+    cal_beta: 20.0
+    cal_lr: 0.001
+    iw:
+      ess_floor: 0.25
+      iterations: 32
+      tau_min: 0.05
+    posterior:
+      alpha: 0.1
+      credibility: 0.95
+      draws: 128
+    radius_mode: full
+    scale_ema: 0.99
+    width_penalty: 0.005
+  protocol:
+    eval_final_episodes: '{experiment.final_episodes}'
+    eval_interval: '{experiment.eval_interval}'
+    eval_periodic_episodes: 10
+    eval_workers: 10
+    evaluation_events:
+      bank: '{evaluation_bank}'
+    num_updates: '{experiment.num_updates}'
+    scan_block_size: '{experiment.scan_block_size}'
+    seed: '{seed}'
+  expected_counts:
+    host_updates: 1000000
+    updates_per_critic: 1000000
+    actor_updates: 1000000
+    periodic_evaluations: 200
+    final_episodes: '{experiment.final_episodes}'
+    planned_checkpoint_steps: [10000, 50000, 1000000]
+  cache: {}
+  training_seed: '{seed}'
+  action_bound: 1.0
+bca_defaults:
+  config:
+    arm: posterior
+    blend: 0.5
+    iw: {}
+  protocol:
+    calibration_max_fraction: 0.1
+    calibration_seed: 911
+    reference_seed: 912
+    reference_size: 1024
+    refresh_steps:
+      bank: refresh_steps
+  expected_counts:
+    posterior_refreshes: 198
+arms:
+  native_full:
+    identity: native_full
+    config:
+      arm: native_full
+      blend: 1.0
+      iw:
+        mode: 'off'
+      width_objective: original
+    protocol:
+      calibration_max_fraction: null
+      calibration_seed: null
+      calibration_target_size: null
+      reference_seed: null
+      reference_size: null
+      refresh_steps: []
+      run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-native_full
+    expected_counts:
+      posterior_refreshes: 0
+    run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-native_full
+  native_pool:
+    identity: native_pool
+    config:
+      arm: native_pool
+      blend: 1.0
+      iw:
+        mode: 'off'
+      width_objective: original
+    protocol:
+      calibration_max_fraction: 0.1
+      calibration_seed: 911
+      reference_seed: null
+      reference_size: null
+      refresh_steps: []
+      run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-native_pool
+    expected_counts:
+      posterior_refreshes: 0
+    run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-native_pool
+  posterior_matched_noiw:
+    bca: true
+    identity: posterior_matched_noiw
+    config:
+      iw:
+        mode: 'off'
+      width_objective: matched
+    protocol:
+      run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_matched_noiw
+    run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_matched_noiw
+  posterior_original_noiw:
+    bca: true
+    identity: posterior_original_noiw
+    config:
+      iw:
+        mode: 'off'
+      width_objective: original
+    protocol:
+      run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_original_noiw
+    run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_original_noiw
+  posterior_policy_density:
+    bca: true
+    identity: posterior_policy_density
+    config:
+      iw:
+        mode: policy
+      width_objective: matched
+    protocol:
+      run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_policy_density
+    run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_policy_density
+  posterior_policy_density_permuted:
+    bca: true
+    identity: posterior_policy_density_permuted
+    config:
+      iw:
+        mode: policy_permuted
+      width_objective: matched
+    protocol:
+      run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_policy_density_permuted
+    run_id: fullwidth-1m-cql-v1-{environment}-s{seed}-posterior_policy_density_permuted
+datasets:
+  halfcheetah:
+    environment: halfcheetah-medium-expert-v2
+    defaults:
+      native_args:
+        cql_alpha: 10.0
+        cql_lagrange: false
+        cql_target_action_gap: -1.0
+        normalize_reward: false
+        policy_lr: 3.0e-05
+      cache:
+        bytes: 474567252
+        sha256: 015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06
+        filename: halfcheetah_medium_expert-v2.hdf5
+      max_episode_steps: 1000
+    bca_defaults:
+      protocol:
+        calibration_target_size: 1024
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 1024
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}
+  hopper:
+    environment: hopper-medium-v2
+    defaults:
+      native_args:
+        cql_alpha: 10.0
+        cql_lagrange: false
+        cql_target_action_gap: -1.0
+        normalize_reward: true
+        policy_lr: 3.0e-05
+      cache:
+        bytes: 152756557
+        sha256: 5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0
+        filename: hopper_medium-v2.hdf5
+      max_episode_steps: 1000
+    bca_defaults:
+      protocol:
+        calibration_target_size: 1024
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 1024
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}
+  maze2d:
+    environment: maze2d-large-v1
+    defaults:
+      native_args:
+        cql_alpha: 10.0
+        cql_lagrange: true
+        cql_target_action_gap: 5.0
+        normalize_reward: false
+        policy_lr: 3.0e-05
+      cache:
+        bytes: 138600852
+        sha256: a80dddbd0158abc6cd85ec3ec88fc3099c288f3141e9bf92bb2c1c11f1876d12
+        filename: maze2d-large-sparse-v1.hdf5
+      max_episode_steps: 800
+    bca_defaults:
+      protocol:
+        calibration_target_size: 1024
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 1024
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}
+  pen-cloned:
+    environment: pen-cloned-v1
+    defaults:
+      native_args:
+        cql_alpha: 1.0
+        cql_lagrange: false
+        cql_target_action_gap: -1.0
+        normalize_reward: false
+        policy_lr: 0.0001
+      cache:
+        bytes: 155074191
+        sha256: 6d1a982cee1950501bedebbddedbcbb377e6284d379986c83abac8a6c0be0c22
+        filename: '{environment}.hdf5'
+      max_episode_steps: 100
+    bca_defaults:
+      protocol:
+        calibration_target_size: 1024
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 1024
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}
+  pen-expert:
+    environment: pen-expert-v1
+    defaults:
+      native_args:
+        cql_alpha: 1.0
+        cql_lagrange: false
+        cql_target_action_gap: -1.0
+        normalize_reward: false
+        policy_lr: 0.0001
+      cache:
+        bytes: 262040663
+        sha256: 3791b8ca6a802061770af2977c051ac3ae261488210ce73788760a5b8308f374
+        filename: '{environment}.hdf5'
+      max_episode_steps: 100
+    bca_defaults:
+      protocol:
+        calibration_target_size: 1024
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 1024
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}
+  pen-human:
+    environment: pen-human-v1
+    defaults:
+      native_args:
+        cql_alpha: 1.0
+        cql_lagrange: false
+        cql_target_action_gap: -1.0
+        normalize_reward: false
+        policy_lr: 0.0001
+      cache:
+        bytes: 2040573
+        sha256: 209e345b2150b633f30a11612612c60f49e941f127ce6c4dc0cd790501c46f9f
+        filename: '{environment}.hdf5'
+      max_episode_steps: 100
+    bca_defaults:
+      protocol:
+        calibration_target_size: 248
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 248
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}
+  walker2d:
+    environment: walker2d-medium-replay-v2
+    defaults:
+      native_args:
+        cql_alpha: 10.0
+        cql_lagrange: false
+        cql_target_action_gap: -1.0
+        normalize_reward: false
+        policy_lr: 3.0e-05
+      cache:
+        bytes: 86323963
+        sha256: e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db
+        filename: walker2d_medium_replay-v2.hdf5
+      max_episode_steps: 1000
+    bca_defaults:
+      protocol:
+        calibration_target_size: 1024
+    arms:
+      native_full: {}
+      native_pool:
+        protocol:
+          calibration_target_size: 1024
+      posterior_matched_noiw: {}
+      posterior_original_noiw: {}
+      posterior_policy_density: {}
+      posterior_policy_density_permuted: {}

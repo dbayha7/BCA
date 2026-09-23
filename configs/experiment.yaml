@@ -1,0 +1,99 @@
+seeds: [202609171, 202609172, 202609173, 202609174, 202609175]
+num_updates: 1000000
+eval_interval: 5000
+final_episodes: 20
+warmup: 10000
+refresh_interval: 5000
+scan_block_size: 1000
+schedules:
+  evaluation_seed_1:
+    kind: evaluation
+    first_step: 5000
+    last_step: 1000000
+    interval: 5000
+    periodic_episodes: 10
+    final_episodes: 20
+    first_seed: 402609171
+    bank_seed_stride: 1000
+  refresh_seed_1:
+    kind: refresh
+    first_step: 10000
+    last_step: 995000
+    interval: 5000
+    first_seed: 302609171
+    seed_stride: 1
+  evaluation_seed_2:
+    kind: evaluation
+    first_step: 5000
+    last_step: 1000000
+    interval: 5000
+    periodic_episodes: 10
+    final_episodes: 20
+    first_seed: 403609171
+    bank_seed_stride: 1000
+  refresh_seed_2:
+    kind: refresh
+    first_step: 10000
+    last_step: 995000
+    interval: 5000
+    first_seed: 302610171
+    seed_stride: 1
+  evaluation_seed_3:
+    kind: evaluation
+    first_step: 5000
+    last_step: 1000000
+    interval: 5000
+    periodic_episodes: 10
+    final_episodes: 20
+    first_seed: 404609171
+    bank_seed_stride: 1000
+  refresh_seed_3:
+    kind: refresh
+    first_step: 10000
+    last_step: 995000
+    interval: 5000
+    first_seed: 302611171
+    seed_stride: 1
+  evaluation_seed_4:
+    kind: evaluation
+    first_step: 5000
+    last_step: 1000000
+    interval: 5000
+    periodic_episodes: 10
+    final_episodes: 20
+    first_seed: 405609171
+    bank_seed_stride: 1000
+  refresh_seed_4:
+    kind: refresh
+    first_step: 10000
+    last_step: 995000
+    interval: 5000
+    first_seed: 302612171
+    seed_stride: 1
+  evaluation_seed_5:
+    kind: evaluation
+    first_step: 5000
+    last_step: 1000000
+    interval: 5000
+    periodic_episodes: 10
+    final_episodes: 20
+    first_seed: 406609171
+    bank_seed_stride: 1000
+  refresh_seed_5:
+    kind: refresh
+    first_step: 10000
+    last_step: 995000
+    interval: 5000
+    first_seed: 302613171
+    seed_stride: 1
+  refresh_steps:
+    kind: steps
+    first_step: 10000
+    last_step: 995000
+    interval: 5000
+evaluation_banks:
+  202609171: evaluation_seed_1
+  202609172: evaluation_seed_2
+  202609173: evaluation_seed_3
+  202609174: evaluation_seed_4
+  202609175: evaluation_seed_5

@@ -1,0 +1,707 @@
+# Dataset arms are an explicit allow-list; {} inherits the named arm.
+# bca: true also inherits the BCA defaults at algorithm and dataset scope.
+host: td3
+defaults:
+  host: td3
+  environment: '{environment}'
+  native_args:
+    seed: '{seed}'
+    dataset: '{environment}'
+    algorithm: corl_td3_bc
+    num_updates: '{experiment.num_updates}'
+    reward_transform: rebrac_x100
+    reward_scale: 10.0
+    reward_bias: -5.0
+    allow_off_config: true
+    eval_interval: '{experiment.eval_interval}'
+    eval_workers: 10
+    eval_final_episodes: '{experiment.final_episodes}'
+    log: false
+    wandb_project: unifloral
+    wandb_team: flair
+    wandb_group: debug
+    lr: 0.0003
+    batch_size: 256
+    discount: 0.99
+    tau: 0.005
+    normalize: true
+    normalize_reward: false
+    alpha: 2.5
+    policy_noise: 0.2
+    noise_clip: 0.5
+    policy_freq: 2
+  specification:
+    configuration_class: declared_deviation
+  protocol:
+    seed: '{seed}'
+    num_updates: '{experiment.num_updates}'
+    scan_block_size: '{experiment.scan_block_size}'
+    eval_interval: '{experiment.eval_interval}'
+    eval_workers: 10
+    eval_periodic_episodes: 10
+    eval_final_episodes: '{experiment.final_episodes}'
+    evaluation_events:
+      bank: '{evaluation_bank}'
+  expected_counts:
+    host_updates: 1000000
+    updates_per_critic: 1000000
+    actor_updates: 500000
+    periodic_evaluations: 200
+    final_episodes: '{experiment.final_episodes}'
+    checkpoint_steps: [10000, 50000, 1000000]
+  cache: {}
+  action:
+    max_action: 1.0
+    rms_bandwidth_grid: [0.05, 0.15, 0.45]
+  training_seed: '{seed}'
+bca_defaults:
+  specification:
+    posterior:
+      alpha: 0.1
+      credibility: 0.95
+      draws: 128
+      blend: 0.5
+      cal_lr: 0.001
+      cal_beta: 20.0
+      width_penalty: 0.005
+      scale_ema: 0.99
+      affinity: {}
+    constant_bc_multiplier: null
+  protocol:
+    reservation:
+      seed: 911
+      max_fraction: 0.1
+      dependency_contract: raw_effective_finite_targets_v1
+    reference:
+      size: 1024
+      seed: 912
+    refresh_events: {}
+  expected_counts:
+    refresh_events: 198
+  seed_overrides:
+    202609171:
+      protocol:
+        refresh_events:
+          bank: refresh_seed_1
+    202609172:
+      protocol:
+        refresh_events:
+          bank: refresh_seed_2
+    202609173:
+      protocol:
+        refresh_events:
+          bank: refresh_seed_3
+    202609174:
+      protocol:
+        refresh_events:
+          bank: refresh_seed_4
+    202609175:
+      protocol:
+        refresh_events:
+          bank: refresh_seed_5
+arms:
+  constant_1p5:
+    identity: constant_bc_pool
+    specification:
+      identity: constant_bc_pool
+      posterior: null
+      constant_bc_multiplier: 1.5
+    protocol:
+      reservation:
+        seed: 911
+        max_fraction: 0.1
+        dependency_contract: raw_effective_finite_targets_v1
+      reference: null
+      refresh_events: []
+    expected_counts:
+      refresh_events: 0
+  fixed_after_warmup:
+    identity: constant_bc_pool
+    specification:
+      identity: constant_bc_pool
+      deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison; unchanged
+        prior host and calibration settings.
+      posterior: null
+      constant_bc_start_step: 10000
+    protocol:
+      run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-constant_bc_pool
+      reservation:
+        target_size: 1024
+        seed: 911
+        max_fraction: 0.1
+        dependency_contract: raw_effective_finite_targets_v1
+      reference: null
+      refresh_events: []
+    expected_counts:
+      refresh_events: 0
+    run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-constant_bc_pool
+  native_full:
+    identity: native_full
+    specification:
+      identity: native_full
+      posterior: null
+      constant_bc_multiplier: null
+    protocol:
+      reservation: null
+      reference: null
+      refresh_events: []
+    expected_counts:
+      refresh_events: 0
+  native_pool:
+    identity: native_pool
+    specification:
+      identity: native_pool
+      posterior: null
+      constant_bc_multiplier: null
+    protocol:
+      reservation:
+        seed: 911
+        max_fraction: 0.1
+        dependency_contract: raw_effective_finite_targets_v1
+      reference: null
+      refresh_events: []
+    expected_counts:
+      refresh_events: 0
+  posterior_affinity:
+    bca: true
+    identity: posterior_affinity
+    specification:
+      identity: posterior_affinity
+      posterior:
+        width_objective: matched
+        affinity:
+          mode: affinity
+          ess_floor: 0.25
+          tau_min: 0.0
+          iterations: 32
+  posterior_affinity_dose_permuted:
+    bca: true
+    identity: posterior_affinity_dose_permuted
+    specification:
+      identity: posterior_affinity_dose_permuted
+      deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison; unchanged
+        prior host and calibration settings.
+      posterior:
+        width_objective: matched
+        affinity:
+          mode: affinity
+          ess_floor: 0.25
+          tau_min: 0.0
+          iterations: 32
+      constant_bc_start_step: 0
+    protocol:
+      run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_affinity_dose_permuted
+      reservation:
+        target_size: 1024
+    run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_affinity_dose_permuted
+  posterior_affinity_permuted:
+    bca: true
+    identity: posterior_affinity_permuted
+    specification:
+      identity: posterior_affinity_permuted
+      posterior:
+        width_objective: matched
+        affinity:
+          mode: affinity_permuted
+          ess_floor: 0.25
+          tau_min: 0.0
+          iterations: 32
+  posterior_matched_noiw:
+    bca: true
+    identity: posterior_matched_noiw
+    specification:
+      identity: posterior_matched_noiw
+      posterior:
+        width_objective: matched
+        affinity:
+          mode: 'off'
+          bandwidth: null
+          ess_floor: null
+          tau_min: null
+          iterations: null
+  posterior_original_noiw:
+    bca: true
+    identity: posterior_original_noiw
+    specification:
+      identity: posterior_original_noiw
+      posterior:
+        width_objective: original
+        affinity:
+          mode: 'off'
+          bandwidth: null
+          ess_floor: null
+          tau_min: null
+          iterations: null
+datasets:
+  halfcheetah:
+    environment: halfcheetah-medium-expert-v2
+    defaults:
+      specification:
+        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
+          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
+      max_episode_steps: 1000
+      cache:
+        sha256: 015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06
+        filename: halfcheetah_medium_expert-v2.hdf5
+      action:
+        action_dim: 6
+        sigma_native_action_units: [0.1224744871391589, 0.36742346141747667, 1.1022703842524302]
+    bca_defaults:
+      protocol:
+        reservation:
+          target_size: 1024
+    arms:
+      constant_1p5:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+      native_full:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.36742346141747667
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.36742346141747667
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+  hopper:
+    environment: hopper-medium-v2
+    defaults:
+      max_episode_steps: 1000
+      cache:
+        sha256: 5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0
+        filename: hopper_medium-v2.hdf5
+      action:
+        action_dim: 3
+        sigma_native_action_units: [0.08660254037844387, 0.25980762113533157, 0.7794228634059948]
+    bca_defaults:
+      specification: {}
+    arms:
+      constant_1p5:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-constant_bc_pool
+      fixed_after_warmup:
+        specification:
+          constant_bc_multiplier: 1.2949029728770256
+      native_full:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        specification:
+          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
+            unchanged prior host and calibration settings.
+          constant_bc_start_step: 0
+        protocol:
+          run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
+            unchanged prior host and calibration settings.
+          posterior:
+            affinity:
+              bandwidth: 0.25980762113533157
+          constant_bc_start_step: 0
+        protocol:
+          run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_affinity
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_dose_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.25980762113533157
+      posterior_affinity_permuted:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+          posterior:
+            affinity:
+              bandwidth: 0.25980762113533157
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        specification:
+          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
+            unchanged prior host and calibration settings.
+          constant_bc_start_step: 0
+        protocol:
+          run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_original_noiw
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_original_noiw
+  maze2d:
+    environment: maze2d-large-v1
+    defaults:
+      specification:
+        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
+          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
+      max_episode_steps: 800
+      cache:
+        sha256: a80dddbd0158abc6cd85ec3ec88fc3099c288f3141e9bf92bb2c1c11f1876d12
+        filename: maze2d-large-sparse-v1.hdf5
+      action:
+        action_dim: 2
+        sigma_native_action_units: [0.07071067811865477, 0.21213203435596426, 0.6363961030678928]
+    bca_defaults:
+      protocol:
+        reservation:
+          target_size: 1024
+    arms:
+      constant_1p5:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+      native_full:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.21213203435596426
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.21213203435596426
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+  pen-cloned:
+    environment: pen-cloned-v1
+    defaults:
+      specification:
+        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
+          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
+      max_episode_steps: 100
+      cache:
+        sha256: 6d1a982cee1950501bedebbddedbcbb377e6284d379986c83abac8a6c0be0c22
+        filename: '{environment}.hdf5'
+      action:
+        action_dim: 24
+        sigma_native_action_units: [0.2449489742783178, 0.7348469228349533, 2.2045407685048604]
+    bca_defaults:
+      protocol:
+        reservation:
+          target_size: 1024
+    arms:
+      constant_1p5:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+      native_full:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.7348469228349533
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.7348469228349533
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+  pen-expert:
+    environment: pen-expert-v1
+    defaults:
+      specification:
+        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
+          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
+      max_episode_steps: 100
+      cache:
+        sha256: 3791b8ca6a802061770af2977c051ac3ae261488210ce73788760a5b8308f374
+        filename: '{environment}.hdf5'
+      action:
+        action_dim: 24
+        sigma_native_action_units: [0.2449489742783178, 0.7348469228349533, 2.2045407685048604]
+    bca_defaults:
+      protocol:
+        reservation:
+          target_size: 1024
+    arms:
+      constant_1p5:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+      native_full:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.7348469228349533
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.7348469228349533
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+  pen-human:
+    environment: pen-human-v1
+    defaults:
+      specification:
+        deviation_reason: Authorized fresh 1M, five-seed comparison; preserve exact saved development
+          recipe; new paired evaluation/refresh banks. No tuning from new outcomes.
+      max_episode_steps: 100
+      cache:
+        sha256: 209e345b2150b633f30a11612612c60f49e941f127ce6c4dc0cd790501c46f9f
+        filename: '{environment}.hdf5'
+      action:
+        action_dim: 24
+        sigma_native_action_units: [0.2449489742783178, 0.7348469228349533, 2.2045407685048604]
+    bca_defaults:
+      protocol:
+        reservation:
+          target_size: 248
+    arms:
+      constant_1p5:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 248
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-constant_bc_pool
+      native_full:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 248
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.7348469228349533
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.7348469228349533
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        protocol:
+          run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+        run_id: fullwidth-1m-more-v1-td3-{environment}-s{seed}-posterior_original_noiw
+  walker2d:
+    environment: walker2d-medium-replay-v2
+    defaults:
+      max_episode_steps: 1000
+      cache:
+        sha256: e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db
+        filename: walker2d_medium_replay-v2.hdf5
+      action:
+        action_dim: 6
+        sigma_native_action_units: [0.1224744871391589, 0.36742346141747667, 1.1022703842524302]
+    bca_defaults:
+      specification: {}
+    arms:
+      constant_1p5:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-constant_bc_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-constant_bc_pool
+      fixed_after_warmup:
+        specification:
+          constant_bc_multiplier: 1.3057747557759285
+      native_full:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-native_full
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-native_full
+      native_pool:
+        specification:
+          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
+            unchanged prior host and calibration settings.
+          constant_bc_start_step: 0
+        protocol:
+          run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-native_pool
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-native_pool
+      posterior_affinity:
+        specification:
+          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
+            unchanged prior host and calibration settings.
+          posterior:
+            affinity:
+              bandwidth: 0.36742346141747667
+          constant_bc_start_step: 0
+        protocol:
+          run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_affinity
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_affinity
+      posterior_affinity_dose_permuted:
+        specification:
+          posterior:
+            affinity:
+              bandwidth: 0.36742346141747667
+      posterior_affinity_permuted:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+          posterior:
+            affinity:
+              bandwidth: 0.36742346141747667
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_affinity_permuted
+      posterior_matched_noiw:
+        specification:
+          deviation_reason: Authorized prospective 1M common-pool strength/assignment comparison;
+            unchanged prior host and calibration settings.
+          constant_bc_start_step: 0
+        protocol:
+          run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-v1-td3-{environment}-s{seed}-posterior_matched_noiw
+      posterior_original_noiw:
+        specification:
+          deviation_reason: Authorized fresh1M five-seed development comparison; exact prior recipe,
+            paired first100 event banks; no outcome-based tuning.
+        protocol:
+          run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_original_noiw
+          reservation:
+            target_size: 1024
+        run_id: fullwidth-1m-hw-v1-td3-{environment}-s{seed}-posterior_original_noiw

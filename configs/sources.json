@@ -1,0 +1,611 @@
+{
+  "format": 1,
+  "purpose": "Standalone reproduction source, not a record of completed 1M experiments.",
+  "configuration_matrix": {
+    "physical_groups": 810,
+    "actor_trajectories": 1055,
+    "hosts": 4,
+    "datasets": 7,
+    "training_seeds": 5,
+    "sha256": "18877262b7262dda0de0ae263ecf3361f39674f40ad493cc70c8ca5b42cb3334",
+    "reconciliation": "All resolved fields match the five frozen source manifests; only output/cache paths are portable."
+  },
+  "configuration_source_manifests": {
+    "fullwidth_1m_v2": "3da62dc25b41d63a495c9eb4c8dedd23d4a324440b466ba1e924b47906ae03c7",
+    "fullwidth_1m_remaining_execution_v1": "ca810a7287fe284769b8189caaca05d9e0f43a866f7e99873abcab5c7cce7ad5",
+    "fullwidth_1m_hw_execution_v1": "f77be4b8eb49a2c87619b3dcd1c00297d4785aab0343da8101d7289ec568d07b",
+    "fullwidth_1m_cql_execution_v1": "849d9ee9d8d859d18707e4f17a208d7c590ee48e7993e0564191b275f4bf0d1b",
+    "fullwidth_1m_iql_execution_v1": "ccacb3c3af3e635a0f2358ccef78a57d5648fb8a56f36c6848bcd01dfcb883cf"
+  },
+  "reference_tables": {
+    "corl_reference_scores.csv": {
+      "original_sha256": "22d8e91161dea97e527ae1a01355491423f5ea8347d644a8ce85629431c13a89",
+      "new_sha256": "701ab4e871e09c07f4d2f2cee505bbec31b8ce4757920e69763b40979ac46cbb",
+      "relocation": "CRLF normalized to LF in new repository only; original untouched; every parsed line and CSV field identical."
+    },
+    "corl_reference_scores.PROVENANCE": {
+      "original_sha256": "240fa15adf04af83e240b8cbed26e8ff6fa0297a9d5918c7ca60d3476dd04465",
+      "new_sha256": "7aa4b263e43de82d8a9cf36f3da456ed7e8bd5af4a219f6a8b989d6af1fcbaf9",
+      "relocation": "CRLF normalized to LF in new repository only; original untouched; every parsed line and CSV field identical."
+    }
+  },
+  "upstream": [
+    {
+      "name": "CORL",
+      "url": "https://github.com/corl-team/CORL",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "Unifloral",
+      "url": "https://github.com/EmptyJackson/Unifloral",
+      "revision": "f2dc127",
+      "license": "Apache-2.0"
+    }
+  ],
+  "relocated_sources": {
+    "_bca_cql_level.py": {
+      "original_module": "_bca_cql_level",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_bca_cql_level.py",
+      "original_sha256": "88de00e4ee2fdf9260b4f48888b2cf8001af3984bdaa4bbcedeae642fdba3e59",
+      "new_sha256": "977351734a952a305c419cfb9d7fd0b0e510a84123589a9e520b4b9da8b03d6d"
+    },
+    "_bca_cql_scale_iw.py": {
+      "original_module": "_bca_cql_scale_iw",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_bca_cql_scale_iw.py",
+      "original_sha256": "aae82ad6659e4e359e15734f85e6f2d9b0815f99aeb84f8989b50e04baa14964",
+      "new_sha256": "c63f3244145b6c00e29262558ac9a0bdeb8940062b535aa6978fd3f4c7f415f1"
+    },
+    "_bca_eval.py": {
+      "original_module": "_bca_eval",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/_bca_eval.py",
+      "original_sha256": "f76e848b1fcfc4bbeebf52001bf7d90e958b8e1a3f3990e8c70547f0ada675e6",
+      "new_sha256": "dbd53946a5c24d55fba0bbb818c8d9952c69815efc40bf3facccc752f654f086"
+    },
+    "_bca_host.py": {
+      "original_module": "_bca_host",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/_bca_host.py",
+      "original_sha256": "4f639ae8edaeaeff891d0ecb51e7d19e933f0a5f82c3a30fdfb30b44d3f4f2a7",
+      "new_sha256": "00793531189761ac288d4e65cd6ed139a0b5882caf48faee9ddad8b0f189288d"
+    },
+    "_bca_iql_adapter.py": {
+      "original_module": "_bca_iql_adapter",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/_bca_iql_adapter.py",
+      "original_sha256": "d1fad7975ddc156e5508cc002d73813608ce4b93c603a37ccf8f4283788dd043",
+      "new_sha256": "efc5476736d03a426fd2598c78ce323b681fcfaff5cc52560f88c004bb354a6a"
+    },
+    "_bca_level.py": {
+      "original_module": "_bca_level",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/_bca_level.py",
+      "original_sha256": "204bfe3c4fad8c020cfb1e1e5e0b29f5f78ea5d2f059a924599ce7a55bccde2e",
+      "new_sha256": "23d89dddae9ac348041d830dc00574f451be38dd5b3c971e70b1b88e8d72cece"
+    },
+    "_bca_module.py": {
+      "original_module": "_bca_module",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_bca_module.py",
+      "original_sha256": "bb056addb6a2c203eaf566b1527fa2a3243066c3cbaff5efb8c85428fa235e56",
+      "new_sha256": "8a9c987559e07f2a9bc7650ae4ef180b2dda33bdd41b6fdba0be8e30f21cc125"
+    },
+    "_bca_posterior.py": {
+      "original_module": "_bca_posterior",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_bca_posterior.py",
+      "original_sha256": "e483aab99c287dbeec68b4cdeb01edf6fd1ecd33ef84e4f02b524df897a60fe7",
+      "new_sha256": "8636dadfb659516b012c9ff458db5e228fc6f988f7e88127de0f5b8a33e69f36"
+    },
+    "_bca_scale_iw_kernel.py": {
+      "original_module": "_bca_scale_iw_kernel",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_bca_scale_iw_kernel.py",
+      "original_sha256": "6a34a4003e050034ae1868839a845dd1ea4ce00405dc943229bac1d1e600fcb8",
+      "new_sha256": "a77d3e80e1d9c45595df11cfc561bc666c079f9af416949e8742759cb482ee6a"
+    },
+    "_common.py": {
+      "original_module": "corl_common",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/corl_common.py",
+      "original_sha256": "f137c0d8387e4f1f82a51a1026ee3732a1494bebe38d659423c070aea60f519e",
+      "new_sha256": "67775fc93ae227b6eda76a6e3f03d6dbf2ad0d3424dba9be73b7022a808dabd8"
+    },
+    "_corl_training_reward_range.py": {
+      "original_module": "_corl_training_reward_range",
+      "source": "work/bca-cql-fullwidth-1m-v1/bca/algorithms/_corl_training_reward_range.py",
+      "original_sha256": "5a9eb36701f71c66bdc0fefb1496854e12db0539355d584a9ef8db104554ee5e",
+      "new_sha256": "a3f0150addc1fda000da03a34c56505ac11e9a4be4cbea773e57bf22e70def8f"
+    },
+    "_cql_runner.py": {
+      "original_module": "corl_cql_posterior_runner",
+      "source": "work/bca-cql-fullwidth-1m-v1/bca/algorithms/corl_bca/corl_cql_posterior_runner.py",
+      "original_sha256": "31a2b66286fb29791534229c52967822f1ae9d0e65a402b86a12d1c66814f83c",
+      "new_sha256": "8e8abfe0cbdcc811c227ab88105335306af7ccf24079f7ab3f7b046a63e3adfd"
+    },
+    "_data.py": {
+      "original_module": "rebrac",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/rebrac.py",
+      "original_sha256": "35ac35d6fa88227cc46dcb10fba9c74fc44c35b530757fe88951339a0d89775b",
+      "new_sha256": "6482b9f4067b5b65beb8708b0b2cabdea1f5c55a81335bd1ae87c0010138abd6"
+    },
+    "_iql_adapter.py": {
+      "original_module": "bca_adapters",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/bca_adapters.py",
+      "original_sha256": "c84386bbb542eef9d9287f97e803e714ad63f0fc28109ed3d2f228247f616482",
+      "new_sha256": "1806ea91bef3a974b9b411b75046c1cc58afb6f72527e89b797cf2f6568f479d"
+    },
+    "_iql_agent.py": {
+      "original_module": "corl_iql_posterior",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/corl_iql_posterior.py",
+      "original_sha256": "0957202e16d4f83c4a85f9105485e95bdc320249b17aa7d240f10ab43bfd8865",
+      "new_sha256": "6b808d2cde25562b12ed8b2e0e6f03e713cbe776e1ba1ba62f748e7d591d53ff"
+    },
+    "_iql_calibration.py": {
+      "original_module": "bca_framework",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/bca_framework.py",
+      "original_sha256": "4661d9f02a02e871e9493f0e324c979f88834baecdfab1fe7a1c2cb1bf9d02ff",
+      "new_sha256": "d996d59e59502293f96f010f6e27611d848ff82dc346c699b072e057a8326ec4"
+    },
+    "_iql_driver.py": {
+      "original_module": "run_corl_iql_shared",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/scripts/run_corl_iql_shared.py",
+      "original_sha256": "e30e20e656a54054cd6f2888f313a64aee7b1a7ba49d17b64cb3da581c2667fd",
+      "new_sha256": "cffcf311ff09c45a940d8c1c24a295157a5455a6c3a22ab0ff1c66ae97f6dd4d"
+    },
+    "_iql_iw.py": {
+      "original_module": "_iql_iw",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/_iql_iw.py",
+      "original_sha256": "6a34a4003e050034ae1868839a845dd1ea4ce00405dc943229bac1d1e600fcb8",
+      "new_sha256": "5d9887cffc157a88d6454f55646a3b03cd6a0cee7292b16ead4ec8112a1f7c57"
+    },
+    "_iql_iw_driver.py": {
+      "original_module": "run_corl_iql_shared_iw_matched_host",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/scripts/run_corl_iql_shared_iw_matched_host.py",
+      "original_sha256": "3a16b2a9fff521bd63d49643de419a7547ed6190634bd94443cd7a5d423a2c7a",
+      "new_sha256": "6c3bdb88c104799b489503e2906e51ea001fec3b49dc448f9ef3a824bcb2305f"
+    },
+    "_iql_iw_scale.py": {
+      "original_module": "_iql_iw_scale",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/_iql_iw_scale.py",
+      "original_sha256": "56bd1c879da0ab580ae0e1878ef224d60f17686c6f1bc1d9b0be6f50a9e36b87",
+      "new_sha256": "6a236c5b324baec46d4baf103c6736832f0f112eb418c3ccc480b47e153932fa"
+    },
+    "_iql_posterior.py": {
+      "original_module": "_iql_posterior",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/_iql_posterior.py",
+      "original_sha256": "a926ca099ac990513c1863f91c39d5cf045482f379dd921a87750212556c9950",
+      "new_sha256": "bfef51db344172b9b3498286aa5e2fe3a108a02db5510537844f481f2e8cfae9"
+    },
+    "_iql_scale_network.py": {
+      "original_module": "sdbca_module",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/sdbca_module.py",
+      "original_sha256": "33c5f9b3800c5395ff12994eeedb85261c4ad12e203a79802ffb230edbfae543",
+      "new_sha256": "d0b7892566cb09795e5cb592787dc2c789394205551eee72db15a39f6b33bd44"
+    },
+    "_iql_shared.py": {
+      "original_module": "corl_iql_shared_posterior",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/corl_iql_shared_posterior.py",
+      "original_sha256": "6d6b10bc660962c31363fadc8756d0ac72fe7d915d7e89fecd0c66e733674ca3",
+      "new_sha256": "552c5f564e12cda306a8f9324941eedd016da06f5d47fa00a0716286a59a4b72"
+    },
+    "_iw_module.py": {
+      "original_module": "_iw_module",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_iw_module.py",
+      "original_sha256": "0857b3fb81dd4a25b495f88be78f016b5412fbab2a178a91d6d74ee195097be1",
+      "new_sha256": "5c28def2b8537899a77e106fd2f400c20b6b6e03d78b6194abf936880b3f3be8"
+    },
+    "_kitchen_compat.py": {
+      "original_module": "_kitchen_compat",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_kitchen_compat.py",
+      "original_sha256": "03be7054a040a4590961d3096b4e8714a35ddcce2dd8095fc33df55b40951c68",
+      "new_sha256": "8d2d7f1cb94818eeb0e90ffaed147ebdaca652fd75bc05b52416f3d4f6621afe"
+    },
+    "_native_cql.py": {
+      "original_module": "corl_cql",
+      "source": "work/bca-cql-fullwidth-1m-v1/bca/algorithms/corl_cql.py",
+      "original_sha256": "21c19d4b282ffd7240790fd8c2d426d071d33cdcccafe6d2c2400af9e8bf01b2",
+      "new_sha256": "f01108174f6e83feba50950cbaf6a76e4cfbac7aa19b502443a97bdf8213b4ea"
+    },
+    "_native_iql.py": {
+      "original_module": "corl_iql",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_iql.py",
+      "original_sha256": "fc334e1115d67feb76ff5c06d27682cc5fce7ebd1f5ecc5b527a119cf4ebc5c4",
+      "new_sha256": "128223ef79d238ba3d8f54c13a83a6997a308e572e6786b1a30dc6e31f2bee1e"
+    },
+    "_native_rebrac.py": {
+      "original_module": "corl_rebrac",
+      "source": "work/bca-rebrac-dose-controls-v1/bca/algorithms/corl_rebrac.py",
+      "original_sha256": "a7bc207350af55fc0fbac346759f4e1848f3b8efb9c7ccc9ddcc24dd30ef9347",
+      "new_sha256": "e53f4bb49cc383a64f48158cbbbb37ae2bbbf34b53ba13e93ce5239b8ce28ef4"
+    },
+    "_native_td3_bc.py": {
+      "original_module": "corl_td3_bc",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/corl_td3_bc.py",
+      "original_sha256": "f1b50cfddb01869d5a585fe60de06081d7d7ebc5ca097ec44547ed6b4ed9236a",
+      "new_sha256": "25fe65df95543f6e24cc252cb8a99ad7fb92e88540e221c9d2eda9903247f9e0"
+    },
+    "_published_config.py": {
+      "original_module": "_published_config",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_published_config.py",
+      "original_sha256": "802c0216c60a2ec73b4ebef5db2fbaadbe12c20bc2b84895b796d0b99b392228",
+      "new_sha256": "5d822178896fb5d0806ef3b53c0a2d3812b52376bd09e0cec31d2e8a905458db"
+    },
+    "_rebrac_runner.py": {
+      "original_module": "corl_rebrac_posterior_runner",
+      "source": "work/bca-rebrac-dose-controls-v1/bca/algorithms/corl_bca/corl_rebrac_posterior_runner.py",
+      "original_sha256": "95e5d5b102c681953ddcd1936c33f076190f46888a8170935363a0bf89c447a8",
+      "new_sha256": "66a8c6fe1e3591626e50067934b8a2c814c73c2ee67b712f62c22a6b7b15888a"
+    },
+    "_reward_transform.py": {
+      "original_module": "_reward_transform",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/_reward_transform.py",
+      "original_sha256": "db507950dd5d23e794d8f41804b0119b534da0784471f7d5e7262366496fe17b",
+      "new_sha256": "a2e7a0abe927849a46712ae2b70e926c9c140dee571c22c12f9147b930e80e59"
+    },
+    "_td3_runner.py": {
+      "original_module": "corl_td3_posterior_runner",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/corl_bca/corl_td3_posterior_runner.py",
+      "original_sha256": "4ff3f82f713b4ecc4fd276bc194009c1db90d7fdb45f2c0be391ea635f9b0aaa",
+      "new_sha256": "56c9f887a7f6c4702fbe51ff7a506dc3a47d7276635428edd8f0ad2ad86a890c"
+    },
+    "cql.py": {
+      "original_module": "corl_cql_posterior",
+      "source": "work/bca-cql-fullwidth-1m-v1/bca/algorithms/corl_bca/corl_cql_posterior.py",
+      "original_sha256": "7c1049e7c307dea9b6a5c9e8db7173606bfe13444597acbdbf35915c82dfc244",
+      "new_sha256": "c98f4abb473709873cc295bdfd75778d3d8844686c3f9bcae5ebe3578f1e7c90"
+    },
+    "iql.py": {
+      "original_module": "corl_iql_shared_iw",
+      "source": "work/bca-iql-fullwidth-1m-v1/bca/algorithms/corl_bca/corl_iql_shared_iw.py",
+      "original_sha256": "2a3dc35ab0c712a57e809de160736ad34d8de13334fa828da194d31a012c0ac8",
+      "new_sha256": "88c5141dd23070e05a52426e774e06a9863b37de955c4922c064346b8805f308"
+    },
+    "rebrac.py": {
+      "original_module": "corl_rebrac_posterior",
+      "source": "work/bca-rebrac-dose-controls-v1/bca/algorithms/corl_bca/corl_rebrac_posterior.py",
+      "original_sha256": "cfa47f620f62ba380f1f90f4a0c49b7e9e8a399823982f24a656c850cf54d77e",
+      "new_sha256": "0271693d8130d6c74b90d4e9d95b17b7d7c5da329978e66b064aeba2d26ad0fa"
+    },
+    "td3_bc.py": {
+      "original_module": "corl_td3_posterior",
+      "source": "work/bca-td3-dose-controls-v1/bca/algorithms/corl_bca/corl_td3_posterior.py",
+      "original_sha256": "22c41bc953891e50964a4627c21049e94b85464593772287d2a69ca8c71a85ad",
+      "new_sha256": "b348f264c3ef8633e2268bdb4314ffe2f2c3a94e342bc3df5460cf16e02eb1ed"
+    }
+  },
+  "entrypoint_files": {
+    "check.py": "8dc2a5a0f440241cd6b018c3fb707cdbb2a23995c9d2034e2b37781956888e16",
+    "train.py": "b74bf3ad5dde5ec479872db87717f4ed337e78306ec78a781e9a1f166ec02213",
+    "algorithms/_config.py": "d463b10246406f5912277bad58235097c9eff9f91cfe010d5f04bde1ddcbca23",
+    "algorithms/_iql_checkpoint.py": "c0dfefaea2135153b26966338f6b48c1a11e07c9258e7099cead433d097f23f1",
+    "algorithms/_provenance.py": "b965a0f02a6ca38f2554ab7d204635b8f6009aaaee37306092bd97091f2c953e",
+    "algorithms/_runtime.py": "639abfb4da06d42ea3abcf0d43bd984c279f86f8ec58430075c6a8fb7a43950f",
+    "algorithms/_validation.py": "7f329492453ff6cc7773a40c47d9fab7b25ea712659490bd9afb9f40ece697b2",
+    "requirements.txt": "b3332a6a86e6c792c0ceddf2ffc5db99efd9ec6f807e4cdee7e03722fb981b8c"
+  },
+  "migration_checks": {
+    "unchanged_retained_function_and_class_ASTs": 379,
+    "AST_normalization": "Docstrings ignored; import locations relocated while preserving local names.",
+    "explicit_infrastructure_relocations": [
+      "_cql_runner.py:source_identity",
+      "_iql_driver.py:GLOBAL:CHECKPOINT_VERIFICATION",
+      "_iql_driver.py:GLOBAL:DRIVER_REL",
+      "_iql_driver.py:load_modules",
+      "_iql_iw_driver.py:GLOBAL:DRIVER_REL",
+      "_iql_iw_driver.py:load_modules",
+      "_published_config.py:GLOBAL:REFERENCE_CSV",
+      "_rebrac_runner.py:_native_loader",
+      "_rebrac_runner.py:source_identity",
+      "_td3_runner.py:source_identity"
+    ],
+    "shared_rebrac_helpers": {
+      "imported_names": [
+        "EvaluationEvent",
+        "EvaluationFailure",
+        "Reference",
+        "RefreshEvent",
+        "_array_hash",
+        "_digest",
+        "_file_hash",
+        "_finite",
+        "_integer",
+        "_json_value",
+        "_real",
+        "_seed",
+        "_tree_hash",
+        "evaluate_episodes",
+        "score_transform_identity"
+      ],
+      "different_definitions": []
+    },
+    "synthetic_cpu_parity": [
+      {
+        "host": "td3",
+        "initial_exact": true,
+        "final_exact": true,
+        "metrics_exact": true,
+        "synthetic_updates": 2,
+        "simulator_steps": 0,
+        "metrics_sha256": "79b7f8cc8041bb4a9c62f3e8bc07d994270913c09eb963ccfb9c8f381a8784aa"
+      },
+      {
+        "host": "rebrac",
+        "initial_exact": true,
+        "final_exact": true,
+        "metrics_exact": true,
+        "synthetic_updates": 2,
+        "simulator_steps": 0,
+        "metrics_sha256": "ee1b8a6b28c32f9cef820c2266c7936f28e290cca24851e06dafb1f6d6fa92e3"
+      },
+      {
+        "host": "cql",
+        "initial_exact": true,
+        "final_exact": true,
+        "metrics_exact": true,
+        "synthetic_updates": 2,
+        "simulator_steps": 0,
+        "metrics_sha256": "7a2ed02f21165ddc95acf9a4fe65a726a7784d78deee2ca821d8f557b8b61d1b"
+      },
+      {
+        "host": "iql",
+        "initial_exact": true,
+        "final_exact": true,
+        "metrics_exact": true,
+        "synthetic_updates": 2,
+        "simulator_steps": 0,
+        "metrics_sha256": "d9902c15897cdeacfeb674313267cf8dd857a720cf6443da861aac35493bf6c4"
+      }
+    ],
+    "cached_data_preparation_cells": [
+      {
+        "host": "td3_bc",
+        "dataset": "halfcheetah",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 1996002,
+        "calibration_size": 1998
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "hopper",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 998895,
+        "calibration_size": 1103
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "maze2d",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 3982097,
+        "calibration_size": 1176
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "pen-cloned",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 495172,
+        "calibration_size": 1092
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "pen-expert",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 493159,
+        "calibration_size": 1089
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "pen-human",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 4577,
+        "calibration_size": 398
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "walker2d",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 300549,
+        "calibration_size": 1149
+      },
+      {
+        "host": "rebrac",
+        "dataset": "halfcheetah",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 1996002,
+        "calibration_size": 1998
+      },
+      {
+        "host": "rebrac",
+        "dataset": "hopper",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 998895,
+        "calibration_size": 1103
+      },
+      {
+        "host": "rebrac",
+        "dataset": "maze2d",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 3982097,
+        "calibration_size": 1176
+      },
+      {
+        "host": "rebrac",
+        "dataset": "pen-cloned",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 495172,
+        "calibration_size": 1092
+      },
+      {
+        "host": "rebrac",
+        "dataset": "pen-expert",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 493159,
+        "calibration_size": 1089
+      },
+      {
+        "host": "rebrac",
+        "dataset": "pen-human",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 4577,
+        "calibration_size": 398
+      },
+      {
+        "host": "rebrac",
+        "dataset": "walker2d",
+        "arm": "posterior_affinity",
+        "accepted": true,
+        "training_size": 300549,
+        "calibration_size": 1149
+      },
+      {
+        "host": "cql",
+        "dataset": "halfcheetah",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 1996002,
+        "calibration_size": 1998
+      },
+      {
+        "host": "cql",
+        "dataset": "hopper",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 998895,
+        "calibration_size": 1103
+      },
+      {
+        "host": "cql",
+        "dataset": "maze2d",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 3982097,
+        "calibration_size": 1176
+      },
+      {
+        "host": "cql",
+        "dataset": "pen-cloned",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 495172,
+        "calibration_size": 1092
+      },
+      {
+        "host": "cql",
+        "dataset": "pen-expert",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 493159,
+        "calibration_size": 1089
+      },
+      {
+        "host": "cql",
+        "dataset": "pen-human",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 4577,
+        "calibration_size": 398
+      },
+      {
+        "host": "cql",
+        "dataset": "walker2d",
+        "arm": "posterior_policy_density",
+        "accepted": true,
+        "training_size": 300549,
+        "calibration_size": 1149
+      },
+      {
+        "host": "iql",
+        "dataset": "halfcheetah",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 1989009,
+        "calibration_size": 8991
+      },
+      {
+        "host": "iql",
+        "dataset": "hopper",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 991509,
+        "calibration_size": 8489
+      },
+      {
+        "host": "iql",
+        "dataset": "maze2d",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 3974874,
+        "calibration_size": 8399
+      },
+      {
+        "host": "iql",
+        "dataset": "pen-cloned",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 488028,
+        "calibration_size": 8236
+      },
+      {
+        "host": "iql",
+        "dataset": "pen-expert",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 486031,
+        "calibration_size": 8217
+      },
+      {
+        "host": "iql",
+        "dataset": "pen-human",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 3781,
+        "calibration_size": 1194
+      },
+      {
+        "host": "iql",
+        "dataset": "walker2d",
+        "arm": "shared",
+        "accepted": true,
+        "training_size": 293200,
+        "calibration_size": 8498
+      }
+    ],
+    "CLI_output_guards": {
+      "accepted": true,
+      "existing_outputs_preserved": true,
+      "failures_preserved": true,
+      "source_snapshot_verified": true,
+      "invalid_data_hash_rejected": true,
+      "invalid_matrix_items_rejected": true,
+      "training_updates": 0,
+      "simulator_steps": 0
+    },
+    "requirements_resolution": "pip --dry-run --ignore-installed with final requirements: exit0; existing runtime pip check passed.",
+    "environment": "Python3.10 on WSL Ubuntu; all numerical migration checks used CPU.",
+    "new_dataset_downloads": 0,
+    "new_simulator_steps": 0,
+    "new_real_experiment_updates": 0
+  },
+  "limitations": [
+    "No new full 1M run or simulator rollout was performed to validate this migration.",
+    "Synthetic parity covers two initial updates per host; it is not an end-to-end training equivalence proof.",
+    "The existing compatible environment was tested; a fresh environment installation and GPU replay were not tested.",
+    "Preparation JSON contains all 28 accepted cells. The Windows console collector failed decoding stderr after completion; its failure is preserved outside this clean repo, and the completed preparations were not repeated.",
+    "These preserved implementations/settings do not themselves establish a conformal coverage guarantee or useful behavioral harm ranking."
+  ],
+  "audit_receipt_sha256": {
+    "source_ast_audit.json": "4d02cc6dfa4d80b3f615c8fe264acf8f306c3252596508d4813538356cdfaedd",
+    "consolidated_config_verification.json": "29b56ddc5d4d9efd4cb7e1eb9f1becc06e3068639f35559484ae8459b52566e8",
+    "synthetic_parity.json": "634d4bfc181ec92fbb94a0d39ee2e3c70915e42ecebbe3e102f41ad0ff88154e",
+    "preparation_audit.json": "ee4164b861ba01ee16c569cf2f45499a86164e8fffebb5ade8d621192015b28f",
+    "preparation_console_failure.json": "0b8ea2f7d4eb9468e6424327c91b9b7d32098699b25fe2e1d0d66f4beec8c5f7",
+    "entrypoint_guard_checks.json": "280c41d098672b7447837f9030b37751cc4671bdf7bc73e10ceb8ea2ed5f9e72",
+    "entrypoint_boundary_verification.json": "c396297a84b71e0d7fe850626af2d3a2ebeba9bedc043fef8428e213e5d919ef",
+    "requirements_resolution_v2.json": "b0e961e73dd4b83942a3e4bda0d4651222d0d20e4e72d213bfbf44ac0ca1c54a"
+  }
+}
