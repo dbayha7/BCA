@@ -2,12 +2,18 @@
 
 Four JAX hosts. Four BCA extensions. Two methods: **`host`** and **`bca`**.
 
+These are the CORL-derived hosts used by BCA. The four exact original
+**Unifloral standalone hosts** are separately pinned [baseline references](#unifloral-baseline-references).
+
 The BCA files import the corresponding host. They reuse its networks, initialization,
 optimizers and update equations. Both methods use the same host hyperparameters.
 
 Read the **[complete pseudocode for all four hosts + BCA](ALGORITHMS.md)**:
 host losses, fitting weights, ESS abstention, Bayesian/conformal radius refresh,
 frozen-width consumption, update order, and evaluation/checkpoint schedules.
+
+Read **[every BCA entry point, with exact code snippets](INTEGRATION.md)** to see
+where BCA reads the host, changes its losses, adds state and gates updates.
 
 | JAX host | Host + BCA | What BCA changes |
 | --- | --- | --- |
@@ -16,16 +22,46 @@ frozen-width consumption, update order, and evaluation/checkpoint schedules.
 | [TD3+BC](algorithms/td3_bc.py) | [TD3+BC + BCA](algorithms/td3_bc_bca.py) | Actor behavior-cloning multiplier. |
 | [ReBRAC](algorithms/rebrac.py) | [ReBRAC + BCA](algorithms/rebrac_bca.py) | Actor behavior-cloning multiplier; critic BC stays unchanged. |
 
+## What owns what, and why
+
+| Component | Responsibility | Why it is separate |
+| --- | --- | --- |
+| `algorithms/<host>.py` | Networks, initialization, optimizers and the host's original update equations | You can read the learning rule without reading calibration. Plain hosts import no BCA code. |
+| `algorithms/<host>_bca.py` | Connect that host's residuals to calibration and insert the resulting detached adjustment into one loss term | The exact intervention is visible; the host equations are reused. |
+| `calibration/` | Fitting weights, positive residual scale, Bayesian/conformal radii and width-to-weight formulas | These are distinct mathematical operations, shared where their definitions agree. |
+| `runtime/` | Resolve settings, prepare data, execute schedules, evaluate and save/verify state; shared initialization/data types live in `networks.py` | Execution bookkeeping should not obscure the host's update. |
+| `configs/` | One experiment schedule; one host/BCA configuration per algorithm with dataset overrides | Each setting has one owner; the resolved config is saved with every run. |
+
+Read **host → host + BCA → shared calibration**. Start with
+[TD3+BC](algorithms/td3_bc.py) and [its BCA extension](algorithms/td3_bc_bca.py),
+then use the [component-level pseudocode map](ALGORITHMS.md#the-calibration-pipeline).
+
+The BCA pipeline has three separate operations:
+
+1. **Fit a scale** to detached Bellman residuals, with host-specific importance
+   weights and an ESS gate. Only the scale network is optimized here.
+2. **Freeze a reference** using held-out residual scores. Retain both the Bayesian
+   and conformal radii and take their maximum.
+3. **Use the frozen width** in the host objective. It strengthens actor BC in
+   TD3+BC/ReBRAC, weights CQL's conservative gap, or shrinks IQL's excess AWR
+   weight above one. The host cannot backpropagate through calibration.
+
+Fitting weights, bootstrap masses and the final host multiplier are different
+quantities. The pseudocode names each separately. The current radius stage uses
+**unweighted held-out scores**; fitting importance weights do not turn it into a
+weighted-conformal covariate-shift theorem.
+
 ## Layout
 
 ```text
 algorithms/       # Four plain hosts and four *_bca.py extensions
 calibration/      # Shared scale fitting, importance weights and radius math
 runtime/          # Data preparation, evaluation, checkpoints and validation
-configs/          # experiment.yaml plus one YAML per algorithm
+configs/          # experiment.yaml, four algorithm YAMLs, source/reference manifests
 train.py          # Run one selected method
 check.py          # Check all declared configurations
 ALGORITHMS.md     # Complete, source-linked pseudocode for every host + BCA
+INTEGRATION.md    # Every BCA entry point, with source-checked code excerpts
 requirements.txt
 LICENSE
 NOTICE
@@ -110,8 +146,77 @@ remain distinct from other native candidates and published reference means.
 See `LICENSE` and `NOTICE`. Historical outputs and checkpoint weights stay outside
 this repository.
 
+## Unifloral baseline references
+
+[One reference manifest](configs/unifloral.json) pins Unifloral commit
+`f2dc1278eae18ed3e22c92255119c54885414d17`, the four original standalone scripts,
+their four sweep files, requirements, Dockerfile and evaluation sources.
+It records all literal `Args` defaults plus the three locomotion datasets and
+seed 0 used for the native-default references. This does not add another BCA
+implementation or change the active experiment matrix.
+
+Keep the original code in a sibling checkout. From this BCA repository:
+
+```bash
+git clone --no-checkout https://github.com/EmptyJackson/Unifloral.git ../Unifloral
+git -C ../Unifloral -c core.autocrlf=false checkout --detach \
+  f2dc1278eae18ed3e22c92255119c54885414d17
+python check.py --unifloral ../Unifloral
+python check.py --unifloral ../Unifloral --reference-config cql hopper
+```
+
+The check reads Git identity, hashes and literal configuration values without
+importing a training script. `--reference-config` prints the full original
+configuration, data hash, evaluation mode, update counts and launch command.
+Reference algorithm names are `iql`, `cql`, `td3_bc`, `rebrac`; dataset names are
+`hopper`, `walker`, `halfcheetah`. The active paired config uses `walker2d`.
+
+Use Unifloral's own pinned requirements/Dockerfile in a **separate environment**.
+After provisioning it, the upstream native-default command is, for example:
+
+```bash
+cd ../Unifloral
+python algorithms/cql.py --dataset hopper-medium-v2 --seed 0 --num-updates 1000000
+```
+
+This command starts training and follows the original upstream output behavior;
+the BCA runner's output guards, GPU lock and checkpoints do not wrap it. Reference
+inspection does not launch it. On a shared machine, reserve the GPU through the
+same external resource lock before an authorized execution.
+
+| Distinction | Original Unifloral default reference | Active BCA host/control design |
+| --- | --- | --- |
+| Source | Exact pinned standalone files | CORL-derived JAX ports with explicit BCA attachment |
+| Data pool | Full converted native dataset | Same reserved training complement for both methods |
+| TD3+BC/ReBRAC budget | 1M outer steps = **2M critic / 1M actor** updates | 1M critic / 500k actor updates |
+| CQL | Ten critics, raw observations, sampled tanh-Gaussian evaluation | Twin critics, configured preprocessing, deterministic tanh-mean evaluation |
+| Evaluations | 400 periodic banks of 8 episodes; 1,000 final episodes | 200 periodic banks of 10 episodes (IQL: 2); 20 final episodes |
+| Evaluation randomness | Split from the evolving upstream training RNG | Separate declared evaluation streams |
+
+The original YAMLs define **sweeps**, not uniquely identified table-winning
+configurations. The reference manifest chooses the unchanged Python defaults;
+it does not claim to reproduce the published Table 1 means. The closed native
+acquisitions also used an observer, synchronous vector evaluation and a recorded
+runtime correction. Their saved results retain that provenance; a direct
+upstream invocation is not a reconstruction of their instrumentation.
+
+## Reproduction status
+
 Validation of this layout covers all 280 resolved run declarations, all 28 cached
 dataset preparations and paired training pools, and CPU numerical parity fixtures
 for all eight host/BCA paths. IQL's paired execution/checkpoint boundary also passes
 with generated data and mock evaluations. These checks do not constitute completed
 1M runs, fresh-environment installation validation, or GPU reproducibility results.
+
+The Unifloral check verifies 14 upstream files and all four default argument sets;
+the eight algorithm/config files also match the archived acquisition bundle
+byte for byte. Upstream dependency ranges and its Docker base tag are not a
+complete binary environment lock. A fresh Unifloral build remains unverified.
+
+For a new BCA run, `resolved.json` identifies the experiment, `source/` contains
+the code/config/docs snapshot, and `source.json` records Python, installed package
+versions and execution flags. Data preparation records the cache, split and
+normalization identities; checkpoints retain optimizer/RNG state; result and
+exit records verify the scheduled budget and evaluations. Preserve the actual
+process exit as well. These records make mismatches inspectable; bitwise replay
+across different hardware, drivers or compiler versions is not established.

@@ -5,6 +5,8 @@ import hashlib
 import importlib.metadata
 import json
 import platform
+import os
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,7 +31,16 @@ def source_files():
     paths += list((ROOT / "configs").glob("*.yaml"))
     paths += [
         p
-        for p in (ROOT / "requirements.txt", ROOT / "configs/sources.json")
+        for p in (
+            ROOT / "requirements.txt",
+            ROOT / "configs/sources.json",
+            ROOT / "configs/unifloral.json",
+            ROOT / "README.md",
+            ROOT / "ALGORITHMS.md",
+            ROOT / "LICENSE",
+            ROOT / "NOTICE",
+            ROOT / "INTEGRATION.md",
+        )
         if p.is_file()
     ]
     return {p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(paths)}
@@ -39,6 +50,33 @@ def source_identity():
     result = source_files()
     result["runtime"] = {
         "python": platform.python_version(),
+        "python_build": platform.python_build(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "byteorder": sys.byteorder,
+        "execution_environment": {
+            name: os.environ.get(name)
+            for name in (
+                "JAX_PLATFORMS",
+                "JAX_ENABLE_X64",
+                "JAX_DEFAULT_MATMUL_PRECISION",
+                "XLA_FLAGS",
+                "XLA_PYTHON_CLIENT_PREALLOCATE",
+                "CUDA_VISIBLE_DEVICES",
+                "MUJOCO_GL",
+                "MUJOCO_PY_FORCE_CPU",
+                "OMP_NUM_THREADS",
+                "OPENBLAS_NUM_THREADS",
+                "MKL_NUM_THREADS",
+            )
+        },
+        "installed_distributions": dict(
+            sorted(
+                (dist.metadata["Name"], dist.version)
+                for dist in importlib.metadata.distributions()
+                if dist.metadata.get("Name")
+            )
+        ),
         "packages": {
             name: importlib.metadata.version(name)
             for name in (

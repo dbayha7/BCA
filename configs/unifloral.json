@@ -1,0 +1,165 @@
+{
+  "schema": "unifloral-standalone-reference-v1",
+  "role": "Exact original baseline references, separate from the four active CORL-derived host/BCA pairs.",
+  "repository": "https://github.com/EmptyJackson/Unifloral",
+  "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+  "source_sha256": {
+    "Dockerfile": "9336740e9eed70a1946e5bfca3f483ebdabdc6434288b18022e6512d16791754",
+    "LICENSE": "af878c708defb49f47c78cd9293386ad09fbbae07f20f24cf9e26ac98a834c95",
+    "README.md": "fe9a4699115cced43988f38334b4a9f1ea5652138aaa05c6e2c498a9711bd725",
+    "algorithms/cql.py": "41edbf1c11ad7b408ee6eafd94420e8fd1932afc8bbf72032bc1b9ff47213061",
+    "algorithms/iql.py": "088fca23120fc76fc9e33d01dfe6511726de9790dd3063c806d6a3e2a96992d7",
+    "algorithms/rebrac.py": "d7ea2b2bdf59b35ea6fb2370ca926b8d291bcad566bd0f5a9adbeafe74178d4f",
+    "algorithms/td3_bc.py": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+    "configs/algorithms/cql.yaml": "9c40f52f71499f84f678281f194e61cef34f3f53b1cf60ce943a310e8bcec7d5",
+    "configs/algorithms/iql.yaml": "3d19e6cda2e1424be112f5c26ef6ec4ce329d84478b4f8f3c3393a01f6fadce8",
+    "configs/algorithms/rebrac.yaml": "edc5f7ebef037480c2965a6a17144aecb10e3ccbd9dd8434ea05247249de320f",
+    "configs/algorithms/td3_bc.yaml": "b5d4f5d06bebf55cdb585fafe375eda64cd8490386b978af8def6f6d2d03ef16",
+    "evaluation.py": "2f39892e07ebd35357cca3127d3df0a60d371b275f0dc4298bcffd41e6642753",
+    "evaluation_plots.ipynb": "0165399e361edd48e0a561c8e26c5794c1cbb6c8ef42ab3d7c4aade877ec8806",
+    "requirements.txt": "f0a26f2a13a2482b60b8d5af1269b23e36d7e09a18d322e6e8d2590a1d568d9d"
+  },
+  "defaults": {
+    "iql": {
+      "seed": 0,
+      "dataset": "halfcheetah-medium-v2",
+      "algorithm": "iql",
+      "num_updates": 1000000,
+      "eval_interval": 2500,
+      "eval_workers": 8,
+      "eval_final_episodes": 1000,
+      "log": false,
+      "wandb_project": "unifloral",
+      "wandb_team": "flair",
+      "wandb_group": "debug",
+      "lr": 0.0003,
+      "batch_size": 256,
+      "gamma": 0.99,
+      "polyak_step_size": 0.005,
+      "beta": 3.0,
+      "iql_tau": 0.7,
+      "exp_adv_clip": 100.0
+    },
+    "cql": {
+      "seed": 0,
+      "dataset": "halfcheetah-medium-v2",
+      "algorithm": "cql",
+      "num_updates": 1000000,
+      "eval_interval": 2500,
+      "eval_workers": 8,
+      "eval_final_episodes": 1000,
+      "log": false,
+      "wandb_project": "unifloral",
+      "wandb_team": "flair",
+      "wandb_group": "debug",
+      "lr": 0.0003,
+      "batch_size": 256,
+      "gamma": 0.99,
+      "polyak_step_size": 0.005,
+      "num_critics": 10,
+      "actor_lr": 3e-05,
+      "cql_temperature": 1.0,
+      "cql_min_q_weight": 10.0
+    },
+    "td3_bc": {
+      "seed": 0,
+      "dataset": "halfcheetah-medium-v2",
+      "algorithm": "td3_bc",
+      "num_updates": 1000000,
+      "eval_interval": 2500,
+      "eval_workers": 8,
+      "eval_final_episodes": 1000,
+      "log": false,
+      "wandb_project": "unifloral",
+      "wandb_team": "flair",
+      "wandb_group": "debug",
+      "lr": 0.0003,
+      "batch_size": 256,
+      "gamma": 0.99,
+      "polyak_step_size": 0.005,
+      "td3_alpha": 2.5,
+      "noise_clip": 0.5,
+      "policy_noise": 0.2,
+      "num_critic_updates_per_step": 2
+    },
+    "rebrac": {
+      "seed": 0,
+      "dataset": "halfcheetah-medium-v2",
+      "algorithm": "rebrac",
+      "num_updates": 1000000,
+      "eval_interval": 2500,
+      "eval_workers": 8,
+      "eval_final_episodes": 1000,
+      "log": false,
+      "wandb_project": "unifloral",
+      "wandb_team": "flair",
+      "wandb_group": "debug",
+      "lr": 0.001,
+      "batch_size": 1024,
+      "gamma": 0.99,
+      "polyak_step_size": 0.005,
+      "noise_clip": 0.5,
+      "policy_noise": 0.2,
+      "num_critic_updates_per_step": 2,
+      "critic_bc_coef": 0.01,
+      "actor_bc_coef": 0.001,
+      "actor_ln": false,
+      "critic_ln": true,
+      "norm_obs": false
+    }
+  },
+  "seed": 0,
+  "datasets": {
+    "hopper": {
+      "environment": "hopper-medium-v2",
+      "cache": {
+        "sha256": "5bdf1bc4a713c82941de44633df669b36c89850b652a25985166796d25cf71a0",
+        "filename": "hopper_medium-v2.hdf5"
+      }
+    },
+    "walker": {
+      "environment": "walker2d-medium-replay-v2",
+      "cache": {
+        "sha256": "e75de96a4f77acf7d4e0d6fdf0d7ccb177c26c44bb4388e4fd99f543ccfa18db",
+        "filename": "walker2d_medium_replay-v2.hdf5"
+      }
+    },
+    "halfcheetah": {
+      "environment": "halfcheetah-medium-expert-v2",
+      "cache": {
+        "sha256": "015db75dae5bbe8e94029b71fa0bafc2073365df0c94744e71031189f3f79c06",
+        "filename": "halfcheetah_medium_expert-v2.hdf5"
+      }
+    }
+  },
+  "resolution": "Literal original Args defaults, overriding only dataset and seed. No random sweep is launched.",
+  "evaluation": {
+    "iql": "Deterministic tanh mean; original vector evaluation and training-derived RNG cadence.",
+    "cql": "Sampled tanh-Gaussian; original vector evaluation and training-derived RNG cadence.",
+    "td3_bc": "Deterministic actor; original vector evaluation and training-derived RNG cadence.",
+    "rebrac": "Deterministic actor; original vector evaluation and training-derived RNG cadence."
+  },
+  "qualification": "Native-default reference candidates, not the uniquely identified sweep settings behind published Table 1. No new baseline run or BCA-on-Unifloral implementation is declared.",
+  "runtime": {
+    "upstream": "Pinned requirements.txt and Dockerfile bytes; dependencies and base image are not a complete transitive/binary lock.",
+    "d4rl_revision": "89141a689b0353b0dac3da5cba60da4b1b16254d",
+    "fresh_environment_tested": false,
+    "historical_acquisition": "The closed acquisitions additionally used a checkpoint observer, synchronous Gym vector evaluation and an isolated runtime-library correction. Original source alone is not a reconstruction of those saved runs."
+  },
+  "verification": {
+    "source_files": 14,
+    "original_bundle_files_byte_identical": [
+      "algorithms/iql.py",
+      "configs/algorithms/iql.yaml",
+      "algorithms/cql.py",
+      "configs/algorithms/cql.yaml",
+      "algorithms/td3_bc.py",
+      "configs/algorithms/td3_bc.yaml",
+      "algorithms/rebrac.py",
+      "configs/algorithms/rebrac.yaml"
+    ],
+    "import_or_model_execution": false,
+    "training_updates": 0,
+    "simulator_steps": 0
+  }
+}

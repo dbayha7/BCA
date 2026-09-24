@@ -5,6 +5,10 @@ This document specifies the **current two-method implementation**: `host` and
 extension. The shared calibration procedures are defined explicitly first.
 The accompanying YAML files supply dataset-specific numerical settings.
 
+For exact implementation excerpts at every attachment point, read the
+[BCA integration map](INTEGRATION.md). The README gives the short
+[component responsibility map](README.md#what-owns-what-and-why).
+
 This is an implementation specification, not a claim that these runs have
 finished or that the construction has a proved policy-performance guarantee.
 The historical multi-arm reproduction matrix is preserved in the
@@ -14,6 +18,7 @@ Historical results must retain their original recipe identities.
 ## Contents
 
 - [What BCA changes](#what-bca-changes)
+- [The calibration pipeline](#the-calibration-pipeline)
 - [Notation and state](#notation-and-state)
 - [Algorithm 0: data preparation and initialization](#algorithm-0-data-preparation-and-initialization)
 - [Procedure A: fitting weights and ESS gate](#procedure-a-fitting-weights-and-ess-gate)
@@ -41,6 +46,57 @@ Thus `host` is a controlled same-pool baseline; it is not automatically a
 reproduction of a published full-data score. IQL's BCA execution contains a
 host actor and a BCA actor sharing **one** Q/V system. Other hosts run each
 method separately.
+
+## The calibration pipeline
+
+This map explains responsibilities. The four algorithms below specify the
+precise update order and parameter versions; this diagram does not replace them.
+
+```mermaid
+flowchart LR
+    T[Training transitions] --> H[Host Bellman target and Q]
+    H --> E[Detached absolute residual]
+    W[Host-specific fitting weights] --> S[Positive scale fit with ESS gate]
+    E --> S
+    S --> F[Frozen scale and residual unit]
+    C[Held-out transitions] --> R[Unweighted residual scores]
+    F --> R
+    R --> B[Bayesian bootstrap radius]
+    R --> K[Finite-rank conformal radius]
+    B --> M[Maximum of both radii]
+    K --> M
+    M --> U[Frozen width for a training transition]
+    F --> U
+    U --> D[Detached host-specific adjustment]
+    D --> L[One host loss term]
+```
+
+| Operation | Inputs → output | Purpose and code owner |
+|---|---|---|
+| Residual definition | Host's Bellman target and Q → absolute residual | Match the fitted quantity to that host's target. Defined by each `*_bca.py`; IQL uses [its target adapter](calibration/iql_targets.py). |
+| Fitting importance weights | AWR, policy density or action affinity → tempered masses and an ESS decision | Choose how fitting examples influence the **scale loss**. [Common stabilization](calibration/weights.py), [density/affinity gate](calibration/policy_weights.py), [IQL fitting](calibration/iql_scale.py). |
+| Positive scale fit | Detached residuals, fitting masses and bootstrap draw → updated scale parameters and live unit | Learn state/action variation in residual magnitude. [Scale network](calibration/network.py), [IQL scale network/loss](calibration/iql_network.py); host extensions construct the appropriate loss. |
+| Radius refresh | Held-out residuals divided by the frozen scale/unit → two radii and their maximum | Set the global residual-band size for that frozen reference. [Radius math](calibration/posterior.py), [reference construction](calibration/reference.py), [IQL reference](calibration/iql_reference.py). |
+| Host consumption | Frozen scale × frozen unit × radius → detached loss adjustment | Translate residual width into the specific intervention in the table above. [BC/CQL multiplier](calibration/dose.py), [IQL post-cap weights](calibration/advantage.py). |
+| Execution and evidence | Config, data and event schedule → checkpoints, metrics and evaluations | Keep data, RNGs, counters and evaluation semantics reproducible. [Entry point](train.py), [config resolution](runtime/config.py), per-host `runtime` modules. |
+
+There are three different kinds of weights: **fitting importance weights**,
+**Bayesian bootstrap masses**, and **host objective weights**. They serve different
+purposes and must not be interchanged. The held-out radius calculation currently
+uses unweighted residual scores. The Bayesian component is a distribution over
+score masses, not an additional Bayesian actor or critic model.
+
+The live scale changes during fitting; the host consumes a **frozen** reference
+between refreshes. Keeping these states separate makes the consumed width
+reconstructible. Before the first usable reference, the host uses its native
+weighting. Increasing a positive global radius changes width magnitude; it does
+not improve the ordering of actions by width.
+
+The exact Unifloral implementations are [separate pinned references](configs/unifloral.json).
+These four host+BCA algorithms specify the current CORL-derived paired design.
+Unifloral's different update counts, CQL ensemble and evaluation semantics are
+listed in the [README](README.md#unifloral-baseline-references); they are not
+silently substituted into these algorithms.
 
 ## Notation and state
 
