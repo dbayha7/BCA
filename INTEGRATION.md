@@ -1173,7 +1173,7 @@ actor counts, reference refreshes and actual evaluations are recorded separately
 
 The exact Unifloral standalone scripts are pinned in
 [configs/unifloral.json](configs/unifloral.json). **They have no BCA entry points.**
-They remain unmodified baseline references in a separate checkout, as selected
+They are included as unmodified baseline references in [baselines/unifloral/](baselines/unifloral/), as selected
 for the minimal repository. This document does not claim that our CQL twin-critic
 hook is already implemented in Unifloral's ten-critic source, or that its TD3/ReBRAC
 outer-step counts match our critic-step budget.

@@ -92,7 +92,8 @@ reconstructible. Before the first usable reference, the host uses its native
 weighting. Increasing a positive global radius changes width magnitude; it does
 not improve the ordering of actions by width.
 
-The exact Unifloral implementations are [separate pinned references](configs/unifloral.json).
+The exact Unifloral implementations are [bundled baseline references](baselines/README.md),
+with every source file pinned in [the reference manifest](configs/unifloral.json).
 These four host+BCA algorithms specify the current CORL-derived paired design.
 Unifloral's different update counts, CQL ensemble and evaluation semantics are
 listed in the [README](README.md#unifloral-baseline-references); they are not

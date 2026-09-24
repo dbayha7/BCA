@@ -33,6 +33,7 @@ def source_files():
         p
         for p in (
             ROOT / "requirements.txt",
+            ROOT / ".gitattributes",
             ROOT / "configs/sources.json",
             ROOT / "configs/unifloral.json",
             ROOT / "README.md",
@@ -40,9 +41,13 @@ def source_files():
             ROOT / "LICENSE",
             ROOT / "NOTICE",
             ROOT / "INTEGRATION.md",
+            ROOT / "baselines/README.md",
+            ROOT / "docs/superpowers/plans/2026-09-24-ood-experiment.md",
         )
         if p.is_file()
     ]
+    reference = json.loads((ROOT / "configs/unifloral.json").read_text(encoding="utf8"))
+    paths += [ROOT / reference["path"] / name for name in reference["source_sha256"]]
     return {p.relative_to(ROOT).as_posix(): sha(p) for p in sorted(paths)}
 
 

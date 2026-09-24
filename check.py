@@ -44,17 +44,15 @@ def main():
     parser.add_argument(
         "--unifloral",
         type=Path,
-        help="Verify a separate checkout of the pinned original Unifloral source.",
+        help="Also verify an external Unifloral checkout; bundled sources are always checked.",
     )
     parser.add_argument(
         "--reference-config",
         nargs=2,
         metavar=("ALGORITHM", "DATASET"),
-        help="With --unifloral, show the exact original default reference settings.",
+        help="Show the exact original Unifloral default reference settings.",
     )
     opt = parser.parse_args()
-    if opt.reference_config and opt.unifloral is None:
-        parser.error("--reference-config requires --unifloral CHECKOUT")
     snippet_count = verify_code_map()
     if opt.runtime:
         os.environ.update(
@@ -146,20 +144,18 @@ def main():
     for name, wanted in record.get("source_sha256", {}).items():
         if hashlib.sha256((ROOT / name).read_bytes()).hexdigest() != wanted:
             raise ValueError("Source changed since verification: " + name)
-    reference = {}
-    if opt.unifloral is not None:
-        from runtime.upstream import configuration, verify
+    from runtime.upstream import configuration, verify
 
-        reference["unifloral"] = verify(opt.unifloral)
-        if opt.reference_config:
-            try:
-                reference["reference_configuration"] = configuration(
-                    *opt.reference_config
-                )
-            except KeyError:
-                parser.error(
-                    "Reference algorithms: iql/cql/td3_bc/rebrac; datasets: hopper/walker/halfcheetah"
-                )
+    reference = {"unifloral": verify()}
+    if opt.unifloral is not None:
+        reference["external_unifloral"] = verify(opt.unifloral)
+    if opt.reference_config:
+        try:
+            reference["reference_configuration"] = configuration(*opt.reference_config)
+        except KeyError:
+            parser.error(
+                "Reference algorithms: iql/cql/td3_bc/rebrac; datasets: hopper/walker/halfcheetah"
+            )
     print(
         json.dumps(
             dict(

@@ -2,8 +2,9 @@
 
 Four JAX hosts. Four BCA extensions. Two methods: **`host`** and **`bca`**.
 
-These are the CORL-derived hosts used by BCA. The four exact original
-**Unifloral standalone hosts** are separately pinned [baseline references](#unifloral-baseline-references).
+These are the CORL-derived hosts used by BCA. The **complete original Unifloral
+repository** is included in [baselines/unifloral/](baselines/unifloral/), with its
+algorithms, configs and environment files preserved exactly at a pinned revision.
 
 The BCA files import the corresponding host. They reuse its networks, initialization,
 optimizers and update equations. Both methods use the same host hyperparameters.
@@ -14,6 +15,10 @@ frozen-width consumption, update order, and evaluation/checkpoint schedules.
 
 Read **[every BCA entry point, with exact code snippets](INTEGRATION.md)** to see
 where BCA reads the host, changes its losses, adds state and gates updates.
+
+Read the proposed **[OOD experiment design](docs/superpowers/plans/2026-09-24-ood-experiment.md)**
+for separate tests of support novelty, residual coverage and behavioral harm,
+including controls, sample budgets and a checked implementation sequence.
 
 | JAX host | Host + BCA | What BCA changes |
 | --- | --- | --- |
@@ -58,6 +63,8 @@ algorithms/       # Four plain hosts and four *_bca.py extensions
 calibration/      # Shared scale fitting, importance weights and radius math
 runtime/          # Data preparation, evaluation, checkpoints and validation
 configs/          # experiment.yaml, four algorithm YAMLs, source/reference manifests
+baselines/        # Complete pinned original Unifloral tree and reference notes
+docs/             # Proposed OOD experiment and implementation plan
 train.py          # Run one selected method
 check.py          # Check all declared configurations
 ALGORITHMS.md     # Complete, source-linked pseudocode for every host + BCA
@@ -148,34 +155,38 @@ this repository.
 
 ## Unifloral baseline references
 
-[One reference manifest](configs/unifloral.json) pins Unifloral commit
-`f2dc1278eae18ed3e22c92255119c54885414d17`, the four original standalone scripts,
-their four sweep files, requirements, Dockerfile and evaluation sources.
-It records all literal `Args` defaults plus the three locomotion datasets and
-seed 0 used for the native-default references. This does not add another BCA
-implementation or change the active experiment matrix.
+[baselines/unifloral/](baselines/unifloral/) contains all **40 original files** at
+Unifloral commit `f2dc1278eae18ed3e22c92255119c54885414d17`: standalone and unified
+algorithms, both config directories, README, license, requirements, Dockerfile and
+evaluation sources. The 256 kB snapshot is included directly in a normal clone.
+There is no submodule, nested Git checkout or additional source-fetch step.
 
-Keep the original code in a sibling checkout. From this BCA repository:
+[One reference manifest](configs/unifloral.json) records the upstream tree and
+every Git blob/SHA256 identity. It also records literal `Args` defaults for the
+four standalone reference hosts, three locomotion datasets and seed 0. Other
+upstream algorithms/configs are preserved, not added to the BCA experiment matrix.
+The root four host/BCA pairs remain the only active learning interface.
+
+From this BCA repository:
 
 ```bash
-git clone --no-checkout https://github.com/EmptyJackson/Unifloral.git ../Unifloral
-git -C ../Unifloral -c core.autocrlf=false checkout --detach \
-  f2dc1278eae18ed3e22c92255119c54885414d17
-python check.py --unifloral ../Unifloral
-python check.py --unifloral ../Unifloral --reference-config cql hopper
+python check.py  # Includes all bundled Unifloral file checks
+python check.py --reference-config cql hopper
 ```
 
-The check reads Git identity, hashes and literal configuration values without
-importing a training script. `--reference-config` prints the full original
+The check reads hashes, Git blob identities and literal configuration values
+without importing a training script. It works without an upstream Git checkout.
+An optional `--unifloral /path/to/checkout` also verifies an external copy and its
+Git revision when present. `--reference-config` prints the full original
 configuration, data hash, evaluation mode, update counts and launch command.
 Reference algorithm names are `iql`, `cql`, `td3_bc`, `rebrac`; dataset names are
 `hopper`, `walker`, `halfcheetah`. The active paired config uses `walker2d`.
 
-Use Unifloral's own pinned requirements/Dockerfile in a **separate environment**.
+Use Unifloral's preserved requirements/Dockerfile in a **separate environment**.
 After provisioning it, the upstream native-default command is, for example:
 
 ```bash
-cd ../Unifloral
+cd baselines/unifloral
 python algorithms/cql.py --dataset hopper-medium-v2 --seed 0 --num-updates 1000000
 ```
 
@@ -208,7 +219,7 @@ for all eight host/BCA paths. IQL's paired execution/checkpoint boundary also pa
 with generated data and mock evaluations. These checks do not constitute completed
 1M runs, fresh-environment installation validation, or GPU reproducibility results.
 
-The Unifloral check verifies 14 upstream files and all four default argument sets;
+The Unifloral check verifies all 40 upstream files and four default argument sets;
 the eight algorithm/config files also match the archived acquisition bundle
 byte for byte. Upstream dependency ranges and its Docker base tag are not a
 complete binary environment lock. A fresh Unifloral build remains unverified.

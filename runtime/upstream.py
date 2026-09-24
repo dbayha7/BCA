@@ -23,22 +23,41 @@ def defaults(path):
     }
 
 
-def verify(checkout):
-    checkout = Path(checkout).expanduser().resolve()
+def verify(checkout=None):
+    """Verify the bundled tree, or an explicitly supplied upstream checkout."""
     record = json.loads(MANIFEST.read_text(encoding="utf8"))
-    revision = subprocess.check_output(
-        ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
-    ).strip()
-    if revision != record["revision"]:
-        raise ValueError("Unifloral checkout is not at the pinned revision.")
+    checkout = Path(checkout or ROOT / record["path"]).expanduser().resolve()
+    # The bundled snapshot has no nested .git; its parent HEAD belongs to BCA.
+    revision_checked = (checkout / ".git").exists()
+    if revision_checked:
+        revision = subprocess.check_output(
+            ["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True
+        ).strip()
+        if revision != record["revision"]:
+            raise ValueError("Unifloral checkout is not at the pinned revision.")
+    if set(record["source_sha256"]) != set(record["git_files"]):
+        raise ValueError("Unifloral manifest file sets differ.")
     for name, wanted in record["source_sha256"].items():
-        if hashlib.sha256((checkout / name).read_bytes()).hexdigest() != wanted:
+        path = (checkout / name).resolve()
+        if not path.is_relative_to(checkout):
+            raise ValueError("Unifloral source must stay inside the snapshot.")
+        raw = path.read_bytes()
+        identity = record["git_files"][name]
+        blob = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
+        if (
+            hashlib.sha256(raw).hexdigest() != wanted
+            or blob != identity["git_blob"]
+            or len(raw) != identity["bytes"]
+        ):
             raise ValueError("Unifloral source differs: " + name)
     for algorithm, args in record["defaults"].items():
         if defaults(checkout / "algorithms" / (algorithm + ".py")) != args:
             raise ValueError("Unifloral Args differ: " + algorithm)
     return {
-        "revision": revision,
+        "revision": record["revision"],
+        "tree": record["tree"],
+        "checkout_revision_checked": revision_checked,
+        "source": str(checkout),
         "verified_files": len(record["source_sha256"]),
         "verified_default_configurations": len(record["defaults"]),
         "reference_cells": len(record["defaults"]) * len(record["datasets"]),
@@ -58,6 +77,7 @@ def configuration(algorithm, dataset):
     return {
         "family": "unifloral-standalone-default-reference",
         "revision": record["revision"],
+        "working_directory": record["path"],
         "algorithm": algorithm,
         "args": args,
         "cache": data["cache"],
