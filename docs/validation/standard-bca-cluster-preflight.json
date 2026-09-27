@@ -1,0 +1,234 @@
+{
+  "preflight_submission.json": {
+    "exit_code": 0,
+    "stdout": "27044796\n",
+    "stderr": ""
+  },
+  "preflight_v2_submission.json": {
+    "exit_code": 0,
+    "stdout": "27044823\n",
+    "stderr": ""
+  },
+  "preflight_v3_submission.json": {
+    "exit_code": 0,
+    "stdout": "27044828\n",
+    "stderr": ""
+  },
+  "preflight_v4_submission.json": {
+    "exit_code": 0,
+    "stdout": "27045031\n",
+    "stderr": ""
+  },
+  "preflight_slurm_actual_exit.json": {
+    "actual_exit_code": 1,
+    "slurm_job_id": "27044796"
+  },
+  "preflight_v2_slurm_actual_exit.json": {
+    "actual_exit_code": 1,
+    "slurm_job_id": "27044823"
+  },
+  "preflight_v3_slurm_actual_exit.json": {
+    "actual_exit_code": 245,
+    "slurm_job_id": "27044828"
+  },
+  "preflight_v4_slurm_actual_exit.json": {
+    "actual_exit_code": 0,
+    "slurm_job_id": "27045031"
+  },
+  "preflight_v2_correction.json": {
+    "original_job": 27044796,
+    "original_exit": 1,
+    "original_failure": "Missing GL/osmesa.h before any learner/simulator computation.",
+    "correction": "Isolated Mesa 24.1.0 headers/libraries; CPATH/LIBRARY_PATH/LD_LIBRARY_PATH only; frozen source and scientific manifest unchanged.",
+    "graphics_shell_receipt_erratum": "Graphics transaction completed and artifacts verified, but original shell wrapper exited 1 due to expanded empty exit argument. Its JSON is not proof of actual installer exit; original logs unchanged."
+  },
+  "preflight_v3_correction.json": {
+    "original_job": 27044823,
+    "original_exit": 1,
+    "original_failure": "patchelf missing from PATH after successful compilation; before training/simulator outcomes.",
+    "correction": "Add isolated venv, preserved base runtime utilities, and graphics prefix to PATH; frozen source unchanged."
+  },
+  "preflight_v4_correction.json": {
+    "original_job": 27044828,
+    "typed_child_exit": -11,
+    "wrapper_exit": 245,
+    "observation": "Old JAX plugin loaded from inherited base packages before segmentation fault; exact crash cause unresolved.",
+    "correction": "Fully isolated venv-v2, pinned JAX requirements, preserved exact MJRL revision, no inherited site-packages or PYTHONPATH. Same frozen scientific source/manifest."
+  },
+  "compute-preflight-v4/result.json": {
+    "accepted": true,
+    "results": [
+      {
+        "phase": "typed",
+        "command": [
+          "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+          "check.py",
+          "--runtime"
+        ],
+        "actual_exit": 0,
+        "backend": "cpu"
+      },
+      {
+        "phase": "noiw-tests",
+        "command": [
+          "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+          "-m",
+          "unittest",
+          "experiments.test_noiw",
+          "experiments.test_standard_runner",
+          "-v"
+        ],
+        "actual_exit": 0,
+        "backend": "cpu"
+      },
+      {
+        "phase": "simulators",
+        "command": [
+          "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+          "/users/dbayha/bca-standard-noiw-v1/campaign/simulator_inventory.py"
+        ],
+        "actual_exit": 0,
+        "backend": "cpu"
+      },
+      {
+        "phase": "rebrac-gpu",
+        "command": [
+          "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+          "/users/dbayha/bca-standard-noiw-v1/campaign/probe_gpu.py",
+          "rebrac",
+          "new",
+          "bca"
+        ],
+        "actual_exit": 0,
+        "backend": "cuda"
+      },
+      {
+        "phase": "iql-gpu",
+        "command": [
+          "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+          "/users/dbayha/bca-standard-noiw-v1/campaign/probe_gpu.py",
+          "iql",
+          "new",
+          "bca"
+        ],
+        "actual_exit": 0,
+        "backend": "cuda"
+      }
+    ],
+    "engineering_simulator_steps": 7,
+    "scientific_outcomes": 0,
+    "synthetic_gpu_updates": 8
+  },
+  "compute-preflight-v4/simulator_inventory.json": {
+    "accepted": true,
+    "rows": [
+      {
+        "environment": "hopper-medium-v2",
+        "observation_shape": [
+          11
+        ],
+        "action_shape": [
+          3
+        ],
+        "reward": 1.000169672816433,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/utils/wrappers.py",
+        "source_sha256": "53ff0ce23479bdc56ffd37e10607c405b29666c589c6fe56047372c5a7d9580a",
+        "engineering_steps": 1
+      },
+      {
+        "environment": "walker2d-medium-replay-v2",
+        "observation_shape": [
+          17
+        ],
+        "action_shape": [
+          6
+        ],
+        "reward": 1.0034611798730442,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/utils/wrappers.py",
+        "source_sha256": "53ff0ce23479bdc56ffd37e10607c405b29666c589c6fe56047372c5a7d9580a",
+        "engineering_steps": 1
+      },
+      {
+        "environment": "halfcheetah-medium-expert-v2",
+        "observation_shape": [
+          17
+        ],
+        "action_shape": [
+          6
+        ],
+        "reward": 0.12131164216339099,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/utils/wrappers.py",
+        "source_sha256": "53ff0ce23479bdc56ffd37e10607c405b29666c589c6fe56047372c5a7d9580a",
+        "engineering_steps": 1
+      },
+      {
+        "environment": "maze2d-large-v1",
+        "observation_shape": [
+          4
+        ],
+        "action_shape": [
+          2
+        ],
+        "reward": 0.0,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/pointmaze/maze_model.py",
+        "source_sha256": "72a353c3edd0ee23e1109729dc03851aeacb376e4325b434fc9600268659a9d4",
+        "engineering_steps": 1
+      },
+      {
+        "environment": "pen-human-v1",
+        "observation_shape": [
+          45
+        ],
+        "action_shape": [
+          24
+        ],
+        "reward": 0.16598150992339722,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/hand_manipulation_suite/pen_v0.py",
+        "source_sha256": "828f3c3f0bd92813d8cf952ba734a1cc5658d7f996a7c06c85cd6a15c99728a7",
+        "engineering_steps": 1
+      },
+      {
+        "environment": "pen-cloned-v1",
+        "observation_shape": [
+          45
+        ],
+        "action_shape": [
+          24
+        ],
+        "reward": 0.16598150992339722,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/hand_manipulation_suite/pen_v0.py",
+        "source_sha256": "828f3c3f0bd92813d8cf952ba734a1cc5658d7f996a7c06c85cd6a15c99728a7",
+        "engineering_steps": 1
+      },
+      {
+        "environment": "pen-expert-v1",
+        "observation_shape": [
+          45
+        ],
+        "action_shape": [
+          24
+        ],
+        "reward": 0.16598150992339722,
+        "done": false,
+        "source_path": "/users/dbayha/bca-standard-noiw-v1/venv-v2/lib/python3.10/site-packages/d4rl/hand_manipulation_suite/pen_v0.py",
+        "source_sha256": "828f3c3f0bd92813d8cf952ba734a1cc5658d7f996a7c06c85cd6a15c99728a7",
+        "engineering_steps": 1
+      }
+    ],
+    "engineering_steps": 7,
+    "scientific_outcomes": 0
+  },
+  "training_submission.json": {
+    "exit_code": 0,
+    "stdout": "27045057\n",
+    "stderr": "",
+    "predecessor": 27045031,
+    "source_unchanged": true
+  }
+}
