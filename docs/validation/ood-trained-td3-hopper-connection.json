@@ -1,0 +1,85 @@
+{
+  "schema": "ood-actions-connection-validation-v1",
+  "checked_utc": "2026-09-27T22:01:37.137769+00:00",
+  "pair_id": "td3_bc/hopper/s202609171",
+  "training_accepted": true,
+  "trained_cpu_query_gate_accepted": true,
+  "ready_for_real_state_collection": false,
+  "ready_for_real_outcomes": false,
+  "fresh_coverage_accepted": false,
+  "exact_gate_sample_rows_per_method": 64,
+  "direct_and_restored_query_batches": 12,
+  "action_max_absolute_errors": {
+    "host": 0.0,
+    "bca": 0.0
+  },
+  "target_arrays_exact": true,
+  "bca_width_and_dose_arrays_exact": true,
+  "prepared_array_hashes_match_accepted_audits": true,
+  "scientific_simulator_steps_added": 0,
+  "engineering_mujoco_steps_added": 0,
+  "physics_steps_added": 0,
+  "training_updates_added": 0,
+  "collector_tests": 12,
+  "total_regression_tests": 59,
+  "test_actual_exit": 0,
+  "trained_connection_actual_exits": [
+    1,
+    0
+  ],
+  "initial_missing_implementation_exit": 1,
+  "execution_correction": "Existing MuJoCo bin LD_LIBRARY_PATH set before Python startup; unchanged source, CPU backend, gates and libraries.",
+  "preserved_warnings": [
+    "CPU JAX CUDA plugin discovery logged CUDA_ERROR_NO_DEVICE with CUDA_VISIBLE_DEVICES empty; CPU devices verified, actual exit0.",
+    "Gym maintenance and pkg_resources deprecation messages preserved; no runtime upgrade."
+  ],
+  "limitations": [
+    "CPU-to-CPU saved direct/restored actions on a fixed heldout-data-derived observation bank; not a GPU-parity or behavioral performance result.",
+    "Real 64-episode-per-collector/0-and-100 state collection, 250-step outcomes, full restore/arithmetic acceptance, D4RL applied-action transforms and production ledger/locks are still pending.",
+    "collect.py executes only the exact toy OracleSimulator in this revision; real simulator constructor calls are refused.",
+    "Scientific candidate banks and JAX continuation step keys remain uncommitted; oracle keys are explicitly toy-only.",
+    "ReBRAC fresh residual target remains unavailable; no coverage or OOD ranking acceptance.",
+    "First seed exploratory; all five declared seeds remain required."
+  ],
+  "code_sha256": {
+    "experiments\\ood\\collect.py": "26952de57af68356ab0db50a94406a9265516e813e3e20a5e28035c3946a03a4",
+    "experiments\\ood\\test_collect.py": "c9c06895f4d758bd0272a1161cbd8f0063a3dc312a5d75fc30c38a4374921eb7",
+    "experiments\\ood\\trained_connection.py": "f04e34efde0e67d4bfc51458445cdcfce8c906b977d1f3e49f4fa5a72c07a8bf"
+  },
+  "artifacts_sha256": {
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/acceptance.json": "db94072b321241f1ce7c5f24e767a014818c623a06814586aacfe9689003a6ba",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/bca-direct-references.json": "3e42f8dee39d806f4f8a68daef6d971536b55c5c3b4d754227912e0bd5078ed3",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/bca-inputs.json": "355a9704dd2e1e2dae3725dac3b2f542ad8f5287dfc0717509291f98a7c275e5",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/bca-restored-and-errors.json": "8c4f4774e85128ae40b50ee3e28befc3127ca3b8d1eb03e1729da5fd896e8580",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/connection_execution_correction.json": "b99038d7bcdd10013e6ce2b840bfc87c3c65c2bfd6f5bad44fc64bf8724edd43",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/host-direct-references.json": "6ac51e7552c460e08245ab64ab165a007eed96d3071d6a5f8edae95845dca3a8",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/host-inputs.json": "ecbcf1c41fa1d41882c6f46d2ba039d453bcd6d42510d0edcd807bb454b46bff",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/host-restored-and-errors.json": "61078595f3a76f38b410a77aff69f21f2a8f704b6cffe350ced54319ba93e55f",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/oracle-readout.json": "80452b400b55fdc16ca45ae9e95125b351fb374a9ac462a3538605bdb260a647",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/precommit.json": "bcb025ae74d2476fe0ea7b50ee794753962aaeadaf9d19b6885e8dc4fc30928a",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/runtime.json": "6cadc54d5fb8bdeb4031eef419f1294382b502e6db5f332331ffe5fafb519f54",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/trained_connection_v1.actual_exit.json": "4b13f6affca06eabc5682ed9f8137db4b2bc181128bbcb983dab02ee7136174b",
+    "outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/trained_connection_v2.actual_exit.json": "743e53ea84a61f9963c58776370a19f93c4985e31a4826e1e1e5a3ed30ee34b7"
+  },
+  "training_status_snapshot": {
+    "utc": "2026-09-27T21:53:31Z",
+    "local_current": "cql-hopper-host-s202609171",
+    "cluster_current": "rebrac-walker2d-host-s202609171",
+    "new_cluster_closures_pending_audit": [
+      "rebrac-hopper-bca-noiw-s202609171",
+      "iql-hopper-host-s202609171",
+      "iql-hopper-bca-noiw-s202609171"
+    ],
+    "live_worker_and_controller_identities_match": true,
+    "queues_changed": false
+  },
+  "repository_check_actual_exit": 0,
+  "frozen_training_files_checked": 108,
+  "frozen_manifest_sha256": "13ae3e6693d1cc71228e7b676243232c52ac6766c6a2c9b0623aaac1145f97fe",
+  "inspection_errors_retained": [
+    "Initial optional lookup of not-yet-existing collect.py; expected missing module tested separately.",
+    "Read-only standard_receipt.py lookup initially used the workspace instead of active repository; corrected explicit working directory.",
+    "Read-only runtime/prepare.py lookup did not exist; actual runtime.td3_bc.prepare then inspected.",
+    "First combined documentation patch failed validation before any file edit; corrected patch applied."
+  ]
+}

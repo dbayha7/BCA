@@ -71,9 +71,13 @@ calculation tests have engineering evidence. **Real trained-checkpoint OOD
 collection has not started.** Initialized fixtures and synthetic figures are not
 scientific outcomes.
 
-The immediate work is to bind this accepted pair to the adapters, pass saved-action
-parity and complete-state restoration, then implement and freeze the collector and
-matched-outcome runner. We can start accepted pairs without waiting for every
+The accepted TD3+BC pair now passes its trained CPU checkpoint-query connection:
+saved direct/restored actions, targets and BCA widths/doses agree exactly on the
+fixed 64-row engineering bank. The bounded toy collector also passes its tests.
+See the [current action-collection status](../../docs/OOD_ACTION_COLLECTION_STATUS.md)
+for actual exits, the preserved setup failure/correction and remaining gates.
+Real complete-state restoration, production collection, candidate/key precommit
+and outcome execution are still pending. We can start accepted pairs without waiting for every
 performance run. One seed is an initial readout; the declared five-seed comparison
 remains incomplete until all five are accepted.
 
@@ -88,6 +92,7 @@ active worker nor resumes an old halted queue. No model weights, training recipe
 scientific settings, gates or outcomes are changed by this document.
 
 - [Accepted first-pair identities and remaining gates](../../docs/validation/ood-actions-first-readiness.json)
+- [Trained CPU connection and collector validation](../../docs/validation/ood-trained-td3-hopper-connection.json)
 - [Next implementation steps](../../docs/superpowers/plans/2026-09-27-ood-actions-first.md)
 - [Full fixed scientific design](../../docs/superpowers/plans/2026-09-24-ood-experiment.md)
 - [Every annotated experiment setting](../../configs/ood.yaml)

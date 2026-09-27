@@ -41,16 +41,16 @@ and accepted audit hashes, but correctly leaves collection readiness false.
 
 - [x] Reuse accepted host/BCA audits; bind the first TD3+BC Hopper pair and its
   final checkpoint identities without reopening weights or replaying training.
-- [ ] Use `experiments/ood/standard_receipt.py` on explicit run/attempt paths to
+- [x] Use `experiments/ood/standard_receipt.py` on explicit run/attempt paths to
   bind the actual worker exits. Read the established source/data acceptance rather
   than repeat closed audits. Preserve separate training-acceptance and
   trained-adapter-acceptance flags.
-- [ ] Create a new exclusive `runs/ood/<attempt>/` with the frozen full declaration
+- [x] Create a new exclusive `runs/ood/<attempt>/` with the frozen full declaration
   and a per-pair execution binding. No directory-search-based checkpoint selection.
-- [ ] Save direct original-host forward/target/width references, then restored
+- [x] Save direct original-host forward/target/width references, then restored
   adapter outputs, devices and error arrays before the unchanged absolute 1e-6
   action gate. Failure stops the attempt. No backend sweep or tolerance change.
-- [ ] Compare actual prepared arrays, reserved IDs and normalization against the
+- [x] Compare actual prepared arrays, reserved IDs and normalization against the
   accepted evidence. Freeze all execution source/runtime/checkpoint identities.
 
 ## 2. Implement a bounded execution layer
@@ -60,7 +60,7 @@ Create `experiments/ood/collect.py` and `experiments/ood/test_collect.py`; reuse
 unchanged. Add functions for declaration/preparation, state collection, candidate
 precommit and outcomes; each stage requires accepted predecessor hashes.
 
-- [ ] First add refusal tests for an unaccepted pair, stale checkpoint/source hash,
+- [x] First add refusal tests for an unaccepted pair, stale checkpoint/source hash,
   changed candidate bank, reused attempt, incomplete state and changed RNG keys.
   Run `python -m unittest experiments.ood.test_collect`; the new tests must fail
   for the missing implementation before adding it.
@@ -81,7 +81,7 @@ precommit and outcomes; each stage requires accepted predecessor hashes.
   frozen continuations, maximum 250 total transitions. Save actual applied vectors,
   dtype and simulator controls; independently reconstruct raw reward at absolute
   1e-7. Stop at original natural termination/time limit, with no learned tail.
-- [ ] Test the full pipeline with the exact deterministic oracle, including
+- [x] Test the full pipeline with the exact deterministic oracle, including
   unfamiliar helpful actions, familiar harmful actions, ties, missing captures,
   early termination, duplicate aliases and interrupted attempts. Compare every
   saved result with hand-enumerated expectations. This is not a BCA result.
@@ -127,6 +127,14 @@ precommit and outcomes; each stage requires accepted predecessor hashes.
   their own checkpoint and simulator contracts pass.
 
 ## Completion criteria
+
+September 27 connection milestone: the first accepted TD3 Hopper pair passes
+the 64-row CPU saved-action/target/width gate; 59 regression tests pass. The
+collector currently executes toy dynamics only. Production constructor accounting,
+state restoration/collection, real candidate/key banks and outcome execution
+remain unchecked above. The original runtime-import exit1 and separate
+library-path correction/exit0 are preserved in
+`docs/OOD_ACTION_COLLECTION_STATUS.md`. No scientific outcomes were collected.
 
 This task is complete only when the declared action outcomes and calculations are
 verified and readable, with complete/missing/failed status and actual exits. A
