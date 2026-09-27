@@ -1,5 +1,9 @@
 # Standard BCA, no importance weighting
 
+**Current priority: [action-level OOD tests](../ood/README.md).** Existing training
+performance is supporting context; accepted checkpoint pairs can enter OOD gates
+without waiting for the full training matrix.
+
 The first stage is four hosts × seven datasets × five seeds × host/BCA:
 280 physical runs and 315 actor trajectories. IQL's primary host/BCA pair shares
 Q/V; its standalone host is additional context, not another independent seed.
