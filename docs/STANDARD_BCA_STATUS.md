@@ -7,8 +7,8 @@ trajectories across four hosts, seven datasets and five seeds.
 
 | Execution lane | Hosts | Status |
 |---|---|---|
-| Local RTX 5070 Ti | TD3+BC, CQL | First TD3+BC Hopper host/BCA pair verified at 1M. Existing controller moved to CQL Hopper host (240k at 21:19 UTC). |
-| Cluster A100 | ReBRAC, IQL | Job 27045057 passed all 14 mandatory data cells with actual gate exit 0. First ReBRAC Hopper host verified complete at 1M; its no-IW BCA counterpart was at 890k on str-gpu13 in the 21:19 UTC snapshot. |
+| Local RTX 5070 Ti | TD3+BC, CQL | **Stopped at 21:56 UTC.** CQL Hopper host reached final evaluation then failed schema validation; worker/controller actual exits 1. First TD3+BC pair remains verified. No retry. |
+| Cluster A100 | ReBRAC, IQL | Job 27045057 continues; ReBRAC Walker host at 645k with matching live identities at 22:24 UTC. ReBRAC Hopper BCA and IQL Hopper host/BCA have closure receipts pending independent audits. |
 
 Three of 280 declared physical runs (three of 315 actor trajectories) are independently verified complete. The first TD3+BC Hopper host final mean is **65.2157311**; its periodic-curve mean is **57.1475157**. See the [complete host readout and plots](../outputs/standard_bca/td3_bc/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-td3-host.json). Its first BCA pair is now verified; four further paired training seeds remain pending for this cell.
 
@@ -96,3 +96,18 @@ The original login-node process observation and direct compute-node SSH timeout
 are retained in the monitoring snapshot. Process identity was subsequently verified
 with a read-only Slurm step in the existing allocation, requesting no GPU. Neither
 inspection attempt changed scientific execution.
+
+## Local CQL validation failure: September 27, 21:56 UTC
+
+CQL's episode records use `score` and `return`; the shared `verify_events` validator
+requires `normalized_score` and `raw_return`. After the final 1M evaluation, this
+raised `KeyError: normalized_score`. Separate worker/controller actual exits are 1,
+with no timeout or interruption. The journal and 10k/50k/1M checkpoint files remain;
+`result.json` and learner `exit.json` were never written. This is not an accepted
+completion, and checkpoint counters have not been independently decoded here.
+
+[Actual receipts and source diagnosis](validation/standard-cql-host-validation-failure.json)
+retain the original failure. No frozen file was changed, controller restarted or
+scientific retry launched. The cluster lane continues unchanged. A separately
+checked correction/handling is needed before local recovery; do not silently
+relabel or replace this attempt. OOD action preparation remains the priority.

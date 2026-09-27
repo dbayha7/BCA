@@ -76,8 +76,10 @@ saved direct/restored actions, targets and BCA widths/doses agree exactly on the
 fixed 64-row engineering bank. The bounded toy collector also passes its tests.
 See the [current action-collection status](../../docs/OOD_ACTION_COLLECTION_STATUS.md)
 for actual exits, the preserved setup failure/correction and remaining gates.
-Real complete-state restoration, production collection, candidate/key precommit
-and outcome execution are still pending. We can start accepted pairs without waiting for every
+The first pair also passes a bounded nine-transition real CPU full-state and
+repeated-transition check (actual exit 0), with cumulative engineering accounting.
+Production 64-episode state collection, candidate/key precommit and outcome
+execution are still pending. We can start accepted pairs without waiting for every
 performance run. One seed is an initial readout; the declared five-seed comparison
 remains incomplete until all five are accepted.
 
@@ -86,8 +88,9 @@ coverage contract stays unavailable; we will not invent a target or call action-
 measurements coverage. Any executable subset must be explicitly declared and keep
 the original full protocol and missing endpoints visible.
 
-Training-queue resource changes are awaiting David's answer to the finish-current
-versus continue-background question. This priority update neither interrupts an
+The local queue has since stopped on a CQL evaluation-schema validation failure;
+its original exit 1 is preserved and no retry was launched. The cluster continues.
+No queue-hold answer has arrived. This priority update neither interrupts an
 active worker nor resumes an old halted queue. No model weights, training recipe,
 scientific settings, gates or outcomes are changed by this document.
 

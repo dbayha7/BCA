@@ -1,0 +1,99 @@
+{
+  "observed_utc": "2026-09-27T22:25:27.330284+00:00",
+  "receipts": {
+    "queue-local-v1/queue_status.json": {
+      "sha256": "2bad8a43ed5f7b8345cf1e72c6c2853746137a602d6a937746410b35788c0522",
+      "content": {
+        "time": "2026-09-27T21:56:16.043498+00:00",
+        "status": "stopped",
+        "completed": [
+          {
+            "run_id": "td3_bc-hopper-host-s202609171",
+            "result_sha256": "0d6707c7b2158d6983de87651c56ea53a3db1448041550a65da18502aae3d69a"
+          },
+          {
+            "run_id": "td3_bc-hopper-bca-noiw-s202609171",
+            "result_sha256": "9d251766cb070aa90627c5908eaf908fc302dd28bc558b7d79ee75013c327cd6"
+          }
+        ],
+        "error": "RuntimeError('Worker stopped: cql-hopper-host-s202609171, exit 1; no retry')",
+        "current": "cql-hopper-host-s202609171"
+      }
+    },
+    "queue-local-v1/controller_exit.json": {
+      "sha256": "149ca06136e099c7d636223a134bfc2a94369fde48471186b92d1a650570eabc",
+      "content": {
+        "time": "2026-09-27T21:56:16.043914+00:00",
+        "intended_exit_code": 1,
+        "completed_count": 2
+      }
+    },
+    "controller-process-local-v1/actual_exit.json": {
+      "sha256": "b2a5d85efc88fa1027d7b76f40656eded5bf8646958efdff4a29a9e9ab2dd7e9",
+      "content": {
+        "started": "2026-09-27T19:10:55.354362+00:00",
+        "ended": "2026-09-27T21:56:16.274069+00:00",
+        "actual_returncode": 1,
+        "timeout": false,
+        "interruption_signal": null
+      }
+    },
+    "queue-local-v1/attempts/cql-hopper-host-s202609171/actual_exit.json": {
+      "sha256": "8bc07a806ceb6424eeb094271d4e663232d1eb114b8c23db57564cbf5b30b3d4",
+      "content": {
+        "started": "2026-09-27T21:07:52.170765+00:00",
+        "ended": "2026-09-27T21:56:16.039897+00:00",
+        "actual_returncode": 1,
+        "timeout": false,
+        "interruption_signal": null
+      }
+    }
+  },
+  "files": {
+    "result.json": {
+      "exists": false,
+      "bytes": null
+    },
+    "exit.json": {
+      "exists": false,
+      "bytes": null
+    },
+    "events.jsonl.gz": {
+      "exists": true,
+      "bytes": 11020102
+    },
+    "checkpoint_10000.msgpack": {
+      "exists": true,
+      "bytes": 8152140
+    },
+    "checkpoint_50000.msgpack": {
+      "exists": true,
+      "bytes": 8152140
+    },
+    "checkpoint_1000000.msgpack": {
+      "exists": true,
+      "bytes": 8152140
+    },
+    "preparation.json": {
+      "exists": true,
+      "bytes": 85724998
+    }
+  },
+  "traceback": "Traceback (most recent call last):\n  File \"/home/dbayha/bca-work/standard-noiw-v1/source/train.py\", line 363, in <module>\n    main()\n  File \"/home/dbayha/bca-work/standard-noiw-v1/source/train.py\", line 344, in main\n    execute(row, objects, output, prepared)\n  File \"/home/dbayha/bca-work/standard-noiw-v1/source/train.py\", line 188, in execute\n    verify_events(protocol, result[\"events\"], result[\"evaluations\"])\n  File \"/home/dbayha/bca-work/standard-noiw-v1/source/runtime/validation.py\", line 96, in verify_events\n    if not all(\n  File \"/home/dbayha/bca-work/standard-noiw-v1/source/runtime/validation.py\", line 97, in <genexpr>\n    (math.isfinite(episode[k]) for k in (\"normalized_score\", \"raw_return\"))\nKeyError: 'normalized_score'\n",
+  "worker_log_bytes": 553362,
+  "completed_result_accepted": false,
+  "retry_launched": false,
+  "schema": "standard-cql-host-validation-failure-v1",
+  "manifest_sha256": "13ae3e6693d1cc71228e7b676243232c52ac6766c6a2c9b0623aaac1145f97fe",
+  "run_id": "cql-hopper-host-s202609171",
+  "source_findings": {
+    "runtime/cql.py": "Episode dictionaries contain score and return.",
+    "runtime/validation.py": "verify_events requires normalized_score and raw_return for every host.",
+    "train.py": "Validation runs after runner returns and before result.json and exit.json are written."
+  },
+  "checkpoints_decoded_for_acceptance": false,
+  "completed_run_accepted": false,
+  "scientific_retry": false,
+  "frozen_source_edits": false,
+  "cluster_lane_unchanged": true
+}

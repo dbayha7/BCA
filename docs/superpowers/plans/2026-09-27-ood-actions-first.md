@@ -88,6 +88,16 @@ precommit and outcomes; each stage requires accepted predecessor hashes.
 
 ## 3. Gate the real checkpoint/simulator connection
 
+September 27, 22:23 UTC: the first-pair CPU engineering connection passed at nine
+real transitions (one constructor plus eight explicit), 36 physics steps, actual
+worker/supervisor exits 0. Full reset/mid-state repeats, controls and raw-reward
+gates pass; cumulative history is bound in the SQLite resource ledger. See
+`docs/validation/ood-real-state-connection.json`. Reuse this closed gate.
+Production collection, native-bound/candidate/key/lock artifacts still require
+implementation and acceptance. No scientific acceptance follows from this gate.
+Fourteen new tests plus prior suites: 73 pass. Local training is now stopped on
+CQL's evaluation-schema validation failure; preserve it and do not silently retry.
+
 - [ ] Declare a separate engineering attempt using disjoint engineering seeds and
   the existing maximum 10,000-transition-per-cell budget; debit all previous/new
   engineering steps according to their declarations. Test only what the newly
@@ -128,13 +138,16 @@ precommit and outcomes; each stage requires accepted predecessor hashes.
 
 ## Completion criteria
 
-September 27 connection milestone: the first accepted TD3 Hopper pair passes
-the 64-row CPU saved-action/target/width gate; 59 regression tests pass. The
-collector currently executes toy dynamics only. Production constructor accounting,
-state restoration/collection, real candidate/key banks and outcome execution
-remain unchecked above. The original runtime-import exit1 and separate
-library-path correction/exit0 are preserved in
-`docs/OOD_ACTION_COLLECTION_STATUS.md`. No scientific outcomes were collected.
+September 27 milestones: the first accepted TD3 Hopper pair passes the 64-row
+CPU saved-action/target/width gate and the separate nine-transition real full-state
+engineering connection. Seventy-three regression tests pass. The persistent ledger
+includes prior and new engineering/constructor reservations. Production state
+collection, native-bound artifacts, candidate/support/JAX-key banks, efficient
+transition storage, lock binding and outcome execution remain incomplete. The
+original runtime-import exit1 and separate library-path correction/exit0 remain
+preserved in `docs/OOD_ACTION_COLLECTION_STATUS.md`. No scientific action outcomes
+were collected. The local CQL queue is stopped with actual exit1; do not retry it
+or edit frozen source. The cluster lane continues independently.
 
 This task is complete only when the declared action outcomes and calculations are
 verified and readable, with complete/missing/failed status and actual exits. A
