@@ -137,6 +137,8 @@ def build_manifest():
                    "experiments/ood/protocol.py", "experiments/ood/test_protocol.py",
                    "experiments/ood/adapters.py", "experiments/ood/simulator.py",
                    "experiments/ood/oracle.py", "experiments/ood/test_outcomes.py",
+                   "experiments/ood/analyze.py", "experiments/ood/report.py",
+                   "experiments/ood/test_analysis.py", "experiments/ood/requirements.txt",
                    "docs/superpowers/plans/2026-09-24-ood-experiment.md"]
     manifest = dict(schema="bca-ood-declaration-v1", config=config,
         repository_revision=subprocess.check_output(

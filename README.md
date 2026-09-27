@@ -253,8 +253,13 @@ See the [adapter test record](docs/OOD_ADAPTER_TESTS.md) for the fixed CPU smoke
 budget, preserved failures, runtime requirements and exact reproduction command.
 The tests use untrained synthetic checkpoints and a few real simulator steps;
 they are engineering evidence, not OOD results or accepted 1M runs. No scientific
-OOD collection has launched. Next are Task C's metric/report tests, then binding
-the actual checkpoints and completing Task D's engineering gates.
+OOD collection has launched. Task C's calculation and static-figure tests now
+pass: see the [calculation test record](docs/OOD_CALCULATION_TESTS.md),
+[synthetic reader](docs/ood-demo/index.html), and
+[all ten example figures](docs/ood-demo/all-figures.pdf). Browser/mobile visual
+review remains unverified because the browser tool blocks local-file pages.
+Next are the remaining reader review, actual checkpoint binding and Task D's
+collection-specific engineering gates. All demonstration data are synthetic.
 
 Validation of this layout covers all 280 resolved run declarations, all 28 cached
 dataset preparations and paired training pools, and CPU numerical parity fixtures

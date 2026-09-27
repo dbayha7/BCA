@@ -1,7 +1,8 @@
 # BCA OOD experiment design and implementation plan
 
-**Status: Task A implemented September 27, 2026; Tasks B–D remain pending.
-No experiment has been launched.**
+**Status: Tasks A and initial-tranche B implemented September 27, 2026;
+Task C calculations/static exports tested, browser layout review pending;
+Task D pending. No scientific experiment has been launched.**
 The original Unifloral source is now bundled. This document specifies the next
 experiment without adding model variants to the four host/BCA pairs.
 
@@ -482,17 +483,35 @@ and repeated-observation equality, action `1e-6`, and reward arithmetic `1e-7`.
 
 ### Task C — metric and reporting correctness before collection
 
-- [ ] Implement ranking with explicit valid-state masks, duplicate-action aliases
+September 27 scope: implement `analyze.py`, `report.py` and `test_analysis.py`.
+First test hand-enumerated returns, pairwise ranking, finite/tolerance ranks and
+paired cluster resampling. Then generate a clearly synthetic reader with
+complete, missing, failed, sparse, tied-score and no-harm examples. Export PNG,
+SVG, PDF and source CSVs; verify each plotted array against the CSV and inspect
+the reader at wide and narrow sizes. Synthetic fixtures use fixed seed 1900927201,
+zero optimizer/model queries and zero simulator steps. Preserve every test/render
+attempt in its own ignored `runs/ood/` directory. Keep all training sources and
+the scientific YAML values unchanged. The reporting bootstrap uses the declared
+10,000 draws; five-seed uncertainty remains explicitly approximate. Validate
+paired/crossed reset resampling, withhold broad claims for sparse/missing strata,
+and reject unsupported partially crossed reset designs. Publish small readouts
+and the synthetic report, excluding weights. No real checkpoint is accepted here.
+
+- [x] Implement ranking with explicit valid-state masks, duplicate-action aliases
   and half-credit ties. Verify constant score = 0.5 on two-class states and N/A
   on single-class states. Check a fixture where pooled and within-state disagree.
-- [ ] Implement finite-rank and tolerance-rank checks independently, including
+- [x] Implement finite-rank and tolerance-rank checks independently, including
   infinite bounds and zero/all failures. Preserve all radius components.
-- [ ] Verify clustered resampling keeps paired scores, reset-time duplicates,
+- [x] Verify clustered resampling keeps paired scores, reset-time duplicates,
   collectors and continuations together; it must not bootstrap actions as seeds.
-- [ ] Generate the complete/missing/failed/sparse synthetic reader and static
+- [x] Generate the complete/missing/failed/sparse synthetic reader and static
   figures; assert every plotted number against its CSV and inspect the renders.
-- [ ] Run `python -m unittest experiments.ood.test_analysis` and `python check.py`.
+- [x] Run `python -m unittest experiments.ood.test_analysis` and `python check.py`.
   Commit the offline analysis/reporting unit; the report must say synthetic.
+- [ ] Inspect the interactive reader at wide/narrow browser sizes. The tool
+  rejected `file://` navigation; no alternate browser/serving workaround was
+  attempted. Static image inspection and numeric/link checks pass, but they do
+  not substitute for this browser review. See `docs/OOD_CALCULATION_TESTS.md`.
 
 ### Task D — bounded engineering validation, then experimental handoff
 
