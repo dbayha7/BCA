@@ -1,83 +1,83 @@
 # Initial OOD tranche. Changing scientific settings requires a new protocol version.
-schema: bca-ood-protocol-v1
-hosts: [td3_bc, rebrac]
-datasets: [hopper, walker2d]
-methods: [host, bca]
-training_seeds_from: configs/experiment.yaml
-checkpoint_step: 1000000
-collectors: [host, bca]
-episodes_per_collector: 64
-capture_steps: [0, 100]
-missing_capture: retain_without_replacement
-candidates:
-  fixed_slots: [host_reference, bca, nearest_recorded, uniform]
-  perturbation_rms: [0.05, 0.15, 0.30]
-  signs: [-1, 1]
-  direction: one_saved_rms_unit_vector_per_state
-  coordinates: normalized_action_box
-  clipping: native_bounds
-  duplicate_applied_actions: retain_aliases_one_ranking_vote
-support:
-  pool: existing_training_complement
-  neighbors: 32
-  maximum_reference_rows: 32768
-  episode_reference_fraction: 0.8
-  validation_rows_per_episode: 1
-  distant_quantile: 0.95
-  missing_episode_boundaries: block_thresholded_analysis
-continuations: [host, bca]
-primary_continuation: bca
-horizon: 250
-reward: raw_undiscounted_no_tail_bootstrap
-harm_threshold: 1.0
-sensitivity_threshold: 0.0
-scores: [frozen_bca_width, support_distance, constant, saved_random_order]
-ranking:
-  primary: within_state_auroc
-  comparative: width_minus_support_auroc
-  reference_action: excluded
-  ties: half_credit
-  single_class_states: unavailable
-  aggregation: equal_collector_capture_strata_with_missing_strata_reported
-  pooled_auroc: separate_secondary_column
-  minimum_valid_states: 30
-  minimum_harmful_alternatives: 30
-coverage:
-  calibration_episodes: 200
-  test_episodes: 500
-  maximum_episode_steps: 1000
-  sample: one_uniform_transition_per_episode
-  frozen_objects: [actor, critics, targets, scale, unit, transforms]
-  adaptive_feedback: false
-  alpha: 0.1
-  credibility: 0.95
-  radii: [training, fresh_conformal, max_fresh_bayesian_conformal]
-  td3_bc_target: pending_adapter_validation
-  rebrac_target: unavailable_until_recorded_next_action_contract_resolved
-inference:
-  bootstrap_draws: 10000
-  unit: paired_training_seed_then_paired_reset_block
-  crossed_reset_dependence: preserve_if_present
-  primary_contrasts_per_cell: 2
-  family_correction: bonferroni_bootstrap_approximate
-  confidence: 0.95
-  whole_policy: separate_reserved_final_and_common_periodic_curve
-streams:
-  first_seed: 1600000000
-  allocator: sequential_unique_uint32_skipping_existing_training_seeds
-  continuation_coupling: same_state_base_seed_across_actions_and_policies
-  continuation_step_keys: pending_adapter_precommit_before_outcomes
-  engineering: disjoint_excluded_from_science
-gates:
-  action_absolute_tolerance: 0.000001
-  reward_absolute_tolerance: 0.0000001
-  restore_schema: all_fields_required_by_actual_adapter
-  state_tolerances: pending_adapter_declaration
-  transformed_controls: save_and_independently_reconstruct
-  failure: stop_preserve_no_automatic_retry
-resources:
-  engineering_transitions_per_cell: 10000
-  local_gpu_workers: 1
-  total_gpus: 2
-  local_lock: /home/dbayha/bca-work/resource-locks/local-rtx5070ti.lock
-  accounting: environment_transitions_and_physics_steps_separate
+schema: bca-ood-protocol-v1 # Version of the reviewed experiment, not a model version.
+hosts: [td3_bc, rebrac] # The two learning algorithms in the first tranche.
+datasets: [hopper, walker2d] # Existing dataset keys; full environment names come from host configs.
+methods: [host, bca] # Compare the original host with the same host plus BCA.
+training_seeds_from: configs/experiment.yaml # Reuse all five declared training seeds; never select the best.
+checkpoint_step: 1000000 # Require models saved after 1M host/critic updates (500k delayed actor updates).
+collectors: [host, bca] # Each frozen policy visits states to supply a separate state bank.
+episodes_per_collector: 64 # Paired reset episodes for each policy, per task and training seed.
+capture_steps: [0, 100] # Save states at reset and after 100 environment transitions, if still alive.
+missing_capture: retain_without_replacement # An early ending stays missing; do not substitute another episode.
+candidates: # First actions compared from exactly the same restored state.
+  fixed_slots: [host_reference, bca, nearest_recorded, uniform] # Host action, BCA action, nearby dataset action, random bounded action.
+  perturbation_rms: [0.05, 0.15, 0.30] # Three root-mean-square distances from the host action before clipping.
+  signs: [-1, 1] # Test both directions at each distance: six perturbed action slots.
+  direction: one_saved_rms_unit_vector_per_state # Pick one random direction before outcomes; never search for a favorable one.
+  coordinates: normalized_action_box # Express candidate actions in the environment wrapper's normalized coordinates.
+  clipping: native_bounds # Apply the environment's action limits and record how clipping changes the action.
+  duplicate_applied_actions: retain_aliases_one_ranking_vote # Archive duplicate slots, but count an identical applied action only once.
+support: # A dataset-distance proxy for unfamiliarity, not proof that an action is truly OOD.
+  pool: existing_training_complement # Use only the learner's training rows, excluding reserved calibration rows.
+  neighbors: 32 # Compare against recorded actions at the 32 nearest normalized training observations.
+  maximum_reference_rows: 32768 # Cap the saved neighbor bank; use all eligible rows if fewer exist.
+  episode_reference_fraction: 0.8 # Assign 80% of training episodes to the neighbor pool and 20% to proxy validation.
+  validation_rows_per_episode: 1 # Uniformly choose one row per validation episode, avoiding repeated-row weighting.
+  distant_quantile: 0.95 # Call distances above the training-validation 95th percentile support-distant.
+  missing_episode_boundaries: block_thresholded_analysis # Without episode IDs, report qualified raw distances only.
+continuations: [host, bca] # After the tested first action, follow either frozen policy for the remaining horizon.
+primary_continuation: bca # BCA's later policy defines the main harm-ranking comparison.
+horizon: 250 # Maximum total transitions, including the tested first action; stop earlier at termination/time limit.
+reward: raw_undiscounted_no_tail_bootstrap # Sum actual rewards; do not append a learned estimate beyond the horizon.
+harm_threshold: 1.0 # Harmful means return is MORE THAN 1 raw reward unit below the host-first-action reference.
+sensitivity_threshold: 0.0 # Separately report any positive loss; this does not replace the main threshold.
+scores: [frozen_bca_width, support_distance, constant, saved_random_order] # Compare BCA with distance and two sanity baselines on identical outcomes.
+ranking: # Rules for asking whether larger scores identify more harmful alternatives.
+  primary: within_state_auroc # Compare harmful versus nonharmful actions within each individual state.
+  comparative: width_minus_support_auroc # Subtract the distance proxy's AUROC from BCA width's AUROC.
+  reference_action: excluded # The host reference defines zero loss and is not an alternative ranked against itself.
+  ties: half_credit # Equal scores receive 0.5 credit in a harmful/nonharmful pair.
+  single_class_states: unavailable # AUROC is N/A when a state has no harmful or no nonharmful alternatives.
+  aggregation: equal_collector_capture_strata_with_missing_strata_reported # Balance the four collector/time groups and expose missing groups.
+  pooled_auroc: separate_secondary_column # Also show pooled ranking, but never substitute it for within-state ranking.
+  minimum_valid_states: 30 # Below this per seed, label ranking sparse and withhold broad cell-level claims.
+  minimum_harmful_alternatives: 30 # A second sparsity rule; neither threshold guarantees statistical power.
+coverage: # Separate audit of residual-band coverage, not coverage of true Q or future return.
+  calibration_episodes: 200 # Fresh frozen-policy episodes used to calculate a new audit radius.
+  test_episodes: 500 # Disjoint fresh episodes used only to measure coverage of the fixed radius.
+  maximum_episode_steps: 1000 # Original locomotion episode cap used for the coverage resource ceiling.
+  sample: one_uniform_transition_per_episode # Gives episodes equal sampling weight, not every trajectory row.
+  frozen_objects: [actor, critics, targets, scale, unit, transforms] # Fix networks, residual scale/unit and preprocessing during this audit.
+  adaptive_feedback: false # Audit observations cannot train the policy/scale or tune settings using test outcomes.
+  alpha: 0.1 # Target residual miscoverage of 10%, corresponding to nominal 90% coverage.
+  credibility: 0.95 # Bayesian posterior quantile level; distinct from nominal prediction coverage.
+  radii: [training, fresh_conformal, max_fresh_bayesian_conformal] # Compare the saved radius with two freshly calibrated audit radii.
+  td3_bc_target: pending_adapter_validation # Validate the frozen TD3 Bellman target before a live coverage claim.
+  rebrac_target: unavailable_until_recorded_next_action_contract_resolved # ReBRAC needs recorded next actions; never silently replace them with actor actions.
+inference: # Uncertainty across independent training seeds and paired reset episodes.
+  bootstrap_draws: 10000 # Number of resampled datasets used for approximate statistical intervals.
+  unit: paired_training_seed_then_paired_reset_block # Resample seeds, then whole episode blocks; keep related comparisons together.
+  crossed_reset_dependence: preserve_if_present # If seeds share resets, resample those shared blocks together.
+  primary_contrasts_per_cell: 2 # Width AUROC minus 0.5, and width AUROC minus support AUROC: eight contrasts total.
+  family_correction: bonferroni_bootstrap_approximate # Adjust simultaneous claims across all eight comparisons; five-seed precision is limited.
+  confidence: 0.95 # Descriptive interval level; family-adjusted intervals are wider.
+  whole_policy: separate_reserved_final_and_common_periodic_curve # Keep final policy performance and learning-curve averages separate from local harm ranking.
+streams: # Save randomness before outcomes so comparisons cannot pick favorable seeds.
+  first_seed: 1600000000 # Starting integer for the OOD-only seed allocation.
+  allocator: sequential_unique_uint32_skipping_existing_training_seeds # Allocate distinct 32-bit seeds and avoid declared training/preparation/evaluation seeds.
+  continuation_coupling: same_state_base_seed_across_actions_and_policies # Competing actions share later-policy random draws within a state.
+  continuation_step_keys: pending_adapter_precommit_before_outcomes # Actual per-step keys must also be saved and hashed before collection.
+  engineering: disjoint_excluded_from_science # Debugging fixtures have separate seeds and never enter research estimates.
+gates: # Checks that must pass before results can be accepted.
+  action_absolute_tolerance: 0.000001 # Saved and restored actor actions may differ by at most 1e-6 per coordinate.
+  reward_absolute_tolerance: 0.0000001 # Independent reward arithmetic must agree within 1e-7; no relative tolerance.
+  restore_schema: all_fields_required_by_actual_adapter # Capture every required state field; no synthetic replacement for missing fields.
+  state_tolerances: pending_adapter_declaration # Declare and test state/observation tolerances in the simulator adapter before collection.
+  transformed_controls: save_and_independently_reconstruct # Record the vector that actually reaches physics, including wrapper transforms and dtype.
+  failure: stop_preserve_no_automatic_retry # Retain the failed attempt and its evidence; do not silently rerun it.
+resources: # Limits for later authorized execution; this YAML itself launches nothing.
+  engineering_transitions_per_cell: 10000 # Maximum debugging transitions for each of the four host/dataset cells.
+  local_gpu_workers: 1 # Only one GPU worker may use the local machine at a time.
+  total_gpus: 2 # Campaign-wide limit across machines, not permission for two local workers.
+  local_lock: /home/dbayha/bca-work/resource-locks/local-rtx5070ti.lock # Shared lock all local GPU work must honor.
+  accounting: environment_transitions_and_physics_steps_separate # One environment step may integrate several physics steps; report both.

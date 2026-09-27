@@ -397,14 +397,16 @@ The existing main thesis PDF stays unchanged.
 
 ## 10. Implementation sequence (no launches here)
 
-Keep the implementation small. The configuration, protocol and protocol tests
-now exist; the remaining files below are planned:
+Keep the implementation small. The configuration, protocol, initial adapters,
+oracle and their tests exist; collection, analysis and reporting remain planned:
 
 | File | Single responsibility |
 | --- | --- |
 | `configs/ood.yaml` | One experiment definition; refer to existing host/dataset configs |
 | `experiments/ood/protocol.py` | Validate/freeze matrix, identities, estimands and resource ceilings |
-| `experiments/ood/adapters.py` | Read-only checkpoint actions/targets/scales and simulator restore contracts |
+| `experiments/ood/adapters.py` | Read-only checkpoint actions/targets/scales and saved-action gates |
+| `experiments/ood/simulator.py` | Audited Hopper/Walker state restore and applied-action reward checks |
+| `experiments/ood/oracle.py` | Tiny independent environment with exactly enumerable returns |
 | `experiments/ood/collect.py` | Capture states, precommit candidates/streams, execute bounded continuations |
 | `experiments/ood/analyze.py` | Offline coverage, paired ranking and clustered statistics |
 | `experiments/ood/report.py` | Tables, figures and completeness-aware landing page |
@@ -433,20 +435,50 @@ Task A allocates base seeds and checks ceilings without acquiring a GPU lock.
 
 ### Task B — independent oracle and read-only adapters
 
-- [ ] Implement a tiny deterministic bounded-action fixture with known behavior
+September 27 execution scope: implement the two initial host adapters (TD3+BC
+and ReBRAC), a separate Hopper/Walker simulator adapter, and a tiny exact oracle.
+Keep these in `adapters.py`, `simulator.py`, `oracle.py`, with tests in
+`test_outcomes.py`. First write refusal/round-trip tests. Reuse the archived
+initialization hashes from the earlier CPU parity fixtures, save direct host
+forward/target/width references before loading the new adapter, and compare the
+restored outputs without optimizer updates. Test missing state fields, action
+transforms, termination/time-limit handling and shared continuation keys.
+
+Use the existing WSL CPU environment. Any actual Hopper/Walker smoke execution
+is a separately labeled engineering fixture: at most 64 explicit transitions
+per environment plus one constructor transition per environment (130 total),
+fixed test seeds 1900927001/1900927002, no trained policy outcomes or dataset
+collection. Save the test declaration, source/model identities and pre-gate
+arrays in a new ignored `runs/ood/` directory; retain failed attempts. Broader
+host/environment adapters and real 1M checkpoint acceptance remain later work.
+Run `python -m unittest experiments.ood.test_outcomes` in that CPU environment,
+then the protocol suite and `python check.py`; publish only code and small
+readouts, never fixture/checkpoint weights.
+
+- [x] Implement a tiny deterministic bounded-action fixture with known behavior
   support, exact transition/reward rules and finite-horizon return enumeration.
   Include unfamiliar beneficial actions, familiar harmful actions, constant widths,
   reversed rankings and a correctly ranked oracle. It tests the harness, not BCA
   performance, and adds no learned model family.
-- [ ] Implement one adapter per existing host identity, preserving every target
+- [x] Implement one adapter per initial-tranche host identity, preserving every target
   convention. Compare its outputs against the original saved forward/target
   fixtures. Add Unifloral only as an explicitly named external baseline adapter
   when needed; never infer shared architecture from an algorithm label.
-- [ ] Require full collector/restore schema agreement before simulation. Exercise
+  This unit covers TD3+BC/ReBRAC only; IQL/CQL and external Unifloral adapters
+  remain outside the initial tranche.
+- [x] Require full collector/restore schema agreement before simulation. Exercise
   deletion of each required field, action transforms, terminal/time-limit state,
   and stochastic-key reuse in negative tests.
-- [ ] Run `python -m unittest experiments.ood.test_outcomes`; archive all deviations,
+- [x] Run `python -m unittest experiments.ood.test_outcomes`; archive all deviations,
   then commit the adapter/fixture unit. Do not count fixtures as research outcomes.
+
+The [adapter test record](../../OOD_ADAPTER_TESTS.md) reports actual engineering
+exits and arithmetic checks. The read-only checkpoint API preserves frozen
+networks/scale/radii; it does not independently accept a training run. All 40
+scientific checkpoint requirements remain pending. YAML placeholder values for
+collection-specific adapters/keys/tolerances remain unchanged until those exact
+artifacts are bound in Task D. The tested simulator tolerances are exact state
+and repeated-observation equality, action `1e-6`, and reward arithmetic `1e-7`.
 
 ### Task C — metric and reporting correctness before collection
 

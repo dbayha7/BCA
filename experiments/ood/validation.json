@@ -1,0 +1,545 @@
+{
+  "schema": "bca-ood-adapter-engineering-v1",
+  "date": "2026-09-27",
+  "base_revision": "c5da0750a7e73abca8b556f7575e925540a0bf85",
+  "scope": {
+    "hosts": [
+      "td3_bc",
+      "rebrac"
+    ],
+    "datasets": [
+      "hopper-medium-v2",
+      "walker2d-medium-replay-v2"
+    ],
+    "checkpoint_methods": [
+      "host",
+      "bca"
+    ],
+    "checkpoint_step": 0,
+    "device": "cpu",
+    "synthetic_radius_refresh": true,
+    "optimizer_updates": 0,
+    "scientific_checkpoint_acceptance": false,
+    "accepted_scientific_checkpoints": 0,
+    "scientific_collection_launched": false
+  },
+  "yaml": {
+    "commented_setting_and_section_lines": 82,
+    "semantic_sha256": "491e5662bfac93bbe58d0318ab133f98c4a93bfedc4ae9f898c59f1c6fb2e35e",
+    "values_changed": false
+  },
+  "source_sha256": {
+    "adapters.py": "df09166de2a5ca1ed8cd62863869f2647d65c0d87b2779e8b658205139938049",
+    "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+    "protocol.py": "ff1031152a8f616556549328e7a1e6fbacf59bce2e9140e7444f5bc8ae74c578",
+    "simulator.py": "63368aa349d3f955f089e14c9ed965739bf1381a1af381a8fc8d5275844cabf0",
+    "test_outcomes.py": "94c8d6e142b6e84c045f6c556a987ab0109af81dd7a42ae8af44515c790e8c31",
+    "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+  },
+  "unchanged_training_matrix_sha256": "e4fa93139c6b94e238cc89242121ce301a4a870b4f7d6e9fd6e1f8734388216c",
+  "only_changed_existing_source_pins": [
+    "README.md",
+    "docs/superpowers/plans/2026-09-24-ood-experiment.md"
+  ],
+  "runtime": {
+    "python": "3.10.20 (main, Mar 11 2026, 17:46:40) [GCC 14.3.0]",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "packages": {
+      "jax": "0.6.2",
+      "jaxlib": "0.6.2",
+      "flax": "0.10.7",
+      "optax": "0.2.8",
+      "numpy": "2.2.6",
+      "gym": "0.23.1",
+      "d4rl": "1.1",
+      "mujoco-py": "2.1.2.14",
+      "PyYAML": "6.0.3"
+    }
+  },
+  "runtime_note": "Package metadata queried read-only after tests; same interpreter. Not a fresh-install validation. Exact v5/v6 OOD source copies and all weights/arrays remain local.",
+  "final_suite": {
+    "attempt": "adapters-runtime-v6",
+    "test_methods": 6,
+    "actual_exit_code": 0,
+    "checks": [
+      {
+        "fixture": "td3_bc-host",
+        "initial_sha256": "ff5a104bc2323b5c49da297cacaa3f1ca26dcc4e8cc4ae12ec5ad135c9a83230",
+        "original_initial_hash_matched": true,
+        "step": 0
+      },
+      {
+        "fixture": "td3_bc-bca",
+        "initial_sha256": "956f6107ec6dcc68d5652ffeb917f2d014f3f320076b2d39ba96a052b0929c1e",
+        "original_initial_hash_matched": true,
+        "step": 0
+      },
+      {
+        "fixture": "rebrac-host",
+        "initial_sha256": "407d77f05207932240195e270d28c1c62bf73c4e27269294631fca28aa35cbf2",
+        "original_initial_hash_matched": true,
+        "step": 0
+      },
+      {
+        "fixture": "rebrac-bca",
+        "initial_sha256": "87de73ae9000a14aa996cef0f3c451b569955ea209b049fc2a4795b1fb098b2d",
+        "original_initial_hash_matched": true,
+        "step": 0
+      },
+      {
+        "environment": "hopper-medium-v2",
+        "transitions": 10,
+        "constructor_transitions": 1,
+        "physics_steps": 44,
+        "max_reward_error": 2.920619301960414e-11,
+        "exact_repeated_observations": true
+      },
+      {
+        "environment": "walker2d-medium-replay-v2",
+        "transitions": 10,
+        "constructor_transitions": 1,
+        "physics_steps": 44,
+        "max_reward_error": 2.192258596878105e-10,
+        "exact_repeated_observations": true
+      }
+    ],
+    "action_gates": [
+      {
+        "fixture": "td3_bc-host",
+        "max_absolute_error": 0.0,
+        "evidence": {
+          "path": "runs/ood/adapters-runtime-v6/td3_bc-host-action-gate.npz",
+          "sha256": "d40436f9823bcdce1ff27fed0912e34b3b80d7a78021cbe2acae642e15b05063"
+        },
+        "direct_reference": {
+          "path": "runs/ood/adapters-runtime-v6/td3_bc-host-direct-reference.npz",
+          "sha256": "8b0b71aa6ba525390cf14b6ece73efbf0581e9d51e1750b36cabbe8dde8972b1"
+        }
+      },
+      {
+        "fixture": "td3_bc-bca",
+        "max_absolute_error": 0.0,
+        "evidence": {
+          "path": "runs/ood/adapters-runtime-v6/td3_bc-bca-action-gate.npz",
+          "sha256": "d40436f9823bcdce1ff27fed0912e34b3b80d7a78021cbe2acae642e15b05063"
+        },
+        "direct_reference": {
+          "path": "runs/ood/adapters-runtime-v6/td3_bc-bca-direct-reference.npz",
+          "sha256": "966278c370da18b0b59d64b6a8ce1d1908a9cd4a87dd2a3c9951f29c7422abda"
+        }
+      },
+      {
+        "fixture": "rebrac-host",
+        "max_absolute_error": 0.0,
+        "evidence": {
+          "path": "runs/ood/adapters-runtime-v6/rebrac-host-action-gate.npz",
+          "sha256": "67545a126cfac426cb61aafceb5c4c2c0130349ea1fa92e056b266ee61d77376"
+        },
+        "direct_reference": {
+          "path": "runs/ood/adapters-runtime-v6/rebrac-host-direct-reference.npz",
+          "sha256": "de46c7ab2fa4e12d5af80eb7fc7bc05c681a0fb94e3c47d9677d5003e1d59e31"
+        }
+      },
+      {
+        "fixture": "rebrac-bca",
+        "max_absolute_error": 0.0,
+        "evidence": {
+          "path": "runs/ood/adapters-runtime-v6/rebrac-bca-action-gate.npz",
+          "sha256": "67545a126cfac426cb61aafceb5c4c2c0130349ea1fa92e056b266ee61d77376"
+        },
+        "direct_reference": {
+          "path": "runs/ood/adapters-runtime-v6/rebrac-bca-direct-reference.npz",
+          "sha256": "4be62a31374d3fb2bb52dd417917bc2c61cd3c049475a6fab5953e05c05f5087"
+        }
+      }
+    ]
+  },
+  "simulator_contracts": {
+    "hopper-medium-v2": {
+      "identity": {
+        "dataset": "hopper-medium-v2",
+        "source_sha256": {
+          "gym.envs.mujoco.hopper": "3cdf42416ab559b9847212e3f0b6233e25c4f9e2021eaa380509cdbf7606e3ee",
+          "gym.envs.mujoco.walker2d": "dec05f755efa64c32dfd76bbb278f5e52d307b1af1b976f07eaf6633268af375",
+          "gym.envs.mujoco.mujoco_env": "f098927716b13fb13e25e924034347fb147acaca8e8d7122b5d37bc4da6c013d",
+          "gym.wrappers.time_limit": "2adc707e54cd568dafcbe6386ac1e7295ef208721c3edc4a5a9d42789352687e",
+          "gym.wrappers.order_enforcing": "b4a1cc1faca0508c1d4be105f462a92ec3af1ec3d69c14b0b89c5693cf01f9cd",
+          "d4rl.utils.wrappers": "53ff0ce23479bdc56ffd37e10607c405b29666c589c6fe56047372c5a7d9580a",
+          "d4rl.gym_mujoco.gym_envs": "9550b9a6ae7c66fe6d7d98bd1ad6e7b1659386b8c343399b3babaaabf37ce77c"
+        },
+        "model_sha256": "27ff0019214d75a676284b681eba43c0b3b517513bc733b79703edee24f006e1",
+        "frame_skip": 4,
+        "max_episode_steps": 1000,
+        "state_absolute_tolerance": 0.0,
+        "repeated_observation_absolute_tolerance": 0.0,
+        "reward_absolute_tolerance": 1e-07,
+        "action_transform": "D4RL lb+(a+1)*0.5*(ub-lb), then clip; preserve incoming dtype",
+        "restore_fields": [
+          "qpos",
+          "qvel",
+          "act",
+          "qacc_warmstart",
+          "ctrl",
+          "qfrc_applied",
+          "xfrc_applied",
+          "mocap_pos",
+          "mocap_quat",
+          "userdata",
+          "body_pos",
+          "body_quat",
+          "site_pos"
+        ],
+        "native_reward": "forward + 1 - .001*sum(applied_action**2)"
+      },
+      "required_snapshot_fields": [
+        "act",
+        "action_rng",
+        "body_pos",
+        "body_quat",
+        "ctrl",
+        "elapsed_steps",
+        "has_reset",
+        "identity",
+        "mocap_pos",
+        "mocap_quat",
+        "native_action_rng",
+        "qacc_warmstart",
+        "qfrc_applied",
+        "qpos",
+        "qvel",
+        "rng",
+        "schema",
+        "site_pos",
+        "terminated",
+        "time",
+        "truncated",
+        "udd_state",
+        "userdata",
+        "xfrc_applied"
+      ],
+      "identity_evidence": {
+        "path": "runs/ood/adapters-runtime-v6/hopper-medium-v2-identity.json",
+        "sha256": "ee6662c953e155e55069e7cf24610f12df9c9d863e8306fb5294ca2801786fcb"
+      },
+      "initial_state_evidence": {
+        "path": "runs/ood/adapters-runtime-v6/hopper-medium-v2-initial-state.json",
+        "sha256": "77c784b0672eaf04cb86a09121537d0b60c393697eaa839f5880ebea9cf66142"
+      },
+      "transitions_evidence": {
+        "path": "runs/ood/adapters-runtime-v6/hopper-medium-v2-transitions.npz",
+        "sha256": "942b90498fd0facbc6d9f6983761b1327956d2fd65c1155353ef6c8af45b8532"
+      }
+    },
+    "walker2d-medium-replay-v2": {
+      "identity": {
+        "dataset": "walker2d-medium-replay-v2",
+        "source_sha256": {
+          "gym.envs.mujoco.hopper": "3cdf42416ab559b9847212e3f0b6233e25c4f9e2021eaa380509cdbf7606e3ee",
+          "gym.envs.mujoco.walker2d": "dec05f755efa64c32dfd76bbb278f5e52d307b1af1b976f07eaf6633268af375",
+          "gym.envs.mujoco.mujoco_env": "f098927716b13fb13e25e924034347fb147acaca8e8d7122b5d37bc4da6c013d",
+          "gym.wrappers.time_limit": "2adc707e54cd568dafcbe6386ac1e7295ef208721c3edc4a5a9d42789352687e",
+          "gym.wrappers.order_enforcing": "b4a1cc1faca0508c1d4be105f462a92ec3af1ec3d69c14b0b89c5693cf01f9cd",
+          "d4rl.utils.wrappers": "53ff0ce23479bdc56ffd37e10607c405b29666c589c6fe56047372c5a7d9580a",
+          "d4rl.gym_mujoco.gym_envs": "9550b9a6ae7c66fe6d7d98bd1ad6e7b1659386b8c343399b3babaaabf37ce77c"
+        },
+        "model_sha256": "2768987058a99389eecb0dbb78c957c64b8d0c72b8a0fa7df809df09b136f2a5",
+        "frame_skip": 4,
+        "max_episode_steps": 1000,
+        "state_absolute_tolerance": 0.0,
+        "repeated_observation_absolute_tolerance": 0.0,
+        "reward_absolute_tolerance": 1e-07,
+        "action_transform": "D4RL lb+(a+1)*0.5*(ub-lb), then clip; preserve incoming dtype",
+        "restore_fields": [
+          "qpos",
+          "qvel",
+          "act",
+          "qacc_warmstart",
+          "ctrl",
+          "qfrc_applied",
+          "xfrc_applied",
+          "mocap_pos",
+          "mocap_quat",
+          "userdata",
+          "body_pos",
+          "body_quat",
+          "site_pos"
+        ],
+        "native_reward": "forward + 1 - .001*sum(applied_action**2)"
+      },
+      "required_snapshot_fields": [
+        "act",
+        "action_rng",
+        "body_pos",
+        "body_quat",
+        "ctrl",
+        "elapsed_steps",
+        "has_reset",
+        "identity",
+        "mocap_pos",
+        "mocap_quat",
+        "native_action_rng",
+        "qacc_warmstart",
+        "qfrc_applied",
+        "qpos",
+        "qvel",
+        "rng",
+        "schema",
+        "site_pos",
+        "terminated",
+        "time",
+        "truncated",
+        "udd_state",
+        "userdata",
+        "xfrc_applied"
+      ],
+      "identity_evidence": {
+        "path": "runs/ood/adapters-runtime-v6/walker2d-medium-replay-v2-identity.json",
+        "sha256": "fce27bc8686efc324636460deead66e2df1eeb0c925e3b5ad4bdbf3aecba2c32"
+      },
+      "initial_state_evidence": {
+        "path": "runs/ood/adapters-runtime-v6/walker2d-medium-replay-v2-initial-state.json",
+        "sha256": "5869e641ea92899edf920b4650c8c690905700b8a4c7b80a18c2a27e9bd6a8d8"
+      },
+      "transitions_evidence": {
+        "path": "runs/ood/adapters-runtime-v6/walker2d-medium-replay-v2-transitions.npz",
+        "sha256": "aeda8d5708745d5e4c233272c51a66d1f85132ad8fb022f8cce2e2233ccf10e2"
+      }
+    }
+  },
+  "resource_ledger": {
+    "all_attempts_environment_transitions": 72,
+    "all_attempts_physics_steps": 288,
+    "all_attempts_explicit_transitions": 60,
+    "all_attempts_constructor_transitions": 12,
+    "predeclared_ceiling": 130,
+    "unused": 58,
+    "scientific_outcome_steps": 0
+  },
+  "attempts": [
+    {
+      "attempt": "adapters-runtime-v1",
+      "actual_exit_code": 1,
+      "note": "Unexpected OrderEnforcing wrapper; before explicit test transitions.",
+      "explicit_transitions": 0,
+      "constructor_transitions": 2,
+      "physics_steps": 8,
+      "declaration": {
+        "path": "runs/ood/adapters-runtime-v1/declaration.json",
+        "sha256": "ffe17a46b186ee22f8ee8173abd23246ed1a94b38e43924648eea6fdfc63e071"
+      },
+      "source_sha256": {
+        "adapters.py": "13ee5e6e11120fa8bd4d36e9d4578587cbf3984a244381aa192a571b44bb8e95",
+        "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+        "protocol.py": "ce658108681bbfe4ac1d6c156042a4ece95c47d53a895cb3b2551bc670e4e4c1",
+        "simulator.py": "d95a35f82e4520daaf993f35d1dba5144ffd57002fa4b95664a0d83b36ab2c45",
+        "test_outcomes.py": "bf1b086b03b69841a5def9ad6ea064ff775a9a74efebfcf0b7c5c295bcc407fd",
+        "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+      },
+      "log": {
+        "path": "runs/ood/adapters-runtime-v1.log",
+        "sha256": "7b5fa430791ee2405dc1da3c4e28ae8ffcef210736eb3f249fb4e3cbc88c2823"
+      },
+      "actual_exit": {
+        "path": "runs/ood/adapters-runtime-v1-exit.json",
+        "sha256": "a0a8371681938a77b076eae9cd8c4cef3f11313f50b36cb7287a4320ea27df2d"
+      },
+      "observations": {
+        "path": "runs/ood/adapters-runtime-v1/observations.json",
+        "sha256": "bd50d75fddef4d42e0b5b75a94b6c4987b8f90dc6fb1ad27456fa8e744807727"
+      }
+    },
+    {
+      "attempt": "adapters-runtime-v2",
+      "actual_exit_code": 1,
+      "note": "Inactive MuJoCo fields are None; before explicit test transitions.",
+      "explicit_transitions": 0,
+      "constructor_transitions": 2,
+      "physics_steps": 8,
+      "declaration": {
+        "path": "runs/ood/adapters-runtime-v2/declaration.json",
+        "sha256": "f669ab0a9f278a05604f374ed165fbb1bf3f339886bbe384e401d7276fb2a17b"
+      },
+      "source_sha256": {
+        "adapters.py": "df09166de2a5ca1ed8cd62863869f2647d65c0d87b2779e8b658205139938049",
+        "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+        "protocol.py": "ce658108681bbfe4ac1d6c156042a4ece95c47d53a895cb3b2551bc670e4e4c1",
+        "simulator.py": "5b26af98dd858751d7cfafe2dc7b17fc87a0808ac67fd540e0a82a4aa2cf2a87",
+        "test_outcomes.py": "6dc76fe796f209ada6fe2092e098ec4cd8d31aa1dd19fa1cf0d411e72d206205",
+        "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+      },
+      "log": {
+        "path": "runs/ood/adapters-runtime-v2.log",
+        "sha256": "6f2cf78fb6eb1661d272f709f11ab4ba6817f81baaae5aad3f6894125cfab7cc"
+      },
+      "actual_exit": {
+        "path": "runs/ood/adapters-runtime-v2-exit.json",
+        "sha256": "b07bbeaba148b91b0477e9e470b6041de482ae2732ea93de7430c2b015f29f2e"
+      },
+      "observations": {
+        "path": "runs/ood/adapters-runtime-v2/observations.json",
+        "sha256": "03a083496b719e2b02f318352a7c632b85818b90cd42552a9aa5cc50bfb92953"
+      }
+    },
+    {
+      "attempt": "adapters-runtime-v3",
+      "actual_exit_code": 1,
+      "note": "Legacy Gym RNG deepcopy reducer incompatible; before explicit test transitions.",
+      "explicit_transitions": 0,
+      "constructor_transitions": 2,
+      "physics_steps": 8,
+      "declaration": {
+        "path": "runs/ood/adapters-runtime-v3/declaration.json",
+        "sha256": "011e597015e28182bd21ea559cfe943f22503f6f5877e2a065efb79f55c4d5b4"
+      },
+      "source_sha256": {
+        "adapters.py": "df09166de2a5ca1ed8cd62863869f2647d65c0d87b2779e8b658205139938049",
+        "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+        "protocol.py": "ce658108681bbfe4ac1d6c156042a4ece95c47d53a895cb3b2551bc670e4e4c1",
+        "simulator.py": "1119fd30edb695af6d54411e44b5c33c5fdd4b6275a90e27b780d17ec3dce191",
+        "test_outcomes.py": "6dc76fe796f209ada6fe2092e098ec4cd8d31aa1dd19fa1cf0d411e72d206205",
+        "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+      },
+      "log": {
+        "path": "runs/ood/adapters-runtime-v3.log",
+        "sha256": "cbce9e665748d8867b9285e872a6b70af8f1e24d5c924cfabac679d136e4e158"
+      },
+      "actual_exit": {
+        "path": "runs/ood/adapters-runtime-v3-exit.json",
+        "sha256": "5042b2cf1ad6704708d977c688c3cf38241938fd542e77ebf346fc29cb829ca6"
+      },
+      "observations": {
+        "path": "runs/ood/adapters-runtime-v3/observations.json",
+        "sha256": "03a083496b719e2b02f318352a7c632b85818b90cd42552a9aa5cc50bfb92953"
+      }
+    },
+    {
+      "attempt": "adapters-runtime-v4",
+      "actual_exit_code": 0,
+      "note": "Simulator-only suite passes.",
+      "explicit_transitions": 20,
+      "constructor_transitions": 2,
+      "physics_steps": 88,
+      "declaration": {
+        "path": "runs/ood/adapters-runtime-v4/declaration.json",
+        "sha256": "30a3bc34f2589dfcb3a95e5d04c1fdae5b43e7c711748d2aa89f21386b364c2a"
+      },
+      "source_sha256": {
+        "adapters.py": "df09166de2a5ca1ed8cd62863869f2647d65c0d87b2779e8b658205139938049",
+        "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+        "protocol.py": "ce658108681bbfe4ac1d6c156042a4ece95c47d53a895cb3b2551bc670e4e4c1",
+        "simulator.py": "d290d45510f96b5590a697f98ded68f8edc2c0974202951ca9886b8ee5539224",
+        "test_outcomes.py": "6dc76fe796f209ada6fe2092e098ec4cd8d31aa1dd19fa1cf0d411e72d206205",
+        "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+      },
+      "log": {
+        "path": "runs/ood/adapters-runtime-v4.log",
+        "sha256": "3469d41d548eef55b61e8ad6f60cc059c3bb251c07c3f4dc8dadb7cb9073f020"
+      },
+      "actual_exit": {
+        "path": "runs/ood/adapters-runtime-v4-exit.json",
+        "sha256": "8d89956c4af217dbbbace70103381d19dbec29c6a185f3506af049ba449211bd"
+      },
+      "observations": {
+        "path": "runs/ood/adapters-runtime-v4/observations.json",
+        "sha256": "782bf25cc48ad0c9101ff7dd2658ffbfa82af79309fc46bc61cecc60d10d9773"
+      }
+    },
+    {
+      "attempt": "adapters-runtime-v5",
+      "actual_exit_code": 0,
+      "note": "Full suite passes with malformed-input checks.",
+      "explicit_transitions": 20,
+      "constructor_transitions": 2,
+      "physics_steps": 88,
+      "declaration": {
+        "path": "runs/ood/adapters-runtime-v5/declaration.json",
+        "sha256": "42ed46b55db28188bd26215dc594c8792adeb1d4c44f2a49c2f16974962d57e1"
+      },
+      "source_sha256": {
+        "adapters.py": "df09166de2a5ca1ed8cd62863869f2647d65c0d87b2779e8b658205139938049",
+        "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+        "protocol.py": "ce658108681bbfe4ac1d6c156042a4ece95c47d53a895cb3b2551bc670e4e4c1",
+        "simulator.py": "77ae0b93f8ceae5c22fdffd201ee9c741ca9e3e847343b1c0300fdb34bfd05d8",
+        "test_outcomes.py": "94c8d6e142b6e84c045f6c556a987ab0109af81dd7a42ae8af44515c790e8c31",
+        "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+      },
+      "log": {
+        "path": "runs/ood/adapters-runtime-v5.log",
+        "sha256": "a09baa89186b7c6bfc5f1b95b18d7293dc4eedaa3091ce495ce1073606e02d0f"
+      },
+      "actual_exit": {
+        "path": "runs/ood/adapters-runtime-v5-exit.json",
+        "sha256": "ad6f0af436efbec52213edbfcd8d0f70c02dcba2a3d005427d3f7ded4147221c"
+      },
+      "observations": {
+        "path": "runs/ood/adapters-runtime-v5/observations.json",
+        "sha256": "ebd3e0110e19ebcd426a6f3c5605f7d9cd5e1689e3bf3aac8abc0ba1c62c1b45"
+      }
+    },
+    {
+      "attempt": "adapters-runtime-v6",
+      "actual_exit_code": 0,
+      "note": "Final full suite passes; applied-control gate now follows evidence writes.",
+      "explicit_transitions": 20,
+      "constructor_transitions": 2,
+      "physics_steps": 88,
+      "declaration": {
+        "path": "runs/ood/adapters-runtime-v6/declaration.json",
+        "sha256": "ae2eef8a35e933d0b4e7c8ca17f4fff2ff13a78b230aadf0b8c7e97a0ec13d74"
+      },
+      "source_sha256": {
+        "adapters.py": "df09166de2a5ca1ed8cd62863869f2647d65c0d87b2779e8b658205139938049",
+        "oracle.py": "e924eae62f5baf49bd32c7d8f06add8ebb51ed9a1858eaa0aca1d3b32b9bf296",
+        "protocol.py": "ff1031152a8f616556549328e7a1e6fbacf59bce2e9140e7444f5bc8ae74c578",
+        "simulator.py": "63368aa349d3f955f089e14c9ed965739bf1381a1af381a8fc8d5275844cabf0",
+        "test_outcomes.py": "94c8d6e142b6e84c045f6c556a987ab0109af81dd7a42ae8af44515c790e8c31",
+        "test_protocol.py": "d3de8649116461928483b0f69b3632940cfcdefd35ee731c35d816f532566d20"
+      },
+      "log": {
+        "path": "runs/ood/adapters-runtime-v6.log",
+        "sha256": "73043ed29d2ff841131eab48f5c900fc026f7d663980ef599d9c7fc6b4100bd5"
+      },
+      "actual_exit": {
+        "path": "runs/ood/adapters-runtime-v6-exit.json",
+        "sha256": "29784fef59695f8b006c30362aba87a40f12766080f51ef374cdb961d0e88697"
+      },
+      "observations": {
+        "path": "runs/ood/adapters-runtime-v6/observations.json",
+        "sha256": "ebd3e0110e19ebcd426a6f3c5605f7d9cd5e1689e3bf3aac8abc0ba1c62c1b45"
+      }
+    }
+  ],
+  "additional_checks": {
+    "protocol-after-adapters": {
+      "test_count": 19,
+      "actual_exit_code": 0,
+      "log": {
+        "path": "runs/ood/protocol-after-adapters.log",
+        "sha256": "f71a83390fafc7fb3b37bc9f0f876149fbad427f6457963f2fa8e3e64a4efdf6"
+      },
+      "actual_exit": {
+        "path": "runs/ood/protocol-after-adapters-exit.json",
+        "sha256": "4f7bf0e8d62aff26bbea6201c95d21e34cc8f37885e55d63bf3f3bca2039f61b"
+      }
+    },
+    "repository-after-adapters": {
+      "test_count": null,
+      "actual_exit_code": 0,
+      "log": {
+        "path": "runs/ood/repository-after-adapters.log",
+        "sha256": "9f79a5bd918433cd176a2da13007c643c39db6b9248d3613bfc5ec5028e34961"
+      },
+      "actual_exit": {
+        "path": "runs/ood/repository-after-adapters-exit.json",
+        "sha256": "eec1131143598bbbffac46676a12da1acbcf7ab84b58fdb02472d9dd03cfcaf9"
+      }
+    }
+  },
+  "remaining": [
+    "Task C metrics and completeness-aware reporting fixtures",
+    "actual 1M checkpoint/event/preparation validation",
+    "collection-specific candidate/key/state precommit and cumulative resource ledger",
+    "ReBRAC fresh live coverage target contract",
+    "other host/environment adapters outside the first tranche"
+  ]
+}

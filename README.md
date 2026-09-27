@@ -213,8 +213,9 @@ upstream invocation is not a reconstruction of their instrumentation.
 
 ## Reproduction status
 
-The first OOD implementation unit is available: one [configuration](configs/ood.yaml),
-one [protocol module](experiments/ood/protocol.py), and its refusal tests. It declares
+The OOD implementation has one fully commented [configuration](configs/ood.yaml),
+one [protocol module](experiments/ood/protocol.py), and tested read-only adapters
+for the initial tranche. It declares
 TD3+BC/ReBRAC × Hopper/Walker2d × the five existing seeds: **20 paired comparisons,
 40 required 1M checkpoints**. It reuses the existing host/BCA settings without
 changing training code or adding model variants.
@@ -239,13 +240,21 @@ Its seven roles are `resolved`, `source`, `preparation`, `result`, `checkpoint`,
 `events` and `actual_exit`, each with a path and SHA256. The separate supervisor
 receipt uses schema `ood-process-exit-v1`, run ID, actual integer exit code, and
 the result-file hash; the learner's own `exit.json` cannot substitute for it.
-Even accepted metadata stays pending: independent checkpoint/journal decoding,
-paired data/normalization verification, simulator adapters and bounded engineering
-checks remain to implement. ReBRAC's fresh live residual-coverage target also
+Even accepted metadata stays pending: the actual 1M checkpoints and journals,
+paired data/normalization, and collection-specific engineering gates must still
+be verified. Synthetic checkpoint tests now pass for TD3+BC/ReBRAC, with and
+without BCA. Hopper/Walker adapters pass exact restored-state and repeated-step
+checks, including independent reward reconstruction within absolute `1e-7`.
+Every YAML setting has an explanation; the scientific values are unchanged.
+ReBRAC's fresh live residual-coverage target also
 remains unresolved because its training target reads a recorded next action.
 
-No OOD experiment has been launched. The next implementation unit is the tiny
-known-answer environment and read-only adapters in Task B of the design.
+See the [adapter test record](docs/OOD_ADAPTER_TESTS.md) for the fixed CPU smoke
+budget, preserved failures, runtime requirements and exact reproduction command.
+The tests use untrained synthetic checkpoints and a few real simulator steps;
+they are engineering evidence, not OOD results or accepted 1M runs. No scientific
+OOD collection has launched. Next are Task C's metric/report tests, then binding
+the actual checkpoints and completing Task D's engineering gates.
 
 Validation of this layout covers all 280 resolved run declarations, all 28 cached
 dataset preparations and paired training pools, and CPU numerical parity fixtures

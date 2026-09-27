@@ -1,7 +1,8 @@
 """Freeze OOD declarations and reject incompatible metadata; never run a model.
 
-Task A only: even accepted metadata stays pending until independent checkpoint,
-event, target and simulator adapters pass. This module has no execution entrypoint.
+Metadata acceptance stays pending until actual checkpoint/event/data decoding
+and collection-specific gates pass. Adapter fixtures do not accept training runs.
+This module has no execution entrypoint.
 """
 
 import argparse
@@ -34,7 +35,10 @@ def digest(value):
 
 def file_hash(path):
     with Path(path).open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+        result = hashlib.sha256()
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            result.update(block)
+        return result.hexdigest()
 
 
 def read_json(path):
@@ -131,6 +135,8 @@ def build_manifest():
     engineering = len(cells) * config["resources"]["engineering_transitions_per_cell"]
     local_files = ["README.md", "configs/ood.yaml", "configs/sources.json",
                    "experiments/ood/protocol.py", "experiments/ood/test_protocol.py",
+                   "experiments/ood/adapters.py", "experiments/ood/simulator.py",
+                   "experiments/ood/oracle.py", "experiments/ood/test_outcomes.py",
                    "docs/superpowers/plans/2026-09-24-ood-experiment.md"]
     manifest = dict(schema="bca-ood-declaration-v1", config=config,
         repository_revision=subprocess.check_output(
@@ -150,9 +156,9 @@ def build_manifest():
                     training_updates_to_execute=0),
         inference_family_size=len(cells) * config["inference"]["primary_contrasts_per_cell"],
         ready_for_collection=False,
-        pending_gates=["checkpoint and event decoding", "paired preparation verification",
-                       "target adapters including ReBRAC next-action contract",
-                       "simulator identity and complete restore schema",
+        pending_gates=["actual 1M checkpoint and event decoding", "paired preparation verification",
+                       "live coverage target including ReBRAC next-action contract",
+                       "collection simulator identity and complete restore schema",
                        "pre-outcome candidate/action/step-key hashes",
                        "bounded engineering validation", "explicit execution direction"])
     manifest["manifest_sha256"] = digest(manifest)
