@@ -16,7 +16,7 @@ frozen-width consumption, update order, and evaluation/checkpoint schedules.
 Read **[every BCA entry point, with exact code snippets](INTEGRATION.md)** to see
 where BCA reads the host, changes its losses, adds state and gates updates.
 
-Read the proposed **[OOD experiment design](docs/superpowers/plans/2026-09-24-ood-experiment.md)**
+Read the **[OOD experiment design](docs/superpowers/plans/2026-09-24-ood-experiment.md)**
 for separate tests of support novelty, residual coverage and behavioral harm,
 including controls, sample budgets and a checked implementation sequence.
 
@@ -212,6 +212,40 @@ runtime correction. Their saved results retain that provenance; a direct
 upstream invocation is not a reconstruction of their instrumentation.
 
 ## Reproduction status
+
+The first OOD implementation unit is available: one [configuration](configs/ood.yaml),
+one [protocol module](experiments/ood/protocol.py), and its refusal tests. It declares
+TD3+BC/ReBRAC × Hopper/Walker2d × the five existing seeds: **20 paired comparisons,
+40 required 1M checkpoints**. It reuses the existing host/BCA settings without
+changing training code or adding model variants.
+
+```bash
+python -m unittest experiments.ood.test_protocol
+python -m experiments.ood.protocol --output runs/ood/declaration-v1.json
+```
+
+These commands need only Python and the existing PyYAML dependency. They execute
+no training, model forward passes or simulator transitions. The declaration pins
+source/config identities, all intended rows, distinct random-stream seeds, the
+statistical contract and resource ceilings. An existing output file is never
+overwritten. Regenerate to a new path after changing the repository revision;
+validation rejects stale or edited declarations. The maximum future budget is
+39,998,400 environment transitions including engineering checks, not a launch.
+
+All checkpoint rows start **pending**, meaning no evidence has been bound; this
+does not assert that compatible artifacts are absent from other locations.
+`validate_evidence` checks explicitly supplied file hashes and reported metadata.
+Its seven roles are `resolved`, `source`, `preparation`, `result`, `checkpoint`,
+`events` and `actual_exit`, each with a path and SHA256. The separate supervisor
+receipt uses schema `ood-process-exit-v1`, run ID, actual integer exit code, and
+the result-file hash; the learner's own `exit.json` cannot substitute for it.
+Even accepted metadata stays pending: independent checkpoint/journal decoding,
+paired data/normalization verification, simulator adapters and bounded engineering
+checks remain to implement. ReBRAC's fresh live residual-coverage target also
+remains unresolved because its training target reads a recorded next action.
+
+No OOD experiment has been launched. The next implementation unit is the tiny
+known-answer environment and read-only adapters in Task B of the design.
 
 Validation of this layout covers all 280 resolved run declarations, all 28 cached
 dataset preparations and paired training pools, and CPU numerical parity fixtures

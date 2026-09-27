@@ -1,0 +1,83 @@
+# Initial OOD tranche. Changing scientific settings requires a new protocol version.
+schema: bca-ood-protocol-v1
+hosts: [td3_bc, rebrac]
+datasets: [hopper, walker2d]
+methods: [host, bca]
+training_seeds_from: configs/experiment.yaml
+checkpoint_step: 1000000
+collectors: [host, bca]
+episodes_per_collector: 64
+capture_steps: [0, 100]
+missing_capture: retain_without_replacement
+candidates:
+  fixed_slots: [host_reference, bca, nearest_recorded, uniform]
+  perturbation_rms: [0.05, 0.15, 0.30]
+  signs: [-1, 1]
+  direction: one_saved_rms_unit_vector_per_state
+  coordinates: normalized_action_box
+  clipping: native_bounds
+  duplicate_applied_actions: retain_aliases_one_ranking_vote
+support:
+  pool: existing_training_complement
+  neighbors: 32
+  maximum_reference_rows: 32768
+  episode_reference_fraction: 0.8
+  validation_rows_per_episode: 1
+  distant_quantile: 0.95
+  missing_episode_boundaries: block_thresholded_analysis
+continuations: [host, bca]
+primary_continuation: bca
+horizon: 250
+reward: raw_undiscounted_no_tail_bootstrap
+harm_threshold: 1.0
+sensitivity_threshold: 0.0
+scores: [frozen_bca_width, support_distance, constant, saved_random_order]
+ranking:
+  primary: within_state_auroc
+  comparative: width_minus_support_auroc
+  reference_action: excluded
+  ties: half_credit
+  single_class_states: unavailable
+  aggregation: equal_collector_capture_strata_with_missing_strata_reported
+  pooled_auroc: separate_secondary_column
+  minimum_valid_states: 30
+  minimum_harmful_alternatives: 30
+coverage:
+  calibration_episodes: 200
+  test_episodes: 500
+  maximum_episode_steps: 1000
+  sample: one_uniform_transition_per_episode
+  frozen_objects: [actor, critics, targets, scale, unit, transforms]
+  adaptive_feedback: false
+  alpha: 0.1
+  credibility: 0.95
+  radii: [training, fresh_conformal, max_fresh_bayesian_conformal]
+  td3_bc_target: pending_adapter_validation
+  rebrac_target: unavailable_until_recorded_next_action_contract_resolved
+inference:
+  bootstrap_draws: 10000
+  unit: paired_training_seed_then_paired_reset_block
+  crossed_reset_dependence: preserve_if_present
+  primary_contrasts_per_cell: 2
+  family_correction: bonferroni_bootstrap_approximate
+  confidence: 0.95
+  whole_policy: separate_reserved_final_and_common_periodic_curve
+streams:
+  first_seed: 1600000000
+  allocator: sequential_unique_uint32_skipping_existing_training_seeds
+  continuation_coupling: same_state_base_seed_across_actions_and_policies
+  continuation_step_keys: pending_adapter_precommit_before_outcomes
+  engineering: disjoint_excluded_from_science
+gates:
+  action_absolute_tolerance: 0.000001
+  reward_absolute_tolerance: 0.0000001
+  restore_schema: all_fields_required_by_actual_adapter
+  state_tolerances: pending_adapter_declaration
+  transformed_controls: save_and_independently_reconstruct
+  failure: stop_preserve_no_automatic_retry
+resources:
+  engineering_transitions_per_cell: 10000
+  local_gpu_workers: 1
+  total_gpus: 2
+  local_lock: /home/dbayha/bca-work/resource-locks/local-rtx5070ti.lock
+  accounting: environment_transitions_and_physics_steps_separate

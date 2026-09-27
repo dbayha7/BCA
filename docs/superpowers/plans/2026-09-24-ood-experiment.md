@@ -1,6 +1,7 @@
 # BCA OOD experiment design and implementation plan
 
-**Status: proposed, September 24, 2026. No experiment is launched by this plan.**
+**Status: Task A implemented September 27, 2026; Tasks B–D remain pending.
+No experiment has been launched.**
 The original Unifloral source is now bundled. This document specifies the next
 experiment without adding model variants to the four host/BCA pairs.
 
@@ -16,8 +17,8 @@ levels. Keep learner code and the original Unifloral snapshot unchanged.
 offline statistics; Matplotlib for exportable figures. New experiment code belongs
 in one `experiments/ood/` directory, with one proposed `configs/ood.yaml`.
 
-Implementation proceeds locally, without subagents. The checklist at the end is
-future work, not a statement that the experiment exists or passed.
+Implementation proceeds locally, without subagents. Checked items below describe
+CPU protocol checks only; they do not imply that real experiments exist or passed.
 
 ## 1. Questions and permissible conclusions
 
@@ -394,9 +395,10 @@ missing/failed/zero-harm/tied-score fixtures at narrow and wide screen sizes.
 Export PDF/PNG/SVG and CSV per figure so presentation does not depend on a browser.
 The existing main thesis PDF stays unchanged.
 
-## 10. Implementation sequence (future, no launches here)
+## 10. Implementation sequence (no launches here)
 
-Keep the implementation small. These proposed files do not yet exist:
+Keep the implementation small. The configuration, protocol and protocol tests
+now exist; the remaining files below are planned:
 
 | File | Single responsibility |
 | --- | --- |
@@ -412,14 +414,22 @@ Keep the implementation small. These proposed files do not yet exist:
 
 ### Task A — freeze identities and statistical contract
 
-- [ ] Add protocol refusal fixtures before the adapter: wrong checkpoint/config,
+- [x] Add protocol refusal fixtures before the adapter: wrong checkpoint/config,
   missing counters/actual exit, overlapping calibration/test IDs, adaptive feedback,
   undeclared seed or continuation, changed horizon, and exceeded step budget.
-- [ ] Implement the single YAML resolver and manifest hash. Keep outcome paths out
+- [x] Implement the single YAML resolver and manifest hash. Keep outcome paths out
   of identity selection. Print both update and simulation accounting.
-- [ ] Validate all intended rows offline; missing checkpoints remain pending.
-- [ ] Run `python -m unittest experiments.ood.test_protocol`; require every adverse
+- [x] Validate all intended rows offline; missing checkpoints remain pending.
+- [x] Run `python -m unittest experiments.ood.test_protocol`; require every adverse
   fixture to fail closed and the valid frozen manifest to pass. Commit this unit.
+
+Task A resolves all 20 pairs/40 checkpoint requirements without importing a
+training host or querying a model. All rows remain pending until evidence is
+explicitly bound. Synthetic metadata tests do not verify actual checkpoints,
+event journals, simulator states or scientific outcomes. Accepted metadata alone
+cannot promote a row to verified. The future collector must persist the cumulative
+resource ledger and precommit actual candidate arrays and continuation step keys;
+Task A allocates base seeds and checks ceilings without acquiring a GPU lock.
 
 ### Task B — independent oracle and read-only adapters
 
