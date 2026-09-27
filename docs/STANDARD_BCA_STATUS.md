@@ -7,15 +7,16 @@ trajectories across four hosts, seven datasets and five seeds.
 
 | Execution lane | Hosts | Status |
 |---|---|---|
-| Local RTX 5070 Ti | TD3+BC, CQL | First TD3+BC Hopper host verified complete at 1M; its no-IW BCA counterpart is running. |
-| Cluster A100 | ReBRAC, IQL | Job 27045057 passed all 14 mandatory data cells with actual gate exit 0. First ReBRAC Hopper host verified complete at 1M; its no-IW BCA counterpart is running on str-gpu13. |
+| Local RTX 5070 Ti | TD3+BC, CQL | First TD3+BC Hopper host/BCA pair verified at 1M. Existing controller moved to CQL Hopper host (240k at 21:19 UTC). |
+| Cluster A100 | ReBRAC, IQL | Job 27045057 passed all 14 mandatory data cells with actual gate exit 0. First ReBRAC Hopper host verified complete at 1M; its no-IW BCA counterpart was at 890k on str-gpu13 in the 21:19 UTC snapshot. |
 
-Two of 280 declared physical runs (two of 315 actor trajectories) are independently verified complete. The first TD3+BC Hopper host final mean is **65.2157311**; its periodic-curve mean is **57.1475157**. See the [complete host readout and plots](../outputs/standard_bca/td3_bc/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-td3-host.json). Four further host seeds and all paired BCA comparisons remain pending for this cell.
+Three of 280 declared physical runs (three of 315 actor trajectories) are independently verified complete. The first TD3+BC Hopper host final mean is **65.2157311**; its periodic-curve mean is **57.1475157**. See the [complete host readout and plots](../outputs/standard_bca/td3_bc/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-td3-host.json). Its first BCA pair is now verified; four further paired training seeds remain pending for this cell.
 
-The first ReBRAC Hopper host final mean is **102.0239558**; its periodic-curve mean is **92.5215207**. See its [host readout and plots](../outputs/standard_bca/rebrac/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-rebrac-host.json). Its paired BCA comparison and four further host seeds remain pending. The two verified results are different hosts and do not supply a paired method comparison.
+The first ReBRAC Hopper host final mean is **102.0239558**; its periodic-curve mean is **92.5215207**. See its [host readout and plots](../outputs/standard_bca/rebrac/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-rebrac-host.json). Its paired BCA comparison and four further host seeds remain pending. The ReBRAC pair remains pending in this readout.
 
-A checkpoint below 1M is progress, not completion. No completed paired seed comparison,
-standard-BCA advantage, or real OOD result is claimed here.
+The first TD3+BC Hopper BCA final mean is **65.9275509** (host **65.2157311**, delta **+0.7118198**); its curve mean is **55.6709296** (host **57.1475157**, delta **-1.4765860**). BCA wins 11/20 paired final episodes. See the [first paired readout and plots](../outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/README.md) and [validation receipts](validation/standard-first-td3-pair.json). One paired training seed does not supply five-seed uncertainty or establish robust benefit, causality or OOD ranking. Initial unit-warmup numerical differences remain unresolved; no replay.
+
+A checkpoint below 1M is progress, not completion. All original outcomes remain included.
 
 ## Accepted preparation
 

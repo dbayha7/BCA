@@ -1,0 +1,84 @@
+{
+  "schema": "standard-first-td3-pair-verification-v1",
+  "checked_utc": "2026-09-27T21:29:36.230408+00:00",
+  "accepted": true,
+  "run_id": "td3_bc-hopper-bca-noiw-s202609171",
+  "audit_actual_exit": {
+    "started": "2026-09-27T21:24:12.829519+00:00",
+    "ended": "2026-09-27T21:24:19.497640+00:00",
+    "actual_exit": 0,
+    "closed": true,
+    "command": [
+      "wsl.exe",
+      "-d",
+      "Ubuntu",
+      "--",
+      "nice",
+      "-n",
+      "10",
+      "/home/dbayha/miniconda3/envs/corl-orig-local/bin/python",
+      "/mnt/c/Users/David Bayha/Documents/GitHub/BCA/experiments/standard_bca/audit_first_td3_bca.py",
+      "--root",
+      "/home/dbayha/bca-work/standard-noiw-v1",
+      "--repo",
+      "/mnt/c/Users/David Bayha/Documents/GitHub/BCA",
+      "--output",
+      "/mnt/c/Users/David Bayha/Documents/GitHub/BCA/outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1"
+    ],
+    "source_sha256": "135c1a7e9970b3a6537b1ce57ebbc8522b2794313c56cb6c6ebccdd4eb2ed06a"
+  },
+  "plot_actual_exit": {
+    "started": "2026-09-27T21:26:23.399105+00:00",
+    "ended": "2026-09-27T21:26:26.539488+00:00",
+    "actual_exit": 0,
+    "closed": true,
+    "command": [
+      "wsl.exe",
+      "-d",
+      "Ubuntu",
+      "--",
+      "nice",
+      "-n",
+      "10",
+      "/home/dbayha/miniconda3/envs/corl-orig-local/bin/python",
+      "/mnt/c/Users/David Bayha/Documents/GitHub/BCA/experiments/standard_bca/plot_first_td3_pair.py",
+      "--host",
+      "/mnt/c/Users/David Bayha/Documents/GitHub/BCA/outputs/standard_bca/td3_bc/hopper/host/s202609171/verified-v4",
+      "--bca",
+      "/mnt/c/Users/David Bayha/Documents/GitHub/BCA/outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1"
+    ]
+  },
+  "code_sha256": {
+    "experiments/standard_bca/audit_first_td3_bca.py": "135c1a7e9970b3a6537b1ce57ebbc8522b2794313c56cb6c6ebccdd4eb2ed06a",
+    "experiments/standard_bca/plot_first_td3_pair.py": "25a456616f084c9be5ae78cdbe83f91feb003a1806d42dad7d01c8ce0d90f6c0"
+  },
+  "artifact_sha256": {
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/audit.json": "bff99806adbff4b6c3bafee90e3eb4263eec0e0610a5d4a9f45fa280aca97a40",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/comparison.json": "7a693ae4787cb32be2c6647e43309e9c780a6661cb2d62344a0876f94d16bce7",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/evaluations.json": "7022043fce69072603be6d34d5fcd0a492dd4a952de12e43bbb5a3763ed7f82c",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/metric_blocks.json": "2a8d6c8a0add6f3b649fe1618dfe8ac0f1b43c83fbe208063b63f430f90a8c53",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/paired_overview.png": "1031de2d2dac8c6448853ddaeb0fbcf9f6bd89791e1d17e4c8a3cf214823bfb9",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/paired_overview.svg": "cf8042641931f61cd6591ce5950b77d195b2c4028dcb14c1d4f9acbb86505f16",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/process_exit.json": "c87eba82324bbcd51329076f42bfa96c7447cd71faf3b2580ad51f832eb53054",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/readout_checks.json": "52da12586cc5be589d9135adcafdcdb15a9d21074bce25110d45b083423f25fd",
+    "outputs/standard_bca/td3_bc/hopper/bca_noiw/s202609171/verified-v1/refreshes.json": "6b32d15ab3c757c183470750e863e7065bf089454c0eda8ffb688c78cf4ccb7c"
+  },
+  "audit_stderr_sha256": "3bc59574d3f3217b0b0a9dcf390637ed842356b8293540d0ddfcb570eebf4e67",
+  "audit_warning": "CUDA plugin discovery reported CUDA_ERROR_NO_DEVICE with CUDA_VISIBLE_DEVICES empty; audit completed under JAX_PLATFORMS=cpu and actual exit 0.",
+  "inspection_notes": [
+    "Initial schema output included excess checkpoint calibration details; retained privately, excluded from publication.",
+    "Read-only lookup of nonexistent calibration/state.py failed; actual type order verified in calibration/reference.py.",
+    "Status write using Windows default encoding exited 1 on Unicode minus; file restored from published HEAD and rewritten with explicit UTF-8."
+  ],
+  "scientific_retry": false,
+  "model_queries_added": 0,
+  "simulator_steps_added": 0,
+  "training_updates_added": 0,
+  "verified_physical_runs": 3,
+  "verified_actor_trajectories": 3,
+  "declared_physical_runs": 280,
+  "declared_actor_trajectories": 315,
+  "completed_paired_seeds_for_td3_hopper": 1,
+  "training_seed_uncertainty": null,
+  "ood_collection_ready": false
+}
