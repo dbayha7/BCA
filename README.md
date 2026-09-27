@@ -43,8 +43,8 @@ then use the [component-level pseudocode map](ALGORITHMS.md#the-calibration-pipe
 
 The BCA pipeline has three separate operations:
 
-1. **Fit a scale** to detached Bellman residuals, with host-specific importance
-   weights and an ESS gate. Only the scale network is optimized here.
+1. **Fit a scale** to detached Bellman residuals. Standard BCA uses equal importance
+   factors and retains Bayesian bootstrap masses. Only the scale network is optimized here.
 2. **Freeze a reference** using held-out residual scores. Retain both the Bayesian
    and conformal radii and take their maximum.
 3. **Use the frozen width** in the host objective. It strengthens actor BC in
@@ -92,7 +92,7 @@ posterior refreshes. Evaluation has 200 periodic banks and a separate 20-episode
 final bank; periodic banks contain ten episodes, or two per actor for IQL.
 
 IQL `bca` explicitly trains **two actors: `host` and `bca`**, with one shared Q/V
-state and one AWR-weighted calibrator. Their beta is the native value and decision
+state and one calibrator with no importance tilt by default. Their beta is the native value and decision
 gain is fixed at 1. The standalone `host` option trains only the host actor on the
 same pool. There are no beta sweeps, floor-only actors, permutation arms or fixed-
 strength control arms in the active interface.
@@ -129,7 +129,7 @@ Use `--prepare-only` with a new output directory to verify a real cached split
 without learner updates. `--data-dir`, `--device cpu` and `--lock` are optional.
 Every output directory must be new. Each run records its resolved config, source
 snapshot, data identity, metrics, evaluations, checkpoints and completion/failure.
-There is no automatic retry or queue. Checkpoint counters and event banks are
+There is no automatic retry in the training entry point. Checkpoint counters and event banks are
 validated before completion is recorded.
 
 GPU runs hold an exclusive lock. On the existing research machine set
@@ -139,9 +139,16 @@ runs share the existing GPU reservation. Do not edit a checkout while it trains.
 ## Calibration and provenance
 
 BCA retains both Bayesian and conformal radii and consumes their maximum.
-TD3+BC/ReBRAC use action-affinity fitting weights, CQL uses policy-density fitting
-weights, and IQL uses capped pre-BCA AWR fitting weights. These weights affect
-scale fitting; posterior residual-score calibration remains unweighted. A fitted
+`configs/experiment.yaml` selects **`calibration_weighting: none`** for the first
+stage: every example has importance factor 1, while Bayesian bootstrap masses
+remain active. IQL retains its native AWR actor loss. BCA run names include
+`bca-noiw` so these runs cannot be confused with prior IW experiments.
+
+The explicit `host` setting preserves the earlier host-specific fitting heuristics:
+action affinity for TD3+BC/ReBRAC, policy density for CQL, and capped pre-BCA AWR
+for IQL. This setting describes calibration weighting, not the plain `host` method.
+Those settings are available for a separately declared later study; they are not
+selected as a best IW method. Posterior residual-score calibration stays unweighted. A fitted
 scale or conformal floor does not by itself guarantee behavioral-harm detection
 or improved return under adaptive training.
 

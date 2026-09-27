@@ -1,0 +1,452 @@
+{
+  "schema": "host-bca-pairs-v1",
+  "archive_commit": "ca5cbe0ba6ff949eb79b6f7e53f4800e5dab45ae",
+  "archive_tag": "reproduction-matrix-v1",
+  "archive_provenance_sha256": "3036d569722bf501512e6be8debd800c0728ae034e21cfc79cf53903c84850aa",
+  "methods": [
+    "host",
+    "bca"
+  ],
+  "matrix_sha256": "e4fa93139c6b94e238cc89242121ce301a4a870b4f7d6e9fd6e1f8734388216c",
+  "physical_runs": 280,
+  "actor_trajectories": 315,
+  "scientific_design": {
+    "training_updates": 1000000,
+    "delayed_actor_updates": 500000,
+    "iql": "One host actor and one BCA actor share Q/V, the same host beta, gain1 and one AWR-weighted fitter; this is a new paired design, not relabeled historical arms.",
+    "baseline": "Same reserved training complement and host configuration; not a published full-data reproduction.",
+    "radius": "Both components retained; max(Bayesian bootstrap quantile, finite-rank conformal component); unweighted held-out scores."
+  },
+  "validation": {
+    "typed_protocols": 280,
+    "exact_cpu_numerical_parity": [
+      {
+        "algorithm": "td3_bc",
+        "method": "host",
+        "exact": true,
+        "updates": 2
+      },
+      {
+        "algorithm": "td3_bc",
+        "method": "bca",
+        "exact": true,
+        "updates": 4
+      },
+      {
+        "algorithm": "rebrac",
+        "method": "host",
+        "exact": true,
+        "updates": 2
+      },
+      {
+        "algorithm": "rebrac",
+        "method": "bca",
+        "exact": true,
+        "updates": 4
+      },
+      {
+        "algorithm": "cql",
+        "method": "host",
+        "exact": true,
+        "updates": 2
+      },
+      {
+        "algorithm": "cql",
+        "method": "bca",
+        "exact": true,
+        "updates": 4
+      },
+      {
+        "algorithm": "iql",
+        "method": "host",
+        "exact": true,
+        "updates": 2
+      },
+      {
+        "algorithm": "iql",
+        "method": "bca",
+        "exact": true,
+        "updates": 4
+      }
+    ],
+    "matched_cached_data_cells": [
+      {
+        "host": "td3_bc",
+        "dataset": "halfcheetah",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 1996002,
+        "calibration_size": 1998
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "hopper",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 998895,
+        "calibration_size": 1103
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "maze2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 3982097,
+        "calibration_size": 1176
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "pen-cloned",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 495172,
+        "calibration_size": 1092
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "pen-expert",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 493159,
+        "calibration_size": 1089
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "pen-human",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 4577,
+        "calibration_size": 398
+      },
+      {
+        "host": "td3_bc",
+        "dataset": "walker2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 300549,
+        "calibration_size": 1149
+      },
+      {
+        "host": "rebrac",
+        "dataset": "halfcheetah",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 1996002,
+        "calibration_size": 1998
+      },
+      {
+        "host": "rebrac",
+        "dataset": "hopper",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 998895,
+        "calibration_size": 1103
+      },
+      {
+        "host": "rebrac",
+        "dataset": "maze2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 3982097,
+        "calibration_size": 1176
+      },
+      {
+        "host": "rebrac",
+        "dataset": "pen-cloned",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 495172,
+        "calibration_size": 1092
+      },
+      {
+        "host": "rebrac",
+        "dataset": "pen-expert",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 493159,
+        "calibration_size": 1089
+      },
+      {
+        "host": "rebrac",
+        "dataset": "pen-human",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 4577,
+        "calibration_size": 398
+      },
+      {
+        "host": "rebrac",
+        "dataset": "walker2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 300549,
+        "calibration_size": 1149
+      },
+      {
+        "host": "cql",
+        "dataset": "halfcheetah",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 1996002,
+        "calibration_size": 1998
+      },
+      {
+        "host": "cql",
+        "dataset": "hopper",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 998895,
+        "calibration_size": 1103
+      },
+      {
+        "host": "cql",
+        "dataset": "maze2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 3982097,
+        "calibration_size": 1176
+      },
+      {
+        "host": "cql",
+        "dataset": "pen-cloned",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 495172,
+        "calibration_size": 1092
+      },
+      {
+        "host": "cql",
+        "dataset": "pen-expert",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 493159,
+        "calibration_size": 1089
+      },
+      {
+        "host": "cql",
+        "dataset": "pen-human",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 4577,
+        "calibration_size": 398
+      },
+      {
+        "host": "cql",
+        "dataset": "walker2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 300549,
+        "calibration_size": 1149
+      },
+      {
+        "host": "iql",
+        "dataset": "halfcheetah",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 1989009,
+        "calibration_size": 8991
+      },
+      {
+        "host": "iql",
+        "dataset": "hopper",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 991509,
+        "calibration_size": 8489
+      },
+      {
+        "host": "iql",
+        "dataset": "maze2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 3974874,
+        "calibration_size": 8399
+      },
+      {
+        "host": "iql",
+        "dataset": "pen-cloned",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 488028,
+        "calibration_size": 8236
+      },
+      {
+        "host": "iql",
+        "dataset": "pen-expert",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 486031,
+        "calibration_size": 8217
+      },
+      {
+        "host": "iql",
+        "dataset": "pen-human",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 3781,
+        "calibration_size": 1194
+      },
+      {
+        "host": "iql",
+        "dataset": "walker2d",
+        "arm": "bca",
+        "accepted": true,
+        "host_bca_data_identical": true,
+        "training_size": 293200,
+        "calibration_size": 8498
+      }
+    ],
+    "iql_execution_boundary": {
+      "accepted": true,
+      "methods": [
+        "host",
+        "bca"
+      ],
+      "synthetic_updates_per_method": 8,
+      "mock_evaluations": true,
+      "simulator_steps": 0
+    },
+    "pseudocode_math_checks": [
+      "finite-rank query correction",
+      "bootstrap quantile order statistic",
+      "maximum of both components",
+      "frozen width multiplier and unsupported fallback",
+      "IQL post-cap weights",
+      "ESS infeasibility and distinct minimum temperatures"
+    ],
+    "source_links_and_anchors": 52,
+    "limits": [
+      "Generated CPU numerical fixtures are not full 1M runs or GPU equivalence tests.",
+      "Cached data preparation checks one seed per cell; fixed split/normalization are shared by all declared seeds.",
+      "Fresh installation and simulator evaluations were not executed.",
+      "Old source/protocol failures and native evidence remain unchanged."
+    ],
+    "integration_map": {
+      "file": "INTEGRATION.md",
+      "source_checked_snippets": 47,
+      "local_document_links_checked": 170,
+      "learning_equations_and_experiment_settings_changed": false,
+      "negative_checks": [
+        "stale snippet rejected",
+        "modified source rejected",
+        "wrong commit rejected"
+      ]
+    }
+  },
+  "source_sha256": {
+    ".gitattributes": "fbaff36ec5d1ee2dde685a12fee46310a67f2f6f8e4fcb5bd6b8b9dfbb58c5fd",
+    "ALGORITHMS.md": "7732e5c6af060ba74498186509625bb1b0aa91ed3d6440e9a8773a6fa5331cb7",
+    "INTEGRATION.md": "d409f469174b3953d1ce2f7fef229d50d13914bd008183846c6c8f1aea4d96af",
+    "LICENSE": "af878c708defb49f47c78cd9293386ad09fbbae07f20f24cf9e26ac98a834c95",
+    "NOTICE": "f08019e8e763a4e9d78845664216ba5bf7b05bd7cdbf3dc8f65ac7019fd94588",
+    "README.md": "f29e67ce4c772e376751d8df0986079411e12c467c108c04ca278fec4b8b1f66",
+    "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "algorithms/cql.py": "2ab5a3fc29b6a7c598e6630bdd377cf89a75ff328a9e90615ebf5f44c538f0e4",
+    "algorithms/cql_bca.py": "e37976ed5a6819da804dc68045a831bf3de6e9df3987f0c25dbcab195affd75f",
+    "algorithms/iql.py": "9bb1b8d45511e7a3531ed3addae6e353ec951ce0d8a3e28ddb1f14a3ddc43dd0",
+    "algorithms/iql_bca.py": "04609d521c49adeb02144583224e82f4501cdf96344b255d1ee2f21db162084d",
+    "algorithms/rebrac.py": "77d74a57a49a474094cc05dfbdc1fe01551d8fbd84929945b17b8b020492ee5d",
+    "algorithms/rebrac_bca.py": "b9db09dec4ef63a6d8b4591f0f0463afd041be5d17f06444a7749c9ed3e2934e",
+    "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+    "algorithms/td3_bc_bca.py": "ad55f70a63e42869452457d8504e17d0a995e290db6a8272b92801f49b81d058",
+    "baselines/README.md": "e97219f0249e2a1b26c223401a74961d7e659aee1f46ac40f9260bbbb749af87",
+    "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "calibration/advantage.py": "a33f1361850d37d1dfd37c464dcbd65e91a9c1f06ff0a853f103421ba0ef8507",
+    "calibration/dose.py": "074f8d0486bfebb046a572203789bf76f5bc28c1b89cbab57ed8a73ce9df299e",
+    "calibration/iql_actors.py": "87d2244d228ce5193e827990a61d5b074f52c26c4df305c3eca25cfec21a44ac",
+    "calibration/iql_imports.py": "39d7d161de9d652558bed549c29c90dd04bd95b83d0de27ff5b8b5079c6a0739",
+    "calibration/iql_loss.py": "e3a9a235697a8aa7f99affbe5105fe8487178ef095f8919cc50e60861dde6f2e",
+    "calibration/iql_network.py": "51f1e0cc446a4896fbe5d04dd0a525b9fb8ce57655d071727db80543311a5acc",
+    "calibration/iql_reference.py": "59ae00056a3f0350dd97c5cab219de11d8305f45f15be5716beba83e6d5c94ea",
+    "calibration/iql_scale.py": "e7400edf4c6b9f40e38a77cb10d8667beb405279d574c13f97196e6a6fed9735",
+    "calibration/iql_state.py": "acc699e47a54da03a23939aaf70ba0414f08a7afc0aea5c2f6c70a602fec5b01",
+    "calibration/iql_targets.py": "771601d3cd11a6d7293f78298d0b71f0fcdefb70ddf86c293f188e00f21a90d5",
+    "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+    "calibration/policy_weights.py": "3d23f22ca3cfd024d142831fc6be1e5798b0de3bffaefeda21b41b76c32fed97",
+    "calibration/posterior.py": "df33d79b7086dfc24529ed7fd3b4442c44c537e7fe9ac79cc9957aff36cef51c",
+    "calibration/reference.py": "13ea468e04b1ca4a8166708aca8703b5c09ba5719bfefaa725b1fa6ad9c8e1c0",
+    "calibration/weights.py": "4f56a4a73ba4bcd5cf64a110a2b581afcc647ed066fc0da91c6e0751b6d59147",
+    "check.py": "9258ed3103657823fd317584fa154d5dde58651bf73d50dfde97ae68514dadd8",
+    "configs/cql.yaml": "010e67510e57e65a93cc9b49f86ee3da4e95bd76f370a5c8ceeb937abf848a2f",
+    "configs/experiment.yaml": "9c71c68632445b98d4aa0698fdb78ec2e7b420d42b3ee111e7da7af429d97aad",
+    "configs/iql.yaml": "81b43c5a82933c57d9b75c1087f08026ee9b7e8e105bd99e673ccab1405687f5",
+    "configs/rebrac.yaml": "ff2202990406f1d4526d28a0bb03741d06b243cfca5d3d3d5a28c839de0e8800",
+    "configs/td3_bc.yaml": "3f23476117a12dc3fbc744750fcffc0f11d624ba721fca75187fbc1cb32e1796",
+    "configs/unifloral.json": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+    "docs/superpowers/plans/2026-09-24-ood-experiment.md": "ef1242f178d6d59239005809ae98c7db6ae1b7c244bc6ecab58523647983ef58",
+    "requirements.txt": "b3332a6a86e6c792c0ceddf2ffc5db99efd9ec6f807e4cdee7e03722fb981b8c",
+    "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "runtime/common.py": "55fb05dafcee056a9e5a69682463c51ac097c6093a67c4171cae7dcfcbd4bf19",
+    "runtime/config.py": "d0e62966fe38d1b0adb1f51e322752a4fb127130a9243479dd3c883f9f807d17",
+    "runtime/cql.py": "12a3cf4deb61d39ae40359dc2586030e02f25cbe4495c99e1d63837aa8b2391d",
+    "runtime/environment.py": "8b3d4b4968fb23b0526c1c14aafa087b3860ce48f712f00878ec2e5e1e3d2e28",
+    "runtime/evaluation_keys.py": "8f3f721568f318debbf69ec194a2dcef512675162cd54585b38813d26a6207fd",
+    "runtime/iql.py": "c58bf60bfd6313015b89eca6822f61aaf8cdf4ae3b6b555037c38e1d96734b11",
+    "runtime/iql_checkpoint.py": "071ab50d1665f3858756fb098fd145e08c5940fd870887c5a52355ad898a346a",
+    "runtime/iql_pair.py": "da01a7531be3752e4aa4833a4453ded7dd0181c7fd36e601f23c75691a0467c8",
+    "runtime/kitchen.py": "05d4a49535055ad87141387916d65ac46b69a4ad2d92fafebdf19f58236f84c9",
+    "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+    "runtime/next_actions.py": "b0f44ea2d243f15334044f8d2be140d371dfc24be8ce5f9c55182a62bcbbca33",
+    "runtime/provenance.py": "69825875610ba9127d5ce7dcb0f5c03efdc003752582ad0cd189d84894fda532",
+    "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+    "runtime/rebrac.py": "4e361fb51d3677bf6fda1c48e77997372506a0ac7a945409243c2a819e2cb5b7",
+    "runtime/reward_range.py": "27c6d0d9927e9d60b550e45d416a0a4751eadcb120164e3ab72c1843a0a442c9",
+    "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71",
+    "runtime/td3_bc.py": "93a950d445eb67e3421eed4d355dc23f1ab11742c67f5e347190651cca30cb72",
+    "runtime/upstream.py": "6f5d7fbdf49f4663cecf757c848198d42aaa1fe87a50b0fed5701c5addc03e76",
+    "runtime/validation.py": "adcfe176f448cd2fdfce3353f45cb89b9f3aa3836ea9e425e6d88e1622cb9db1",
+    "train.py": "cdb4421faad60b35e84b9032257ff04573c85e7317b11bd0700112f3517ac022"
+  },
+  "unifloral_reference": {
+    "manifest": "configs/unifloral.json",
+    "role": "Complete unmodified upstream source tree; four audited standalone default profiles; no additional BCA hosts.",
+    "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+    "verified_source_files": 40,
+    "reference_default_cells": 12,
+    "fresh_environment_tested": false,
+    "path": "baselines/unifloral",
+    "complete_tracked_tree": true,
+    "tree": "9df95ad0d56e44591882cd7db6f3fc19e4e6314d"
+  },
+  "ood_design": {
+    "path": "docs/superpowers/plans/2026-09-24-ood-experiment.md",
+    "status": "calculation_and_static_figure_tests_passed_browser_review_pending",
+    "implementation_present": true,
+    "implemented_stage": "Task A, initial-tranche B, and Task C calculations/static exports; live browser layout review pending",
+    "experiments_launched": false,
+    "adapter_test_report": "docs/OOD_ADAPTER_TESTS.md",
+    "adapter_test_receipt": "experiments/ood/validation.json",
+    "scientific_checkpoints_accepted": 0,
+    "calculation_test_report": "docs/OOD_CALCULATION_TESTS.md",
+    "calculation_test_receipt": "experiments/ood/analysis_validation.json",
+    "synthetic_reader": "docs/ood-demo/index.html",
+    "browser_layout_verified": false
+  }
+}

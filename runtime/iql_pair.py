@@ -20,6 +20,7 @@ import runtime.iql as D
 @dataclass(frozen=True)
 class Options(D.Options):
     decision_gain: float = 1.0
+    fitting_mode: str = "awr"
 
 
 DRIVER_REL = Path("runtime/iql_pair.py")
@@ -43,6 +44,7 @@ def validate_options(o):
     if (
         type(o) is not Options
         or o.mode != "shared"
+        or o.fitting_mode not in ("off", "awr")
         or type(o.decision_gain) is not float
         or (o.decision_gain != 1.0)
     ):
@@ -76,7 +78,7 @@ def resolved_arguments(o, m):
     validate_options(o)
     args, _, differences = D.resolved_arguments(o, m)
     args = replace(args, algorithm="iql_bca_pair")
-    variants, arms = m.X.default_design(args.beta)
+    variants, arms = m.X.default_design(args.beta, fitting_mode=o.fitting_mode)
     return (
         args,
         variants,
@@ -104,7 +106,8 @@ def declaration(o, m):
             evaluation_schedule=D.evaluation_schedule(o, m),
             runtime_dependencies=D.runtime_dependencies(),
             posterior_measure="unweighted held-out residual scores",
-            iw_measure="capped pre-BCA AWR fitting tilt; not a policy/behavior density ratio",
+            iw_measure=("equal importance factors; Bayesian bootstrap retained" if o.fitting_mode == "off"
+                        else "capped pre-BCA AWR fitting tilt; not a policy/behavior density ratio"),
             selection_allowed=False,
         )
     )
@@ -116,7 +119,7 @@ def validate_declaration(o, declared):
     validate_options(o)
     import algorithms.iql_bca as X
 
-    variants, arms = X.default_design(declared["args"]["beta"])
+    variants, arms = X.default_design(declared["args"]["beta"], fitting_mode=o.fitting_mode)
     if (
         declared["arms"] != [asdict(a) for a in arms]
         or declared["variants"] != [asdict(v) for v in variants]

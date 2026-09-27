@@ -1,4 +1,4 @@
-"""IQL + BCA: two actors sharing Q/V; one AWR-weighted scale fitter."""
+"""IQL + BCA: two actors sharing Q/V; one explicitly weighted or unweighted fitter."""
 
 from dataclasses import asdict, dataclass, replace
 from numbers import Real
@@ -71,11 +71,12 @@ class SharedIWCarry(NamedTuple):
     actors: object
 
 
-def default_design(published_beta):
+def default_design(published_beta, *, fitting_mode="awr"):
     """The only paired design: shared Q/V, identical beta, fixed gain1, one scale fitter."""
     _positive(published_beta, "host beta")
     variant = ScaleVariant(
-        "awr", W.ScaleIWConfig(mode="awr", beta=published_beta), True
+        "noiw" if fitting_mode == "off" else "awr",
+        W.ScaleIWConfig(mode=fitting_mode, beta=published_beta), True
     )
     actors = (
         IWArm("host", -1, "off", published_beta),
@@ -88,10 +89,10 @@ def _validate_variants(args, variants):
     args.posterior.validate()
     if (
         len(variants) != 1
-        or variants[0].iw.mode != "awr"
+        or variants[0].iw.mode not in ("off", "awr")
         or not variants[0].weight_width
     ):
-        raise ValueError("Exactly one AWR-weighted full BCA fitter is supported.")
+        raise ValueError("Exactly one explicitly declared full BCA fitter is supported.")
     if args.posterior.mode != "full":
         raise ValueError(
             "shared references retain the full Bayesian/conformal posterior"

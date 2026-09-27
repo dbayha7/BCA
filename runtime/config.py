@@ -88,18 +88,28 @@ def resolve(path, method, seed, output_dir, dataset=None):
         or dataset not in config["datasets"]
     ):
         raise ValueError("Select a declared dataset, seed and method (host or bca).")
+    weighting = exp.get("calibration_weighting", "host")
+    if weighting not in ("none", "host"):
+        raise ValueError("calibration_weighting must be none or host.")
     data = config["datasets"][dataset]
     algorithm = config["algorithm"]
     host = "td3" if algorithm == "td3_bc" else algorithm
     native = merge(config["host"], data.get("host", {}))
     bca = merge(config["bca"], data.get("bca", {}))
     reservation = merge(config["reservation"], data.get("reservation", {}))
-    run_id = f"{algorithm}-{dataset}-{method}-s{seed}"
+    identity = "bca-noiw" if method == "bca" and weighting == "none" else method
+    run_id = f"{algorithm}-{dataset}-{identity}-s{seed}"
+    if method == "bca" and weighting == "none":
+        if host in ("td3", "rebrac"):
+            bca["affinity"] = dict(mode="off", bandwidth=None, ess_floor=None, tau_min=None, iterations=None)
+        elif host == "cql":
+            bca["iw"]["mode"] = "off"
     row = dict(
         host=host,
         algorithm=algorithm,
         environment=data["environment"],
         method=method,
+        calibration_weighting=weighting if method == "bca" else "not_applicable",
         run_id=run_id,
         cache=deepcopy(data["cache"]),
     )
@@ -177,6 +187,7 @@ def resolve(path, method, seed, output_dir, dataset=None):
         )
         if method == "bca":
             row["options"]["decision_gain"] = 1.0
+            row["options"]["fitting_mode"] = "off" if weighting == "none" else "awr"
         return row
     native.update(algorithm="corl_" + algorithm, allow_off_config=True)
     row["native_args"] = native

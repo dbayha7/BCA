@@ -271,18 +271,19 @@ IQL is structurally different: the extension runs **two actors with one shared
 Q/V state**. It calls the host's `nuisance_update`, then routes each actor through
 a guarded regression update. It does not pass a multiplier into `iql_update`.
 
-**Declared pair.** One AWR scale fitter, the same host beta for both actors,
+**Declared pair.** One scale fitter (no importance tilt by default), the same host beta for both actors,
 and a fixed decision gain of one. The `host` actor has mode `off`.
 
-[algorithms/iql_bca.py, lines 74–84](algorithms/iql_bca.py#L74-L84)
+[algorithms/iql_bca.py, lines 74–85](algorithms/iql_bca.py#L74-L85)
 
-<!-- source: algorithms/iql_bca.py:74:84 -->
+<!-- source: algorithms/iql_bca.py:74:85 -->
 ```python
-def default_design(published_beta):
+def default_design(published_beta, *, fitting_mode="awr"):
     """The only paired design: shared Q/V, identical beta, fixed gain1, one scale fitter."""
     _positive(published_beta, "host beta")
     variant = ScaleVariant(
-        "awr", W.ScaleIWConfig(mode="awr", beta=published_beta), True
+        "noiw" if fitting_mode == "off" else "awr",
+        W.ScaleIWConfig(mode=fitting_mode, beta=published_beta), True
     )
     actors = (
         IWArm("host", -1, "off", published_beta),
@@ -294,9 +295,9 @@ def default_design(published_beta):
 **Q/V boundary.** The shared nuisance update reads the recorded minibatch. It
 has no BCA actor-weight argument. Its returned target and advantage feed fitting.
 
-[algorithms/iql_bca.py, lines 235–245](algorithms/iql_bca.py#L235-L245)
+[algorithms/iql_bca.py, lines 236–246](algorithms/iql_bca.py#L236-L246)
 
-<!-- source: algorithms/iql_bca.py:235:245 -->
+<!-- source: algorithms/iql_bca.py:236:246 -->
 ```python
 it = it + 1
 rng, batch_key, dropout_key = jax.random.split(rng, 3)
@@ -316,9 +317,9 @@ host actor uses capped native AWR. Until a reference is ready, the BCA path
 selects the native weights as well. This is equality of the intended weights,
 not a claim of bitwise identical trajectories across distinct execution paths.
 
-[algorithms/iql_bca.py, lines 193–214](algorithms/iql_bca.py#L193-L214)
+[algorithms/iql_bca.py, lines 194–215](algorithms/iql_bca.py#L194-L215)
 
-<!-- source: algorithms/iql_bca.py:193:214 -->
+<!-- source: algorithms/iql_bca.py:194:215 -->
 ```python
 def arm_weights(args, arms, extras, predictions, advantage):
     rows = []
@@ -439,9 +440,9 @@ return jax.lax.cond(weights.has_support & weights.inputs_valid, propose, skip, N
 advantage and dropout key. The state keeps a representative actor for its data
 structure, but Q/V updates use neither actor's actions.
 
-[algorithms/iql_bca.py, lines 301–321](algorithms/iql_bca.py#L301-L321)
+[algorithms/iql_bca.py, lines 302–322](algorithms/iql_bca.py#L302-L322)
 
-<!-- source: algorithms/iql_bca.py:301:321 -->
+<!-- source: algorithms/iql_bca.py:302:322 -->
 ```python
 weights = arm_weights(args, arms, extras, predictions, adv)
 dependency_valid = jnp.stack(
@@ -469,7 +470,7 @@ state = state._replace(actor=S.actor_at(actors, representative))
 | Component | Exact function entry points |
 |---|---|
 | Unmodified shared Q/V learning | [`nuisance_update`](algorithms/iql.py#L258) |
-| Paired connection | [`initialize_shared`](algorithms/iql_bca.py#L171), [`arm_weights`](algorithms/iql_bca.py#L193), [`make_shared_train_step`](algorithms/iql_bca.py#L217) |
+| Paired connection | [`initialize_shared`](algorithms/iql_bca.py#L172), [`arm_weights`](algorithms/iql_bca.py#L194), [`make_shared_train_step`](algorithms/iql_bca.py#L218) |
 | Frozen width to weights | [`posterior_width`](calibration/iql_reference.py#L156), [`weights_at_reference`](calibration/iql_reference.py#L184), [`gain_actor_weights`](calibration/iql_reference.py#L99) |
 | Post-cap formula | [`postcap_level_actor_weights`](calibration/advantage.py#L32) |
 | Actor vectorization | [`update_actors`](calibration/iql_actors.py#L44) |
@@ -591,9 +592,9 @@ post = initialize_posterior(cal_state.params, 1, config.posterior.draws)
 return (rng, State(native, cal_state, jnp.asarray(1.0), post), (actor, c1, c2, cal))
 ```
 
-[algorithms/iql_bca.py, lines 176–190](algorithms/iql_bca.py#L176-L190)
+[algorithms/iql_bca.py, lines 177–191](algorithms/iql_bca.py#L177-L191)
 
-<!-- source: algorithms/iql_bca.py:176:190 -->
+<!-- source: algorithms/iql_bca.py:177:191 -->
 ```python
 _validate_arms(args, arms, len(fitters))
 extras = tuple(
@@ -624,7 +625,12 @@ targets, updates only scale parameters, and never differentiates the fitting
 loss into the actor or critics. Three distinct weight concepts stay separate:
 fitting importance weights, bootstrap masses, and consumed host weights.
 
-**TD3+BC residual and affinity.** The target uses target-policy smoothing with a
+The current experiment setting is `calibration_weighting: none`. TD3+BC, ReBRAC
+and CQL initialize fitting masses to the Bayesian bootstrap prior and skip the
+`config.iw.mode != "off"` branch. The conditional IW snippets below are retained
+to map that separate path; they are inactive in the first-stage comparison.
+
+**TD3+BC residual and optional affinity.** The target uses target-policy smoothing with a
 folded fitting key; Q is the online twin minimum on recorded actions.
 
 [algorithms/td3_bc_bca.py, lines 272–287](algorithms/td3_bc_bca.py#L272-L287)
@@ -674,8 +680,9 @@ weights, valid = (
 feasible = tilted.fit_feasible
 ```
 
-**ReBRAC residual and affinity.** Its fitting target retains ReBRAC's recorded
-next-action critic BC penalty. The fitting weights still come from action affinity.
+**ReBRAC residual and optional affinity.** Its fitting target retains ReBRAC's recorded
+next-action critic BC penalty. Standard BCA uses Bayesian bootstrap masses directly;
+the optional IW branch below tilts those masses using action affinity.
 
 [algorithms/rebrac_bca.py, lines 402–412](algorithms/rebrac_bca.py#L402-L412)
 
@@ -762,9 +769,11 @@ if config.iw.mode != "off":
     feasible = weighted.fit_feasible
 ```
 
-**IQL residual and AWR.** The target uses pre-update V; the scale reads
-post-update online Q. The adapter explicitly detaches both. AWR importance
-weights use the pre-BCA advantage, and the complete weighting result is detached.
+**IQL residual and optional AWR fitting.** The target uses pre-update V; the scale reads
+post-update online Q. The adapter explicitly detaches both. Standard BCA uses
+equal importance factors and unchanged Bayesian bootstrap masses. In the optional
+IW branch, AWR fitting weights use the pre-BCA advantage. The complete weighting
+result is detached; the native actor still uses its original AWR weights.
 
 [calibration/iql_targets.py, lines 22–37](calibration/iql_targets.py#L22-L37)
 
@@ -788,11 +797,21 @@ def calibration_inputs(self, state, batch, rng, step, host=None):
     )
 ```
 
-[calibration/iql_scale.py, lines 62–78](calibration/iql_scale.py#L62-L78)
+[calibration/iql_scale.py, lines 60–86](calibration/iql_scale.py#L60-L86)
 
-<!-- source: calibration/iql_scale.py:62:78 -->
+<!-- source: calibration/iql_scale.py:60:86 -->
 ```python
-raw = IW.capped_awr_log_weights(advantage, config.beta, config.cap, config.mixing)
+if not isinstance(config, ScaleIWConfig):
+    raise ValueError("scale_weighting requires a typed ScaleIWConfig")
+advantage = jnp.asarray(advantage)
+if advantage.ndim != 1 or advantage.size == 0:
+    raise ValueError("advantage must be a nonempty vector")
+# Uniform importance factors preserve the SAME Bayesian bootstrap prior.
+# The actor still uses native AWR; only calibration importance tilting is off.
+raw = (IW.IWLogWeights(jnp.zeros_like(advantage), jnp.ones(advantage.shape, dtype=bool),
+                      jnp.all(jnp.isfinite(advantage)))
+       if config.mode == "off" else
+       IW.capped_awr_log_weights(advantage, config.beta, config.cap, config.mixing))
 iw = IW.stabilize_log_weights(
     raw.log_weights,
     support=raw.support_mask,
@@ -847,7 +866,7 @@ unit_new = config.scale_ema * unit + (1.0 - config.scale_ema) * jnp.maximum(
 | ReBRAC fitting target/optimizer | [`native_target`](algorithms/rebrac_bca.py#L383), [`affinity_log_weights`](algorithms/rebrac_bca.py#L365), [`fit_scale`](algorithms/rebrac_bca.py#L398) |
 | CQL fitting target/optimizer | [`native_target`](algorithms/cql_bca.py#L176), [`policy_log_weights`](algorithms/cql_bca.py#L143), [`fit_scale`](algorithms/cql_bca.py#L210) |
 | IQL fitting target | [`CorlIQLAdapter`](calibration/iql_targets.py#L11) |
-| IQL weighting and scale optimizer | [`scale_weighting`](calibration/iql_scale.py#L59), [`IWScaleFitter`](calibration/iql_scale.py#L81) |
+| IQL weighting and scale optimizer | [`scale_weighting`](calibration/iql_scale.py#L59), [`IWScaleFitter`](calibration/iql_scale.py#L89) |
 | IQL scale objective | [`make_cal_loss_fn`](calibration/iql_network.py#L52) |
 
 ## Refresh, frozen width and gradients
@@ -1051,9 +1070,9 @@ result = jax.lax.cond(
 )
 ```
 
-[calibration/iql_scale.py, lines 177–183](calibration/iql_scale.py#L177-L183)
+[calibration/iql_scale.py, lines 185–191](calibration/iql_scale.py#L185-L191)
 
-<!-- source: calibration/iql_scale.py:177:183 -->
+<!-- source: calibration/iql_scale.py:185:191 -->
 ```python
 numerical_valid = (
     raw_valid & P.finite_tree(proposed) & (proposed.resid_scale > 0)
@@ -1137,16 +1156,16 @@ def refresh_at(event):
 | TD3+BC refresh scheduler and validity | [`run_prepared`](runtime/td3_bc.py#L1092), [`_accept`](runtime/td3_bc.py#L1080) |
 | ReBRAC refresh scheduler and validity | [`run_prepared`](runtime/rebrac.py#L812), [`_accept`](runtime/rebrac.py#L803) |
 | CQL refresh scheduler and validity | [`run_prepared`](runtime/cql.py#L724), [`_accept`](runtime/cql.py#L714) |
-| IQL reference scheduler and validity | [`IWRuntime`](runtime/iql_pair.py#L268) |
+| IQL reference scheduler and validity | [`IWRuntime`](runtime/iql_pair.py#L271) |
 
 **Evaluation boundary.** Evaluation uses the resulting actor parameters. There
 is no extra BCA action search, rejection filter, width penalty or calibration
 network call in action selection. The paired IQL evaluator explicitly receives
 each actor's parameters with common episode IDs:
 
-[runtime/iql_pair.py, lines 442–449](runtime/iql_pair.py#L442-L449)
+[runtime/iql_pair.py, lines 445–452](runtime/iql_pair.py#L445-L452)
 
-<!-- source: runtime/iql_pair.py:442:449 -->
+<!-- source: runtime/iql_pair.py:445:452 -->
 ```python
 self.checkpoint("training_end")
 self.phase = "final_evaluation"

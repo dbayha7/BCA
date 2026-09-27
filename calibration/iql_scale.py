@@ -1,4 +1,4 @@
-"""One AWR-weighted IQL scale fitter with ESS-gated updates."""
+"""One IQL scale fitter: explicit uniform or AWR importance factors, same Bayesian masses."""
 
 from dataclasses import dataclass
 from numbers import Real
@@ -13,7 +13,7 @@ ASSIGNMENT_FOLD = 1230458957
 
 @dataclass(frozen=True)
 class ScaleIWConfig:
-    mode: Literal["awr"] = "awr"
+    mode: Literal["off", "awr"] = "awr"
     beta: float = 3.0
     cap: float = 100.0
     mixing: float = 1.0
@@ -22,8 +22,8 @@ class ScaleIWConfig:
     iterations: int = 32
 
     def __post_init__(self):
-        if self.mode != "awr":
-            raise ValueError("IQL scale fitting uses aligned AWR weights.")
+        if self.mode not in ("off", "awr"):
+            raise ValueError("IQL fitting importance factors must be off or aligned AWR.")
         for name in ("beta", "cap", "mixing", "ess_floor", "tau_min"):
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, Real):
@@ -57,9 +57,17 @@ class ScaleWeighting(NamedTuple):
 
 
 def scale_weighting(advantage, key, config):
-    if not isinstance(config, ScaleIWConfig) or config.mode == "off":
-        raise ValueError("scale_weighting requires an enabled ScaleIWConfig")
-    raw = IW.capped_awr_log_weights(advantage, config.beta, config.cap, config.mixing)
+    if not isinstance(config, ScaleIWConfig):
+        raise ValueError("scale_weighting requires a typed ScaleIWConfig")
+    advantage = jnp.asarray(advantage)
+    if advantage.ndim != 1 or advantage.size == 0:
+        raise ValueError("advantage must be a nonempty vector")
+    # Uniform importance factors preserve the SAME Bayesian bootstrap prior.
+    # The actor still uses native AWR; only calibration importance tilting is off.
+    raw = (IW.IWLogWeights(jnp.zeros_like(advantage), jnp.ones(advantage.shape, dtype=bool),
+                          jnp.all(jnp.isfinite(advantage)))
+           if config.mode == "off" else
+           IW.capped_awr_log_weights(advantage, config.beta, config.cap, config.mixing))
     iw = IW.stabilize_log_weights(
         raw.log_weights,
         support=raw.support_mask,
@@ -92,7 +100,7 @@ class IWScaleFitter(P.ScaleFitter):
         weight_width=False
     ):
         if not weight_width:
-            raise ValueError("The BCA fitter requires IW on coverage and width.")
+            raise ValueError("BCA uses the same fitting masses on coverage and width.")
         if not isinstance(iw, ScaleIWConfig):
             raise ValueError("iw must be a ScaleIWConfig")
         if not isinstance(weight_width, bool):
@@ -181,6 +189,11 @@ class IWScaleFitter(P.ScaleFitter):
         feasible = weighting.iw.ess_feasible
         accepted = numerical_valid & feasible & has_support
         out = jax.lax.cond(accepted, lambda _: proposed, lambda _: state, operand=None)
+        # Preserve the original no-IW ESS arithmetic as well as its model updates.
+        prior_ess = (1.0 / (len(batch.reward) * jnp.sum(weighting.prior**2))
+                     if self.iw.mode == "off" else weighting.product.prior_ess_fraction)
+        product_ess = (prior_ess if self.iw.mode == "off"
+                       else weighting.product.product_ess_fraction)
         diagnostics = {
             "cal_loss": loss,
             "eta_mean": eta_mean,
@@ -201,8 +214,8 @@ class IWScaleFitter(P.ScaleFitter):
             "iw_tau": weighting.iw.tau,
             "iw_raw_ess_fraction": weighting.iw.raw_ess_fraction,
             "iw_ess_fraction": weighting.iw.ess_fraction,
-            "bootstrap_prior_ess_fraction": weighting.product.prior_ess_fraction,
-            "bootstrap_ess_fraction": weighting.product.product_ess_fraction,
+            "bootstrap_prior_ess_fraction": prior_ess,
+            "bootstrap_ess_fraction": product_ess,
             "weight_width": jnp.asarray(self.weight_width),
             "iw_permuted": jnp.asarray(self.iw.mode == "awr_permuted"),
         }

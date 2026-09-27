@@ -4,6 +4,10 @@ This document specifies the **current two-method implementation**: `host` and
 `bca`. Each host algorithm below includes its complete update and the BCA
 extension. The shared calibration procedures are defined explicitly first.
 The accompanying YAML files supply dataset-specific numerical settings.
+The current first stage uses `calibration_weighting: none`: equal importance
+factors, unchanged Bayesian bootstrap masses, both radius components, and
+unchanged native host losses. The optional `host` setting below reproduces the
+previous fitting heuristics for a separately declared IW study.
 
 For exact implementation excerpts at every attachment point, read the
 [BCA integration map](INTEGRATION.md). The README gives the short
@@ -56,7 +60,7 @@ precise update order and parameter versions; this diagram does not replace them.
 flowchart LR
     T[Training transitions] --> H[Host Bellman target and Q]
     H --> E[Detached absolute residual]
-    W[Host-specific fitting weights] --> S[Positive scale fit with ESS gate]
+    W[Equal importance factors by default; optional host heuristic] --> S[Positive scale fit with ESS gate]
     E --> S
     S --> F[Frozen scale and residual unit]
     C[Held-out transitions] --> R[Unweighted residual scores]
@@ -74,7 +78,7 @@ flowchart LR
 | Operation | Inputs → output | Purpose and code owner |
 |---|---|---|
 | Residual definition | Host's Bellman target and Q → absolute residual | Match the fitted quantity to that host's target. Defined by each `*_bca.py`; IQL uses [its target adapter](calibration/iql_targets.py). |
-| Fitting importance weights | AWR, policy density or action affinity → tempered masses and an ESS decision | Choose how fitting examples influence the **scale loss**. [Common stabilization](calibration/weights.py), [density/affinity gate](calibration/policy_weights.py), [IQL fitting](calibration/iql_scale.py). |
+| Fitting importance weights | Equal factors by default; optional AWR, density or affinity → tempered masses and an ESS decision | Choose how fitting examples influence the **scale loss**. [Common stabilization](calibration/weights.py), [density/affinity gate](calibration/policy_weights.py), [IQL fitting](calibration/iql_scale.py). |
 | Positive scale fit | Detached residuals, fitting masses and bootstrap draw → updated scale parameters and live unit | Learn state/action variation in residual magnitude. [Scale network](calibration/network.py), [IQL scale network/loss](calibration/iql_network.py); host extensions construct the appropriate loss. |
 | Radius refresh | Held-out residuals divided by the frozen scale/unit → two radii and their maximum | Set the global residual-band size for that frozen reference. [Radius math](calibration/posterior.py), [reference construction](calibration/reference.py), [IQL reference](calibration/iql_reference.py). |
 | Host consumption | Frozen scale × frozen unit × radius → detached loss adjustment | Translate residual width into the specific intervention in the table above. [BC/CQL multiplier](calibration/dose.py), [IQL post-cap weights](calibration/advantage.py). |
@@ -211,7 +215,14 @@ importance-sampling ratios.
 ```text
 FIT_WEIGHTS(host, minibatch B, detached host state, detached IQL advantage A, key):
 
-1. Compute one log score ell_i per training transition:
+0. If calibration_weighting == none (CURRENT STANDARD BCA):
+       Set all importance factors to 1; do not calculate a host-specific score.
+       Draw e_i ~ Exponential(1); return w_i=e_i/sum_j e_j.
+       The importance-factor ESS fraction is 1; bootstrap ESS is separate.
+       Retain all finite-value checks. IQL actor AWR is unaffected.
+       Stop this procedure here.
+
+1. Otherwise (the separately declared host-specific IW setting), compute ell_i:
    IQL:      ell_i = min(beta*A_i, log(100)).
              beta is the same host beta used by BOTH actors; mixing=1.
    TD3/      ell_i = -0.5 * sum_j ((a_ij - pi(s_i)_j)/h)^2.
@@ -236,7 +247,7 @@ FIT_WEIGHTS(host, minibatch B, detached host state, detached IQL advantage A, ke
    The 0.25 gate applies to p(tau), NOT to the bootstrap product w.
 ```
 
-CQL fitting density uses `a_clip=clip(a,-1+1e-6,1-1e-6)`, `z=atanh(a_clip)`,
+In the optional policy-density IW branch, CQL fitting density uses `a_clip=clip(a,-1+1e-6,1-1e-6)`, `z=atanh(a_clip)`,
 and actor outputs `(mu,log_sigma)`:
 
 ```text
@@ -411,7 +422,7 @@ for t=1,...,N:
 
     # Fit the single BCA scale; host Q/V receive no calibration gradients.
     q_fit_i <- sg(min_k Q_new_k(s_i,a_i))
-    ell_i <- min(beta*A_i,log(100))
+    ell_i <- 0 for standard BCA; otherwise min(beta*A_i,log(100))
     FIT_SCALE(B,y,q_fit,ell) using IQL's current-batch unit and coverage variance term.
     Preserve the previously frozen F during both actor updates.
 
@@ -474,7 +485,7 @@ for t=1,...,N:
     # Uses pre-host-update networks and a separate folded noise key.
     y_fit <- TD3_TARGET(B,fold_in(K,FIT_NOISE))
     q_fit <- sg(min_k Q_old_k(s,a))
-    ell <- detached affinity log scores from pi_old at the recorded actions
+    ell <- 0 for standard BCA; otherwise detached affinity scores at recorded actions
     FIT_SCALE(B,y_fit,q_fit,ell)
     m <- BC_OR_CQL_MULTIPLIER(F,B)  # old frozen psi_f,u_f,R
 
@@ -532,7 +543,7 @@ for k=0,...,N-1:   # preserve the host's ZERO-BASED actor-update phase
     Split training key and sample uniform B from Dtr.
     y_fit <- REBRAC_TARGET(B,folded dedicated fitting-noise key)
     q_fit <- sg(min_k Q_old_k(s,a))
-    ell <- detached affinity log scores from pi_old at recorded actions
+    ell <- 0 for standard BCA; otherwise detached affinity scores at recorded actions
     FIT_SCALE(B,y_fit,q_fit,ell)
     m <- BC_OR_CQL_MULTIPLIER(F,B)
 
@@ -612,7 +623,7 @@ for t=1,...,N:
     # Pre-host-update scale fit; separate fitting target sample.
     y_fit <- CQL_TARGET(B,fold_in(K,FIT_NOISE))
     q_fit <- sg(min(Q_1_old(s,a),Q_2_old(s,a)))
-    ell <- detached recorded-action policy fitting log density (Procedure A)
+    ell <- 0 for standard BCA; otherwise recorded-action policy log density (Procedure A)
     FIT_SCALE(B,y_fit,q_fit,ell)
     m <- BC_OR_CQL_MULTIPLIER(F,B)
 

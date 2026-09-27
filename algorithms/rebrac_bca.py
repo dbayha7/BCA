@@ -60,7 +60,7 @@ class AffinityIWConfig:
                     )
                 )
             ):
-                raise ValueError("The host has no affinity settings.")
+                raise ValueError("Disabled importance fitting has no affinity settings.")
         else:
             _real(self.bandwidth, "affinity bandwidth", positive=True)
         self.canonical()
@@ -89,11 +89,11 @@ class Config:
             raise ValueError("Choose host or bca with a typed affinity configuration.")
         if self.arm == "bca":
             if (
-                self.iw.mode != "affinity"
+                self.iw.mode not in ("off", "affinity")
                 or type(self.posterior) is not PosteriorConfig
             ):
                 raise ValueError(
-                    "BCA requires affinity fitting and both radius components."
+                    "BCA requires both radius components; importance fitting is explicitly off or affinity."
                 )
             _real(self.blend, "blend", positive=True)
             if self.blend > 1:

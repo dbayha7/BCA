@@ -41,6 +41,8 @@ def source_files():
             ROOT / "LICENSE",
             ROOT / "NOTICE",
             ROOT / "INTEGRATION.md",
+            ROOT / "experiments/standard_runner.py",
+            ROOT / "docs/superpowers/plans/2026-09-27-standard-bca-real-tests.md",
             ROOT / "baselines/README.md",
             ROOT / "docs/superpowers/plans/2026-09-24-ood-experiment.md",
         )

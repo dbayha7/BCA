@@ -38,9 +38,9 @@ class Config:
             or (not isinstance(self.posterior, PosteriorConfig))
         ):
             raise ValueError("Choose host or bca with typed calibration settings.")
-        if self.iw.mode != ("policy" if self.arm == "bca" else "off"):
+        if self.iw.mode not in (("off", "policy") if self.arm == "bca" else ("off",)):
             raise ValueError(
-                "BCA uses aligned policy-density fitting; the host has none."
+                "BCA fitting is explicitly unweighted or policy-density; the host has none."
             )
         for name in ("blend", "cal_lr", "cal_beta", "width_penalty", "scale_ema"):
             value = getattr(self, name)
