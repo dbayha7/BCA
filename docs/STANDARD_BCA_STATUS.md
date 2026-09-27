@@ -7,8 +7,8 @@ trajectories across four hosts, seven datasets and five seeds.
 
 | Execution lane | Hosts | Status |
 |---|---|---|
-| Local RTX 5070 Ti | TD3+BC, CQL | Running; first TD3+BC Hopper host run has saved 10k/50k checkpoints. Its BCA counterpart follows. |
-| Cluster A100 | ReBRAC, IQL | Job 27045057 is running its mandatory data gate; training follows only after all 14 cluster host/dataset fingerprints pass. |
+| Local RTX 5070 Ti | TD3+BC, CQL | Running; first TD3+BC Hopper host run logged 600k updates in the September 27 monitoring snapshot. Its BCA counterpart follows. |
+| Cluster A100 | ReBRAC, IQL | Job 27045057 passed all 14 mandatory data cells with actual gate exit 0. First ReBRAC Hopper host training is active on str-gpu13; 145k updates logged in the snapshot. |
 
 A checkpoint below 1M is progress, not completion. No completed seed comparison,
 standard-BCA advantage, or real OOD result is claimed here.
@@ -58,7 +58,7 @@ See [manifest and runner](../experiments/standard_bca/README.md) and
 [validation evidence](validation/standard-bca-preflight.json).
 
 Cluster runtime, simulator identity and GPU checks passed. Its mandatory
-14-cell data gate runs in job 27045057 before the cluster training controller starts. Real OOD collection follows
+14-cell data gate passed in job 27045057 before the cluster training controller started. Both methods matched the accepted local fingerprints in every cell. Live command/start/group identities were checked on the compute node; a login-node PID lookup is insufficient. See [data-gate and live-process evidence](validation/standard-bca-live-gate.json). Real OOD collection follows
 verified 1M checkpoints and adapter checks. TD3+BC/ReBRAC Hopper/Walker adapters
 have prior engineering evidence; IQL/CQL and remaining environments still need
 their own gates. ReBRAC's missing recorded-next-action coverage target remains
@@ -76,3 +76,18 @@ the original failures, separately documented corrections and actual exits.
 The frozen `configs/sources.json` records its creation-time preflight state.
 The completed 28-cell acceptance is in the newer validation receipt linked above;
 the frozen snapshot is deliberately preserved.
+
+## OOD process-receipt preparation
+
+`experiments/ood/standard_receipt.py` binds the standard runner's separate actual
+worker exit to its dispatch, declared row and result. It rejects failed, interrupted,
+stale and mismatched metadata, and refuses to overwrite a receipt. Its current
+scope is TD3+BC/ReBRAC Hopper/Walker. This bridge performs no model query or
+simulator step and leaves scientific acceptance pending: checkpoints, journals,
+source/data contents, paired preparation and simulator parity still need independent
+verification. See [synthetic receipt tests](validation/standard-ood-receipts.json).
+
+The original login-node process observation and direct compute-node SSH timeout
+are retained in the monitoring snapshot. Process identity was subsequently verified
+with a read-only Slurm step in the existing allocation, requesting no GPU. Neither
+inspection attempt changed scientific execution.
