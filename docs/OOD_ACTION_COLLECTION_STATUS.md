@@ -1,4 +1,21 @@
-# Action-level OOD execution: real state restoration checked
+# Action-level OOD execution: first real outcomes running
+
+## September 27, 23:15 UTC: production banks accepted and first panel closed
+
+The first accepted TD3+BC Hopper pair has completed the **declared production state and candidate stages**. All 256 captures are present: 64 paired reset episodes per collector, at steps 0 and 100, with complete restore fields. All 64 paired reset states are exact. The independent audit checked 38,400 durable transition artifacts, float32 applied controls and raw rewards; maximum reward error **3.8361e-10** is below the unchanged absolute **1e-7** gate. State collection used 12,800 explicit transitions plus one constructor, 51,204 physics steps. Worker and supervisor actual exits are 0.
+
+Before this collection, a separate seven-transition engineering check accepted the execution improvements: the original simulator step remains unchanged while its exact NPZ bytes commit into one SQLite archive, and the actor keeps the original eager query operations with full checkpoint immutability checks at episode/rollout boundaries. Direct actions have maximum error 0; all 68 compared NPZ arrays and repeated complete end states are exact. Explicit live native bounds/dtypes are now saved. Earlier closed query and real-state checks were reused.
+
+The **2,560 candidate slots** are fixed before consequences: no applied-action aliases, 88 clipped slots, and all width/dose/radius/support/random scores saved. The training-complement support bank has 32,768 rows; its 1,748/437 episode reference/validation split gives threshold **0.21134613219046514**. There are 233 support-distant slots, which is not a harm finding. The independent arithmetic check reproduced actions, support, width and dose exactly. Both Bayesian/conformal components remain. The actual **256 x 250 JAX continuation keys** were frozen before collection. Candidate worker and supervisor actual exits are 0, with zero simulator transitions.
+
+A separately checked execution declaration dispatched the first **real action-harm worker** at 23:13 UTC. It runs on CPU under the shared local lock, with no GPU allocation. At 23:15 UTC its matching live process had closed one of 512 state/continuation panels: 2,500 outcome transitions and ten exact first-transition/full-state repeat checks. All later panels, actual worker closure, independent outcome audit and harm-ranking readout are pending. The declared ceiling is 1,280,000 outcome transitions, 5,120 repeat checks, one accounted constructor and 24 hours. Calls reserve durably before physics in the original cumulative ledger. Any failure stops; there is no retry/resume path.
+
+- [Closed production bank validation](validation/ood-production-states-candidates.json)
+- [Bounded behavioral dispatch and live identity snapshot](validation/ood-behavioral-dispatch.json)
+- [Exact-byte evidence packs, actual exits and diagnostics](../outputs/ood/td3_bc/hopper/s202609171/production-v1/README.md)
+
+There are **103 distinct passing regression tests**. Initial fixture errors and an outcome-preflight receipt-path error remain preserved; their separate corrections added no scientific retry or changed gate. All 108 frozen training files remain unchanged. The first seed is exploratory; all five seeds remain required. No accepted action-harm comparison, fresh coverage or global-ready claim follows from dispatch. ReBRAC's unavailable recorded-next-action coverage target remains unavailable. The local CQL failure is unchanged; at 22:51 UTC the cluster was training ReBRAC Walker BCA at 135k with matching live identities, while four new closures awaited training audits.
+
 
 ## September 27, 22:23 UTC: real CPU simulator connection
 
@@ -15,7 +32,7 @@ SQLite transactions serialize reservations and enforce per-cell/per-pair/global 
 
 The CPU CUDA-discovery warning and Gym/package warnings remain. The active device was CPU; no backend switch or retry occurred.
 
-Production remains gated: 64 paired episodes per collector and captures at 0/100, an explicit live native-action-bound artifact, support/candidate banks, JAX step keys, efficient transition storage, and execution/lock binding remain unfinished. Saved applied vectors also match the declared unit-bound D4RL transform; production must explicitly save the live bounds. The bounded engineering facade refuses scientific scopes or more than eight explicit steps. The original toy collector still cannot execute real science. All five training seeds remain required; ReBRAC fresh residual coverage remains unavailable.
+At this earlier milestone, production remained gated: 64 paired episodes per collector and captures at 0/100, an explicit live native-action-bound artifact, support/candidate banks, JAX step keys, efficient transition storage, and execution/lock binding remain unfinished. Saved applied vectors also match the declared unit-bound D4RL transform; production must explicitly save the live bounds. The bounded engineering facade refuses scientific scopes or more than eight explicit steps. The original toy collector still cannot execute real science. All five training seeds remain required; ReBRAC fresh residual coverage remains unavailable.
 
 ## Training status discovered at 22:24 UTC
 
@@ -35,8 +52,7 @@ host width remains N/A.
 
 This earlier gate validates the measurement tool, **not OOD action harm**. It added
 no simulator step, model update or GPU worker. The later nine-step engineering
-connection above is separate. Scientific state collection and action outcomes
-have not started.
+connection above is separate. Scientific state collection and action outcomes had not started at that earlier gate; see the current production milestone above.
 
 - [Validation receipt](validation/ood-trained-td3-hopper-connection.json)
 - [Saved arrays, runtime and actual exits](../outputs/ood/td3_bc/hopper/s202609171/trained-connection-v2/)
@@ -109,20 +125,9 @@ Real data-to-support-bank binding remains pending.
 
 ## Remaining boundaries
 
-1. Reuse the accepted real full-state/repeat/reward engineering check above.
-   Bind production native bounds, transition storage, budgets and locks while
-   retaining cumulative engineering/constructor accounting and unchanged gates.
-2. Implement and accept production collection of 64 paired episodes per
-   collector with captures at 0/100. The toy's 2 episodes and 0/2 captures are
-   not that scientific bank. Preserve missing captures and reset dependence.
-3. Freeze ten real candidate slots, clipping/aliases, BCA and support scores,
-   and actual JAX continuation keys. Explicitly toy-only keys cannot substitute.
-4. Bind resource accounting and GPU locks before the 250-transition outcome
-   stage. Report within-state and pooled AUROC separately. First-seed evidence
-   is exploratory; all five declared seeds remain required.
+1. Monitor the one already-dispatched outcome worker using small progress/actual-exit receipts and command/start/group identity. Do not start a duplicate or edit its bound execution sources.
+2. When it closes successfully, independently verify the complete/missing/failed panel layout, 250-step bounds, per-step keys, full repeats, control/reward arithmetic and cumulative reservations from saved records. An actual exit0 alone is not scientific acceptance.
+3. Report measured action harm and within-state width/support AUROC, keeping pooled AUROC separate. Preserve every episode and candidate, ties, sparse panels, shared-reset dependence and both continuations. First-seed evidence is exploratory; all five declared seeds remain required.
+4. Accept other checkpoint/simulator pairs separately. Fresh coverage remains separate; ReBRAC's missing recorded-next-action target remains unavailable. The original toy collector remains toy-only and earlier engineering fixtures stay excluded.
 
-Fresh coverage remains separate; ReBRAC's missing recorded-next-action target
-is unavailable. Global readiness stays false. Frozen science, old campaigns,
-native inventory and thesis PDF remain unchanged. At 21:53 UTC both training
-lanes had valid live identities. Three new cluster closures await independent
-audits; they are not new verified results here. No training queue was changed.
+The old 810-group campaign, native inventory, local CQL failed attempt and thesis PDF remain unchanged. No training queue was altered.

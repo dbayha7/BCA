@@ -64,16 +64,16 @@ precommit and outcomes; each stage requires accepted predecessor hashes.
   changed candidate bank, reused attempt, incomplete state and changed RNG keys.
   Run `python -m unittest experiments.ood.test_collect`; the new tests must fail
   for the missing implementation before adding it.
-- [ ] Implement exclusive outputs and a persistent ledger charged before simulator
+- [x] Implement exclusive outputs and a persistent ledger charged before simulator
   calls, including constructor steps. Count environment and physics steps
   separately; distinguish engineering, state collection and scientific outcomes.
-- [ ] Implement the declared 64 paired-reset episodes per collector and captures
+- [x] Implement the declared 64 paired-reset episodes per collector and captures
   at 0/100. Store every required restore field, wrapper/time-limit/RNG state and
   missing capture. Shared reset states retain dependence and verified reuse.
-- [ ] Implement the training-complement support bank and its episode split exactly
+- [x] Implement the training-complement support bank and its episode split exactly
   as declared. Require episode IDs for the threshold; raw distance alone does not
   authorize thresholded OOD labels when IDs are unavailable.
-- [ ] Generate all ten candidate slots per state from saved seeds. Save proposed
+- [x] Generate all ten candidate slots per state from saved seeds. Save proposed
   and applied coordinates, clipping, duplicate aliases, BCA width/dose/radii and
   support/constant/random scores. Freeze every per-step continuation key before
   outcomes. Neither width nor observed harm may guide candidate selection.
@@ -93,25 +93,24 @@ real transitions (one constructor plus eight explicit), 36 physics steps, actual
 worker/supervisor exits 0. Full reset/mid-state repeats, controls and raw-reward
 gates pass; cumulative history is bound in the SQLite resource ledger. See
 `docs/validation/ood-real-state-connection.json`. Reuse this closed gate.
-Production collection, native-bound/candidate/key/lock artifacts still require
-implementation and acceptance. No scientific acceptance follows from this gate.
+That earlier milestone left production collection and bindings pending. The later production banks and bounded outcome dispatch below supersede that pending state; outcome-result acceptance is still separate.
 Fourteen new tests plus prior suites: 73 pass. Local training is now stopped on
 CQL's evaluation-schema validation failure; preserve it and do not silently retry.
 
-- [ ] Declare a separate engineering attempt using disjoint engineering seeds and
+- [x] Declare a separate engineering attempt using disjoint engineering seeds and
   the existing maximum 10,000-transition-per-cell budget; debit all previous/new
   engineering steps according to their declarations. Test only what the newly
   connected execution path requires. Keep engineering data out of scientific
   estimates. Do not repeat already closed standalone smoke tests routinely.
-- [ ] Check complete state round-trips and repeated first transitions against the
+- [x] Check complete state round-trips and repeated first transitions against the
   actual restore function. Save diagnostic arrays before gates and record actual
   process exits. Preserve every failure; no automatic retry or synthetic repair.
-- [ ] Run `python -m unittest experiments.ood.test_collect
+- [x] Run `python -m unittest experiments.ood.test_collect
   experiments.ood.test_protocol experiments.ood.test_standard_receipt
   experiments.ood.test_analysis` after execution-layer changes. Run the real
   adapter tests only inside the declared engineering budget when changes justify
   them. Confirm all 108 training source hashes still match the frozen manifest.
-- [ ] Declare a per-pair behavioral execution subset with exact sources, banks,
+- [x] Declare a per-pair behavioral execution subset with exact sources, banks,
   seeds, maximum counts, ledger and lock. Keep fresh residual coverage separately
   pending. The original protocol's global ready flag must not be changed to true
   to bypass unavailable ReBRAC coverage. If interface separation is needed, use a
@@ -119,7 +118,7 @@ CQL's evaluation-schema validation failure; preserve it and do not silently retr
 
 ## 4. Collect and report action consequences
 
-- [ ] Dispatch once only after the trained-adapter, state-schema, arithmetic and
+- [x] Dispatch once only after the trained-adapter, state-schema, arithmetic and
   pre-outcome bindings pass. Honor the shared local GPU lock and total two-GPU
   cap; do not compete with an active training worker or spawn duplicate controllers.
 - [ ] Check actual exit and every expected/missing/failed row. Accept no silent
@@ -138,16 +137,9 @@ CQL's evaluation-schema validation failure; preserve it and do not silently retr
 
 ## Completion criteria
 
-September 27 milestones: the first accepted TD3 Hopper pair passes the 64-row
-CPU saved-action/target/width gate and the separate nine-transition real full-state
-engineering connection. Seventy-three regression tests pass. The persistent ledger
-includes prior and new engineering/constructor reservations. Production state
-collection, native-bound artifacts, candidate/support/JAX-key banks, efficient
-transition storage, lock binding and outcome execution remain incomplete. The
-original runtime-import exit1 and separate library-path correction/exit0 remain
-preserved in `docs/OOD_ACTION_COLLECTION_STATUS.md`. No scientific action outcomes
-were collected. The local CQL queue is stopped with actual exit1; do not retry it
-or edit frozen source. The cluster lane continues independently.
+September 27, 23:15 UTC: the closed query/state/streaming gates are accepted. Production state collection saved all 256 captures with actual exit0 and an independent 38,400-artifact audit. The candidate/support stage fixed 2,560 slots, 64,000 actual continuation keys, both radii and an episode-disjoint training-complement support bank, actual exit0 and exact independent arithmetic. There are 103 passing tests.
+
+The separately accepted `outcome_stage.py` worker is running once on CPU under the shared lock; one of 512 panels was closed at the saved 23:15 snapshot. The worker has per-call cumulative reservations, unchanged action/reward/state gates, complete first-transition repeat checks, a 250-transition horizon and 24-hour execution ceiling. Outcome completion/actual exit, independent scientific audit, figures and all remaining seeds are still pending. Do not relaunch this worker or edit its bound source. Preserve the original local CQL failure and its stopped queue; cluster training remains independent.
 
 This task is complete only when the declared action outcomes and calculations are
 verified and readable, with complete/missing/failed status and actual exits. A

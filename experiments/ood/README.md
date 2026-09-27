@@ -65,23 +65,9 @@ from within-state results, and show valid-state counts and seed uncertainty.
 
 ## What is ready, and what comes next
 
-As checked on September 27, 2026, the TD3+BC Hopper first host/BCA pair has accepted
-1M training audits. The existing initial-tranche checkpoint/simulator adapters and
-calculation tests have engineering evidence. **Real trained-checkpoint OOD
-collection has not started.** Initialized fixtures and synthetic figures are not
-scientific outcomes.
+As checked on September 27, 2026, the first TD3+BC Hopper host/BCA pair has accepted 1M training audits and separate CPU checkpoint/simulator gates. Its production bank now contains **all 256 declared state captures** and **2,560 precommitted candidate slots**, plus the training-complement support bank and actual JAX continuation keys. Both production workers and their supervisors exited 0, and independent saved-record audits passed.
 
-The accepted TD3+BC pair now passes its trained CPU checkpoint-query connection:
-saved direct/restored actions, targets and BCA widths/doses agree exactly on the
-fixed 64-row engineering bank. The bounded toy collector also passes its tests.
-See the [current action-collection status](../../docs/OOD_ACTION_COLLECTION_STATUS.md)
-for actual exits, the preserved setup failure/correction and remaining gates.
-The first pair also passes a bounded nine-transition real CPU full-state and
-repeated-transition check (actual exit 0), with cumulative engineering accounting.
-Production 64-episode state collection, candidate/key precommit and outcome
-execution are still pending. We can start accepted pairs without waiting for every
-performance run. One seed is an initial readout; the declared five-seed comparison
-remains incomplete until all five are accepted.
+**The first real action-harm experiment is running.** At 23:15 UTC it had closed one of 512 state/continuation panels, with all ten first-transition/full-state repeat checks passing. The full worker exit, outcome audit and harm-ranking results remain pending. This is one exploratory training seed; all five remain required. See the [current collection status](../../docs/OOD_ACTION_COLLECTION_STATUS.md) and [production evidence](../../outputs/ood/td3_bc/hopper/s202609171/production-v1/README.md). No accepted OOD benefit or coverage result is claimed.
 
 Fresh residual coverage is a separate endpoint. ReBRAC's missing recorded-next-action
 coverage contract stays unavailable; we will not invent a target or call action-harm
