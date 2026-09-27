@@ -8,9 +8,11 @@ trajectories across four hosts, seven datasets and five seeds.
 | Execution lane | Hosts | Status |
 |---|---|---|
 | Local RTX 5070 Ti | TD3+BC, CQL | First TD3+BC Hopper host verified complete at 1M; its no-IW BCA counterpart is running. |
-| Cluster A100 | ReBRAC, IQL | Job 27045057 passed all 14 mandatory data cells with actual gate exit 0. First ReBRAC Hopper host training is active on str-gpu13; 145k updates logged in the snapshot. |
+| Cluster A100 | ReBRAC, IQL | Job 27045057 passed all 14 mandatory data cells with actual gate exit 0. First ReBRAC Hopper host verified complete at 1M; its no-IW BCA counterpart is running on str-gpu13. |
 
-One of 280 declared physical runs is independently verified complete. The first TD3+BC Hopper host final mean is **65.2157311**; its periodic-curve mean is **57.1475157**. See the [complete host readout and plots](../outputs/standard_bca/td3_bc/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-td3-host.json). Four further host seeds and all paired BCA comparisons remain pending for this cell.
+Two of 280 declared physical runs (two of 315 actor trajectories) are independently verified complete. The first TD3+BC Hopper host final mean is **65.2157311**; its periodic-curve mean is **57.1475157**. See the [complete host readout and plots](../outputs/standard_bca/td3_bc/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-td3-host.json). Four further host seeds and all paired BCA comparisons remain pending for this cell.
+
+The first ReBRAC Hopper host final mean is **102.0239558**; its periodic-curve mean is **92.5215207**. See its [host readout and plots](../outputs/standard_bca/rebrac/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-rebrac-host.json). Its paired BCA comparison and four further host seeds remain pending. The two verified results are different hosts and do not supply a paired method comparison.
 
 A checkpoint below 1M is progress, not completion. No completed paired seed comparison,
 standard-BCA advantage, or real OOD result is claimed here.
