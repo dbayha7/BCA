@@ -1,4 +1,22 @@
-# Action-level OOD: direct robustness follow-up prepared; v2 execution gated
+# Action-level OOD: v2 resource component tested; collector acceptance pending
+
+## September 28: separate resource-extension prerequisite
+
+The new extension component passed29 synthetic tests, including durable charges
+through callback failure/process death, cap/duplicate refusal, immutable ancestry,
+lock/path replacement, mutation and pending-call refusal. A small read-only check
+matches the original ledger to its closed full-audit receipt; no large ledger
+rescan, writer, real resource lock, extension creation or scientific call occurred.
+Original1,298,353 environment/5,193,412 physics reservations remain charged.
+
+This is component preparation only. Actual-path/declaration integration, v2
+collector/precommit/supervisor, scientific engineering gates and independent
+execution acceptance remain pending. No new v2 worker is running. Original
+science, prior33 preparation tests and all108 training files remain unchanged.
+
+- [Component scope, tests and remaining gates](../outputs/ood/robustness-v2/resource-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-resource-component.json)
+
 
 ## September 28: user requests a more direct test of OOD action handling
 
