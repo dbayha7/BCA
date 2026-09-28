@@ -17,3 +17,5 @@ Preserve this attempt in place. A saved-record inspection may inventory durable 
 ## Evidence
 
 The observation JSON files, actual diagnostic exits, filtered Windows restart events and source-integrity check are included here. Windows events unrelated to restart are omitted from this publication; the original diagnostic and its hash are retained. High-frequency archives and the original resource ledger are not copied or opened by this diagnostic. Publication receipts named `prior_work_*` confirm the previous commit, not the commit containing this new interruption report.
+
+Publication copies of eight diagnostic JSON files use LF newlines to match Git blobs. `copy-normalization.json` records original and published hashes and identical parsed values; original private receipts remain unchanged. The initial pre-push mismatch was detected before publication and is retained in the monitor snapshot.
