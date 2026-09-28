@@ -1,5 +1,19 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September28,23:37UTC: exact numeric import environment accepted
+
+An explicitly versioned eight-field profile passed a real CPU Python/NumPy/JAX
+import-only process, actualexit0, and independent saved-receipt review actual0.
+All four effective/kernel environment observations and both parent process
+observations match. Sixteen new refusal tests passed. No inherited fields were
+merged or removed, and no key generator or closed review was rerun.
+
+This accepts numeric import compatibility only. The original capsule/worker/
+supervisor are unchanged; native imports, full graph and scientific-route
+integration remain pending. Prior keyproducer actual1 and all saved-key execution
+holds remain. No keys, model, simulator, ledger or shared resource lock were used.
+[Exact scope and evidence](../outputs/ood/robustness-v2/numeric-environment-v1/README.md).
+
 ## September 28,23:24UTC: real key values reviewed; environment gate failed
 
 The approved amended map passed separate review. Real CPU JAX preparation saved
