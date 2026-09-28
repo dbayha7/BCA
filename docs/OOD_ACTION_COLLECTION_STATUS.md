@@ -1,4 +1,34 @@
-# Action-level OOD execution: first-seed saved outcomes audited; readouts pending
+# Action-level OOD: first-seed harm/ranking readout published; five-seed study pending
+
+## September 28: first measured action-harm comparison
+
+The separate real-data report adapter and independent export review passed. Under
+the primary BCA continuation, 276/2,304 precommitted alternatives (11.98%) are
+harmful (>1 raw reward unit versus the host first action). Equal-stratum mean
+within-state AUROC is width0.529, support-distance0.566, precommitted random0.513
+and constant0.500. Only111/256 captured panels contain both harm classes;145 are
+N/A. Pooled AUROC is separate: width0.432, support0.539. These data do not establish
+generally useful OOD ranking. All five training seeds remain required.
+
+Host-continuation sensitivity, every collector/capture stratum, support/harm
+quadrants, fixed-first-action continuation effects and separately tested finite
+tested-bank regret are included. The secondary regret definition was specified
+after collection and before this readout; it is not global-optimal Q regret.
+Three scientific figures were visually checked, with every plotted numeric array
+matched back to exact exports. No action-based or five-seed confidence interval.
+
+The report reuses the accepted saved-outcome audit and preserves both partial
+exclusions, unknown ancestor exits/input-only output, missing final full-state
+contents and constructor evidence limits. No model/simulator/worker/ledger writer
+was invoked. All108 training files and frozen OOD/recovery sources are unchanged.
+Fresh residual coverage and global readiness remain false.
+
+- [Readable report and exact data](../outputs/ood/td3_bc/hopper/s202609171/real-harm-report-v1/README.md)
+- [HTML report](../outputs/ood/td3_bc/hopper/s202609171/real-harm-report-v1/report.html)
+- [Readout acceptance and file hashes](validation/ood-real-harm-report.json)
+
+Earlier pending/running snapshots below are historical.
+
 
 ## September 28: first-seed saved action outcomes accepted after independent audit
 
