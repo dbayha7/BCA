@@ -1,4 +1,23 @@
-# Action-level OOD: v2 resource component tested; collector acceptance pending
+# Action-level OOD: v2 precommit component tested; execution acceptance pending
+
+## September 28: fixed capture/action precommit prerequisite
+
+A separate component passed28 synthetic tests for the fixed256-state schedule,
+14 nominal slots, missing-band preservation, earliest exact-action aliases,
+source/state/key pins, stream collision refusal and exclusive hash-bound artifacts.
+It reuses the frozen candidate design and keeps native host/BCA slots12/13 fixed
+even when support quotas are unfilled. No outcome or warning score enters selection.
+
+This is engineering preparation. No actual v2 state/candidate bank, JAX key table,
+model query, simulator, resource lock, extension ledger or scientific worker ran.
+Actual source/runtime/checkpoint/stream binding, collector/outcome/supervisor and
+constructor/full-final-state evidence still need independent engineering acceptance.
+Existing33 preparation and29 resource tests/sources were preserved without reruns;
+all108 training files and frozen v1 sources remain unchanged.
+
+- [Scope, tests and remaining gates](../outputs/ood/robustness-v2/precommit-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-precommit-component.json)
+
 
 ## September 28: separate resource-extension prerequisite
 
