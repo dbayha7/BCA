@@ -1,3 +1,24 @@
+# Action-level OOD execution: second recovery closed; audit pending
+
+## September 28, 15:39 UTC: worker and supervisor exited0
+
+All512 panels and5,120 completed action rows are saved. Both actual exit receipts
+are0. Independent closure/panel provenance and archive-chain/raw-payload checks
+passed, retaining1,438 original,2,761 first-recovery and921 second-recovery actions.
+Both ancestor exits remain unknown. The initial archive-auditor journal refusal
+is preserved; a separately tested reader verified the exact pinned zero-header
+journal without changing or deleting it.
+
+Full transition semantics and cumulative-ledger reconciliation remain pending;
+harm ranking, tested-action regret and coverage are not accepted. The first seed
+is exploratory and all five seeds remain required. No further collection or
+training was launched. Cluster status remains unverified after an SSH timeout.
+
+- [Closure validation](validation/ood-second-recovery-closure.json)
+- [Exact closure evidence and limits](../outputs/ood/td3_bc/hopper/s202609171/desktop-restart-v2-closure/README.md)
+
+Earlier running snapshots below are historical.
+
 # Action-level OOD execution: second recovery running
 
 ## September 28: second desktop recovery running
