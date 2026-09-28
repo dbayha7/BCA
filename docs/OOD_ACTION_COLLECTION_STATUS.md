@@ -1,5 +1,19 @@
 # Action-level OOD execution: second recovery closed; audit pending
 
+## September 28: cumulative reservation audit passed; archive joins pending
+
+The independent read-only audit reconciled all1,298,293 ledger entries, including
+the original72-transition history, both interruption prefixes and every recovery
+charge. All65 caps, four bound prefix/final snapshots and cached totals agree.
+The compact index retains5,120 complete action ranges and two excluded partials;
+the input-only historical output remains unknown and charged. This verifies
+reservations, not completed physics or full scientific semantics. Archive joins,
+harm/AUROC/regret, coverage and five-seed completion remain pending.
+
+- [Reservation audit scope and exact evidence](../outputs/ood/td3_bc/hopper/s202609171/saved-ledger-audit-v1/README.md)
+- [Reservation validation](validation/ood-saved-ledger-reconciliation.json)
+
+
 ## September 28, 16:10 UTC: decoded saved values; semantic joins pending
 
 A separately tested, bounded decoder passed20 synthetic tests and a limited real
