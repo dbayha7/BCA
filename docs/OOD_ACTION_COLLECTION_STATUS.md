@@ -1,4 +1,17 @@
-# Action-level OOD execution: recovery running
+# Action-level OOD execution: recovery interrupted again
+
+## September 28, 13:21 UTC: second desktop interruption; actual exits unknown
+
+The recovery worker and its supervisors are absent. Last durable progress is **419/512 closed panels at 06:07:40 UTC**. Windows reports boot at 06:12:44 UTC after an unclean shutdown (Kernel-Power event 41). The precise cause and worker termination time remain unknown. Neither recovery actual-exit receipt, completion.json nor failure.json exists; no exit code or signal is inferred.
+
+Both interrupted attempts, all partial traces and the original cumulative ledger remain preserved. These are closed-panel progress counts, not accepted outcomes or a count of every later in-flight call. No automatic retry or new controller was launched. The accepted 237-record replay gate remains historical evidence; it does not accept this interrupted recovery. All 108 frozen training files still match. This diagnostic added no model query, simulator step or training update.
+
+The independent cluster status probe timed out, so its current state is **unverified**. Local CQL's earlier schema failure stays stopped. Further recovery needs applicable user direction and separately checked handling under the standing no-automatic-retry rule, preserving both attempts, unknown exits and all resource charges. All five seeds remain required; harm, regret and coverage acceptance is pending.
+
+- [Second-interruption validation and exact receipts](validation/ood-recovery-second-interruption.json)
+- [Exact-byte evidence pack and preserved limitations](../outputs/ood/td3_bc/hopper/s202609171/recovery-interruption-v1/README.md)
+
+Earlier running snapshots below are historical.
 
 ## September 27, 9:54 p.m. Eastern: desktop interruption recovered
 
