@@ -1,5 +1,26 @@
 # Action-level OOD: v2 stream amendment pending; runtime preparation continuing
 
+## September 28: cooperating supervisor and worker route prerequisite
+
+The new supervisor saves launch intent, observes the exact child process and
+saves readiness/release evidence before its one engineering callback. Raw output
+and actual exits are retained; failed/unknown exits, reuse, mutation and missing
+handshakes refuse.34 synthetic tests passed, actual0/no skips.17 saved synthetic
+process receipts passed separate standard-library review, actual0.
+
+The pinned Python adds LC_CTYPE=C.UTF-8 to its effective environment. The unchanged
+exact CPU contract correctly refuses an unmodified synthetic entrypoint before
+release, actual1. Successful temporary fixtures explicitly remove the locale
+field only to test the protocol. This is not an accepted real compatibility fix.
+No actual scientific entrypoint, shared lease, ledger, model, simulator or fresh
+stream was used. Actual environment/runtime/storage/worker-only route acceptance
+remains pending; all prior closed sources and accepted science are unchanged.
+The stream amendment remains pending explicit direction and was not applied.
+
+- [Supervisor scope and remaining integration](../outputs/ood/robustness-v2/supervisor-component-v1/README.md)
+- [Exact synthetic validation](validation/ood-v2-supervisor-component.json)
+
+
 ## September 28: engineering capsule declaration/review prerequisite
 
 A new read-only capsule binds exact files, fresh output paths, the original
