@@ -1,4 +1,32 @@
-# Action-level OOD: v2 durable archive integration tested; execution pending
+# Action-level OOD: v2 stream collision found; single-stream correction proposed
+
+## September 28: real stream gate stopped before v2 execution
+
+A complete current-campaign seed inventory found one of16,640 v2 stream integers
+already reserved for training evaluation. The gate exited1 and correctly refused
+stream acceptance. TD3+BC Walker2d seed202609171 candidate index54 uses404735174;
+the inventory contains597,032 occurrences and83,875 unique predecessor integers.
+
+An independent review confirmed the collision and checked a proposal to change
+only that candidate-generation seed to404735181, the first larger unused value.
+The complete proposed map has exactly one change and no old or internal overlap.
+The proposal is unapproved and NOT applied. The frozen protocol forbids silently
+resampling collisions. All original code, training seeds and streams remain fixed.
+
+No v2 JAX keys, candidate pools, model queries, simulator calls, extension ledger
+or scientific worker were created. This identifier collision does not by itself
+establish identical random draws or invalidate v1 results. Unaffected engineering
+and read-only training audits may continue; v2 stream execution stays held.
+
+The new inventory component passed15 synthetic tests, actual0/no skips. The real
+gate's actual1, first independent-review assumption failure1, corrected review0
+and exact declarations/provenance are preserved. All108 training files and closed
+OOD/v2 sources and receipts remain unchanged; no closed tests or large audit rerun.
+
+- [Inventory scope, failure and evidence](../outputs/ood/robustness-v2/stream-inventory-v1/README.md)
+- [Concrete single-stream amendment proposal](superpowers/plans/2026-09-28-ood-v2-single-stream-amendment-proposal.md)
+- [Component and real-gate validation](validation/ood-v2-stream-inventory.json)
+
 
 ## September 28: durable native and full-state evidence ordering
 
