@@ -1,5 +1,30 @@
 # Standard BCA: execution status
 
+## September 28, 19:02 UTC: VPN restored; cluster training continued
+
+Live compute-node inspection confirms the original controller and worker still
+match their saved command, start time and process group. The cluster has **45/140
+training runs with successful worker and learner exit receipts: 23 ReBRAC and
+22 IQL**. All seven datasets have host and BCA run closures for the first seed;
+17 further closures are from the second seed. The active run is ReBRAC Pen-human
+BCA, seed 202609172, at 950,000 updates in this snapshot. No restart, duplicate
+submission, new model query or simulator call was needed for this check.
+
+These are execution completions, **not 45 independently accepted scientific
+results**. Accepted training results remain three physical runs: the TD3+BC Hopper
+host/BCA pair and the ReBRAC Hopper host. The other 44 cluster closures need
+independent source/data, counter, checkpoint and evaluation-bank audits. The next
+cluster pair to verify is ReBRAC Hopper BCA against its already accepted host.
+The local CQL queue remains stopped on its preserved validation error.
+
+The first TD3+BC Hopper OOD action comparison is separately complete and reported;
+all other OOD comparisons and the full five-seed study remain incomplete.
+
+- [Live identity and all 45 actual-exit receipts](validation/standard-cluster-vpn-return.json)
+- [Current OOD readout status](OOD_ACTION_COLLECTION_STATUS.md)
+
+## Earlier training observations (historical timestamps)
+
 The September 27 study compares each plain host with BCA **without an importance
 tilt**, retaining Bayesian bootstrap masses and both radius components. Each
 run has 1M host updates. The frozen matrix contains 280 runs / 315 actor
