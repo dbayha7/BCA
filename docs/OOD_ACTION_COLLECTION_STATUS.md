@@ -1,4 +1,23 @@
-# Action-level OOD: v2 precommit component tested; execution acceptance pending
+# Action-level OOD: v2 injected drivers tested; native execution gates pending
+
+## September 28: collector/outcome control flow and evidence ordering
+
+The separate drivers passed25 synthetic tests, including the full fixed capture
+schedule, missing/alias handling,250-total-step horizon, native flag stopping,
+exact first-repeat record/state checks, saved final capture contents and pending
+charges after failures. A temporary synthetic SQLite integration used the closed
+extension component; original synthetic ancestor bytes stayed unchanged.
+
+No actual model, simulator, resource lock or extension ledger was used. Constructor
+evidence, actual restore-schema/runtime/checkpoint/stream bindings, global precommit
+barrier, durable native archive/storage checks and supervisor/independent execution
+acceptance remain pending. Full simulated-state contents in a test double do not
+prove real native field coverage. The original scientific protocol,108 training
+files and all closed v1/v2 preparation components remain unchanged and were not rerun.
+
+- [Driver scope, ordering, tests and remaining gates](../outputs/ood/robustness-v2/driver-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-driver-component.json)
+
 
 ## September 28: fixed capture/action precommit prerequisite
 
