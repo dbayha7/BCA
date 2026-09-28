@@ -1,3 +1,8 @@
 * text=auto eol=lf
 # Preserve every byte of the pinned upstream snapshot.
 baselines/unifloral/** -text
+# Fixed advisor snapshot contains byte-bound receipts and saved evaluation arrays.
+outputs/advisor_progress/2026-09-29/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Verbatim Windows process stderr retains its original CRCRLF bytes.
+outputs/advisor_progress/2026-09-29/*.stderr -diff
+outputs/advisor_progress/2026-09-29/inputs/*.stderr -diff
