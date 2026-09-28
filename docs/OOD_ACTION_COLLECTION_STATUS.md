@@ -1,4 +1,30 @@
-# Action-level OOD: v2 stream amendment pending; runtime preparation continuing
+# Action-level OOD: stream amendment approved; execution checks pending
+
+## September 28, 22:42 UTC: stream approval observed during publication review
+
+David explicitly approved the one-seed correction in the active chat
+"Analyze BCA algorithm performance (3)". That chat is implementing the amendment.
+This supersedes the pending-approval statements in earlier status entries and in
+the second Hopper pair's saved audit package. The training audit evidence and
+results remain unchanged. This monitor has not accepted the other chat's new
+amendment validation, and runtime and scientific execution gates remain pending.
+See [the authorization context record](validation/standard-second-rebrac-hopper-pair-context-update.json).
+
+## September28,22:33UTC: fourth training pair accepted; stream hold unchanged
+
+ReBRAC Hopper seed202609172 host/BCA saved evidence passed separate audits and
+independent review. Final BCA-minus-host normalized mean+0.0818220,
+periodic-curve difference-1.7710068,10/20 paired final episode wins.
+This accepts one additional training pair, giving two of five ReBRAC Hopper seeds
+and eight physical runs/four training pairs overall. It does not establish an
+OOD-action benefit or authorize any real v2 execution.
+
+No v2 keys/candidates/model/simulator/ledger/lock/worker were dispatched. The
+404735174->404735181 proposal remains pending; no reseed or held gate rerun.
+All closed v2 components, including capsule/supervisor, remain unchanged. Actual
+environment/native/runtime/storage/lease and scientific gates remain pending.
+[New pair readout](../outputs/standard_bca/rebrac/hopper/bca_noiw/s202609172/README.md).
+
 
 ## September 28: cooperating supervisor and worker route prerequisite
 

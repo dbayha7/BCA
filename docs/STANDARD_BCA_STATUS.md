@@ -1,5 +1,39 @@
 # Standard BCA: execution status
 
+## September 28, 22:42 UTC: stream approval observed during publication review
+
+David explicitly approved the one-seed correction in the active chat
+"Analyze BCA algorithm performance (3)". That chat is implementing the amendment.
+This supersedes the pending-approval statements in earlier status entries and in
+the second Hopper pair's saved audit package. The training audit evidence and
+results remain unchanged. This monitor has not accepted the other chat's new
+amendment validation, and runtime and scientific execution gates remain pending.
+See [the authorization context record](validation/standard-second-rebrac-hopper-pair-context-update.json).
+
+## September28,22:33UTC: second ReBRAC Hopper seed independently accepted
+
+Saved host and BCA evidence for seed202609172 passed separate CPU audits, each
+once in fixed order, and independent export/arithmetic review, all actual0.
+Eight of280 physical training runs (8/315 actors) and four pairs are now accepted.
+ReBRAC Hopper has two of five paired seeds accepted; full five-seed inference
+remains pending. Existing first-seed Hopper/Walker results are unchanged.
+
+Final normalized host101.9562131/BCA102.0380352,
+delta+0.0818220; periodic-curve host90.9682323/BCA89.1972255,
+delta-1.7710068. BCA wins10/20 final paired episodes,
+zero ties. Final performance is nearly tied and the average across training
+evaluations is lower. This is descriptive training evidence, not an OOD benefit.
+
+Latest bounded cluster probe22:28:55UTC: job27045057 str-gpu13, original
+controller/current-worker identity matched,56/140 successful closures
+(28ReBRAC/28IQL),28 closures each for the first two seeds. After acceptance,
+50 cluster closures still await independent audits. Current exits remain pending;
+queues are unchanged. No new model/physics/training/stream execution occurred.
+
+[Pair evidence and limits](../outputs/standard_bca/rebrac/hopper/bca_noiw/s202609172/README.md),
+[independent validation](validation/standard-second-rebrac-hopper-pair.json).
+
+
 ## September 28,21:40 UTC: first ReBRAC Walker2d pair accepted
 
 Independent saved-input audits of seed202609171 host and BCA each exited0, in
