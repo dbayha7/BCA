@@ -1,4 +1,27 @@
-# Action-level OOD: v2 injected drivers tested; native execution gates pending
+# Action-level OOD: v2 constructor evidence tested; runtime acceptance pending
+
+## September 28: truthful native constructor evidence and call ordering
+
+The separate native constructor component passed21 synthetic tests, actual exit0.
+It reserves before construction, retains the actual sampled native action, saves
+intercepted controls before physics, and saves returned values/full native
+poststate before arithmetic validation and acknowledgment. Native exceptions
+preserve available poststate and leave the reservation pending; no retry/refund.
+
+Read-only installed-source inspection confirms that Gym samples a constructor
+action before its native step. Wrapper state and pre-sampling RNG contents are
+not available there and are not invented. The three MuJoCo source hashes match
+the frozen registry; three additional Gym/RNG source files are newly pinned.
+
+No real model/simulator, extension ledger or resource lock was used. Actual
+runtime/source/path/checkpoint/stream/native-schema binding, storage feasibility,
+supervisor, global precommit and independent engineering/execution acceptance
+remain pending. Existing scientific protocol,108 training files and closed
+v1/v2 components remain unchanged; no closed test or large audit was rerun.
+
+- [Constructor scope and remaining gates](../outputs/ood/robustness-v2/constructor-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-constructor-component.json)
+
 
 ## September 28: collector/outcome control flow and evidence ordering
 
