@@ -1,5 +1,20 @@
 # Action-level OOD execution: second recovery closed; audit pending
 
+## September 28: independent saved transition join dispatched; acceptance pending
+
+The saved-only three-attempt join is now running once, after16 synthetic tests
+passed actual0/no skips. It joins reserved input/applied/output calls to frozen
+states, candidates, keys and completed reward arrays, with both excluded partials
+and the unknown historical output retained. Collection remains closed. This is
+an audit process, with no new scientific worker/model query/simulation or retry.
+Its actual exit and full result are pending; partial progress is not acceptance.
+Unavailable final full-state contents remain explicitly unverified. Harm/AUROC,
+regret, coverage and five-seed completion are still pending.
+
+- [Join scope and exact code/dispatch evidence](../outputs/ood/td3_bc/hopper/s202609171/saved-transition-join-v1/README.md)
+- [Component validation and pending real integration](validation/ood-saved-transition-join.json)
+
+
 ## September 28: cumulative reservation audit passed; archive joins pending
 
 The independent read-only audit reconciled all1,298,293 ledger entries, including
