@@ -1,5 +1,25 @@
 # Action-level OOD: v2 stream amendment pending; runtime preparation continuing
 
+## September 28: engineering capsule declaration/review prerequisite
+
+A new read-only capsule binds exact files, fresh output paths, the original
+protocol and resource ceilings, an explicit CPU-only command/environment, and
+an independently pinned reviewer report plus actual process-exit receipt.
+Forty-six synthetic tests passed, actual0, without skips. Missing/held semantic
+gates, unknown/nonzero exits, stale receipts, mutable-resource aliases, changed
+inputs, reused outputs, forks and second consumption are refused.
+
+The synthetic receipts authorize no real use. Reviewer provenance, actual
+runtime/native/storage/shared-lease semantics and supervisor/worker integration
+remain pending. No process, real lock, ledger, model, simulator or new stream was
+created. Existing v2 sources and all accepted training/OOD evidence are unchanged.
+The stream amendment remains pending; no gate rerun or reseeding occurred.
+This is component preparation, not engineering execution or scientific acceptance.
+
+- [Capsule scope and remaining integration](../outputs/ood/robustness-v2/execution-capsule-component-v1/README.md)
+- [Exact synthetic validation](validation/ood-v2-execution-capsule-component.json)
+
+
 ## September 28,21:40 UTC: third training pair accepted; v2 stream hold unchanged
 
 ReBRAC Walker2d seed202609171 host/BCA saved training evidence passed independent
