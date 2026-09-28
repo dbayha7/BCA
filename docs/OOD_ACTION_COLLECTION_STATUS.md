@@ -1,4 +1,28 @@
-# Action-level OOD: v2 constructor evidence tested; runtime acceptance pending
+# Action-level OOD: v2 durable archive integration tested; execution pending
+
+## September 28: durable native and full-state evidence ordering
+
+A separate runtime archive wrapper passed24 synthetic tests, actual exit0. Exact
+frozen archive class bodies were exercised on temporary Linux SQLite files with
+FULL/DELETE settings, file/directory fsync and exact readback. Native raw and
+full-state typed evidence share the wrapper. Failures retain bytes and poison
+further use, with no reopen, repair or retry.
+
+Constructor input/control artifacts were independently visible to a read-only
+connection before synthetic physics. A temporary synthetic extension integration
+charged one1env/4physics call, saved seven artifacts, and preserved its ancestor.
+A child deliberately exiting23 after append retained its acknowledged bytes.
+These are storage fixtures, not new scientific transitions or worker failures.
+
+Actual target-device/campaign storage feasibility, runtime/factory/source/path/
+checkpoint/stream binding, global precommit barrier, supervisor and independent
+engineering/execution acceptance remain pending. No actual model/simulator,
+original resource DB or shared lock was touched. All108 training files and closed
+v1/v2 components remain unchanged; no closed tests or large audits were rerun.
+
+- [Runtime archive scope and limitations](../outputs/ood/robustness-v2/runtime-archive-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-runtime-archive-component.json)
+
 
 ## September 28: truthful native constructor evidence and call ordering
 
