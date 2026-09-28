@@ -1,5 +1,19 @@
 # Action-level OOD execution: second recovery closed; audit pending
 
+## September 28, 16:10 UTC: decoded saved values; semantic joins pending
+
+A separately tested, bounded decoder passed20 synthetic tests and a limited real
+integration check. All5,120 completed reward arrays decode correctly and their
+stored sequential sums agree. Nine NPZ payloads (first input/applied/output per
+attempt) also decode and bind to saved first-record and original state hashes.
+This sampled decoder check does not join all transitions or reconcile the ledger.
+Scientific acceptance, harm/AUROC, regret and coverage remain pending. Successful
+prior closure, provenance and archive integrity checks were reused.
+
+- [Decoder scope and evidence](../outputs/ood/td3_bc/hopper/s202609171/saved-audit-decoding-v1/README.md)
+- [Decoder validation](validation/ood-saved-value-decoding.json)
+
+
 ## September 28, 15:39 UTC: worker and supervisor exited0
 
 All512 panels and5,120 completed action rows are saved. Both actual exit receipts
