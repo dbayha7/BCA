@@ -1,5 +1,23 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 28,23:24UTC: real key values reviewed; environment gate failed
+
+The approved amended map passed separate review. Real CPU JAX preparation saved
+1,280,000 v2 and1,280,000 reconstructed predecessor continuation keys, then exited1
+on its final exact-environment guard. A separate integer implementation matched
+all2,560,000 saved keys and found zero overlaps/duplicates. The failed producer
+was not rerun or overridden; its tables remain held from execution.
+
+A separate import-only observation found JAX adds TF_CPP_MIN_LOG_LEVEL=1 and
+TPU_SKIP_MDS_QUERY=1. It did not create keys. The original process's final
+environment was not saved; this later observation reproduces a guard-breaking
+change but is not its missing contemporaneous measurement. The frozen scientific
+CPU environment remains unchanged and unaccepted for actual native integration.
+
+No model, simulator, pool, ledger, shared resource lock or scientific worker ran.
+Existing accepted training/OOD evidence remains unchanged. See the
+[saved failure and independent review](../outputs/ood/robustness-v2/real-continuation-key-diagnostic-v1/README.md).
+
 ## September 28, 22:56 UTC: fifth training pair accepted; OOD gates pending
 
 ReBRAC Walker2d seed202609172 host/BCA saved training evidence is independently
