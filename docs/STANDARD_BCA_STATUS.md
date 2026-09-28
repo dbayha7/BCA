@@ -1,5 +1,30 @@
 # Standard BCA: execution status
 
+## September 28, 22:56 UTC: second ReBRAC Walker2d pair accepted
+
+Host and BCA seed202609172 saved evidence passed separate CPU audits once each in
+fixed order and independent export/arithmetic review, all actual0. Ten of280
+physical runs (10/315 actors), five training pairs, are now accepted. ReBRAC
+Hopper and Walker2d each have two of five paired seeds accepted; all5 are required.
+
+Final normalized host 87.8072335, BCA 84.8193274,
+difference -2.9879062; periodic-curve host 74.2158849,
+BCA 77.3464882, difference +3.1306033.
+BCA wins 3/20 final paired episodes, zero ties.
+Lower final mean coexists with higher average across training evaluations.
+Unlike the first Walker seed, the final difference is negative. Neither seed
+alone nor these two descriptive contrasts establishes reliable general benefit
+or better OOD handling.
+
+Bounded cluster observation22:51:51UTC: job27045057 str-gpu13, controller/worker
+identities match,56 closures (28ReBRAC/28IQL;28 each first/second seed), all saved
+worker and learner completion receipts successful. With this pair accepted,
+48 cluster closures await full audits. Current worker was770k, exits pending.
+Queues unchanged. No new model/physics/learner/OOD key execution.
+
+[Pair readout](../outputs/standard_bca/rebrac/walker2d/bca_noiw/s202609172/README.md),
+[independent validation](validation/standard-second-rebrac-walker-pair.json).
+
 ## September 28, 22:42 UTC: stream approval observed during publication review
 
 David explicitly approved the one-seed correction in the active chat

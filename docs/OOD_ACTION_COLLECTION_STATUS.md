@@ -1,5 +1,21 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 28, 22:56 UTC: fifth training pair accepted; OOD gates pending
+
+ReBRAC Walker2d seed202609172 host/BCA saved training evidence is independently
+accepted. Final BCA-minus-host mean -2.9879062, periodic-curve
+difference +3.1306033; 3/20 paired final episodes favor BCA.
+This is a training comparison, not an OOD-action result. Ten runs/five pairs are
+accepted overall; ReBRAC Hopper and Walker2d each have2/5 paired seeds accepted.
+
+The one-stream correction is explicitly approved; its separate implementation
+and advisor brief belong to the other chat and remain unchanged here. No new
+v2 key, pool, model, simulator, ledger, shared lock or scientific worker was used.
+Actual stream derivation/runtime/environment/storage/ownership and subsequent
+physical engineering and science acceptance remain pending. Existing closed
+components and the original scientific plan are unchanged.
+[New pair readout](../outputs/standard_bca/rebrac/walker2d/bca_noiw/s202609172/README.md).
+
 ## September 28, 22:42 UTC: stream approval observed during publication review
 
 David explicitly approved the one-seed correction in the active chat
