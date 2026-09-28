@@ -1,4 +1,25 @@
-# Action-level OOD execution: second recovery closed; audit pending
+# Action-level OOD execution: first-seed saved outcomes audited; readouts pending
+
+## September 28: first-seed saved action outcomes accepted after independent audit
+
+The three-attempt join and separate binding/coverage review exited0. All 5,120
+complete returns /1,280,000 reward elements reconcile with the archived outputs,
+original reservation ownership and frozen states/candidates/keys. Both partials
+are excluded and the historical input-only output remains unknown and charged.
+All available following-state checks pass; 5,121 final following-state checks
+remain unavailable because their full contents were not saved. Constructor
+receipt evidence is separately reconciled, with its limits recorded explicitly.
+
+Acceptance covers this first pair's recorded finite-horizon action outcomes.
+Harm/AUROC and a real report adapter are next; separately tested secondary regret
+remains pending. All five seeds are still required. Coverage/global readiness
+remain false, and no new simulation or model query was performed.
+
+- [Exact scope, limits and saved audit evidence](../outputs/ood/td3_bc/hopper/s202609171/saved-outcome-audit-v1/README.md)
+- [File-bound first-pair acceptance](validation/ood-saved-outcome-acceptance.json)
+
+Earlier running/pending snapshots below are historical.
+
 
 ## September 28: independent saved transition join dispatched; acceptance pending
 
