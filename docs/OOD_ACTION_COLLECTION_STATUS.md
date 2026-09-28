@@ -1,4 +1,34 @@
-# Action-level OOD: first-seed harm/ranking readout published; five-seed study pending
+# Action-level OOD: direct robustness follow-up prepared; v2 execution gated
+
+## September 28: user requests a more direct test of OOD action handling
+
+A separate v2 protocol now compares host and BCA after identical imposed actions
+at identical states, with near/moderate/strong support bands selected from training
+data before outcomes. It reports absolute return advantage together with degradation
+relative to one shared familiar first action. Native first-action choice and harm
+warning quality remain separate endpoints. The completed v1 study is unchanged.
+Future unstarted v1 OOD collection is held; training queues are unchanged.
+
+All33 preparation tests passed. The fixed sampler filled all bands at437 training
+calibration states without tuning. This is preparation, not future-state feasibility
+or outcome acceptance. V2 requires a separately tested combined resource ledger,
+collector/precommit engineering gates and independently accepted checkpoint pairs
+before dispatch; no new simulator/model/worker has been run.
+
+An independently checked post-hoc bridge of the original first seed found that,
+for233 support-distant alternatives, the equal-stratum/state-weighted BCA-minus-host
+continuation return was -5.045585 and degradation advantage versus the shared
+nearest-recorded anchor was -0.018709. These inspected one-seed data do not establish
+better OOD handling by BCA. They cannot validate the prospective v2 experiment.
+All five seeds per cell, explicit empirical-support limits and shared dependence
+remain required; global readiness and fresh residual coverage remain false.
+
+- [New frozen prospective protocol](superpowers/plans/2026-09-28-ood-robustness-v2.md)
+- [Preparation, descriptive bridge and remaining execution gates](../outputs/ood/robustness-v2/preparation-v1/README.md)
+- [Exact validation and file hashes](validation/ood-robustness-v2-preparation.json)
+
+Previous first-pair results below remain valid within their stated scope.
+
 
 ## September 28: first measured action-harm comparison
 
