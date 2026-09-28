@@ -1,5 +1,20 @@
 # Action-level OOD: v2 stream amendment pending; runtime preparation continuing
 
+## September 28,21:40 UTC: third training pair accepted; v2 stream hold unchanged
+
+ReBRAC Walker2d seed202609171 host/BCA saved training evidence passed independent
+audits and review. Final normalized BCA-minus-host mean difference+4.9805026;
+BCA wins7/20 paired final episodes. This is one seed and is not an OOD-action
+result. Three training pairs are now accepted: TD3+BC Hopper, ReBRAC Hopper and
+ReBRAC Walker2d first seeds. All five seeds and separate OOD gates remain required.
+
+No v2 keys/candidates/model/simulator/ledger/lock/worker were dispatched. The
+404735174->404735181 proposal remains pending explicit direction; no gate rerun
+or reseeding occurred. Actual capsule/supervisor/native/engineering acceptance
+remains pending. Closed runtime-binding and other v2 component sources are unchanged.
+[New pair readout](../outputs/standard_bca/rebrac/walker2d/bca_noiw/s202609171/README.md).
+
+
 ## September 28: live Python source/callable binding prerequisite
 
 A separate guard now matches live Python code to externally pinned source,

@@ -1,0 +1,3 @@
+# Fixed-order ReBRAC Walker2d saved-training audit
+
+Inspect current controller/worker identity, then the declared seed202609171 host and BCA completed-run metadata. Create separately versioned saved-input auditors, retaining all Hopper audit sources and receipts. Verify actual source/data/normalization/partition/counters/metrics/evaluation/checkpoint/calibrator provenance and independently review exports before accepting a pair. Use CPU analysis only; no model, simulator, training, new OOD stream, ledger or lock calls. Keep the pending one-stream amendment held. Publish only owned small sources/evidence after integrity checks, preserving separate actual exits and failures. No closed audit rerun or accepted-evidence repull.

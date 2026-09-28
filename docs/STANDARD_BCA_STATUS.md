@@ -1,5 +1,28 @@
 # Standard BCA: execution status
 
+## September 28,21:40 UTC: first ReBRAC Walker2d pair accepted
+
+Independent saved-input audits of seed202609171 host and BCA each exited0, in
+fixed order, followed by an independent arithmetic/export review0. Accepted
+physical runs now total6/280 (6/315 actors), forming three first-seed pairs:
+TD3+BC Hopper, ReBRAC Hopper and ReBRAC Walker2d. All five paired seeds remain required.
+
+Walker2d final normalized means: host77.3307787, BCA82.3112812, delta+4.9805026.
+Periodic-curve means: host74.5169790, BCA75.4619361, delta+0.9449571. BCA wins7/20
+paired final episodes, with zero ties. Its higher mean coexists with a lower
+median; no episode was excluded. This single-seed result supplies neither a
+reliable general benefit nor evidence of improved OOD-action handling.
+
+All saved data/source/counters/evaluation/metric/checkpoint evidence passed under
+the documented limits. No learner/model/simulator call or new OOD stream was run.
+Latest live probe21:32:54UTC: job27045057 str-gpu13, controller/current-worker
+identity matched,53/140 successful cluster closures (27ReBRAC/26IQL). After this
+pair acceptance49 cluster closures still await independent audits. Queues unchanged.
+
+[Pair readout and limits](../outputs/standard_bca/rebrac/walker2d/bca_noiw/s202609171/README.md),
+[independent validation](validation/standard-first-rebrac-walker-pair.json).
+
+
 ## September 28,20:40 UTC: first ReBRAC Hopper pair independently accepted
 
 The saved ReBRAC Hopper BCA run at seed202609171 passed its CPU audit and a
