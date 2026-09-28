@@ -1,5 +1,16 @@
 # Action-level OOD: v2 stream collision found; single-stream correction proposed
 
+## September 28,20:40 UTC: second training pair accepted; v2 stream hold unchanged
+
+ReBRAC Hopper host/BCA seed202609171 now has an independent saved-training audit.
+The final BCA-minus-host normalized-score difference is+0.0882836; this is one
+training seed and supplies no OOD-action conclusion. TD3+BC and ReBRAC Hopper
+first-seed training pairs are accepted; other declared pairs still need audits.
+The v2 stream correction remains unapproved, and no v2 science was dispatched.
+Source/runtime/checkpoint/simulator/stream/engineering acceptance remains required
+before v2 outcomes. [Pair readout](../outputs/standard_bca/rebrac/hopper/bca_noiw/s202609171/README.md).
+
+
 ## September 28: real stream gate stopped before v2 execution
 
 A complete current-campaign seed inventory found one of16,640 v2 stream integers

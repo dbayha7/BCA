@@ -1,5 +1,31 @@
 # Standard BCA: execution status
 
+## September 28,20:40 UTC: first ReBRAC Hopper pair independently accepted
+
+The saved ReBRAC Hopper BCA run at seed202609171 passed its CPU audit and a
+separate export review, both actualexit0. Accepted physical runs now total4/280:
+the TD3+BC Hopper and ReBRAC Hopper host/BCA pairs, one seed each. All five paired
+training seeds remain required for each cell.
+
+Final normalized mean: host102.0239558, BCA102.1122394, delta+0.0882836.
+Periodic-curve mean: host92.5215207, BCA93.0327780, delta+0.5112573.
+BCA wins10/20 paired final episodes. This small single-seed difference does not
+establish a reliable benefit or improved OOD handling. No training-seed interval.
+
+All1M updates/metric rows,500k actor updates,1M accepted scale fits,198 refreshes,
+three checkpoints, declared evaluation banks and exact source/data identities
+were checked. The closed host audit was reused. No model query, simulator step,
+learner update, GPU request or training retry was added. OOD gates remain separate.
+
+Latest live snapshot20:28:20UTC: job27045057 on str-gpu13, matching original
+controller/current worker identities,50/140 cluster closures (26 ReBRAC/24 IQL),
+all worker/learner success receipts. With the newly accepted pair,48 cluster
+closures still need independent audits. Active queues and local CQL hold unchanged.
+
+- [Accepted pair and evidence limits](../outputs/standard_bca/rebrac/hopper/bca_noiw/s202609171/README.md)
+- [Independent validation](validation/standard-first-rebrac-pair.json)
+
+
 ## September 28, 19:02 UTC: VPN restored; cluster training continued
 
 Live compute-node inspection confirms the original controller and worker still
