@@ -1,4 +1,25 @@
-# Action-level OOD execution: recovery interrupted again
+# Action-level OOD execution: second recovery running
+
+## September 28: second desktop recovery running
+
+Both interrupted attempts remain immutable, with unknown actual exits. The
+separately accepted second recovery reuses **419 panels/4,199 completed actions**.
+All103 saved full transition records and104 input/state records matched exactly
+during replay of the sole unfinished action. One prior input has no saved output;
+that output remains unknown and its original reservation remains charged. No
+completed action was rerun. Existing gates, sources, policies and caps are unchanged.
+
+At 2026-09-28T14:08:52.275509+00:00, the new worker identity and shared lock matched and progress
+advanced to **420/512 panels**. Worker/supervisor closure and the full independent
+outcome audit remain pending; no accepted harm/regret/coverage result is claimed.
+51 tests passed. The cluster connection is unavailable; no duplicate was submitted.
+Local CQL's separate validation failure remains stopped.
+
+- [Second recovery validation](validation/ood-second-desktop-recovery.json)
+- [Exact evidence and limitations](../outputs/ood/td3_bc/hopper/s202609171/desktop-restart-v2/README.md)
+
+Earlier snapshots below are historical. Active attempt: `td3-hopper-s202609171-outcomes-restart-v2`.
+
 
 ## September 28, 13:21 UTC: second desktop interruption; actual exits unknown
 
