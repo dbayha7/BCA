@@ -1,4 +1,26 @@
-# Action-level OOD execution: collection interrupted
+# Action-level OOD execution: recovery running
+
+## September 27, 9:54 p.m. Eastern: desktop interruption recovered
+
+David explicitly authorized restarting after the desktop reboot. The original
+worker was absent, the shared lock was free, and its actual exit is unknown.
+All **143 complete panels / 1,438 completed actions** were hash-bound and retained.
+Only the one incomplete action was replayed from its original state, action and
+keys. **All 237 saved transition records matched exactly**; unchanged gates passed
+before new outcome steps. The worker is live and has advanced to **144/512 panels**
+at 01:54:24 UTC. Its real exit and combined scientific outcome audit remain pending.
+
+The original attempt/ledger/caps are unchanged. The replay and constructor use
+238 transitions of the existing engineering allowance. No completed rollout was
+rerun and no training was restarted. The separate cluster job is live; local CQL's
+pre-existing validation failure remains stopped. One seed remains exploratory.
+
+- [Recovery validation and live identity](validation/ood-desktop-restart.json)
+- [Recovery explanation and exact evidence](../outputs/ood/td3_bc/hopper/s202609171/desktop-restart-v1/README.md)
+
+The earlier snapshots below describe the original attempt. Monitor the new
+`td3-hopper-s202609171-outcomes-restart-v1` attempt and its separate process receipts.
+
 
 ## September 28, 01:41 UTC: outcome attempt interrupted; no actual exit receipts
 
