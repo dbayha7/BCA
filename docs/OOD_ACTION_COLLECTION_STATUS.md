@@ -1,4 +1,25 @@
-# Action-level OOD: v2 stream collision found; single-stream correction proposed
+# Action-level OOD: v2 stream amendment pending; runtime preparation continuing
+
+## September 28: pair-wide precommit and guarded phase component
+
+The separate global barrier/phase component passed33 synthetic tests, actual0.
+All256 nominal state rows, complete keys, candidate banks and warning slots must
+be byte-bound before a seal. A separately pinned independent review is required
+before an injected outcome phase can start. Fixed512 host/BCA nominal panels
+retain missing rows, immutable starts and no replay after failure or reentry.
+An integration fixture used the unchanged outcome driver for1,004 synthetic calls,
+four unique actions and exact full first-repeat/final contents. No real science ran.
+
+The original stream collision and proposed one-seed amendment remain held pending
+explicit direction. Structural tests and invented review receipts do not accept
+real streams, native semantics, factory/runtime/source paths, storage or execution.
+The29-test development pass and expanded test's field-name failure are preserved;
+the final33-test pass corrected only that assertion. Prior closed sources and
+all108 training files remain unchanged, with no closed suite or audit rerun.
+
+- [Component scope and remaining gates](../outputs/ood/robustness-v2/global-barrier-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-global-barrier-component.json)
+
 
 ## September 28,20:40 UTC: second training pair accepted; v2 stream hold unchanged
 
