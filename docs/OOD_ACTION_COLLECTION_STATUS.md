@@ -1,5 +1,28 @@
 # Action-level OOD: v2 stream amendment pending; runtime preparation continuing
 
+## September 28: live Python source/callable binding prerequisite
+
+A separate guard now matches live Python code to externally pinned source,
+defining owners, defaults and declared direct globals/attributes.32 synthetic
+tests passed, actual0. Same-filename code substitution, mutable/default/global
+changes, redirected sources, closures and runtime imports are refused. An exact
+frozen archive-class AST fixture was checked without constructing an archive.
+
+A read-only13-entrypoint source inspection exited0: nine generic scans passed;
+four require separately reviewed import or declared-native-field bindings.
+The contextmanager archive wrapper also needs an explicit decorator binding.
+These findings do not accept live native factories, dependency graphs or execution.
+The frozen sources remain unchanged, and no scientific object was constructed.
+
+The stream amendment remains pending explicit direction. No real v2 keys, model
+queries, physics, resource ledger/lock or worker were added. All prior closed
+sources/evidence and108 training files remain unchanged; no closed suite reran.
+Development fixtures and their closure refusal are retained with actual exits.
+
+- [Binding scope and actual integration requirements](../outputs/ood/robustness-v2/runtime-binding-component-v1/README.md)
+- [Exact component validation](validation/ood-v2-runtime-binding-component.json)
+
+
 ## September 28: pair-wide precommit and guarded phase component
 
 The separate global barrier/phase component passed33 synthetic tests, actual0.
