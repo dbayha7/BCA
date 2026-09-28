@@ -135,6 +135,10 @@ CQL's evaluation-schema validation failure; preserve it and do not silently retr
   original frozen settings and main thesis PDF. Expand hosts/datasets only after
   their own checkpoint and simulator contracts pass.
 
+## September 28 interruption boundary
+
+The first outcome attempt stopped across a Windows restart after the last durable 143/512-panel snapshot. Worker and supervisor actual exits, completion and failure receipts are missing. Preserve the incomplete attempt and original ledger; no automatic retry/resume or source edit. Closed state/candidate gates are reusable. Saved-only inspection may establish the durable/uncertain prefix but cannot promote it to full scientific acceptance. David has explicitly requested restart in "Analyze BCA algorithm performance (3)"; recovery preparation is active there. Further collection still requires the separately checked execution binding. Do not ask again for existing restart authorization or duplicate that work. See `docs/validation/ood-outcome-interruption.json`.
+
 ## Completion criteria
 
 September 27, 23:15 UTC: the closed query/state/streaming gates are accepted. Production state collection saved all 256 captures with actual exit0 and an independent 38,400-artifact audit. The candidate/support stage fixed 2,560 slots, 64,000 actual continuation keys, both radii and an episode-disjoint training-complement support bank, actual exit0 and exact independent arithmetic. There are 103 passing tests.

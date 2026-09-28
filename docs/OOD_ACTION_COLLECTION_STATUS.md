@@ -1,4 +1,14 @@
-# Action-level OOD execution: first real outcomes running
+# Action-level OOD execution: collection interrupted
+
+## September 28, 01:41 UTC: outcome attempt interrupted; no actual exit receipts
+
+Windows restarted during collection: shutdown at 01:35:32 UTC, boot at 01:39:15 UTC. The outcome worker and both supervisors are absent. Its last durable progress, at 01:32:14 UTC, reports **143 / 512 closed panels**, **357,500 outcome transitions** and **1,430 repeat checks**. These are closed-panel counts; later in-flight reservations and partial work are not included. Neither actual-exit receipt, completion nor failure file is available. Exact exit codes and the termination time remain unknown.
+
+The original partial attempt and cumulative ledger remain intact. **No accepted harm-ranking result, retry or resume is claimed.** All 108 frozen training sources and all 12 bound outcome sources still match. Closed production gates remain accepted; all five seeds, both continuations and separate coverage acceptance remain required. David has explicitly requested restart in the active chat "Analyze BCA algorithm performance (3)"; that chat is preparing the separate checked recovery. Do not request the existing authorization again or launch a duplicate. See [the interruption receipt](validation/ood-outcome-interruption.json) and [preserved observations](../outputs/ood/td3_bc/hopper/s202609171/interruption-v1/README.md).
+
+The cluster continues independently, with matching identities at ReBRAC HalfCheetah BCA 485k in this snapshot. Eight cluster closure receipts await independent audits; three standard physical runs remain verified. The local CQL queue remains stopped on its prior validation failure.
+
+The earlier production evidence commit `5c8d5eaa4673c06ca4d0b89ed0e316a448dfec05` has now been pushed successfully: actual exit0, matching remote and all 80 owned blob hashes verified. The original DNS failure and every prior scientific attempt remain preserved.
 
 ## September 27, 23:15 UTC: production banks accepted and first panel closed
 

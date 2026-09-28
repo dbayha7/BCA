@@ -8,7 +8,7 @@ trajectories across four hosts, seven datasets and five seeds.
 | Execution lane | Hosts | Status |
 |---|---|---|
 | Local RTX 5070 Ti | TD3+BC, CQL | **Stopped at 21:56 UTC.** CQL Hopper host reached final evaluation then failed schema validation; worker/controller actual exits 1. First TD3+BC pair remains verified. No retry. |
-| Cluster A100 | ReBRAC, IQL | Job 27045057 continues; ReBRAC Walker BCA at 135k with matching live identities at 22:51 UTC. ReBRAC Hopper BCA, IQL Hopper host/BCA and ReBRAC Walker host have closure receipts pending independent audits. |
+| Cluster A100 | ReBRAC, IQL | Job 27045057 continues; ReBRAC HalfCheetah BCA at 485k with matching live identities on September 28 at 01:44 UTC. Eight closure receipts await independent audits; accepted results remain unchanged. |
 
 Three of 280 declared physical runs (three of 315 actor trajectories) are independently verified complete. The first TD3+BC Hopper host final mean is **65.2157311**; its periodic-curve mean is **57.1475157**. See the [complete host readout and plots](../outputs/standard_bca/td3_bc/hopper/host/s202609171/README.md) and [audit receipts](validation/standard-first-td3-host.json). Its first BCA pair is now verified; four further paired training seeds remain pending for this cell.
 
@@ -111,3 +111,7 @@ retain the original failure. No frozen file was changed, controller restarted or
 scientific retry launched. The cluster lane continues unchanged. A separately
 checked correction/handling is needed before local recovery; do not silently
 relabel or replace this attempt. OOD action preparation remains the priority.
+
+## September 28 OOD interruption
+
+The separate CPU action-harm worker was interrupted across a Windows restart, with 143/512 panels in its last durable progress and missing actual-exit receipts. Partial outcomes are not accepted results. No retry or training-queue change was made. See [the OOD interruption receipt](validation/ood-outcome-interruption.json).
