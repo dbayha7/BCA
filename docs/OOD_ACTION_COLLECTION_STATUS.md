@@ -1,5 +1,31 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 02:07 UTC: conditional hook source graph corrected before actual import
+
+Separate source review confirms `_read_write` registers its SQLite audit callback
+only under `if _IS_PYPY`, so that registration is skipped on the declared CPython
+route. A different `_api._audit_fork_safety` audit callback remains, with captured
+keyword defaults bound to fork events and the original state object. `_api`
+also registers three at-fork callbacks; `_read_write` registers its separate
+SQLite-transition at-fork callback. These are source predictions, not retroactive
+event counts or absence claims for earlier failed probes.
+
+Following all64 relative import edges in21 filelock sources found three previously
+unlisted `_soft_rw` subpackage files and an atexit cleanup callback that releases
+registered instances. Live callback arguments/defaults, registry and synchronization
+state, stdlib code/globals and source aliases still need binding. All26 saved source
+files were independently rehashed/restatted. A separate edge review reconstructed
+the complete saved relative-edge multiset; a Windows path-format draft failure
+and one pre-dispatch helper invocation error remain preserved.
+
+No target import, hook registration, SQLite connection, fork, native probe, keys,
+lease/ledger/archive/model/simulator or physics ran. No15-field real profile is
+accepted and closed sources/tests/probes remain unchanged. Training remains12runs/
+sixpairs; the01:18UTC60-closure snapshot stays dated. The next actual route must
+bind the now-explicit audit/at-fork/atexit dependencies before independent review
+and one new versioned observation.
+[Source evidence and exact limits](../outputs/ood/robustness-v2/filelock-registration-source-v1/README.md).
+
 ## September 29, 01:50 UTC: import-entry bridge fixtures and current shared-source provenance verified
 
 The new bridge observes one capability call inside an importlib-loaded synthetic
