@@ -1,0 +1,27 @@
+{
+  "started": "2026-09-29T03:46:23.116860+00:00",
+  "finished": "2026-09-29T03:46:32.538326+00:00",
+  "actual_exit": 0,
+  "timeout": false,
+  "command": [
+    "wsl.exe",
+    "-e",
+    "timeout",
+    "50",
+    "ssh",
+    "-T",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "ConnectTimeout=12",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=2",
+    "-S",
+    "/tmp/uncc.sock",
+    "dbayha@hpc.charlotte.edu",
+    "srun --jobid=27045057 --overlap --nodes=1 --ntasks=1 --cpus-per-task=1 --gres=none --nodelist=str-gpu13 /usr/bin/python3 -"
+  ],
+  "source_sha256": "db646329baf7b4484700ec25ee47a737a2113f00facb15ad73808f9e025a73a2"
+}
