@@ -1,5 +1,43 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 04:41 UTC: unified capability and finalizer composition; real route held
+
+A separately versioned dispatcher composes child-owned bootstrap, exact saved
+filelock capability entry/return and natural temporary-storage/finalizer detach
+through one audit/profile owner. The registered module is synthetic; full filelock
+and native execution remain unimplemented. No callback replay or substituted
+capability result occurs. Actual weakref registry fields, classmethod owner,
+arguments, conditional original atexit registration and unrelated entries are
+observed. Thirteen native filesystem entry/return pairs retain unavailable C
+arguments; twelve audit events separately carry exact paths/order.
+
+Final22 new isolated fixtures passed0/no skips: two successful compositions and
+twenty expected refusals, all22 child exits0. Nine completed capability lifecycles
+include cases with deliberate later refusals. Independent saved-evidence review0
+checked22 receipts, retained bytes/stat,372 bootstrap/diagnostic operation triples,
+all nine lifecycles and fifteen current shared stdlib source aliases without
+component import or replay. Source/direct-global/native-object identities do not
+accept a full transitive graph. Pre-boundary registrations are not counted.
+
+The first fourteen-case attempt1 retained child3: bytecode-cache open was refused
+before capability module entry. A separately saved fixture version explicitly
+sets sys.dont_write_bytecode=True before dynamic loading;14 tests passed, followed
+by tighter defaults/owner/global/native binding and the final22. No environment
+field was silently changed; this fixture choice still needs production binding.
+All original versions/logs/bytes remain. No preimplementation red is claimed.
+
+The unchanged fifteen-field production declaration is unlaunched/not dispatchable;
+both actual roots were absent at the dated04:38:40UTC review snapshot. Remaining
+actual filelock/fork/shutdown/native-bound state, full graph, cached builder/package
+lock and production parent release/completion checks must be implemented and
+independently prereviewed before one new versioned import-only observation.
+
+Prior closed sources/receipts, original plan/amendment and40held key tables remain
+unchanged. No closed suite/probe/key-review rerun, cluster probe, model, simulator,
+lease or physics. Training remains14runs/seven pairs, both ReBRAC cells3/5; the
+02:24:54UTC cluster snapshot remains historical. Queues/holds stay unchanged.
+[Composition implementation, review and limits](../outputs/ood/robustness-v2/native-import-v4-capability-v1/README.md).
+
 ## September 29, 04:10 UTC: worker-owned bootstrap implemented; full import route still held
 
 A new dispatcher implements only the declared root-creation and bounded diagnostic
