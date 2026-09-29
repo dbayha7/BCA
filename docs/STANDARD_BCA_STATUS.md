@@ -1,5 +1,29 @@
 # Standard BCA: execution status
 
+## September 29, 12:35 UTC: first TD3+BC Walker training pair accepted
+
+Seed202609171 host/BCA passed saved-data audits and independent arithmetic review,
+all actualexit0. The paired training inventory now has8 accepted pairs and16
+successful runs; the recovered CQL Hopper host with original exit1 remains separate.
+Final normalized means are77.246103 host and82.896940 BCA (+5.650837); periodic
+curve means are73.795470 host and71.579274 BCA (-2.216197). BCA wins8/20 paired
+final resets. One paired training seed supports a descriptive contrast, not a
+replicated benefit or training-seed uncertainty estimate.
+
+The raw data, dependency split, training-only normalization,108 execution-source
+pins, three checkpoints per method,402 evaluation banks/4040 episodes and198 BCA
+refreshes passed. No learner/model/simulator was run by the review. OOD checkpoint
+queries and native simulator gates remain pending for this new pair. All five
+existing OOD executions continue; no v2 OOD comparison is complete.
+
+The recovery training queue has5 completed/1 active/131 unstarted rows at12:34.
+CQL Walker BCA171 completed actualexit0 at12:18:51; its independent training review
+is pending. TD3 HalfCheetah host171 is the current worker. The local queue stays
+delegated, the original ReBRAC/IQL queue is unchanged, and the two-GPU cap holds.
+
+[Independent training review](validation/standard-td3-walker-first-pair.json),
+[training and OOD evidence readout](../outputs/ood/robustness-v2/prefix-td3-walker-acceptance-v1/README.md).
+
 ## September 29, 09:11 UTC: CQL+BCA training is running
 
 Recoveryjob27068529 passed all14 data-cell checks (7TD3 reused from pinned
