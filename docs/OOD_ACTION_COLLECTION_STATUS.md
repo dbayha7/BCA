@@ -1,5 +1,39 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 04:10 UTC: worker-owned bootstrap implemented; full import route still held
+
+A new dispatcher implements only the declared root-creation and bounded diagnostic
+phases with one audit/profile owner and shared first refusal. Explicit fixture
+bindings use different persistent roots and forbid production dispatch. Parent
+identity release precedes child-owned0700 root creation; four0600 files are
+exclusive/nofollow, descriptor-bound and fsynced. Native operation arguments and
+ordered keywords are recorded before observed entry/return. Post-refusal writes
+remain restricted to the pinned diagnostic method and checked descriptors.
+
+Final35 isolated fixtures passed0/no skips:34 children0 and one deliberate23 with
+retained fsynced bytes. Separate saved-evidence review0 checked all35 receipts,
+retained bytes/stat,446 complete native operation triples and death-fixture
+creation/ack evidence without replay. Synthetic import/rename audit events are
+explicitly not actual imports or rename operations. No target callbacks ran.
+
+Preserve29/33-test development passes and the first35-test attempt1: an audit
+handler's frame inspection recursively emitted sys._getframe events, causing
+child2/RecursionError with first_refusal null. The separately saved final source
+classifies events before inspecting the frame; unchanged35-test source passed.
+This was fixture development, not a scientific retry or new native failure.
+
+The full live callback/state/default/closure/native graph, observed filelock
+capability/finalizer detach, cached builder/package lock and production parent
+observer remain unimplemented. The actual fifteen-field declaration is unchanged,
+unlaunched and not dispatchable. Both production roots remained absent at the
+dated04:08:03UTC review snapshot. Bootstrap acceptance is not launch prereview.
+
+All previous closed sources/receipts and40held key tables remain unchanged. No
+closed suite/native probe/key review rerun, cluster probe, lease, model, simulator
+or physics. Training remains14runs/seven pairs, both ReBRAC cells3/5. Queues and
+holds are unchanged; the02:24:54UTC cluster snapshot remains historical.
+[Bootstrap implementation and evidence limits](../outputs/ood/robustness-v2/native-import-v3-bootstrap-v1/README.md).
+
 ## September 29, 03:40 UTC: fifteen-field launch declared; unchanged observer stack cannot compose
 
 A concrete prospective v3 contract now preserves the old fourteen environment
