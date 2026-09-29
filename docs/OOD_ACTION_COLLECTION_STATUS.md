@@ -1,5 +1,28 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 01:50 UTC: import-entry bridge fixtures and current shared-source provenance verified
+
+The new bridge observes one capability call inside an importlib-loaded synthetic
+module, without invoking or replaying it. Twenty-five new isolated tests passed;
+separate saved-evidence review verified the exact callback source, four entry/exit
+boundaries, twelve filesystem events and retained deliberate exit23 fixture.
+No full filelock/JAX/MuJoCo import or new native probe ran. Prior failed probes
+and all closed tests/reviews remain unchanged.
+
+Bounded source inspection and independent review located all three current hard
+links for each of four stdlib files across two Conda environments and their package
+cache. This establishes current shared-file provenance, not an accepted scientific
+alias exception or complete live code/global graph. Filelock audit/at-fork callback
+state remains unbound and this bridge refuses new registrations. Its at-fork
+diagnostic records the caller location, not callback keyword arguments.
+
+Next bind those live dependencies/state and compose the observing route with an
+explicit TMPDIR/worker-owned scratch launch contract before independent prereview
+and one new versioned import-only observation. No15-field real profile is accepted.
+Training remains12 runs/six pairs; the01:18UTC cluster60-closure snapshot is dated,
+with50 awaiting audits. No queues, held40 key tables or scientific gates changed.
+[Component evidence and exact limits](../outputs/ood/robustness-v2/filelock-import-bridge-component-v1/README.md).
+
 ## September 29, 01:23 UTC: sixth training pair accepted; native/OOD gates remain held
 
 ReBRAC Hopper seed202609173 host/BCA saved training evidence passed independent
