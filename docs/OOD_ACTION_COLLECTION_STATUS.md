@@ -1,5 +1,30 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 03:18 UTC: concrete stdlib hook and finalizer bindings identified
+
+Source review along actual filelock import leads found additional obligations:
+ThreadPoolExecutor's internal threading shutdown registration and three native
+bound lock callbacks; threading's own child callback; and TemporaryDirectory's
+weakref finalizer/classmethod registration plus exact detach/registry lifecycle.
+Further logging/secrets/random leads add logging fork/shutdown callbacks (including
+the captured positional `_handlerList` default) and random's bound `_inst.seed`
+callback with an implicit `__class__` closure. The closed plain-function fixtures
+do not yet bind these callback forms or shared state.
+
+Ten named stdlib sources and thirty current hard-link paths have exact saved bytes
+and separate source/alias reviews. Seven hook source sites plus one finalizer
+construction site are source findings, not observed live counts or a complete
+external graph. The first supplemental reviewer found two conditional definitions
+of a named logging helper; its actual1 is preserved, and separate v2 retains both.
+No target definitions, callback, native probe or test suite were executed.
+
+No production guard or installed dependency changed. Actual callback/global/state
+and bootstrap-order bindings, explicit15-field TMPDIR/worker-owned scratch and
+independent prereview remain required before a new versioned import observation.
+All closed evidence and held40 key tables are unchanged. Training remains14runs/
+7pairs; no new cluster probe or scientific execution occurred.
+[Source findings and required live bindings](../outputs/ood/robustness-v2/stdlib-registration-source-v1/README.md).
+
 ## September 29, 02:59 UTC: actual registration arguments verified in synthetic fixtures
 
 A new observer captures the actual audit/fork/shutdown callback arguments and
