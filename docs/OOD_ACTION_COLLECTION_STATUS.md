@@ -1,3 +1,24 @@
+# September 29: real OOD collection on local and cluster workers
+
+Two revised pairs are now running: **TD3+BC Hopper locally** and **ReBRAC Hopper
+on the cluster**, both seed 202609171 with the accepted 1M host/BCA checkpoints.
+The cluster's separate CPU job is 27067675; GPU training job 27045057 continues.
+Both live simulator connections passed the original action, reward and exact
+state-restoration gates. ReBRAC's saved-data engineering review also passed
+before collection. Neither revised pair is complete yet.
+
+The workers own different pairs and share the original total resource ceiling.
+The cluster startup lock failure is preserved; its execution-only correction
+passed a real cross-process exclusion/release test before the new attempt.
+No scientific settings, checkpoint bytes or tolerance changed. The full
+twenty-pair tranche is not queued or finished.
+
+[Cluster execution, checks, scope and preserved failure](../outputs/ood/robustness-v2/cluster-execution-v1/README.md).
+
+The dated local-only entry and earlier records below remain historical.
+
+---
+
 # Action-level OOD: revised real experiment is running
 
 ## September 29: live TD3+BC Hopper execution
