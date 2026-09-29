@@ -1,3 +1,22 @@
+# September 29, 08:51 UTC: five OOD pairs active
+
+Three accepted ReBRAC Walker seeds (202609171/172/173) now collect real states
+in parallel CPU jobs 27068500/501/502. All passed exact actor/full-state repeat
+and unchanged reward gates, with separate saved-array reviews exiting 0. Both
+original Hopper workers continue outcomes. No revised OOD pair is complete.
+
+The new shared journal retains per-call durable reservations, pre-physics
+controls and complete output/state evidence. Original workers are unchanged.
+Three initial label-error failures are preserved with their pending charges;
+the explicit correction uses the original pair leases and cumulative caps.
+
+[Execution, original failures, correction, accounting and evidence](../outputs/ood/robustness-v2/parallel-walker-execution-v1/README.md).
+
+Full saved-outcome verification remains required before comparisons. No
+end-to-end completion date or BCA benefit is inferred from early progress.
+
+---
+
 # September 29, 08:09 UTC: throughput measured; five next-pair query gates passed
 
 A bounded synthetic storage test measured shared sequential writes at **5.22x
