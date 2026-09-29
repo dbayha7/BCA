@@ -1,0 +1,18 @@
+# Mathematical validation only; this file is not a host training configuration.
+schema: weighted-conformal-math-v1 # Identifies this distinct development stage.
+seed: 2026092901 # Fixed before validation; never selected using outcomes.
+trials: 2000 # Independent repetitions, each with a fresh calibration bank and query.
+calibration_size: 199 # Number of IID synthetic calibration examples per repetition.
+alpha: 0.1 # Target marginal miscoverage; nominal coverage is 1-alpha = 90%.
+credibility: 0.95 # Empirical bootstrap-quantile percentile; not a frequentist certificate.
+bootstrap_draws: 128 # Explicit independent exponential-mass draws for the Bayesian component.
+source_hard_probability: 0.2 # P(X=hard) in the calibration population.
+target_hard_probability: 0.8 # Q(X=hard) in the target population.
+easy_error_max: 1.0 # Y|easy is Uniform(0,1), in both populations.
+hard_error_max: 6.0 # Y|hard is Uniform(0,6), in both populations.
+predictor: zero # Fixed center; no fitting, policy, critic or simulator is involved.
+positive_scale: 1.0 # Fixed scale isolates the effect of weighting the threshold.
+ratios: known # Q/P equals 0.25 for easy and 4 for hard, at calibration and query points.
+interval_confidence: 0.95 # Exact binomial interval for observed synthetic coverage.
+training_updates: 0 # No RL or scale-network training is authorized by this protocol.
+simulator_steps: 0 # Synthetic scalar sampling only; no environment interactions.
