@@ -1,0 +1,395 @@
+{
+  "order": [
+    "analysis_objective",
+    "p1",
+    "p2",
+    "p3",
+    "p5",
+    "p6",
+    "p7",
+    "analysis_bridge",
+    "analysis_gap",
+    "analysis_synthetic",
+    "analysis_coverage_plot",
+    "analysis_halfwidth_plot",
+    "analysis_ranking",
+    "analysis_execution",
+    "analysis_decisions",
+    "p4",
+    "p8",
+    "analysis_td3",
+    "p9",
+    "analysis_rebrac",
+    "p10",
+    "analysis_cql",
+    "p11",
+    "analysis_math",
+    "analysis_conditions",
+    "analysis_bindings"
+  ],
+  "slides": [
+    {
+      "id": "analysis_objective",
+      "type": "story",
+      "title": "Can BCA identify harmful unfamiliar actions?",
+      "body": [
+        "Offline agents cannot try new actions during training. If they overestimate an unfamiliar action, they can learn to prefer a poor decision.",
+        "BCA uses prediction-error bands to adjust the host algorithm’s training penalty. We are testing whether those bands provide useful warnings about harmful actions.",
+        "We first compare each host with standard BCA, using equal calibration-fitting weights. Weighted conformal prediction is the next separate method to validate."
+      ],
+      "takeaway": "The goal is reliable uncertainty that helps the agent make better decisions.",
+      "footer": "Advisor update • Evidence saved through September 29, 2026; detailed diagnostics follow in the appendix.",
+      "notes": "Why this study: episode return alone cannot tell whether BCA’s uncertainty mechanism works. A policy can improve for unrelated reasons, and a useful residual interval need not identify harmful choices. Standard BCA is the baseline with equal fitting weights and both Bayesian/conformal components. Current evidence is limited: a completed original TD3+BC Hopper pilot supplies action outcomes; reviewed TD3+BC/ReBRAC Walker runs supply training diagnostics; CQL diagnostics are preliminary; the controlled weighted-CP experiment is synthetic. No new outcome or live progress check was performed to prepare this update."
+    },
+    {
+      "id": "p1",
+      "type": "story",
+      "title": "The OOD test compares actions at the same state",
+      "body": [
+        "We restore a saved simulator state and try the host action, the BCA action, and other candidate actions. We keep the later policy fixed within each comparison.",
+        "We call an alternative harmful when its continuation earns more than 1 raw reward unit less than the host action. Larger BCA bands should rank those alternatives as riskier.",
+        "We also measure distance from recorded actions and regret relative to the best tested action. These distinguish unfamiliarity, warning quality, and decision quality."
+      ],
+      "takeaway": "Calibration uses recorded transitions; this separate simulator study measures action outcomes.",
+      "footer": "Completed original pilot: TD3+BC Hopper, one training seed, 256 captured rows and 5,120 rollouts.",
+      "notes": "What was done: the completed original Hopper pilot used ten candidates per captured row, including the host reference, with both frozen host and BCA continuations. The primary harm-ranking readout fixes BCA as the later policy. There are 2,304 alternatives under that continuation and 64 shared reset blocks. States and alternatives are dependent, so they are not independent training seeds. The common-state comparison isolates a local first-action contrast; it does not identify a whole-policy training cause. Separate revised OOD runs must not be marked complete using this pilot. The saved September 29 snapshot had 5 active and 0 complete of 20 first-tranche revised pairs; that is a dated snapshot, not a current live count. Training/calibration remain offline; simulator interaction is diagnostic evaluation."
+    },
+    {
+      "id": "p2",
+      "type": "plot",
+      "title": "BCA’s harm warnings are weak in this pilot",
+      "texts": {
+        "p2_i5": "AUROC: does a harmful action get a higher warning?",
+        "p2_i6": "Average precision: are the top warnings useful?",
+        "p2_i9": "Width AUROC is 0.529; chance is 0.500. Distance scores 0.566."
+      },
+      "footer": "TD3+BC Hopper, one seed. Within-state results, averaged equally across four groups; 111/256 rows eligible.",
+      "notes": "Why important: a warning is useful only if larger values tend to identify worse alternatives at the same state. AUROC measures pairwise harmful-versus-nonharmful ordering; 0.5 is chance. Width is 0.529327, distance 0.565805 and a fixed random score 0.513251. Average precision emphasizes the highest warnings: width 0.510392, distance 0.542025, random 0.432432 and constant-score baseline 0.274558. Thus there is some enrichment at the top, but overall separation is weak; the metrics answer different questions. The AP baseline is computed in the same eligible-row/equal-group aggregation, so it is not the pooled 11.98% harmful rate. Only 111 of 256 rows contain both classes; the other 145 have undefined AUROC and are not assigned zero. These descriptive results do not establish a multi-seed benefit or statistical superiority. Next: reproduce the paired ranking across declared seeds and measure coverage separately before attributing weak ranking to calibration shift."
+    },
+    {
+      "id": "p3",
+      "type": "plot",
+      "title": "Unfamiliarity raises risk, but does not define harm",
+      "texts": {
+        "p3_i7": "Actions farther from recorded behavior were harmful more often: 19.3% versus 11.2%.\nYet 231 of 276 harmful actions were near recorded behavior.\nA useful warning must also distinguish harmful from helpful actions within each group.",
+        "p3_i8": "Distance helps describe the test; simulator outcomes establish whether an action is harmful."
+      },
+      "footer": "TD3+BC Hopper pilot. Distance is a local action-support proxy, not a known behavior probability.",
+      "notes": "Why important: equating OOD with harm would make an uncertainty method look good merely for flagging novelty. Arithmetic: near recorded actions, 231/2071 = 11.153%; farther actions, 45/233 = 19.313%. There are more near actions, so 231/276 harmful alternatives are near. Also 188/233 distant alternatives are not harmful under the specified continuation. Distance is minimum RMS action distance to recorded actions among 32 nearby reference states, using threshold 0.21134613219046514; it is not a true density or exact OOD label. Meaning: novelty identifies a harder group, but a blanket penalty on all distant actions could suppress useful moves and miss familiar bad moves. Next: report coverage and harm ranking separately within support-distance groups while retaining paired states."
+    },
+    {
+      "id": "p5",
+      "type": "plot",
+      "title": "BCA has not improved tested-action regret",
+      "texts": {
+        "p5_i6": "Regret = best tested return − selected-action return; lower is better",
+        "p5_i7": "With BCA continuing afterward, mean regret is 6.33 for host actions and 6.45 for BCA actions."
+      },
+      "footer": "Exploratory TD3+BC Hopper pilot: ten tested actions per row, 256 rows, one training seed.",
+      "notes": "Why important: even a statistically well-calibrated interval is not useful for control unless it helps decisions. Candidate-set regret compares each chosen first action with the best of ten tested alternatives from the same state, holding the later policy fixed. Under BCA continuation, host-first mean regret is 6.333291153 and BCA-first 6.452881609; BCA minus host is +0.119590456, so there is no descriptive mean reduction. Under host continuation, corresponding values are 8.242196683 and 8.489875844, a +0.247679161 difference. This is not regret against the unknown optimal policy. One seed and correlated states cannot establish a general worsening. Next: replicate this paired comparison; if coverage improves but regret does not, investigate how uncertainty is consumed rather than declaring weighted CP successful for control."
+    },
+    {
+      "id": "p6",
+      "type": "plot",
+      "title": "BCA is fitting and changing the training penalty",
+      "texts": {
+        "p6_i11": "Both runs accepted 1M scale fits. Final BC strength rises by 33.1% and 37.7%."
+      },
+      "footer": "Separate reviewed Walker training runs: TD3+BC and ReBRAC, seed 202609171; these are not Hopper outcomes.",
+      "notes": "Why important: weak behavioral results could come from an inactive method or from an active method whose signal is not useful. Independent checkpoint counters confirm 1,000,000 accepted scale fits for both reviewed Walker runs. Their last 1,000-update blocks have actor-BC multipliers 1.331356037 for TD3+BC and 1.377447963 for ReBRAC. Arithmetic: (1.331356037−1)×100 = 33.1356% more BC coefficient and (1.377447963−1)×100 = 37.7448%. This is increased loss strength, not the probability of following the old policy. Final scale objectives are 0.0109333582 and 0.0100045581. The graphs show full block means, with skipped actor placeholder zeros excluded. Meaning: the mechanism operates in these Walker runs; accepted optimization steps do not prove coverage or harm detection. Next: evaluate fresh coverage and decision metrics, not only fitting success. Do not use these Walker diagnostics as a causal explanation of the separate Hopper pilot."
+    },
+    {
+      "id": "p7",
+      "type": "plot",
+      "title": "The Bayesian component sets these observed radii",
+      "texts": {
+        "p7_i11": "The Bayesian radius exceeds the conformal radius at all 198 refreshes in each run.",
+        "p7_i12": "A corrected conformal threshold changes the final band only when it exceeds the Bayesian radius."
+      },
+      "footer": "Reviewed TD3+BC/ReBRAC Walker runs. Final radius = max(Bayesian radius, conformal radius).",
+      "notes": "Why important: both BCA components remain in the implementation, but only the larger radius determines the band at a given refresh. The conformal component is smaller at 198/198 logged refreshes in each reviewed Walker run. A change to the conformal floor can therefore be numerically masked by the Bayesian radius. Taking their maximum cannot make the band smaller than the conformal floor; this does not validate a Bayesian population-risk theorem. Meaning: we must report each radius, the effective width, and the actual training multiplier to know whether a correction reaches the host. A positive global radius rescales widths without changing within-state action ordering. Next: keep both components, check which one controls the final band, and distinguish coverage improvement from changes in harm ranking."
+    },
+    {
+      "id": "analysis_bridge",
+      "type": "story",
+      "title": "The next question is calibration under shift",
+      "body": [
+        "The pilot gives weak evidence of useful harm ranking and no mean regret improvement. It does not yet tell us whether the bands achieve their stated coverage.",
+        "An offline calibration set may emphasize different state–action situations from those the policy queries. A threshold fitted to the old mixture can miss too many new targets.",
+        "Weighted conformal prediction tests that specific distribution-shift problem. We still need separate evidence that correcting coverage improves action choices."
+      ],
+      "takeaway": "This is a testable explanation to investigate, not an established cause of the pilot result.",
+      "footer": "Coverage means the fraction of new stated targets contained in their bands; it does not mean policy imitation.",
+      "notes": "Why this follows the current study: standard BCA provides an equal-fitting-weight comparison, while the code audit identifies a missing weighted-conformal threshold in the earlier fitting-IW variants. These are two different observations. Weak harm ranking alone cannot prove covariate shift or undercoverage. The clean next experiment freezes the model, measures fresh response coverage under a declared shift, and then tests the behavioral consequences separately. The current response is a host-specific one-step Bellman target, not true Q or a safety label. Keep nominal coverage at 90%; it does not specify a 90% probability of copying the old policy."
+    },
+    {
+      "id": "analysis_gap",
+      "type": "story",
+      "title": "Our earlier IW path did not complete weighted CP",
+      "body": [
+        "The earlier IW variants changed which examples trained the error-scale network. The host path still gave calibration errors equal mass when calculating the conformal threshold.",
+        "Weighted CP must also weight those held-out errors by target probability divided by source probability. It must include the queried state–action pair’s weight in the cutoff.",
+        "We need justified ratios, a query-dependent threshold, and fresh calibration data after freezing the model. Existing affinity or policy-density weights do not establish all three."
+      ],
+      "takeaway": "We will identify the corrected weighted-threshold method separately from prior fitting-IW runs.",
+      "footer": "Code audit: calibration/reference.py and calibration/posterior.py; mathematical contract in speaker notes.",
+      "notes": "Current versus missing: all four host paths refresh through fit_posterior with one group; partitioned_posterior supplies indicator masses and query mass one. With one group those masses are equal even when fitting IW is on. Lower-level unequal-mass support exists, but the hosts do not supply the intended source/target ratios. One cached scalar is generally insufficient for query-dependent weighted CP. CQL policy density lacks the behavior denominator; TD3/ReBRAC affinity and IQL advantage weights are not automatically density ratios. The calibration bank influences later training, so freezing the final model does not restore independent split-calibration validity. The required correction changes the weighted quantile and query mass, and separately resolves sampling and ratio assumptions. This is not a claim that the intended equal-weight standard-BCA treatment contains a failed IW intervention. Reference: Tibshirani et al. (2019), Conformal Prediction Under Covariate Shift, https://www.stat.berkeley.edu/~ryantibs/papers/weightedcp.pdf ; local docs/WEIGHTED_CONFORMAL_DESIGN.md."
+    },
+    {
+      "id": "analysis_synthetic",
+      "type": "story",
+      "title": "A controlled test isolates the effect of the shift",
+      "body": [
+        "We created easy cases with errors between 0 and 1, and hard cases with errors between 0 and 6. Calibration sees 80% easy cases; testing sees only 20%.",
+        "Everything within each case type stays the same. Only the mixture changes, so the correct importance weights are known: easy = 0.2/0.8 = 0.25; hard = 0.8/0.2 = 4.",
+        "We compare ordinary CP, weighted CP, and weighted CP with the Bayesian component. Each method targets 90% coverage using the same simulated examples."
+      ],
+      "takeaway": "This isolates the calibration calculation before introducing RL training or estimated ratios.",
+      "footer": "2,000 independent synthetic trials; 199 calibration examples per trial. No RL training or simulator rollouts.",
+      "notes": "Purpose: test whether target/source weighting repairs an intentionally controlled calibration-population mismatch. Prediction center is zero and scale one, so absolute prediction error equals Y. Easy response Y is uniform on [0,1]; hard response Y is uniform on [0,6]. Source type probabilities are (0.8,0.2), target (0.2,0.8), and conditional response distributions are unchanged. Known ratios are 0.25 and 4. Each of 2,000 independent trials samples a fresh bank of 199 calibration examples and a fresh query. All compared methods reuse the fixed examples and score construction. The reference also passed 15 boundary/arithmetic tests, and an independent reader checked all 8,000 radii and coverage outcomes. The accepted rational-ratio correction and its earlier numerical attempt remain archived; this deck uses the accepted v2 results without rerunning trials. This experiment establishes behavior in its stated mathematical setting only."
+    },
+    {
+      "id": "analysis_coverage_plot",
+      "type": "plot",
+      "title": "Weighting restores coverage in the synthetic test",
+      "texts": {
+        "analysis_coverage_plot_i6": "Coverage = fraction of test targets inside the band; goal = 90%",
+        "analysis_coverage_plot_i7": "Weighted CP covers 1,814/2,000 targets, versus 1,221/2,000 without weighting."
+      },
+      "footer": "Known-ratio synthetic shift; bars show coverage and 95% binomial intervals. Real RL coverage remains unverified.",
+      "notes": "What the plot shows: ordinary CP covers 1820/2000 = 91.00% without shift, close to the 90% target. After changing only the easy/hard mixture, it covers 1221/2000 = 61.05%. Correct weighted CP covers 1814/2000 = 90.70%, an increase of 593 covered queries or 29.65 percentage points over shifted ordinary CP. Retaining the Bayesian maximum covers 1879/2000 = 93.95%. Respective 95% binomial intervals are [89.660%,92.218%], [58.873%,63.195%], [89.342%,91.937%], and [92.814%,94.955%]. Why important: it demonstrates the missing threshold correction can repair coverage in a clean shift where the assumptions and ratios are known. Meaning: the reference implementation behaves as intended in this controlled setting. It does not establish that real policy queries have the same assumptions or that these wider bands improve RL decisions. Next: a frozen-model real-data test with a declared source/target sampling design."
+    },
+    {
+      "id": "analysis_halfwidth_plot",
+      "type": "plot",
+      "title": "Coverage recovery requires wider error bands",
+      "texts": {
+        "analysis_halfwidth_plot_i6": "Mean interval half-width; smaller is useful only if coverage is adequate",
+        "analysis_halfwidth_plot_i7": "The mean half-width grows from 3.00 to 5.29; the Bayesian maximum raises it to 5.59."
+      },
+      "footer": "Synthetic center = 0 and scale = 1. Half-width describes uncertainty, not the host’s penalty multiplier.",
+      "notes": "Why important: coverage alone rewards arbitrarily wide intervals. We also need sharpness and the effect on decisions. Ordinary CP mean half-width is 2.998574625; weighted CP is 5.294714196; weighted plus Bayesian maximum is 5.589847011. The latter is about 5.57% wider than weighted CP and covers 65 additional queries, raising coverage by 3.25 percentage points. No interval was infinite in these trials, but other supported inputs can require infinity. The wider interval is appropriate here because hard cases are more frequent under the target mixture. Higher-than-target coverage is not automatically better; it may lead to unnecessarily strong penalties. Next: report coverage, width, infinite-band frequency, and actual consumed training dose together; then evaluate regret and harm ranking separately."
+    },
+    {
+      "id": "analysis_ranking",
+      "type": "story",
+      "title": "The arithmetic explains the coverage change",
+      "body": [
+        "A half-width of 3 covers all easy errors and half the hard errors. In the original mixture, coverage is 0.8 × 1 + 0.2 × (3/6) = 0.90.",
+        "After the shift, the same band covers only 0.2 × 1 + 0.8 × (3/6) = 0.60. The predictor did not change; the tested population did.",
+        "To cover 90% of the new population, solve 0.2 + 0.8 × (R/6) = 0.90. This gives R = 5.25, close to the observed weighted mean half-width of 5.29."
+      ],
+      "takeaway": "Weighting changes how much each observed error contributes to the coverage threshold.",
+      "footer": "Population arithmetic for the synthetic example. Finite calibration banks and query correction explain the difference.",
+      "notes": "This arithmetic explains the experiment rather than replacing its measured results. For R between 1 and 6, all uniform [0,1] errors are covered and a fraction R/6 of uniform [0,6] errors are covered. Source mixture coverage at R=3 is 0.8+0.2×0.5=0.9. Target mixture coverage at R=3 is 0.2+0.8×0.5=0.6. Solving target coverage 0.2+0.8R/6=0.9 yields R=6×0.7/0.8=5.25. The empirical radius changes trial by trial; 5.2947 is its mean, not a fixed radius used in all 2,000 tests. At center zero and scale one, a band of half-width 3 is [−3,3], while half-width 5.25 gives [−5.25,5.25]; a target value 4 is missed by the first and contained by the second. Weighted CP has not discovered true Q or corrected the point prediction."
+    },
+    {
+      "id": "analysis_execution",
+      "type": "story",
+      "title": "Next, validate coverage before changing learning",
+      "body": [
+        "First, freeze a checkpoint and define which state–action population we want to cover. Use fresh calibration and test samples with defensible source-to-target ratios.",
+        "Then, integrate the query-dependent weighted threshold, preserve both BCA components, and verify weights, action alignment, checkpoint restoration, and infinite-band handling.",
+        "Finally, compare standard BCA with corrected weighted-threshold BCA across the declared seeds. Keep scale fitting and host losses fixed initially so the comparison isolates the correction."
+      ],
+      "takeaway": "Measure coverage and band width first; then ask whether harm ranking and regret improve.",
+      "footer": "The mathematical reference and synthetic test are complete. These real-data and training stages remain to be validated.",
+      "notes": "What must happen to execute: choose the target population before selecting ratios or seeing outcomes. A controlled common-state action-shift design with known sampling densities is an appropriate first real-data mechanism test, but it does not by itself establish offline deployment coverage. Target support must be within source support, and Y|X must stay fixed under the chosen frozen Bellman-target construction. Query-dependent radii require a sorted weighted bank/cache, versioned checkpoints, model/ratio identities, and correct normalization and RNG handling. Infinite intervals remain infinite in coverage reports; a policy fallback is a separate declared behavior. The first training comparison should change the conformal threshold while holding scale fitting and host consumption fixed. If the Bayesian observed-score weighting is also changed, identify that arm separately so the causal contrast remains interpretable. Keep alpha=0.1; do not tune coverage for return. A later fitting-IW factorial can then isolate additional effects."
+    },
+    {
+      "id": "analysis_decisions",
+      "type": "story",
+      "title": "What the next results will tell us",
+      "body": [
+        "If weighted CP reaches the target coverage with useful band widths, the distribution-shift correction is working in that tested setting. It still needs a separate decision benefit.",
+        "If coverage improves but regret and harm ranking do not, we should examine the link between Bellman-target uncertainty and the host’s action penalty.",
+        "If coverage remains poor or bands often become infinite, we should investigate the ratio, data overlap, sampling assumptions, and score construction before further training."
+      ],
+      "takeaway": "Success requires a clear chain: reliable bands → useful warnings → better decisions.",
+      "footer": "We will retain standard BCA, report every declared seed, and preserve all unfavorable outcomes.",
+      "notes": "The advisor-facing conclusion is conditional. The original Hopper pilot has limited harm-ranking evidence and no mean tested-action regret improvement. Reviewed Walker diagnostics show BCA is active, not that its uncertainty is correct. The synthetic known-ratio experiment validates an important threshold mechanism and motivates a direct real-data coverage test. It does not prove that IW fixes RL. If coverage improves while decision metrics do not, possible limitations include the distinction between one-step Bellman response uncertainty and long-horizon harm, action ordering in the scale model, a Bayesian radius masking the conformal correction, or the host’s consumption rule. Those require separated tests; changing all components at once would prevent attribution. If both calibration and decisions improve across seeds, that supports a benefit in the specified populations, not broad OOD safety."
+    },
+    {
+      "id": "analysis_td3",
+      "title": "TD3+BC: lower Q does not establish better Q",
+      "body": [
+        "On Walker, BCA lowers the final-block mean Q estimate from 207.10 to 191.92. This is consistent with more conservative values, but their accuracy is still unknown.",
+        "The critic fitting loss rises from 55.42 to 61.31. That loss compares predictions with a moving Bellman target; it does not measure error against known true returns.",
+        "We need frozen-target coverage and paired action outcomes to decide whether the change is helpful. A lower Q estimate alone cannot explain improved or worse decisions."
+      ],
+      "takeaway": "Interpret these as training diagnostics until an independent outcome comparison supports a benefit.",
+      "footer": "Appendix • Reviewed TD3+BC Walker, seed 202609171; Q1 is evaluated at proposed policy actions.",
+      "type": "story"
+    },
+    {
+      "id": "analysis_rebrac",
+      "title": "ReBRAC: the value tradeoff is also unresolved",
+      "body": [
+        "On Walker, BCA lowers the final-block mean minimum Q from 232.63 to 216.31, while critic loss rises from 20.30 to 24.75.",
+        "BCA increases the actor’s behavior-cloning strength, while the critic’s behavior-cloning coefficient stays fixed. The change can influence later targets and values indirectly.",
+        "To assess the impact, compare fresh coverage and action outcomes at matched states. These logged losses cannot show that BCA corrected overestimation or detected OOD harm."
+      ],
+      "takeaway": "The mechanism is active; its effect on value accuracy and decisions still needs direct evidence.",
+      "footer": "Appendix • Reviewed ReBRAC Walker, seed 202609171; minimum twin Q is evaluated at recorded actions.",
+      "type": "story"
+    },
+    {
+      "id": "analysis_cql",
+      "title": "CQL’s early diagnostics need a complete review",
+      "body": [
+        "In the final retained Walker snapshot, BCA lowers Q1 from 177.15 to 163.12 and increases Bellman loss from 35.60 to 37.20.",
+        "The conservative objective changes from 13.68 to 13.21 with a BCA multiplier of 1.345. One recorded-action width scales the transition’s conservative gap.",
+        "These are sparse snapshots, and independent checkpoint review remains pending. We must verify the full run and paired outcomes before attributing a benefit or failure to BCA."
+      ],
+      "takeaway": "Objective values show what the learner optimized; they do not directly measure action safety.",
+      "footer": "Appendix • Preliminary CQL Walker; 1,000 retained last-row snapshots are not a complete update history.",
+      "type": "story"
+    },
+    {
+      "id": "p11",
+      "title": "Fresh coverage is the missing real-data measurement",
+      "body": [
+        "Coverage asks how often a new stated target lies inside its prediction band. The current BCA target is a one-step Bellman response, not known true long-run Q.",
+        "We have not verified fresh OOD response coverage for these real-RL results. Successful scale fitting, wide bands, and completed radius refreshes do not supply that measurement.",
+        "Freeze the model, use a fresh calibration/test design, and report coverage by the declared population alongside width and unsupported queries. Keep trajectory dependence explicit."
+      ],
+      "takeaway": "A nominal 90% setting states an objective; measured coverage establishes what actually happened.",
+      "footer": "Appendix • The previous calibration bank affected learning; freezing afterward does not undo that dependence.",
+      "type": "story"
+    },
+    {
+      "id": "analysis_conditions",
+      "title": "Weighted CP needs a defensible target population",
+      "body": [
+        "The target must have support in the source, and the conditional response law must stay the same. If state visitation changes, an action-only ratio is insufficient.",
+        "Deterministic actor outputs can be point masses relative to continuous source actions. A stochastic neighborhood would be a different target and must be declared explicitly.",
+        "Use fresh data after freezing the score, validate estimated ratios separately, and retain infinite intervals. Weight clipping and repeated bank reuse require additional justification."
+      ],
+      "takeaway": "The coverage claim concerns the declared response population; it is not a guarantee for every action.",
+      "footer": "Appendix • Tibshirani et al., Conformal Prediction Under Covariate Shift (2019); full source and contract in notes.",
+      "type": "story"
+    }
+  ],
+  "plan": [
+    {
+      "slideId": "analysis_objective",
+      "exemplar": "analysis_objective",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "p1",
+      "exemplar": "p1",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "p2",
+      "exemplar": "p2",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "p3",
+      "exemplar": "p3",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "p5",
+      "exemplar": "p5",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "p6",
+      "exemplar": "p6",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "p7",
+      "exemplar": "p7",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "analysis_bridge",
+      "exemplar": "analysis_bridge",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_gap",
+      "exemplar": "analysis_gap",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_synthetic",
+      "exemplar": "analysis_synthetic",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_coverage_plot",
+      "exemplar": "analysis_coverage_plot",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "analysis_halfwidth_plot",
+      "exemplar": "analysis_halfwidth_plot",
+      "construction": "edit in place",
+      "tableMapping": "keep original scientific media and caption roles"
+    },
+    {
+      "slideId": "analysis_ranking",
+      "exemplar": "analysis_ranking",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_execution",
+      "exemplar": "analysis_execution",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_decisions",
+      "exemplar": "analysis_decisions",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_td3",
+      "exemplar": "analysis_td3",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_rebrac",
+      "exemplar": "analysis_rebrac",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_cql",
+      "exemplar": "analysis_cql",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "p11",
+      "exemplar": "p11",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    },
+    {
+      "slideId": "analysis_conditions",
+      "exemplar": "analysis_conditions",
+      "construction": "edit in place",
+      "tableMapping": "delete dense result table; replace with complete explanatory paragraphs"
+    }
+  ]
+}
