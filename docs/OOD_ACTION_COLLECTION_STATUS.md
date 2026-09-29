@@ -1,3 +1,19 @@
+# September 29: local failure preserved; four cluster OOD pairs continue
+
+The local TD3+BC Hopper run exited1 after a database-lock error during our new
+live read-only audit. Audit contention is strongly implicated. Live SQLite
+audits are now prohibited. All saved bytes and 222,854 charged calls remain;
+the entire retained native/accounting prefix was checked after exit. The run
+has 740 completed trajectories and one incomplete trajectory, not a completed
+OOD pair. An explicit checked continuation is being prepared; no restart occurred.
+
+All three ReBRAC Walker pairs finished collection and reached outcomes. The
+original cluster Hopper also continues. No revised return comparison is complete.
+
+[Failure, saved checks and next continuation](../outputs/ood/robustness-v2/saved-outcome-review-draft-v1/README.md).
+
+---
+
 # September 29, 08:51 UTC: five OOD pairs active
 
 Three accepted ReBRAC Walker seeds (202609171/172/173) now collect real states
