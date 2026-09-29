@@ -1,5 +1,26 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 01:23 UTC: sixth training pair accepted; native/OOD gates remain held
+
+ReBRAC Hopper seed202609173 host/BCA saved training evidence passed independent
+audits and export review. Final BCA-minus-host mean -0.2571079;
+periodic-curve difference +4.0264171; 5/20 paired
+final episodes favor BCA. This is training evidence, not an OOD-action result.
+Twelve runs/six pairs are accepted: Hopper3/5 and Walker2d2/5 ReBRAC paired seeds.
+
+All closed v2 sources/receipts, original plan, approved amendment, failed native
+probes and held40 key tables remain unchanged. No native import, model, simulator,
+new keys, shared resource lease, archive or extension ledger ran. The filelock
+scratch component still needs integration into a separately reviewed real import
+bridge, including live stdlib/source aliases and audit/at-fork state. Fourteen
+fields passed only Python/NumPy snapshots; no15-field real launch is accepted.
+Full storage/ownership/native engineering and pair-wide OOD science gates remain.
+
+The bounded01:18:05UTC cluster snapshot has60 closures;50 await independent audits
+after this pair acceptance. Next fixed training audit is ReBRAC Walker2d seed173,
+host then BCA, only once both close and current identity is checked. No queues or
+holds changed. [Pair readout](../outputs/standard_bca/rebrac/hopper/bca_noiw/s202609173/README.md).
+
 ## September29,01:02UTC: exact filelock scratch lifecycle verified in fixtures
 
 The new source-bound scratch component passed29 tests. The exact extracted installed
