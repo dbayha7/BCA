@@ -1,5 +1,31 @@
 # Standard BCA: execution status
 
+## September 29, 08:56 UTC: CQL result recovered; untouched queue delegated
+
+The CQL validation bug is fixed. Its episode fields are `score`/`return`, while
+the old common validator expected `normalized_score`/`raw_return`. The first
+CQL host had already finished 1M updates and all evaluations when it failed.
+The saved-only audit and independent review now accept its result without
+retraining: final normalized mean62.9825183, 201banks/2020episodes and all three
+checkpoints verified. Original worker/controller exit1 remains; this is one
+recovered host result, not an additional OOD pair or evidence of BCA benefit.
+Nine execution/regression tests passed; no scientific gate changed.
+
+Job27068516 owns the frozen137 untouched CQL/TD3 rows on a second A100, starting
+with CQLHopperBCA seed202609171 after mandatory data/GPU gates. Existing
+ReBRAC/IQLjob27045057 remains on the other allocated A100. The local CPU OOD
+worker and its shared lock remain undisturbed. A durable local delegation claim
+prevents duplicate execution. Submission is not training completion; follow
+the new job's actual gate/controller/worker receipts.
+
+The first recovered CQL host ran on RTX5070Ti; its future BCA counterpart runs
+on A100. Preserve this mixed-hardware qualification in comparisons. Four later
+CQL seeds will use A100 for both methods; no existing seed is replaced.
+
+[Recovery readout](../outputs/standard_bca/cql/hopper/host/s202609171/recovery-v1/README.md),
+[independent review](validation/standard-cql-recovery-independent-review.json),
+[continuation declaration](../experiments/standard_bca/cql_validation_recovery/README.md).
+
 ## September 29, 02:29 UTC: third ReBRAC Walker2d training pair accepted
 
 Seed202609173 host/BCA saved training evidence passed fixed-order CPU audits and

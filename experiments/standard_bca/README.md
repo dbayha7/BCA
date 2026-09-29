@@ -17,8 +17,14 @@ with `gzip -dk manifest.json.gz`. Its uncompressed SHA256 is
 The repository contains the exact source files named in that manifest; verify
 their SHA256 identities before reproduction. Model weights are excluded.
 
-The local lane contains TD3+BC/CQL; the cluster lane contains ReBRAC/IQL.
-Both methods and all five seeds for a host/dataset stay on the same lane.
+The original local lane contains TD3+BC/CQL; the original cluster lane contains
+ReBRAC/IQL. On September 29, the CQL result-schema bug was corrected and the
+137 untouched local rows were delegated to a second allocated cluster GPU.
+The lane label and scientific declarations are preserved. The first CQL
+host/BCA pair therefore crosses desktop/A100 hardware and must retain that
+qualification; it is not a hardware-matched pair. See the
+[recovery declaration](cql_validation_recovery/README.md). Completed runs are
+excluded from the continuation and never retrained.
 `../standard_runner.py` validates the frozen source and declarations, launches
 one worker at a time with an exclusive GPU lock, records actual child exits,
 and stops on failure. A started output directory cannot be resumed/retried.

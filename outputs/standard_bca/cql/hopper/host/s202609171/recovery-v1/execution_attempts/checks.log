@@ -1,0 +1,30 @@
+test_each_host_schema_is_accepted_without_mutation (test_evaluation_validation.EvaluationSchemas) ... ok
+test_each_required_field_and_finite_gate (test_evaluation_validation.EvaluationSchemas) ... ok
+test_existing_schedule_and_bank_gates (test_evaluation_validation.EvaluationSchemas) ... ok
+test_original_default_remains_compatible (test_evaluation_validation.EvaluationSchemas) ... ok
+test_other_host_schema_is_not_silently_substituted (test_evaluation_validation.EvaluationSchemas) ... ok
+test_unknown_host_is_rejected (test_evaluation_validation.EvaluationSchemas) ... ok
+test_lock_rejects_second_owner (test_standard_runner.Lifecycle) ... FAIL
+test_success_and_explicit_failure (test_standard_runner.Lifecycle) ... ok
+test_timeout_records_real_exit (test_standard_runner.Lifecycle) ... ok
+
+======================================================================
+FAIL: test_lock_rejects_second_owner (test_standard_runner.Lifecycle)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/mnt/c/Users/David Bayha/Documents/GitHub/BCA/experiments/test_standard_runner.py", line 39, in test_lock_rejects_second_owner
+    self.assertIn(b"BlockingIOError",p.stderr)
+AssertionError: b'BlockingIOError' not found in b'Traceback (most recent call last):\n  File "<string>", line 1, in <module>\nModuleNotFoundError: No module named \'experiments\'\n'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.658s
+
+FAILED (failures=1)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+pybullet build time: Jan 29 2025 23:16:28
+/home/dbayha/miniconda3/envs/corl-orig-local/lib/python3.10/site-packages/pybullet_envs/env_bases.py:8: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  from pkg_resources import parse_version
+[published-config] corl_cql x hopper-medium-v2: matches the published configuration on all 14 recorded field(s)
+{"accepted": false, "tests": 9, "failures": 1, "errors": 0, "next_run": "cql-hopper-bca-noiw-s202609171", "next_typed_protocol": true, "refreshes": 198, "evaluation_banks": 201, "model_queries": 0, "simulator_steps": 0, "training_updates": 0}

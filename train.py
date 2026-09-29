@@ -185,7 +185,7 @@ def execute(row, objects, out, prepared):
         )
     if result["steps_completed"] != protocol.num_updates:
         raise ValueError("Incomplete update budget.")
-    verify_events(protocol, result["events"], result["evaluations"])
+    verify_events(protocol, result["events"], result["evaluations"], host=row["host"])
     if [c["step"] for c in checkpoints] != row["expected_counts"]["checkpoint_steps"]:
         raise ValueError("Incomplete checkpoint schedule.")
     record = dict(

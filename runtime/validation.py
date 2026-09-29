@@ -56,7 +56,12 @@ def checkpoint_counts(tree, host, step, policy_freq=2):
     return result
 
 
-def verify_events(protocol, records, evaluations):
+def verify_events(protocol, records, evaluations, *, host=None):
+    # CQL preserves its native episode names; choose the schema explicitly.
+    # The default retains the original TD3/ReBRAC API for existing readers.
+    if host not in (None, "td3", "rebrac", "cql"):
+        raise ValueError("Unsupported evaluation host: " + str(host))
+    fields = ("score", "return") if host == "cql" else ("normalized_score", "raw_return")
     refresh = (
         list(protocol.refresh_steps)
         if hasattr(protocol, "refresh_steps")
@@ -93,7 +98,10 @@ def verify_events(protocol, records, evaluations):
         ):
             raise ValueError("Incomplete episode bank.")
         for episode in actual["episodes"]:
+            if any(k not in episode for k in fields):
+                raise ValueError("Missing evaluation fields for host: " + str(host))
             if not all(
-                (math.isfinite(episode[k]) for k in ("normalized_score", "raw_return"))
+                (isinstance(episode[k], (int, float)) and not isinstance(episode[k], bool)
+                 and math.isfinite(episode[k]) for k in fields)
             ):
                 raise ValueError("Nonfinite evaluation result.")
