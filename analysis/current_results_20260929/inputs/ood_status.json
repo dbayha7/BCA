@@ -1,0 +1,286 @@
+{
+  "training": {
+    "utc": "2026-09-29T12:51:08.428428+00:00",
+    "squeue": "JOBID|NAME|STATE|TRES_PER_NODE|NODELIST|TIME\n27068529|bca-cql-td3-recovery|RUNNING|gres/gpu:A100:1|str-gpu13|3:45:37\n27045057|bca-standard-noiw|RUNNING|gres/gpu:A100:1|str-gpu13|1-17:24:46\n27069491|bca-saved-prefix|RUNNING|N/A|str-c152|6:55\n27069492|bca-saved-prefix|RUNNING|N/A|str-c152|6:55\n27069490|bca-saved-prefix|RUNNING|N/A|str-c152|6:56\n27068502|bca-ood-w173|RUNNING|N/A|str-c130|4:02:09\n27068501|bca-ood-w172|RUNNING|N/A|str-c130|4:02:14\n27068500|bca-ood-w171|RUNNING|N/A|str-c20|4:02:54\n27067675|bca-ood-rebrac|RUNNING|N/A|str-c130|5:55:42\n",
+    "lanes": {
+      "cql_td3": {
+        "queue": {
+          "time": "2026-09-29T12:18:51.962651+00:00",
+          "status": "running",
+          "current": "td3_bc-halfcheetah-host-s202609171",
+          "total": 137
+        },
+        "completed_count": 5,
+        "completed_by_host": {
+          "cql": 3,
+          "td3_bc": 2
+        },
+        "closed_results": [
+          {
+            "run_id": "cql-hopper-bca-noiw-s202609171",
+            "ended": "2026-09-29T09:53:39.556330+00:00",
+            "steps_completed": 1000000,
+            "final_mean": 56.78996635188082,
+            "result_sha256": "3482a1005a84d30f7f3e1d4e51ef29fb800c86887212274f7d0b30da24bea470"
+          },
+          {
+            "run_id": "td3_bc-walker2d-host-s202609171",
+            "ended": "2026-09-29T10:29:50.472079+00:00",
+            "steps_completed": 1000000,
+            "final_mean": 77.24610280210655,
+            "result_sha256": "604a83499dc4a3d6be1503b68a280934ad5fef3dfc6e4dd33d96b613004f1960"
+          },
+          {
+            "run_id": "td3_bc-walker2d-bca-noiw-s202609171",
+            "ended": "2026-09-29T11:11:50.153105+00:00",
+            "steps_completed": 1000000,
+            "final_mean": 82.89694028488609,
+            "result_sha256": "78641e846f51ced3981ae29fda825bf260c3512c25a7336bf02e51a0c74c3d12"
+          },
+          {
+            "run_id": "cql-walker2d-host-s202609171",
+            "ended": "2026-09-29T11:39:55.763323+00:00",
+            "steps_completed": 1000000,
+            "final_mean": 80.12873916060884,
+            "result_sha256": "57d0ce69aeefb91ccd4f184f530eff8c73ec313128498b35e40c1ab3921e6218"
+          },
+          {
+            "run_id": "cql-walker2d-bca-noiw-s202609171",
+            "ended": "2026-09-29T12:18:51.931279+00:00",
+            "steps_completed": 1000000,
+            "final_mean": 63.87791386367712,
+            "result_sha256": "8999a4b091f424c64c52ac92d7de8ad9c7b6a8a63f6ce86e34dc4ed2f811e023"
+          }
+        ],
+        "dispatch": {
+          "command": [
+            "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+            "/users/dbayha/bca-standard-noiw-v1/cql-validation-recovery-v2/source/train.py",
+            "--algorithm",
+            "td3_bc",
+            "--dataset",
+            "halfcheetah",
+            "--method",
+            "host",
+            "--seed",
+            "202609171",
+            "--output",
+            "/users/dbayha/bca-standard-noiw-v1/cql-validation-recovery-v2/queue-v1/runs/td3_bc-halfcheetah-host-s202609171",
+            "--device",
+            "cuda",
+            "--lock",
+            "/users/dbayha/bca-standard-noiw-v1/cql-validation-recovery-v2/resource-locks/allocated-gpu.lock",
+            "--data-dir",
+            "/users/dbayha/.d4rl/datasets"
+          ],
+          "started": "2026-09-29T12:18:51.964708+00:00",
+          "pid": 951738,
+          "process_group": 951738,
+          "proc_stat": "951738 (python) R 921277 951738 951738 0 -1 4194304 5 0 0 0 0 0 0 0 20 0 1 0 1216965120 4161536 0 68719476736 94884614254592 94884616364141 140724072736608 0 0 0 0 0 0 0 0 0 17 14 0 0 0 0 0 94884617393040 94884617616224 94884650885120 140724072742362 140724072742843 140724072742843 140724072746946 0\n",
+          "supervisor_pid": 921277,
+          "slurm_job_id": "27068529"
+        },
+        "actual_exit": null,
+        "recent_events": [
+          {
+            "kind": "periodic",
+            "step": 765000,
+            "episode_count": 10
+          },
+          {
+            "kind": "periodic",
+            "step": 770000,
+            "episode_count": 10
+          },
+          {
+            "kind": "periodic",
+            "step": 775000,
+            "episode_count": 10
+          }
+        ],
+        "log_tail": null
+      },
+      "rebrac_iql": {
+        "queue": {
+          "time": "2026-09-29T12:23:47.713050+00:00",
+          "status": "running",
+          "current": "rebrac-hopper-bca-noiw-s202609174",
+          "total": 140
+        },
+        "completed_count": 85,
+        "completed_by_host": {
+          "rebrac": 43,
+          "iql": 42
+        },
+        "closed_results": [],
+        "dispatch": {
+          "command": [
+            "/users/dbayha/bca-standard-noiw-v1/venv-v2/bin/python",
+            "/users/dbayha/bca-standard-noiw-v1/campaign/source/train.py",
+            "--algorithm",
+            "rebrac",
+            "--dataset",
+            "hopper",
+            "--method",
+            "bca",
+            "--seed",
+            "202609174",
+            "--output",
+            "/users/dbayha/bca-standard-noiw-v1/campaign/queue-cluster-v1/runs/rebrac-hopper-bca-noiw-s202609174",
+            "--device",
+            "cuda",
+            "--lock",
+            "/users/dbayha/bca-standard-noiw-v1/campaign/resource-locks/cluster-gpu.lock",
+            "--data-dir",
+            "/users/dbayha/.d4rl/datasets"
+          ],
+          "started": "2026-09-29T12:23:47.743310+00:00",
+          "pid": 952388,
+          "process_group": 952388,
+          "proc_stat": "952388 (python) R 763309 952388 952388 0 -1 4194304 5 0 0 0 0 0 0 0 20 0 1 0 1216994698 4161536 0 68719476736 94482514395136 94482516504685 140721879952928 0 0 0 0 0 0 0 0 0 17 2 0 0 0 0 0 94482517533584 94482517756768 94482540945408 140721879956974 140721879957400 140721879957400 140721879961538 0\n",
+          "supervisor_pid": 763309,
+          "slurm_job_id": "27045057"
+        },
+        "actual_exit": null,
+        "recent_events": [
+          {
+            "kind": "periodic",
+            "step": 465000,
+            "episode_count": 10
+          },
+          {
+            "kind": "periodic",
+            "step": 470000,
+            "episode_count": 10
+          },
+          {
+            "kind": "periodic",
+            "step": 475000,
+            "episode_count": 10
+          }
+        ],
+        "log_tail": null
+      }
+    }
+  },
+  "ood_cluster": {
+    "utc": "2026-09-29T12:52:19.699943+00:00",
+    "ood": [
+      {
+        "job": "27068500",
+        "status": {
+          "utc": "2026-09-29T12:51:59.106118+00:00",
+          "pid": 1197859,
+          "pair": [
+            "rebrac",
+            "walker2d",
+            202609171
+          ],
+          "stage": "outcomes",
+          "scientific_complete": false,
+          "transitions": 571393,
+          "current": "bca/state083/slot8/188"
+        },
+        "actual_exit": null,
+        "failure": null,
+        "live_identity_matches": true,
+        "execution_complete": null
+      },
+      {
+        "job": "27068501",
+        "status": {
+          "utc": "2026-09-29T12:51:49.839416+00:00",
+          "pid": 2715015,
+          "pair": [
+            "rebrac",
+            "walker2d",
+            202609172
+          ],
+          "stage": "outcomes",
+          "scientific_complete": false,
+          "transitions": 527378,
+          "current": "bca/state070/slot6/0"
+        },
+        "actual_exit": null,
+        "failure": null,
+        "live_identity_matches": true,
+        "execution_complete": null
+      },
+      {
+        "job": "27068502",
+        "status": {
+          "utc": "2026-09-29T12:52:12.934625+00:00",
+          "pid": 2715058,
+          "pair": [
+            "rebrac",
+            "walker2d",
+            202609173
+          ],
+          "stage": "outcomes",
+          "scientific_complete": false,
+          "panels_completed": 153,
+          "panels_expected": 482,
+          "transitions": 520344
+        },
+        "actual_exit": null,
+        "failure": null,
+        "live_identity_matches": true,
+        "execution_complete": null
+      },
+      {
+        "job": "27067675",
+        "status": {
+          "utc": "2026-09-29T12:52:00.892383+00:00",
+          "pid": 2711664,
+          "pair": [
+            "rebrac",
+            "hopper",
+            202609171
+          ],
+          "stage": "outcomes",
+          "scientific_complete": false,
+          "transitions": 180386,
+          "current": "host/state020/slot5/165"
+        },
+        "actual_exit": null,
+        "failure": null,
+        "live_identity_matches": true,
+        "execution_complete": null
+      }
+    ]
+  },
+  "ood_local": {
+    "utc": "2026-09-29T12:52:19.425859+00:00",
+    "status": {
+      "utc": "2026-09-29T12:51:55.040432+00:00",
+      "pid": 387,
+      "pair": [
+        "td3_bc",
+        "hopper",
+        202609171
+      ],
+      "stage": "outcomes",
+      "scientific_complete": false,
+      "transitions": 328248,
+      "current": "bca/state073/slot0/68",
+      "old_explicit_transitions": 222853
+    },
+    "actual_exit": null,
+    "live_identity_matches": true,
+    "failure": null,
+    "old_explicit_transitions": 222853,
+    "old_completed_panels": 52,
+    "old_completed_trajectories": 740
+  },
+  "counts": {
+    "training_successful_processes": 92,
+    "training_saved_recovery_original_exit1": 1,
+    "training_active": 2,
+    "training_not_started": 185,
+    "training_total": 280,
+    "ood_v2_active": 5,
+    "ood_v2_completed": 0,
+    "ood_v2_not_started": 15,
+    "ood_v2_tranche_total": 20
+  }
+}

@@ -1,0 +1,62 @@
+[
+  {
+    "name": "01_new_learning_curves",
+    "title": "New completed learning curves",
+    "caption": "Read left to right through 1M updates. Every periodic mean is shown without smoothing. The diamonds use a separate final reset bank. CQL training results are preliminary pending independent review; TD3 Walker is reviewed. CQL Hopper compares a local RTX 5070 Ti host run with an A100 BCA run. These are policy-performance results, not action-level OOD results."
+  },
+  {
+    "name": "02_endpoint_vs_curve",
+    "title": "Endpoint versus performance during learning",
+    "caption": "Positive values favor BCA. TD3 Walker improves the final mean but has a lower average periodic score; it wins only 8 of 20 paired final resets. These are distinct questions, not conflicting calculations. One training seed per pair cannot estimate training-seed uncertainty. CQL figures await independent review."
+  },
+  {
+    "name": "02b_final_reset_differences",
+    "title": "Final-reset differences",
+    "caption": "Each dot compares host and BCA from the same final reset seed, with fixed trained policies. All 20 resets appear in their recorded order. TD3 Walker has a positive mean despite only 8 positive resets; CQL Walker has a negative mean despite 11 positive resets. This is variation over environment resets, not 20 independent training seeds, and does not isolate action-level harm."
+  },
+  {
+    "name": "03_atlas_td3_bc",
+    "title": "TD3+BC learning-curve atlas",
+    "caption": "The same completed training seeds are used for both methods in each colored comparison. Shading describes variation among the available seeds; it is not a confidence interval or final five-seed conclusion. Unpaired completed runs are gray dashed context. Most atlas rows await the complete independent source/data/checkpoint audit; exact status appears in the per-seed table. No best-seed or best-checkpoint selection."
+  },
+  {
+    "name": "03_atlas_cql",
+    "title": "CQL learning-curve atlas",
+    "caption": "The same completed training seeds are used for both methods in each colored comparison. Shading describes variation among the available seeds; it is not a confidence interval or final five-seed conclusion. Unpaired completed runs are gray dashed context. Most atlas rows await the complete independent source/data/checkpoint audit; exact status appears in the per-seed table. No best-seed or best-checkpoint selection."
+  },
+  {
+    "name": "03_atlas_rebrac",
+    "title": "ReBRAC learning-curve atlas",
+    "caption": "The same completed training seeds are used for both methods in each colored comparison. Shading describes variation among the available seeds; it is not a confidence interval or final five-seed conclusion. Unpaired completed runs are gray dashed context. Most atlas rows await the complete independent source/data/checkpoint audit; exact status appears in the per-seed table. No best-seed or best-checkpoint selection."
+  },
+  {
+    "name": "03_atlas_iql",
+    "title": "IQL learning-curve atlas",
+    "caption": "The same completed training seeds are used for both methods in each colored comparison. Shading describes variation among the available seeds; it is not a confidence interval or final five-seed conclusion. Unpaired completed runs are gray dashed context. IQL compares its paired actors sharing the same learned Q/V; the separately trained host is shown only as dotted gray context. Most atlas rows await the complete independent source/data/checkpoint audit; exact status appears in the per-seed table. No best-seed or best-checkpoint selection."
+  },
+  {
+    "name": "04_reviewed_seed_pairs",
+    "title": "Reviewed ReBRAC training-seed comparisons",
+    "caption": "Each line connects the two final 20-episode means for one paired training seed. Agreement across seeds is stronger evidence than a single endpoint; three seeds remain short of the planned five. The lines describe whole-policy performance, not whether BCA correctly identifies harmful actions."
+  },
+  {
+    "name": "05_td3_calibration",
+    "title": "TD3 Walker calibration during training",
+    "caption": "198 recorded refreshes retain both Bayesian and conformal radii; the effective radius is their maximum. The actor\u2019s behavior-cloning penalty is multiplied by the BCA signal. The scale and critic plots use audited 1,000-update block means; actor statistics exclude skipped actor updates. Successful fitting does not show that width ranks OOD harm correctly."
+  },
+  {
+    "name": "06_cql_diagnostics",
+    "title": "CQL Q and loss diagnostics",
+    "caption": "These are 1,000 sparse last-row snapshots per completed run, not means over all updates. Q1 is evaluated on recorded dataset actions. Different Q/loss trajectories can help locate a mechanism to investigate, but cannot establish which proposed actions cause harm. Original CQL host failure/recovery remains preserved; the new CQL runs still await independent review."
+  },
+  {
+    "name": "06b_cql_calibration",
+    "title": "CQL calibration signal",
+    "caption": "Sparse last-row snapshots show the multiplier used on CQL\u2019s conservative objective and the fitting objective. Both runs record 198 successful posterior refreshes. Historical numerical radii are not in these CQL refresh records, so no radius history is fabricated. Sampled fit acceptance is not a complete per-update acceptance log; independent final checkpoint-counter review is still pending. A nonzero multiplier alone does not demonstrate useful harm ranking."
+  },
+  {
+    "name": "07_ood_progress",
+    "title": "OOD execution progress",
+    "caption": "Four cluster CPU workers and one local continuation worker are running the five pairs. Bar length counts recorded explicit transitions, including engineering checks and collection; different episode lengths prevent direct conversion to percent complete. TD3 includes its preserved original prefix plus its continuation. No revised pair is complete, so final harm-ranking, coverage and regret findings are unavailable. No live scientific database was read for this report."
+  }
+]
