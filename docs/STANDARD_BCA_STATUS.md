@@ -1,5 +1,18 @@
 # Standard BCA: execution status
 
+## September 29, 09:11 UTC: CQL+BCA training is running
+
+Recoveryjob27068529 passed all14 data-cell checks (7TD3 reused from pinned
+acceptances, 7CQL newly checked) and all4 GPU fixtures with actualexit0. The
+live CQLHopperBCA worker's command, process start ticks and Slurm allocation
+were independently matched. Its journal console has completed the original
+5k/10k/15k/20k ten-episode evaluation banks; training is at least20k/1M.
+The queue has1active,136notstarted and0closed recovery rows. Both original
+completedTD3runs and recoveredCQLhost are excluded. ExistingReBRAC/IQL and
+CPUOODjobs continue; no new OOD pair is claimed by this training progress.
+
+[Actual checks and live-worker evidence](validation/standard-cql-cluster-recovery-execution.json).
+
 ## September 29, 09:05 UTC: separate CQL data-wrapper correction dispatched
 
 The initial recovery clusterjob27068516 stopped before any learner/model/fixture

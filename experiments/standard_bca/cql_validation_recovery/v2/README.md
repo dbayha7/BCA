@@ -1,5 +1,10 @@
 # Current execution: job 27068529
 
+At09:11UTC all14data cells and all4GPUfixtures are accepted with actualexit0.
+CQLHopperBCA171 is training and has completed the5k/10k/15k/20k evaluation banks.
+The queue contains1active/136unstarted/0closed rows. See the
+[actual execution receipt](../../../../docs/validation/standard-cql-cluster-recovery-execution.json).
+
 The first cluster preflight job27068516 stopped with actual exit1 before any
 model initialization, fixture or scientific training. Seven TD3 dataset cells
 passed. The wrapper then tried to call TD3/ReBRAC's `validate_prepared` helper
