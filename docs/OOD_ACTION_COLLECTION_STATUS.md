@@ -1,3 +1,43 @@
+# Action-level OOD: revised real experiment is running
+
+## September 29: live TD3+BC Hopper execution
+
+The first revised OOD worker is running with the independently accepted 1M
+host and standard-BCA checkpoints for seed 202609171. Both live actor checks
+matched exactly (maximum error 0); the first-transition records and complete
+restored states matched exactly. A separate saved-data engineering review exited
+0. Constructor reward reconstruction error was 1.085e-10, below the unchanged
+1e-7 gate. These checks accept the engineering connection, not an OOD benefit.
+
+Real simulator state collection has begun: 64 paired reset episodes under each
+policy, captures at steps 100 and 300. Missing captures remain missing. The same
+worker next freezes every candidate action and score for the pair before running
+the two 250-step continuations. Independent outcome verification follows actual
+process completion. There is no completed revised pair or new benefit claim yet.
+
+The execution-only correction permits normal installed-library startup and
+worker temporary files. It does not change the scientific protocol, models,
+coverage, action/reward/state gates, seeds, outcomes or budgets. Old import-hook
+drafts and failed probes are preserved; further work on that framework is no
+longer on the critical path. Exact saved continuation keys have a new documented
+disposition based on their independent numeric review; their original producer
+still has exit 1. No old scientific outcomes are repeated.
+
+The shared lock is held by the CPU worker. Every physical call is reserved in a
+new cumulative extension ledger; the original ledger remains read-only. The
+detached supervisor records the actual worker exit. The monitor now follows this
+real run and its results. Only this first pair is dispatched; the whole twenty-
+pair tranche is not queued or complete.
+
+[Exact executed code and saved engineering evidence](../outputs/ood/robustness-v2/live-execution-v1/README.md).
+The accompanying status snapshot is dated, not a live counter. Live status is
+`/home/dbayha/bca-work/ood-live-v2/td3-hopper-s202609171-v1/status.json`.
+
+---
+
+The entries below are preserved historical records. Their earlier production
+holds refer to the abandoned import-hook route, not the active worker above.
+
 # Action-level OOD: stream amendment approved; execution checks pending
 
 ## September 29, 06:10 UTC: open unified import integration draft; production held
