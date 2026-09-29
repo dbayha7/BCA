@@ -1,5 +1,20 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September29,01:02UTC: exact filelock scratch lifecycle verified in fixtures
+
+The new source-bound scratch component passed29 tests. The exact extracted installed
+filelock capability function completed its12-event filesystem lifecycle in a private
+directory; separate review verified saved events, source pins and retained failures,
+including a deliberate child exit23. No filelock/JAX/MuJoCo package was imported and
+neither closed failed native probe was retried. The original scientific gates remain.
+
+Four stdlib sources have three hard links each; their live-code/alias provenance
+still needs acceptance. Source inspection also found filelock's SQLite audit and
+at-fork hook registrations, which need binding before native/ledger integration.
+The initial draft audit-tuple failure and later missing-/tmp-fixture review failure
+remain preserved; new persistent fixtures were independently verified without replay.
+[Component evidence and exact limits](../outputs/ood/robustness-v2/filelock-scratch-component-v1/README.md).
+
 ## September29,00:44UTC: NumPy startup passed; JAX dependency write refused
 
 The separately versioned14-field contract completed Python and NumPy stages.
