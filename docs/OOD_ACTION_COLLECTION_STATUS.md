@@ -1,3 +1,19 @@
+# September 29: local Hopper continuation is running
+
+The local TD3+BC Hopper pair has resumed outcome rollouts after new native gates
+and independent saved-data review. The continuation retains740 completed
+trajectories and the whole-pair precommit, and completes the interrupted
+trajectory with exactly its final3 steps. Its original first-repeat is reused;
+all old charges remain in the original cumulative extension. The four cluster
+pairs continue as well. No completed revised pair or BCA benefit is claimed.
+
+Do not open active scientific SQLite databases. Final comparisons require the
+actual worker exit and full independent cross-attempt/accounting review.
+
+[Continuation, checks and current scope](../outputs/ood/robustness-v2/local-continuation-v1/README.md).
+
+---
+
 # September 29: local failure preserved; four cluster OOD pairs continue
 
 The local TD3+BC Hopper run exited1 after a database-lock error during our new
