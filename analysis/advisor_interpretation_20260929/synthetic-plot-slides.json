@@ -1,0 +1,20 @@
+[
+  {
+    "key": "coverage_plot",
+    "title": "Weighted CP restores coverage in the controlled shift",
+    "caption": "Observed response coverage. Dashed line = 90% target. Error bars = 95% binomial intervals.",
+    "footer": "2,000 independent synthetic trials. Known ratios, fixed score and unchanged conditional response law.",
+    "takeaway": "Ordinary: 61.05% after shift. Weighted: 90.70%. Real RL coverage remains unverified.",
+    "image": "synthetic_coverage_slide.png",
+    "notes": "This figure reuses outputs/weighted_conformal/2026-09-29-v2/results.json with no new samples. Ordinary CP gives 91.00% coverage on its source population but 61.05% on the constructed target shift. Correctly weighted CP gives 90.70%, while the weighted-plus-Bayesian maximum gives 93.95%. Error bars are the saved 95% binomial intervals, not standard deviations across seeds. Source hard-group frequency is .2 and target .8, with unchanged conditional response. Known ratios are .25 and 4. This directly supports the intended population-correction mechanism under the synthetic assumptions. It does not identify the cause of weak real pilot harm ranking or establish a policy improvement. Alpha remains .1. See the following analysis slide for meaning and implementation gates."
+  },
+  {
+    "key": "halfwidth_plot",
+    "title": "Coverage recovery comes with wider bands",
+    "caption": "Mean finite half-width. Scale = 1, so radius equals half-width. Full band length is twice this.",
+    "footer": "Same 2,000 saved synthetic trials. All bands were finite. Means are descriptive, without uncertainty bars.",
+    "takeaway": "A useful correction needs adequate coverage and informative widths, then better decisions.",
+    "image": "synthetic_halfwidth_slide.png",
+    "notes": "The accepted synthetic result has mean finite radii 2.998574625, 2.998574625, 5.294714196 and 5.589847011 for ordinary/source, ordinary/shifted, weighted-CP/shifted and weighted-plus-Bayesian/shifted. The frozen score has scale one and center zero, so these are also half-widths. Full interval lengths are twice these values. All 2,000 bands are finite in each arm; infinity is tested separately in boundary checks. These means have no uncertainty bars in this figure. Why important: the target population contains more hard/high-error responses, so widening is part of the observed coverage recovery. The extra Bayesian maximum raises coverage and width simultaneously. That is not automatically more efficient or more useful for the host policy. Compare adequate coverage at usable widths, then risk ranking and regret, rather than maximizing coverage alone. Source: outputs/weighted_conformal/2026-09-29-v2/results.json. No new scalar trials, model query, simulator steps or learning updates."
+  }
+]
