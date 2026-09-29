@@ -1,5 +1,60 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 06:10 UTC: open unified import integration draft; production held
+
+The new v5 dispatcher, v2 protocol and concrete fixture entry now compose native
+registration arguments/state, natural scratch capability/finalizer detach, and
+parent release/completion acknowledgment under one audit/profile owner. The four
+new sources remain OPEN drafts; continue actual integration in these files with
+new saved snapshots, rather than closing another partial component. All older
+closed sources remain unchanged. Full actual filelock/native integration and the
+production entrypoint are still unimplemented, not prereviewed or dispatchable.
+
+Final21 new isolated fixtures passed0/no skips at06:04:07UTC: one completed child0,
+nineteen expected child1 refusals, one prelaunch production refusal/childNULL.
+Two saved final-suite journals each contain nine registration requests (eight
+native registration triples and one real internal-threading request/return), four
+capability boundaries/twelve scratch events/thirteen native filesystem pairs,
+and actual finalizer registry insertion/detach. Native bound lock callbacks were
+registered, not executed. Callback identities/ordered arguments and the earlier
+threading partial/list are bound. The deliberately rejected parent ack leaves
+its later failure append visible after the pending manifest. Other later-refused
+cases lack complete journals; no missing evidence or general empty state assumed.
+
+Filelock definitions still use synthetic namespaces and a deliberate fixture
+registration driver, not actual package import/state transitions. No callback
+replay/capability substitution or stacked old installers. Bootstrap registrations
+and automatic audit deliveries are not counted; target audit installation remains
+unaccepted. Exact15fixture fields change only TMPDIR. Production roots were absent
+at 2026-09-29T06:07:18.521711+00:00, a dated snapshot only.
+
+Both development failures are retained. Firstsuite1/firstchild1 at05:53:12UTC
+saved only readiness/bootstrap: stderr shows observer refusal and attempted
+logging shutdown during unwinding; the original triggering exception is unsaved.
+Secondsuite1 at06:01:59UTC ran13children, including a wrongly completed negative:
+an earlier threading mutation became the too-late baseline. Finaldraft binds that
+baseline early and catches profile exceptions before CPython unwinding; its
+source-bound epilogue emits a bounded failure packet then captured os._exit1,
+without diagnostic writes inside suspended profiling. All final failure packets
+show profile-present; stderr is empty and normal-shutdown sentinel absent.
+No preimplementation red, scientific failure or retry is claimed.
+
+Separate stdlib saved-byte/AST review0 at06:07:22UTC verifies873retained files/
+346unique byte blobs,16definitions, histories, process/env/ack/diagnostic evidence,
+and the two saved composed journals without importing components or replaying.
+It accepts this fixture snapshot only. Full code/global/native/state graph,
+real registry transitions, cached builder/package-lock refusal and actual entry
+remain next, followed by independent FULL actual-route prereview before one new
+versioned import-only observation. Stable/opaque identity bindings are insufficient.
+
+Immutablecheck0 at06:07:17UTC preserves prior closed code/receipts, failed probes,
+held-key evidence, training, original plan and approved amendment. Local107/108
+is only reviewed publication metadata. Training14runs/seven pairs unchanged;
+02:24:54UTC62closures/50pending audits remains historical. No cluster probe,
+model, simulator, lease, ledger, new keys, physics, closed-suite/probe/key-review
+rerun, subagent, message or other-chat read. All execution/science holds persist.
+[Open draft evidence and remaining work](../outputs/ood/robustness-v2/native-import-integration-draft-v1/README.md).
+
 ## September 29, 05:39 UTC: concrete callback/state bindings; actual dispatcher still held
 
 New separately versioned binding code now handles exact captured keyword defaults,
