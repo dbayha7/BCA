@@ -1,0 +1,279 @@
+{
+  "schema": "ood-v2-native-import-observation-contract-v3-draft1",
+  "status": "DECLARED_UNLAUNCHED_NOT_DISPATCHABLE",
+  "utc": "2026-09-29T03:35:38.195100+00:00",
+  "previous_failed_contract_sha256": "1cce14e1a6cf7be65862d7bf8b53ee36cd7dafd383f19e0978f34cc6951e5b7f",
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "",
+    "JAX_PLATFORMS": "cpu",
+    "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "LC_CTYPE": "C.UTF-8",
+    "TF_CPP_MIN_LOG_LEVEL": "1",
+    "TPU_SKIP_MDS_QUERY": "1",
+    "MUJOCO_PY_MUJOCO_PATH": "/home/dbayha/.mujoco/mujoco210",
+    "MUJOCO_PY_FORCE_CPU": "1",
+    "LD_LIBRARY_PATH": "/home/dbayha/.mujoco/mujoco210/bin",
+    "PYGLFW_LIBRARY": "/home/dbayha/miniconda3/envs/corl-orig-local/lib/python3.10/site-packages/glfw/x11/libglfw.so",
+    "OPENBLAS_MAIN_FREE": "1",
+    "GOTOBLAS_MAIN_FREE": "1",
+    "TMPDIR": "/home/dbayha/bca-work/ood-native-import-v3-scratch"
+  },
+  "environment_field_count": 15,
+  "environment_delta": {
+    "added": {
+      "TMPDIR": "/home/dbayha/bca-work/ood-native-import-v3-scratch"
+    },
+    "removed": {},
+    "changed": {}
+  },
+  "environment_rules": {
+    "inherit": false,
+    "merge": false,
+    "strip_after_launch": false,
+    "mutate": false,
+    "kernel_and_effective_exact": true,
+    "snapshot_phases": [
+      "python",
+      "numpy",
+      "jax",
+      "cpu_backend",
+      "mujoco_py",
+      "diagnostic_completion"
+    ],
+    "continuous_environment_absence_claim": false
+  },
+  "planned_command": [
+    "/home/dbayha/miniconda3/envs/corl-orig-local/bin/python",
+    "-I",
+    "/mnt/c/Users/David Bayha/Documents/Codex/2026-09-09/this-is-my-phd-research-im/work/standard_bca_noiw_campaign_v1/monitor_20260929T032135Z/native_import_probe_v3.py"
+  ],
+  "implementation": {
+    "entrypoint_sha256": null,
+    "unified_observer_sha256": null,
+    "parent_observer_sha256": null,
+    "dispatchable": false
+  },
+  "process": {
+    "one_shot": true,
+    "isolated_session_group": true,
+    "cpu_only": true,
+    "gpu_visible_devices": "",
+    "parent_release_after_identity": true,
+    "parent_observes": [
+      "pid",
+      "parent_pid",
+      "start_ticks",
+      "session",
+      "group",
+      "argv",
+      "kernel_environment"
+    ],
+    "parent_observation_boundaries": [
+      "before_release",
+      "before_completion_acknowledgment"
+    ],
+    "worker_rechecks_ownership": [
+      "before_root_creation",
+      "each_routed_operation",
+      "each_phase",
+      "before_completion"
+    ],
+    "arbitrary_descendant_containment_claim": false
+  },
+  "scratch": {
+    "parent": "/home/dbayha/bca-work",
+    "root": "/home/dbayha/bca-work/ood-native-import-v3-scratch",
+    "diagnostics_root": "/home/dbayha/bca-work/ood-native-import-v3-diagnostics",
+    "proposed_path_snapshot_sha256": "08c94ec9b38320ac398896de82c8afea6736a09037f344db4f3efc7077a8a4e1",
+    "parent_expected": {
+      "dev": 2096,
+      "ino": 14072,
+      "uid": 1000,
+      "gid": 1000,
+      "mode": 448
+    },
+    "fresh_paths_required": [
+      "/home/dbayha/bca-work/ood-native-import-v3-scratch",
+      "/home/dbayha/bca-work/ood-native-import-v3-diagnostics"
+    ],
+    "created_by": "released_worker_only",
+    "parents_may_create_roots": false,
+    "recursive_parent_creation": false,
+    "mode": 448,
+    "uid": 1000,
+    "gid": 1000,
+    "creation_order": [
+      "/home/dbayha/bca-work/ood-native-import-v3-diagnostics",
+      "/home/dbayha/bca-work/ood-native-import-v3-scratch"
+    ],
+    "creation_route": "one mkdir per exact absent basename using a verified retained parent dirfd; no parents=True/exist_ok; EEXIST refuses",
+    "ownership_route": "lstat plus O_DIRECTORY|O_NOFOLLOW open/fstat, canonical ancestors, dev/ino/uid/gid/mode; retain dirfds and recheck name-to-fd identity for every routed operation",
+    "initial_tempfile_cache_must_be_none": true,
+    "root_must_initially_be_empty": true,
+    "root_reuse": false,
+    "capability": "filelock._strict._probe_link_follow_symlinks",
+    "entry_count": 1,
+    "manual_invocations": 0,
+    "replay": false,
+    "result_substitution": false,
+    "lifecycle": "exact source-bound twelve-event capability lifecycle; dynamic temporary names learned only from actual observed arguments and bound thereafter; exact dirfd/device/inode link/readback/unlink/rmdir sequence",
+    "finalizer": "bind actual weakref.finalize registry entry, weak target, classmethod callback owner/function, args/ordered kwargs/atexit/index and exact detach removal; preserve unrelated live entries and registration flag",
+    "success_cleanup": "only the capability cleans its exact probe files/subdirectory; worker retains the empty scratch root and every diagnostic file; no root deletion",
+    "failure_cleanup": "none: retain root, every partial descendant and diagnostic; no broad rmtree, finalizer replay, retry, replacement root or repair",
+    "success_exit": "guard remains installed; bounded final diagnostics and parent acknowledgment then source-bound os._exit(0)",
+    "failure_exit": "preserve first refusal; bounded diagnostics when possible then source-bound os._exit(nonzero); missing diagnostic or unknown actual exit stays unavailable"
+  },
+  "diagnostics": {
+    "files": [
+      "events.jsonl",
+      "final.json",
+      "modules.json",
+      "maps.txt"
+    ],
+    "file_mode": 384,
+    "exclusive_create": true,
+    "symlinks": false,
+    "hardlinks": false,
+    "file_flags": [
+      "O_WRONLY",
+      "O_CREAT",
+      "O_EXCL",
+      "O_NOFOLLOW",
+      "O_CLOEXEC"
+    ],
+    "dirfd_bound": true,
+    "fd_identity_rechecked": true,
+    "per_file_max_bytes": 8388608,
+    "total_max_bytes": 33554432,
+    "parent_stdout_max_bytes": 8388608,
+    "parent_stderr_max_bytes": 8388608,
+    "parent_timeout_seconds": 180,
+    "durability": "flush and fsync each event before acknowledgment; fsync diagnostic directory after file creation; retain and refuse on write/fsync/cap failures",
+    "first_refusal_fields": [
+      "sequence",
+      "phase",
+      "event",
+      "caller_source",
+      "caller_line",
+      "actual_positional_metadata",
+      "ordered_keyword_metadata",
+      "reason",
+      "availability"
+    ],
+    "unavailable_arguments": null,
+    "native_alias_arguments_fabricated": false,
+    "first_refusal_immutable": true,
+    "metadata": "type/identity and exact primitive values only; never arbitrary callback/object repr or property evaluation",
+    "post_refusal_write_authority": "only pinned diagnostic function/code/callsite, predeclared retained descriptors and remaining byte budget; no blanket write/hook exception or observer deactivation",
+    "diagnostic_failure": "append when possible without overwriting first refusal; preserve raw pipes/partial bytes; parent records actual child/transport exits separately"
+  },
+  "observer": {
+    "single_profile_owner": true,
+    "single_audit_dispatcher": true,
+    "install_old_observers": false,
+    "bootstrap": "record sys.modules/profile and known registration-state snapshots at the earliest pinned bootstrap boundary; pre-boundary registration history/counts unavailable, never reconstructed as actual events",
+    "own_audit_canary_required": true,
+    "target_audit_installation_proved_by_native_return": false,
+    "manual_audit_callback_replay": false,
+    "registration_routes": [
+      "sys.addaudithook",
+      "os.register_at_fork",
+      "atexit.register",
+      "threading._register_atexit"
+    ],
+    "callback_forms": [
+      "plain_function",
+      "python_bound_method",
+      "classmethod",
+      "native_bound_lock_method",
+      "functools.partial"
+    ],
+    "callback_bindings": [
+      "exact caller code/registered namespace/source/order",
+      "actual original callback object forwarded once",
+      "positional defaults and keyword-default dictionary/objects",
+      "closure cells including Random.seed.__class__",
+      "method owner/function/native descriptor/type",
+      "direct and transitive code/global/native/state graph",
+      "threading partial/list/_SHUTTING_DOWN",
+      "weakref finalizer creation/detach and existing registry",
+      "logging captured handlerList/locks/weak handlers",
+      "filelock transition/admission/weak/class/singleton/descriptor state"
+    ],
+    "state_assumptions": "no empty registry, harmless shutdown, target audit effectiveness, complete live hook inventory or full package graph inferred from static source/fixtures",
+    "dispatcher_routes": [
+      "bootstrap_exact_root_creation",
+      "declared_registration",
+      "observed_capability_lifecycle",
+      "existing_package_buildlock",
+      "bounded_diagnostics",
+      "refuse_all_other_mutations_process_network_environment"
+    ],
+    "native_refusals": [
+      "source-bound builder/build/discovery before body",
+      "cached extension identity",
+      "exact existing package-lock append/parent check/whole-file nonblocking lock/unlock"
+    ],
+    "first_refusal_shared": true,
+    "observers_retained_until_exit": true,
+    "security_sandbox": false,
+    "native_c_syscall_monitor": false
+  },
+  "prior_source_reviews": {
+    "stdlib": {
+      "path": "C:\\Users\\David Bayha\\Documents\\Codex\\2026-09-09\\this-is-my-phd-research-im\\work\\standard_bca_noiw_campaign_v1\\monitor_20260929T030134Z\\stdlib_registration_routes_review.json",
+      "sha256": "ceb56aff696fe0cfe0b81cd2eb29abae1d58cd986ac49aa090c066c1e5472305"
+    },
+    "logging_random": {
+      "path": "C:\\Users\\David Bayha\\Documents\\Codex\\2026-09-09\\this-is-my-phd-research-im\\work\\standard_bca_noiw_campaign_v1\\monitor_20260929T030134Z\\logging_random_registration_review_v2.json",
+      "sha256": "f8388f0e400b291ea0695b06c7e78f608642d157229dbb5d979a3d9d90fb08d2"
+    },
+    "filelock": {
+      "path": "C:\\Users\\David Bayha\\Documents\\Codex\\2026-09-09\\this-is-my-phd-research-im\\work\\standard_bca_noiw_campaign_v1\\monitor_20260929T015303Z\\registration_graph_review.json",
+      "sha256": "7a5b905487252729d4c1ece7dbd927beaca86751b49dbc4138bfcaa9128c3118"
+    },
+    "arguments": {
+      "path": "C:\\Users\\David Bayha\\Documents\\Codex\\2026-09-09\\this-is-my-phd-research-im\\work\\standard_bca_noiw_campaign_v1\\monitor_20260929T023304Z\\registration_args_saved_review.json",
+      "sha256": "82698bfbbd96526d5acbb9b4f5ee4a3b6a854be3b2505b87d8b289c79e910c1b"
+    }
+  },
+  "closed_component_pins": {
+    "native_import_guard_v2.py": "2aaa78879bff7bf72effd4023afae681144c738f160550d4e646e8807f1f7fb2",
+    "filelock_scratch_v1.py": "9cff11889c93fb9d645c3640f8c188ac3d5d6005a4584616a1da367db9560548",
+    "filelock_import_bridge_v1.py": "fb18f9d069858ddc5f6ec2ce8624974b6a0d65f39a2f1dcfc918056493029425",
+    "filelock_registration_args_v1.py": "f092d252bcb5f19a227bfca815bbb2639e82d406983f53290c0599234ef28d35"
+  },
+  "required_before_dispatch": [
+    "versioned_source_bound_unified_implementation",
+    "actual_bootstrap_import_and_registration_route_bindings",
+    "full_relevant_live_code_global_native_state_graph",
+    "explicit_current_shared_source_alias_bindings",
+    "worker_owned_create_cleanup_retention_and_bounded_diagnostics_fixtures",
+    "complete_interpreter_native_source_cache_lock_bindings",
+    "independent_exact_route_prereview_with_actual_zero_exit"
+  ],
+  "acceptance": {
+    "declaration_review_only": true,
+    "launch_prereview_accepted": false,
+    "fifteen_field_profile_executed": false,
+    "actual_filelock_namespace_accepted": false,
+    "full_live_graph_accepted": false,
+    "target_audit_installation_accepted": false,
+    "native_environment_accepted": false,
+    "key_execution_accepted": false,
+    "engineering_execution_accepted": false,
+    "scientific_execution_accepted": false
+  },
+  "forbidden": [
+    "preimport_filelock_outside_observer",
+    "callback_replay_or_substitution",
+    "installed_dependency_edits",
+    "closed_probe_retry",
+    "held_key_regeneration",
+    "scientific_lease_or_extension",
+    "models_or_simulators_or_physics",
+    "training_queue_changes"
+  ]
+}

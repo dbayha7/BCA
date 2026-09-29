@@ -1,0 +1,139 @@
+{
+  "schema": "native-import-composition-source-findings-v1",
+  "utc": "2026-09-29T03:35:38.190621+00:00",
+  "source_pins": {
+    "native_import_guard_v2.py": "2aaa78879bff7bf72effd4023afae681144c738f160550d4e646e8807f1f7fb2",
+    "filelock_scratch_v1.py": "9cff11889c93fb9d645c3640f8c188ac3d5d6005a4584616a1da367db9560548",
+    "filelock_import_bridge_v1.py": "fb18f9d069858ddc5f6ec2ce8624974b6a0d65f39a2f1dcfc918056493029425",
+    "filelock_registration_args_v1.py": "f092d252bcb5f19a227bfca815bbb2639e82d406983f53290c0599234ef28d35"
+  },
+  "method_evidence": [
+    {
+      "file": "native_import_guard_v2.py",
+      "owner": "NativeImportGuard",
+      "name": "install",
+      "line": 138,
+      "end_line": 142,
+      "source": "def install(self):\n        self.check()\n        if self.installed or sys.getprofile() is not None:self.refuse('Reused or already profiled route.')\n        self.installed=True;self.active=True\n        sys.addaudithook(self.audit);sys.setprofile(self.profile)"
+    },
+    {
+      "file": "native_import_guard_v2.py",
+      "owner": "NativeImportGuard",
+      "name": "check",
+      "line": 77,
+      "end_line": 87,
+      "source": "def check(self):\n        try:\n            if self.failed or self.pid_reader()!=self.pid:self.refuse('Poisoned or forked route.')\n            if json.dumps(self.bindings,sort_keys=True)!=self.binding_bytes:self.refuse('Bindings mutated.')\n            if self.effective_reader()!=environment() or self.kernel_reader()!=environment():self.refuse('Exact native import environment required.')\n            for b in self.bindings.values():\n                s=Path(b['path']).stat()\n                if [s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns,s.st_ctime_ns]!=b['stat']:\n                    self.refuse('Source/cache/package-lock identity changed.')\n            return True\n        except BaseException:self.failed=True;raise"
+    },
+    {
+      "file": "native_import_guard_v2.py",
+      "owner": "NativeImportGuard",
+      "name": "audit",
+      "line": 105,
+      "end_line": 136,
+      "source": "def audit(self,event,args):\n        if not self.active:return\n        # These checks constrain the cooperative Python import route. Native C\n        # syscalls and arbitrary interpreter tampering are outside this guard.\n        if event.startswith('subprocess.') or event in ('os.system','os.fork','os.forkpty','os.exec','os.posix_spawn','os.spawn'):\n            self.refuse('Child/process launch refused: '+event)\n        if event in ('os.remove','os.rename','os.rmdir','os.link','os.symlink','os.truncate','os.chmod','os.chown'):\n            self.refuse('Filesystem mutation refused: '+event)\n        if event=='open':\n            path,mode,flags=args\n            writing=isinstance(flags,int) and bool(flags & (os.O_WRONLY|os.O_RDWR|os.O_CREAT|os.O_TRUNC|os.O_APPEND))\n            if writing:\n                name=os.fsdecode(path) if isinstance(path,(str,bytes,os.PathLike)) else None\n                expected=os.O_WRONLY|os.O_APPEND|os.O_CREAT\n                if self.failed or name!=self.lock or (flags & ~getattr(os,'O_CLOEXEC',0))!=expected or mode!='a':\n                    self.refuse('Only exact existing package-lock append-open allowed.')\n                self.check();self.events.append(dict(event=event,path=name,mode=mode,flags=flags))\n        elif event=='os.mkdir':\n            if self.failed or os.fsdecode(args[0])!=self.lock_parent or not Path(self.lock_parent).is_dir():\n                self.refuse('Only existing package-lock parent mkdir check allowed.')\n            self.events.append(dict(event=event,path=self.lock_parent))\n        elif event=='os.putenv':\n            key,value=map(os.fsdecode,args)\n            if self.failed or environment().get(key)!=value:self.refuse('Environment mutation refused.',dict(event=event,key=key,value=value))\n        elif event=='os.unsetenv':self.refuse('Environment removal refused.',dict(event=event,key=os.fsdecode(args[0])))\n        elif event.startswith('fcntl.'):\n            if event!='fcntl.lockf':self.refuse('Undeclared lock operation.')\n            fd,cmd,length,start,whence=args\n            if self.failed or os.readlink('/proc/self/fd/%d'%fd)!=self.lock or cmd not in (fcntl.LOCK_EX|fcntl.LOCK_NB,fcntl.LOCK_UN) or (length,start,whence)!=(None,None,0):\n                self.refuse('Only existing package-lock whole-file lock/unlock allowed.')\n            self.events.append(dict(event=event,path=self.lock,command=cmd))\n        elif event.startswith('socket.'):self.refuse('Network/socket route refused.')"
+    },
+    {
+      "file": "filelock_import_bridge_v1.py",
+      "owner": "ImportScratchBridge",
+      "name": "install",
+      "line": 141,
+      "end_line": 145,
+      "source": "def install(self):\n        self.check()\n        if self.used or sys.getprofile() is not None:self.refuse('Bridge is single-use and requires no existing profile.')\n        self.used=True\n        sys.addaudithook(self.audit);sys.setprofile(self.profile);self.active=True"
+    },
+    {
+      "file": "filelock_import_bridge_v1.py",
+      "owner": "ImportScratchBridge",
+      "name": "profile",
+      "line": 88,
+      "end_line": 123,
+      "source": "def profile(self,frame,event,arg):\n        if not self.active:return\n        if event=='c_call' and arg is getattr(os,'register_at_fork',None):\n            self.refuse('Filelock at-fork registration requires a separate state binding.','os.register_at_fork',(frame.f_code.co_filename,frame.f_lineno))\n        if frame.f_code.co_filename!=self.source:return\n        if self.failed:self.refuse('Previously refused import bridge.')\n        if frame.f_code not in self.all_codes:self.refuse('Unexpected live module code.',event,(frame.f_code.co_name,))\n        if event=='call' and frame.f_code==self.module_code:\n            if self.module_seen:self.refuse('Repeated module execution.')\n            module=sys.modules.get(self.module_name)\n            if not isinstance(module,types.ModuleType) or module.__dict__ is not frame.f_globals or frame.f_globals.get('__name__')!=self.module_name or frame.f_globals.get('__file__')!=self.source:\n                self.refuse('Registered module namespace required.')\n            self.module=module;self.module_frame=frame;self.module_seen=True\n            self.check();self.boundary_events.append(dict(event='module_entry',line=frame.f_lineno));return\n        if event=='call' and frame.f_code==self.callback_code:\n            if not self.module_seen or self.callback_seen or frame.f_back is not self.module_frame or frame.f_back.f_lineno!=self.call_line or frame.f_globals is not self.module.__dict__:\n                self.refuse('Capability must enter once from exact module callsite.')\n            callback=frame.f_globals.get('_probe_link_follow_symlinks')\n            if not isinstance(callback,types.FunctionType) or callback.__code__!=frame.f_code or callback.__globals__ is not frame.f_globals:\n                self.refuse('Live capability function binding differs.')\n            self.check()\n            self.scratch=lifecycle.FilelockScratch(self.root,callback,self.bindings)\n            # Observe the function already entering. Never call scratch.run() or callback().\n            self.scratch.used=True;self.scratch.active=True\n            self.callback_frame=frame;self.callback_seen=True\n            self.boundary_events.append(dict(event='callback_entry',line=frame.f_back.f_lineno));return\n        if event=='return' and frame is self.callback_frame:\n            self.check();s=self.scratch\n            if arg is not True or s.stage!=12 or Path(s.directory).exists() or Path(s.testfile).exists() or list(Path(self.root).iterdir()):\n                self.refuse('Capability returned without complete exact scratch lifecycle.','callback_return',(arg,s.stage))\n            s.active=False;self.callback_returned=True\n            self.boundary_events.append(dict(event='callback_return',value=True,stage=s.stage));return\n        if event=='return' and frame is self.module_frame:\n            self.check()\n            if not self.callback_returned or frame.f_globals.get(self.result_name) is not True:self.refuse('Module returned without the observed capability result.')\n            self.module_returned=True;self.boundary_events.append(dict(event='module_return',result=True));return"
+    },
+    {
+      "file": "filelock_import_bridge_v1.py",
+      "owner": "ImportScratchBridge",
+      "name": "audit",
+      "line": 125,
+      "end_line": 139,
+      "source": "def audit(self,event,args):\n        if not self.active:return\n        if event in ('sys.addaudithook','sys.setprofile') and not self.releasing:\n            self.refuse('Additional audit/profile registration is unbound.',event,args)\n        writing=event=='open' and isinstance(args[2],int) and bool(args[2] & (os.O_WRONLY|os.O_RDWR|os.O_CREAT|os.O_TRUNC|os.O_APPEND))\n        mutation=event in ('os.mkdir','os.remove','os.rmdir','os.link','os.symlink','os.rename','os.utime','os.chmod','os.chown','os.truncate','shutil.rmtree')\n        forbidden=event.startswith(('subprocess.','socket.','fcntl.')) or event in ('os.system','os.fork','os.forkpty','os.exec','os.posix_spawn','os.spawn','os.putenv','os.unsetenv')\n        if forbidden:self.refuse('Process/network/environment/lock route refused.',event,args)\n        if self.failed and (writing or mutation):self.refuse('Mutation after bridge refusal.',event,args)\n        if self.scratch is not None and self.scratch.active:\n            try:self.scratch.audit(event,args)\n            except BaseException as e:\n                detail=self.scratch.first_refusal\n                self.refuse(detail['message'] if detail else 'Scratch observation failed: '+type(e).__name__,event,args)\n        elif writing or mutation:self.refuse('Write outside capability scope.',event,args)"
+    },
+    {
+      "file": "filelock_registration_args_v1.py",
+      "owner": "RegistrationArguments",
+      "name": "install",
+      "line": 226,
+      "end_line": 237,
+      "source": "def install(self):\n        self.check()\n        if self.used or sys.getprofile() is not None:self.refuse('Single-use observer requires no prior profile.')\n        self.used=True\n        try:\n            self.original['audit'](self.audit)\n            sys.audit('ood.registration_args.install',self.install_token)\n        except BaseException as error:self.refuse('Observer audit installation raised: '+type(error).__name__)\n        if not self.install_seen:self.refuse('Observer audit hook installation was suppressed.')\n        sys.setprofile(self.profile)\n        sys.addaudithook=self.wrappers['audit'];os.register_at_fork=self.wrappers['fork'];atexit.register=self.wrappers['exit']\n        self.active=True"
+    },
+    {
+      "file": "filelock_registration_args_v1.py",
+      "owner": "RegistrationArguments",
+      "name": "_bind_callback",
+      "line": 103,
+      "end_line": 119,
+      "source": "def _bind_callback(self,name,value):\n        if type(value) is not types.FunctionType or self.namespace.get(name) is not value:\n            self.refuse('Callback object differs from declared namespace.')\n        matches=[c for c in self.compiled if c.co_name==name]\n        if len(matches)!=1 or value.__code__!=matches[0] or value.__code__.co_filename!=self.source_pin['path'] or value.__globals__ is not self.namespace or value.__module__!=self.module_name or value.__qualname__!=name:\n            self.refuse('Callback defining code/namespace differs.')\n        if value.__closure__ is not None or value.__defaults__ is not None:\n            self.refuse('Unexpected callback closure or positional defaults.')\n        refs=self.keyword_references.get(name,{})\n        actual=value.__kwdefaults__ or {}\n        if list(actual)!=list(refs) or any(actual[k] is not self.namespace[n] for k,n in refs.items()):\n            self.refuse('Captured keyword default reference differs.')\n        item=dict(fn=value,code=value.__code__,kw_object=value.__kwdefaults__,kw=dict(actual),\n                  names=(value.__module__,value.__name__,value.__qualname__),\n                  globals={n:self._global(value,n) for n in globals_used(value.__code__)})\n        if name in self.bound and self.bound[name]['fn'] is not value:self.refuse('Callback rebound.')\n        self.bound[name]=item"
+    },
+    {
+      "file": "filelock_registration_args_v1.py",
+      "owner": "RegistrationArguments",
+      "name": "audit",
+      "line": 177,
+      "end_line": 189,
+      "source": "def audit(self,event,args):\n        if event=='ood.registration_args.install' and len(args)==1 and args[0] is self.install_token:\n            self.install_seen=True;return\n        if not self.active:return\n        if event=='sys.addaudithook':\n            if self.native_pending!='audit' or self.native_seen!='entry':self.refuse('Unbound audit registration event.',event,args=args)\n        elif event=='sys.setprofile':self.refuse('Profile replacement refused.',event,args=args)\n        elif event.startswith(('subprocess.','socket.','fcntl.')) or event in ('os.system','os.fork','os.forkpty','os.exec','os.posix_spawn','os.spawn','os.putenv','os.unsetenv'):\n            self.refuse('Process/network/environment/lock route refused.',event,args=args)\n        elif event=='open' and isinstance(args[2],int) and args[2]&(os.O_WRONLY|os.O_RDWR|os.O_CREAT|os.O_TRUNC|os.O_APPEND):\n            self.refuse('Write outside registration observation refused.',event,args=args)\n        elif event in ('os.mkdir','os.remove','os.rmdir','os.link','os.symlink','os.rename','os.utime','os.chmod','os.chown','os.truncate','shutil.rmtree'):\n            self.refuse('Mutation outside registration observation refused.',event,args=args)"
+    },
+    {
+      "file": "filelock_scratch_v1.py",
+      "owner": "FilelockScratch",
+      "name": "run",
+      "line": 159,
+      "end_line": 171,
+      "source": "def run(self):\n        self.check()\n        if self.used:self.refuse('Repeated scratch callback.')\n        self.used=True;self.active=True;sys.addaudithook(self.audit)\n        try:\n            result=self.callback()\n            self.check()\n            if result is not True or self.stage!=12 or Path(self.directory).exists() or Path(self.testfile).exists() or list(Path(self.root).iterdir()):self.refuse('Incomplete scratch lifecycle.')\n            self.active=False\n            return dict(result=True,events=self.events,owner_pid=self.pid,scratch_root=self.root,root_retained_empty=True,\n                        full_native_import_accepted=False,scientific_execution_accepted=False)\n        except BaseException as e:\n            self.refuse('Scratch callback failed: '+type(e).__name__)"
+    }
+  ],
+  "findings": [
+    {
+      "id": "exclusive_profile_owners",
+      "source_fact": "All three install methods require no existing profile and each installs its own bound profile method.",
+      "consequence": "Calling the existing install methods sequentially cannot yield three installed observers. A replacing dispatcher also fails their bound-method identity checks."
+    },
+    {
+      "id": "bridge_refuses_registration",
+      "source_fact": "Bridge audit refuses additional sys.addaudithook/sys.setprofile, and profile refuses native os.register_at_fork c_call.",
+      "consequence": "The bridge does not grant a registration observer an exception merely because its callback arguments are bound."
+    },
+    {
+      "id": "native_refuses_scratch",
+      "source_fact": "Native guard audit permits writing only at the exact package lock and refuses link/remove/rmdir; its mkdir route accepts only an existing package-lock parent.",
+      "consequence": "Scratch permission from another hook cannot undo the native hook refusal."
+    },
+    {
+      "id": "registration_refuses_scratch_and_lock",
+      "source_fact": "Registration audit refuses writes, filesystem mutations and fcntl routes.",
+      "consequence": "A second observer allowing scratch or package-lock operations cannot make the stack accept them."
+    },
+    {
+      "id": "native_environment_is_fourteen",
+      "source_fact": "Native guard check compares effective and kernel environments to its fixed fourteen-field environment() dictionary.",
+      "consequence": "The declared TMPDIR field must use a separate implementation; injecting this contract into the closed guard would refuse."
+    },
+    {
+      "id": "callback_shapes_and_internal_route",
+      "source_fact": "Registration binder only accepts FunctionType with no closure or positional defaults; original wrapper inventory has audit/fork/exit only.",
+      "consequence": "Bound Python/class/native lock methods, logging defaults, Random.seed closure and threading._register_atexit partial/list lifecycle need separate exact bindings."
+    },
+    {
+      "id": "scratch_run_replays_capability",
+      "source_fact": "FilelockScratch.run installs an audit hook and directly calls its supplied capability callback.",
+      "consequence": "The composed real import route must observe import-triggered entry/return; it must not invoke run() to replay that callback."
+    },
+    {
+      "id": "old_probe_disables_observers",
+      "source_fact": "The saved v2 probe exception/finally paths set guard.active=False and sys.setprofile(None), then use normal sys.exit on failure.",
+      "consequence": "Do not reuse that failure epilogue for a callback-bearing import. The prospective route keeps observers and uses a bounded diagnostic capability followed by os._exit, with all partial evidence retained. This is a future requirement, not a claim about old callback execution."
+    }
+  ],
+  "unchanged_stack_composable": false,
+  "dispatch_authorized": false,
+  "no_components_imported": true,
+  "no_definitions_executed": true,
+  "static_findings_only": true
+}

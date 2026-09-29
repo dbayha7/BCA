@@ -1,5 +1,33 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 03:40 UTC: fifteen-field launch declared; unchanged observer stack cannot compose
+
+A concrete prospective v3 contract now preserves the old fourteen environment
+fields and adds only TMPDIR, naming fresh worker-owned scratch and diagnostic
+roots. Creation, ownership, exact capability cleanup, finalizer detach, bounded
+diagnostics, first-refusal retention and os._exit epilogues are explicit. Both
+roots were absent at the dated03:33:16UTC read-only snapshot; neither was created.
+
+Separate saved-byte/AST review exited0 and verified eight composition conflicts:
+three exclusive profile owners, incompatible registration/scratch/package-lock
+policies, the old fourteen-field environment check, unsupported callback forms,
+scratch.run's direct callback invocation and the old probe's observer-deactivating
+epilogue. Closed guards cannot be stacked unchanged. A new unified source-bound
+dispatcher and shared first refusal are required; no old guard was weakened.
+
+The declaration is not dispatchable: actual entry-point/observer hashes remain
+null. Review accepted the declaration/static findings only, not an implemented
+route or launch prereview. No15-field profile or target import ran. Real live
+code/global/native/state/alias/bootstrap and worker-owned lifecycle integration,
+then independent exact-route prereview, remain required before one new observation.
+Target audit effectiveness remains separate from registration return evidence.
+
+All closed sources/receipts and40held key tables are unchanged. No new test suite,
+closed review/probe rerun, cluster probe, model, lease, ledger or physics occurred.
+Training remains14runs/seven pairs, both ReBRAC cells3/5. The02:24:54UTC cluster
+snapshot remains historical. No queue changes or new scientific acceptance.
+[Exact declaration and composition findings](../outputs/ood/robustness-v2/native-import-v3-declaration-v1/README.md).
+
 ## September 29, 03:18 UTC: concrete stdlib hook and finalizer bindings identified
 
 Source review along actual filelock import leads found additional obligations:
