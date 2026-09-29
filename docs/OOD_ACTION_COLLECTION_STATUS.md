@@ -1,5 +1,21 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September29,00:02UTC: installed native import prerequisites inspected
+
+The existing CPU extension and an explicit installed GLFW target have saved ELF
+dependency listings,54 source pins and24 resolved library paths, independently
+reviewed with actualexit0. Ordinary GLFW discovery can spawn subprocesses;
+the saved12-field native environment proposal names one installed library.
+That proposal was not launched. No native Python import, model, simulator,
+package/shared lock acquisition, key generation or physics occurred.
+
+The source inventory and declared ELF dependencies do not accept the complete
+transitive import graph, ABI, automatic-rebuild refusal or scientific execution.
+The prior numeric profile and failed key-producer execution hold are unchanged.
+One review-selector error is retained with its separate corrected review; no
+inspection or closed audit was rerun.
+[Exact scope and evidence](../outputs/ood/robustness-v2/native-import-prerequisites-v1/README.md).
+
 ## September28,23:37UTC: exact numeric import environment accepted
 
 An explicitly versioned eight-field profile passed a real CPU Python/NumPy/JAX
