@@ -1,5 +1,47 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 05:08 UTC: concrete parent release/completion protocol; actual route held
+
+A new parent/worker protocol composes with the unchanged closed v4 dispatcher.
+It independently observes actual Linux PID/parent/start/session/group/argv and
+exact15-field fixture environment before release and before completion ack,
+checks retained diagnostic file names/descriptors/bytes, and requires a matching
+worker acknowledgment plus actual exit0. Intents are fsynced before send;
+stdout/stderr are bounded8MiB each with a declared180s timeout. Only the released
+worker creates diagnostics and scratch. Both epilogues retain observers and use
+captured native os._exit. The full production purpose is refused before launch.
+
+Final23 new isolated fixtures passed0/no skips at04:55:29UTC. Seventeen children:
+three actual0 (two completed, one unacknowledged0 refused), eight expected1,
+one deliberate23 retaining the31-byte fsynced bootstrap marker, five identified
+private-group SIGTERM/-15 cases. Six refusals occurred before launch. Both8MiB
+overflow logs remain local; only hashes/metadata are exported and unread excess
+bytes remain unavailable. The0.5s timeout fixture explicitly shortens the180s
+ceiling. These are protocol fixtures, not scientific/native failures.
+
+Separate stdlib saved-byte review0 checked469 retained files and packages279
+small exact-byte records without component import or replay. Four full capability
+journals retain twelve scratch audit events, natural finalizer detach and52 native
+entry/return pairs total; C args remain null. A fifth capability precedes the
+wrong-result refusal in the pinned route, but its final lifecycle journal is
+unavailable. The protocol does not save a dynamic diagnostic fsync-operation
+journal; fsync-before-ack ordering is source verified, not power-loss proof.
+
+The original17-test pass retains two null child exits after a /proc PermissionError
+during stop handling; the precise access-error cause remains unknown. A separate
+source version adds bounded natural reap and six cases. New children have actual1
+exits; old null receipts remain unchanged. No preimplementation red is claimed.
+
+This fixture protocol does not implement full filelock/native registration/state,
+complete source/global/native graph, cached builder/package-lock route or actual
+entrypoint. Production remains unlaunched/not dispatchable. Both real roots were
+absent at05:05:39UTC, a dated snapshot only. Full actual-route implementation and
+independent prereview remain required before one versioned import-only observation.
+Prior sources/receipts, training, original plan/amendment and40held key tables are
+unchanged. No closed tests/probes/key reviews, cluster probe, model, simulator,
+lease, ledger or physics. Training14runs/seven pairs and all holds persist.
+[Protocol, saved review and limits](../outputs/ood/robustness-v2/native-import-protocol-v1/README.md).
+
 ## September 29, 04:41 UTC: unified capability and finalizer composition; real route held
 
 A separately versioned dispatcher composes child-owned bootstrap, exact saved
