@@ -1,5 +1,34 @@
 # Standard BCA: execution status
 
+## September 29, 02:29 UTC: third ReBRAC Walker2d training pair accepted
+
+Seed202609173 host/BCA saved training evidence passed fixed-order CPU audits and
+independent arithmetic/export review, all actual0. Fourteen of280 physical runs
+(14/315 actors), seven training pairs, are accepted. Both ReBRAC Hopper and
+Walker2d now have3/5 paired training seeds; all5 remain required.
+
+Final normalized host 45.2889322, BCA 78.9288721,
+difference +33.6399399; periodic-curve host 73.3720495,
+BCA 75.0450822, difference +1.6730327.
+BCA wins 13/20 final paired episodes, zero ties. The host
+final scores vary widely (episode SD 39.1199, BCA
+15.0166). Prior Walker final differences were
++4.9805 and -2.9879; this third contrast is +33.6399. All episodes and declared
+seeds remain included. No training-seed interval, reliable general benefit or
+OOD-action conclusion is claimed.
+
+The02:24:54UTC bounded cluster snapshot confirms job27045057/str-gpu13,
+controller763309 and worker870231 command/start/group identities.62/140 closures
+(32ReBRAC/30IQL;28 first,28 second,6 third seed) all have worker0/learner completed.
+After this acceptance,50 cluster closures await independent audits. The current
+worker is iql-walker2d-host-s202609173, with no numeric step in the bounded
+recent-event summary; current worker/controller actual exits remain pending.
+Queues and holds unchanged. The initial02:22:08UTC snapshot with61 closures and
+BCA975k is retained. Both fixed runs closed before inspection and audit.
+
+[Pair readout](../outputs/standard_bca/rebrac/walker2d/bca_noiw/s202609173/README.md),
+[independent validation](validation/standard-third-rebrac-walker-pair.json).
+
 ## September 29, 01:23 UTC: third ReBRAC Hopper training pair accepted
 
 Seed202609173 host/BCA saved training evidence passed separate CPU audits in fixed

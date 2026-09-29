@@ -1,5 +1,36 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 02:29 UTC: seventh training pair accepted; native/OOD execution held
+
+ReBRAC Walker2d seed202609173 host/BCA passed saved-input CPU audits and independent
+export review. Final normalized means 45.2889322 versus
+78.9288721; BCA-minus-host +33.6399399. Periodic
+curve difference +1.6730327; 13/20 final paired
+episodes favor BCA. This is training evidence, not an OOD-action result. Fourteen
+runs/seven pairs accepted; ReBRAC Hopper and Walker2d each3/5 paired training seeds.
+
+All closed v2 sources/receipts, original plan, approved amendment, failed native
+probes and held40 key tables remain unchanged. Latest conditional filelock source
+graph and bridge fixture evidence remain closed. Source-only predictions do not
+accept live registrations or native execution. Real integration must bind the
+_api audit callback's captured keyword defaults and three fork callbacks/shared
+state, _read_write fork callback/state, _soft_rw atexit callback/registries, and
+the relevant live stdlib code/global graph plus explicit current source aliases.
+Compose these with the exact observed scratch entry/exit and native build/cache/
+package-lock refusal route. An explicit15-field TMPDIR/worker-owned fresh scratch
+contract and independent prereview are still required before ONE new versioned
+import-only observation. No15-field real profile or native acceptance exists.
+
+No native probe, model/physics/learner, new OOD keys, scientific lease, archive or
+extension ledger ran. Full storage/ownership/native engineering and pair-wide OOD
+science gates remain. At02:24:54UTC the cluster had62 closures;50 remain unaudited
+after this pair acceptance. Native integration remains the priority. The next
+fixed training audit alternative is ReBRAC Hopper seed202609174, host then BCA,
+only after both close and bounded current identity is checked. No queue changes,
+retuning, seed substitution or closed audit/test rerun.
+
+[Pair readout](../outputs/standard_bca/rebrac/walker2d/bca_noiw/s202609173/README.md).
+
 ## September 29, 02:07 UTC: conditional hook source graph corrected before actual import
 
 Separate source review confirms `_read_write` registers its SQLite audit callback
