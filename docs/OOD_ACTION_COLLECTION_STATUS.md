@@ -1,5 +1,21 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September29,00:20UTC: cached native import probe stopped during NumPy
+
+The single instrumented import-only child exited1 before reaching JAX or MuJoCo.
+The guard refused NumPy startup's temporary environment mutation. Installed source
+sets absent OPENBLAS_MAIN_FREE/GOTOBLAS_MAIN_FREE to1 and later removes them;
+the exact blocked argument was not saved because a poison check masked the first
+message. Raw failure evidence and the separate saved-evidence review(actual0) are
+retained. Twenty-four new guard tests passed; no real probe retry occurred.
+
+Earlier numeric acceptance remains limited to its four recorded stage snapshots;
+it does not establish absence of intermediate environment changes. No native
+model, simulator, key, physics or package/shared lease was used. Native/scientific
+execution and prior saved-key holds remain. Any revised contract/guard requires
+separate versioning and independent review before a new observation.
+[Failure evidence and exact limits](../outputs/ood/robustness-v2/native-import-refusal-v1/README.md).
+
 ## September29,00:02UTC: installed native import prerequisites inspected
 
 The existing CPU extension and an explicit installed GLFW target have saved ELF
