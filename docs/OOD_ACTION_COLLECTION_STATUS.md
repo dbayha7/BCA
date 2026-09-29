@@ -1,3 +1,26 @@
+# September 29, 08:09 UTC: throughput measured; five next-pair query gates passed
+
+A bounded synthetic storage test measured shared sequential writes at **5.22x
+the local SQLite rate and 21.80x the cluster SQLite rate**. Required synthetic
+records and charged/pending crash dispositions survived independent saved-byte
+checks. This is a storage-only result; a faster scientific worker has not yet
+been integrated or dispatched. Both original OOD workers remain unchanged.
+
+CPU checkpoint queries for ReBRAC Hopper seeds 172/173 and Walker2d seeds
+171/172/173 (full seeds 202609172/173 and 202609171/172/173) all exited 0 with exact
+actor outputs and saved target/width/dose checks. They performed no simulator
+steps or training updates. A disjoint allocation proposal and concrete outcome
+audit schedule are saved; real allocation/storage/simulator gates remain.
+
+[Measured rates, scope and next execution steps](../outputs/ood/robustness-v2/throughput-preparation-v1/README.md).
+
+The local worker had 27/512 completed panels at 08:09 UTC; cluster collection
+had reached 36,202 explicit transitions. Both actual exits remained pending,
+with original process identities and source hashes matched. No completed revised
+OOD comparison or BCA benefit is claimed.
+
+---
+
 # September 29: real OOD collection on local and cluster workers
 
 Two revised pairs are now running: **TD3+BC Hopper locally** and **ReBRAC Hopper

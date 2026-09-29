@@ -1,0 +1,64 @@
+{
+  "schema": "ood-parallel-allocation-proposal-v1",
+  "status": "PROPOSED_NOT_PHYSICS_DISPATCH_ACCEPTED",
+  "original_environment_cap": 39998400,
+  "closed_ancestor_reserved": 1298353,
+  "local_owner": "td3_bc",
+  "local_half_max": 18395680,
+  "cluster_owner": "rebrac",
+  "cluster_half_max": 18395680,
+  "cluster_phase_max_per_pair": 1837568,
+  "cluster_phase_max_all_ten": 18375680,
+  "engineering_by_cell": {
+    "hopper": 10000,
+    "walker2d": 10000
+  },
+  "legacy_hopper171_engineering_entitlement_retained": 10000,
+  "unstarted_hopper_engineering_currently_allocated": 0,
+  "walker_engineering_proposed_per_seed": 2000,
+  "walker_seeds": [
+    202609171,
+    202609172,
+    202609173,
+    202609174,
+    202609175
+  ],
+  "duplicate_pair_blocked": [
+    "rebrac",
+    "hopper",
+    202609171
+  ],
+  "currently_training_accepted_unstarted": [
+    [
+      "rebrac",
+      "hopper",
+      202609172
+    ],
+    [
+      "rebrac",
+      "hopper",
+      202609173
+    ],
+    [
+      "rebrac",
+      "walker2d",
+      202609171
+    ],
+    [
+      "rebrac",
+      "walker2d",
+      202609172
+    ],
+    [
+      "rebrac",
+      "walker2d",
+      202609173
+    ]
+  ],
+  "required_before_hopper_parallel_physics": "Independently bind first worker engineering phase closed and its actual reserved engineering totals; explicitly repartition unused entitlement without refunding calls.",
+  "required_before_any_parallel_physics": [
+    "Atomic persistent allocation claim and duplicate exclusion across legacy/new routes.",
+    "Pair lease exclusion/death tests and cumulative per-pair cap; failed claims are never silently reopened.",
+    "Accepted checkpoint query, selected storage integration and live actor/restore/reward gates."
+  ]
+}
