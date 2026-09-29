@@ -1,5 +1,20 @@
 # Standard BCA: execution status
 
+## September 29, 09:05 UTC: separate CQL data-wrapper correction dispatched
+
+The initial recovery clusterjob27068516 stopped before any learner/model/fixture
+execution. Its data wrapper called a TD3/ReBRAC-only helper on CQL after passing
+all seven TD3 cells. All original bytes and actual exit1 remain preserved.
+Job27068529 now owns the unchanged137-row manifest in a separatev2 root. It
+reuses the seven pinned TD3 acceptances and applies CQL's own exact preparation
+contracts and original CQL fingerprint to the remaining seven cells. All
+scientific sources, settings and numerical gates remain unchanged.
+
+[Execution correction and actual-attempt records](../experiments/standard_bca/cql_validation_recovery/v2/README.md).
+The saved CQL host acceptance below remains valid; this was a new preflight
+wrapper failure, not another failed training run. Training starts only after
+the v2 data/GPU gates pass.
+
 ## September 29, 08:56 UTC: CQL result recovered; untouched queue delegated
 
 The CQL validation bug is fixed. Its episode fields are `score`/`return`, while

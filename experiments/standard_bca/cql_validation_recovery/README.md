@@ -1,5 +1,9 @@
 # CQL validation correction: untouched 137-row continuation
 
+**Current execution is [v2, job27068529](v2/README.md).** The initial job27068516
+described below stopped at a data-preflight wrapper mismatch before training.
+Its original execution package and failure are retained unchanged.
+
 This is an execution amendment to the September 27 standard/no-IW BCA manifest.
 Every one of the 137 remaining scientific rows is byte-for-byte equivalent as
 parsed JSON to the original local lane after its first three rows. Only

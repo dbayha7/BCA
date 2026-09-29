@@ -56,7 +56,10 @@ directory; both attempts remain. Neither event executed a scientific retry.
 The original 137 unstarted TD3+BC/CQL rows are frozen in an execution-only
 [continuation package](../../../../../../../experiments/standard_bca/cql_validation_recovery/README.md).
 The two completed TD3 runs and this recovered CQL host are excluded.
-Cluster job **27068516** owns this queue exclusively; the existing ReBRAC/IQL
+Cluster job **27068529** now owns this queue exclusively; its predecessor
+27068516 stopped before training at a separately documented data-check wrapper
+mismatch. [Execution v2](../../../../../../../experiments/standard_bca/cql_validation_recovery/v2/README.md)
+corrects that wrapper and reuses the seven passed TD3 checks. The existing ReBRAC/IQL
 job **27045057** continues unchanged. Both have separate A100 allocations.
 The local launch guard was safely blocked by the running CPU OOD worker's shared
 lock. That lock and worker were left intact, and the local queue now has a durable
