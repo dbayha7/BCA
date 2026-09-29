@@ -1,5 +1,31 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September 29, 02:59 UTC: actual registration arguments verified in synthetic fixtures
+
+A new observer captures the actual audit/fork/shutdown callback arguments and
+ordered keywords before forwarding the original objects once to native APIs.
+Forty new isolated tests and separate saved-evidence review passed, including
+exact saved installed callback/helper text in a registered synthetic module.
+The two successful observations each record four requests and twelve entry/return
+events; the other 38 fixtures verify expected persistent refusals. The earlier
+31-test development pass and both exact code versions are retained.
+
+An explicit suppression fixture establishes the limit: normal native audit-hook
+registration return does not certify target installation. A private canary checks
+the observer's own hook only. Target effectiveness, the real package namespace,
+full live code/global/state graph, fork/shutdown lifecycle and composition with
+the old scratch/native guards remain unaccepted. No callback was replayed; no
+full filelock/JAX/MuJoCo import or new native probe ran. All closed evidence is
+unchanged, and no 15-field launch profile was executed.
+
+Next bind the real callback/state graph and shared stdlib aliases, compose the
+observers into the actual native refusal route, and prereview an explicit TMPDIR
+and fresh worker-owned scratch contract before one versioned import-only
+observation. Training remains fourteen runs/seven pairs; the dated 02:24:54 UTC
+cluster snapshot remains 62 closures/50 pending audits. No cluster probe, key
+regeneration, scientific lease, model or physics occurred this turn.
+[Component evidence and limits](../outputs/ood/robustness-v2/filelock-registration-arguments-component-v1/README.md).
+
 ## September 29, 02:29 UTC: seventh training pair accepted; native/OOD execution held
 
 ReBRAC Walker2d seed202609173 host/BCA passed saved-input CPU audits and independent
