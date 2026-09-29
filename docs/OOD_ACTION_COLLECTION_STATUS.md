@@ -1,5 +1,21 @@
 # Action-level OOD: stream amendment approved; execution checks pending
 
+## September29,00:44UTC: NumPy startup passed; JAX dependency write refused
+
+The separately versioned14-field contract completed Python and NumPy stages.
+The one import-only child then exited1 during JAX import when filelock's module-level
+temporary-file capability probe hit the unchanged write restriction. No MuJoCo,
+model, simulator, key, physics or package/shared lease was used. Thirty new tests
+passed; the first refusal message is preserved, while the exact temporary filename
+was not recorded. Separate saved-evidence review exited0. Neither failed probe
+was rerun; all previous profiles and failed key outputs remain unchanged/held.
+
+The installed filelock temporary-directory/hard-link lifecycle now needs explicit
+source/storage/ownership review before any new observation. Native/scientific
+acceptance remains false. Source-only inspection preserved an initial hard-link
+assertion failure and a separate successful inventory recording the actual links.
+[Evidence and remaining gates](../outputs/ood/robustness-v2/native-import-refusal-v2/README.md).
+
 ## September29,00:20UTC: cached native import probe stopped during NumPy
 
 The single instrumented import-only child exited1 before reaching JAX or MuJoCo.

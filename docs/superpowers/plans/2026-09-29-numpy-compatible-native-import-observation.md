@@ -1,0 +1,9 @@
+# Explicit NumPy startup contract and retained native-import refusals
+
+1. Preserve the closed 12-field refusal and all previous sources/receipts. Create a separately named v2 guard with exactly two additional launch fields: OPENBLAS_MAIN_FREE=1 and GOTOBLAS_MAIN_FREE=1. Bind the saved NumPy startup source; no environment mutation is permitted to introduce these fields after launch.
+2. Retain the first refusal message and environment audit arguments before poison checks. Test actual audit/profile interaction, missing/changed startup fields, repeated poison checks, and the inherited cached-loader/package-lock restrictions using only synthetic files/children. Do not rerun closed suites.
+3. Independently review the new contract, exact source changes, saved NumPy branch, new tests and single import-only route. Only after this review may one newly versioned observation launch. Preserve every exit/output on failure; no retry of either version.
+4. Review saved process identity, environment stages, audit diagnostics, module/maps inventory and source hashes independently. Acceptance, if any, is limited to the observed import route. No model, simulator, keys, original scientific lease, extension or physics is authorized here.
+5. Verify immutable evidence, publish only owned small source/receipts, retain unrelated weighted-conformal files, verify actual push/remote/exact blobs, and update the active heartbeat with guarded current-byte preservation. Routine preparation remains quiet; a genuinely new runtime refusal is reported once.
+
+Remaining engineering gates include full transitive execution graph, native fields/context managers, storage, worker-owned original shared lease, only-route integration and separate engineering/science reviews. The original scientific capsule and failed key producer remain unchanged.
