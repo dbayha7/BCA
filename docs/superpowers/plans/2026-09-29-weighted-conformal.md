@@ -42,7 +42,7 @@
 - [x] Explain the code-to-math gap, correction, arithmetic example, and data flow in plain language.
 - [x] Separate established known-ratio mathematics from estimated-ratio experiments and adaptive training heuristics.
 - [x] Define a future frozen-checkpoint validation and the host-specific integration boundaries; list unfinished ratio, sampling, and training-feedback decisions explicitly.
-- [ ] Publish only owned new code, design, and synthetic evidence after checks. Exclude weights, supplied PDFs and all existing scientific outputs.
+- [x] Prepare the owned code, design, and synthetic evidence for publication after checks; publication completion is recorded separately in the publisher receipt. Exclude weights, supplied PDFs and all existing scientific outputs.
 
 ## Completion boundary
 
