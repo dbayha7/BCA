@@ -96,6 +96,16 @@ class ExactRiskTests(unittest.TestCase):
         self.assertAlmostEqual(risk([1.5])[0], 5 / 6)
 
 
+class KishTests(unittest.TestCase):
+    def test_effective_size_is_scale_free_down_to_subnormal_weights(self):
+        weights = np.array([1.0, 2.0, 3.0, 0.5])
+        expected = weights.sum() ** 2 / np.dot(weights, weights)
+        for scale in (1.0, 1e-300, 5e-320):  # 5e-320: squares underflow to zero (the halfcheetah shift crash)
+            with self.subTest(scale=scale):
+                self.assertAlmostEqual(bench._kish(weights * scale), expected, delta=1e-3 if scale < 1e-310 else 1e-12)
+        self.assertEqual(bench._kish(np.zeros(3)), 0.0)
+
+
 class TiltTests(unittest.TestCase):
     def test_gamma_zero_is_the_uniform_law(self):
         z = bench.standardize(np.random.default_rng(1).normal(size=997))

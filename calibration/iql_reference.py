@@ -262,9 +262,19 @@ class PreparedData(NamedTuple):
     withheld_indices: object = None  # every row of the reserved episodes; none trains
 
 
-def prepare_dataset(args, converted, raw):
+def prepare_dataset(args, converted, raw, *, population_split=False):
+    """Reserve whole episodes, then transform the rows with training-only statistics.
+
+    population_split=True is for population splits ONLY (experiments/wbcp/freeze_iql.py):
+    the reservation runs with rows_per_episode=None, so every row of the withheld
+    episodes is returned as `calibration`, and the declared K is unused. It is never a
+    WBCP calibration bank (whole episodes break the guarantee, DEPENDENCE.md); the
+    runtime and train.py never pass it, and verify_data_partition rejects its record.
+    """
     a = args.posterior
     a.validate()
+    if population_split and not a.reserve_size:
+        raise ValueError("a population split needs a positive reserve_size")
     n = len(converted["rewards"])
     ids = POST.qlearning_episode_ids(raw)
     if ids is not None and len(ids) != n:
@@ -290,7 +300,7 @@ def prepare_dataset(args, converted, raw):
             done,
             a.reserve_size,
             a.reserve_seed,
-            rows_per_episode=a.reserve_rows_per_episode,
+            rows_per_episode=None if population_split else a.reserve_rows_per_episode,
             max_fraction=a.reserve_max_fraction,
             episode_ids=ids,
         )

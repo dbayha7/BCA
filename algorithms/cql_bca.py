@@ -87,11 +87,18 @@ def select_training_pool(dataset, arm, training_indices=None):
 
 
 def reserve_pool(
-    dataset, target_size, seed, rows_per_episode, *, max_fraction=0.25, episode_ids=None
+    dataset, target_size, seed, rows_per_episode, *, max_fraction=0.25, episode_ids=None,
+    population_split=False,
 ):
-    """(training, withheld, calibration, metadata); see calibration/reference.py."""
-    if rows_per_episode is None:  # whole episodes are a population split, not a WBCP bank
-        raise ValueError("CQL's WBCP bank requires a positive integer rows_per_episode")
+    """(training, withheld, calibration, metadata); see calibration/reference.py.
+
+    rows_per_episode=None is accepted only with population_split=True: whole withheld
+    episodes, every row returned, to split a dataset into populations
+    (experiments/wbcp/freeze_cql.py). It is never a WBCP bank.
+    """
+    if (rows_per_episode is None) != bool(population_split):
+        raise ValueError("CQL's WBCP bank requires a positive integer rows_per_episode; "
+                         "None is only for an explicit population split")
     return reserve_calibration(
         dataset.obs, dataset.next_obs, dataset.done, target_size, seed, rows_per_episode,
         max_fraction=max_fraction, episode_ids=episode_ids,
