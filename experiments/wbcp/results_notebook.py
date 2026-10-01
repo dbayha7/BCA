@@ -34,6 +34,9 @@ own synthetic experiments (section 9).
   - Uniform BCA: WBCP with equal weights (BQ-CP), today's BCA calibration.
   - WBCP: with weights estimated by a classifier, or with the exact weights.
   - RCPS: a conservative frequentist baseline.
+- **Layout of each section.** The question, what each change did, what was expected before its runs (summarized
+  from the timestamped expectation files listed under Provenance), then the answer and the verdict against that
+  expectation.
 
 **Sections.**
 1. Setup and data
@@ -173,23 +176,40 @@ display(table([[k, p["rows"]["population"], p["rows"]["population_episodes"], p[
 6. **WBCP's excess under strong shift is small and finite-sample.** It comes from heavy weights on the misses,
    shrinks as banks grow, and matches what the paper itself reports.
 
-| Change | Question | Verdict | Key result |
-|---|---|---|---|
-| 1 | Do whole-episode banks keep the guarantee? | not pre-registered | 28.0% fail with no shift (independent rows 4.9%) |
-| 2 | Does within-episode dependence explain it? | mostly (retrodiction) | predicted 26.1% against 28.0% observed |
-| 3 | Does a bigger whole-episode bank help? | yes; raw score mostly | 26.4-27.8% from 1,103 to 11,500 rows |
-| 4 | Does thinning to K rows per episode fix it? | largely | K=5 5.2%, K=10 5.7%, K=25 8.0% |
-| 5 | Does the shift picture survive thinning? | partly | K=5 held; K=10 missed under the density tilt |
-| 6 | Does spacing rows apart help? | mostly | spaced K=25 6.4% against random 8.0% |
-| 7 | Does spaced K=10 hold under shift? | yes on the main part | density 6.7% / 10.1%: spacing did not fix it |
-| 8 | Does spaced K=5 hold under shift? | yes | WBCP 5.2-8.5%; uniform BCA 26-98% |
-| 9 | Does BCA's implementation behave as validated? | mostly | 5.0% without shift; all shift ranges met |
-| 10 | Does it transfer to other datasets? | partly | ρ 0.11-0.12; K=5 fails 6-8%; shift expectation failed |
-| 11 | Why does WBCP exceed 5% under strong shift? | mostly | finite-sample; excess 2.6-2.9 → 1.0 points over 8× n |"""),
+| Change | What changed | Question | Verdict | Key result |
+|---|---|---|---|---|
+| 1 | Banks drawn as whole episodes, as BCA reserved them | Do whole-episode banks keep the guarantee? | not pre-registered | 28.0% fail with no shift (independent rows 4.9%) |
+| 2 | Measured within-episode correlation and predicted failure from it | Does within-episode dependence explain it? | mostly (retrodiction) | predicted 26.1% against 28.0% observed |
+| 3 | Whole-episode banks of 1,103 to 11,500 rows | Does a bigger whole-episode bank help? | yes; raw score mostly | 26.4-27.8% from 1,103 to 11,500 rows |
+| 4 | K random rows from each of many episodes | Does thinning to K rows per episode fix it? | largely | K=5 5.2%, K=10 5.7%, K=25 8.0% |
+| 5 | Shift sweep rerun with K = 5 and K = 10 banks | Does the shift picture survive thinning? | partly | K=5 held; K=10 missed under the density tilt |
+| 6 | K rows spaced evenly through each episode | Does spacing rows apart help? | mostly | spaced K=25 6.4% against random 8.0% |
+| 7 | Shift sweep with spaced K = 10 | Does spaced K=10 hold under shift? | yes on the main part | density 6.7% / 10.1%: spacing did not fix it |
+| 8 | Shift sweep with spaced K = 5 | Does spaced K=5 hold under shift? | yes | WBCP 5.2-8.5%; uniform BCA 26-98% |
+| 9 | BCA's own reservation now builds spaced K = 5 | Does BCA's implementation behave as validated? | mostly | 5.0% without shift; all shift ranges met |
+| 10 | Score pools and benchmarks for walker2d and pen-cloned | Does it transfer to other datasets? | partly | ρ 0.11-0.12; K=5 fails 6-8%; shift expectation failed |
+| 11 | Diagnostics only: risk percentiles, shuffled weights, per-bank posterior | Why does WBCP exceed 5% under strong shift? | mostly | finite-sample; excess 2.6-2.9 → 1.0 points over 8× n |"""),
 
 ("md", r"""## 3. Whole-episode banks (Changes 1-3)
 
 **Question.** Does BCA's original bank, whole held-out episodes, give the guarantee WBCP promises?
+
+**What each change did.**
+- Change 1: the benchmark draws a bank as whole episodes, until it has at least n rows, the way BCA's reservation
+  held out data, instead of n independent rows. No shift, 2,000 trials.
+- Change 2: `dependence.py` measures how strongly misses are correlated within an episode (ρ), turns that into a
+  design effect for each bank design, and predicts each design's failure rate from it.
+- Change 3: whole-episode banks of 1,103, 2,300, 4,600 and 11,500 rows (about 3, 6, 11 and 26 episodes), no shift,
+  4,000 trials. It tests the obvious fix, a bigger bank.
+
+**Expected before the run.**
+- Change 1: nothing written down. It is the only experiment run without a written expectation; at the time it
+  was only "some loss of validity", with no size.
+- Change 2: if within-episode dependence is the mechanism, the design effect of whole-episode banks should
+  reproduce the 28% already observed. The 28% was known, so this is a retrodiction.
+- Change 3 (`predictions.md`): flat at every bank size, because the design effect depends on rows per episode,
+  not on the number of episodes. 26-29% for the normalized score (Monte Carlo 26.0-26.3%) and 28-31% for the raw
+  score. The dashed line in the second figure is that prediction.
 
 **Answer.** No. About 28% of banks fail with no shift at all. Rows in one episode are correlated
 (ρ = 0.016), and over ~480 rows per episode that inflates the variance about 6.5×, while the posterior treats
@@ -263,6 +283,21 @@ display(table(rows, ["Score", "Target rows", "Mean bank", "Uniform BCA", "WBCP e
 
 **Question.** Does taking only K rows from each of many episodes restore validity, and does spacing them apart help?
 
+**What each change did.**
+- Change 4: a bank of n rows takes K rows from each of n/K episodes, drawn in proportion to episode length, with
+  the rows placed at random inside each episode. K = 1, 2, 5, 10, 25, 50 and 100 at n = 1,103, no shift, 4,000 trials.
+- Change 6: the same banks with the rows spaced out. Each episode is cut into K equal segments and one row is drawn
+  from each, so rows sit about L/K steps apart; the episodes drawn are unchanged.
+
+**Expected before the run.**
+- Change 4 (`predictions.md`): failure falls toward 5% as K shrinks, following each K's design-effect
+  prediction: 5.1% at K = 1, 5.7% at K = 5, 6.3% at K = 10, 8.5% at K = 25 and 16.2% at K = 100 (Monte Carlo,
+  normalized score).
+- Change 6 (`hopper-u100000-spacing/predictions.md`, 15:12 UTC): spacing gains nothing at K = 2, a little at
+  K = 5-10 and about a point at K = 25-50. For K = 2, 5, 10, 25 and 50, spaced banks were predicted to fail 5.1%,
+  5.1%, 5.7%, 7.3% and 10.1%, against 5.1%, 5.6%, 6.4%, 8.4% and 11.4% for random ones.
+- The dashed lines in the first figure are these predictions.
+
 **Answer.** Yes for small K. K ≤ 10 stays near 5% without shift, the threshold does not widen, and spacing
 (one row per K-th of the episode) helps at larger K. The cost is training data: every contributing episode
 leaves training (K = 5 withholds about 10-11% of hopper, K = 10 about 5%).
@@ -312,6 +347,29 @@ display(table(rows, ["K", "Score", "Random: predicted", "Random: uniform BCA", "
 ("md", r"""## 5. Distribution shift (Changes 5, 7, 8)
 
 **Question.** Does the WBCP-versus-uniform picture survive thinned banks, and which design holds under shift?
+
+**What each change did.** All three rerun the shift sweep (policy, density and state tilts at γ = 0.5 and 1) at
+n = 1,103 with a thinned bank in place of independent rows.
+- Change 5: random K = 5 and K = 10, 2,000 trials. It checks that the case for weighting survives thinned banks.
+- Change 7: spaced K = 10, against random K = 10 at the same seed, 4,000 trials. If it held, BCA could withhold half
+  as many episodes as with K = 5.
+- Change 8: spaced K = 5, the candidate design, 4,000 trials.
+
+**Expected before the run.**
+- Change 5 (`hopper-u100000/expectations_shift.md`, 14:43 UTC): thinning adds a design effect of about 1.07
+  (K = 5) or 1.15 (K = 10), so each Bayesian rule should fail about 0.5-1.5 points more than with independent rows,
+  and the picture should not change. Uniform BCA about 40-90% under density and state shift. WBCP about 5-6% at
+  density γ = 0.5, 8-9% at density γ = 1, about 9% at state γ = 0.5 and 5-6% under policy shift. A miss would mean
+  dependence interacts with the tilt, for example tilted mass concentrated in a few episodes.
+- Change 7 (`hopper-u100000-spacing/expectations_shift.md`, 15:12 UTC): spacing should *not* fix K = 10 under the
+  density tilt. The random K = 10 miss in Change 5 was traced to banks that miss a few sparse, high-risk episodes,
+  which depends on the number of distinct episodes (111), not on spacing. WBCP about 6.5-8% at γ = 0.5 and 9-11% at
+  γ = 1, at most about a point better than random K = 10. Under policy and state tilts, spaced K = 10 should behave
+  like random K = 5: about 4.5-5.5% (policy) and 7.5-9% (state γ = 0.5).
+- Change 8 (`hopper-u100000-spacing/expectations_strat5.md`, 15:22 UTC): spaced K = 5 has random K = 5's episode
+  count (221) and at least its no-shift validity, so WBCP should match random K = 5 within noise: density 5-6%
+  (γ = 0.5) and 8-9% (γ = 1), state γ = 0.5 7.5-9%, policy 4.5-5.5%. Uniform BCA still fails badly under density
+  and state shift.
 
 **Answer.**
 - Uniform BCA fails 25-98% under density and state shift, while WBCP stays at 4-9%.
@@ -376,6 +434,27 @@ display(table(rows, ["Tilt", "D at K=5", "D at K=10", "iid failure", "K=10 predi
 **Question.** Does BCA's own implementation of the thinned bank behave like the validated design, and what K does
 each config get?
 
+**What the change did.** Change 9 makes BCA's reservation build the spaced K = 5 design instead of whole episodes.
+- A shared sampler (`calibration/bank.py`) picks distinct episodes with probability proportional to their length
+  and takes one row from each of K equal segments. Every row of a withheld episode leaves training.
+- Every config declares its K. Banks outside the validated range (K ≤ 10 from at least 100 episodes) are flagged.
+- The benchmark then draws hopper banks with BCA's own sampler, with and without shift.
+
+**Expected before the run** (`hopper-u100000-reservation/expectations.md`, 17:15 UTC, before any code; addendum
+17:26 UTC, before any benchmark run).
+1. **Unit tests.** Training and withheld rows partition the data, the bank is a subset of the withheld rows, each
+   reserved episode gives min(K, L) rows (one per segment), and inclusion frequencies match their exact values.
+2. **Config K.** With the smallest K ≥ 5 that fits the cap, TD3+BC / ReBRAC / CQL get K = 5-6 except walker2d
+   (about 21) and pen-human (124). IQL gets about 18-19 on halfcheetah and hopper, 11 on pen-cloned and 64 on
+   walker2d. Outside the validated range: walker2d and pen-human for every host, and IQL halfcheetah, hopper and
+   pen-cloned.
+3. **BCA's sampler on hopper (K = 5).** 4.2-5.9% without shift. Under shift within noise of spaced K = 5
+   (Change 8) or lower: WBCP about 4.5-5.5% (policy), 5-6% (density γ = 0.5), 8-9% (density γ = 1) and 7.5-9%
+   (state γ = 0.5).
+4. **IQL on hopper (K = 18, n = 8,192).** About 5.5-7%, above 5%. The addendum noted that a bank covering about
+   44% of the pool varies less than a real deployment would, and split this into 4.9-6.5% for BCA's sampler and
+   5.8-7.4% for spaced rows drawn with replacement, with a real deployment in between.
+
 **Answer.**
 - On hopper, BCA's sampler (distinct episodes chosen in proportion to length, K spaced rows each) fails 5.0%
   without shift and meets every shift range.
@@ -420,6 +499,25 @@ display(table(rows, ["Dataset", "Hosts", "Bank target", "Cap", "K", "Episodes", 
 ("md", r"""## 7. Other datasets (Change 10)
 
 **Question.** Does hopper's answer (K = 5) carry over to walker2d-medium-replay and pen-cloned?
+
+**What the change did.** Change 10 builds frozen score pools for two more datasets with hopper's recipe:
+walker2d-medium-replay (151,195 rows in 528 episodes) and pen-cloned (248,165 rows in 1,887 episodes). On each it
+measures ρ and benchmarks the configured banks with and without shift. walker2d is the dataset whose K the
+withholding cap raised most; pen-cloned has both a validated config (K = 5) and a flagged one (IQL, K = 11).
+
+**Expected before the run** (`other-datasets/expectations.md`, written in stages).
+- **Stage A** (18:23 UTC, before the pools): ρ above hopper's 0.016 on both datasets, about 0.02-0.10.
+  walker2d-medium-replay is a replay buffer whose episodes come from policies at different stages of training;
+  pen-cloned mixes human demonstrations with rollouts of a cloned policy. Implied failure: walker2d's configured
+  K = 23 about 8-18% and IQL's K = 67 about 14-28%; pen-cloned K = 5 about 5.5-8% and K = 11 about 6.5-12%; whole
+  episodes at least as bad as hopper's 28%.
+- **Stage B** (18:49 UTC, after the pools, before any run): each thinned design within about ±2 points of its
+  Monte Carlo prediction for the same sampler (whole episodes and K = 67 within ±5); even K = 5 fails about 8-9% on
+  both datasets; under shift WBCP fails at least as often as without shift, and uniform BCA still fails badly under
+  density and state. The hollow diamonds in the "predicted against observed" figure are these predictions.
+- **Stage D** (19:24 UTC, after an observation that was not pre-registered: estimated-weight WBCP failed 14.9% on
+  walker2d with no shift at n = 8,192, against 4.2% with exact weights): if the cause is noise in the weight model,
+  fitting it on 10× the samples should bring it to about 5-9%. If it stays near 15%, the explanation is wrong.
 
 **Answer.**
 - No. ρ is 0.120 on walker2d and 0.108 on pen-cloned, about 7× hopper's.
@@ -519,6 +617,29 @@ display(table(rows, ["Dataset", "Tilt", "γ", "λ*", "ρ of misses", "ρ of weig
 ("md", r"""## 8. WBCP under strong shift (Change 11)
 
 **Question.** Why does WBCP fail 7-9% under strong shift on hopper, even with independent rows and exact weights?
+
+**What the change did.** Change 11 leaves WBCP unchanged and adds four diagnostics:
+- the 95th and 99th percentiles of each bank's realized risk, and the mean excess over α among failing banks;
+- a shuffled-weight control that keeps a tilt's weights but breaks their link to the score;
+- a per-bank view of the WBCP posterior at the true threshold λ*;
+- the slack η_n of the paper's Theorem 4 for these weights.
+
+They run as a bank-size sweep (A), the shuffled control (B) and the per-bank analysis (C).
+
+**Expected before the run** (`hopper-u100000-weighting/expectations.md`, 18:23 UTC, before any code or run).
+- **Theory.** Theorem 4's slack η_n exceeds α at these bank sizes, so 8% failure breaks no theorem.
+- **Hypothesis.** Under a tilt aligned with the score, a few heavy-weight misses dominate the risk. A bank holding
+  few of them reports both a low risk and too small a spread, and certifies too low a threshold. The error is
+  finite-sample and should shrink about as 1/√n; a bias would leave it flat.
+- **A, bank size.** Exact-weight WBCP falls along stated paths, shaded in the first figure: 7.4%, 6.7%, 6.2% and
+  5.9% for density γ = 1 and 8.0%, 7.1%, 6.5% and 6.1% for state γ = 0.5 from n = 1,103 to 8,824, each ±0.8 points.
+  The policy control stays at 4.2-5.8%. At n = 1,103 under density γ = 1: 95th percentile of risk 9.8-10.3%, 99th
+  10.3-11.2%, mean excess among failing banks 0.3-1.0 points, all shrinking with n.
+- **B, shuffled weights.** Same weight spread, no link to the score: λ* stays near the uniform 1.064 and
+  exact-weight WBCP fails 4.0-6.0%.
+- **C, per bank.** Failure read off the posterior at λ* matches the benchmark; the mean posterior SD matches the
+  across-bank SD within 0.9-1.1; in the aligned case only, failing banks' posterior SD is at most 0.8 of the true
+  spread, and corr(R̂, SD) is clearly stronger than in the controls.
 
 **Answer.** It is finite-sample behaviour that the paper allows and also reports.
 - **What drives it.** Heavy weights (33-39× the mean) that sit on the misses. A bank that misses those few rows

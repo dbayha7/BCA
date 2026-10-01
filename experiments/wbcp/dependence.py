@@ -85,6 +85,20 @@ def monte_carlo_design_effect(indicator, groups, design, n, banks, seed):
     return float(rates.var(ddof=1) / (p * (1 - p) / sizes.mean())), float(sizes.mean())
 
 
+def num(value, spec):
+    return "n/a" if value is None else format(value, spec)
+
+
+def finite_or_none(value):
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {k: finite_or_none(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [finite_or_none(v) for v in value]
+    return value
+
+
 def predicted_failure(design_effect, beta):
     return float(stats.norm.sf(stats.norm.isf(1 - beta) / math.sqrt(design_effect)))
 
@@ -166,6 +180,7 @@ def main(argv=None):
             ))
         report["scores"][name] = entry
 
+    report = finite_or_none(report)  # e.g. a lag correlation with no variation on a tiny pool
     os.makedirs(args.output)
     with open(os.path.join(args.output, "predictions.json"), "x") as handle:
         json.dump(report, handle, indent=1, allow_nan=False)
@@ -173,8 +188,8 @@ def main(argv=None):
              f"Pool: {pool.size} rows, {int(lengths.size)} episodes, mean length {lengths.mean():.1f} "
              f"(size-biased {size_biased_length:.1f}). Dataset: {total_rows} rows, {total_episodes} episodes.", ""]
     for name, entry in report["scores"].items():
-        lines += [f"## {name} score: lambda* = {entry['lambda_star']:.4f}, rho(I) = {entry['icc']:.4f}, "
-                  f"rho(score) = {entry['icc_score']:.4f}", "",
+        lines += [f"## {name} score: lambda* = {num(entry['lambda_star'], '.4f')}, rho(I) = {num(entry['icc'], '.4f')}, "
+                  f"rho(score) = {num(entry['icc_score'], '.4f')}", "",
                   "lag correlation of I: " + ", ".join(f"{k}: {v:.3f}" for k, v in entry["lag_correlation"].items()
                                                        if v is not None), "",
                   "| design | n | rows/episode | D (ICC) | D (MC) | predicted failure (ICC / MC) | episodes reserved | share of dataset |",
@@ -182,8 +197,9 @@ def main(argv=None):
         for row in entry["designs"]:
             icc = "n/a" if row["design_effect_icc"] is None else f"{row['design_effect_icc']:.2f}"
             icc_fail = "n/a" if row["predicted_failure_icc"] is None else f"{100 * row['predicted_failure_icc']:.1f}%"
+            mc_fail = "n/a" if row["predicted_failure_mc"] is None else f"{100 * row['predicted_failure_mc']:.1f}%"
             lines.append(f"| {row['design']} | {row['n']} | {row['rows_per_episode']:.1f} | {icc} | "
-                         f"{row['design_effect_mc']:.2f} | {icc_fail} / {100 * row['predicted_failure_mc']:.1f}% | "
+                         f"{num(row['design_effect_mc'], '.2f')} | {icc_fail} / {mc_fail} | "
                          f"{row['episodes_reserved']:.0f} | {100 * (row['reserved_share_of_dataset'] or 0):.1f}% |")
         lines.append("")
     with open(os.path.join(args.output, "predictions.md"), "x") as handle:

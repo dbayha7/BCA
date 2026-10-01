@@ -468,8 +468,13 @@ def run_trial(setup, n, trial):
 
 
 def _kish(weights):
-    total = float(weights.sum())
-    return total ** 2 / float(np.dot(weights, weights)) if total > 0 else 0.0
+    # scale-free, so divide by the largest weight first: a bank whose weights are all tiny next to
+    # the test mass (common_scale) would otherwise square them to zero
+    top = float(weights.max()) if weights.size else 0.0
+    if not top > 0:
+        return 0.0
+    scaled = weights / top
+    return float(scaled.sum()) ** 2 / float(np.dot(scaled, scaled))
 
 
 def _wbcp(scores, rng, scaled, options):

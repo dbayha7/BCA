@@ -50,7 +50,7 @@ h1 { font: 600 26px/1.15 var(--cond); letter-spacing: 0.01em; margin: 0; text-wr
 .tabs button:hover { color: var(--ink); }
 .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .tabs .num { font: 500 11px var(--mono); color: var(--muted); margin-right: 5px; }
-section.panel { padding-top: 26px; display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 160px; }
+section.panel { padding-top: 26px; display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 280px; }
 .lead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 900px; }
 .lead h2 { font: 600 22px/1.2 var(--cond); margin: 0; text-wrap: balance; }
 .lead p { margin: 0; max-width: 72ch; }
@@ -101,6 +101,54 @@ blockquote cite { display: block; color: var(--muted); font-style: normal; font-
 .copy { font: 500 11.5px var(--sans); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; cursor: pointer; margin-left: 6px; }
 .legend-note { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--muted); }
 .legend-note span::before { content: ""; display: inline-block; width: 18px; height: 0; border-top: 2px dashed var(--target); vertical-align: middle; margin-right: 6px; }
+.pipeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); gap: 12px; }
+.pipeline li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 13px 10px; display: flex; flex-direction: column; gap: 6px; transition: border-color .2s, background .2s; }
+.pipeline li.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--sunken); }
+.pipeline .num { font: 600 11.5px var(--mono); color: var(--muted); letter-spacing: 0.04em; }
+.pipeline li.done .num { color: var(--ok); }
+.pipeline li.active .num { color: var(--accent); }
+.pipeline h4 { margin: 0; font: 600 15px/1.25 var(--cond); }
+.pipeline p { margin: 0; font-size: 13px; color: var(--muted); }
+.pipeline .when { margin-top: auto; padding-top: 4px; font: 600 10.5px var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.demo-controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+.demo-controls label { display: flex; flex-direction: column; gap: 4px; font: 600 11px var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.demo-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { font: 600 13px var(--sans); border-radius: 6px; padding: 7px 13px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.demo-grid { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.demo-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+canvas.pool { width: 100%; max-width: 460px; aspect-ratio: 1 / 1; display: block; border-radius: 6px; background: var(--sunken); }
+canvas.strip { width: 100%; height: 170px; display: block; }
+canvas.hist { width: 100%; height: 150px; display: block; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.readout { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 5px 14px; margin: 0; font-size: 13.5px; }
+.readout dt { color: var(--muted); }
+.readout dd { margin: 0; font-family: var(--mono); font-size: 12.5px; }
+.verdict { display: inline-block; font: 600 13px var(--sans); padding: 5px 12px; border-radius: 999px; }
+.verdict.pass { background: var(--ok-bg); color: var(--ok); }
+.verdict.fail { background: var(--no-bg); color: var(--no); }
+.verdict.idle { background: var(--na-bg); color: var(--na); }
+.tally-box { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--grid); padding-top: 12px; }
+.tally { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; }
+.tally .big { font: 600 30px var(--cond); font-variant-numeric: tabular-nums; }
+.tally .ref { color: var(--muted); font-size: 13px; }
+.meter { position: relative; height: 8px; background: var(--sunken); border-radius: 4px; overflow: visible; max-width: 520px; }
+.meter i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: var(--accent); }
+.meter b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--target); }
+.path { list-style: none; margin: 0; padding: 0; }
+.path li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; position: relative; padding-bottom: 16px; }
+.path li::before { content: ""; position: absolute; left: 16px; top: 36px; bottom: 2px; width: 2px; background: var(--line); }
+.path li:last-child::before { display: none; }
+.path .dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 600 13px var(--mono); background: var(--sunken); border: 1px solid var(--line); }
+.path .body { display: flex; flex-direction: column; gap: 3px; padding-top: 5px; max-width: 80ch; }
+.path h4 { margin: 0; font: 600 15px var(--cond); }
+.path p { margin: 0; font-size: 14px; }
+.path .next { color: var(--muted); font-size: 13px; }
+.path .go { font: 500 12.5px var(--sans); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; align-self: flex-start; }
+@media (max-width: 860px) { .demo-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) { h1 { font-size: 22px; } .qa { grid-template-columns: minmax(0, 1fr); } .plot { height: 300px; } .plot.tall { height: 520px; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
 </style>
@@ -125,6 +173,7 @@ blockquote cite { display: block; color: var(--muted); font-style: normal; font-
     </div>
     <nav class="tabs" role="tablist" aria-label="Result sections">
       <button type="button" role="tab" id="tab-overview" data-tab="overview" aria-controls="overview">Overview</button>
+      <button type="button" role="tab" id="tab-flow" data-tab="flow" aria-controls="flow">Experiment flow</button>
       <button type="button" role="tab" id="tab-whole" data-tab="whole" aria-controls="whole"><span class="num">1-3</span>Whole episodes</button>
       <button type="button" role="tab" id="tab-thin" data-tab="thin" aria-controls="thin"><span class="num">4, 6</span>Thinning and spacing</button>
       <button type="button" role="tab" id="tab-shift" data-tab="shift" aria-controls="shift"><span class="num">5, 7, 8</span>Distribution shift</button>
@@ -142,7 +191,7 @@ blockquote cite { display: block; color: var(--muted); font-style: normal; font-
 <section class="panel" id="overview" role="tabpanel" aria-labelledby="tab-overview">
   <div class="lead">
     <h2>What the semi-synthetic tests show</h2>
-    <p>TD3+BC with BCA's learned scale is trained on half of a D4RL dataset, frozen, and used to score every transition in the other half. That pool is resampled under shifts we impose, so the true risk of any threshold is known exactly. A calibration bank "fails" when the threshold it certifies misses more than 10% of test rows; a valid rule fails at most 5% of the time. Every experiment after the first had its expectations written down before it ran.</p>
+    <p>TD3+BC with BCA's learned scale is trained on half of a D4RL dataset, frozen, and used to score every transition in the other half. That pool is resampled under shifts we impose, so the true risk of any threshold is known exactly. A calibration bank "fails" when the threshold it certifies misses more than 10% of test rows; a valid rule fails at most 5% of the time. Every experiment after the first had its expectations written down before it ran. The Experiment flow tab shows how one test works, with a live demo you can run.</p>
   </div>
   <div class="findings" id="findings"></div>
   <div class="card wide">
@@ -171,6 +220,83 @@ blockquote cite { display: block; color: var(--muted); font-style: normal; font-
         <dt>Normalized / raw</dt><dd>The score with and without BCA's learned scale σ(s, a). The toggle in the header switches every chart that has both.</dd>
       </dl>
     </div>
+  </div>
+</section>
+
+<section class="panel" id="flow" role="tabpanel" aria-labelledby="tab-flow" hidden>
+  <dl class="qa"><dt>Question</dt><dd>How does one test work, from a D4RL dataset to a failure rate?</dd>
+  <dt>Answer</dt><dd>Steps 1-3 happen once per dataset. Steps 4-6 repeat for every simulated calibration bank, 2,000-4,000 times per result. The demo below runs the same loop on a small toy dataset in your browser.</dd></dl>
+  <ol class="pipeline" id="pipeline">
+    <li data-stage="1"><span class="num">Step 1</span><h4>Split the episodes</h4><p>Half the episodes train the agent; the other half is held out. On hopper-medium: 1,093 episodes train, 1,094 episodes (500,285 rows) are held out.</p><span class="when">once per dataset</span></li>
+    <li data-stage="2"><span class="num">Step 2</span><h4>Train and freeze</h4><p>TD3+BC with BCA's learned scale σ(s,a) trains for 100k updates on the training half, then is frozen.</p><span class="when">once per dataset</span></li>
+    <li data-stage="3"><span class="num">Step 3</span><h4>Score every held-out row</h4><p>score = |target − Q| ÷ σ(s,a). A threshold λ "misses" every row whose score is above it.</p><span class="when">once per dataset</span></li>
+    <li data-stage="4"><span class="num">Step 4</span><h4>Impose a shift</h4><p>Reweight the rows by exp(γ z). Because we choose the weights, the true miss rate of any threshold, and the true threshold λ*, are known exactly.</p><span class="when">once per tilt</span></li>
+    <li data-stage="5"><span class="num">Step 5</span><h4>Draw a bank and calibrate</h4><p>Pick n rows with one bank design, then run uniform BCA (BQ-CP) or WBCP on them to certify a threshold λ̂.</p><span class="when">every bank</span></li>
+    <li data-stage="6"><span class="num">Step 6</span><h4>Judge the bank</h4><p>The bank fails if the true miss rate at λ̂ is above 10%. Over thousands of banks a valid method fails at most 5% of them.</p><span class="when">every bank</span></li>
+  </ol>
+
+  <div class="card wide demo">
+    <h3>Live demo: run the loop yourself</h3>
+    <p class="how">A toy held-out pool of 100 episodes × 100 steps, tuned to behave like hopper (whole-episode banks fail about 28%, five spaced rows per episode about 5%). Banks are 400 rows; the posterior uses 200 draws. It reproduces the pattern of the real results, not their exact numbers.</p>
+    <div class="demo-controls">
+      <label for="d-design">Bank design<select id="d-design">
+        <option value="iid">Independent rows</option>
+        <option value="whole" selected>Whole episodes (BCA's old bank)</option>
+        <option value="k5">5 spaced rows per episode (BCA's new bank)</option>
+        <option value="k10">10 random rows per episode</option>
+        <option value="k20">20 random rows per episode</option></select></label>
+      <label for="d-dep">Dependence within an episode<select id="d-dep">
+        <option value="none">None (rows independent)</option>
+        <option value="hopper" selected>Like hopper (mostly short-range)</option>
+        <option value="strong">Strong, like walker2d (episode-level)</option></select></label>
+      <label for="d-shift">Test distribution<select id="d-shift">
+        <option value="none" selected>No shift</option>
+        <option value="aligned">Strong shift toward high-error rows</option></select></label>
+      <label for="d-method">Calibration<select id="d-method">
+        <option value="uniform" selected>Uniform BCA (BQ-CP)</option>
+        <option value="wbcp">WBCP with exact weights</option></select></label>
+      <div class="demo-buttons">
+        <button type="button" class="btn primary" id="d-step">Draw a bank</button>
+        <button type="button" class="btn" id="d-run">Run 1,000 banks</button>
+        <button type="button" class="btn" id="d-reset">Reset tally</button>
+      </div>
+    </div>
+    <div class="demo-grid">
+      <div class="demo-col">
+        <canvas class="pool" id="d-pool" aria-label="Held-out pool: each column is an episode, each row a time step"></canvas>
+        <div class="legend-row"><span><i class="sw" style="background:var(--accent)"></i>row, darker = higher score</span><span><i class="sw" style="background:var(--target)"></i>missed at the true threshold λ*</span><span><i class="sw" style="background:var(--uniform)"></i>rows in the current bank</span></div>
+        <p class="how">Each column is an episode and each row a time step. Misses cluster in columns and runs: that is the within-episode dependence.</p>
+      </div>
+      <div class="demo-col">
+        <canvas class="strip" id="d-strip" aria-label="Score axis with the true threshold and the certified threshold"></canvas>
+        <div class="legend-row"><span><i class="sw" style="background:var(--pred)"></i>score distribution under the test law</span><span><i class="sw" style="background:var(--target)"></i>true λ*</span><span><i class="sw" style="background:var(--wbcp)"></i>posterior draws and certified λ̂</span></div>
+        <dl class="readout" id="d-readout"></dl>
+        <div><span class="verdict idle" id="d-verdict">Press "Draw a bank" to start</span></div>
+      </div>
+    </div>
+    <div class="tally-box">
+      <div class="tally"><span class="big" id="d-rate">–</span><span id="d-count">No banks yet</span><span class="ref" id="d-ref"></span></div>
+      <div class="meter" aria-hidden="true"><i id="d-meter"></i><b id="d-mark"></b></div>
+      <canvas class="hist" id="d-hist" aria-label="True miss rate of every bank so far"></canvas>
+      <p class="how">True miss rate of every bank so far. Bars right of the 10% line are failures; a valid method keeps them at or below 5% of banks.</p>
+    </div>
+  </div>
+
+  <div class="card wide">
+    <h3>The research path: how each answer led to the next question</h3>
+    <ol class="path">
+      <li><span class="dot">1</span><div class="body"><h4>Calibrate on whole episodes, as BCA did</h4><p>28% of banks fail with no shift, against 4.7% for independent rows.</p><p class="next">Next: why?</p><button type="button" class="go" data-go="whole">See the charts →</button></div></li>
+      <li><span class="dot">2</span><div class="body"><h4>Measure the dependence</h4><p>Misses in one episode are correlated (ρ = 0.016). Over ~480 rows that inflates variance about 6.5×, which predicts 26% failure.</p><p class="next">Next: does a bigger bank help?</p><button type="button" class="go" data-go="whole">See the charts →</button></div></li>
+      <li><span class="dot">3</span><div class="body"><h4>Bigger whole-episode banks</h4><p>No: about 27% at every size, from 3 to 26 episodes. The threshold only gets more confident.</p><p class="next">Next: take only a few rows from each episode.</p><button type="button" class="go" data-go="whole">See the charts →</button></div></li>
+      <li><span class="dot">4</span><div class="body"><h4>Thin to K rows per episode</h4><p>K ≤ 10 is back near 5% with no wider threshold. The cost is withheld training data (K = 5: about 11% of hopper).</p><p class="next">Next: does it hold under distribution shift?</p><button type="button" class="go" data-go="thin">See the charts →</button></div></li>
+      <li><span class="dot">5</span><div class="body"><h4>Distribution shift with thinned banks</h4><p>Uniform BCA still fails 25-90%; WBCP holds. K = 5 meets its ranges, K = 10 misses under the density tilt.</p><p class="next">Next: can spacing the rows apart help?</p><button type="button" class="go" data-go="shift">See the charts →</button></div></li>
+      <li><span class="dot">6</span><div class="body"><h4>Space the rows apart</h4><p>One row per K-th of the episode is free and helps at larger K (K = 25: 6.4% against 8.0%).</p><p class="next">Next: does spaced K = 10 hold under shift?</p><button type="button" class="go" data-go="thin">See the charts →</button></div></li>
+      <li><span class="dot">7</span><div class="body"><h4>Spaced K = 10 under shift</h4><p>No, as predicted: spacing does not add episodes, and the density miss is about how many distinct episodes the bank holds.</p><p class="next">Next: test spaced K = 5.</p><button type="button" class="go" data-go="shift">See the charts →</button></div></li>
+      <li><span class="dot">8</span><div class="body"><h4>Spaced K = 5 under shift</h4><p>Every predicted range met: WBCP 5.2-8.5%, uniform BCA 26-98%.</p><p class="next">Next: build it into BCA.</p><button type="button" class="go" data-go="shift">See the charts →</button></div></li>
+      <li><span class="dot">9</span><div class="body"><h4>BCA's own bank</h4><p>The implementation reproduces the validated behaviour: 5.0% without shift, every shift range met.</p><p class="next">Next: does K = 5 carry over to other datasets?</p><button type="button" class="go" data-go="bca">See the charts →</button></div></li>
+      <li><span class="dot">10</span><div class="body"><h4>Two more datasets</h4><p>No: ρ is about 7× hopper's on walker2d-medium-replay and pen-cloned, so K = 5 fails 6-8%. Estimated weights also need far more fitting data there.</p><p class="next">Alongside: why does WBCP run above 5% under strong shift?</p><button type="button" class="go" data-go="datasets">See the charts →</button></div></li>
+      <li><span class="dot">11</span><div class="body"><h4>WBCP under strong shift</h4><p>Finite-sample: heavy weights on the misses make failing banks under-report their spread. It shrinks with bank size and matches the paper's own 7.5-7.9%.</p><p class="next">Next: choose K from each dataset's measured ρ, then sweep every host.</p><button type="button" class="go" data-go="excess">See the charts →</button></div></li>
+    </ol>
   </div>
 </section>
 
@@ -696,6 +822,7 @@ blockquote cite { display: block; color: var(--muted); font-style: normal; font-
     tabs.forEach(b => { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
     document.querySelectorAll('section.panel').forEach(p => { p.hidden = p.id !== tab; });
     if (tab === 'all') renderExplorer();
+    if (tab === 'flow' && window.FlowDemo) window.FlowDemo.show();
     renderCharts(tab);
     if (push) { try { history.replaceState(null, '', '#' + tab); } catch (e) { /* ignore */ } }
     try { localStorage.setItem('bca-bench-tab', tab); } catch (e) { /* storage unavailable */ }
@@ -725,5 +852,288 @@ blockquote cite { display: block; color: var(--muted); font-style: normal; font-
   if (!first) { try { first = localStorage.getItem('bca-bench-tab') || ''; } catch (e) { first = ''; } }
   show(first || 'overview', false);
   window.scrollTo(0, 0);
+  window.addEventListener('load', () => window.scrollTo(0, 0));
+})();
+</script>
+<script>
+(function () {
+  // Toy held-out pool tuned to behave like hopper (see DEPENDENCE.md); the loop mirrors d4rl_benchmark.py.
+  const E = 100, L = 100, N = E * L, NB = 400, M = 200, ALPHA = 0.1, BETA = 0.95, GAMMA = 0.7;
+  const PRESETS = { none: [0, 0], hopper: [0.02, 0.85], strong: [0.35, 0.6] };  // [episode-level variance share, step-to-step correlation]
+  const DESIGNS = {
+    iid: { kind: 'iid' }, whole: { kind: 'whole' },
+    k5: { kind: 'k', k: 5, spaced: true }, k10: { kind: 'k', k: 10, spaced: false }, k20: { kind: 'k', k: 20, spaced: false },
+  };
+  // Real benchmark results for the matching setup (hopper unless noted), for comparison.
+  const REF = {
+    'hopper|none|iid': '4.7% (independent rows)', 'hopper|none|whole': '27.8% (whole episodes)', 'hopper|none|k5': '5.2% (spaced K = 5)',
+    'hopper|none|k10': '5.7% (random K = 10)', 'hopper|none|k20': '8.0% (random K = 25, the closest run)',
+    'hopper|aligned|iid|uniform': '89.5% (density γ = 1)', 'hopper|aligned|whole|uniform': '75.4% (density γ = 1)', 'hopper|aligned|k5|uniform': '89.4% (density γ = 1)',
+    'hopper|aligned|k10|uniform': '88.8% (density γ = 1)', 'hopper|aligned|iid|wbcp': '7.6% (density γ = 1, exact weights)', 'hopper|aligned|whole|wbcp': '33.5% (density γ = 1, exact weights)',
+    'hopper|aligned|k5|wbcp': '8.2% (density γ = 1, exact weights)', 'hopper|aligned|k10|wbcp': '10.7% (density γ = 1, exact weights)',
+    'strong|none|iid': '4.7% (walker2d-medium-replay)', 'strong|none|whole': '48.0% (walker2d-medium-replay)', 'strong|none|k5': '7.5% (walker2d-medium-replay)',
+  };
+  const $ = id => document.getElementById(id);
+  const st = { dep: 'hopper', design: 'whole', shift: 'none', method: 'uniform', pool: null, phase: 0, bank: null, cal: null, risk: null,
+    tally: { n: 0, f: 0, risks: [] }, running: false };
+  let rand = mulberry32(20261001);
+
+  function mulberry32(a) {
+    return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function normal(r) { let u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  function tokens() {
+    const s = getComputedStyle(document.documentElement), g = n => s.getPropertyValue(n).trim();
+    return { ink: g('--ink'), muted: g('--muted'), line: g('--line'), grid: g('--grid'), sunken: g('--sunken'), accent: g('--accent'), target: g('--target'),
+      uniform: g('--uniform'), wbcp: g('--wbcp'), pred: g('--pred'), ok: g('--ok'), surface: g('--surface') };
+  }
+
+  function makePool() {
+    const [share, phi] = PRESETS[st.dep], r = mulberry32(7);
+    const s = new Float64Array(N), z = new Float64Array(N);
+    for (let e = 0; e < E; e++) {
+      const u = normal(r); let w = normal(r);
+      for (let t = 0; t < L; t++) {
+        if (t > 0) w = phi * w + Math.sqrt(1 - phi * phi) * normal(r);
+        const ls = Math.sqrt(share) * u + Math.sqrt(1 - share) * w;
+        s[e * L + t] = Math.exp(ls); z[e * L + t] = 0.6 * ls + 0.8 * normal(r);
+      }
+    }
+    let mean = 0, sq = 0;
+    for (let i = 0; i < N; i++) mean += z[i];
+    mean /= N;
+    for (let i = 0; i < N; i++) sq += (z[i] - mean) ** 2;
+    const sd = Math.sqrt(sq / N);
+    for (let i = 0; i < N; i++) z[i] = (z[i] - mean) / sd;
+    const order = Array.from({ length: N }, (_, i) => i).sort((i, j) => s[i] - s[j]);
+    const rank = new Float64Array(N);
+    order.forEach((i, k) => { rank[i] = k / (N - 1); });
+    st.pool = { s, z, order, rank };
+    setLaw();
+  }
+  function setLaw() {
+    const p = st.pool, a = new Float64Array(N);
+    let sum = 0, sum2 = 0;
+    for (let i = 0; i < N; i++) { a[i] = st.shift === 'aligned' ? Math.exp(GAMMA * p.z[i]) : 1; sum += a[i]; sum2 += a[i] * a[i]; }
+    const ss = new Float64Array(N), above = new Float64Array(N + 1);
+    p.order.forEach((i, k) => { ss[k] = p.s[i]; });
+    for (let k = N - 1; k >= 0; k--) above[k] = above[k + 1] + a[p.order[k]] / sum;
+    let kstar = N - 1;
+    for (let k = 0; k < N; k++) { if (above[k + 1] <= ALPHA) { kstar = k; break; } }
+    Object.assign(p, { a, mean: sum / N, wbar: (sum2 / N) / ((sum / N) ** 2), ss, above, lam: ss[kstar] });
+  }
+  function trueRisk(th) {
+    if (!isFinite(th)) return 0;
+    const p = st.pool; let lo = 0, hi = N;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (p.ss[mid] <= th) lo = mid + 1; else hi = mid; }
+    return p.above[lo];
+  }
+  function drawBank() {
+    const d = DESIGNS[st.design], rows = [];
+    if (d.kind === 'iid') { for (let i = 0; i < NB; i++) rows.push(Math.floor(rand() * N)); }
+    else if (d.kind === 'whole') { while (rows.length < NB) { const e = Math.floor(rand() * E); for (let t = 0; t < L; t++) rows.push(e * L + t); } }
+    else {
+      for (let j = 0; j < Math.ceil(NB / d.k); j++) {
+        const e = Math.floor(rand() * E);
+        for (let i = 0; i < d.k; i++) { const pos = d.spaced ? (i + rand()) / d.k : rand(); rows.push(e * L + Math.min(L - 1, Math.floor(pos * L))); }
+      }
+      rows.length = Math.min(rows.length, NB);
+    }
+    return rows;
+  }
+  // WBCP, Lou and Luo Algorithm 1; with every weight and the test mass equal to 1 it is BQ-CP (uniform BCA).
+  function calibrate(rows) {
+    const p = st.pool, n = rows.length, idx = rows.slice().sort((i, j) => p.s[i] - p.s[j]);
+    const sc = new Float64Array(n), w = new Float64Array(n);
+    let wsum = 0;
+    for (let k = 0; k < n; k++) { sc[k] = p.s[idx[k]]; w[k] = st.method === 'wbcp' ? p.a[idx[k]] / p.mean : 1; wsum += w[k]; }
+    const wbar = st.method === 'wbcp' ? p.wbar : 1, cross = new Float64Array(M), V = new Float64Array(n);
+    for (let m = 0; m < M; m++) {
+      let total = 0;
+      for (let k = 0; k < n; k++) { V[k] = w[k] * -Math.log(1 - rand()); total += V[k]; }
+      const atom = wbar * -Math.log(1 - rand());
+      total += atom;
+      let tail = atom, kstar = -1;
+      for (let k = n - 1; k >= 0; k--) { if (tail / total <= ALPHA) { kstar = k; tail += V[k]; } else break; }
+      cross[m] = kstar >= 0 ? sc[kstar] : Infinity;
+    }
+    cross.sort();
+    const hpd = cross[Math.ceil(BETA * M) - 1];
+    let tailw = 0, khat = 0;
+    for (let k = n - 1; k >= 0; k--) { if (tailw / wsum <= ALPHA) { khat = k; tailw += w[k]; } else break; }
+    const lamHat = sc[khat];
+    return { th: Math.max(lamHat, hpd), hpd, lamHat, cross };
+  }
+
+  function fit(canvas, cssHeight) {
+    const r = canvas.getBoundingClientRect();
+    if (!r.width) return null;
+    const dpr = window.devicePixelRatio || 1, h = cssHeight || r.width;
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w: r.width, h };
+  }
+  function drawPool() {
+    const f = fit($('d-pool')); if (!f) return;
+    const { ctx, w } = f, c = tokens(), p = st.pool, cell = w / E;
+    const inBank = new Uint8Array(N);
+    if (st.bank && st.phase >= 1) st.bank.forEach(i => { inBank[i] = 1; });
+    const dim = st.bank && st.phase >= 1 ? 0.28 : 1;
+    ctx.clearRect(0, 0, w, w);
+    for (let e = 0; e < E; e++) {
+      for (let t = 0; t < L; t++) {
+        const i = e * L + t, miss = p.s[i] > p.lam;
+        ctx.globalAlpha = (miss ? 0.9 : 0.1 + 0.6 * p.rank[i] ** 2) * (inBank[i] ? 1 : dim);
+        ctx.fillStyle = inBank[i] && !miss ? c.uniform : miss ? c.target : c.accent;
+        ctx.fillRect(e * cell, t * cell, Math.max(cell - 0.6, 0.8), Math.max(cell - 0.6, 0.8));
+      }
+    }
+    ctx.globalAlpha = 1;
+    if (st.bank && st.phase >= 1) {
+      ctx.strokeStyle = c.uniform; ctx.lineWidth = 1;
+      st.bank.forEach(i => { if (st.pool.s[i] > st.pool.lam) { const e = Math.floor(i / L), t = i % L; ctx.strokeRect(e * cell + 0.5, t * cell + 0.5, cell - 1.4, cell - 1.4); } });
+    }
+  }
+  function drawStrip() {
+    const f = fit($('d-strip'), 170); if (!f) return;
+    const { ctx, w, h } = f, c = tokens(), p = st.pool;
+    const lo = Math.log(p.ss[Math.floor(0.003 * N)]), hi = Math.log(p.ss[Math.floor(0.9995 * N)]);
+    const pad = { l: 10, r: 10, t: 26, b: 26 }, X = v => pad.l + (Math.log(v) - lo) / (hi - lo) * (w - pad.l - pad.r);
+    const bins = 70, mass = new Float64Array(bins), sum = p.a.reduce((x, y) => x + y, 0);
+    for (let i = 0; i < N; i++) { const b = Math.floor((Math.log(p.s[i]) - lo) / (hi - lo) * bins); if (b >= 0 && b < bins) mass[b] += p.a[i] / sum; }
+    const mx = Math.max(...mass), bw = (w - pad.l - pad.r) / bins, base = h - pad.b;
+    ctx.clearRect(0, 0, w, h);
+    const th = st.cal && st.phase >= 2 ? st.cal.th : null;
+    for (let b = 0; b < bins; b++) {
+      const x0 = pad.l + b * bw, bh = mass[b] / mx * (base - pad.t - 6), mid = Math.exp(lo + (b + 0.5) / bins * (hi - lo));
+      ctx.fillStyle = st.phase >= 3 && th !== null && isFinite(th) && mid > th ? (st.risk > ALPHA ? c.target : c.ok) : c.pred;
+      ctx.globalAlpha = st.phase >= 3 && th !== null && mid > th ? 0.55 : 0.4;
+      ctx.fillRect(x0, base - bh, Math.max(bw - 1, 1), bh);
+    }
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = c.line; ctx.beginPath(); ctx.moveTo(pad.l, base + 0.5); ctx.lineTo(w - pad.r, base + 0.5); ctx.stroke();
+    ctx.fillStyle = c.muted; ctx.font = "11px 'IBM Plex Mono', monospace"; ctx.textAlign = 'center';
+    [0.25, 0.5, 1, 2, 4, 8].forEach(v => { const x = X(v); if (x > pad.l + 8 && x < w - pad.r - 8) { ctx.fillText(String(v), x, base + 15); } });
+    ctx.textAlign = 'left'; ctx.fillText('score (log scale)', pad.l, h - 1);
+    const vline = (v, color, dash, label, row) => {
+      const x = X(v); if (x < pad.l || x > w - pad.r) return;
+      ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(x, pad.t - 4); ctx.lineTo(x, base); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = color; ctx.font = "600 11px 'IBM Plex Sans', sans-serif"; ctx.textAlign = x > w * 0.7 ? 'right' : 'left';
+      ctx.fillText(label, x + (x > w * 0.7 ? -5 : 5), row);
+    };
+    if (st.cal && st.phase >= 2) {
+      const col = st.method === 'wbcp' ? c.wbcp : c.uniform;
+      ctx.strokeStyle = col; ctx.globalAlpha = 0.22; ctx.lineWidth = 1;
+      st.cal.cross.forEach(v => { if (isFinite(v)) { const x = X(v); ctx.beginPath(); ctx.moveTo(x, pad.t + 2); ctx.lineTo(x, pad.t + 14); ctx.stroke(); } });
+      ctx.globalAlpha = 1;
+      if (isFinite(st.cal.th)) vline(st.cal.th, col, [], `certified λ̂ = ${st.cal.th.toFixed(3)}`, pad.t - 10);
+    }
+    vline(p.lam, c.target, [5, 4], `true λ* = ${p.lam.toFixed(3)}`, st.cal && st.phase >= 2 ? pad.t + 28 : pad.t - 10);
+  }
+  function drawHist() {
+    const f = fit($('d-hist'), 150); if (!f) return;
+    const { ctx, w, h } = f, c = tokens(), rs = st.tally.risks, bins = 60, maxR = 0.3;
+    const counts = new Array(bins).fill(0);
+    rs.forEach(r => { counts[Math.min(bins - 1, Math.floor(r / maxR * bins))] += 1; });
+    const mx = Math.max(1, ...counts), pad = { l: 8, r: 8, t: 10, b: 22 }, bw = (w - pad.l - pad.r) / bins, base = h - pad.b;
+    ctx.clearRect(0, 0, w, h);
+    counts.forEach((n, b) => {
+      const bh = n / mx * (base - pad.t);
+      ctx.fillStyle = (b + 0.5) / bins * maxR > ALPHA ? c.target : c.muted; ctx.globalAlpha = 0.75;
+      ctx.fillRect(pad.l + b * bw, base - bh, Math.max(bw - 1, 1), bh);
+    });
+    ctx.globalAlpha = 1;
+    const x10 = pad.l + ALPHA / maxR * (w - pad.l - pad.r);
+    ctx.strokeStyle = c.target; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(x10, pad.t - 4); ctx.lineTo(x10, base); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = c.muted; ctx.font = "11px 'IBM Plex Mono', monospace"; ctx.textAlign = 'center';
+    [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3].forEach(v => ctx.fillText(`${Math.round(v * 100)}%`, pad.l + v / maxR * (w - pad.l - pad.r), h - 6));
+    ctx.fillStyle = c.target; ctx.textAlign = 'left'; ctx.fillText('α = 10%', x10 + 4, pad.t + 6);
+  }
+  function wilson(f, n) {
+    if (!n) return [0, 0];
+    const z = 1.96, p = f / n, d = 1 + z * z / n, ctr = (p + z * z / (2 * n)) / d, half = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d;
+    return [Math.max(0, ctr - half), Math.min(1, ctr + half)];
+  }
+  function drawTally() {
+    const { n, f } = st.tally;
+    const [lo, hi] = wilson(f, n), rate = n ? f / n : 0;
+    $('d-rate').textContent = n ? `${(100 * rate).toFixed(1)}%` : '–';
+    $('d-count').textContent = n ? `of ${n.toLocaleString('en-US')} banks failed (95% interval ${(100 * lo).toFixed(1)}-${(100 * hi).toFixed(1)}%; target ≤ 5%)` : 'No banks yet';
+    const key = [st.dep, st.shift, st.design].concat(st.shift === 'aligned' ? [st.method] : []).join('|');
+    $('d-ref').textContent = REF[key] ? `Real benchmark, same design: ${REF[key]}` : '';
+    $('d-meter').style.width = `${Math.min(100, rate / 0.4 * 100)}%`;
+    $('d-meter').style.background = rate > 0.05 && lo > 0.05 ? 'var(--target)' : 'var(--accent)';
+    $('d-mark').style.left = `${0.05 / 0.4 * 100}%`;
+    drawHist();
+  }
+  function readout() {
+    const rows = [], p = st.pool;
+    rows.push(['Test distribution', st.shift === 'aligned' ? `shifted toward high-error rows; true λ* = ${p.lam.toFixed(3)}` : `same as the pool; true λ* = ${p.lam.toFixed(3)}`]);
+    if (st.bank && st.phase >= 1) {
+      const eps = new Set(st.bank.map(i => Math.floor(i / L))).size, miss = st.bank.filter(i => p.s[i] > p.lam).length;
+      rows.push(['Bank', `${st.bank.length} rows from ${eps} episode${eps === 1 ? '' : 's'}`]);
+      rows.push(['Bank rows above λ*', `${miss} (${(100 * miss / st.bank.length).toFixed(1)}%; the pool's rate is 10%)`]);
+    }
+    if (st.cal && st.phase >= 2) {
+      rows.push(['Posterior', `${M} Dirichlet draws; 95% of them cross α at or below λ̂`]);
+      rows.push(['Certified threshold', isFinite(st.cal.th) ? `λ̂ = ${st.cal.th.toFixed(3)} (${st.cal.th < p.lam ? 'below' : 'above'} the true λ*)` : 'none: the method abstains']);
+    }
+    if (st.phase >= 3) rows.push(['True miss rate at λ̂', `${(100 * st.risk).toFixed(2)}% (fails if above 10%)`]);
+    $('d-readout').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+    const v = $('d-verdict');
+    if (st.phase >= 3) { const failed = st.risk > ALPHA; v.className = `verdict ${failed ? 'fail' : 'pass'}`; v.textContent = failed ? 'FAIL: this bank certified a threshold that misses more than 10%' : (isFinite(st.cal.th) ? 'PASS: the true miss rate is at most 10%' : 'PASS: the method abstained'); }
+    else { v.className = 'verdict idle'; v.textContent = ['Press "Draw a bank" to start', 'Bank drawn: press "Calibrate"', 'Threshold certified: press "Judge"'][st.phase]; }
+    $('d-step').textContent = ['Draw a bank', 'Calibrate', 'Judge', 'Draw another bank'][st.phase];
+    document.querySelectorAll('#pipeline li').forEach(li => {
+      const s = Number(li.dataset.stage);
+      li.classList.toggle('active', (st.phase === 0 && s === 4) || ((st.phase === 1 || st.phase === 2) && s === 5) || (st.phase === 3 && s === 6));
+      li.classList.toggle('done', s <= 3 || (s === 4 && st.phase > 0));
+    });
+  }
+  function render() { if (!st.pool) makePool(); drawPool(); drawStrip(); readout(); drawTally(); }
+  function record(risk) { st.tally.n += 1; st.tally.f += risk > ALPHA ? 1 : 0; st.tally.risks.push(risk); }
+  function step() {
+    if (st.running) return;
+    if (st.phase === 0 || st.phase === 3) { st.bank = drawBank(); st.cal = null; st.phase = 1; }
+    else if (st.phase === 1) { st.cal = calibrate(st.bank); st.phase = 2; }
+    else { st.risk = trueRisk(st.cal.th); record(st.risk); st.phase = 3; }
+    render();
+  }
+  function runMany(total) {
+    if (st.running) return;
+    st.running = true;
+    ['d-step', 'd-run', 'd-reset', 'd-design', 'd-dep', 'd-shift', 'd-method'].forEach(id => { $(id).disabled = true; });
+    let done = 0;
+    const chunk = () => {
+      const stop = Math.min(total, done + 25);
+      for (; done < stop; done++) { st.bank = drawBank(); st.cal = calibrate(st.bank); st.risk = trueRisk(st.cal.th); record(st.risk); }
+      $('d-run').textContent = `Running ${done.toLocaleString('en-US')} / ${total.toLocaleString('en-US')}`;
+      drawTally();
+      if (done < total) { requestAnimationFrame(chunk); return; }
+      st.phase = 3; st.running = false;
+      ['d-step', 'd-run', 'd-reset', 'd-design', 'd-dep', 'd-shift', 'd-method'].forEach(id => { $(id).disabled = false; });
+      $('d-run').textContent = 'Run 1,000 banks';
+      render();
+    };
+    requestAnimationFrame(chunk);
+  }
+  function resetTally() { st.tally = { n: 0, f: 0, risks: [] }; st.phase = 0; st.bank = null; st.cal = null; st.risk = null; rand = mulberry32(20261001); render(); }
+  function bind() {
+    $('d-step').addEventListener('click', step);
+    $('d-run').addEventListener('click', () => runMany(1000));
+    $('d-reset').addEventListener('click', resetTally);
+    $('d-design').addEventListener('change', e => { st.design = e.target.value; resetTally(); });
+    $('d-dep').addEventListener('change', e => { st.dep = e.target.value; makePool(); resetTally(); });
+    $('d-shift').addEventListener('change', e => { st.shift = e.target.value; setLaw(); resetTally(); });
+    $('d-method').addEventListener('change', e => { st.method = e.target.value; resetTally(); });
+    window.addEventListener('resize', () => { if (!$('flow').hidden) render(); });
+    new MutationObserver(() => { if (!$('flow').hidden) render(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!$('flow').hidden) render(); }); } catch (e) { /* old browsers */ }
+  }
+  ['design', 'dep', 'shift', 'method'].forEach(k => { const el = $(`d-${k}`); if (el) st[k] = el.value; });
+  bind();
+  window.FlowDemo = { show: render };
+  if (!$('flow').hidden) render();
 })();
 </script>
