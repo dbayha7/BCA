@@ -254,8 +254,8 @@ FIT_SCALE(B, detached target y, detached prediction q):
 
 Fitting happens from the first update. The 10k warmup delays **consumption of
 the frozen reference**, not fitting. IQL uses its pre-V-update target and
-post-Q-update online critic in this loss; the other hosts fit before their host
-update. The four algorithms below make those orders explicit.
+post-Q-update target critic Qbar in this loss (the copy its actor advantage reads);
+the other hosts fit before their host update. The four algorithms below make those orders explicit.
 
 ## Procedure C: freeze a WBCP reference
 
@@ -275,7 +275,8 @@ REFRESH(host state, live psi,u, Dcal, refresh key):
                                 - critic_BC*||noisy_pibar(s'_j)-a'_j||^2].
    CQL:      its configured sampled target-policy backup (Algorithm 4).
    Use the dedicated pinned refresh key for stochastic target actions.
-3. q_j = min_k CURRENT online Q_k(s_j,a_j).
+3. q_j = min_k CURRENT online Q_k(s_j,a_j); for IQL, min_k CURRENT target Qbar_k(s_j,a_j),
+   the copy its actor advantage reads (exp(beta*(min_k Qbar_k - V)) weights).
    sigma_j = u_f*max(eta_psi_f(s_j,a_j),1e-6).
    rho_j = |y_j-q_j|/sigma_j   (nonconformity scores, n = |Dcal|).
    Require finite scores and strictly positive finite scales.
@@ -384,7 +385,8 @@ for t=1,...,N:
     Qbar <- Polyak(Qbar,Q,tau)  # uses the just-updated online Q
 
     # Fit the single BCA scale; host Q/V receive no calibration gradients.
-    q_fit_i <- sg(min_k Q_new_k(s_i,a_i))
+    # The residual reads the target heads, the copy the next actor advantage reads.
+    q_fit_i <- sg(min_k Qbar_new_k(s_i,a_i))
     FIT_SCALE(B,y,q_fit) using IQL's current-batch unit and coverage variance term.
     Preserve the previously frozen F during both actor updates.
 
@@ -405,7 +407,7 @@ for t=1,...,N:
     Validate the nuisance, scale and actor evidence; stop on numerical failure.
     At a periodic boundary evaluate BOTH actors on the same declared reset bank.
     If t is a refresh boundary and t<N:
-        REFRESH with current online Q, current V, live psi/u and held-out data;
+        REFRESH with current target Qbar, current V, live psi/u and held-out data;
         save the paired checkpoint/reference before the next training update.
 
 After update N: save both actors, Q/V, target Q, optimizer and BCA states;

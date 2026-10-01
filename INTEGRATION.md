@@ -796,19 +796,20 @@ weights = jax.lax.stop_gradient(
 )
 ```
 
-**IQL residual.** The target uses pre-update V; the scale reads post-update
-online Q. The adapter explicitly detaches both. The fitter divides both by the
+**IQL residual.** The target uses pre-update V; the scale reads the post-update
+Polyak target Q, the copy IQL's actor advantage reads (its weights are
+exp(beta * (min Qbar - V))), not the online heads. The adapter explicitly detaches both. The fitter divides both by the
 current-batch residual spread and draws one Bayesian bootstrap simplex per
 minibatch; the native actor still uses its original AWR weights.
 
-[calibration/iql_targets.py, lines 19–34](calibration/iql_targets.py#L19-L34)
+[calibration/iql_targets.py, lines 24–39](calibration/iql_targets.py#L24-L39)
 
-<!-- source: calibration/iql_targets.py:19:34 -->
+<!-- source: calibration/iql_targets.py:24:39 -->
 ```python
 def calibration_inputs(self, state, batch, rng, step, host=None):
     if host is None or "target" not in host:
         raise ValueError("Supply the host pre-update V target.")
-    heads = self.q_apply_fn(state.qf.params, batch.obs, batch.action)
+    heads = self.q_apply_fn(state.qf_target.params, batch.obs, batch.action)
     return CalibrationInputs(
         targets=jax.lax.stop_gradient(host["target"]),
         q_at_data=jax.lax.stop_gradient(jnp.min(heads, axis=-1)),
@@ -817,8 +818,8 @@ def calibration_inputs(self, state, batch, rng, step, host=None):
         action=batch.action,
         vintage={
             "targets": "pre_update_value_net",
-            "q_at_data": "post_update_online",
-            "q_heads": "post_update_online",
+            "q_at_data": "post_update_target",
+            "q_heads": "post_update_target",
         },
     )
 ```
@@ -996,13 +997,14 @@ valid = bool(valid) and bool(tree_finite(state.calibrator))
 result = state._replace(posterior=reference) if valid else state
 ```
 
-IQL scores `r + (1-d)*gamma*V(s')` with the current V against the current online
-twin minimum, using the live calibrator's predictions. It raises instead of
+IQL scores `r + (1-d)*gamma*V(s')` with the current V against the current target
+twin minimum (the Polyak copy IQL's actor advantage reads), using the live
+calibrator's predictions. It raises instead of
 returning a validity flag:
 
-[calibration/iql_reference.py, lines 192–216](calibration/iql_reference.py#L192-L216)
+[calibration/iql_reference.py, lines 193–218](calibration/iql_reference.py#L193-L218)
 
-<!-- source: calibration/iql_reference.py:192:216 -->
+<!-- source: calibration/iql_reference.py:193:218 -->
 ```python
 key = jax.random.fold_in(training_key, POSTERIOR_FOLD)
 pred_cal = jax.lax.stop_gradient(
@@ -1012,7 +1014,8 @@ target = cal.reward + (1.0 - cal.done) * discount * agent_state.vf.apply_fn(
     agent_state.vf.params, cal.next_obs
 )
 q = jnp.min(
-    agent_state.qf.apply_fn(agent_state.qf.params, cal.obs, cal.action), axis=-1
+    agent_state.qf_target.apply_fn(agent_state.qf_target.params, cal.obs, cal.action),
+    axis=-1,
 )
 residual = jax.lax.stop_gradient(target - q)
 state, valid, wbcp = POST.freeze_reference(

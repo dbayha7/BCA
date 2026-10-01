@@ -138,6 +138,21 @@ class IQLWBCPSmoke(unittest.TestCase):
         host, bca = (jax.tree_util.tree_map(lambda x: x[i], self.carry1.actors.params) for i in (0, 1))
         jax.tree_util.tree_map(np.testing.assert_array_equal, host, bca)
 
+    def test_calibration_reads_the_actor_s_target_q(self):
+        # IQL's actor advantage reads min over the Polyak target heads, so both the per-step scale fit
+        # and the refresh residual must use them. The online heads differ after training steps.
+        agent, cal = self.carry1.nuisance, self.cal
+        online = jnp.min(agent.qf.apply_fn(agent.qf.params, cal.obs, cal.action), -1)
+        aimed = jnp.min(agent.qf_target.apply_fn(agent.qf_target.params, cal.obs, cal.action), -1)
+        self.assertGreater(float(jnp.max(jnp.abs(online - aimed))), 0.0)
+        target = cal.reward + (1 - cal.done) * self.args.discount * agent.vf.apply_fn(agent.vf.params, cal.next_obs)
+        recorded = self.record["component_sha256"]["cal_residuals"]
+        self.assertEqual(recorded, self.m.P.fingerprint(jax.lax.stop_gradient(target - aimed)))
+        self.assertNotEqual(recorded, self.m.P.fingerprint(jax.lax.stop_gradient(target - online)))
+        inputs = self.fitters[0].adapter.calibration_inputs(agent, cal, None, STEPS, host={"target": target})
+        np.testing.assert_array_equal(np.asarray(inputs.q_at_data), np.asarray(aimed))
+        self.assertEqual(inputs.vintage["q_at_data"], "post_update_target")
+
     def test_refresh_freezes_a_wbcp_threshold(self):
         ref, record, extra = self.reference, self.record, self.carry1.extras[0]
         self.assertTrue(bool(ref.ready) and bool(reference_valid(ref)))
@@ -148,10 +163,11 @@ class IQLWBCPSmoke(unittest.TestCase):
         # The frozen scale is the one being fit at the refresh.
         jax.tree_util.tree_map(np.testing.assert_array_equal, ref.cal_params, extra.calibration.calibrator.params)
         self.assertEqual(float(ref.residual_scale), float(extra.calibration.resid_scale))
-        # Independent recomputation: r + (1-d) gamma V(s') - min Q(s,a), scored by the frozen scale.
+        # Independent recomputation: r + (1-d) gamma V(s') - min Qbar(s,a), scored by the frozen scale.
+        # Qbar is the target copy the actor's advantage reads, not the online heads.
         agent, cal = self.carry1.nuisance, self.cal
         target = cal.reward + (1 - cal.done) * self.args.discount * agent.vf.apply_fn(agent.vf.params, cal.next_obs)
-        q = jnp.min(agent.qf.apply_fn(agent.qf.params, cal.obs, cal.action), -1)
+        q = jnp.min(agent.qf_target.apply_fn(agent.qf_target.params, cal.obs, cal.action), -1)
         eta = self.fitters[0].predictions(extra.calibration, ref.cal_params, cal)
         scores = np.abs(np.asarray(target - q, np.float64)) / np.asarray(
             jnp.maximum(eta, 1e-6) * ref.residual_scale, np.float64)

@@ -184,8 +184,9 @@ def weights_at_reference(args, posterior, predictions, advantage, beta, cap):
 def refresh(args, fitter, cal_state, agent_state, cal, training_key, step, *, discount):
     """Freeze the current scale/unit and select the uniform-weight WBCP threshold.
 
-    Runs eagerly between scan blocks. Scores are |r + (1-d) gamma V(s') - min Q(s,a)|
-    over the held-out bank divided by the frozen positive scale. The posterior draws
+    Runs eagerly between scan blocks. Scores are |r + (1-d) gamma V(s') - min Qbar(s,a)|
+    over the held-out bank divided by the frozen positive scale, where Qbar is the
+    Polyak target copy of the twin critic: the Q that IQL's actor advantage reads. The posterior draws
     use fold_in(training_key, POSTERIOR_FOLD); the carry key itself is not consumed.
     """
     args.validate(len(cal.reward))
@@ -197,7 +198,8 @@ def refresh(args, fitter, cal_state, agent_state, cal, training_key, step, *, di
         agent_state.vf.params, cal.next_obs
     )
     q = jnp.min(
-        agent_state.qf.apply_fn(agent_state.qf.params, cal.obs, cal.action), axis=-1
+        agent_state.qf_target.apply_fn(agent_state.qf_target.params, cal.obs, cal.action),
+        axis=-1,
     )
     residual = jax.lax.stop_gradient(target - q)
     state, valid, wbcp = POST.freeze_reference(
@@ -241,8 +243,8 @@ def refresh(args, fitter, cal_state, agent_state, cal, training_key, step, *, di
         "wbcp": wbcp,
         "calibration_rows": len(cal.reward),
         "decision_gain": args.decision_gain,
-        "reference_vintage": "current online-Q min over twins and current V; frozen current scale/unit",
-        "scale_training_vintage": "post-Q-update online twins versus pre-V-update target",
+        "reference_vintage": "current target-Q min over twins (the copy IQL's actor advantage reads) and current V; frozen current scale/unit",
+        "scale_training_vintage": "post-Q-update target twins versus pre-V-update target",
         "posterior_draws_saved": False,
     }
     return (state, record)
