@@ -18,7 +18,8 @@ CELLS = [
 ("md", r"""# BCA calibration benchmark: semi-synthetic D4RL results
 
 Every result from the semi-synthetic tests of BCA's WBCP calibration banks (Changes 1-11 of
-`experiments/wbcp/DEPENDENCE.md`), with the plots and the numbers behind them.
+`experiments/wbcp/DEPENDENCE.md`), with the plots and the numbers behind them, and our reproduction of the paper's
+own synthetic experiments (section 9).
 
 **How the tests work.**
 - **Setup.** TD3+BC with BCA's learned scale is trained on half of a D4RL dataset's episodes, frozen,
@@ -43,8 +44,9 @@ Every result from the semi-synthetic tests of BCA's WBCP calibration banks (Chan
 6. BCA's implemented bank (Change 9)
 7. Other datasets (Change 10)
 8. WBCP under strong shift (Change 11)
-9. All results
-10. Provenance
+9. Reproducing the paper's Tables 1 and 2
+10. All results
+11. Provenance
 
 To refresh after new runs: `python experiments/wbcp/results_notebook.py`."""),
 
@@ -600,7 +602,249 @@ display(table(rows, ["Tilt", "γ", "n", "B = max w ÷ mean w", "E[w²]", "n_eff 
 > WBCP certifies every trial at 7.5–7.9%. The oracle row attributes the residual to η_n, not weight estimation.
 > (§4.2; Table 2 at n = 250: 7.9% with estimated weights, 5.6% with oracle weights)"""),
 
-("md", r"""## 9. All results
+("md", r"""## 9. Reproducing the paper's Tables 1 and 2
+
+Lou and Luo (arXiv:2604.06464v3) validate WBCP on two synthetic benchmarks. Reproducing them checks our
+implementation against the authors' own numbers before it is trusted on D4RL.
+
+- **Table 1 (§4.1), regression.** X ~ U[0, 4], Y | X ~ N(0, X²), score |Y|, miscoverage loss, α = 0.1,
+  n = 200, test covariates tilted by exp(x). `experiments/wbcp/reproduce_table1.py`.
+- **Table 2 (§4.2), multilabel count loss.** x ~ N(0, 1). Each unit has K = 4 outcomes T_k | x ~ Exp(rate(x)),
+  and its loss is the share of its outcomes above λ (so a larger λ is safer). α = 0.4, test covariates N(1, 1),
+  reported at n = 10 and n = 250. `experiments/wbcp/reproduce_table2.py`.
+- **Both.** β = 0.95, 10,000 trials, weights from a logistic classifier fit on samples disjoint from the
+  calibration set. A trial *fails* when the true risk of its deployed threshold under the test law exceeds α.
+  Rates are over the trials that certified, with exact 95% intervals.
+
+**What had to be inferred.**
+- **rate(x).** The paper does not give it. We assume rate(x) = exp(b − a x) and fit a and b to the shift-blind
+  rows only. BQ-CP and RCPS see no test data, so their thresholds depend on the calibration law alone.
+  - The ratios of their mean thresholds (n = 10 over n = 250) point to a ≈ 0.69-0.70.
+  - Their n = 10 failure rates point to a ≈ 0.67.
+  - We use a = ln 2, which follows the ratios; b = −0.019 then fits the four mean thresholds.
+  - The blind rows are therefore fits, not tests. Every W-CRC and WBCP number in Table 2 is a prediction.
+- **RCPS rounding.** The paper's RCPS numbers match the Hoeffding-Bentkus bound only when its binomial term uses
+  ⌊nR̂⌋. The published bound (Bates et al., 2021) uses ⌈nR̂⌉. The two agree for Table 1's miscoverage loss and
+  differ for the count loss, so both are shown. A likely cause: `scipy.stats.binom.cdf` floors a non-integer
+  count without warning.
+- **Unstated settings.** Classifier and test-mass sample sizes (200 each) and posterior draws (1,000).
+- **Test-atom mass.** WBCP's oracle row is shown with the Eq. (6) mass E_test[w*] and with mass 1.
+- **W-CRC's test point** enters with the plug-in mass w̄ (the paper's §3.1). Appendix C's literal CRC Prop. 2 form,
+  with the test point's own weight, fails about 33% at n = 10 and does not match the paper's row.
+
+Expectations were written before the W-CRC and WBCP rows were run (`runs/wbcp_paper/expectations.md`, SHA-256
+`9b63f675…5dad`). A dated addendum written after the runs corrects its description of the fit; it changes no
+expectation (with the addendum: `5204b8f7…ecc2`)."""),
+("code", r"""import hashlib
+import json
+
+from experiments.wbcp import reproduce_table1 as T1, reproduce_table2 as T2
+
+PP = ROOT / "runs" / "wbcp_paper"
+P = {f.stem: json.loads(f.read_text()) for f in sorted(PP.glob("*.json"))}
+print(f"{len(P)} reproduction runs: {', '.join(P)}")
+print(f"expectations.md SHA-256 {hashlib.sha256((PP / 'expectations.md').read_bytes()).hexdigest()}")
+SHORT = {"BQ-CP": "BQ-CP", "RCPS": "RCPS", "RCPS (floor)": "RCPS ⌊nR̂⌋", "W-CRC": "W-CRC", "WBCP": "WBCP",
+         "WBCP (oracle w)": "WBCP oracle", "WBCP (oracle, wbar=1)": "oracle, mass 1"}
+
+
+def pf(row, key="fail"):
+    return "–" if row is None or row.get(key) is None else f"{100 * row[key]:.1f}%"
+
+
+def pci(row):
+    return "–" if row is None or row.get("fail") is None else f"{100 * row['fail']:.1f}% [{100 * row['ci'][0]:.1f}, {100 * row['ci'][1]:.1f}]"
+
+
+t1 = P["t1_g1"]["summary"]
+rows = [[name, pci(t1[name]), f"{100 * paper[0]:.1f}%", pf(t1[name], "risk"), f"{100 * paper[1]:.1f}%", f"{t1[name]['length']:.2f}", f"{paper[2]:.2f}"]
+        for name, paper in T1.PAPER.items()]
+display(Markdown(f"**Table 1, γ = 1 (n = 200, α = 0.1): ours against the paper.** λ* = {P['t1_g1']['lambda_star']:.3f}; "
+                 "the paper prints one oracle row, compared with both test-atom masses."))
+display(table(rows, ["Rule", "Fail [95% CI]", "Paper fail", "Mean risk", "Paper risk", "Mean length", "Paper length"]))
+t0 = P["t1_g0"]["summary"]
+display(Markdown(f"Exchangeable control (γ = 0): BQ-CP fails {pci(t0['BQ-CP'])} and WBCP {pci(t0['WBCP'])}; the paper reports 2.6%."))
+
+for n in (10, 250):
+    run = P[f"t2_g1_n{n}"]
+    rows = [[name, pci(r), f"{100 * freq:.1f}%", "–" if r["mean_lambda"] is None else f"{r['mean_lambda']:.2f}", f"{lam:.2f}",
+             f"{100 * r['abstain']:.1f}%", "0 per caption; its CI implies ≈96%" if name not in T2.PAPER_ABSTAIN[n] else f"{100 * T2.PAPER_ABSTAIN[n][name]:.0f}%"]
+            for name, (freq, lam) in T2.PAPER[n].items() for r in [run["summary"][name]]]
+    display(Markdown(f"**Table 2, γ = 1, n = {n} (α = 0.4): ours against the paper.** λ* = {run['lambda_star']:.3f} under the test law "
+                     f"({run['lambda_star_cal']:.3f} under the calibration law); mean n_eff of the estimated weights {run['mean_n_eff']:.1f}."))
+    display(table(rows, ["Rule", "Fail [95% CI]", "Paper fail", "Mean λ", "Paper mean λ", "Abstain", "Paper abstain"]))"""),
+("code", r"""def versus(ax, summary, paper, title):
+    names = list(paper)
+    x = np.arange(len(names))
+    rows = [summary[k] for k in names]
+    ours = np.array([np.nan if r.get("fail") is None else 100 * r["fail"] for r in rows])
+    err = [[o - 100 * r["ci"][0] if np.isfinite(o) else 0 for o, r in zip(ours, rows)],
+           [100 * r["ci"][1] - o if np.isfinite(o) else 0 for o, r in zip(ours, rows)]]
+    ax.bar(x - 0.2, ours, 0.4, yerr=err, color=COL["accent"], label="Ours (95% CI)", error_kw=dict(elinewidth=0.8, capsize=1.8, ecolor="#333"))
+    ax.bar(x + 0.2, [100 * paper[k][0] for k in names], 0.4, color=COL["pred"], label="Paper")
+    for xi, o, p in zip(x, ours, [100 * paper[k][0] for k in names]):
+        ax.annotate(f"{o:.1f}", (xi - 0.2, o), ha="center", va="bottom", fontsize=6.5, color=COL["accent"])
+    ax.set_xticks(x, [SHORT[k] for k in names], rotation=30, ha="right", fontsize=8)
+    ax.axhline(5, color=COL["target"], ls="--", lw=1, label="5% target")
+    ax.set_ylabel("Trials failing (%)"); ax.set_ylim(0, 108); ax.set_title(title)
+
+
+fig, axes = plt.subplots(1, 4, figsize=(17.5, 4.1), gridspec_kw={"width_ratios": [1.1, 1.25, 1.25, 1.05]})
+versus(axes[0], P["t1_g1"]["summary"], T1.PAPER, "Table 1: regression, γ = 1, n = 200")
+versus(axes[1], P["t2_g1_n10"]["summary"], {k: v for k, v in T2.PAPER[10].items()}, "Table 2: count loss, n = 10")
+versus(axes[2], P["t2_g1_n250"]["summary"], {k: v for k, v in T2.PAPER[250].items()}, "Table 2: count loss, n = 250")
+axes[0].legend(loc="upper right", fontsize=7.5)
+ax = axes[3]
+points = [("T1", k, P["t1_g1"]["summary"][k]["length"], T1.PAPER[k][2]) for k in T1.PAPER]
+points += [(f"n={n}", k, P[f"t2_g1_n{n}"]["summary"][k]["mean_lambda"], T2.PAPER[n][k][1]) for n in (10, 250) for k in T2.PAPER[n]]
+for tag, color, marker in (("T1", COL["c3"], "s"), ("n=10", COL["c6"], "o"), ("n=250", COL["c4"], "^")):
+    sel = [(o, p) for t, _, o, p in points if t == tag and o is not None]
+    ax.scatter([p for _, p in sel], [o for o, _ in sel], color=color, marker=marker, s=28, label="Table 1 length" if tag == "T1" else f"Table 2 mean λ, {tag}")
+lim = (0.8, 20)
+ax.plot(lim, lim, color="#666", ls="--", lw=1); ax.set_xscale("log"); ax.set_yscale("log"); ax.set_xlim(*lim); ax.set_ylim(*lim)
+for t, k, o, p in points:
+    if o is not None and abs(math.log(o / p)) > 0.15:
+        ax.annotate(f"{SHORT[k]} ({t})", (p, o), fontsize=6.5, xytext=(4, -3), textcoords="offset points")
+ax.set_xlabel("Paper (log)"); ax.set_ylabel("Ours (log)"); ax.set_title("Size of what is deployed"); ax.legend(fontsize=7, loc="upper left")
+plt.tight_layout(); plt.show()"""),
+("md", r"""**Appendix C's sweep.** The paper also runs Table 2's benchmark at γ ∈ {0, 1, 2} and n from 10 to 250, and describes
+three regimes:
+- **γ = 0** (no shift, where WBCP is BQ-CP): WBCP fails 0.3-2.2% with no abstention; W-CRC fails 24-33%.
+- **γ = 1**: the blind rules fail in essentially every trial by n = 100; WBCP certifies every trial at 7.5-7.9%.
+- **γ = 2**: BQ-CP fails 91-100% (risk up to 0.74); WBCP abstains in every trial up to n = 100 and in 75% at
+  n = 250, and never fails when it certifies.
+
+We ran n ∈ {10, 100, 250} at each γ. RCPS is the published (⌈nR̂⌉) bound."""),
+("code", r"""NS2 = (10, 100, 250)
+SW = [("BQ-CP", COL["BQ-CP"], "o"), ("RCPS", COL["RCPS"], "s"), ("W-CRC", COL["W-CRC"], "D"), ("WBCP", COL["WBCP"], "o"), ("WBCP (oracle w)", COL["WBCP (oracle w)"], "^")]
+
+
+def cell(g, n, name):
+    run = P.get(f"t2_g{g}_n{n}")
+    return None if run is None else run["summary"][name]
+
+
+fig, axes = plt.subplots(1, 4, figsize=(17.5, 3.7))
+for ax, g in zip(axes, (0, 1, 2)):
+    for name, color, marker in SW:
+        rows = [cell(g, n, name) for n in NS2]
+        y = [np.nan if r is None or r.get("fail") is None else 100 * r["fail"] for r in rows]
+        ax.plot(NS2, y, marker=marker, color=color, ms=4.5, lw=1.5, label=SHORT[name])
+    target(ax); ax.set_xscale("log"); ax.set_xticks(NS2, [str(n) for n in NS2]); ax.set_ylim(-3, 103)
+    ax.set_xlabel("Calibration units n"); ax.set_ylabel("Certified trials failing (%)"); ax.set_title(f"γ = {g}")
+axes[0].legend(fontsize=7.5, loc="upper left")
+ax = axes[3]
+for g, ls in ((0, ":"), (1, "-"), (2, "--")):
+    for name, color in (("WBCP", COL["WBCP"]), ("W-CRC", COL["W-CRC"])):
+        rows = [cell(g, n, name) for n in NS2]
+        ax.plot(NS2, [np.nan if r is None else 100 * r["abstain"] for r in rows], color=color, ls=ls, marker="o", ms=3.5, label=f"{name}, γ = {g}")
+ax.set_xscale("log"); ax.set_xticks(NS2, [str(n) for n in NS2]); ax.set_ylim(-3, 103)
+ax.set_xlabel("Calibration units n"); ax.set_ylabel("Trials abstaining (%)"); ax.set_title("No certifiable threshold"); ax.legend(fontsize=6.5, ncol=2)
+plt.tight_layout(); plt.show()
+
+rows = []
+for g in (0, 1, 2):
+    for n in NS2:
+        run = P.get(f"t2_g{g}_n{n}")
+        if run is None:
+            continue
+        s = run["summary"]
+        rows.append([g, n, round(run["lambda_star"], 3), round(run["mean_n_eff"], 1)] + [pci(s[k]) for k, _, _ in SW]
+                    + [pf(s["WBCP"], "abstain"), pf(s["W-CRC"], "abstain"), pf(s["BQ-CP"], "risk")])
+display(Markdown("**Appendix C sweep (estimated weights unless marked oracle; 10,000 trials per row)**"))
+display(table(rows, ["γ", "n", "λ*", "n_eff", *[SHORT[k] for k, _, _ in SW], "WBCP abstain", "W-CRC abstain", "BQ-CP mean risk"]))"""),
+("code", r"""SENS = [("Default: a = ln 2, b = −0.019, samples 200", "t2_g1_n{}"), ("Classifier and test-mass samples 1,000", "sens_fit1000_n{}"),
+        ("Slope a = 0.65 (b = −0.040)", "sens_a065_n{}"), ("Slope a = 0.75 (b = +0.011)", "sens_a075_n{}")]
+rows = []
+for label, pattern in SENS:
+    for n in (10, 250):
+        run = P.get(pattern.format(n))
+        if run is None:
+            continue
+        s = run["summary"]
+        rows.append([label, n, round(run["lambda_star"], 3)] + [pci(s[k]) for k in ("BQ-CP", "RCPS (floor)", "W-CRC", "WBCP", "WBCP (oracle w)")]
+                    + [pf(s["WBCP"], "abstain"), "–" if s["WBCP"]["mean_lambda"] is None else round(s["WBCP"]["mean_lambda"], 2)])
+display(Markdown("**Sensitivity to what the paper leaves unstated (γ = 1).** Paper at n = 10: BQ-CP 28.2%, RCPS 5.7%, W-CRC 13.2%, "
+                 "WBCP 0.0% (abstains 93%). At n = 250: 100%, 100%, 43.7%, 7.9% (oracle 5.6%)."))
+display(table(rows, ["Setting", "n", "λ*", "BQ-CP", "RCPS ⌊nR̂⌋", "W-CRC", "WBCP", "WBCP oracle", "WBCP abstain", "WBCP mean λ"]))"""),
+("md", r"""**Scorecard against the pre-registered expectations** (`runs/wbcp_paper/expectations.md`)
+
+| # | Expectation | Result | Met? |
+|---|---|---|---|
+| 1 | n = 250: blind rules fail 100% | 100% each | Yes (fitted, not a test) |
+| 2 | n = 250: W-CRC fails 35-50%, mean λ 1.85-2.00 | 46.3% [45.3, 47.2], 1.94 (paper 43.7% [42.8, 44.7], 1.92) | Yes, though outside the paper's interval |
+| 3 | n = 250: WBCP fails 5-10%, mean λ 2.25-2.45 | 10.2% [9.6, 10.8], 2.42 (paper 7.9% [7.4, 8.5], 2.36) | No, just above |
+| 4 | n = 250: oracle WBCP (Eq. 6 mass) fails 4-8% | 7.0% [6.6, 7.6], 2.37 (paper 5.6% [5.1, 6.0], 2.35) | Yes, though outside the paper's interval |
+| 5 | Oracle with mass 1 fails more than item 4 | 9.2% | Yes |
+| 6 | n = 10: WBCP abstains 85-97%, fails 0-2% when it certifies, mean λ above 5 | Abstains 91.8%, fails 0.0%, mean λ 11.21 (paper 93%, 0.0%, 7.61) | Yes |
+| 7 | n = 10: oracle (Eq. 6) abstains 90-98% (paper about 96% from its interval); mass 1 abstains 30-60%; the paper's oracle row is the Eq. 6 mass | 93.3%; mass 1 abstains 9.2% and fails 1.4%. The paper's row rules out mass 1 but implies more abstention than Eq. 6 gives | Partly |
+| 8 | n = 10: W-CRC abstains 2-7%, fails 10-17%, mean λ 3.0-3.6 | 3.3%, 11.8%, 3.49 (paper 4%, 13.2%, 3.31) | Yes |
+| 9 | n = 10: RCPS ⌈⌉ about 2-3% / 4.4; ⌊⌋ about 6-7% / 3.5 | 2.4% / 4.22; 6.2% / 3.48 (paper 5.7% / 3.49) | Yes (fitted, not a test; ⌈⌉ mean 4.22 against about 4.4) |
+| 10 | n = 100: blind rules fail at least 95%; WBCP certifies all trials and fails 5-10% | BQ-CP 100%, RCPS 99.95%; WBCP abstains 0.0% and fails 7.8% (paper 7.5-7.9%) | Yes (the blind part follows from the fit) |
+| 11 | γ = 0: WBCP fails 0.3-3%; W-CRC fails 20-35% | WBCP 0.6 / 6.7 / 11.3% at n = 10 / 100 / 250; W-CRC 27.9 / 43.2 / 46.4% | No |
+| 12 | γ = 2: BQ-CP fails 90-100% (risk 0.70-0.76 at n = 250); WBCP abstains nearly always to n = 100, 50-90% at n = 250, never fails when certifying | 91.7-100%, risk 0.741; abstains 100 / 96.9 / 54.9%; fails 0.0% at n = 100 and 0.4% at n = 250 | Mostly: 0.4% is not "never" |
+| 13 | Classifier and test-mass samples of 1,000 move WBCP toward the oracle by under 2 points | 10.2% → 7.6% (oracle 6.5%), 2.6 points | No: right direction, larger move |
+| 14 | Slope 0.65 or 0.75 moves WBCP (n = 250) under 3 points | 10.0% and 10.5% | Yes |
+| 15 | Table 1 rerun reproduces the README table | Identical at printed precision (all six rows: failure, interval, risk, length) | Yes |
+
+**Why the misses happened.**
+- **Item 3: WBCP at n = 250 runs 2.3 points above the paper (10.2% against 7.9%). Two parts, only one explained.**
+  - About 1.4 points also appear in the exact-weight row: 7.0% against 5.6%, and 6.5-7.2% at every slope and
+    sample size tried. That part is not weight estimation, and its cause is not identified.
+  - The rest is the estimated-weight premium: estimated minus oracle is 3.2 points here and 2.3 in the paper.
+    It shrinks with a larger classifier sample (item 13).
+- **Item 11: estimated weights add error even with no shift.**
+  - At γ = 0 the classifier's slope is pure noise, but the score depends strongly on x, so the noise tilts the
+    weighted risk curve. As n grows the posterior concentrates on the tilted curve: 0.6% → 6.7% → 11.3%.
+  - With exactly uniform weights (the oracle row at γ = 0) failure stays at 0.5 / 4.0 / 3.8%.
+  - This is Theorem 4's weight-error × non-pivotal-score term. It is the same mechanism found on walker2d in
+    Change 10, where a 10× larger classifier sample largely removed it (14.9% → 5.7%).
+  - Table 1 shows it as well: at γ = 0, estimated-weight WBCP fails 5.7% against 3.7% with exact weights.
+  - The paper's γ = 0 statement is about WBCP = BQ-CP with equal weights, so the estimated-weight rows do not
+    contradict it. The paper does not mention this cost.
+- **Item 11, equal weights and W-CRC.**
+  - Even with equal weights, BQ-CP fails 4.0% and 3.9% at n = 100 and 250, above the paper's 0.3-2.2%.
+  - W-CRC's 43-46% is what an expectation-only rule gives at large n.
+  - The cause of the gap is not identified. Candidates are design details the paper does not state, such as
+    the form of rate(x) beyond the fitted slope.
+- **Item 13.** The unstated sample sizes matter more than pre-registered.
+  - They move WBCP by 2.6 points, enough to bring it inside the paper's interval (7.6% [7.1, 8.2]).
+  - They do not bring W-CRC (n = 10: 9.9% against 13.2%) or the oracle row (6.5% against 5.6%) closer. So this
+    does not show that the paper used a larger classifier.
+- **Item 7.** At n = 10, abstention depends only on the weights and the test mass, not on rate(x). It is
+  identical at slopes 0.65 and 0.75. The paper's oracle interval [0.0, 0.9] implies about 410 certified trials,
+  i.e. about 96% abstention. Eq. (6) gives 93.3%; matching 96% would take a test mass near 3.0 rather than
+  e = 2.72. With mass 1 most trials certify.
+
+**Not predicted.**
+- **Mean λ at n = 10.** Only "above 5" was pre-registered. Over the about 8% of trials that certify, WBCP's mean λ
+  is 11.2 (oracle 12.6) against the paper's 7.61 (7.94). This conditional mean is driven by the upper tail of T,
+  which the fit to mid-range thresholds does not pin down: the deployed λ is usually the largest or second-largest
+  of the 40 outcomes.
+- **Abstention at n = 10.** Failure rates match (0.0%). Abstention, which tests the weights and test mass directly,
+  is close but not equal:
+  - Estimated-weight WBCP abstains 91.8% against the paper's 93% (93.2% with 1,000-sample weights).
+  - The Eq. (6) oracle abstains 93.3% against about 96%.
+- **Table 1's exchangeable control.** BQ-CP fails 3.8% at γ = 0, against the paper's 2.6% (documented earlier: the
+  exact infinite-draw value is 3.20%).
+
+**Verdict.**
+- **Table 1.** The shift rows reproduce to within about 2 points (W-CRC 41.2% against 42.8% is the largest gap).
+  Two caveats: the oracle row matches test mass 1 rather than Eq. (6), and the exchangeable control (3.8% against
+  2.6%) does not reproduce.
+- **Table 2 at n = 10.** WBCP abstains instead of failing: 91.8% abstention and no failures, against the paper's
+  93% and none. W-CRC (11.8%, abstaining 3.3%) is close to the paper's 13.2% and 4%. The blind rows were used to
+  fit rate(x), so they are not a test.
+- **Table 2 at n = 250.** At the pre-registered settings it does not reproduce quantitatively. WBCP fails 10.2%
+  [9.6, 10.8] against 7.9% [7.4, 8.5], and W-CRC and the oracle row also fall outside the paper's intervals. The
+  qualitative result holds: WBCP certifies every trial at a few points above the 5% target, while the blind rules
+  fail every trial.
+- **RCPS.** The paper's numbers need a non-published rounding.
+
+For BCA, the lesson that carries over is the one in Change 10: split-estimated weights need a large fitting sample
+when the score is not pivotal, or WBCP fails more often than its 5% target even with no shift."""),
+
+("md", r"""## 10. All results
 
 Every result block from every run: one row per experiment, tilt, bank size and score, with each rule's failure
 rate and 95% interval. The last columns (mean risk, percentiles, excess, threshold, abstention) are for WBCP with
@@ -618,7 +862,7 @@ ALL = table(rows, ["Change", "Experiment", "Dataset", "Bank design", "n", "Tilt"
 print(f"{len(ALL)} result blocks")
 ALL"""),
 
-("md", r"""## 10. Provenance
+("md", r"""## 11. Provenance
 
 Expectations were written to timestamped files before each run. They are not under version control, so their
 SHA-256 values are listed to be sent to the advisor or committed. The full write-up, with every verdict and its
