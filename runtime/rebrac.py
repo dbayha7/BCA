@@ -68,7 +68,23 @@ class Reservation:
             raise ValueError(
                 "unsupported dependency contract; no fallback is available"
             )
+        self._check_rows_per_episode()
+
+    def _check_rows_per_episode(self):
         _integer(self.rows_per_episode, "reservation rows per episode", 1)
+
+
+@dataclass(frozen=True)
+class PopulationSplit(Reservation):
+    # Population splits ONLY (experiments/wbcp/freeze_rebrac.py): rows_per_episode=None
+    # withholds whole components and keeps every row of them, never a WBCP bank
+    # (DEPENDENCE.md), so run_prepared refuses it. Reservation, which
+    # runtime.config.typed builds, still refuses None.
+    def _check_rows_per_episode(self):
+        if self.rows_per_episode is not None:
+            raise ValueError(
+                "a population split keeps every withheld row; rows_per_episode is None"
+            )
 
 
 @dataclass(frozen=True)
@@ -102,7 +118,10 @@ class RunProtocol:
             raise ValueError(
                 "native horizon must be divisible by periodic interval; no truncation"
             )
-        if self.reservation is not None and type(self.reservation) is not Reservation:
+        if self.reservation is not None and type(self.reservation) not in (
+            Reservation,
+            PopulationSplit,
+        ):
             raise TypeError("typed reservation required")
         if (
             type(self.refresh_events) is not tuple
@@ -515,7 +534,8 @@ def _prepared_hashes(prepared):
 
 def _selection(converted, maps, protocol):
     """(training, withheld, heldout, record): training and withheld partition the rows;
-    heldout is the WBCP calibration bank, K stratified rows of each withheld component."""
+    heldout is the WBCP calibration bank, K stratified rows of each withheld component
+    (every withheld row for a PopulationSplit, rows_per_episode=None)."""
     r = protocol.reservation
     native = C.TransitionNA(
         converted["observations"],
@@ -536,7 +556,11 @@ def _selection(converted, maps, protocol):
     reservation = dict(
         contract=DEPENDENCY_CONTRACT,
         meaning=(
-            "K stratified rows from each withheld effective raw-dependency component; "
+            "whole withheld effective raw-dependency components, every row kept "
+            "(population split for experiments/wbcp/freeze_rebrac.py, not a calibration design); "
+            "not inferred independent episodes"
+            if r.rows_per_episode is None
+            else "K stratified rows from each withheld effective raw-dependency component; "
             "every row of a withheld component is excluded from training; "
             "not inferred independent episodes"
         ),
@@ -776,6 +800,8 @@ def run_prepared(
     on_event=None,
     on_checkpoint=None
 ):
+    if isinstance(getattr(protocol, "reservation", None), PopulationSplit):
+        raise ValueError("a whole-component population split is not a WBCP bank; it is never run")
     args, specification, protocol, prepared = copy.deepcopy(
         (args, specification, protocol, prepared)
     )

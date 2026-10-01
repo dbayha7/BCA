@@ -138,10 +138,26 @@ class RunProtocol:
             )
 
 
+@dataclass(frozen=True)
+class PopulationSplitProtocol(RunProtocol):
+    """RunProtocol with calibration_rows_per_episode=None, for population splits only.
+
+    prepare reserves whole episodes up to the target and keeps every withheld row
+    (experiments/wbcp/freeze_cql.py). That is not a WBCP bank, so run_prepared refuses
+    this type, and RunProtocol itself still requires an integer K with a target.
+    """
+
+    def __post_init__(self):
+        if self.calibration_rows_per_episode is not None or self.calibration_target_size is None:
+            raise ValueError("a population split has a target and no calibration_rows_per_episode")
+        fields = {k: getattr(self, k) for k in self.__dataclass_fields__}
+        RunProtocol(**{**fields, "calibration_rows_per_episode": 1})  # every other field's checks
+
+
 def validate_protocol(args, config, protocol):
     if not isinstance(protocol, RunProtocol) or not isinstance(config, P.Config):
         raise TypeError("typed protocol and posterior configuration required")
-    RunProtocol(**{k: getattr(protocol, k) for k in protocol.__dataclass_fields__})
+    type(protocol)(**{k: getattr(protocol, k) for k in protocol.__dataclass_fields__})
     for name in (
         "seed",
         "num_updates",
@@ -157,7 +173,8 @@ def validate_protocol(args, config, protocol):
         protocol.calibration_max_fraction,
         protocol.calibration_rows_per_episode,
     )
-    if any((x is None for x in split)):
+    population = isinstance(protocol, PopulationSplitProtocol)  # K is None by its type
+    if any((x is None for x in (split[:3] if population else split))):
         raise ValueError("reserved arms require all split inputs")
     if config.arm == "bca":
         if not protocol.refresh_steps:
@@ -373,6 +390,7 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
         protocol.calibration_rows_per_episode,
         max_fraction=protocol.calibration_max_fraction,
         episode_ids=episode_ids,
+        population_split=isinstance(protocol, PopulationSplitProtocol),
     )
     if set(episode_ids[train]) & set(episode_ids[withheld]):
         raise ValueError("training and withheld episode IDs overlap")
@@ -726,6 +744,8 @@ def run_prepared(
     on_checkpoint=None
 ):
     validate_protocol(args, config, protocol)
+    if isinstance(protocol, PopulationSplitProtocol):
+        raise ValueError("a whole-episode population split is not a WBCP bank; it is never run")
     if _digest(prepared.metadata) != prepared.metadata_sha256:
         raise ValueError(
             "prepared provenance metadata differs from its complete digest"
