@@ -1,0 +1,729 @@
+<title>BCA Calibration Benchmark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --paper: #f4f6f9; --surface: #ffffff; --sunken: #eceff4; --ink: #152033; --muted: #586476;
+  --line: #d8dee7; --grid: #e7ebf1; --accent: #0d7a85;
+  --wbcp: #0d8a96; --exact: #0b4f58; --uniform: #b8701a; --rcps: #7d889b; --pred: #8792a3; --target: #c0392b;
+  --c3: #4b5fc1; --c4: #2e9a6b; --c5: #9b4dca; --c6: #d0632b;
+  --ok: #2f7d4f; --ok-bg: #e3f2e8; --mid: #8a6a12; --mid-bg: #f6eed4; --no: #b3261e; --no-bg: #f9e3e1; --na: #586476; --na-bg: #eceff4;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --cond: 'IBM Plex Sans Condensed', 'Arial Narrow', 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0d1218; --surface: #141b24; --sunken: #1a2330; --ink: #e4e9f0; --muted: #98a3b3;
+    --line: #283343; --grid: #1f2936; --accent: #41b9c6;
+    --wbcp: #3cc0cc; --exact: #9fe0e6; --uniform: #e3a14a; --rcps: #8f9bb0; --pred: #6f7b8e; --target: #f06b5d;
+    --c3: #8b9cf0; --c4: #5cc795; --c5: #c28bea; --c6: #f08b55;
+    --ok: #6cc38e; --ok-bg: #16301f; --mid: #e3c265; --mid-bg: #33290e; --no: #f0776a; --no-bg: #3a1714; --na: #98a3b3; --na-bg: #1a2330;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0d1218; --surface: #141b24; --sunken: #1a2330; --ink: #e4e9f0; --muted: #98a3b3;
+  --line: #283343; --grid: #1f2936; --accent: #41b9c6;
+  --wbcp: #3cc0cc; --exact: #9fe0e6; --uniform: #e3a14a; --rcps: #8f9bb0; --pred: #6f7b8e; --target: #f06b5d;
+  --c3: #8b9cf0; --c4: #5cc795; --c5: #c28bea; --c6: #f08b55;
+  --ok: #6cc38e; --ok-bg: #16301f; --mid: #e3c265; --mid-bg: #33290e; --no: #f0776a; --no-bg: #3a1714; --na: #98a3b3; --na-bg: #1a2330;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.55 var(--sans); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 0 48px; }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); border-bottom: 1px solid var(--line); }
+.head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; padding-block: 18px 12px; }
+h1 { font: 600 26px/1.15 var(--cond); letter-spacing: 0.01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--surface); }
+.seg button { font: 500 12.5px var(--sans); color: var(--muted); background: transparent; border: 0; padding: 6px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.seg button:focus-visible, .tabs button:focus-visible, select:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ctl-label { font: 600 11px var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: thin; margin-inline: -4px; padding-inline: 4px; }
+.tabs button { font: 500 14px var(--cond); color: var(--muted); background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 12px 9px; white-space: nowrap; cursor: pointer; }
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs .num { font: 500 11px var(--mono); color: var(--muted); margin-right: 5px; }
+section.panel { padding-top: 26px; display: flex; flex-direction: column; gap: 22px; scroll-margin-top: 160px; }
+.lead { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; max-width: 900px; }
+.lead h2 { font: 600 22px/1.2 var(--cond); margin: 0; text-wrap: balance; }
+.lead p { margin: 0; max-width: 72ch; }
+.qa { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 6px 14px; max-width: 900px; }
+.qa dt { font: 600 11px/2 var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.qa dd { margin: 0; max-width: 75ch; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 500 12.5px var(--sans); padding: 3px 10px 3px 8px; border-radius: 999px; background: var(--na-bg); color: var(--na); }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.chip.ok { background: var(--ok-bg); color: var(--ok); } .chip.mid { background: var(--mid-bg); color: var(--mid); } .chip.no { background: var(--no-bg); color: var(--no); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 18px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { font: 600 16px/1.3 var(--cond); margin: 0; }
+.card .how { color: var(--muted); font-size: 13px; margin: 0; max-width: 80ch; }
+.card .src { color: var(--muted); font: 11.5px/1.4 var(--mono); margin: 0; overflow-wrap: anywhere; }
+.plot { width: 100%; height: 340px; }
+.plot.tall { height: 470px; }
+.plot .msg { color: var(--muted); font-size: 13px; padding: 20px; }
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+th { font: 600 11.5px var(--sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--sunken); position: sticky; top: 0; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+td.mono, .mono { font-family: var(--mono); font-size: 12px; }
+td.fail { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+td.fail .bad { color: var(--no); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+.explorer-controls { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; }
+.explorer-controls label { display: flex; flex-direction: column; gap: 4px; font: 600 11px var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+select { font: 13px var(--sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; min-width: 150px; max-width: 100%; }
+.count { color: var(--muted); font-size: 13px; }
+.explorer .tbl { max-height: 70vh; }
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.finding h3 { font: 600 16px/1.3 var(--cond); margin: 0; }
+.finding p { margin: 0; font-size: 14px; }
+.finding .go { font: 500 12.5px var(--sans); color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; align-self: flex-start; }
+.finding .go:hover { text-decoration: underline; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 18px; }
+.prose p { margin: 0 0 10px; max-width: 72ch; }
+.prose h3 { font: 600 16px var(--cond); margin: 0 0 8px; }
+dl.terms { display: grid; grid-template-columns: minmax(110px, 170px) minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 14px; }
+dl.terms dt { font-weight: 600; }
+dl.terms dd { margin: 0; }
+blockquote { margin: 0; padding: 10px 14px; border-left: 3px solid var(--line); background: var(--sunken); border-radius: 0 6px 6px 0; font-size: 14px; }
+blockquote cite { display: block; color: var(--muted); font-style: normal; font-size: 12px; margin-top: 4px; }
+.copy { font: 500 11.5px var(--sans); color: var(--accent); background: none; border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px; cursor: pointer; margin-left: 6px; }
+.legend-note { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--muted); }
+.legend-note span::before { content: ""; display: inline-block; width: 18px; height: 0; border-top: 2px dashed var(--target); vertical-align: middle; margin-right: 6px; }
+@media (max-width: 640px) { h1 { font-size: 22px; } .qa { grid-template-columns: minmax(0, 1fr); } .plot { height: 300px; } .plot.tall { height: 520px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <h1>BCA Calibration Benchmark</h1>
+        <p class="sub" id="sub">Semi-synthetic D4RL tests of WBCP calibration banks</p>
+      </div>
+      <div class="controls">
+        <div><span class="ctl-label">Score</span><span class="seg" role="group" aria-label="Score">
+          <button type="button" id="score-normalized" data-score="normalized" aria-pressed="true">Normalized</button>
+          <button type="button" id="score-raw" data-score="raw" aria-pressed="false">Raw</button></span></div>
+        <div><span class="ctl-label">Rule</span><span class="seg" role="group" aria-label="Rule shown in shift charts">
+          <button type="button" id="arm-wbcp" data-arm="WBCP" aria-pressed="true">WBCP</button>
+          <button type="button" id="arm-exact" data-arm="WBCP (oracle w)" aria-pressed="false">WBCP exact w</button>
+          <button type="button" id="arm-uniform" data-arm="BQ-CP" aria-pressed="false">Uniform BCA</button>
+          <button type="button" id="arm-rcps" data-arm="RCPS" aria-pressed="false">RCPS</button></span></div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Result sections">
+      <button type="button" role="tab" id="tab-overview" data-tab="overview" aria-controls="overview">Overview</button>
+      <button type="button" role="tab" id="tab-whole" data-tab="whole" aria-controls="whole"><span class="num">1-3</span>Whole episodes</button>
+      <button type="button" role="tab" id="tab-thin" data-tab="thin" aria-controls="thin"><span class="num">4, 6</span>Thinning and spacing</button>
+      <button type="button" role="tab" id="tab-shift" data-tab="shift" aria-controls="shift"><span class="num">5, 7, 8</span>Distribution shift</button>
+      <button type="button" role="tab" id="tab-bca" data-tab="bca" aria-controls="bca"><span class="num">9</span>BCA's bank</button>
+      <button type="button" role="tab" id="tab-datasets" data-tab="datasets" aria-controls="datasets"><span class="num">10</span>Other datasets</button>
+      <button type="button" role="tab" id="tab-excess" data-tab="excess" aria-controls="excess"><span class="num">11</span>WBCP under strong shift</button>
+      <button type="button" role="tab" id="tab-all" data-tab="all" aria-controls="all">All results</button>
+      <button type="button" role="tab" id="tab-provenance" data-tab="provenance" aria-controls="provenance">Provenance</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="panel" id="overview" role="tabpanel" aria-labelledby="tab-overview">
+  <div class="lead">
+    <h2>What the semi-synthetic tests show</h2>
+    <p>TD3+BC with BCA's learned scale is trained on half of a D4RL dataset, frozen, and used to score every transition in the other half. That pool is resampled under shifts we impose, so the true risk of any threshold is known exactly. A calibration bank "fails" when the threshold it certifies misses more than 10% of test rows; a valid rule fails at most 5% of the time. Every experiment after the first had its expectations written down before it ran.</p>
+  </div>
+  <div class="findings" id="findings"></div>
+  <div class="card wide">
+    <h3>Prediction scorecard</h3>
+    <p class="how">One row per change in the write-up (experiments/wbcp/DEPENDENCE.md). Verdicts compare results with the expectations recorded before each run.</p>
+    <div class="tbl"><table><thead><tr><th>Change</th><th>Question</th><th>Verdict</th><th>Key result</th></tr></thead><tbody id="scorecard"></tbody></table></div>
+  </div>
+  <div class="two">
+    <div class="card">
+      <h3>Setup</h3>
+      <div class="prose">
+        <p>Target miscoverage α = 0.1 at credibility β = 0.95. Each failure rate is the share of 2,000-4,000 simulated banks whose certified threshold misses more than 10% of test rows, shown with its exact 95% interval.</p>
+        <p>Shifts reweight the pool by exp(γ z), z a standardized feature of (s, a): closeness of the logged action to the policy's (policy), sparseness of the region (density) or the size of the state (state). Resampling never changes a row's score, so the shift is purely covariate and the true threshold λ* is exact.</p>
+      </div>
+      <div class="tbl"><table><thead><tr><th>Score pool</th><th class="n">Rows</th><th class="n">Episodes</th><th class="n">Training rows</th></tr></thead><tbody id="pools"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Terms</h3>
+      <dl class="terms">
+        <dt>Bank</dt><dd>The calibration set a threshold is computed from. BCA's hopper bank is about 1,100 rows.</dd>
+        <dt>Uniform BCA</dt><dd>WBCP with equal weights (BQ-CP), today's BCA calibration.</dd>
+        <dt>WBCP</dt><dd>Weighted Bayesian conformal prediction (Lou and Luo), with weights from a classifier or, as a control, the exact ones.</dd>
+        <dt>RCPS</dt><dd>A conservative frequentist baseline.</dd>
+        <dt>K</dt><dd>Rows taken from each withheld episode. Random puts them anywhere; spaced puts one in each K-th of the episode; BCA sampler is BCA's own reservation.</dd>
+        <dt>ρ, design effect</dt><dd>ρ is the correlation between misses in the same episode. The design effect 1 + (K − 1) ρ is how much that inflates a bank's variance.</dd>
+        <dt>Normalized / raw</dt><dd>The score with and without BCA's learned scale σ(s, a). The toggle in the header switches every chart that has both.</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="panel" id="whole" role="tabpanel" aria-labelledby="tab-whole" hidden>
+  <dl class="qa"><dt>Question</dt><dd>Does BCA's original bank, whole held-out episodes, give the guarantee WBCP promises?</dd>
+  <dt>Answer</dt><dd>No. About 28% of banks fail with no shift at all, because rows in one episode are correlated and the posterior treats them as independent. A bigger bank of whole episodes only makes the threshold tighter.</dd></dl>
+  <div class="chips"><span class="chip">Change 1: not pre-registered</span><span class="chip mid">Change 2: mostly (retrodiction)</span><span class="chip ok">Change 3: yes (raw: mostly)</span></div>
+  <div class="grid">
+    <div class="card"><h3>Independent rows against whole episodes</h3><p class="how">Share of 1,103-row banks that fail with no shift. The dashed line is the 5% target.</p><div class="plot" id="c-whole-vs-iid"></div><p class="src">hopper-u100000/e0_iid, e1_blocks · 4,000 trials</p></div>
+    <div class="card"><h3>Bigger whole-episode banks</h3><p class="how">Failure stays near 27% as the bank grows from 3 to 26 episodes. The dashed grey line is the Monte Carlo design-effect prediction.</p><div class="plot" id="c-whole-size"></div><p class="src">hopper-u100000/e1_blocks, predictions.json · 4,000 trials</p></div>
+    <div class="card"><h3>The threshold tightens without becoming reliable</h3><p class="how">Mean certified threshold against the true threshold λ*. The posterior grows more confident while failure stays put.</p><div class="plot" id="c-whole-threshold"></div><p class="src">hopper-u100000/e1_blocks, e0_iid</p></div>
+    <div class="card"><h3>Why: misses cluster within an episode</h3><p class="how">Correlation between misses t and t + lag steps apart in the same episode (hopper). ρ over whole episodes is 0.016, and over ~480 rows per episode that inflates the variance about 6.5×.</p><div class="plot" id="c-lags-hopper"></div><p class="src">hopper-u100000/predictions.json</p></div>
+    <div class="card wide"><h3>Whole-episode banks under shift</h3><p class="how">Solid bars: whole-episode banks. Hatched bars: independent rows. Whole episodes spoil WBCP under every tilt. At state γ = 1 WBCP mostly abstains, which counts as a pass.</p><div class="plot" id="c-whole-shift"></div><p class="src">wbcp_bench/blocks.json, main.json · 2,000 trials</p></div>
+  </div>
+</section>
+
+<section class="panel" id="thin" role="tabpanel" aria-labelledby="tab-thin" hidden>
+  <dl class="qa"><dt>Question</dt><dd>Does taking only K rows from each of many episodes restore validity, and does spacing them apart help?</dd>
+  <dt>Answer</dt><dd>Yes for small K. K ≤ 10 stays near 5% without shift, the threshold does not widen, and spacing helps at larger K. The cost is training data: every contributing episode leaves training.</dd></dl>
+  <div class="chips"><span class="chip ok">Change 4: largely</span><span class="chip ok">Change 6: mostly</span></div>
+  <div class="grid">
+    <div class="card wide"><h3>Failure against rows per episode</h3><p class="how">Uniform BCA, 1,103-row banks, no shift. Solid lines are observed with 95% intervals; dashed lines are the Monte Carlo predictions made in advance. The dotted line is the independent-row rate.</p><div class="plot" id="c-k-sweep"></div><p class="src">hopper-u100000/e2_k*, hopper-u100000-spacing/e6_strat_k*, predictions.json · 4,000 trials</p></div>
+    <div class="card"><h3>What it costs: data withheld from training</h3><p class="how">Share of hopper-medium that a real bank of 1,103 rows withholds, with episodes picked in proportion to their length.</p><div class="plot" id="c-k-withheld"></div><p class="src">ceil(1,103 / K) episodes × 484 mean selected length ÷ 999,998 rows</p></div>
+    <div class="card"><h3>The threshold does not widen</h3><p class="how">Mean certified threshold for random and spaced banks, against λ*.</p><div class="plot" id="c-k-threshold"></div><p class="src">hopper-u100000/e2_k*, e6_strat_k*</p></div>
+  </div>
+</section>
+
+<section class="panel" id="shift" role="tabpanel" aria-labelledby="tab-shift" hidden>
+  <dl class="qa"><dt>Question</dt><dd>Does the WBCP-versus-uniform picture survive thinned banks, and which design holds under shift?</dd>
+  <dt>Answer</dt><dd>Uniform BCA fails 25-98% under density and state shift while WBCP stays at 4-9%. K = 5 holds; K = 10 fails under the density tilt, spaced or not, because it draws from too few episodes.</dd></dl>
+  <div class="chips"><span class="chip mid">Change 5: partly</span><span class="chip ok">Change 7: yes on the main part</span><span class="chip ok">Change 8: yes</span></div>
+  <div class="grid">
+    <div class="card wide"><h3>Failure by tilt and bank design</h3><p class="how">1,103-row banks on hopper. Use the Rule switch in the header to change the rule shown. At state γ = 1 WBCP abstains in about a third of banks, which counts as a pass.</p><div class="plot tall" id="c-shift-designs"></div><p class="src">wbcp_bench/main, blocks · hopper-u100000/e3_k* · hopper-u100000-spacing/e7_*, e8_* · 2,000-4,000 trials</p></div>
+    <div class="card"><h3>K = 10 fails more than K = 5 under the density tilt</h3><p class="how">WBCP, normalized score. Each pair is one comparison run. The excess shows up in every run.</p><div class="plot" id="c-k10-excess"></div><p class="src">e3_k5 vs e3_k10 · posthoc_dominant_episode.json (rerun, exact weights, approximate intervals) · e8 vs e7_stratified</p></div>
+    <div class="card"><h3>Post hoc: failure by the largest episode's weight share</h3><p class="how">Density γ = 1, exact weights. Failures are most common when no single episode dominates the bank, which contradicts a "dominant episode" explanation.</p><div class="plot" id="c-dominant"></div><p class="src">hopper-u100000/posthoc_dominant_episode.json (post hoc; 500 banks per quartile)</p></div>
+    <div class="card wide"><h3>Post hoc: design effect recomputed under each tilt</h3><p class="how">K = 10 with exact weights: observed failure against the failure predicted from the tilted design effect.</p><div class="plot" id="c-tilted-hopper"></div><p class="src">hopper-u100000/posthoc_tilted_design_effect.json (post hoc)</p></div>
+  </div>
+</section>
+
+<section class="panel" id="bca" role="tabpanel" aria-labelledby="tab-bca" hidden>
+  <dl class="qa"><dt>Question</dt><dd>Does BCA's own implementation of the thinned bank behave like the validated design, and what K does each config get?</dd>
+  <dt>Answer</dt><dd>Yes on hopper: 5.0% without shift and every shift range met. Under the rule "K = 5, raised until it fits the withholding cap", most TD3+BC / ReBRAC / CQL banks stay validated and most IQL banks do not.</dd></dl>
+  <div class="chips"><span class="chip mid">Change 9: mostly (4 expectations: yes, mostly, yes, yes)</span></div>
+  <div class="grid">
+    <div class="card wide"><h3>BCA's sampler against the benchmark's designs</h3><p class="how">K = 5, 1,103-row banks on hopper. The Rule switch changes the rule shown.</p><div class="plot" id="c-bca-vs-bench"></div><p class="src">hopper-u100000-reservation/r1, r2 · hopper-u100000-spacing/e6_strat_k5, e8 · hopper-u100000/e2_k5, e3_k5</p></div>
+    <div class="card"><h3>IQL's raised K on hopper</h3><p class="how">K = 18 at 8,192 rows. BCA's sampler looks optimistic on the half-size pool and the spaced sampler with replacement looks pessimistic; a real deployment lies between.</p><div class="plot" id="c-iql-bracket"></div><p class="src">hopper-u100000-reservation/r3, r4 · hopper-u100000/e0_iid</p></div>
+    <div class="card"><h3>Withheld share per config</h3><p class="how">Share of each dataset withheld at the configured seed. Hatched bars are outside the validated range (K ≤ 10 from at least 100 episodes). Dashed lines are the caps.</p><div class="plot" id="c-config-withheld"></div><p class="src">hopper-u100000-reservation/rows_per_episode.json</p></div>
+    <div class="card wide"><h3>Rows per episode by host and dataset</h3><div class="tbl"><table><thead><tr><th>Dataset</th><th>Hosts</th><th class="n">Bank target</th><th class="n">Cap</th><th class="n">K</th><th class="n">Episodes</th><th class="n">Bank rows</th><th class="n">Withheld</th><th>Validated range</th></tr></thead><tbody id="configs"></tbody></table></div></div>
+  </div>
+</section>
+
+<section class="panel" id="datasets" role="tabpanel" aria-labelledby="tab-datasets" hidden>
+  <dl class="qa"><dt>Question</dt><dd>Does hopper's answer (K = 5) carry over to walker2d-medium-replay and pen-cloned?</dd>
+  <dt>Answer</dt><dd>No. ρ is about seven times hopper's, K = 5 fails 6-8%, and the configured walker2d banks fail 18-30%. Estimated weights also hurt WBCP there even without shift, unless the weight model gets far more data.</dd></dl>
+  <div class="chips"><span class="chip mid">Stage A: mostly</span><span class="chip mid">Stage B, no shift: mostly</span><span class="chip no">Stage B, shift: no (walker2d), mixed (pen-cloned)</span><span class="chip ok">Stage D: yes</span></div>
+  <div class="grid">
+    <div class="card"><h3>Within-episode correlation of misses</h3><p class="how">ρ at the true threshold, by dataset.</p><div class="plot" id="c-rho"></div><p class="src">predictions.json of each pool</p></div>
+    <div class="card"><h3>How far apart misses stay correlated</h3><p class="how">On walker2d the correlation never fades within an episode, so spacing rows cannot help there.</p><div class="plot" id="c-lags-all"></div><p class="src">predictions.json of each pool</p></div>
+    <div class="card wide"><h3>Predicted against observed failure, by design</h3><p class="how">Uniform BCA, no shift. Filled circles are observed with 95% intervals; open diamonds are the Monte Carlo predictions recorded before the runs.</p><div class="plot tall" id="c-designs-pred-obs"></div><p class="src">other-datasets/w_*, p_*, predictions_* · hopper-u100000-reservation/r1 · 4,000 trials</p></div>
+    <div class="card"><h3>Configured TD3+BC-family bank under shift</h3><p class="how">walker2d K = 23 and pen-cloned K = 5, BCA's sampler. The Rule switch changes the rule shown. At state γ = 1 WBCP abstains in every bank, which counts as a pass.</p><div class="plot" id="c-datasets-shift"></div><p class="src">other-datasets/w_resv23_*, p_resv5_* · 4,000 trials</p></div>
+    <div class="card"><h3>Estimated against exact weights, no shift</h3><p class="how">Independent rows. With the weight model fit on 1,000 samples, WBCP fails more than uniform BCA; fitting on 10× more data fixes it.</p><div class="plot" id="c-est-vs-exact"></div><p class="src">other-datasets/w_iid_*, p_iid_*, d_w_iid_n8192_fit10000 (normalized only) · hopper-u100000/e0_iid</p></div>
+    <div class="card wide"><h3>Post hoc: why shift lowered failure on walker2d</h3><p class="how">Under a tilt, the dependence that matters is that of the weighted miss term, which drops well below the unweighted ρ for the policy and density tilts.</p><div class="plot" id="c-tilted-rho"></div><p class="src">other-datasets/posthoc_tilted_rho_*.json (post hoc)</p></div>
+  </div>
+</section>
+
+<section class="panel" id="excess" role="tabpanel" aria-labelledby="tab-excess" hidden>
+  <dl class="qa"><dt>Question</dt><dd>Why does WBCP fail 7-9% under strong shift on hopper, even with independent rows and exact weights?</dd>
+  <dt>Answer</dt><dd>It is finite-sample behaviour the paper allows and also reports. It is driven by heavy weights that sit on the misses, it shrinks as banks grow, and failing banks exceed α by under a point.</dd></dl>
+  <div class="chips"><span class="chip ok">Theory: yes</span><span class="chip mid">A, bank size: mostly</span><span class="chip ok">B, shuffled weights: yes</span><span class="chip mid">C, mechanism: partly</span></div>
+  <div class="grid">
+    <div class="card wide"><h3>The excess shrinks as the bank grows</h3><p class="how">Exact weights (solid, with 95% intervals) and estimated weights (dotted). Shaded bands are the paths pre-registered for density γ = 1 and state γ = 0.5. Normalized score.</p><div class="plot" id="c-n-sweep"></div><p class="src">hopper-u100000-weighting/a_density1, a_state05, a_policy1 · 4,000 trials per point</p></div>
+    <div class="card"><h3>How far failing banks exceed α</h3><p class="how">Mean excess over 10% among failing banks, exact weights.</p><div class="plot" id="c-excess-size"></div><p class="src">hopper-u100000-weighting/a_*</p></div>
+    <div class="card"><h3>99th percentile of realized risk</h3><p class="how">The worst 1% of banks, exact weights. The dashed line is α = 10%.</p><div class="plot" id="c-q99"></div><p class="src">hopper-u100000-weighting/a_*</p></div>
+    <div class="card"><h3>Alignment with the score drives it</h3><p class="how">Same density γ = 1 weights, aligned with the scores or shuffled onto random rows; policy γ = 1 as a mild control. 1,103-row banks.</p><div class="plot" id="c-shuffle"></div><p class="src">hopper-u100000-weighting/a_density1, b_shuffled_density1, a_policy1</p></div>
+    <div class="card"><h3>Mechanism: failing banks under-report their spread</h3><p class="how">Posterior spread at the true threshold relative to the true spread across banks. On average it is right; in failing banks it is too small.</p><div class="plot" id="c-mechanism"></div><p class="src">hopper-u100000-weighting/c_*.json · 4,000 banks × 4,000 posterior draws</p></div>
+    <div class="card"><h3>The paper's frequentist slack is larger than α</h3><p class="how">Theorem 4's concentration term η_n (Bernstein form, δ = 0.05) for our weights, log scale. Above the dashed α line, the certificate promises nothing.</p><div class="plot" id="c-slack"></div><p class="src">hopper-u100000-weighting/certificate_slack.json</p></div>
+    <div class="card"><h3>What the paper says</h3>
+      <blockquote>Credibility no longer coincides with confidence.<cite>Lou and Luo, arXiv:2604.06464v3, §1</cite></blockquote>
+      <blockquote>WBCP certifies every trial at 7.5–7.9%. The oracle row attributes the residual to η_n, not weight estimation.<cite>§4.2, Table 2 (n = 250: 7.9% estimated weights, 5.6% oracle)</cite></blockquote>
+      <p class="how">Corollary 3 is a statement about posterior credibility. The frequency guarantee is Theorem 4, whose slack η_n is shown above.</p>
+    </div>
+  </div>
+</section>
+
+<section class="panel explorer" id="all" role="tabpanel" aria-labelledby="tab-all" hidden>
+  <div class="lead"><h2>All benchmark results</h2><p>Every result block from every run: one row per experiment, tilt, bank size and score. Failure rates are shown for each rule with their 95% intervals; red marks rates above the 5% target. The detail columns belong to the rule chosen on the right.</p></div>
+  <div class="explorer-controls">
+    <label for="f-change">Change<select id="f-change"></select></label>
+    <label for="f-exp">Experiment<select id="f-exp"></select></label>
+    <label for="f-dataset">Dataset<select id="f-dataset"></select></label>
+    <label for="f-score">Score<select id="f-score"><option value="">Both</option><option value="normalized">Normalized</option><option value="raw">Raw</option></select></label>
+    <label for="f-tilt">Tilt<select id="f-tilt"><option value="">All</option><option value="none">No shift</option><option value="policy">Policy</option><option value="density">Density</option><option value="state">State</option></select></label>
+    <label for="f-detail">Detail columns for<select id="f-detail"><option value="WBCP">WBCP, estimated weights</option><option value="WBCP (oracle w)">WBCP, exact weights</option><option value="BQ-CP">Uniform BCA</option><option value="RCPS">RCPS</option><option value="W-CRC">W-CRC</option></select></label>
+    <span class="count" id="f-count"></span>
+  </div>
+  <div class="tbl"><table><thead><tr><th>Chg</th><th>Experiment</th><th>Dataset</th><th>Bank design</th><th class="n">n</th><th>Tilt</th><th class="n">γ</th><th>Score</th><th class="n">λ*</th><th class="n">n_eff</th><th>Uniform BCA</th><th>WBCP est. w</th><th>WBCP exact w</th><th>RCPS</th><th class="n">Mean risk</th><th class="n">q95</th><th class="n">q99</th><th class="n">Excess | fail</th><th class="n">Threshold</th><th class="n">Abstain</th></tr></thead><tbody id="explorer"></tbody></table></div>
+</section>
+
+<section class="panel" id="provenance" role="tabpanel" aria-labelledby="tab-provenance" hidden>
+  <div class="lead"><h2>Provenance</h2><p>Expectations were written to timestamped files before each run. They are not under version control, so their SHA-256 values are listed here to be sent to the advisor or committed. The full write-up, with every verdict and its reasoning, is experiments/wbcp/DEPENDENCE.md.</p></div>
+  <div class="tbl"><table><thead><tr><th>Change</th><th>Expectations</th><th>Header</th><th>File</th><th>SHA-256</th></tr></thead><tbody id="expectations"></tbody></table></div>
+  <div class="tbl"><table><thead><tr><th>Change</th><th>Experiment</th><th>File</th><th>Dataset</th><th>Bank design</th><th class="n">Trials</th><th class="n">Seed</th></tr></thead><tbody id="files"></tbody></table></div>
+</section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly-basic.min.js"></script>
+<script type="application/json" id="bench-data">__DATA__</script>
+<script>
+(function () {
+  const D = JSON.parse(document.getElementById('bench-data').textContent);
+  const state = { score: 'normalized', arm: 'WBCP', tab: 'overview' };
+  const IDX = new Map();
+  D.blocks.forEach(b => IDX.set([b.e, b.t, b.y, b.s, b.n].join('|'), b));
+  const EXP = new Map(D.exps.map(e => [e.id, e]));
+  const B = (e, t, y, n, s) => IDX.get([e, t, y, s || state.score, n].join('|')) || null;
+  const A = (e, t, y, n, arm, s) => { const b = B(e, t, y, n, s); return b ? (b.A[arm] || null) : null; };
+  const ARMS = { 'BQ-CP': 'Uniform BCA', 'WBCP': 'WBCP, estimated weights', 'WBCP (oracle w)': 'WBCP, exact weights', 'RCPS': 'RCPS', 'W-CRC': 'W-CRC' };
+  const TILTS = [['policy', 0.5], ['policy', 1], ['density', 0.5], ['density', 1], ['state', 0.5], ['state', 1]];
+  const tl = (t, y) => `${t} γ=${y}`;
+  const P = a => (a ? 100 * a.f / a.T : null);
+  const F = a => { if (!a) return '–'; const t = Math.floor((2000 * a.f + a.T) / (2 * a.T)); return (t / 10).toFixed(1); };
+  const CI = a => (a ? `[${(100 * a.lo).toFixed(1)}, ${(100 * a.hi).toFixed(1)}]` : '');
+  const fmtInt = v => v == null ? '–' : Math.round(v).toLocaleString('en-US');
+
+  function C() {
+    const s = getComputedStyle(document.documentElement);
+    const g = n => s.getPropertyValue(n).trim();
+    return { ink: g('--ink'), muted: g('--muted'), line: g('--line'), grid: g('--grid'), surface: g('--surface'), wbcp: g('--wbcp'),
+      exact: g('--exact'), uniform: g('--uniform'), rcps: g('--rcps'), pred: g('--pred'), target: g('--target'),
+      c3: g('--c3'), c4: g('--c4'), c5: g('--c5'), c6: g('--c6'), accent: g('--accent') };
+  }
+  const armColor = (k, c) => ({ 'BQ-CP': c.uniform, 'WBCP': c.wbcp, 'WBCP (oracle w)': c.exact, 'RCPS': c.rcps, 'W-CRC': c.muted })[k];
+
+  function merge(a, b) {
+    const out = Array.isArray(a) ? a.slice() : Object.assign({}, a);
+    Object.keys(b).forEach(k => {
+      const v = b[k];
+      out[k] = (v && typeof v === 'object' && !Array.isArray(v) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) ? merge(a[k], v) : v;
+    });
+    return out;
+  }
+  function layout(extra) {
+    const c = C();
+    const axis = { gridcolor: c.grid, linecolor: c.line, zerolinecolor: c.line, tickfont: { color: c.muted, size: 11 },
+      title: { font: { color: c.muted, size: 12 }, standoff: 10 }, automargin: true };
+    return merge({ margin: { l: 58, r: 18, t: 44, b: 50 }, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+      font: { family: "'IBM Plex Sans', system-ui, sans-serif", size: 12, color: c.ink }, xaxis: axis, yaxis: axis,
+      legend: { orientation: 'h', x: 0, xanchor: 'left', y: 1.02, yanchor: 'bottom', font: { size: 11, color: c.ink }, bgcolor: 'rgba(0,0,0,0)' },
+      hoverlabel: { bgcolor: c.surface, bordercolor: c.line, font: { family: "'IBM Plex Mono', monospace", size: 11, color: c.ink } },
+      bargap: 0.25, bargroupgap: 0.06, shapes: [], annotations: [] }, extra || {});
+  }
+  function hline(y, label, color, xanchor) {
+    const c = C();
+    return { shape: { type: 'line', xref: 'paper', x0: 0, x1: 1, y0: y, y1: y, layer: 'below', line: { color: color || c.target, width: 1.3, dash: 'dash' } },
+      ann: { xref: 'paper', x: xanchor === 'left' ? 0 : 1, y, text: label, showarrow: false, xanchor: xanchor || 'right', yanchor: 'bottom', font: { color: color || c.target, size: 10.5 } } };
+  }
+  const target = () => hline(5, '5% target');
+  function withLines(extra, lines) {
+    return layout(merge(extra, { shapes: lines.map(l => l.shape), annotations: lines.map(l => l.ann) }));
+  }
+  function errs(arms, color) {
+    return { type: 'data', symmetric: false, color, thickness: 1.2, width: 3,
+      array: arms.map(a => (a ? 100 * a.hi - P(a) : null)), arrayminus: arms.map(a => (a ? P(a) - 100 * a.lo : null)) };
+  }
+  const hov = arms => arms.map(a => (a ? `${F(a)}% ${CI(a)} · ${a.f}/${a.T}` : 'not run'));
+  function barT(name, x, arms, color, extra) {
+    return merge({ type: 'bar', name, x, y: arms.map(P), marker: { color }, error_y: errs(arms, C().ink), customdata: hov(arms),
+      hovertemplate: `<b>${name}</b><br>%{x}<br>%{customdata}<extra></extra>` }, extra || {});
+  }
+  function lineT(name, x, arms, color, extra) {
+    return merge({ type: 'scatter', mode: 'lines+markers', name, x, y: arms.map(P), line: { color, width: 2 }, marker: { color, size: 7 },
+      error_y: errs(arms, color), customdata: hov(arms), hovertemplate: `<b>${name}</b><br>%{x}<br>%{customdata}<extra></extra>` }, extra || {});
+  }
+  function valT(name, x, y, color, extra, unit) {
+    const u = unit === undefined ? '%' : unit;
+    return merge({ type: 'scatter', mode: 'lines+markers', name, x, y, line: { color, width: 1.6, dash: 'dash' }, marker: { color, size: 6, symbol: 'diamond-open' },
+      hovertemplate: `<b>${name}</b><br>%{x}<br>%{y:.2f}${u}<extra></extra>` }, extra || {});
+  }
+  const yFail = extra => merge({ title: { text: 'Banks failing (%)' }, rangemode: 'tozero', ticksuffix: '%' }, extra || {});
+  const predOf = (src, design, n, s) => {
+    const p = D.pred[src]; if (!p) return null;
+    const d = p.scores[s || state.score].designs.find(x => x.design === design && x.n === n);
+    return d ? 100 * d.pmc : null;
+  };
+  function wilson(p, n) { const z = 1.96, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [c - h, c + h]; }
+  const pseudo = (p, n) => { const [lo, hi] = wilson(p, n); return { f: Math.round(p * n), T: n, lo, hi }; };
+
+  const H = 'hopper-u100000/', S = 'hopper-u100000-spacing/', R = 'hopper-u100000-reservation/', O = 'other-datasets/', W = 'hopper-u100000-weighting/';
+  const CH = {};
+
+  CH['whole-vs-iid'] = () => {
+    const c = C(), x = ['Independent rows', 'Whole episodes'];
+    const data = ['BQ-CP', 'WBCP', 'RCPS'].map(k => barT(ARMS[k], x, [A(H + 'e0_iid', 'policy', 0, 1103, k), A(H + 'e1_blocks', 'policy', 0, 1103, k)], armColor(k, c)));
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail() }, [target()]) };
+  };
+  CH['whole-size'] = () => {
+    const c = C(), ns = [1103, 2300, 4600, 11500], bs = ns.map(n => B(H + 'e1_blocks', 'policy', 0, n));
+    const x = bs.map(b => (b ? Math.round(b.cs) : null));
+    const data = [lineT('Uniform BCA', x, bs.map(b => b && b.A['BQ-CP']), c.uniform), lineT('WBCP, estimated weights', x, bs.map(b => b && b.A['WBCP']), c.wbcp),
+      valT('Predicted (Monte Carlo)', x, ns.map(n => predOf('hopper', 'whole episodes', n)), c.pred)];
+    return { data, layout: withLines({ xaxis: { type: 'log', title: { text: 'Mean bank size (rows, log scale)' }, tickvals: x }, yaxis: yFail({ range: [0, 36] }) }, [target()]) };
+  };
+  CH['whole-threshold'] = () => {
+    const c = C(), ns = [1103, 2300, 4600, 11500], bs = ns.map(n => B(H + 'e1_blocks', 'policy', 0, n));
+    const x = bs.map(b => (b ? Math.round(b.cs) : null)), iid = B(H + 'e0_iid', 'policy', 0, 1103);
+    const data = [{ type: 'scatter', mode: 'lines+markers', name: 'Whole episodes, mean threshold', x, y: bs.map(b => b && b.A['BQ-CP'].th),
+      line: { color: c.uniform, width: 2 }, marker: { color: c.uniform, size: 7 }, hovertemplate: '%{x} rows<br>threshold %{y:.3f}<extra></extra>' }];
+    const lines = [hline(bs[0].L, `true threshold λ* = ${bs[0].L.toFixed(3)}`, c.target)];
+    if (iid) lines.push(hline(iid.A['BQ-CP'].th, `independent rows: ${iid.A['BQ-CP'].th.toFixed(3)}`, c.pred, 'left'));
+    return { data, layout: withLines({ showlegend: false, xaxis: { type: 'log', title: { text: 'Mean bank size (rows, log scale)' }, tickvals: x }, yaxis: { title: { text: 'Certified threshold' } } }, lines) };
+  };
+  function lagsT(src, name, color) {
+    const lags = D.pred[src].scores[state.score].lags, ks = Object.keys(lags).map(Number).sort((a, b) => a - b);
+    return { type: 'scatter', mode: 'lines+markers', name, x: ks, y: ks.map(k => lags[String(k)]), line: { color, width: 2 }, marker: { color, size: 6 },
+      hovertemplate: `<b>${name}</b><br>lag %{x}: %{y:.3f}<extra></extra>` };
+  }
+  const LAGAXIS = { type: 'log', title: { text: 'Steps apart (log scale)' }, tickvals: [1, 2, 5, 10, 25, 50, 100, 200], ticktext: ['1', '2', '5', '10', '25', '50', '100', '200'] };
+  CH['lags-hopper'] = () => {
+    const c = C();
+    return { data: [lagsT('hopper', 'hopper-medium', c.accent)], layout: withLines({ showlegend: false, xaxis: LAGAXIS, yaxis: { title: { text: 'Correlation of misses' } } }, [hline(0, '', c.line)]) };
+  };
+  CH['whole-shift'] = () => {
+    const c = C(), x = TILTS.map(([t, y]) => tl(t, y));
+    const get = (e, k) => TILTS.map(([t, y]) => A(e, t, y, 1103, k));
+    const data = [barT('WBCP, whole episodes', x, get('wbcp_bench/blocks', 'WBCP'), c.wbcp), barT('WBCP, independent rows', x, get('wbcp_bench/main', 'WBCP'), c.wbcp, { marker: { pattern: { shape: '/', fgcolor: c.surface, solidity: 0.45 } } }),
+      barT('Uniform BCA, whole episodes', x, get('wbcp_bench/blocks', 'BQ-CP'), c.uniform), barT('Uniform BCA, independent rows', x, get('wbcp_bench/main', 'BQ-CP'), c.uniform, { marker: { pattern: { shape: '/', fgcolor: c.surface, solidity: 0.45 } } })];
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, 100] }) }, [target()]) };
+  };
+
+  CH['k-sweep'] = () => {
+    const c = C(), ks = [1, 2, 5, 10, 25, 50, 100], sk = [2, 5, 10, 25, 50];
+    const iid = A(H + 'e0_iid', 'policy', 0, 1103, 'BQ-CP');
+    const data = [lineT('Random rows, observed', ks, ks.map(k => A(H + `e2_k${k}`, 'policy', 0, 1103, 'BQ-CP')), c.c3),
+      lineT('Spaced rows, observed', sk, sk.map(k => A(S + `e6_strat_k${k}`, 'policy', 0, 1103, 'BQ-CP')), c.c4),
+      valT('Random rows, predicted', ks, ks.map(k => predOf('hopper', `${k} per episode`, 1103)), c.c3, { marker: { size: 5 } }),
+      valT('Spaced rows, predicted', sk, sk.map(k => predOf('hopper-spacing', `${k} per episode, stratified`, 1103)), c.c4, { marker: { size: 5 } })];
+    const lines = [target()];
+    if (iid) lines.push(hline(P(iid), `independent rows ${F(iid)}%`, c.pred, 'left'));
+    lines[lines.length - 1].shape.line.dash = 'dot';
+    return { data, layout: withLines({ xaxis: { type: 'log', title: { text: 'Rows per episode K (log scale)' }, tickvals: ks }, yaxis: yFail({ range: [0, 19] }) }, lines) };
+  };
+  CH['k-withheld'] = () => {
+    const c = C(), ks = [1, 2, 5, 10, 25, 50, 100], p = D.pred.hopper;
+    const y = ks.map(k => 100 * Math.ceil(1103 / k) * p.pool.size_biased_length / p.dataset.rows);
+    return { data: [{ type: 'bar', x: ks.map(k => `K=${k}`), y, marker: { color: c.muted }, text: y.map(v => `${v.toFixed(1)}%`), textposition: 'outside', cliponaxis: false,
+      textfont: { color: c.ink, size: 11 }, hovertemplate: '%{x}: %{y:.1f}% of hopper withheld<extra></extra>' }],
+      layout: layout({ showlegend: false, yaxis: { title: { text: 'Share of dataset withheld' }, ticksuffix: '%', range: [0, 62] } }) };
+  };
+  CH['k-threshold'] = () => {
+    const c = C(), ks = [1, 2, 5, 10, 25, 50, 100], sk = [2, 5, 10, 25, 50];
+    const th = (e, k) => { const a = A(e, 'policy', 0, 1103, 'BQ-CP'); return a ? a.th : null; };
+    const lam = B(H + 'e0_iid', 'policy', 0, 1103).L;
+    const data = [{ type: 'scatter', mode: 'lines+markers', name: 'Random rows', x: ks, y: ks.map(k => th(H + `e2_k${k}`)), line: { color: c.c3, width: 2 }, marker: { color: c.c3, size: 7 }, hovertemplate: 'K=%{x}: %{y:.3f}<extra></extra>' },
+      { type: 'scatter', mode: 'lines+markers', name: 'Spaced rows', x: sk, y: sk.map(k => th(S + `e6_strat_k${k}`)), line: { color: c.c4, width: 2 }, marker: { color: c.c4, size: 7 }, hovertemplate: 'K=%{x}: %{y:.3f}<extra></extra>' }];
+    return { data, layout: withLines({ xaxis: { type: 'log', title: { text: 'Rows per episode K (log scale)' }, tickvals: ks }, yaxis: { title: { text: 'Mean certified threshold' } } }, [hline(lam, `true threshold λ* = ${lam.toFixed(3)}`, c.target)]) };
+  };
+
+  CH['shift-designs'] = () => {
+    const c = C(), x = TILTS.map(([t, y]) => tl(t, y));
+    const designs = [['Independent rows', 'wbcp_bench/main', c.pred, 1], ['Whole episodes', 'wbcp_bench/blocks', c.target, 1], ['K=10 random', H + 'e3_k10', c.c5, 1],
+      ['K=10 random, rerun', S + 'e7_random_k10', c.c5, 0.55], ['K=10 spaced', S + 'e7_stratified_k10', c.c6, 1], ['K=5 random', H + 'e3_k5', c.c3, 1], ['K=5 spaced', S + 'e8_stratified_k5', c.c4, 1]];
+    const data = designs.map(([name, e, color, op]) => barT(name, x, TILTS.map(([t, y]) => A(e, t, y, 1103, state.arm)), color, { marker: { opacity: op } }));
+    const top = state.arm === 'BQ-CP' || state.arm === 'RCPS' ? 100 : 40;
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, top], title: { text: `${ARMS[state.arm]}: banks failing (%)` } }) }, [target()]) };
+  };
+  CH['k10-excess'] = () => {
+    const c = C(), cats = [], k5 = [], k10 = [];
+    [0.5, 1].forEach(g => {
+      cats.push(`γ=${g} · Change 5`); k5.push(A(H + 'e3_k5', 'density', g, 1103, 'WBCP', 'normalized')); k10.push(A(H + 'e3_k10', 'density', g, 1103, 'WBCP', 'normalized'));
+      const key = g === 1 ? '1.0' : '0.5';
+      cats.push(`γ=${g} · rerun`); k5.push(pseudo(D.dominant[`gamma=${key} 5`].fail, 2000)); k10.push(pseudo(D.dominant[`gamma=${key} 10`].fail, 2000));
+      cats.push(`γ=${g} · Changes 7-8`); k5.push(A(S + 'e8_stratified_k5', 'density', g, 1103, 'WBCP', 'normalized')); k10.push(A(S + 'e7_stratified_k10', 'density', g, 1103, 'WBCP', 'normalized'));
+    });
+    const data = [lineT('K = 5', cats, k5, c.c3, { mode: 'markers', marker: { size: 9 } }), lineT('K = 10', cats, k10, c.c5, { mode: 'markers', marker: { size: 9, symbol: 'square' } })];
+    return { data, layout: withLines({ xaxis: { tickangle: -25 }, yaxis: yFail({ range: [0, 14] }), margin: { b: 90 } }, [target()]) };
+  };
+  CH['dominant'] = () => {
+    const c = C(), x = ['Q1 smallest share', 'Q2', 'Q3', 'Q4 largest share'];
+    const data = [];
+    [['iid', 'Independent rows', c.pred], ['5', 'K = 5 random', c.c3], ['10', 'K = 10 random', c.c5]].forEach(([k, name, color]) => {
+      data.push({ type: 'scatter', mode: 'lines+markers', name: `${name}, γ=1`, x, y: D.dominant[`gamma=1.0 ${k}`].fail_by_share_quartile.map(v => 100 * v), line: { color, width: 2 }, marker: { color, size: 7 }, hovertemplate: `${name}, γ=1<br>%{x}: %{y:.1f}%<extra></extra>` });
+      data.push({ type: 'scatter', mode: 'lines', name: `${name}, γ=0.5`, x, y: D.dominant[`gamma=0.5 ${k}`].fail_by_share_quartile.map(v => 100 * v), line: { color, width: 1.3, dash: 'dot' }, hovertemplate: `${name}, γ=0.5<br>%{x}: %{y:.1f}%<extra></extra>` });
+    });
+    return { data, layout: withLines({ xaxis: { title: { text: 'Quartile of the largest episode\'s weight share' } }, yaxis: yFail({ range: [0, 19] }) }, [target()]) };
+  };
+  CH['tilted-hopper'] = () => {
+    const c = C(), keys = Object.keys(D.tilted_hopper), x = keys.map(k => k.replace(' gamma=', ' γ=').replace('.0', ''));
+    const row = k => D.tilted_hopper[k];
+    const data = [{ type: 'bar', name: 'Observed, K=10 (exact weights)', x, y: keys.map(k => 100 * row(k).observed_K10), marker: { color: c.c5 }, customdata: keys.map(k => row(k).D_K10.toFixed(2)), hovertemplate: '%{x}<br>observed %{y:.1f}%<br>tilted D = %{customdata}<extra></extra>' },
+      { type: 'bar', name: 'Predicted from the tilted design effect', x, y: keys.map(k => 100 * row(k).predicted_K10), marker: { color: c.pred }, hovertemplate: '%{x}<br>predicted %{y:.1f}%<extra></extra>' }];
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, 13] }) }, [target()]) };
+  };
+
+  CH['bca-vs-bench'] = () => {
+    const c = C(), x = ['no shift'].concat(TILTS.map(([t, y]) => tl(t, y)));
+    const row = (e0, e1) => [A(e0, 'policy', 0, 1103, state.arm)].concat(TILTS.map(([t, y]) => A(e1, t, y, 1103, state.arm)));
+    const data = [barT("BCA's sampler, K=5", x, row(R + 'r1_resv_k5', R + 'r2_resv_k5_shift'), c.accent), barT('Spaced, K=5', x, row(S + 'e6_strat_k5', S + 'e8_stratified_k5'), c.c4),
+      barT('Random, K=5', x, row(H + 'e2_k5', H + 'e3_k5'), c.c3)];
+    const top = state.arm === 'BQ-CP' || state.arm === 'RCPS' ? 100 : 12;
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, top], title: { text: `${ARMS[state.arm]}: banks failing (%)` } }) }, [target()]) };
+  };
+  CH['iql-bracket'] = () => {
+    const c = C(), x = ['Independent rows<br>n = 1,103', "BCA's sampler, K = 18<br>n = 8,192", 'Spaced with replacement<br>K = 18, n = 8,192'];
+    const src = [[H + 'e0_iid', 1103], [R + 'r3_resv_k18_n8192', 8192], [R + 'r4_strat_k18_n8192', 8192]];
+    const data = ['BQ-CP', 'WBCP'].map(k => barT(ARMS[k], x, src.map(([e, n]) => A(e, 'policy', 0, n, k)), armColor(k, c)));
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, 10] }) }, [target()]) };
+  };
+  const DS = ['halfcheetah', 'hopper', 'maze2d', 'pen-cloned', 'pen-expert', 'pen-human', 'walker2d'];
+  CH['config-withheld'] = () => {
+    const c = C();
+    const tr = (host, name, color) => {
+      const rows = DS.map(d => D.configs[host][d]);
+      return { type: 'bar', name, x: DS, y: rows.map(r => 100 * r.withheld_share_at_seed), marker: { color, pattern: { shape: rows.map(r => (r.dependence_validated ? '' : '/')), fgcolor: c.surface, solidity: 0.35 } },
+        customdata: rows.map(r => [r.rows_per_episode, r.episodes, r.calibration_rows, r.dependence_validated ? 'validated range' : 'outside validated range']),
+        hovertemplate: `<b>${name}</b><br>%{x}: %{y:.1f}% withheld<br>K = %{customdata[0]}, %{customdata[1]} episodes, %{customdata[2]} bank rows<br>%{customdata[3]}<extra></extra>` };
+    };
+    return { data: [tr('td3_bc', 'TD3+BC / ReBRAC / CQL', c.accent), tr('iql', 'IQL', c.c5)],
+      layout: withLines({ barmode: 'group', xaxis: { tickangle: -25 }, yaxis: { title: { text: 'Share of dataset withheld' }, ticksuffix: '%', range: [0, 30] } }, [hline(10, '10% cap', c.accent, 'left'), hline(25, '25% cap (IQL)', c.c5, 'left')]) };
+  };
+
+  const DSETS = [['hopper', 'hopper-medium'], ['walker2d-n1024', 'walker2d-medium-replay'], ['pen-n1024', 'pen-cloned']];
+  CH['rho'] = () => {
+    const c = C(), colors = [c.accent, c.c5, c.c6];
+    const y = DSETS.map(([src]) => D.pred[src].scores[state.score].rho);
+    return { data: [{ type: 'bar', x: DSETS.map(d => d[1]), y, marker: { color: colors }, text: y.map(v => v.toFixed(3)), textposition: 'outside', cliponaxis: false, textfont: { color: c.ink },
+      hovertemplate: '%{x}<br>ρ = %{y:.4f}<extra></extra>' }], layout: layout({ showlegend: false, yaxis: { title: { text: 'ρ of misses within an episode' }, range: [0, 0.16] } }) };
+  };
+  CH['lags-all'] = () => {
+    const c = C(), colors = [c.accent, c.c5, c.c6];
+    return { data: DSETS.map(([src, name], i) => lagsT(src, name, colors[i])), layout: withLines({ xaxis: LAGAXIS, yaxis: { title: { text: 'Correlation of misses' } } }, [hline(0, '', c.line)]) };
+  };
+  CH['designs-pred-obs'] = () => {
+    const c = C();
+    const rows = [
+      ['hopper · K=5 BCA sampler', R + 'r1_resv_k5', 1103, 'hopper-k5', '5 per episode, BCA reservation'],
+      ['walker2d · whole episodes', O + 'w_blocks_n1024', 1024, 'walker2d-n1024', 'whole episodes'],
+      ['walker2d · K=5 spaced', O + 'w_strat5_n1024', 1024, 'walker2d-n1024', '5 per episode, stratified'],
+      ['walker2d · K=23 BCA sampler', O + 'w_resv23_n1024', 1024, 'walker2d-n1024', '23 per episode, BCA reservation'],
+      ['walker2d · K=23 spaced', O + 'w_strat23_n1024', 1024, 'walker2d-n1024', '23 per episode, stratified'],
+      ['walker2d · K=67 BCA sampler, n=8,192', O + 'w_resv67_n8192', 8192, 'walker2d-n8192', '67 per episode, BCA reservation'],
+      ['walker2d · K=67 spaced, n=8,192', O + 'w_strat67_n8192', 8192, 'walker2d-n8192', '67 per episode, stratified'],
+      ['pen-cloned · whole episodes', O + 'p_blocks_n1024', 1024, 'pen-n1024', 'whole episodes'],
+      ['pen-cloned · K=5 BCA sampler', O + 'p_resv5_n1024', 1024, 'pen-n1024', '5 per episode, BCA reservation'],
+      ['pen-cloned · K=5 spaced', O + 'p_strat5_n1024', 1024, 'pen-n1024', '5 per episode, stratified'],
+      ['pen-cloned · K=11 BCA sampler, n=8,192', O + 'p_resv11_n8192', 8192, 'pen-n8192', '11 per episode, BCA reservation'],
+      ['pen-cloned · K=11 spaced, n=8,192', O + 'p_strat11_n8192', 8192, 'pen-n8192', '11 per episode, stratified']];
+    const labels = rows.map(r => r[0]), arms = rows.map(r => A(r[1], 'policy', 0, r[2], 'BQ-CP'));
+    const pred = rows.map(r => predOf(r[3], r[4], r[2]));
+    const obs = { type: 'scatter', mode: 'markers', name: 'Observed (uniform BCA)', y: labels, x: arms.map(P), marker: { color: c.uniform, size: 9 },
+      error_x: { type: 'data', symmetric: false, color: c.uniform, thickness: 1.2, width: 3, array: arms.map(a => (a ? 100 * a.hi - P(a) : null)), arrayminus: arms.map(a => (a ? P(a) - 100 * a.lo : null)) },
+      customdata: hov(arms), hovertemplate: '<b>%{y}</b><br>observed %{customdata}<extra></extra>' };
+    const pr = { type: 'scatter', mode: 'markers', name: 'Predicted before the run', y: labels, x: pred, marker: { color: c.ink, size: 10, symbol: 'diamond-open', line: { width: 1.5 } }, hovertemplate: '<b>%{y}</b><br>predicted %{x:.1f}%<extra></extra>' };
+    const t = hline(5, '', c.target);
+    return { data: [obs, pr], layout: layout({ margin: { l: 250 }, yaxis: { autorange: 'reversed', automargin: true, gridcolor: 'rgba(0,0,0,0)' }, xaxis: { title: { text: 'Banks failing (%)' }, ticksuffix: '%', range: [0, 55] },
+      shapes: [{ type: 'line', yref: 'paper', y0: 0, y1: 1, x0: 5, x1: 5, line: { color: c.target, width: 1.3, dash: 'dash' }, layer: 'below' }] }) };
+  };
+  CH['datasets-shift'] = () => {
+    const c = C(), x = ['no shift'].concat(TILTS.map(([t, y]) => tl(t, y)));
+    const row = (e0, e1) => [A(e0, 'policy', 0, 1024, state.arm)].concat(TILTS.map(([t, y]) => A(e1, t, y, 1024, state.arm)));
+    const data = [barT('walker2d, K = 23', x, row(O + 'w_resv23_n1024', O + 'w_resv23_shift'), c.c5), barT('pen-cloned, K = 5', x, row(O + 'p_resv5_n1024', O + 'p_resv5_shift'), c.c6)];
+    const top = state.arm === 'BQ-CP' || state.arm === 'RCPS' ? 100 : 25;
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, top], title: { text: `${ARMS[state.arm]}: banks failing (%)` } }) }, [target()]) };
+  };
+  CH['est-vs-exact'] = () => {
+    const c = C(), src = [['walker2d<br>n = 1,024', O + 'w_iid_n1024', 1024], ['walker2d<br>n = 8,192', O + 'w_iid_n8192', 8192], ['walker2d, n = 8,192<br>10× weight fit', O + 'd_w_iid_n8192_fit10000', 8192],
+      ['pen-cloned<br>n = 1,024', O + 'p_iid_n1024', 1024], ['pen-cloned<br>n = 8,192', O + 'p_iid_n8192', 8192], ['hopper<br>n = 1,103', H + 'e0_iid', 1103]];
+    const x = src.map(s => s[0]);
+    const data = ['WBCP', 'WBCP (oracle w)', 'BQ-CP'].map(k => barT(ARMS[k], x, src.map(([, e, n]) => A(e, 'policy', 0, n, k)), armColor(k, c)));
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, 20] }) }, [target()]) };
+  };
+  CH['tilted-rho'] = () => {
+    const c = C(), data = [];
+    [['walker2d-medium-replay', 'walker2d', c.c5], ['pen-cloned', 'pen-cloned', c.c6]].forEach(([key, name, color]) => {
+      const rows = D.tilted_rho[key], x = rows.map(r => (r.gamma === 0 ? 'no shift' : tl(r.tilt, r.gamma)));
+      data.push({ type: 'bar', name: `${name}: ρ of misses`, x, y: rows.map(r => r.rho_miss), marker: { color, pattern: { shape: '/', fgcolor: C().surface, solidity: 0.45 } }, hovertemplate: `${name}<br>%{x}: ρ(misses) %{y:.3f}<extra></extra>` });
+      data.push({ type: 'bar', name: `${name}: ρ of weighted term`, x, y: rows.map(r => r.rho_weighted), marker: { color }, customdata: rows.map(r => (100 * r.predicted_failure).toFixed(1)),
+        hovertemplate: `${name}<br>%{x}: ρ(weighted) %{y:.3f}<br>implied failure %{customdata}%<extra></extra>` });
+    });
+    return { data, layout: layout({ barmode: 'group', yaxis: { title: { text: 'Within-episode correlation' } } }) };
+  };
+
+  const NS = [1103, 2206, 4412, 8824];
+  const SWEEP = () => { const c = C(); return [['density γ=1', W + 'a_density1', 'density', 1, c.c5, [7.4, 6.7, 6.2, 5.9]], ['state γ=0.5', W + 'a_state05', 'state', 0.5, c.c6, [8.0, 7.1, 6.5, 6.1]], ['policy γ=1 (control)', W + 'a_policy1', 'policy', 1, c.c3, null]]; };
+  CH['n-sweep'] = () => {
+    const data = [];
+    SWEEP().forEach(([name, e, t, y, color, path]) => {
+      if (path) data.push({ type: 'scatter', mode: 'lines', name: `${name}: pre-registered path ±0.8`, x: NS.concat(NS.slice().reverse()), y: path.map(v => v + 0.8).concat(path.slice().reverse().map(v => v - 0.8)),
+        fill: 'toself', fillcolor: color, opacity: 0.12, line: { width: 0 }, hoverinfo: 'skip', showlegend: false });
+      data.push(lineT(`${name}, exact weights`, NS, NS.map(n => A(e, t, y, n, 'WBCP (oracle w)', 'normalized')), color));
+      data.push(lineT(`${name}, estimated`, NS, NS.map(n => A(e, t, y, n, 'WBCP', 'normalized')), color, { line: { dash: 'dot', width: 1.3 }, marker: { size: 5, symbol: 'circle-open' }, error_y: { visible: false }, showlegend: false }));
+    });
+    return { data, layout: withLines({ xaxis: { type: 'log', title: { text: 'Bank size n (log scale)' }, tickvals: NS, ticktext: NS.map(n => n.toLocaleString('en-US')) }, yaxis: yFail({ range: [0, 10] }) }, [target()]) };
+  };
+  CH['excess-size'] = () => {
+    const data = SWEEP().map(([name, e, t, y, color]) => ({ type: 'scatter', mode: 'lines+markers', name, x: NS, y: NS.map(n => { const a = A(e, t, y, n, 'WBCP (oracle w)', 'normalized'); return a && a.x != null ? 100 * a.x : null; }),
+      line: { color, width: 2 }, marker: { color, size: 7 }, hovertemplate: `${name}<br>n = %{x}: %{y:.2f} points<extra></extra>` }));
+    return { data, layout: layout({ xaxis: { type: 'log', title: { text: 'Bank size n (log scale)' }, tickvals: NS, ticktext: NS.map(n => n.toLocaleString('en-US')) }, yaxis: { title: { text: 'Mean excess over α (points)' }, rangemode: 'tozero' } }) };
+  };
+  CH['q99'] = () => {
+    const c = C();
+    const data = SWEEP().map(([name, e, t, y, color]) => ({ type: 'scatter', mode: 'lines+markers', name, x: NS, y: NS.map(n => { const a = A(e, t, y, n, 'WBCP (oracle w)', 'normalized'); return a && a.q99 != null ? 100 * a.q99 : null; }),
+      line: { color, width: 2 }, marker: { color, size: 7 }, hovertemplate: `${name}<br>n = %{x}: %{y:.2f}%<extra></extra>` }));
+    return { data, layout: withLines({ xaxis: { type: 'log', title: { text: 'Bank size n (log scale)' }, tickvals: NS, ticktext: NS.map(n => n.toLocaleString('en-US')) }, yaxis: { title: { text: '99th percentile of realized risk' }, ticksuffix: '%', range: [9.5, 12] } }, [hline(10, 'α = 10%', c.target)]) };
+  };
+  CH['shuffle'] = () => {
+    const c = C(), x = ['density γ=1<br>aligned', 'density γ=1<br>weights shuffled', 'policy γ=1<br>mild, unaligned'];
+    const src = [[W + 'a_density1', 'density', 1], [W + 'b_shuffled_density1', 'density', 1], [W + 'a_policy1', 'policy', 1]];
+    const data = ['WBCP (oracle w)', 'WBCP'].map(k => barT(ARMS[k], x, src.map(([e, t, y]) => A(e, t, y, 1103, k, 'normalized')), armColor(k, c)));
+    return { data, layout: withLines({ barmode: 'group', yaxis: yFail({ range: [0, 10] }) }, [target()]) };
+  };
+  CH['mechanism'] = () => {
+    const c = C(), cases = [['aligned', 'density γ=1 aligned'], ['shuffled', 'weights shuffled'], ['policy', 'policy γ=1']];
+    const metric = (k, name, color) => ({ type: 'bar', name, x: cases.map(cs => cs[1]), y: cases.map(([key]) => D.mech[key][k]), marker: { color }, hovertemplate: `${name}<br>%{x}: %{y:.2f}<extra></extra>` });
+    const data = [metric('failing_median_posterior_sd_over_across', 'Failing banks: posterior spread ÷ true spread', c.target),
+      metric('passing_median_posterior_sd_over_across', 'Passing banks: posterior spread ÷ true spread', c.pred),
+      metric('sd_ratio_across_over_posterior', 'All banks: true spread ÷ mean posterior spread', c.accent)];
+    return { data, layout: withLines({ barmode: 'group', yaxis: { title: { text: 'Ratio' }, range: [0, 1.25] } }, [hline(1, 'calibrated = 1', c.muted, 'left')]) };
+  };
+  CH['slack'] = () => {
+    const c = C(), cases = [['policy', 0, 'no shift'], ['policy', 1, 'policy γ=1'], ['density', 0.5, 'density γ=0.5'], ['density', 1, 'density γ=1'], ['state', 0.5, 'state γ=0.5'], ['state', 1, 'state γ=1']];
+    const pick = (t, y, n) => D.slack.find(r => r.tilt === t && r.gamma === y && r.n === n);
+    const data = [1103, 8824].map((n, i) => ({ type: 'bar', name: `n = ${n.toLocaleString('en-US')}`, x: cases.map(cs => cs[2]), y: cases.map(([t, y]) => { const r = pick(t, y, n); return r ? r.eta_bernstein : null; }),
+      marker: { color: i ? c.accent : c.c5 }, customdata: cases.map(([t, y]) => { const r = pick(t, y, n); return r ? `B = ${r.B.toFixed(1)}` : ''; }),
+      hovertemplate: `n = ${n}<br>%{x}: η_n = %{y:.3f}<br>%{customdata}<extra></extra>` }));
+    return { data, layout: withLines({ barmode: 'group', yaxis: { type: 'log', title: { text: 'η_n (log scale; missing bars are infinite)' } } }, [hline(0.1, 'α = 0.1', c.target, 'left')]) };
+  };
+
+  const TAB_CHARTS = {
+    whole: ['whole-vs-iid', 'whole-size', 'whole-threshold', 'lags-hopper', 'whole-shift'],
+    thin: ['k-sweep', 'k-withheld', 'k-threshold'],
+    shift: ['shift-designs', 'k10-excess', 'dominant', 'tilted-hopper'],
+    bca: ['bca-vs-bench', 'iql-bracket', 'config-withheld'],
+    datasets: ['rho', 'lags-all', 'designs-pred-obs', 'datasets-shift', 'est-vs-exact', 'tilted-rho'],
+    excess: ['n-sweep', 'excess-size', 'q99', 'shuffle', 'mechanism', 'slack'],
+  };
+  const CONFIG = { displayModeBar: false, responsive: true };
+  function renderCharts(tab) {
+    const ids = TAB_CHARTS[tab] || [];
+    ids.forEach(id => {
+      const el = document.getElementById('c-' + id);
+      if (!el) return;
+      if (typeof Plotly === 'undefined') { el.innerHTML = '<p class="msg">Charts need the Plotly library from cdnjs, which did not load. Every number is in the All results tab.</p>'; return; }
+      try { const spec = CH[id](); Plotly.react(el, spec.data, spec.layout, CONFIG); }
+      catch (err) { el.innerHTML = `<p class="msg">This chart could not be drawn (${String(err.message || err)}).</p>`; }
+    });
+  }
+
+  // Overview content
+  const FINDINGS = [
+    ['whole', 'The original bank broke the guarantee', 'Whole-episode banks fail about 28% of the time with no shift, against 4.7% for independent rows, because misses cluster within episodes.'],
+    ['thin', 'A thinned bank fixes it on hopper', 'K rows from each of many episodes keeps failure near 5% for K up to 10, with no wider threshold; the cost is withheld training data.'],
+    ['shift', 'WBCP handles shift; uniform BCA does not', 'Under density and state shift uniform BCA fails 25-98% while WBCP stays at 4-9%. K = 5 holds; K = 10 fails under the density tilt.'],
+    ['bca', 'BCA now uses the thinned bank', "BCA's own sampler reproduces the validated behaviour on hopper: 5.0% without shift and every shift range met."],
+    ['datasets', "Hopper's K = 5 does not transfer", 'On walker2d-medium-replay and pen-cloned, ρ is about 7× hopper\'s; K = 5 fails 6-8% and the configured walker2d banks fail 18-30%.'],
+    ['excess', "WBCP's excess under strong shift is small and finite-sample", 'It comes from heavy weights on the misses, shrinks as banks grow, and matches what the paper itself reports.'],
+  ];
+  document.getElementById('findings').innerHTML = FINDINGS.map(([tab, h, p]) => `<div class="finding"><h3>${h}</h3><p>${p}</p><button type="button" class="go" data-go="${tab}">See the charts →</button></div>`).join('');
+  const SCORE = [
+    ['1', 'Do whole-episode banks keep the guarantee?', 'na', 'not pre-registered', '28.0% fail with no shift (independent rows 4.9%)'],
+    ['2', 'Does within-episode dependence explain it?', 'mid', 'mostly (retrodiction)', 'predicted 26.1% against 28.0% observed'],
+    ['3', 'Does a bigger whole-episode bank help?', 'ok', 'yes; raw score mostly', '26.4-27.8% from 1,103 to 11,500 rows'],
+    ['4', 'Does thinning to K rows per episode fix it?', 'ok', 'largely', 'K=5 5.2%, K=10 5.7%, K=25 8.0%'],
+    ['5', 'Does the shift picture survive thinning?', 'mid', 'partly', 'K=5 held; K=10 missed under the density tilt'],
+    ['6', 'Does spacing rows apart help?', 'ok', 'mostly', 'spaced K=25 6.4% against random 8.0%'],
+    ['7', 'Does spaced K=10 hold under shift?', 'ok', 'yes on the main part', 'density 6.7% / 10.1%: spacing did not fix it'],
+    ['8', 'Does spaced K=5 hold under shift?', 'ok', 'yes', 'WBCP 5.2-8.5%; uniform BCA 26-98%'],
+    ['9', "Does BCA's implementation behave as validated?", 'ok', 'mostly', '5.0% without shift; all shift ranges met'],
+    ['10', 'Does it transfer to other datasets?', 'mid', 'partly', 'ρ 0.11-0.12; K=5 fails 6-8%; shift expectation failed'],
+    ['11', 'Why does WBCP exceed 5% under strong shift?', 'mid', 'mostly', 'finite-sample; excess 2.6-2.9 → 1.0 points over 8× n'],
+  ];
+  document.getElementById('scorecard').innerHTML = SCORE.map(([ch, q, cls, v, r]) => `<tr><td class="n">${ch}</td><td>${q}</td><td><span class="chip ${cls}">${v}</span></td><td>${r}</td></tr>`).join('');
+  document.getElementById('pools').innerHTML = Object.entries(D.pools).map(([k, p]) => `<tr><td>${k}</td><td class="n">${fmtInt(p.rows.population)}</td><td class="n">${fmtInt(p.rows.population_episodes)}</td><td class="n">${fmtInt(p.rows.training)}</td></tr>`).join('');
+  document.getElementById('sub').textContent = `Semi-synthetic D4RL tests of WBCP calibration banks · ${D.blocks.length} result blocks from ${D.exps.length} runs · generated ${D.generated}`;
+
+  // Config table
+  const HOSTS = [['td3_bc', 'TD3+BC / ReBRAC / CQL'], ['iql', 'IQL']];
+  document.getElementById('configs').innerHTML = DS.map(d => HOSTS.map(([h, name]) => {
+    const r = D.configs[h][d];
+    return `<tr><td>${d}</td><td>${name}</td><td class="n">${fmtInt(r.target)}</td><td class="n">${Math.round(100 * r.cap)}%</td><td class="n">${r.rows_per_episode}</td><td class="n">${fmtInt(r.episodes)}</td><td class="n">${fmtInt(r.calibration_rows)}</td><td class="n">${(100 * r.withheld_share_at_seed).toFixed(1)}%</td><td><span class="chip ${r.dependence_validated ? 'ok' : 'no'}">${r.dependence_validated ? 'inside' : 'outside'}</span></td></tr>`;
+  }).join('')).join('');
+
+  // Provenance
+  document.getElementById('expectations').innerHTML = D.expectations.map((x, i) => `<tr><td class="n">${x.change}</td><td>${x.label}</td><td>${x.header}</td><td class="mono">${x.file}</td><td class="mono">${x.sha.slice(0, 16)}…<button type="button" class="copy" data-copy="${x.sha}" id="copy-${i}">Copy</button></td></tr>`).join('');
+  document.getElementById('files').innerHTML = D.exps.map(e => `<tr><td class="n">${e.change}</td><td>${e.label}</td><td class="mono">${e.file}</td><td>${e.dataset}</td><td>${e.design}</td><td class="n">${fmtInt(e.trials)}</td><td class="n">${e.seed}</td></tr>`).join('');
+  document.addEventListener('click', ev => {
+    const btn = ev.target.closest('.copy');
+    if (!btn) return;
+    const text = btn.getAttribute('data-copy');
+    const done = ok => { btn.textContent = ok ? 'Copied' : 'Select'; setTimeout(() => { btn.textContent = 'Copy'; }, 1600); };
+    try { navigator.clipboard.writeText(text).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+  });
+
+  // Explorer
+  const changes = [...new Set(D.exps.map(e => e.change))].sort((a, b) => Number(a) - Number(b));
+  const fillSelect = (id, items, all) => { document.getElementById(id).innerHTML = `<option value="">${all}</option>` + items.map(([v, t]) => `<option value="${v}">${t}</option>`).join(''); };
+  fillSelect('f-change', changes.map(c => [c, `Change ${c}`]), 'All');
+  fillSelect('f-dataset', [...new Set(D.exps.map(e => e.dataset))].map(d => [d, d]), 'All');
+  const fillExp = () => { const ch = document.getElementById('f-change').value; fillSelect('f-exp', D.exps.filter(e => !ch || e.change === ch).map(e => [e.id, e.id]), 'All'); };
+  fillExp();
+  const cell = a => (a ? `<span class="${P(a) > 5 && a.hi > 0.05 ? 'bad' : ''}">${F(a)}%</span> <span style="color:var(--muted)">${CI(a)}</span>` : '–');
+  const num = (v, d, pct) => (v == null ? '–' : pct ? `${(100 * v).toFixed(d)}%` : v.toFixed(d));
+  function renderExplorer() {
+    const f = id => document.getElementById(id).value;
+    const ch = f('f-change'), ex = f('f-exp'), ds = f('f-dataset'), sc = f('f-score'), ti = f('f-tilt'), det = f('f-detail');
+    const rows = D.blocks.filter(b => { const e = EXP.get(b.e); return (!ch || e.change === ch) && (!ex || b.e === ex) && (!ds || e.dataset === ds) && (!sc || b.s === sc)
+      && (!ti || (ti === 'none' ? b.y === 0 : (b.t === ti && b.y !== 0))); });
+    document.getElementById('f-count').textContent = `${rows.length} of ${D.blocks.length} result blocks`;
+    document.getElementById('explorer').innerHTML = rows.map(b => {
+      const e = EXP.get(b.e), d = b.A[det];
+      return `<tr><td class="n">${e.change}</td><td class="mono">${b.e}</td><td>${e.dataset}</td><td>${e.design}</td><td class="n">${fmtInt(b.n)}</td><td>${b.y === 0 ? 'none' : b.t}</td><td class="n">${b.y}</td><td>${b.s}</td>`
+        + `<td class="n">${num(b.L, 3)}</td><td class="n">${fmtInt(b.ne)}</td><td class="fail">${cell(b.A['BQ-CP'])}</td><td class="fail">${cell(b.A['WBCP'])}</td><td class="fail">${cell(b.A['WBCP (oracle w)'])}</td><td class="fail">${cell(b.A['RCPS'])}</td>`
+        + `<td class="n">${d ? num(d.r, 2, true) : '–'}</td><td class="n">${d ? num(d.q95, 2, true) : '–'}</td><td class="n">${d ? num(d.q99, 2, true) : '–'}</td><td class="n">${d && d.x != null ? (100 * d.x).toFixed(2) : '–'}</td><td class="n">${d ? num(d.th, 3) : '–'}</td><td class="n">${d ? num(d.ab, 1, true) : '–'}</td></tr>`;
+    }).join('');
+  }
+  ['f-change', 'f-exp', 'f-dataset', 'f-score', 'f-tilt', 'f-detail'].forEach(id => document.getElementById(id).addEventListener('change', () => { if (id === 'f-change') fillExp(); renderExplorer(); }));
+
+  // Tabs and controls
+  const tabs = [...document.querySelectorAll('.tabs [role="tab"]')];
+  function show(tab, push) {
+    if (!document.getElementById(tab)) tab = 'overview';
+    state.tab = tab;
+    tabs.forEach(b => { const on = b.dataset.tab === tab; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; });
+    document.querySelectorAll('section.panel').forEach(p => { p.hidden = p.id !== tab; });
+    if (tab === 'all') renderExplorer();
+    renderCharts(tab);
+    if (push) { try { history.replaceState(null, '', '#' + tab); } catch (e) { /* ignore */ } }
+    try { localStorage.setItem('bca-bench-tab', tab); } catch (e) { /* storage unavailable */ }
+  }
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => show(b.dataset.tab, true));
+    b.addEventListener('keydown', ev => {
+      if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+      const next = tabs[(i + (ev.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+      next.focus(); show(next.dataset.tab, true);
+    });
+  });
+  document.addEventListener('click', ev => { const go = ev.target.closest('[data-go]'); if (go) { show(go.dataset.go, true); window.scrollTo(0, 0); } });
+  document.querySelectorAll('[data-score]').forEach(b => b.addEventListener('click', () => {
+    state.score = b.dataset.score;
+    document.querySelectorAll('[data-score]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    renderCharts(state.tab);
+  }));
+  document.querySelectorAll('[data-arm]').forEach(b => b.addEventListener('click', () => {
+    state.arm = b.dataset.arm;
+    document.querySelectorAll('[data-arm]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    renderCharts(state.tab);
+  }));
+  new MutationObserver(() => renderCharts(state.tab)).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => renderCharts(state.tab)); } catch (e) { /* old browsers */ }
+  let first = (location.hash || '').replace('#', '');
+  if (!first) { try { first = localStorage.getItem('bca-bench-tab') || ''; } catch (e) { first = ''; } }
+  show(first || 'overview', false);
+  window.scrollTo(0, 0);
+})();
+</script>
