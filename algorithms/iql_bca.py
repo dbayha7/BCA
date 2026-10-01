@@ -1,4 +1,4 @@
-"""IQL + BCA: two actors sharing Q/V; one explicitly weighted or unweighted fitter."""
+"""IQL + BCA: two actors sharing Q/V; one Bayesian bootstrap scale fitter and a frozen WBCP threshold."""
 
 from dataclasses import asdict, dataclass, replace
 from numbers import Real
@@ -8,6 +8,8 @@ import calibration.iql_state as H
 import calibration.iql_actors as S
 import calibration.iql_scale as W
 from calibration.iql_state import P, jax, jnp
+
+VARIANT = "wbcp_uniform"
 
 
 def _name(value):
@@ -27,19 +29,16 @@ def _positive(value, name):
 @dataclass(frozen=True)
 class ScaleVariant:
     name: str
-    iw: W.ScaleIWConfig = W.ScaleIWConfig()
     weight_width: bool = False
 
     def __post_init__(self):
         _name(self.name)
-        if not isinstance(self.iw, W.ScaleIWConfig):
-            raise ValueError("iw must be a ScaleIWConfig")
         if not isinstance(self.weight_width, bool):
             raise ValueError("weight_width must be an explicit boolean")
 
 
 @dataclass(frozen=True)
-class IWArm:
+class PairArm:
     name: str
     variant_index: int
     mode: str
@@ -63,7 +62,7 @@ class IWArm:
             raise ValueError("baseline gain is unused and must be one")
 
 
-class SharedIWCarry(NamedTuple):
+class SharedPairCarry(NamedTuple):
     rng: object
     nuisance: object
     step: object
@@ -71,42 +70,28 @@ class SharedIWCarry(NamedTuple):
     actors: object
 
 
-def default_design(published_beta, *, fitting_mode="awr"):
+def default_design(published_beta):
     """The only paired design: shared Q/V, identical beta, fixed gain1, one scale fitter."""
     _positive(published_beta, "host beta")
-    variant = ScaleVariant(
-        "noiw" if fitting_mode == "off" else "awr",
-        W.ScaleIWConfig(mode=fitting_mode, beta=published_beta), True
-    )
+    variant = ScaleVariant(VARIANT, True)
     actors = (
-        IWArm("host", -1, "off", published_beta),
-        IWArm("bca", 0, "full", published_beta),
+        PairArm("host", -1, "off", published_beta),
+        PairArm("bca", 0, "full", published_beta),
     )
     return ((variant,), actors)
 
 
 def _validate_variants(args, variants):
     args.posterior.validate()
-    if (
-        len(variants) != 1
-        or variants[0].iw.mode not in ("off", "awr")
-        or not variants[0].weight_width
-    ):
-        raise ValueError("Exactly one explicitly declared full BCA fitter is supported.")
+    if len(variants) != 1 or not variants[0].weight_width:
+        raise ValueError("Exactly one declared BCA scale fitter is supported.")
     if args.posterior.mode != "full":
-        raise ValueError(
-            "shared references retain the full Bayesian/conformal posterior"
-        )
+        raise ValueError("shared references consume the WBCP threshold")
     _positive(args.beta, "published beta")
     if not variants or any((not isinstance(v, ScaleVariant) for v in variants)):
         raise ValueError("explicit scale variants required")
     if len({v.name for v in variants}) != len(variants):
         raise ValueError("scale variant names must be unique")
-    common = variants[0].iw
-    if common.beta != args.beta or any((v.iw != common for v in variants)):
-        raise ValueError(
-            "all variants require the same fixed IW settings and published IW beta"
-        )
 
 
 def _validate_arms(args, arms, count):
@@ -117,8 +102,8 @@ def _validate_arms(args, arms, count):
         or any(a.beta != args.beta for a in arms)
     ):
         raise ValueError("Only the host/BCA pair with the same beta is supported.")
-    if not arms or any((not isinstance(a, IWArm) for a in arms)):
-        raise ValueError("explicit IWArm actors required")
+    if not arms or any((not isinstance(a, PairArm) for a in arms)):
+        raise ValueError("explicit PairArm actors required")
     if len({a.name for a in arms}) != len(arms):
         raise ValueError("actor names must be unique")
     if any((a.variant_index >= count for a in arms)):
@@ -141,8 +126,7 @@ def _validate_fitters(args, fitters, variants):
         raise ValueError("scale variants cannot reuse one fitter instance")
     for fitter, variant in zip(fitters, variants):
         if (
-            not isinstance(fitter, W.IWScaleFitter)
-            or fitter.iw != variant.iw
+            not isinstance(fitter, W.BootstrapScaleFitter)
             or fitter.weight_width != variant.weight_width
             or (asdict(fitter.args) != asdict(args.posterior))
         ):
@@ -155,13 +139,12 @@ def make_fitters(args, state, obs_dim, action_dim, variants):
     _validate_variants(args, variants)
     return tuple(
         (
-            W.IWScaleFitter(
+            W.BootstrapScaleFitter(
                 args.posterior,
                 state.qf.apply_fn,
                 obs_dim,
                 action_dim,
                 args.seed,
-                iw=v.iw,
                 weight_width=v.weight_width,
             )
             for v in variants
@@ -171,22 +154,19 @@ def make_fitters(args, state, obs_dim, action_dim, variants):
 
 def initialize_shared(args, state, rng, fitters, arms):
     variants = tuple(
-        (ScaleVariant(str(i), f.iw, f.weight_width) for i, f in enumerate(fitters))
+        (ScaleVariant(str(i), f.weight_width) for i, f in enumerate(fitters))
     )
     _validate_fitters(args, fitters, variants)
     _validate_arms(args, arms, len(fitters))
     extras = tuple(
         (
             H.PosteriorTrainState(
-                f.initial,
-                P.POST.initialize_posterior(
-                    f.initial.calibrator.params, 1, args.posterior.draws
-                ),
+                f.initial, P.POST.initial_reference(f.initial.calibrator.params)
             )
             for f in fitters
         )
     )
-    return SharedIWCarry(
+    return SharedPairCarry(
         rng, state, jnp.int32(0), extras, S.stack_actors(state.actor, len(arms))
     )
 
@@ -251,11 +231,11 @@ def make_shared_train_step(args, dataset, fitters, variants, arms):
         new_extras, predictions, variant_logs = ([], [], [])
         for f, extra in zip(fitters, extras):
             calibration, readout, accepted = f.update(
-                extra.calibration, state, batch, target, adv, dropout_key, it
+                extra.calibration, state, batch, target, dropout_key, it
             )
             d = readout.diagnostics
             numerical = (
-                d.get("numerical_valid", accepted)
+                d["numerical_valid"]
                 & P.finite_tree(extra.calibration)
                 & (extra.calibration.resid_scale > 0)
             )
@@ -271,31 +251,13 @@ def make_shared_train_step(args, dataset, fitters, variants, arms):
                 {
                     "accepted": accepted,
                     "numerical_valid": numerical,
-                    "ess_feasible": d.get("iw_ess_feasible", jnp.asarray(True)),
-                    "ess_infeasible": d.get("iw_ess_infeasible", jnp.asarray(False)),
-                    "iw_inputs_valid": d.get("iw_inputs_valid", jnp.asarray(True)),
-                    "has_support": d.get("iw_has_support", jnp.asarray(True)),
                     "step": calibration.calibrator.step,
                     "loss": d["cal_loss"],
                     "coverage": readout.coverage,
                     "width_loss": d["width_loss"],
                     "eta_mean": d["eta_mean"],
                     "resid_scale": calibration.resid_scale,
-                    "iw_tau": d.get("iw_tau", jnp.asarray(1.0)),
-                    "iw_raw_ess_fraction": d.get(
-                        "iw_raw_ess_fraction", jnp.asarray(1.0)
-                    ),
-                    "iw_ess_fraction": d.get("iw_ess_fraction", jnp.asarray(1.0)),
-                    "prior_ess_fraction": d.get(
-                        "bootstrap_prior_ess_fraction", d["bootstrap_ess_fraction"]
-                    ),
-                    "product_ess_fraction": d["bootstrap_ess_fraction"],
-                    "iw_supported_count": d.get(
-                        "iw_supported_count", jnp.asarray(len(adv), jnp.int32)
-                    ),
-                    "iw_positive_count": d.get(
-                        "iw_positive_count", jnp.asarray(len(adv), jnp.int32)
-                    ),
+                    "bootstrap_ess_fraction": d["bootstrap_ess_fraction"],
                 }
             )
         detail = jax.tree_util.tree_map(lambda *xs: jnp.stack(xs), *variant_logs)
@@ -350,6 +312,6 @@ def make_shared_train_step(args, dataset, fitters, variants, arms):
             "scale_coverage": jnp.mean(detail["coverage"]),
             **{"cal_variant_" + k: v for k, v in detail.items()},
         }
-        return (SharedIWCarry(rng, state, it, tuple(new_extras), actors), diagnostics)
+        return (SharedPairCarry(rng, state, it, tuple(new_extras), actors), diagnostics)
 
     return step

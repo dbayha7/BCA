@@ -20,11 +20,10 @@ import runtime.iql as D
 @dataclass(frozen=True)
 class Options(D.Options):
     decision_gain: float = 1.0
-    fitting_mode: str = "awr"
 
 
 DRIVER_REL = Path("runtime/iql_pair.py")
-SCHEMA = "iql-host-bca-pair-v1"
+SCHEMA = "iql-host-bca-wbcp-pair-v1"
 PUBLISHED_BETA = 3.0
 COMMON_REFERENCE = (
     "online_q_params",
@@ -34,7 +33,6 @@ COMMON_REFERENCE = (
     "value_params",
     "value_optimizer",
     "posterior_key",
-    "fit_indices",
     "cal_residuals",
 )
 
@@ -44,7 +42,6 @@ def validate_options(o):
     if (
         type(o) is not Options
         or o.mode != "shared"
-        or o.fitting_mode not in ("off", "awr")
         or type(o.decision_gain) is not float
         or (o.decision_gain != 1.0)
     ):
@@ -56,7 +53,7 @@ def load_modules():
     m.X = importlib.import_module("algorithms.iql_bca")
     expected = Path(__file__).resolve().parents[1] / "algorithms/iql_bca.py"
     if Path(m.X.__file__).resolve() != expected:
-        raise RuntimeError("IW core import escaped frozen source")
+        raise RuntimeError("BCA core import escaped frozen source")
     return m
 
 
@@ -78,7 +75,7 @@ def resolved_arguments(o, m):
     validate_options(o)
     args, _, differences = D.resolved_arguments(o, m)
     args = replace(args, algorithm="iql_bca_pair")
-    variants, arms = m.X.default_design(args.beta, fitting_mode=o.fitting_mode)
+    variants, arms = m.X.default_design(args.beta)
     return (
         args,
         variants,
@@ -105,9 +102,9 @@ def declaration(o, m):
             driver_options=asdict(o),
             evaluation_schedule=D.evaluation_schedule(o, m),
             runtime_dependencies=D.runtime_dependencies(),
-            posterior_measure="unweighted held-out residual scores",
-            iw_measure=("equal importance factors; Bayesian bootstrap retained" if o.fitting_mode == "off"
-                        else "capped pre-BCA AWR fitting tilt; not a policy/behavior density ratio"),
+            calibration="wbcp_uniform",
+            posterior_measure="WBCP (Lou and Luo, arXiv:2604.06464v3, Algorithm 1) with unit weights and test mass one on held-out residual scores",
+            scale_fit_measure="Bayesian bootstrap masses on coverage and width; no importance factors",
             selection_allowed=False,
         )
     )
@@ -119,37 +116,37 @@ def validate_declaration(o, declared):
     validate_options(o)
     import algorithms.iql_bca as X
 
-    variants, arms = X.default_design(declared["args"]["beta"], fitting_mode=o.fitting_mode)
+    variants, arms = X.default_design(declared["args"]["beta"])
     if (
         declared["arms"] != [asdict(a) for a in arms]
         or declared["variants"] != [asdict(v) for v in variants]
         or declared["driver_options"] != asdict(o)
+        or declared.get("calibration") != "wbcp_uniform"
     ):
         raise ValueError("IQL declaration differs from the single host/BCA pair.")
     if (
         declared["args"]["posterior"]["decision_gain"] != 1.0
         or declared["args"]["posterior"]["mode"] != "full"
     ):
-        raise ValueError("Full Bayesian/conformal BCA and gain1 are required.")
+        raise ValueError("The consumed WBCP threshold and gain1 are required.")
 
 
 def variant_counts(metrics, count, variants, np):
     shape = (count, variants)
     accepted = np.asarray(metrics.get("cal_variant_accepted"))
     numeric = np.asarray(metrics.get("cal_variant_numerical_valid"))
-    infeasible = np.asarray(metrics.get("cal_variant_ess_infeasible"))
-    for x in (accepted, numeric, infeasible):
+    for x in (accepted, numeric):
         if x.dtype != np.bool_ or x.shape != shape:
             raise ValueError("malformed variant acceptance diagnostics")
-    if np.any(accepted & (~numeric | infeasible)):
-        raise ValueError("accepted calibration has invalid or infeasible evidence")
-    if np.any(numeric & ~accepted & ~infeasible):
+    if np.any(accepted & ~numeric):
+        raise ValueError("accepted calibration has invalid evidence")
+    if np.any(numeric & ~accepted):
         raise ValueError("undeclared numerically valid calibration rejection")
     if not np.array_equal(
         np.asarray(metrics.get("calibration_valid")), numeric.all(axis=1)
     ):
         raise ValueError("aggregate calibration validity hides a variant failure")
-    return (accepted.sum(0, dtype=np.int64), infeasible.sum(0, dtype=np.int64))
+    return accepted.sum(0, dtype=np.int64)
 
 
 def verify_common_references(records):
@@ -169,7 +166,6 @@ def verify_common_references(records):
             "posterior_key",
             "training_key",
             "calibration_rows",
-            "fit_rows",
         ):
             if item[name] != first[name]:
                 raise ValueError("shared reference metadata mismatch: " + name)
@@ -185,38 +181,20 @@ def verify_reference_fit_exposure(records, scope):
 def verify_variant_evidence(metrics, count, variants, batch_size, np):
     shape = (count, len(variants))
     flags = {}
-    for name in (
-        "accepted",
-        "numerical_valid",
-        "ess_feasible",
-        "ess_infeasible",
-        "iw_inputs_valid",
-        "has_support",
-    ):
+    for name in ("accepted", "numerical_valid"):
         x = np.asarray(metrics.get("cal_variant_" + name))
         if x.dtype != np.bool_ or x.shape != shape:
             raise ValueError("missing/malformed variant flag: " + name)
         flags[name] = x
-    if (
-        not flags["numerical_valid"].all()
-        or not flags["iw_inputs_valid"].all()
-        or (not flags["has_support"].all())
-    ):
-        raise ValueError("invalid or unsupported calibration in accepted evidence")
-    if not np.array_equal(flags["ess_feasible"], ~flags["ess_infeasible"]):
-        raise ValueError("contradictory variant ESS flags")
-    numeric = {}
+    if not flags["numerical_valid"].all() or not flags["accepted"].all():
+        raise ValueError("invalid or rejected calibration in accepted evidence")
     fields = dict(
         loss=(0.0, None),
         coverage=(0.0, 1.0),
         width_loss=(0.0, None),
         eta_mean=(0.0, None),
         resid_scale=(0.0, None),
-        iw_tau=(0.0, 1.0),
-        iw_raw_ess_fraction=(0.0, 1.0),
-        iw_ess_fraction=(0.0, 1.0),
-        prior_ess_fraction=(0.0, 1.0),
-        product_ess_fraction=(0.0, 1.0),
+        bootstrap_ess_fraction=(0.0, 1.0),
     )
     for name, (lo, hi) in fields.items():
         x = np.asarray(metrics.get("cal_variant_" + name))
@@ -224,51 +202,26 @@ def verify_variant_evidence(metrics, count, variants, batch_size, np):
             raise ValueError("missing/nonfinite variant numeric: " + name)
         eps = (
             8 * np.finfo(x.dtype).eps
-            if x.dtype.kind == "f" and (name == "coverage" or "ess_fraction" in name)
+            if x.dtype.kind == "f" and name in ("coverage", "bootstrap_ess_fraction")
             else 0.0
         )
         if np.any(x < lo) or (hi is not None and np.any(x > hi + eps)):
             raise ValueError("variant numeric outside range: " + name)
-        if name in (
-            "eta_mean",
-            "resid_scale",
-            "iw_ess_fraction",
-            "prior_ess_fraction",
-            "product_ess_fraction",
-        ) and np.any(x <= 0):
+        if name in ("eta_mean", "resid_scale", "bootstrap_ess_fraction") and np.any(
+            x <= 0
+        ):
             raise ValueError("variant numeric must be positive: " + name)
-        numeric[name] = x
-    for name in ("step", "iw_supported_count", "iw_positive_count"):
-        x = np.asarray(metrics.get("cal_variant_" + name))
-        if x.shape != shape or x.dtype.kind not in "iu" or np.any(x < 0):
-            raise ValueError("invalid variant count: " + name)
-        numeric[name] = x
-    if np.any(numeric["iw_supported_count"] > batch_size) or np.any(
-        numeric["iw_positive_count"] > numeric["iw_supported_count"]
-    ):
-        raise ValueError("invalid IW support/positive counts")
-    if np.any(numeric["iw_positive_count"] < 1):
-        raise ValueError("numerically unsupported IW bank")
-    for i, v in enumerate(variants):
-        if v["iw"]["mode"] == "off":
-            if (
-                not np.all(numeric["iw_tau"][:, i] == 1)
-                or not flags["accepted"][:, i].all()
-            ):
-                raise ValueError("off calibration did not update normally")
-        else:
-            if np.any(numeric["iw_tau"][:, i] < v["iw"]["tau_min"]):
-                raise ValueError("IW temperature below declared minimum")
-            ess = numeric["iw_ess_fraction"][:, i]
-            tolerance = 8 * np.finfo(ess.dtype).eps if ess.dtype.kind == "f" else 0.0
-            if np.any(
-                flags["ess_feasible"][:, i] & (ess < v["iw"]["ess_floor"] - tolerance)
-            ):
-                raise ValueError("feasible IW does not meet its ESS floor")
+        if name == "bootstrap_ess_fraction" and np.any(
+            x < 1.0 / batch_size - eps
+        ):
+            raise ValueError("bootstrap ESS fraction below one row")
+    x = np.asarray(metrics.get("cal_variant_step"))
+    if x.shape != shape or x.dtype.kind not in "iu" or np.any(x < 0):
+        raise ValueError("invalid variant count: step")
     return variant_counts(metrics, count, len(variants), np)
 
 
-class IWRuntime(D.GroupRuntime):
+class PairRuntime(D.GroupRuntime):
 
     def __init__(self, o, m, output, args, variants, arms):
         self.o, self.m, self.output, self.args, self.arms = (
@@ -318,7 +271,6 @@ class IWRuntime(D.GroupRuntime):
             self.actor_abstained = self.actor_applied.copy()
             self.actor_post_applied = self.actor_applied.copy()
             self.cal_applied = m.np.zeros(len(variants), m.np.int64)
-            self.cal_ess_abstained = self.cal_applied.copy()
             self.nuisance_valid_count = 0
             self.artifacts = {"curves": {}, "references": {}}
             self.phase = "initialized"
@@ -343,7 +295,6 @@ class IWRuntime(D.GroupRuntime):
                 fitter,
                 extra.calibration,
                 self.carry.nuisance,
-                self.data.train,
                 self.data.calibration,
                 self.carry.rng,
                 step,
@@ -391,14 +342,10 @@ class IWRuntime(D.GroupRuntime):
         cal = self.m.np.asarray(metrics["cal_variant_accepted"]).sum(
             0, dtype=self.m.np.int64
         )
-        ess = self.m.np.asarray(metrics["cal_variant_ess_infeasible"]).sum(
-            0, dtype=self.m.np.int64
-        )
         self.actor_applied += applied
         self.actor_abstained += abstained
         self.actor_post_applied += post
         self.cal_applied += cal
-        self.cal_ess_abstained += ess
         self.nuisance_valid_count += int(
             self.m.np.asarray(metrics["nuisance_valid"]).sum()
         )
@@ -427,13 +374,8 @@ class IWRuntime(D.GroupRuntime):
         counters = self.state_counters()
         if any((counters[k] != steps for k in ("qf", "vf", "qf_target"))):
             raise ValueError("actual nuisance counter mismatch")
-        for v, e, count, abstained in zip(
-            self.variants, self.carry.extras, self.cal_applied, self.cal_ess_abstained
-        ):
-            if (
-                counters["calibrators"][v.name] != int(count)
-                or count + abstained != steps
-            ):
+        for v, e, count in zip(self.variants, self.carry.extras, self.cal_applied):
+            if counters["calibrators"][v.name] != int(count) or count != steps:
                 raise ValueError("actual scale counter mismatch: " + v.name)
             if not bool(m.P.finite_tree(e.calibration)):
                 raise ValueError("invalid final calibrator: " + v.name)
@@ -485,7 +427,7 @@ class IWRuntime(D.GroupRuntime):
         self.timings["evaluation_seconds"] += time.perf_counter() - start
 
 
-def execute_group(o, m, output, runtime_factory=IWRuntime):
+def execute_group(o, m, output, runtime_factory=PairRuntime):
     validate_options(o)
     output = Path(output)
     start = time.perf_counter()
@@ -589,7 +531,6 @@ def execute_group(o, m, output, runtime_factory=IWRuntime):
                 actor_valid_abstentions=runtime.actor_abstained.tolist(),
                 actor_post_ready_applied_updates=runtime.actor_post_applied.tolist(),
                 scale_applied_updates=runtime.cal_applied.tolist(),
-                scale_ess_abstentions=runtime.cal_ess_abstained.tolist(),
                 timings=runtime.timings,
             )
         record.update(
@@ -651,7 +592,7 @@ def verify_result(output, result, o, np):
             raise ValueError("invalid artifact path/hash")
         return path
 
-    aa, ca, ce, post = (np.zeros(n, np.int64) for n in (na, nv, nv, na))
+    aa, ca, post = (np.zeros(n, np.int64) for n in (na, nv, na))
     previous = 0
     cal_history = {0: ca.copy()}
     consumed_support = []
@@ -670,7 +611,7 @@ def verify_result(output, result, o, np):
         if D.first_failure(metrics, first, np) is not None:
             raise ValueError("numeric failure in accepted block")
         applied, abstained, posterior = D.block_counts(metrics, count, na, np)
-        cal, ess = verify_variant_evidence(
+        cal = verify_variant_evidence(
             metrics, count, variants, declared["args"]["batch_size"], np
         )
         for name, want in [
@@ -697,7 +638,6 @@ def verify_result(output, result, o, np):
             raise ValueError("calibrator step evidence mismatch")
         aa += applied
         ca += cal
-        ce += ess
         post += posterior
         cal_history[last] = ca.copy()
         consumed_support.append((first, last, metrics["supported_fraction"]))
@@ -707,7 +647,6 @@ def verify_result(output, result, o, np):
     for key, expected in [
         ("actor_applied_updates", aa),
         ("scale_applied_updates", ca),
-        ("scale_ess_abstentions", ce),
         ("actor_post_ready_applied_updates", post),
         ("actor_valid_abstentions", o.updates - aa),
     ]:
@@ -719,11 +658,11 @@ def verify_result(output, result, o, np):
         ):
             raise ValueError("summary counter mismatch: " + key)
     if (
-        np.any(ca + ce != o.updates)
+        np.any(ca != o.updates)
         or type(result.get("nuisance_valid_updates")) is not int
         or result.get("nuisance_valid_updates") != o.updates
     ):
-        raise ValueError("missing accepted/abstained calibration or nuisance updates")
+        raise ValueError("missing accepted calibration or nuisance updates")
     counters = result["state_counters"]
     if any(
         (
@@ -802,10 +741,8 @@ def verify_result(output, result, o, np):
                     expected = 1.0
                 else:
                     ref = row["variants"][arm["variant_index"]]
-                    radius = ref[
-                        "full_radius" if arm["mode"] == "full" else "conformal_radius"
-                    ]
-                    expected = 0.0 if radius == "Infinity" else 1.0
+                    threshold = ref["wbcp"]["threshold"]
+                    expected = 0.0 if threshold == "Infinity" else 1.0
                 if not np.all(selected[:, i] == expected):
                     raise ValueError("actor support disagrees with consumed reference")
     schedule = declared["evaluation_schedule"]

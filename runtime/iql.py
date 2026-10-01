@@ -4,7 +4,6 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
-from decimal import Decimal, ROUND_CEILING
 import hashlib
 import importlib
 import importlib.metadata
@@ -597,48 +596,71 @@ def _evidence_number(value, name, *, infinity=False):
     return value
 
 
-def verify_reference_evidence(record, posterior, data):
+def verify_data_partition(data, posterior):
+    """Training and withheld rows partition the data; the bank is K rows per withheld episode."""
     train = _evidence_count(data.get("training_size"), "training_size")
+    withheld = _evidence_count(data.get("withheld_size"), "withheld_size")
     cal = _evidence_count(data.get("calibration_size"), "calibration_size")
-    if _evidence_count(data.get("dataset_rows"), "dataset_rows") != train + cal:
-        raise ValueError("training/calibration count partition mismatch")
+    rows = _evidence_count(data.get("dataset_rows"), "dataset_rows")
+    if rows != train + withheld or cal > withheld:
+        raise ValueError("training/withheld partition or calibration subset mismatch")
+    k = data.get("rows_per_episode")
+    if type(k) is not int or k < 1 or k != posterior.get("reserve_rows_per_episode"):
+        raise ValueError("calibration bank must thin withheld episodes at the declared K")
+    cap = _evidence_number(posterior.get("reserve_max_fraction"), "reserve_max_fraction")
+    if withheld > cap * rows:
+        raise ValueError("withheld rows exceed the declared reservation fraction")
+    return train, withheld, cal
+
+
+def verify_reference_evidence(record, posterior, data):
+    """Check one refresh record: uniform-weight WBCP over every row of the thinned bank."""
+    _, _, cal = verify_data_partition(data, posterior)
     if _evidence_count(record.get("calibration_rows"), "calibration_rows") != cal:
         raise ValueError("reference calibration count mismatch")
-    fit = _evidence_count(posterior.get("fit_size"), "fit_size")
-    if _evidence_count(record.get("fit_rows"), "fit_rows") != min(fit, train):
-        raise ValueError("reference fitting count mismatch")
     alpha = _evidence_number(posterior.get("alpha"), "alpha")
     credibility = _evidence_number(posterior.get("credibility"), "credibility")
     draws = _evidence_count(posterior.get("draws"), "draws")
-    if not 0 < alpha < 1 or not 0 < credibility < 1 or draws < 2:
+    if not 0 < alpha < 1 or not 0 < credibility < 1:
         raise ValueError("invalid declared posterior configuration")
-    rank = int(
-        (Decimal(cal + 1) * (Decimal(1) - Decimal(str(alpha)))).to_integral_value(
-            rounding=ROUND_CEILING
-        )
-    )
-    if rank > cal:
-        raise ValueError(
-            "global calibration bank cannot support configured finite rank"
-        )
+    from calibration.reference import WBCPConfig, certifiable
+
+    if not certifiable(cal, WBCPConfig(alpha, credibility, draws)):
+        raise ValueError("calibration bank cannot certify the WBCP test atom")
     if posterior.get("mode") != "full" or posterior.get("use_bootstrap") is not True:
         raise ValueError(
-            "shared reference must retain full posterior and Bayesian scale fitting"
+            "shared reference must consume WBCP and keep Bayesian scale fitting"
         )
     unit = _evidence_number(record.get("residual_unit"), "residual_unit")
     gain = _evidence_number(record.get("decision_gain"), "decision_gain")
     if unit <= 0 or gain <= 0 or gain != posterior.get("decision_gain"):
         raise ValueError("invalid reference unit or decision gain")
-    radii = {
-        name: _evidence_number(record.get(name), name, infinity=True)
-        for name in ("full_radius", "bayesian_radius", "conformal_radius")
-    }
-    if any((x < 0 for x in radii.values())) or radii["full_radius"] != max(
-        radii["bayesian_radius"], radii["conformal_radius"]
+    wbcp = record.get("wbcp")
+    if record.get("calibration") != "wbcp_uniform" or not isinstance(wbcp, dict):
+        raise ValueError("reference must record uniform-weight WBCP diagnostics")
+    if set(wbcp) != {
+        "certified", "threshold", "lambda_hat", "lambda_hpd", "sigma_post", "n_eff",
+        "clamp_binds", "scores",
+    }:
+        raise ValueError("unexpected WBCP diagnostic fields")
+    threshold = _evidence_number(wbcp["threshold"], "threshold", infinity=True)
+    lambda_hat = _evidence_number(wbcp["lambda_hat"], "lambda_hat")
+    lambda_hpd = _evidence_number(wbcp["lambda_hpd"], "lambda_hpd", infinity=True)
+    sigma_post = _evidence_number(wbcp["sigma_post"], "sigma_post", infinity=True)
+    n_eff = _evidence_number(wbcp["n_eff"], "n_eff")
+    if (
+        min(threshold, lambda_hat, lambda_hpd, sigma_post) < 0
+        or threshold != max(lambda_hat, lambda_hpd)
     ):
-        raise ValueError(
-            "reference must satisfy nonnegative full=max(Bayesian,conformal)"
-        )
+        raise ValueError("reference must satisfy nonnegative threshold=max(hat,hpd)")
+    if (
+        wbcp["certified"] is not math.isfinite(threshold)
+        or wbcp["clamp_binds"] is not (lambda_hat > lambda_hpd)
+        or (math.isfinite(sigma_post) and not math.isfinite(lambda_hpd))
+    ):
+        raise ValueError("inconsistent WBCP certification flags")
+    if _evidence_count(wbcp["scores"], "scores") != cal or n_eff != cal:
+        raise ValueError("uniform WBCP must score the whole bank with unit weights")
     for name in ("training_key", "posterior_key"):
         key = record.get(name)
         if (
@@ -656,12 +678,9 @@ def verify_reference_evidence(record, posterior, data):
     required += [
         "residual_unit",
         "posterior_key",
-        "posterior_quantile_draws",
-        "fit_indices",
         "cal_residuals",
         "cal_predictions",
-        "fit_predictions",
-        "radii",
+        "wbcp_threshold",
     ]
     if not isinstance(components, dict) or any(
         (
@@ -676,12 +695,9 @@ def verify_reference_evidence(record, posterior, data):
         k: v for k, v in components.items() if not k.startswith("actor_")
     }:
         raise ValueError("common/reference component digest mismatch")
-    if (
-        record.get("bootstrap_weights_saved") is not False
-        or record.get("posterior_quantile_draws_hashed") is not True
-    ):
-        raise ValueError("incorrect bootstrap/draw provenance declaration")
-    return radii
+    if record.get("posterior_draws_saved") is not False:
+        raise ValueError("incorrect posterior draw provenance declaration")
+    return {"threshold": threshold, "lambda_hat": lambda_hat, "lambda_hpd": lambda_hpd}
 
 
 def verify_result(output, result, o, np):
@@ -690,9 +706,8 @@ def verify_result(output, result, o, np):
     if declared["driver_options"] != asdict(o):
         raise ValueError("resolved driver options mismatch")
     data = json.loads((output / "data_metadata.json").read_text())
-    _evidence_count(data.get("training_size"), "training_size")
-    if _evidence_count(data.get("calibration_size"), "calibration_size") < 1:
-        raise ValueError("The matched host requires the declared held-out reservation.")
+    # The native host trains on the same reserved pool, so it is held to the same partition.
+    verify_data_partition(data, declared["args"]["posterior"])
     names = [a["name"] for a in declared["arms"]]
     final = result.get("artifacts", {}).get("final", {})
     if (
@@ -814,7 +829,7 @@ def verify_result(output, result, o, np):
     references = result["artifacts"]["references"]
     if set(references) != {str(s) for s in refs}:
         raise ValueError("reference refresh list mismatch")
-    reference_radii = {}
+    reference_thresholds = {}
     for step in refs:
         entry = references[str(step)]
         path = output / f"reference_{step}.json"
@@ -833,29 +848,23 @@ def verify_result(output, result, o, np):
             != result["artifacts"][f"reference_{step}"]["actor_states"]
         ):
             raise ValueError("reference actor state hash mismatch")
-        reference_radii[step] = verify_reference_evidence(
+        reference_thresholds[step] = verify_reference_evidence(
             record, declared["args"]["posterior"], data
         )
     if o.mode == "shared":
         for b in blocks:
             consumed = [s for s in refs if s < b["first_step"]]
-            radius = reference_radii[max(consumed)] if consumed else None
+            reference = reference_thresholds[max(consumed)] if consumed else None
             with np.load(output / b["diagnostics_npz"], allow_pickle=False) as archive:
                 support = archive["supported_fraction"]
                 for i, arm in enumerate(declared["arms"]):
                     r = (
                         0.0
-                        if radius is None or arm["mode"] == "off"
-                        else radius[
-                            (
-                                "full_radius"
-                                if arm["mode"] == "full"
-                                else "conformal_radius"
-                            )
-                        ]
+                        if reference is None or arm["mode"] == "off"
+                        else reference["threshold"]
                     )
                     if not np.all(support[:, i] == (0.0 if math.isinf(r) else 1.0)):
-                        raise ValueError("consumed global radius/support mismatch")
+                        raise ValueError("consumed WBCP threshold/support mismatch")
     ids = np.asarray(episode_ids(True, 0, o.final_episodes), np.uint32)
     point = schedule["final"]
     if point["step"] != o.updates or point["evaluation_ids"] != ids.tolist():

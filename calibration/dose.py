@@ -62,62 +62,34 @@ def level_critic_dose(widths, usable, residual_scale, blend, inputs_valid=True):
     return jax.tree_util.tree_map(jax.lax.stop_gradient, result)
 
 
-def frozen_level_dose(state, predictions, mode, blend):
-    if mode not in ("full", "floor"):
-        raise ValueError("level posterior mode must be full or floor")
+def frozen_level_dose(reference, predictions, blend):
+    """Width = WBCP threshold x frozen scale at the recorded rows; not ready means width 0.
+
+    A threshold of +inf (nothing certifiable) gives infinite widths, which
+    level_critic_dose treats as unsupported rows with the native multiplier 1.
+    """
     predictions = jnp.asarray(predictions)
-    if (
-        predictions.ndim != 1
-        or state.radii.radius.shape != (1,)
-        or state.residual_scale.ndim != 0
-    ):
-        raise ValueError(
-            "level dose requires vector predictions, one global radius and scalar unit"
-        )
-    radius = (state.radii.radius if mode == "full" else state.radii.conformal_radius)[0]
-    unit = state.residual_scale
+    if predictions.ndim != 1 or reference.threshold.ndim != 0 or reference.residual_scale.ndim != 0:
+        raise ValueError("level dose requires vector predictions, one threshold and a scalar unit")
+    threshold, unit = reference.threshold, reference.residual_scale
     scale = jnp.maximum(predictions, 1e-06) * unit
-    width = radius * scale
+    width = threshold * scale
     valid = (
-        jnp.all(state.radii.inputs_valid)
-        & tree_finite(state.cal_params)
+        tree_finite(reference.cal_params)
         & jnp.all(jnp.isfinite(predictions) & (predictions > 0))
         & jnp.isfinite(unit)
         & (unit > 0)
         & jnp.all(jnp.isfinite(scale) & (scale > 0))
-        & ~jnp.isnan(radius)
-        & (radius >= 0)
+        & ~jnp.isnan(threshold)
+        & (threshold >= 0)
         & (
-            jnp.isposinf(radius)
-            | jnp.all(jnp.isfinite(width) & ((radius == 0) | (width > 0)))
+            jnp.isposinf(threshold)
+            | jnp.all(jnp.isfinite(width) & ((threshold == 0) | (width > 0)))
         )
     )
-    width = jnp.where(state.ready, width, jnp.zeros_like(width))
-    valid = jnp.where(state.ready, valid, True)
-    unit = jnp.where(state.ready, unit, 1.0)
+    width = jnp.where(reference.ready, width, jnp.zeros_like(width))
+    valid = jnp.where(reference.ready, valid, True)
+    unit = jnp.where(reference.ready, unit, 1.0)
     return level_critic_dose(
         width, jnp.ones_like(width, dtype=bool), unit, blend, valid
     )
-
-
-def level_component_engagement(state, predictions, blend):
-    full = frozen_level_dose(state, predictions, "full", blend)
-    floor = frozen_level_dose(state, predictions, "floor", blend)
-    bayes = frozen_level_dose(
-        state._replace(radii=state.radii._replace(radius=state.radii.bayesian_radius)),
-        predictions,
-        "full",
-        blend,
-    )
-    valid = full.inputs_valid & floor.inputs_valid & bayes.inputs_valid
-    active = state.ready & valid
-    result = dict(level_engagement_valid=jnp.where(state.ready, valid, True))
-    for name, alternative in (("bayes", floor), ("floor", bayes)):
-        difference = jnp.abs(full.dose - alternative.dose)
-        result[f"level_{name}_dose_absdiff"] = jnp.where(
-            active, jnp.mean(difference), 0.0
-        )
-        result[f"level_{name}_dose_changed_fraction"] = jnp.where(
-            active, jnp.mean((difference > 0).astype(jnp.float32)), 0.0
-        )
-    return jax.tree_util.tree_map(jax.lax.stop_gradient, result)

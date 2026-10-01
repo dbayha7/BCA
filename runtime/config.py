@@ -33,7 +33,6 @@ def read_config(path):
         "host",
         "bca",
         "reservation",
-        "reference",
         "datasets",
     }:
         raise ValueError(
@@ -88,28 +87,26 @@ def resolve(path, method, seed, output_dir, dataset=None):
         or dataset not in config["datasets"]
     ):
         raise ValueError("Select a declared dataset, seed and method (host or bca).")
-    weighting = exp.get("calibration_weighting", "host")
-    if weighting not in ("none", "host"):
-        raise ValueError("calibration_weighting must be none or host.")
+    if "calibration_weighting" in exp:
+        raise ValueError("calibration_weighting belongs to the archived stack; WBCP weights are uniform.")
     data = config["datasets"][dataset]
     algorithm = config["algorithm"]
     host = "td3" if algorithm == "td3_bc" else algorithm
     native = merge(config["host"], data.get("host", {}))
     bca = merge(config["bca"], data.get("bca", {}))
     reservation = merge(config["reservation"], data.get("reservation", {}))
-    identity = "bca-noiw" if method == "bca" and weighting == "none" else method
+    k = reservation.get("rows_per_episode")
+    if isinstance(k, bool) or not isinstance(k, int) or k < 1:
+        # Whole-episode banks break WBCP's guarantee (experiments/wbcp/DEPENDENCE.md).
+        raise ValueError("Declare a positive integer reservation.rows_per_episode for " + str(dataset) + ".")
+    identity = "bca-wbcp" if method == "bca" else method
     run_id = f"{algorithm}-{dataset}-{identity}-s{seed}"
-    if method == "bca" and weighting == "none":
-        if host in ("td3", "rebrac"):
-            bca["affinity"] = dict(mode="off", bandwidth=None, ess_floor=None, tau_min=None, iterations=None)
-        elif host == "cql":
-            bca["iw"]["mode"] = "off"
     row = dict(
         host=host,
         algorithm=algorithm,
         environment=data["environment"],
         method=method,
-        calibration_weighting=weighting if method == "bca" else "not_applicable",
+        calibration="wbcp_uniform" if method == "bca" else "not_applicable",
         run_id=run_id,
         cache=deepcopy(data["cache"]),
     )
@@ -142,24 +139,13 @@ def resolve(path, method, seed, output_dir, dataset=None):
                 "each reference and training end" if method == "bca" else "training end"
             ),
         )
-        fitting = bca.pop("fitting")
-        if fitting != dict(
-            beta="host beta",
-            cap=100.0,
-            mixing=1.0,
-            ess_floor=0.25,
-            tau_min=0.05,
-            iterations=32,
-        ):
-            raise ValueError(
-                "IQL uses the declared single AWR-weighted fitting objective."
-            )
         if bca["decision_gain"] != 1.0:
             raise ValueError("IQL decision gain is fixed at one.")
         native["allow_off_config"] = False
         bca.update(
             reserve_seed=reservation["seed"],
             reserve_max_fraction=reservation["max_fraction"],
+            reserve_rows_per_episode=reservation["rows_per_episode"],
         )
         row.update(
             mode="shared" if method == "bca" else "native",
@@ -187,12 +173,10 @@ def resolve(path, method, seed, output_dir, dataset=None):
         )
         if method == "bca":
             row["options"]["decision_gain"] = 1.0
-            row["options"]["fitting_mode"] = "off" if weighting == "none" else "awr"
         return row
     native.update(algorithm="corl_" + algorithm, allow_off_config=True)
     row["native_args"] = native
     events = schedule(exp["schedules"][exp["evaluation_banks"][seed]])
-    ref = merge(config.get("reference", {}), data.get("reference", {}))
     protocol = dict(
         run_id=run_id,
         seed=seed,
@@ -205,20 +189,12 @@ def resolve(path, method, seed, output_dir, dataset=None):
         evaluation_events=events,
     )
     if host == "cql":
-        if method == "host":
-            bca["iw"] = dict(
-                mode="off",
-                ess_floor=bca["iw"]["ess_floor"],
-                tau_min=bca["iw"]["tau_min"],
-                iterations=bca["iw"]["iterations"],
-            )
         row["config"] = dict(arm=method, **bca)
         protocol.update(
             calibration_target_size=reservation["size"],
             calibration_seed=reservation["seed"],
             calibration_max_fraction=reservation["max_fraction"],
-            reference_size=ref["size"] if method == "bca" else None,
-            reference_seed=ref["seed"] if method == "bca" else None,
+            calibration_rows_per_episode=reservation["rows_per_episode"],
             refresh_steps=steps if method == "bca" else [],
         )
     else:
@@ -233,13 +209,13 @@ def resolve(path, method, seed, output_dir, dataset=None):
                 target_size=reservation["size"],
                 seed=reservation["seed"],
                 max_fraction=reservation["max_fraction"],
+                rows_per_episode=reservation["rows_per_episode"],
                 dependency_contract=(
                     "raw_effective_finite_targets_next_actions_v1"
                     if host == "rebrac"
                     else "raw_effective_finite_targets_v1"
                 ),
             ),
-            reference=ref if method == "bca" else None,
             refresh_events=(
                 schedule(
                     exp["schedules"][data["refresh_banks"][exp["seeds"].index(seed)]]
@@ -295,21 +271,15 @@ def typed(row):
     )
     if host == "cql":
         spec = decode(deepcopy(row["config"]))
-        spec["iw"] = runner.P.ScaleIWConfig(**spec["iw"])
-        spec["posterior"] = runner.P.PosteriorConfig(**spec["posterior"])
+        spec["posterior"] = runner.P.WBCPConfig(**spec["posterior"])
         spec = runner.P.Config(**spec)
         protocol["refresh_steps"] = tuple(protocol["refresh_steps"])
     else:
         spec = deepcopy(row["specification"])
         if spec["posterior"] is not None:
-            spec["posterior"]["affinity"] = runner.AffinitySpecification(
-                **spec["posterior"]["affinity"]
-            )
             spec["posterior"] = runner.PosteriorSpecification(**spec["posterior"])
         spec = runner.RunSpecification(**spec)
         protocol["reservation"] = runner.Reservation(**protocol["reservation"])
-        if protocol["reference"] is not None:
-            protocol["reference"] = runner.Reference(**protocol["reference"])
         protocol["refresh_events"] = tuple(
             runner.RefreshEvent(**e) for e in protocol["refresh_events"]
         )

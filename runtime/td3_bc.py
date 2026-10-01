@@ -14,6 +14,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import algorithms.td3_bc_bca as P
+from calibration.reference import reference_valid
 
 N = P.BASE
 from runtime import common as C
@@ -55,6 +56,10 @@ class Reservation:
     seed: int
     max_fraction: float
     dependency_contract: str
+    # K calibration rows from each withheld component (calibration/bank.py). None withholds
+    # whole components and calibrates on all their rows: that is only the population split of
+    # experiments/wbcp/freeze_scores.py, never a WBCP bank (DEPENDENCE.md).
+    rows_per_episode: int | None
 
     def __post_init__(self):
         _integer(self.target_size, "reservation target", 1)
@@ -71,16 +76,8 @@ class Reservation:
             raise ValueError(
                 "unsupported dependency contract; no fallback is available"
             )
-
-
-@dataclass(frozen=True)
-class Reference:
-    size: int
-    seed: int
-
-    def __post_init__(self):
-        _integer(self.size, "reference size", 1)
-        _seed(self.seed, "reference seed")
+        if self.rows_per_episode is not None:
+            _integer(self.rows_per_episode, "reservation rows per episode", 1)
 
 
 @dataclass(frozen=True)
@@ -122,7 +119,6 @@ class RunProtocol:
     eval_periodic_episodes: int
     eval_final_episodes: int
     reservation: Reservation | None
-    reference: Reference | None
     refresh_events: tuple
     evaluation_events: tuple
 
@@ -143,12 +139,8 @@ class RunProtocol:
             raise ValueError(
                 "native horizon must be divisible by periodic interval; no truncation"
             )
-        for value, cls, name in (
-            (self.reservation, Reservation, "reservation"),
-            (self.reference, Reference, "reference"),
-        ):
-            if value is not None and type(value) is not cls:
-                raise TypeError("typed " + name + " required")
+        if self.reservation is not None and type(self.reservation) is not Reservation:
+            raise TypeError("typed reservation required")
         if (
             type(self.refresh_events) is not tuple
             or type(self.evaluation_events) is not tuple
@@ -198,34 +190,6 @@ class RunProtocol:
 
 
 @dataclass(frozen=True)
-class AffinitySpecification:
-    mode: str
-    bandwidth: float | None
-    ess_floor: float | None
-    tau_min: float | None
-    iterations: int | None
-
-    def config(self):
-        if self.mode != "off":
-            _real(
-                self.bandwidth,
-                "native-action-unit affinity bandwidth",
-                minimum=0,
-                strict_min=True,
-            )
-            _real(
-                self.ess_floor,
-                "affinity ESS floor",
-                minimum=0,
-                maximum=1,
-                strict_min=True,
-            )
-            _real(self.tau_min, "affinity minimum temperature", minimum=0, maximum=1)
-            _integer(self.iterations, "affinity iterations", 1)
-        return P.AffinityIWConfig(**asdict(self))
-
-
-@dataclass(frozen=True)
 class PosteriorSpecification:
     alpha: float
     credibility: float
@@ -235,13 +199,11 @@ class PosteriorSpecification:
     cal_beta: float
     width_penalty: float
     scale_ema: float
-    affinity: AffinitySpecification
 
     def config(self):
         return P.Config(
             "bca",
-            self.affinity.config(),
-            P.PosteriorConfig(self.alpha, self.credibility, self.draws),
+            P.WBCPConfig(self.alpha, self.credibility, self.draws),
             self.blend,
             self.cal_lr,
             self.cal_beta,
@@ -316,10 +278,10 @@ def validate_protocol(args, specification, protocol):
     if protocol.reservation is None:
         raise ValueError("reserved arm requires an explicit reservation contract")
     if cfg.arm == "bca":
-        if protocol.reference is None or not protocol.refresh_events:
-            raise ValueError("posterior requires explicit reference and refresh events")
-    elif protocol.reference is not None or protocol.refresh_events:
-        raise ValueError("native controls cannot carry reference or refresh settings")
+        if not protocol.refresh_events:
+            raise ValueError("posterior requires explicit refresh events")
+    elif protocol.refresh_events:
+        raise ValueError("native controls cannot carry refresh settings")
     recorded = published.published_config("corl_td3_bc", args.dataset)
     if recorded is None:
         raise ValueError(
@@ -521,13 +483,14 @@ def _dependencies(maps, indices, literal=False):
     return np.unique(np.r_[rows, rows + 1 if literal else (rows + 1)[done == 0]])
 
 
-def _partition(maps, training, heldout, reference):
+def _partition(maps, training, withheld, heldout):
+    """Training and withheld rows partition the data with disjoint effective dependencies.
+
+    The held-out calibration bank is a subset of the withheld rows, so the no-leak check
+    covers every withheld row, calibrated or not.
+    """
     n = len(maps["raw_current"])
-    for ids, name in (
-        (training, "training"),
-        (heldout, "heldout"),
-        (reference, "reference"),
-    ):
+    for ids, name in ((training, "training"), (withheld, "withheld"), (heldout, "heldout")):
         a = np.asarray(ids)
         if (
             a.ndim != 1
@@ -538,29 +501,66 @@ def _partition(maps, training, heldout, reference):
         ):
             raise ValueError(name + " IDs must be sorted unique converted rows")
     if not len(training) or not np.array_equal(
-        np.sort(np.r_[training, heldout]), np.arange(n)
+        np.sort(np.r_[training, withheld]), np.arange(n)
     ):
         raise ValueError(
-            "training/heldout identities must partition the converted data exactly"
+            "training/withheld identities must partition the converted data exactly"
         )
-    if not np.all(np.isin(reference, training)):
-        raise ValueError("reference contains a nontraining identity")
+    if not np.all(np.isin(heldout, withheld)):
+        raise ValueError("the held-out bank must lie inside the withheld rows")
     effective_overlap = np.intersect1d(
-        _dependencies(maps, training), _dependencies(maps, heldout)
+        _dependencies(maps, training), _dependencies(maps, withheld)
     )
     if effective_overlap.size:
         raise ValueError("effective raw dependencies overlap")
     literal_overlap = np.intersect1d(
-        _dependencies(maps, training, True), _dependencies(maps, heldout, True)
+        _dependencies(maps, training, True), _dependencies(maps, withheld, True)
     )
     return {
         "effective_overlap": effective_overlap.tolist(),
         "literal_shared_raw_rows": literal_overlap.tolist(),
         "training_effective_raw_rows": _dependencies(maps, training).tolist(),
+        "withheld_effective_raw_rows": _dependencies(maps, withheld).tolist(),
         "heldout_effective_raw_rows": _dependencies(maps, heldout).tolist(),
-        "reference_effective_raw_rows": _dependencies(maps, reference).tolist(),
-        "reference_dependency_note": "Recorded full-transition set is conservative: scale-reference predictions read current obs/action only.",
     }
+
+
+def _reserve(maps, reservation, data):
+    """The protocol's reservation: (training, withheld, heldout) converted IDs and its record.
+
+    Training and withheld partition the rows; heldout is the WBCP calibration bank, the K
+    stratified rows of each withheld component (all of them when rows_per_episode is None).
+    With explicit episode IDs the selection reads only the component boundaries; `data`
+    is only shape-checked, which lets validate_prepared repeat this exact call.
+    """
+    r, components = reservation, np.asarray(maps["effective_components"])
+    training, withheld, heldout, inherited = P.reserve_pool(
+        data,
+        r.target_size,
+        r.seed,
+        r.rows_per_episode,
+        max_fraction=r.max_fraction,
+        episode_ids=components,
+    )
+    starts = np.r_[0, np.flatnonzero(np.diff(components)) + 1]
+    meaning = (
+        "whole contiguous effective raw-dependency components, every row calibrated "
+        "(population split for experiments/wbcp/freeze_scores.py, not a calibration design)"
+        if r.rows_per_episode is None
+        else "K stratified rows from each withheld effective raw-dependency component; "
+        "every row of a withheld component is excluded from training"
+    )
+    record = {
+        "contract": DEPENDENCY_CONTRACT,
+        "meaning": meaning + "; not inferred independent episodes",
+        "inherited_primitive_metadata": inherited,
+        "inherited_boundary_string_is_generic": True,
+        "component_boundaries": np.r_[starts, len(components)].tolist(),
+        "heldout_component_ids": np.unique(components[heldout]).tolist(),
+        "withheld_component_ids": np.unique(components[withheld]).tolist(),
+        "training_component_ids": np.unique(components[training]).tolist(),
+    }
+    return training, withheld, heldout, record
 
 
 def _settings(args, specification, protocol):
@@ -581,10 +581,8 @@ def _execution_identity(specification):
 class PreparedData:
     training: object
     heldout: object
-    reference: object
     training_ids: object
     heldout_ids: object
-    reference_ids: object
     obs_mean: object
     obs_std: object
     max_action: float
@@ -599,10 +597,8 @@ def _prepared_hashes(prepared):
         for name in (
             "training",
             "heldout",
-            "reference",
             "training_ids",
             "heldout_ids",
-            "reference_ids",
             "obs_mean",
             "obs_std",
             "max_action",
@@ -640,60 +636,13 @@ def _raw_identity(identity, dataset):
         raise ValueError("raw identity must explicitly be synthetic/cached_hdf5")
 
 
-def prepare(
-    raw, args, specification, protocol, *, max_action, max_episode_steps, raw_identity
-):
-    cfg = validate_protocol(args, specification, protocol)
-    _real(max_action, "uniform symmetric action bound", minimum=0, strict_min=True)
-    _raw_identity(raw_identity, args.dataset)
-    raw_hashes = {k: _array_hash(raw[k]) for k in sorted(raw)}
-    converted, rows, episode_ids = _convert(raw, max_episode_steps)
-    converted_hashes = {k: _array_hash(v) for k, v in converted.items()}
-    maps = dependency_maps(rows, converted["terminals"])
-    n = len(rows)
-    training_ids, heldout_ids, reservation = (
-        np.arange(n, dtype=np.int64),
-        np.empty(0, np.int64),
-        None,
-    )
-    r = protocol.reservation
-    data = C.Transition(
-        converted["observations"],
-        converted["actions"],
-        converted["rewards"],
-        converted["next_observations"],
-        converted["terminals"],
-    )
-    training_ids, heldout_ids, inherited = P.reserve_pool(
-        data,
-        r.target_size,
-        r.seed,
-        max_fraction=r.max_fraction,
-        episode_ids=np.asarray(maps["effective_components"]),
-    )
-    components = np.asarray(maps["effective_components"])
-    starts = np.r_[0, np.flatnonzero(np.diff(components)) + 1]
-    reservation = {
-        "contract": DEPENDENCY_CONTRACT,
-        "meaning": "whole contiguous effective raw-dependency components; not inferred independent episodes",
-        "inherited_primitive_metadata": inherited,
-        "inherited_boundary_string_is_generic": True,
-        "component_boundaries": np.r_[starts, n].tolist(),
-        "heldout_component_ids": np.unique(components[heldout_ids]).tolist(),
-        "training_component_ids": np.unique(components[training_ids]).tolist(),
-    }
-    reference_ids = np.empty(0, np.int64)
-    if cfg.arm == "bca":
-        if protocol.reference.size > len(training_ids):
-            raise ValueError("reference exceeds training complement")
-        local = np.sort(
-            np.random.default_rng(protocol.reference.seed).choice(
-                len(training_ids), protocol.reference.size, replace=False
-            )
-        )
-        reference_ids = np.asarray(training_ids)[local]
-    partition = _partition(maps, training_ids, heldout_ids, reference_ids)
-    converted["rewards"] = np.asarray(converted["rewards"], np.float64)
+def transform_rows(converted, args, training_ids, max_episode_steps):
+    """Every converted row after native reward handling and the training-fit normalization.
+
+    prepare keeps the training pool and the held-out bank of this; the other withheld rows
+    are dropped, and experiments/wbcp/freeze_scores.py rebuilds them with this function.
+    """
+    converted = dict(converted, rewards=np.asarray(converted["rewards"], np.float64))
     if args.normalize_reward:
         converted = C.modify_reward(
             converted, args.dataset, max_episode_steps=max_episode_steps
@@ -731,24 +680,43 @@ def prepare(
     _finite((all_data, mean, std), "prepared data/statistics")
     if np.any(std <= 0):
         raise ValueError("observation standard deviation must be positive")
-    if cfg.iw.mode != "off" and np.any(
-        np.abs(np.asarray(all_data.action)) > max_action
-    ):
-        raise ValueError(
-            "affinity arm requires dataset actions inside native bounds; no clipping"
-        )
+    return all_data, mean, std
+
+
+def prepare(
+    raw, args, specification, protocol, *, max_action, max_episode_steps, raw_identity
+):
+    cfg = validate_protocol(args, specification, protocol)
+    _real(max_action, "uniform symmetric action bound", minimum=0, strict_min=True)
+    _raw_identity(raw_identity, args.dataset)
+    raw_hashes = {k: _array_hash(raw[k]) for k in sorted(raw)}
+    converted, rows, episode_ids = _convert(raw, max_episode_steps)
+    converted_hashes = {k: _array_hash(v) for k, v in converted.items()}
+    maps = dependency_maps(rows, converted["terminals"])
+    n = len(rows)
+    data = C.Transition(
+        converted["observations"],
+        converted["actions"],
+        converted["rewards"],
+        converted["next_observations"],
+        converted["terminals"],
+    )
+    training_ids, withheld_ids, heldout_ids, reservation = _reserve(
+        maps, protocol.reservation, data
+    )
+    if cfg.arm == "bca" and not P.certifiable(len(heldout_ids), cfg.posterior):
+        raise ValueError("held-out bank is too small for WBCP to certify a finite threshold")
+    partition = _partition(maps, training_ids, withheld_ids, heldout_ids)
+    all_data, mean, std = transform_rows(converted, args, training_ids, max_episode_steps)
     take = lambda ids: jax.tree_util.tree_map(lambda x: x[ids], all_data)
     training = P.select_training_pool(all_data, cfg.arm, training_ids)
-    heldout, reference = (
-        take(heldout_ids) if len(heldout_ids) else None,
-        take(reference_ids) if len(reference_ids) else None,
-    )
+    heldout = take(heldout_ids) if len(heldout_ids) else None
     settings = _settings(args, specification, protocol)
     all_seeds = [
         seed for event in protocol.evaluation_events for seed in event.episode_seeds
     ]
     metadata = {
-        "schema": "native-td3-prepared-v2",
+        "schema": "native-td3-prepared-v4",
         "settings": settings,
         "settings_sha256": _digest(settings),
         "execution": _execution_identity(specification),
@@ -765,8 +733,8 @@ def prepare(
         "original_terminal_timeout_episode_ids": episode_ids.tolist(),
         "partition": partition,
         "training_converted_ids": np.asarray(training_ids).tolist(),
+        "withheld_converted_ids": np.asarray(withheld_ids).tolist(),
         "heldout_converted_ids": np.asarray(heldout_ids).tolist(),
-        "reference_converted_ids": reference_ids.tolist(),
         "reservation": reservation,
         "normalization_fit_converted_ids": np.asarray(training_ids).tolist(),
         "normalization_fit": "training_complement",
@@ -777,10 +745,10 @@ def prepare(
         ),
         "preprocessing_order": [
             "exact native D4RL conversion and raw identity verification",
-            "explicit effective-component reservation",
+            "explicit effective-component reservation: withheld components leave training; K stratified rows of each (all rows if rows_per_episode is None) form the held-out bank",
             "native float64 reward handling and registered transform",
             "current training-observation mean/std + 1e-3",
-            "same transforms applied to training/heldout/reference/evaluation",
+            "same transforms applied to training/heldout/evaluation",
         ],
         "published_config_fields": copy.deepcopy(
             published.published_config("corl_td3_bc", args.dataset)
@@ -788,8 +756,11 @@ def prepare(
         "published_config_differences": _json_value(
             published.diff_against_published("corl_td3_bc", args.dataset, args)
         ),
-        "affinity_bandwidth_units": "native action units; detached action-kernel tilt, not a density ratio",
-        "posterior_refresh": "frozen arm snapshot, fixed training reference, unweighted heldout Bayesian/conformal posterior",
+        "posterior_refresh": (
+            "frozen arm snapshot; uniform-weight WBCP threshold (Lou and Luo, Algorithm 1) on held-out normalized residuals"
+            if cfg.arm == "bca"
+            else "not_applicable"
+        ),
         "evaluation_seed_convention": "explicit seed per episode; not upstream sequential-reset identity",
         "evaluation_score_transform": score_transform_identity(args.dataset),
         "repeated_episode_seeds": sorted(
@@ -799,10 +770,8 @@ def prepare(
     prepared = PreparedData(
         training,
         heldout,
-        reference,
         jnp.asarray(training_ids),
         jnp.asarray(heldout_ids),
-        jnp.asarray(reference_ids),
         jnp.asarray(mean),
         jnp.asarray(std),
         float(max_action),
@@ -872,7 +841,7 @@ def validate_prepared(args, specification, protocol, prepared):
     ):
         raise ValueError("complete prepared metadata digest mismatch")
     m = prepared.metadata
-    if m.get("schema") != "native-td3-prepared-v2" or m.get(
+    if m.get("schema") != "native-td3-prepared-v4" or m.get(
         "execution"
     ) != _execution_identity(specification):
         raise ValueError("prepared schema or execution identity mismatch")
@@ -891,16 +860,12 @@ def validate_prepared(args, specification, protocol, prepared):
     )
     if maps != m["dependency_maps"] or m["dependency_limits"] != DEPENDENCY_LIMIT:
         raise ValueError("raw dependency map or guarantee mismatch")
-    ids = [
-        np.asarray(x)
-        for x in (prepared.training_ids, prepared.heldout_ids, prepared.reference_ids)
-    ]
-    if _partition(maps, *ids) != m["partition"]:
+    ids = [np.asarray(x) for x in (prepared.training_ids, prepared.heldout_ids)]
+    withheld = np.asarray(m["withheld_converted_ids"], np.int64)
+    if _partition(maps, ids[0], withheld, ids[1]) != m["partition"]:
         raise ValueError("raw dependency membership mismatch")
     for actual, name, pool in zip(
-        ids,
-        ("training", "heldout", "reference"),
-        (prepared.training, prepared.heldout, prepared.reference),
+        ids, ("training", "heldout"), (prepared.training, prepared.heldout)
     ):
         if actual.tolist() != m[name + "_converted_ids"] or len(actual) != (
             len(pool.obs) if pool is not None else 0
@@ -918,48 +883,20 @@ def validate_prepared(args, specification, protocol, prepared):
         raise ValueError("normalization fitting identity mismatch")
     if m["dependency_contract"] != DEPENDENCY_CONTRACT:
         raise ValueError("unsupported reserved dependency contract")
-    comp = np.asarray(maps["effective_components"])
-    boundaries = np.r_[0, np.flatnonzero(np.diff(comp)) + 1, len(comp)]
-    lengths = np.diff(boundaries)
-    order = np.random.default_rng(protocol.reservation.seed).permutation(len(lengths))
-    count = (
-        int(
-            np.searchsorted(np.cumsum(lengths[order]), protocol.reservation.target_size)
-        )
-        + 1
+    # Repeat prepare's reservation call with the protocol values. The selection reads only
+    # the component boundaries, so zero observations with the recorded terminal mask stand
+    # in for the transitions that preparation did not keep.
+    blank = np.zeros((len(maps["raw_current"]), 1), np.float32)
+    done = np.asarray(maps["terminal_mask"], np.float32)
+    *expected, reservation = _reserve(
+        maps, protocol.reservation, C.Transition(blank, blank, blank[:, 0], blank, done)
     )
-    expected = np.sort(
-        np.concatenate(
-            [np.arange(boundaries[i], boundaries[i + 1]) for i in order[:count]]
-        )
-    )
-    if not np.array_equal(ids[1], expected) or len(
-        expected
-    ) > protocol.reservation.max_fraction * len(comp):
+    if reservation != m["reservation"] or any(
+        not np.array_equal(a, b) for a, b in zip(expected, (ids[0], withheld, ids[1]))
+    ):
         raise ValueError("reservation differs from explicit seeded component selection")
-    if cfg.arm == "bca":
-        local = np.sort(
-            np.random.default_rng(protocol.reference.seed).choice(
-                len(ids[0]), protocol.reference.size, replace=False
-            )
-        )
-        if not np.array_equal(ids[2], ids[0][local]) or any(
-            (
-                not np.array_equal(a, b[local])
-                for a, b in zip(prepared.reference, prepared.training)
-            )
-        ):
-            raise ValueError(
-                "reference arrays/IDs differ from exact seeded training subset"
-            )
     _finite(
-        (
-            prepared.training,
-            prepared.heldout,
-            prepared.reference,
-            prepared.obs_mean,
-            prepared.obs_std,
-        ),
+        (prepared.training, prepared.heldout, prepared.obs_mean, prepared.obs_std),
         "prepared inputs",
     )
     if np.any(np.asarray(prepared.obs_std) <= 0):
@@ -1085,8 +1022,8 @@ def _accept(state, metrics):
         _finite(
             (state.calibrator, state.residual_scale), "calibrator/optimizer/EMA state"
         )
-        if not bool(P.posterior_storage_valid(state.posterior)):
-            raise FloatingPointError("invalid posterior storage")
+        if not bool(reference_valid(state.posterior)):
+            raise FloatingPointError("invalid frozen reference storage")
 
 
 def run_prepared(
@@ -1128,23 +1065,17 @@ def run_prepared(
         nonlocal carry
         key = jax.random.fold_in(jax.random.PRNGKey(event.seed), event.step)
         frozen_identity = _tree_hash(carry[1])
-        proposal, metrics = P.refresh(
+        proposal, metrics, diagnostics = P.refresh(
             args,
             cfg,
             models,
             carry[1],
-            prepared.reference,
             prepared.heldout,
             key,
             prepared.max_action,
-            training_ids=prepared.reference_ids,
             heldout_ids=prepared.heldout_ids,
         )
         _accept(proposal, metrics)
-        diagnostics = P.component_diagnostics(cfg, models, proposal, prepared.reference)
-        _finite(diagnostics, "component diagnostics")
-        if not bool(diagnostics["level_engagement_valid"]):
-            raise FloatingPointError("invalid frozen component diagnostic")
         carry = (carry[0], proposal, carry[2])
         emit(
             {
@@ -1154,16 +1085,13 @@ def run_prepared(
                 "refresh_key": key,
                 "frozen_input_state_sha256": frozen_identity,
                 "posterior_snapshot_sha256": _tree_hash(proposal.posterior),
-                "reference_sha256": _tree_hash(prepared.reference),
                 "heldout_sha256": _tree_hash(prepared.heldout),
-                "training_reference_ids": prepared.reference_ids,
                 "heldout_ids": prepared.heldout_ids,
-                "posterior_weighting": "unweighted",
+                "posterior_weighting": "wbcp_uniform",
                 "metrics": metrics,
-                "component_diagnostics": diagnostics,
+                "wbcp": diagnostics,
                 "posterior_ready": proposal.posterior.ready,
                 "residual_unit": proposal.posterior.residual_scale,
-                "radii": proposal.posterior.radii._asdict(),
             }
         )
 

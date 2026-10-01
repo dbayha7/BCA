@@ -1,5 +1,15 @@
 # Correcting the IW-BCA design
 
+> **Status, 30 September 2026: superseded for the active code.** BCA now freezes
+> its threshold with the published WBCP construction (Lou and Luo,
+> arXiv:2604.06464v3, Algorithm 1) in [calibration/wbcp.py](../calibration/wbcp.py),
+> with uniform weights and a scalar test mass; the threshold is WBCP's
+> max(lambda_hat, lambda_HPD) and there is no finite-rank conformal radius; see [ALGORITHMS.md Procedure C](../ALGORITHMS.md#procedure-c-freeze-a-wbcp-reference)
+> and [experiments/wbcp/](../experiments/wbcp/). The per-query Tibshirani design
+> below, and its plan to keep both radius components, is retained as history. Its
+> integration gates on ratios, target populations, deterministic support and
+> adaptive reuse still apply to any future weighted study.
+
 **Decision, 29 September 2026 UTC:** David clarified that the intended IW method is weighted conformal prediction. Existing fitting-IW variants do not implement that method. The correction must weight the held-out threshold, include query mass, and justify the source/target ratio. It must be a separately identified method, preserving prior experiments.
 
 ## What changes, in plain language

@@ -1,7 +1,7 @@
-"""TD3+BC: full-width Bayesian/conformal modulation of the actor BC term."""
+"""TD3+BC: frozen WBCP-width modulation of the actor BC term."""
 
 from runtime import published
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from numbers import Real
 from typing import Any, NamedTuple
 import jax
@@ -11,14 +11,15 @@ import optax
 from flax.training.train_state import TrainState
 import algorithms.td3_bc as BASE
 from calibration.network import Calibrator, bayesian_bootstrap_weights, soft_coverage
-from calibration.posterior import PosteriorConfig
 from calibration.reference import (
-    initialize_posterior,
-    fit_posterior,
+    WBCPConfig,
+    initial_reference,
+    freeze_reference,
+    certifiable,
+    reference_valid,
     reserve_calibration,
 )
-from calibration.dose import frozen_level_dose, tree_finite, level_component_engagement
-from calibration.policy_weights import ScaleIWConfig, fit_weighting
+from calibration.dose import frozen_level_dose, tree_finite
 
 
 def _real(value, name, *, positive=False):
@@ -31,46 +32,9 @@ def _real(value, name, *, positive=False):
 
 
 @dataclass(frozen=True)
-class AffinityIWConfig:
-    mode: str = "off"
-    bandwidth: float | None = None
-    ess_floor: float | None = None
-    tau_min: float | None = None
-    iterations: int | None = None
-
-    def __post_init__(self):
-        if self.mode not in ("off", "affinity"):
-            raise ValueError("Only the host or aligned affinity BCA is implemented.")
-        if self.mode == "off":
-            if any(
-                (
-                    v is not None
-                    for v in (
-                        self.bandwidth,
-                        self.ess_floor,
-                        self.tau_min,
-                        self.iterations,
-                    )
-                )
-            ):
-                raise ValueError("Disabled importance fitting has no affinity settings.")
-        else:
-            _real(self.bandwidth, "affinity bandwidth", positive=True)
-        self.canonical()
-
-    def canonical(self):
-        return (
-            ScaleIWConfig()
-            if self.mode == "off"
-            else ScaleIWConfig("policy", self.ess_floor, self.tau_min, self.iterations)
-        )
-
-
-@dataclass(frozen=True)
 class Config:
     arm: str
-    iw: AffinityIWConfig = field(default_factory=AffinityIWConfig)
-    posterior: PosteriorConfig | None = None
+    posterior: WBCPConfig | None = None
     blend: float | None = None
     cal_lr: float = 0.001
     cal_beta: float = 20.0
@@ -78,24 +42,15 @@ class Config:
     scale_ema: float = 0.99
 
     def __post_init__(self):
-        if self.arm not in ("host", "bca") or type(self.iw) is not AffinityIWConfig:
-            raise ValueError("Choose host or bca with a typed affinity configuration.")
+        if self.arm not in ("host", "bca"):
+            raise ValueError("Choose the host or bca arm.")
         if self.arm == "bca":
-            if (
-                self.iw.mode not in ("off", "affinity")
-                or type(self.posterior) is not PosteriorConfig
-            ):
-                raise ValueError(
-                    "BCA requires both radius components; importance fitting is explicitly off or affinity."
-                )
+            if type(self.posterior) is not WBCPConfig:
+                raise ValueError("BCA requires a typed WBCP threshold configuration.")
             _real(self.blend, "blend", positive=True)
             if self.blend > 1:
                 raise ValueError("blend exceeds one")
-        elif (
-            self.iw.mode != "off"
-            or self.posterior is not None
-            or self.blend is not None
-        ):
+        elif self.posterior is not None or self.blend is not None:
             raise ValueError("The host cannot carry BCA settings.")
         for name in ("cal_lr", "cal_beta", "width_penalty", "scale_ema"):
             _real(getattr(self, name), name, positive=name in ("cal_lr", "cal_beta"))
@@ -111,47 +66,7 @@ class State(NamedTuple):
     native: Any
     calibrator: Any
     residual_scale: Any
-    posterior: Any
-
-
-class AffinitySignal(NamedTuple):
-    log_weights: Any
-    inputs_valid: Any
-
-
-def posterior_storage_valid(post):
-    if post.ready.shape != () or post.ready.dtype != jnp.bool_:
-        raise ValueError("posterior readiness must be a boolean scalar")
-    r = post.radii
-    if (
-        r.radius.shape != (1,)
-        or post.residual_scale.shape != ()
-        or post.group_edges.shape != (0,)
-    ):
-        raise ValueError(
-            "TD3 requires one global posterior and one scalar residual unit"
-        )
-    valid = tree_finite((post.cal_params, post.residual_scale)) & (
-        post.residual_scale > 0
-    )
-    for value in (
-        r.radius,
-        r.conformal_radius,
-        r.bayesian_radius,
-        r.posterior_quantiles,
-    ):
-        valid = valid & jnp.all(~jnp.isnan(value) & (value >= 0))
-    valid = (
-        valid
-        & tree_finite((r.effective_sample_size, r.supported_count))
-        & jnp.all(r.effective_sample_size >= 0)
-        & jnp.all(r.supported_count >= 0)
-        & jnp.all(r.radius == jnp.maximum(r.conformal_radius, r.bayesian_radius))
-    )
-    return valid & (
-        ~post.ready
-        | jnp.all(r.inputs_valid) & jnp.all(r.finite == jnp.isfinite(r.radius))
-    )
+    posterior: Any  # calibration.reference.FrozenReference on the bca arm
 
 
 def _ids(indices, n, name):
@@ -184,13 +99,13 @@ def select_training_pool(dataset, arm, training_indices=None):
     return jax.tree_util.tree_map(lambda x: x[idx], dataset)
 
 
-def reserve_pool(dataset, target_size, seed, *, max_fraction=0.25, episode_ids=None):
+def reserve_pool(dataset, target_size, seed, rows_per_episode, *, max_fraction=0.25, episode_ids=None):
+    # (training, withheld, calibration, metadata): withheld rows never train; calibration is the WBCP bank.
     return reserve_calibration(
-        dataset.obs,
-        dataset.next_obs,
-        dataset.done,
+        dataset.obs, dataset.next_obs, dataset.done,
         target_size,
         seed,
+        rows_per_episode,
         max_fraction=max_fraction,
         episode_ids=episode_ids,
     )
@@ -208,12 +123,6 @@ def initialize(args, config, obs_dim, action_dim, max_action=1.0):
         "corl_td3_bc", args.dataset, args, allow_off_config=args.allow_off_config
     )
     _real(max_action, "max_action", positive=True)
-    if (
-        getattr(args, "cal_iw", False)
-        or getattr(args, "acrab_iw_bellman", False)
-        or getattr(args, "acrab_cinf", -1.0) >= 0
-    ):
-        raise ValueError("legacy IW/Bellman/A-Crab are separate interventions")
     rng, native, (actor, critic) = BASE.initialize(
         args, obs_dim, action_dim, max_action
     )
@@ -226,31 +135,12 @@ def initialize(args, config, obs_dim, action_dim, max_action=1.0):
         params=cal.init(jax.random.fold_in(rng, 1128352841), obs[None], action[None]),
         tx=optax.adam(config.cal_lr),
     )
-    posterior = initialize_posterior(cal_state.params, 1, config.posterior.draws)
+    posterior = initial_reference(cal_state.params)
     return (
         rng,
         State(native, cal_state, jnp.asarray(1.0), posterior),
         (actor, critic, cal),
     )
-
-
-def affinity_log_weights(actor_apply, params, obs, actions, bandwidth, max_action=1.0):
-    _real(bandwidth, "explicit affinity bandwidth", positive=True)
-    _real(max_action, "max_action", positive=True)
-    obs, actions = (jnp.asarray(obs), jnp.asarray(actions))
-    if obs.ndim != 2 or actions.ndim != 2 or len(obs) != len(actions) or (not len(obs)):
-        raise ValueError("nonempty aligned observation/action matrices required")
-    detached = jax.tree_util.tree_map(jax.lax.stop_gradient, (params, obs, actions))
-    mu = actor_apply(detached[0], detached[1])
-    if mu.shape != actions.shape:
-        raise ValueError("deterministic actor must emit one action vector per row")
-    logw = -0.5 * jnp.sum(jnp.square((detached[2] - mu) / bandwidth), axis=-1)
-    valid = (
-        tree_finite((params, obs, actions, mu, logw))
-        & jnp.all(jnp.abs(actions) <= max_action)
-        & jnp.all(jnp.abs(mu) <= max_action)
-    )
-    return jax.tree_util.tree_map(jax.lax.stop_gradient, AffinitySignal(logw, valid))
 
 
 def native_target(args, models, native, batch, rng_noise, max_action=1.0):
@@ -285,33 +175,6 @@ def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
     prior = jax.lax.stop_gradient(
         bayesian_bootstrap_weights(jax.random.fold_in(rng, 1128352850), len(batch.obs))
     )
-    weights, valid, feasible = (prior, jnp.asarray(True), jnp.asarray(True))
-    diag = {}
-    if config.iw.mode != "off":
-        signal = affinity_log_weights(
-            models[0].apply,
-            state.native.actor.params,
-            batch.obs,
-            batch.action,
-            config.iw.bandwidth,
-            max_action,
-        )
-        tilted = fit_weighting(
-            signal.log_weights,
-            prior,
-            jax.random.fold_in(rng, 1413761367),
-            config.iw.canonical(),
-        )
-        weights, valid = (
-            tilted.product.weights,
-            signal.inputs_valid & tilted.inputs_valid,
-        )
-        feasible = tilted.fit_feasible
-        diag = dict(
-            iw_ess=tilted.iw.ess_fraction,
-            iw_tau=tilted.iw.tau,
-            iw_product_ess=tilted.product.product_ess_fraction,
-        )
     unit = state.residual_scale
 
     def objective(params):
@@ -319,9 +182,9 @@ def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
         if eta.shape != (len(batch.obs),):
             raise ValueError("scale predictor must emit one positive value per row")
         coverage = soft_coverage(target / unit, q / unit, eta, config.cal_beta)
-        width = jnp.sum(weights * jnp.square(eta))
+        width = jnp.sum(prior * jnp.square(eta))
         return (
-            jnp.square(jnp.sum(weights * coverage) - (1.0 - config.posterior.alpha))
+            jnp.square(jnp.sum(prior * coverage) - (1.0 - config.posterior.alpha))
             + config.width_penalty * width,
             eta,
         )
@@ -334,8 +197,7 @@ def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
         jnp.std(target - q), 1e-06
     )
     valid = (
-        valid
-        & tree_finite(
+        tree_finite(
             (
                 batch,
                 state.native,
@@ -357,46 +219,28 @@ def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
         & (unit > 0)
         & (unit_new > 0)
     )
-    accepted = valid & feasible
     result = jax.lax.cond(
-        accepted,
+        valid,
         lambda _: state._replace(calibrator=proposed, residual_scale=unit_new),
         lambda _: state,
         None,
     )
     return (
         result,
-        dict(
-            diag,
-            scale_inputs_valid=valid,
-            scale_fit_accepted=accepted,
-            scale_ess_abstained=valid & ~feasible,
-            scale_loss=loss,
-        ),
+        dict(scale_inputs_valid=valid, scale_fit_accepted=valid, scale_loss=loss),
     )
 
 
-def refresh(
-    args,
-    config,
-    models,
-    state,
-    training_reference,
-    heldout,
-    rng,
-    max_action=1.0,
-    *,
-    training_ids,
-    heldout_ids
-):
-    if config.arm != "bca" or not len(training_reference.obs) or (not len(heldout.obs)):
-        raise ValueError(
-            "posterior refresh requires nonempty training and held-out references"
-        )
-    train = _ids(training_ids, len(training_reference.obs), "training IDs")
-    hold = _ids(heldout_ids, len(heldout.obs), "held-out IDs")
-    if np.intersect1d(train, hold).size:
-        raise ValueError("training and held-out row identities overlap")
+def refresh(args, config, models, state, heldout, rng, max_action=1.0, *, heldout_ids):
+    """Freeze the current scale and select the uniform-weight WBCP threshold.
+
+    Runs eagerly (freeze_reference is NumPy): scores are |target - q| / frozen scale
+    on the held-out rows. Randomness only folds the refresh key. An invalid refresh
+    keeps the previous state and reports posterior_inputs_valid=False.
+    """
+    if config.arm != "bca" or not len(heldout.obs):
+        raise ValueError("posterior refresh requires a nonempty held-out reference")
+    _ids(heldout_ids, len(heldout.obs), "held-out IDs")
     target = native_target(
         args,
         models,
@@ -410,51 +254,38 @@ def refresh(
         .apply(state.native.critic.params, heldout.obs, heldout.action)
         .min(axis=-1)
     )
-    fit = models[2].apply(
-        state.calibrator.params, training_reference.obs, training_reference.action
-    )
     cal = models[2].apply(state.calibrator.params, heldout.obs, heldout.action)
-    post = fit_posterior(
+    stored = (
+        tree_finite((state.native, state.calibrator, heldout, target, q))
+        & reference_valid(state.posterior)
+        & jnp.all(jnp.isfinite(cal) & (cal > 0))
+    )
+    reference, frozen, diagnostics = freeze_reference(
         state.calibrator.params,
         state.residual_scale,
-        fit,
         cal,
         target - q,
         jax.random.fold_in(rng, 1347375956),
         config.posterior,
-        groups=1,
     )
-    valid = (
-        tree_finite(
-            (state.native, state.calibrator, training_reference, heldout, target, q)
-        )
-        & posterior_storage_valid(state.posterior)
-        & jnp.all(jnp.isfinite(fit) & (fit > 0))
-        & jnp.all(jnp.isfinite(cal) & (cal > 0))
-        & jnp.all(post.radii.inputs_valid)
-    )
-    result = jax.lax.cond(
-        valid, lambda _: state._replace(posterior=post), lambda _: state, None
-    )
+    valid = bool(stored) and frozen
+    result = state._replace(posterior=reference) if valid else state
     return (
         result,
         dict(
-            posterior_inputs_valid=valid, posterior_supported=jnp.all(post.radii.finite)
+            posterior_inputs_valid=valid,
+            posterior_certified=valid and bool(diagnostics["certified"]),
         ),
+        diagnostics,
     )
 
 
-def bc_readout(models, state, batch, blend, *, mode="full"):
+def bc_readout(models, state, batch, blend):
     predictions = models[2].apply(state.posterior.cal_params, batch.obs, batch.action)
-    dose = frozen_level_dose(state.posterior, predictions, mode, blend)
+    dose = frozen_level_dose(state.posterior, predictions, blend)
     return dose._replace(
-        inputs_valid=dose.inputs_valid & posterior_storage_valid(state.posterior)
+        inputs_valid=dose.inputs_valid & reference_valid(state.posterior)
     )
-
-
-def component_diagnostics(config, models, state, batch):
-    predictions = models[2].apply(state.posterior.cal_params, batch.obs, batch.action)
-    return level_component_engagement(state.posterior, predictions, config.blend)
 
 
 def consumed_bc_multiplier(config, dose, batch, it, rng):

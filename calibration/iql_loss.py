@@ -39,7 +39,6 @@ class CalibrationInputs:
     action: jax.Array
     vintage: dict
     residual_norm: bool = True
-    iw_logw: jax.Array | None = None
     adv_scale: jax.Array | None = None
 
     def batch_size(self) -> int:

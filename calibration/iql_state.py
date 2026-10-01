@@ -38,8 +38,8 @@ class Args(BASE.Args):
 
 
 class PosteriorTrainState(NamedTuple):
-    calibration: object
-    posterior: object
+    calibration: object  # BCAState: the scale network and residual unit still being fit
+    posterior: object  # calibration.reference.FrozenReference from the last refresh
 
 
 def actor_update(args, actor_state, batch, advantage, dropout_key, weights):
@@ -77,27 +77,6 @@ def actor_update(args, actor_state, batch, advantage, dropout_key, weights):
         )
 
     return jax.lax.cond(weights.has_support & weights.inputs_valid, propose, skip, None)
-
-
-def component_diagnostics(a, reference, predictions, adv, beta):
-    candidates = {}
-    valid = jnp.asarray(True)
-    for mode in ("full", "floor", "bayes"):
-        width, support, ok = P.posterior_width(reference, predictions, mode)
-        candidates[mode] = P.gain_actor_weights(
-            adv, width, support, beta, EXP_ADV_MAX, a.decision_gain, ok
-        )
-        valid = valid & candidates[mode].inputs_valid
-    active = reference.ready & valid
-    full = candidates["full"].weights
-    out = {}
-    for name, control in [("bayes_effect", "floor"), ("floor_effect", "bayes")]:
-        diff = jnp.abs(full - candidates[control].weights)
-        out[name + "_absdiff"] = jnp.where(active, jnp.mean(diff), 0.0)
-        out[name + "_changed_fraction"] = jnp.where(
-            active, jnp.mean((diff > 0).astype(jnp.float32)), 0.0
-        )
-    return out
 
 
 def load_data(args):

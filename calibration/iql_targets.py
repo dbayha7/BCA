@@ -11,13 +11,10 @@ from calibration.iql_loss import CalibrationInputs
 class CorlIQLAdapter:
     q_apply_fn: Callable
     num_heads: int = 2
-    iw_source: None = None
 
     def __post_init__(self):
-        if self.num_heads != 2 or self.iw_source is not None:
-            raise ValueError(
-                "IQL uses its twin critic and external AWR fitting weights."
-            )
+        if self.num_heads != 2:
+            raise ValueError("IQL uses its twin critic.")
 
     def calibration_inputs(self, state, batch, rng, step, host=None):
         if host is None or "target" not in host:

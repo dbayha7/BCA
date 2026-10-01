@@ -1,23 +1,40 @@
-"""Block reservation and frozen scale/radius reference construction."""
+"""Thinned episode reservation and the frozen scale/threshold reference every host consumes."""
 
 import hashlib
+import math
+from dataclasses import dataclass
+from fractions import Fraction
+from numbers import Integral, Real
 from typing import Any, NamedTuple
 import jax
 import jax.numpy as jnp
 import numpy as np
-from calibration.posterior import (
-    PosteriorConfig,
-    PosteriorRadius,
-    partitioned_posterior,
-    apply_partitioned_radius,
-)
+from scipy import stats
+from calibration import bank, wbcp
 
 
-class IQLPosteriorState(NamedTuple):
-    cal_params: Any
-    residual_scale: jax.Array
-    group_edges: jax.Array
-    radii: PosteriorRadius
+@dataclass(frozen=True)
+class WBCPConfig:
+    alpha: float = 0.1  # target miscoverage; also the scale fit's coverage target 1-alpha
+    credibility: float = 0.95  # posterior credibility beta of the selected threshold, Eq. (7)
+    draws: int = 1000  # posterior draws M, Algorithm 1
+
+    def __post_init__(self):
+        for name in ("alpha", "credibility"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, Real) or not 0.0 < value < 1.0:
+                raise ValueError(name + " must be strictly between zero and one")
+        if isinstance(self.draws, bool) or not isinstance(self.draws, Integral) or self.draws < 1:
+            raise ValueError("draws must be a positive integer")
+
+
+class FrozenReference(NamedTuple):
+    cal_params: Any  # scale-network parameters frozen at the refresh
+    residual_scale: jax.Array  # residual unit frozen with them
+    threshold: jax.Array  # lambda_dep = max(lambda_hat, lambda_hpd); +inf when nothing is certifiable
+    lambda_hat: jax.Array  # weighted empirical selection, Eq. (1)
+    lambda_hpd: jax.Array  # beta-credible posterior selection, Eq. (7)
+    n_eff: jax.Array  # Kish effective sample size of the calibration weights
     ready: jax.Array
 
 
@@ -30,8 +47,18 @@ def qlearning_episode_ids(raw):
 
 
 def reserve_calibration(
-    obs, next_obs, done, target_size, seed, max_fraction=0.25, episode_ids=None
+    obs, next_obs, done, target_size, seed, rows_per_episode, max_fraction=0.25,
+    episode_ids=None,
 ):
+    """Withhold length-weighted episodes from training and calibrate on K rows of each.
+
+    Returns (training, withheld, calibration, metadata) row indices: training and withheld
+    partition the data, calibration is the thinned subset of withheld (calibration/bank.py).
+    rows_per_episode=None withholds whole episodes in seeded-permutation order until the
+    target is covered and returns all their rows as calibration. That is only for splitting
+    a dataset into populations (experiments/wbcp/freeze_scores.py): as a calibration bank,
+    whole episodes fail about 28% of the time on hopper-medium (DEPENDENCE.md).
+    """
     obs, next_obs, done = (np.asarray(obs), np.asarray(next_obs), np.asarray(done))
     n = len(obs)
     if obs.ndim != 2 or next_obs.shape != obs.shape or done.shape != (n,):
@@ -51,53 +78,69 @@ def reserve_calibration(
     ends[-1] = True
     boundaries = np.concatenate([[0], np.flatnonzero(ends) + 1])
     lengths = np.diff(boundaries)
-    order = np.random.default_rng(seed).permutation(len(lengths))
-    count = int(np.searchsorted(np.cumsum(lengths[order]), target_size)) + 1
-    chosen = order[:count]
-    cal = np.sort(
+    if rows_per_episode is None:
+        order = np.random.default_rng(seed).permutation(len(lengths))
+        chosen = order[: int(np.searchsorted(np.cumsum(lengths[order]), target_size)) + 1]
+        offsets = [np.arange(lengths[i]) for i in chosen]
+    else:
+        chosen, offsets = bank.stratified_bank(
+            lengths, target_size, rows_per_episode, np.random.default_rng(seed)
+        )
+    withheld = np.sort(
         np.concatenate([np.arange(boundaries[i], boundaries[i + 1]) for i in chosen])
     )
-    if len(cal) > max_fraction * n:
-        raise ValueError("whole-block calibration exceeds the reserved fraction limit")
-    train = np.flatnonzero(~np.isin(np.arange(n), cal))
-    digest = hashlib.sha256(cal.astype("<i8").tobytes()).hexdigest()
+    if len(withheld) > max_fraction * n:
+        raise ValueError("withheld episodes exceed the reserved fraction limit; raise rows_per_episode")
+    cal = np.sort(np.concatenate([boundaries[i] + o for i, o in zip(chosen, offsets)]))
+    train = np.flatnonzero(~np.isin(np.arange(n), withheld))
+    digest = lambda rows: hashlib.sha256(rows.astype("<i8").tobytes()).hexdigest()
     return (
         train.astype(np.int32),
+        withheld.astype(np.int32),
         cal.astype(np.int32),
         {
             "boundary_rule": rule,
+            "design": ("whole episodes (population split, not a calibration design)"
+                       if rows_per_episode is None
+                       else "length-proportional episodes, one row per K equal segments"),
             "target_size": int(target_size),
+            "rows_per_episode": None if rows_per_episode is None else int(rows_per_episode),
             "calibration_size": len(cal),
+            "withheld_size": len(withheld),
+            "withheld_fraction": len(withheld) / n,
             "training_size": len(train),
-            "reserved_blocks": count,
+            "reserved_blocks": len(chosen),
             "total_blocks": len(lengths),
+            "dependence_validated": (rows_per_episode is not None
+                                     and bank.dependence_validated(rows_per_episode, len(chosen))),
             "seed": int(seed),
-            "calibration_indices_sha256": digest,
+            "calibration_indices_sha256": digest(cal),
+            "withheld_indices_sha256": digest(withheld),
         },
     )
 
 
-def initialize_posterior(cal_params, groups, draws):
-    if (
-        not isinstance(groups, int)
-        or groups < 1
-        or (not isinstance(draws, int))
-        or (draws < 2)
-    ):
-        raise ValueError("groups must be positive and draws must be at least two")
-    inf = jnp.full((groups,), jnp.inf)
-    radii = PosteriorRadius(
-        inf,
-        inf,
-        inf,
-        jnp.full((groups, draws), jnp.inf),
-        jnp.zeros(groups),
-        jnp.zeros(groups, jnp.int32),
-        jnp.zeros(groups, bool),
-        jnp.zeros(groups, bool),
-    )
-    return IQLPosteriorState(
-        cal_params, jnp.asarray(1.0), jnp.zeros(groups - 1), radii, jnp.asarray(False)
+def certifiable(n, config, tolerance=1e-6):
+    """Whether a uniform-weight bank of n held-out scores certifies a finite threshold.
+
+    A posterior draw crosses iff the test atom's mass, Beta(1, n), is at most alpha,
+    so the crossing draws are Binomial(M, 1 - (1 - alpha)^n) and lambda_hpd needs
+    ceil(credibility * M) of them. The bank qualifies when failing that has
+    probability at most `tolerance` (n >= 36 at the declared 0.1 / 0.95 / 1000).
+    """
+    if isinstance(n, bool) or not isinstance(n, Integral) or n < 1:
+        return False
+    need = math.ceil(Fraction(str(config.credibility)) * config.draws)
+    crossing = -math.expm1(n * math.log1p(-config.alpha))
+    return float(stats.binom.cdf(need - 1, config.draws, crossing)) <= tolerance
+
+
+def initial_reference(cal_params):
+    """Not ready: hosts keep their native weighting until the first refresh."""
+    inf = jnp.asarray(jnp.inf, jnp.float32)
+    return FrozenReference(
+        cal_params, jnp.asarray(1.0, jnp.float32), inf, inf, inf,
+        jnp.asarray(0.0, jnp.float32), jnp.asarray(False),
     )
 
 
@@ -105,54 +148,70 @@ def positive_scale(predictions, residual_scale):
     return jnp.maximum(predictions, 1e-06) * residual_scale
 
 
-def fit_posterior(
-    cal_params,
-    residual_scale,
-    fit_predictions,
-    cal_predictions,
-    residuals,
-    rng,
-    config=PosteriorConfig(),
-    *,
-    groups=4
-):
-    residuals, residual_scale = (jnp.asarray(residuals), jnp.asarray(residual_scale))
-    if residual_scale.ndim != 0 or not isinstance(groups, int) or groups < 1:
-        raise ValueError("residual_scale must be scalar and groups positive")
-    fit_scale = positive_scale(jnp.asarray(fit_predictions), residual_scale)
-    cal_scale = positive_scale(jnp.asarray(cal_predictions), residual_scale)
-    if (
-        fit_scale.ndim != 1
-        or fit_scale.size == 0
-        or residuals.ndim != 1
-        or (residuals.size == 0)
-        or (cal_scale.shape != residuals.shape)
-    ):
-        raise ValueError("predictions and residuals must be aligned vectors")
-    edges = jnp.quantile(fit_scale, jnp.arange(1, groups) / groups)
-    labels = jnp.searchsorted(edges, cal_scale, side="right")
-    radii = partitioned_posterior(
-        jnp.abs(residuals) / cal_scale, labels, rng, config, num_groups=groups
+def freeze_reference(cal_params, residual_scale, predictions, residuals, key, config):
+    """Score held-out residuals with the frozen scale and select the WBCP threshold.
+
+    Scores are |y - q| / (max(eta, 1e-6) u) with unit weights, the exchangeable case
+    (BQ-CP with the test atom). Runs eagerly on the host at a refresh. Returns the
+    reference, whether its inputs were valid, and scalar diagnostics; an invalid
+    refresh returns valid=False and leaves the caller to keep its previous state.
+    """
+    residual_scale = jnp.asarray(residual_scale)
+    predictions, residuals = jnp.asarray(predictions), jnp.asarray(residuals)
+    if residual_scale.ndim != 0 or predictions.ndim != 1 or predictions.shape != residuals.shape:
+        raise ValueError("expected aligned prediction/residual vectors and a scalar residual unit")
+    scale = np.asarray(positive_scale(predictions, residual_scale), np.float64)
+    residuals = np.asarray(residuals, np.float64)
+    valid = bool(
+        tree_valid(cal_params)
+        and np.isfinite(float(residual_scale)) and float(residual_scale) > 0
+        and predictions.size > 0
+        and np.all(np.isfinite(scale) & (scale > 0))
+        and np.all(np.isfinite(residuals))
     )
-    valid = jnp.all(jnp.isfinite(fit_scale) & (fit_scale > 0)) & jnp.all(
-        jnp.isfinite(cal_scale) & (cal_scale > 0)
+    if not valid:
+        return initial_reference(cal_params), False, dict(certified=False)
+    scores = np.abs(residuals) / scale
+    result = wbcp.calibrate(
+        scores, np.random.default_rng(np.asarray(key, np.uint32).ravel()),
+        alpha=config.alpha, beta=config.credibility, draws=config.draws,
     )
-    radii = radii._replace(
-        radius=jnp.where(valid, radii.radius, jnp.inf),
-        finite=radii.finite & valid,
-        inputs_valid=radii.inputs_valid & valid,
+    with np.errstate(over="ignore"):
+        stored = np.float32(result.threshold)
+    if result.certified and not np.isfinite(stored):  # a finite threshold must stay finite when stored
+        return initial_reference(cal_params), False, dict(certified=False)
+    as32 = lambda value: jnp.asarray(value, jnp.float32)
+    reference = FrozenReference(
+        cal_params, residual_scale.astype(jnp.float32), as32(result.threshold),
+        as32(result.lambda_hat), as32(result.lambda_hpd), as32(result.n_eff), jnp.asarray(True),
     )
-    return IQLPosteriorState(
-        cal_params, residual_scale, edges, radii, jnp.asarray(True)
+    diagnostics = dict(
+        certified=result.certified, threshold=result.threshold, lambda_hat=result.lambda_hat,
+        lambda_hpd=result.lambda_hpd, sigma_post=result.sigma_post, n_eff=result.n_eff,
+        clamp_binds=result.lambda_hat > result.lambda_hpd, scores=int(scores.size),
     )
+    return reference, True, diagnostics
 
 
-def apply_posterior(state, predictions, mode="full"):
-    if mode not in ("full", "floor"):
-        raise ValueError("posterior mode must be full or floor")
-    scale = positive_scale(predictions, state.residual_scale)
-    groups = jnp.searchsorted(state.group_edges, scale, side="right")
-    radii = state.radii
-    if mode == "floor":
-        radii = radii._replace(radius=radii.conformal_radius)
-    return apply_partitioned_radius(radii, groups, scale)
+def tree_valid(tree):
+    return all(np.all(np.isfinite(np.asarray(leaf))) for leaf in jax.tree_util.tree_leaves(tree))
+
+
+def reference_valid(reference):
+    """Traceable storage check shared by the hosts' jitted updates."""
+    fields = (reference.residual_scale, reference.threshold, reference.lambda_hat,
+              reference.lambda_hpd, reference.n_eff, reference.ready)
+    if any(jnp.shape(value) != () for value in fields) or reference.ready.dtype != jnp.bool_:
+        raise ValueError("the frozen reference stores scalar thresholds and one residual unit")
+    valid = jnp.asarray(True)
+    for leaf in jax.tree_util.tree_leaves(reference.cal_params):
+        valid = valid & jnp.all(jnp.isfinite(leaf))
+    for value in (reference.threshold, reference.lambda_hat, reference.lambda_hpd):
+        valid = valid & ~jnp.isnan(value) & (value >= 0)
+    return (
+        valid
+        & jnp.isfinite(reference.residual_scale) & (reference.residual_scale > 0)
+        & jnp.isfinite(reference.n_eff) & (reference.n_eff >= 0)
+        & (~reference.ready
+           | (reference.threshold == jnp.maximum(reference.lambda_hat, reference.lambda_hpd)))
+    )

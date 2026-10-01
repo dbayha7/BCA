@@ -29,24 +29,19 @@ host:
 bca:
   cal_beta: 20.0
   cal_lr: 0.001
-  iw:
-    ess_floor: 0.25
-    iterations: 32
-    tau_min: 0.05
-    mode: policy
   posterior:
     alpha: 0.1
     credibility: 0.95
-    draws: 128
+    draws: 1000
   scale_ema: 0.99
   width_penalty: 0.005
   blend: 0.5
 reservation:
+  # rows_per_episode (per dataset): K calibration rows from each withheld episode; the
+  # smallest K >= 5 that keeps withheld rows within max_fraction for 1,000 simulated seeds
+  # (experiments/wbcp/choose_rows_per_episode.py; DEPENDENCE.md, Change 9).
   seed: 911
   max_fraction: 0.1
-reference:
-  size: 1024
-  seed: 912
 datasets:
   halfcheetah:
     environment: halfcheetah-medium-expert-v2
@@ -62,6 +57,7 @@ datasets:
       policy_lr: 3.0e-05
     reservation:
       size: 1024
+      rows_per_episode: 6
     max_episode_steps: 1000
   hopper:
     environment: hopper-medium-v2
@@ -77,6 +73,7 @@ datasets:
       policy_lr: 3.0e-05
     reservation:
       size: 1024
+      rows_per_episode: 6
     max_episode_steps: 1000
   maze2d:
     environment: maze2d-large-v1
@@ -92,6 +89,7 @@ datasets:
       policy_lr: 3.0e-05
     reservation:
       size: 1024
+      rows_per_episode: 5
     max_episode_steps: 800
   pen-cloned:
     environment: pen-cloned-v1
@@ -107,6 +105,7 @@ datasets:
       policy_lr: 0.0001
     reservation:
       size: 1024
+      rows_per_episode: 5
     max_episode_steps: 100
   pen-expert:
     environment: pen-expert-v1
@@ -122,6 +121,7 @@ datasets:
       policy_lr: 0.0001
     reservation:
       size: 1024
+      rows_per_episode: 5
     max_episode_steps: 100
   pen-human:
     environment: pen-human-v1
@@ -137,6 +137,7 @@ datasets:
       policy_lr: 0.0001
     reservation:
       size: 248
+      rows_per_episode: 124  # outside the validated range (DEPENDENCE.md, Change 9)
     max_episode_steps: 100
   walker2d:
     environment: walker2d-medium-replay-v2
@@ -152,4 +153,5 @@ datasets:
       policy_lr: 3.0e-05
     reservation:
       size: 1024
+      rows_per_episode: 23  # outside the validated range (DEPENDENCE.md, Change 9)
     max_episode_steps: 1000

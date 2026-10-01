@@ -26,7 +26,6 @@ from runtime.td3_bc import (
     _array_hash,
     _finite,
     _tree_hash,
-    Reference,
     RefreshEvent,
     EvaluationEvent,
     EvaluationFailure,
@@ -52,6 +51,7 @@ class Reservation:
     seed: int
     max_fraction: float
     dependency_contract: str
+    rows_per_episode: int  # K calibration rows from each withheld component (calibration/bank.py)
 
     def __post_init__(self):
         _integer(self.target_size, "reservation target", 1)
@@ -68,6 +68,7 @@ class Reservation:
             raise ValueError(
                 "unsupported dependency contract; no fallback is available"
             )
+        _integer(self.rows_per_episode, "reservation rows per episode", 1)
 
 
 @dataclass(frozen=True)
@@ -81,7 +82,6 @@ class RunProtocol:
     eval_periodic_episodes: int
     eval_final_episodes: int
     reservation: Reservation | None
-    reference: Reference | None
     refresh_events: tuple
     evaluation_events: tuple
 
@@ -102,12 +102,8 @@ class RunProtocol:
             raise ValueError(
                 "native horizon must be divisible by periodic interval; no truncation"
             )
-        for value, cls, name in (
-            (self.reservation, Reservation, "reservation"),
-            (self.reference, Reference, "reference"),
-        ):
-            if value is not None and type(value) is not cls:
-                raise TypeError("typed " + name + " required")
+        if self.reservation is not None and type(self.reservation) is not Reservation:
+            raise TypeError("typed reservation required")
         if (
             type(self.refresh_events) is not tuple
             or type(self.evaluation_events) is not tuple
@@ -154,34 +150,6 @@ class RunProtocol:
                 )
         elif final:
             raise ValueError("zero final count cannot carry final evaluation events")
-
-
-@dataclass(frozen=True)
-class AffinitySpecification:
-    mode: str
-    bandwidth: float | None
-    ess_floor: float | None
-    tau_min: float | None
-    iterations: int | None
-
-    def config(self):
-        if self.mode != "off":
-            _real(
-                self.bandwidth,
-                "native-action-unit affinity bandwidth",
-                minimum=0,
-                strict_min=True,
-            )
-            _real(
-                self.ess_floor,
-                "affinity ESS floor",
-                minimum=0,
-                maximum=1,
-                strict_min=True,
-            )
-            _real(self.tau_min, "affinity minimum temperature", minimum=0, maximum=1)
-            _integer(self.iterations, "affinity iterations", 1)
-        return P.AffinityIWConfig(**asdict(self))
 
 
 def _convert(raw, max_episode_steps):
@@ -284,13 +252,14 @@ def _dependencies(maps, indices, literal=False):
     return np.unique(np.r_[rows, rows + 1 if literal else (rows + 1)[done == 0]])
 
 
-def _partition(maps, training, heldout, reference):
+def _partition(maps, training, withheld, heldout):
+    """Training and withheld rows partition the data with disjoint effective dependencies.
+
+    The held-out calibration bank is a subset of the withheld rows, so the no-leak check
+    covers every withheld row, calibrated or not.
+    """
     n = len(maps["raw_current"])
-    for ids, name in (
-        (training, "training"),
-        (heldout, "heldout"),
-        (reference, "reference"),
-    ):
+    for ids, name in ((training, "training"), (withheld, "withheld"), (heldout, "heldout")):
         a = np.asarray(ids)
         if (
             a.ndim != 1
@@ -301,29 +270,28 @@ def _partition(maps, training, heldout, reference):
         ):
             raise ValueError(name + " IDs must be sorted unique converted rows")
     if not len(training) or not np.array_equal(
-        np.sort(np.r_[training, heldout]), np.arange(n)
+        np.sort(np.r_[training, withheld]), np.arange(n)
     ):
         raise ValueError(
-            "training/heldout identities must partition the converted data exactly"
+            "training/withheld identities must partition the converted data exactly"
         )
-    if not np.all(np.isin(reference, training)):
-        raise ValueError("reference contains a nontraining identity")
+    if not np.all(np.isin(heldout, withheld)):
+        raise ValueError("the held-out bank must lie inside the withheld rows")
     effective_overlap = np.intersect1d(
-        _dependencies(maps, training), _dependencies(maps, heldout)
+        _dependencies(maps, training), _dependencies(maps, withheld)
     )
     if effective_overlap.size:
         raise ValueError("effective raw dependencies overlap")
     literal_overlap = np.intersect1d(
-        _dependencies(maps, training, True), _dependencies(maps, heldout, True)
+        _dependencies(maps, training, True), _dependencies(maps, withheld, True)
     )
     return {
         "effective_overlap": effective_overlap.tolist(),
         "literal_shared_raw_rows": literal_overlap.tolist(),
         "literal_shared_action_raw_rows": literal_overlap.tolist(),
         "training_effective_raw_rows": _dependencies(maps, training).tolist(),
+        "withheld_effective_raw_rows": _dependencies(maps, withheld).tolist(),
         "heldout_effective_raw_rows": _dependencies(maps, heldout).tolist(),
-        "reference_effective_raw_rows": _dependencies(maps, reference).tolist(),
-        "reference_dependency_note": "Recorded full-transition set is conservative: scale-reference predictions read current obs/action only.",
     }
 
 
@@ -366,13 +334,11 @@ class PosteriorSpecification:
     cal_beta: float
     width_penalty: float
     scale_ema: float
-    affinity: AffinitySpecification
 
     def config(self):
         return P.Config(
             "bca",
-            self.affinity.config(),
-            P.PosteriorConfig(self.alpha, self.credibility, self.draws),
+            P.WBCPConfig(self.alpha, self.credibility, self.draws),
             self.blend,
             self.cal_lr,
             self.cal_beta,
@@ -442,19 +408,17 @@ def validate_protocol(args, specification, protocol):
     if False != (protocol.reservation is None):
         raise ValueError("Both methods require the declared reservation")
     if cfg.is_posterior:
-        if protocol.reference is None or not protocol.refresh_events:
-            raise ValueError("posterior requires explicit reference and refresh events")
-    elif protocol.reference is not None or protocol.refresh_events:
-        raise ValueError("controls cannot carry reference/refresh fields")
+        if not protocol.refresh_events:
+            raise ValueError("posterior requires explicit refresh events")
+    elif protocol.refresh_events:
+        raise ValueError("controls cannot carry refresh fields")
     seeds = [s for e in protocol.evaluation_events for s in e.episode_seeds]
     if len(seeds) != len(set(seeds)):
         raise ValueError(
             "evaluation episode banks must be disjoint with no repeated seeds"
         )
     fitting = {protocol.seed} | {e.seed for e in protocol.refresh_events}
-    fitting |= {
-        x.seed for x in (protocol.reservation, protocol.reference) if x is not None
-    }
+    fitting |= {protocol.reservation.seed}
     if fitting.intersection(seeds):
         raise ValueError("evaluation seeds overlap training/calibration seeds")
     return cfg
@@ -477,10 +441,8 @@ class PreparedData:
     converted: dict
     training: object
     heldout: object
-    reference: object
     training_ids: object
     heldout_ids: object
-    reference_ids: object
     obs_mean: object
     obs_std: object
     cal_obs_mean: object
@@ -551,10 +513,9 @@ def _prepared_hashes(prepared):
     }
 
 
-def _selection(converted, maps, cfg, protocol):
-    n = len(converted["rewards"])
-    train, hold = (np.arange(n, dtype=np.int32), np.empty(0, np.int32))
-    reservation = None
+def _selection(converted, maps, protocol):
+    """(training, withheld, heldout, record): training and withheld partition the rows;
+    heldout is the WBCP calibration bank, K stratified rows of each withheld component."""
     r = protocol.reservation
     native = C.TransitionNA(
         converted["observations"],
@@ -564,30 +525,25 @@ def _selection(converted, maps, cfg, protocol):
         converted["terminals"],
         converted["next_actions"],
     )
-    train, hold, inherited = P.reserve_pool(
+    train, withheld, hold, inherited = P.reserve_pool(
         native,
         r.target_size,
         r.seed,
+        r.rows_per_episode,
         max_fraction=r.max_fraction,
         episode_ids=np.asarray(maps["effective_components"]),
     )
     reservation = dict(
         contract=DEPENDENCY_CONTRACT,
-        meaning="whole effective raw-dependency components, not inferred independent episodes",
+        meaning=(
+            "K stratified rows from each withheld effective raw-dependency component; "
+            "every row of a withheld component is excluded from training; "
+            "not inferred independent episodes"
+        ),
         inherited_primitive_metadata=inherited,
         inherited_boundary_string_is_generic=True,
     )
-    reference = np.empty(0, np.int32)
-    if cfg.is_posterior:
-        if protocol.reference.size > len(train):
-            raise ValueError("reference exceeds training complement")
-        idx = np.sort(
-            np.random.default_rng(protocol.reference.seed).choice(
-                len(train), protocol.reference.size, replace=False
-            )
-        )
-        reference = train[idx]
-    return (train, hold, reference, reservation)
+    return (train, withheld, hold, reservation)
 
 
 def prepare(
@@ -598,8 +554,10 @@ def prepare(
     _raw_identity(raw_identity, args.dataset)
     converted, rows, episode_ids = _convert(raw, max_episode_steps)
     maps = dependency_maps(rows, converted["terminals"])
-    train, hold, ref, reservation = _selection(converted, maps, cfg, protocol)
-    partition = _partition(maps, train, hold, ref)
+    train, withheld, hold, reservation = _selection(converted, maps, protocol)
+    if cfg.arm == "bca" and not P.certifiable(len(hold), cfg.posterior):
+        raise ValueError("held-out bank is too small for WBCP to certify a finite threshold")
+    partition = _partition(maps, train, withheld, hold)
     all_data, mean, std = _preprocess(converted, args, train)
     take = lambda ids: (
         jax.tree_util.tree_map(lambda x: x[ids], all_data) if len(ids) else None
@@ -613,7 +571,7 @@ def prepare(
     _finite((cm, cs), "calibrator-only fixed statistics")
     settings = _settings(args, specification, protocol)
     metadata = dict(
-        schema="native-rebrac-prepared-v1",
+        schema="native-rebrac-prepared-v3",
         settings=settings,
         settings_sha256=_digest(settings),
         execution=_execution(specification),
@@ -630,8 +588,8 @@ def prepare(
         dependency_limits=DEPENDENCY_LIMIT,
         reservation=reservation,
         training_converted_ids=train.tolist(),
+        withheld_converted_ids=withheld.tolist(),
         heldout_converted_ids=hold.tolist(),
-        reference_converted_ids=ref.tolist(),
         normalization_fit_converted_ids=train.tolist(),
         normalization_fit="training_complement",
         native_normalization_enabled=args.normalize_states,
@@ -662,10 +620,8 @@ def prepare(
         converted,
         training,
         take(hold),
-        take(ref),
         train,
         hold,
-        ref,
         mean,
         std,
         cm,
@@ -739,7 +695,7 @@ def validate_prepared(args, specification, protocol, prepared):
         raise ValueError("prepared metadata digest mismatch")
     m = prepared.metadata
     if (
-        m.get("schema") != "native-rebrac-prepared-v1"
+        m.get("schema") != "native-rebrac-prepared-v3"
         or m["settings"] != _settings(args, specification, protocol)
         or m["settings_sha256"] != _digest(m["settings"])
         or (m["execution"] != _execution(specification))
@@ -751,12 +707,13 @@ def validate_prepared(args, specification, protocol, prepared):
     maps = dependency_maps(
         m["dependency_maps"]["raw_current"], prepared.converted["terminals"]
     )
-    train, hold, ref, reservation = _selection(prepared.converted, maps, cfg, protocol)
+    train, withheld, hold, reservation = _selection(prepared.converted, maps, protocol)
     if (
         maps != m["dependency_maps"]
         or m["dependency_limits"] != DEPENDENCY_LIMIT
         or reservation != m["reservation"]
-        or (_partition(maps, train, hold, ref) != m["partition"])
+        or withheld.tolist() != m["withheld_converted_ids"]
+        or (_partition(maps, train, withheld, hold) != m["partition"])
     ):
         raise ValueError("prepared next-action dependency partition mismatch")
     expected_contract = DEPENDENCY_CONTRACT
@@ -770,7 +727,7 @@ def validate_prepared(args, specification, protocol, prepared):
     ]:
         raise ValueError("converted array identity mismatch")
     all_data, mean, std = _preprocess(prepared.converted, args, train)
-    for ids, name in ((train, "training"), (hold, "heldout"), (ref, "reference")):
+    for ids, name in ((train, "training"), (hold, "heldout")):
         expected = (
             jax.tree_util.tree_map(lambda x: x[ids], all_data) if len(ids) else None
         )
@@ -859,22 +816,16 @@ def run_prepared(
         emit("phase", phase="refresh", step=completed)
         key = jax.random.fold_in(jax.random.PRNGKey(event.seed), event.step)
         frozen = _tree_hash(carry[1])
-        proposed, metrics = P.refresh(
+        proposed, metrics, diagnostics = P.refresh(
             args,
             cfg,
             models,
             carry[1],
-            prepared.reference,
             prepared.heldout,
             key,
-            training_ids=prepared.reference_ids,
             heldout_ids=prepared.heldout_ids,
         )
         _accept(proposed, metrics, models)
-        diagnostics = P.component_diagnostics(cfg, models, proposed, prepared.reference)
-        _finite(diagnostics, "component diagnostics")
-        if not bool(diagnostics["level_engagement_valid"]):
-            raise FloatingPointError("invalid component diagnostic")
         carry = (carry[0], proposed, carry[2])
         emit(
             "refresh",
@@ -883,12 +834,10 @@ def run_prepared(
             refresh_key=key,
             frozen_input_state_sha256=frozen,
             posterior_snapshot_sha256=_tree_hash(proposed.posterior),
-            reference_sha256=_tree_hash(prepared.reference),
             heldout_sha256=_tree_hash(prepared.heldout),
-            posterior_weighting="unweighted",
+            posterior_weighting="wbcp_uniform",
             metrics=metrics,
-            component_diagnostics=diagnostics,
-            radii=proposed.posterior.radii._asdict(),
+            wbcp=diagnostics,
         )
 
     if 0 in refreshes:

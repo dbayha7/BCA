@@ -58,8 +58,7 @@ class RunProtocol:
     calibration_target_size: int | None
     calibration_seed: int | None
     calibration_max_fraction: float | None
-    reference_size: int | None
-    reference_seed: int | None
+    calibration_rows_per_episode: int | None
     eval_periodic_episodes: int
     evaluation_events: tuple
 
@@ -90,17 +89,20 @@ class RunProtocol:
             raise ValueError("refresh steps must be unique and increasing")
         if self.refresh_steps and self.refresh_steps[-1] >= self.num_updates:
             raise ValueError("refresh must precede a subsequent training update")
-        for name in ("calibration_target_size", "reference_size"):
-            if getattr(self, name) is not None:
-                _integer(getattr(self, name), name, 1)
-        for name in ("calibration_seed", "reference_seed"):
-            if getattr(self, name) is not None:
-                _integer(getattr(self, name), name)
+        if self.calibration_target_size is not None:
+            _integer(self.calibration_target_size, "calibration_target_size", 1)
+        if self.calibration_seed is not None:
+            _integer(self.calibration_seed, "calibration_seed")
         f = self.calibration_max_fraction
         if f is not None and (
             isinstance(f, bool) or not np.isfinite(f) or (not 0 < f < 1)
         ):
             raise ValueError("calibration_max_fraction must be explicitly in (0,1)")
+        if self.calibration_rows_per_episode is not None:
+            _integer(self.calibration_rows_per_episode, "calibration_rows_per_episode", 1)
+        elif self.calibration_target_size is not None:
+            # Whole reserved episodes are correlated rows; WBCP's bank needs K per episode.
+            raise ValueError("a calibration target requires calibration_rows_per_episode")
         if type(self.evaluation_events) is not tuple or any(
             (type(e) is not EvaluationEvent for e in self.evaluation_events)
         ):
@@ -153,19 +155,15 @@ def validate_protocol(args, config, protocol):
         protocol.calibration_target_size,
         protocol.calibration_seed,
         protocol.calibration_max_fraction,
+        protocol.calibration_rows_per_episode,
     )
     if any((x is None for x in split)):
         raise ValueError("reserved arms require all split inputs")
-    reference = (protocol.reference_size, protocol.reference_seed)
     if config.arm == "bca":
-        if not protocol.refresh_steps or any((x is None for x in reference)):
-            raise ValueError(
-                "posterior requires an explicit refresh schedule and training reference"
-            )
-    elif protocol.refresh_steps or any((x is not None for x in reference)):
-        raise ValueError(
-            "native controls cannot carry posterior refresh/reference inputs"
-        )
+        if not protocol.refresh_steps:
+            raise ValueError("WBCP requires an explicit refresh schedule")
+    elif protocol.refresh_steps:
+        raise ValueError("native controls cannot carry WBCP refresh inputs")
     C.check_reward_transform(
         "corl_cql",
         args.dataset,
@@ -237,8 +235,8 @@ def _settings(args, config, protocol):
     )
 
 
-def _prepared_hashes(training, heldout, reference, mean, std, max_action, max_steps):
-    pools = {"training": training, "heldout": heldout, "reference": reference}
+def _prepared_hashes(training, heldout, mean, std, max_action, max_steps):
+    pools = {"training": training, "heldout": heldout}
     return {
         **{
             name: (
@@ -346,7 +344,6 @@ def _convert(raw, max_episode_steps):
 class PreparedData:
     training: object
     heldout: object
-    reference: object
     obs_mean: object
     obs_std: object
     max_action: float
@@ -359,11 +356,11 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
     validate_protocol(args, config, protocol)
     if not np.isfinite(max_action) or max_action <= 0:
         raise ValueError("max_action must be finite and positive")
-    if config.arm == "bca" and max_action != 1.0:
-        raise ValueError("accepted posterior density requires max_action=1")
     converted, raw_rows, episode_ids = _convert(raw, max_episode_steps)
     n = len(raw_rows)
-    train, cal, reservation = P.reserve_pool(
+    # train and withheld partition the rows; cal (the WBCP bank) is K rows of each
+    # withheld episode. The other withheld rows neither train nor calibrate.
+    train, withheld, cal, reservation = P.reserve_pool(
         C.Transition(
             converted["observations"],
             converted["actions"],
@@ -373,11 +370,16 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
         ),
         protocol.calibration_target_size,
         protocol.calibration_seed,
+        protocol.calibration_rows_per_episode,
         max_fraction=protocol.calibration_max_fraction,
         episode_ids=episode_ids,
     )
-    if set(episode_ids[train]) & set(episode_ids[cal]):
-        raise ValueError("training and heldout episode IDs overlap")
+    if set(episode_ids[train]) & set(episode_ids[withheld]):
+        raise ValueError("training and withheld episode IDs overlap")
+    if len(train) + len(withheld) != n or not np.all(np.isin(cal, withheld)):
+        raise ValueError("reservation must partition training/withheld with the bank inside withheld")
+    if config.arm == "bca" and not P.certifiable(len(cal), config.posterior):
+        raise ValueError("held-out bank is too small for WBCP to certify a finite threshold")
     converted["rewards"] = np.asarray(converted["rewards"], np.float64)
     reward_normalization = {"mode": "disabled"}
     if args.normalize_reward:
@@ -437,21 +439,11 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
         raise ValueError("observation standard deviations must be positive")
     training = P.select_training_pool(all_data, config.arm, train)
     heldout = jax.tree_util.tree_map(lambda x: x[cal], all_data) if len(cal) else None
-    reference, reference_rows = (None, np.empty(0, np.int64))
-    if config.arm == "bca":
-        if protocol.reference_size > len(train):
-            raise ValueError("training reference cannot exceed training pool")
-        local = np.sort(
-            np.random.default_rng(protocol.reference_seed).choice(
-                len(train), protocol.reference_size, replace=False
-            )
-        )
-        reference = jax.tree_util.tree_map(lambda x: x[local], training)
-        reference_rows = train[local]
     hashes = {k: _array_hash(raw[k]) for k in sorted(raw)}
     settings = _settings(args, config, protocol)
     metadata = {
-        "schema": "native-cql-prepared-explicit-evaluation-v2",
+        "schema": "native-cql-prepared-explicit-evaluation-v3",
+        "calibration": "wbcp_uniform" if config.arm == "bca" else "not_applicable",
         "settings": settings,
         "settings_sha256": _digest(settings),
         "source_files": source_identity(),
@@ -465,12 +457,13 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
         "heldout_converted_indices": cal.tolist(),
         "training_raw_indices": raw_rows[train].tolist(),
         "heldout_raw_indices": raw_rows[cal].tolist(),
-        "reference_raw_indices": raw_rows[reference_rows].tolist(),
+        "withheld_converted_indices": withheld.tolist(),
+        "withheld_raw_indices": raw_rows[withheld].tolist(),
         "reservation": reservation,
-        "boundary_note": "Disjoint transition/episode blocks; retained terminal next_obs can name the next raw episode. This is not a claim of independent observations.",
+        "boundary_note": "Training and withheld rows come from disjoint episodes; the heldout bank is K rows of each withheld episode and the remaining withheld rows are unused. Retained terminal next_obs can name the next raw episode. This is not a claim of independent observations.",
         "preprocessing_order": [
             "D4RL conversion and verified raw mapping",
-            "whole-block reservation if requested",
+            "length-proportional episode reservation: withheld episodes leave training, K rows of each form the heldout bank",
             "native reward normalization/affine tail if enabled",
             "registered antmaze transform",
             "observation statistics from full data or training complement",
@@ -483,7 +476,6 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
         "prepared_array_hashes": {
             name: _array_hash(x) for name, x in zip(all_data._fields, all_data)
         },
-        "reference_selection": "fixed seeded uniform subset of training identities, sorted in dataset order",
         "published_config_differences": _json_value(
             published.diff_against_published("corl_cql", args.dataset, args)
         ),
@@ -495,12 +487,11 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
         [asdict(e) for e in protocol.evaluation_events]
     )
     metadata["run_input_hashes"] = _prepared_hashes(
-        training, heldout, reference, mean, std, max_action, max_episode_steps
+        training, heldout, mean, std, max_action, max_episode_steps
     )
     return PreparedData(
         training,
         heldout,
-        reference,
         jnp.asarray(mean),
         jnp.asarray(std),
         float(max_action),
@@ -718,6 +709,8 @@ def _accept(state, metrics):
         _finite(
             (state.calibrator, state.residual_scale), "calibrator state/optimizer/EMA"
         )
+        if not bool(P.reference_valid(state.posterior)):
+            raise FloatingPointError("frozen WBCP reference storage is invalid")
     _finite(metrics, "training/refresh metrics")
 
 
@@ -748,7 +741,6 @@ def run_prepared(
         _prepared_hashes(
             prepared.training,
             prepared.heldout,
-            prepared.reference,
             prepared.obs_mean,
             prepared.obs_std,
             prepared.max_action,
@@ -806,12 +798,12 @@ def run_prepared(
         refresh_key = jax.random.fold_in(
             jax.random.fold_in(jax.random.PRNGKey(args.seed), 1380271698), step
         )
-        updated, metrics = P.refresh(
+        # Eager: freeze_reference runs NumPy WBCP between scans, never under jit.
+        updated, metrics, diagnostics = P.refresh(
             args,
             config,
             models,
             carry[1],
-            prepared.reference,
             prepared.heldout,
             refresh_key,
             prepared.max_action,
@@ -822,7 +814,9 @@ def run_prepared(
             {
                 "kind": "refresh",
                 "step": step,
+                "posterior_weighting": "wbcp_uniform",
                 "metrics": {k: np.asarray(v).tolist() for k, v in metrics.items()},
+                "wbcp": _json_value(diagnostics),
             }
         )
 

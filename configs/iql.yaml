@@ -13,8 +13,7 @@ host:
 bca:
   alpha: 0.1
   credibility: 0.95
-  draws: 128
-  fit_size: 4096
+  draws: 1000
   decision_gain: 1.0
   cond_mode: state_action
   use_bootstrap: true
@@ -24,14 +23,10 @@ bca:
   cal_hidden_dim: 64
   balance_coverage: true
   balance_weight: 0.5
-  fitting:
-    beta: host beta
-    cap: 100.0
-    mixing: 1.0
-    ess_floor: 0.25
-    tau_min: 0.05
-    iterations: 32
 reservation:
+  # rows_per_episode (per dataset): K calibration rows from each withheld episode; the
+  # smallest K >= 5 that keeps withheld rows within max_fraction for 1,000 simulated seeds
+  # (experiments/wbcp/choose_rows_per_episode.py; DEPENDENCE.md, Change 9).
   seed: 911
   max_fraction: 0.25
 datasets:
@@ -49,6 +44,7 @@ datasets:
       actor_dropout: null
     reservation:
       size: 8192
+      rows_per_episode: 17  # outside the validated range (DEPENDENCE.md, Change 9)
     spaces:
       observation_shape: [17]
       action_shape: [6]
@@ -69,6 +65,7 @@ datasets:
       actor_dropout: null
     reservation:
       size: 8192
+      rows_per_episode: 17  # outside the validated range (DEPENDENCE.md, Change 9)
     spaces:
       observation_shape: [11]
       action_shape: [3]
@@ -89,6 +86,7 @@ datasets:
       actor_dropout: null
     reservation:
       size: 8192
+      rows_per_episode: 5
     spaces:
       observation_shape: [4]
       action_shape: [2]
@@ -109,6 +107,7 @@ datasets:
       actor_dropout: 0.1
     reservation:
       size: 8192
+      rows_per_episode: 11  # outside the validated range (DEPENDENCE.md, Change 9)
     spaces:
       observation_shape: [45]
       action_shape: [24]
@@ -131,6 +130,7 @@ datasets:
       actor_dropout: 0.1
     reservation:
       size: 8192
+      rows_per_episode: 7
     spaces:
       observation_shape: [45]
       action_shape: [24]
@@ -153,6 +153,7 @@ datasets:
       actor_dropout: 0.1
     reservation:
       size: 1194
+      rows_per_episode: 199  # outside the validated range (DEPENDENCE.md, Change 9)
     spaces:
       observation_shape: [45]
       action_shape: [24]
@@ -175,6 +176,7 @@ datasets:
       actor_dropout: null
     reservation:
       size: 8192
+      rows_per_episode: 67  # outside the validated range (DEPENDENCE.md, Change 9)
     spaces:
       observation_shape: [17]
       action_shape: [6]

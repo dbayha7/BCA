@@ -2,7 +2,12 @@
 
 from dataclasses import asdict
 import hashlib
+import math
 import numpy as np
+
+REFERENCE_FIELDS = frozenset(
+    ("cal_params", "residual_scale", "threshold", "lambda_hat", "lambda_hpd", "n_eff", "ready")
+)
 
 
 def optimizer_counts(tree, prefix=""):
@@ -31,6 +36,43 @@ def finite_parameters(state):
 
     visit(state["params"])
     visit(state["opt_state"])
+
+
+def _json_number(value):
+    return value if math.isfinite(value) else "Infinity" if value > 0 else "-Infinity"
+
+
+def frozen_reference(tree):
+    """Decode one stored FrozenReference: a scalar WBCP threshold and the frozen scale."""
+    assert set(tree) == REFERENCE_FIELDS, "unexpected frozen reference fields"
+    finite_parameters({"params": tree["cal_params"], "opt_state": {}})
+    ready = np.asarray(tree["ready"])
+    assert ready.shape == () and ready.dtype == np.bool_, "reference readiness must be a boolean scalar"
+    values = {}
+    for name in ("residual_scale", "threshold", "lambda_hat", "lambda_hpd", "n_eff"):
+        a = np.asarray(tree[name])
+        assert a.shape == () and a.dtype.kind == "f", "reference field must be a float scalar: " + name
+        values[name] = float(a)
+    threshold, hat, hpd = (values[k] for k in ("threshold", "lambda_hat", "lambda_hpd"))
+    unit, n_eff = values["residual_scale"], values["n_eff"]
+    assert not any(math.isnan(x) or x < 0 for x in (threshold, hat, hpd)), "invalid threshold"
+    assert math.isfinite(unit) and unit > 0, "invalid frozen residual unit"
+    assert math.isfinite(n_eff) and n_eff >= 0, "invalid effective sample size"
+    if bool(ready):
+        assert math.isfinite(hat) and n_eff >= 1, "ready reference lacks a scored bank"
+        assert threshold == max(hat, hpd), "threshold must be max(lambda_hat, lambda_hpd)"
+    else:
+        assert math.isinf(threshold) and math.isinf(hat) and math.isinf(hpd) and n_eff == 0, (
+            "an unready reference must be the initial one"
+        )
+    return dict(
+        ready=bool(ready),
+        threshold=_json_number(threshold),
+        lambda_hat=_json_number(hat),
+        lambda_hpd=_json_number(hpd),
+        n_eff=n_eff,
+        residual_scale=unit,
+    )
 
 
 def train_state(state, want):
@@ -97,9 +139,17 @@ def checkpoint_counts(tree, mode, step, actors, calibrators):
         same_representative(nuisance["actor"], tree["actors"])
         record["actors"] = train_state(tree["actors"], np.asarray(actors))
         assert set(tree["extras"]) == {str(i) for i in range(len(calibrators))}
+        assert all(
+            set(tree["extras"][str(i)]) == {"calibration", "posterior"}
+            for i in range(len(calibrators))
+        )
         record["calibrators"] = [
             train_state(tree["extras"][str(i)]["calibration"]["calibrator"], n)
             for i, n in enumerate(calibrators)
+        ]
+        record["references"] = [
+            frozen_reference(tree["extras"][str(i)]["posterior"])
+            for i in range(len(calibrators))
         ]
     else:
         assert len(actors) == 1 and (not calibrators)

@@ -1,4 +1,11 @@
-"""CQL: full-width Bayesian/conformal modulation of the conservative gap."""
+"""CQL: WBCP-threshold modulation of the per-transition conservative gap.
+
+The scale network sigma(s, a) is fit online exactly as before (Bayesian bootstrap
+masses, EMA residual unit). At each declared refresh the held-out bank (K rows from
+each withheld episode) is scored with |y - q| / sigma(s, a) and the uniform-weight
+WBCP threshold (BQ-CP with the test atom) is frozen with the scale; updates then read
+the frozen width as a detached per-transition multiplier on the conservative gap.
+"""
 
 from runtime import published
 from dataclasses import dataclass, field
@@ -10,21 +17,21 @@ import optax
 from flax.training.train_state import TrainState
 import algorithms.cql as BASE
 from calibration.network import Calibrator, bayesian_bootstrap_weights, soft_coverage
-from calibration.posterior import PosteriorConfig
 from calibration.reference import (
-    initialize_posterior,
-    fit_posterior,
+    WBCPConfig,
+    freeze_reference,
+    initial_reference,
+    certifiable,
+    reference_valid,
     reserve_calibration,
 )
 from calibration.dose import frozen_level_dose, tree_finite
-from calibration.policy_weights import ScaleIWConfig, PolicyLogWeights, fit_weighting
 
 
 @dataclass(frozen=True)
 class Config:
     arm: str = "host"
-    iw: ScaleIWConfig = field(default_factory=ScaleIWConfig)
-    posterior: PosteriorConfig = field(default_factory=PosteriorConfig)
+    posterior: WBCPConfig | None = field(default_factory=WBCPConfig)
     blend: float = 0.5
     cal_lr: float = 0.001
     cal_beta: float = 20.0
@@ -32,15 +39,12 @@ class Config:
     scale_ema: float = 0.99
 
     def __post_init__(self):
-        if (
-            self.arm not in ("host", "bca")
-            or not isinstance(self.iw, ScaleIWConfig)
-            or (not isinstance(self.posterior, PosteriorConfig))
+        if self.arm not in ("host", "bca") or not (
+            isinstance(self.posterior, WBCPConfig)
+            or (self.arm == "host" and self.posterior is None)
         ):
-            raise ValueError("Choose host or bca with typed calibration settings.")
-        if self.iw.mode not in (("off", "policy") if self.arm == "bca" else ("off",)):
             raise ValueError(
-                "BCA fitting is explicitly unweighted or policy-density; the host has none."
+                "Choose host or bca; the BCA arm requires a typed WBCP configuration."
             )
         for name in ("blend", "cal_lr", "cal_beta", "width_penalty", "scale_ema"):
             value = getattr(self, name)
@@ -82,15 +86,15 @@ def select_training_pool(dataset, arm, training_indices=None):
     return jax.tree_util.tree_map(lambda x: x[idx], dataset)
 
 
-def reserve_pool(dataset, target_size, seed, *, max_fraction=0.25, episode_ids=None):
+def reserve_pool(
+    dataset, target_size, seed, rows_per_episode, *, max_fraction=0.25, episode_ids=None
+):
+    """(training, withheld, calibration, metadata); see calibration/reference.py."""
+    if rows_per_episode is None:  # whole episodes are a population split, not a WBCP bank
+        raise ValueError("CQL's WBCP bank requires a positive integer rows_per_episode")
     return reserve_calibration(
-        dataset.obs,
-        dataset.next_obs,
-        dataset.done,
-        target_size,
-        seed,
-        max_fraction=max_fraction,
-        episode_ids=episode_ids,
+        dataset.obs, dataset.next_obs, dataset.done, target_size, seed, rows_per_episode,
+        max_fraction=max_fraction, episode_ids=episode_ids,
     )
 
 
@@ -106,24 +110,12 @@ def initialize(args, config, obs_dim, action_dim, max_action=1.0):
         "corl_cql", args.dataset, args, allow_off_config=args.allow_off_config
     )
     if (
-        getattr(args, "cal_iw", False)
-        or getattr(args, "acrab_iw_bellman", False)
-        or getattr(args, "acrab_cinf", -1.0) >= 0
-    ):
-        raise ValueError(
-            "legacy calibration IW/Bellman/A-Crab are separate interventions"
-        )
-    if (
         BASE.C.is_antmaze(args.dataset)
         and args.normalize_reward
         and (args.reward_transform == "cql_scale_bias")
         and (args.cql_reward_scale != 1.0 or args.cql_reward_bias != 0.0)
     ):
         raise ValueError("native antmaze affine reward tail would be applied twice")
-    if config.arm == "bca" and max_action != 1.0:
-        raise ValueError(
-            "posterior actor-density convention currently requires max_action=1"
-        )
     rng, native, (actor, c1, c2) = BASE.initialize(
         args, obs_dim, action_dim, max_action
     )
@@ -136,41 +128,8 @@ def initialize(args, config, obs_dim, action_dim, max_action=1.0):
         params=cal.init(jax.random.fold_in(rng, 1128352841), obs[None], action[None]),
         tx=optax.adam(config.cal_lr),
     )
-    post = initialize_posterior(cal_state.params, 1, config.posterior.draws)
+    post = initial_reference(cal_state.params)
     return (rng, State(native, cal_state, jnp.asarray(1.0), post), (actor, c1, c2, cal))
-
-
-def policy_log_weights(actor_apply, params, obs, actions, max_action=1.0):
-    if max_action != 1.0:
-        raise ValueError("native fitting density currently requires max_action=1")
-    if (
-        obs.ndim != 2
-        or actions.ndim != 2
-        or obs.shape[0] != actions.shape[0]
-        or (not len(obs))
-    ):
-        raise ValueError("aligned nonempty observation/action matrices required")
-    mean, log_std = actor_apply(
-        jax.tree_util.tree_map(jax.lax.stop_gradient, params), obs
-    )
-    if mean.shape != actions.shape or log_std.shape != actions.shape:
-        raise ValueError(
-            "native actor must emit one mean/log_std per action coordinate"
-        )
-    clipped = jnp.clip(actions, -1.0 + 1e-06, 1.0 - 1e-06)
-    pre = jnp.arctanh(clipped)
-    coordinate_logp = (
-        -0.5 * jnp.square((pre - mean) * jnp.exp(-log_std))
-        - log_std
-        - 0.5 * np.log(2 * np.pi)
-    )
-    coordinate_logp -= jnp.log1p(-jnp.square(clipped))
-    logp = coordinate_logp.sum(axis=-1)
-    valid = tree_finite(params) & tree_finite((obs, actions, mean, log_std, logp))
-    result = PolicyLogWeights(
-        logp, valid, jnp.mean(jnp.any(actions != clipped, axis=-1).astype(jnp.float32))
-    )
-    return jax.tree_util.tree_map(jax.lax.stop_gradient, result)
 
 
 def native_target(args, models, native, batch, rng, max_action=1.0):
@@ -222,31 +181,9 @@ def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
             models[2].apply(state.native.critic2.params, batch.obs, batch.action),
         )
     )
-    prior = jax.lax.stop_gradient(
+    weights = jax.lax.stop_gradient(
         bayesian_bootstrap_weights(jax.random.fold_in(rng, 1128352850), len(batch.obs))
     )
-    weights, valid, feasible = (prior, jnp.asarray(True), jnp.asarray(True))
-    diag = {}
-    if config.iw.mode != "off":
-        signal = policy_log_weights(
-            models[0].apply,
-            state.native.actor.params,
-            batch.obs,
-            batch.action,
-            max_action,
-        )
-        weighted = fit_weighting(
-            signal.log_weights, prior, jax.random.fold_in(rng, 1129531735), config.iw
-        )
-        weights = weighted.product.weights
-        valid = signal.inputs_valid & weighted.inputs_valid
-        feasible = weighted.fit_feasible
-        diag = {
-            "iw_ess": weighted.iw.ess_fraction,
-            "iw_tau": weighted.iw.tau,
-            "iw_product_ess": weighted.product.product_ess_fraction,
-            "action_clip_fraction": signal.action_clip_fraction,
-        }
     unit = state.residual_scale
 
     def objective(params):
@@ -262,39 +199,36 @@ def fit_scale(args, config, models, state, batch, rng, max_action=1.0):
         jnp.std(target - q), 1e-06
     )
     valid = (
-        valid
-        & tree_finite(
-            (batch, target, q, prior, unit, loss, grad, proposed, proposed_unit)
+        tree_finite(
+            (batch, target, q, weights, unit, loss, grad, proposed, proposed_unit)
         )
         & (unit > 0)
         & (proposed_unit > 0)
     )
-    accepted = valid & feasible
     result = jax.lax.cond(
-        accepted,
+        valid,
         lambda _: state._replace(calibrator=proposed, residual_scale=proposed_unit),
         lambda _: state,
         operand=None,
     )
     return (
         result,
-        dict(
-            diag,
-            scale_inputs_valid=valid,
-            scale_fit_accepted=accepted,
-            scale_ess_abstained=valid & ~feasible,
-            scale_loss=loss,
-        ),
+        dict(scale_inputs_valid=valid, scale_fit_accepted=valid, scale_loss=loss),
     )
 
 
-def refresh(
-    args, config, models, state, training_reference, heldout, rng, max_action=1.0
-):
-    if config.arm != "bca" or not len(training_reference.obs) or (not len(heldout.obs)):
-        raise ValueError(
-            "posterior refresh needs nonempty training and held-out references"
-        )
+def refresh(args, config, models, state, heldout, rng, max_action=1.0):
+    """Freeze the current scale with its WBCP threshold on the held-out bank.
+
+    Eager only (freeze_reference runs NumPy): call it between scans, never inside
+    jit or lax.scan. Scores are |y - q| / (max(eta, 1e-6) u) with uniform weights.
+    Target sampling and the posterior draws use fixed fold_in constants of `rng`.
+    Returns the state (unchanged when the refresh is invalid), finite validity
+    metrics for the abort gate, and the WBCP diagnostics as python scalars (the
+    threshold is +inf when nothing is certifiable).
+    """
+    if config.arm != "bca" or not len(heldout.obs):
+        raise ValueError("WBCP refresh needs the BCA arm and a nonempty held-out bank")
     target = native_target(
         args,
         models,
@@ -307,33 +241,24 @@ def refresh(
         models[1].apply(state.native.critic1.params, heldout.obs, heldout.action),
         models[2].apply(state.native.critic2.params, heldout.obs, heldout.action),
     )
-    fit_predictions = models[3].apply(
-        state.calibrator.params, training_reference.obs, training_reference.action
-    )
     cal_predictions = models[3].apply(
         state.calibrator.params, heldout.obs, heldout.action
     )
-    post = fit_posterior(
+    reference, valid, diagnostics = freeze_reference(
         state.calibrator.params,
         state.residual_scale,
-        fit_predictions,
         cal_predictions,
         target - q,
         jax.random.fold_in(rng, 1347375956),
         config.posterior,
-        groups=1,
     )
-    valid = tree_finite(state.calibrator) & jnp.all(post.radii.inputs_valid)
-    result = jax.lax.cond(
-        valid, lambda _: state._replace(posterior=post), lambda _: state, operand=None
-    )
-    return (
-        result,
-        {
-            "posterior_inputs_valid": valid,
-            "posterior_supported": jnp.all(post.radii.finite),
-        },
-    )
+    valid = bool(valid) and bool(tree_finite(state.calibrator))
+    result = state._replace(posterior=reference) if valid else state
+    metrics = {
+        "posterior_inputs_valid": valid,
+        "posterior_certified": valid and bool(diagnostics["certified"]),
+    }
+    return (result, metrics, diagnostics)
 
 
 def update(args, config, models, state, batch, it, rng, max_action=1.0):
@@ -353,7 +278,7 @@ def update(args, config, models, state, batch, it, rng, max_action=1.0):
     frozen_predictions = models[3].apply(
         state.posterior.cal_params, batch.obs, batch.action
     )
-    dose = frozen_level_dose(state.posterior, frozen_predictions, "full", config.blend)
+    dose = frozen_level_dose(state.posterior, frozen_predictions, config.blend)
     native, metrics = BASE.cql_update(
         args,
         *(m.apply for m in models[:3]),
@@ -365,12 +290,18 @@ def update(args, config, models, state, batch, it, rng, max_action=1.0):
         -float(batch.action.shape[-1]),
         conservative_multiplier=dose.dose
     )
-    valid = fit_diag["scale_inputs_valid"] & dose.inputs_valid & tree_finite(native)
+    valid = (
+        fit_diag["scale_inputs_valid"]
+        & dose.inputs_valid
+        & reference_valid(state.posterior)
+        & tree_finite(native)
+    )
     proposed = fitted._replace(native=native)
     result = jax.lax.cond(valid, lambda _: proposed, lambda _: state, operand=None)
     metrics.update(fit_diag)
     metrics.update(
         inputs_valid=valid,
+        posterior_ready=state.posterior.ready,
         critic_dose_mean=jnp.mean(dose.dose),
         critic_support_fraction=jnp.mean(dose.support_mask.astype(jnp.float32)),
     )

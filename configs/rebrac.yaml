@@ -22,20 +22,15 @@ bca:
   cal_beta: 20.0
   cal_lr: 0.001
   credibility: 0.95
-  draws: 128
+  draws: 1000
   scale_ema: 0.99
   width_penalty: 0.005
-  affinity:
-    ess_floor: 0.25
-    iterations: 32
-    tau_min: 0.0
-    mode: affinity
 reservation:
+  # rows_per_episode (per dataset): K calibration rows from each withheld episode; the
+  # smallest K >= 5 that keeps withheld rows within max_fraction for 1,000 simulated seeds
+  # (experiments/wbcp/choose_rows_per_episode.py; DEPENDENCE.md, Change 9).
   max_fraction: 0.1
   seed: 911
-reference:
-  seed: 912
-  size: 1024
 datasets:
   halfcheetah:
     environment: halfcheetah-medium-expert-v2
@@ -48,11 +43,9 @@ datasets:
       batch_size: 1024
       critic_bc_coef: 0.1
       critic_learning_rate: 0.001
-    bca:
-      affinity:
-        bandwidth: 0.36742346141747667
     reservation:
       size: 1024
+      rows_per_episode: 6
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 1000
   hopper:
@@ -66,11 +59,9 @@ datasets:
       batch_size: 1024
       critic_bc_coef: 0.01
       critic_learning_rate: 0.001
-    bca:
-      affinity:
-        bandwidth: 0.25980762113533157
     reservation:
       size: 1024
+      rows_per_episode: 6
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 1000
   maze2d:
@@ -84,11 +75,9 @@ datasets:
       batch_size: 256
       critic_bc_coef: 0.001
       critic_learning_rate: 0.0003
-    bca:
-      affinity:
-        bandwidth: 0.21213203435596426
     reservation:
       size: 1024
+      rows_per_episode: 5
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 800
   pen-cloned:
@@ -102,11 +91,9 @@ datasets:
       batch_size: 256
       critic_bc_coef: 0.5
       critic_learning_rate: 0.0003
-    bca:
-      affinity:
-        bandwidth: 0.7348469228349533
     reservation:
       size: 1024
+      rows_per_episode: 5
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 100
   pen-expert:
@@ -120,11 +107,9 @@ datasets:
       batch_size: 256
       critic_bc_coef: 0.01
       critic_learning_rate: 0.0003
-    bca:
-      affinity:
-        bandwidth: 0.7348469228349533
     reservation:
       size: 1024
+      rows_per_episode: 5
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 100
   pen-human:
@@ -138,11 +123,9 @@ datasets:
       batch_size: 256
       critic_bc_coef: 0.5
       critic_learning_rate: 0.0003
-    bca:
-      affinity:
-        bandwidth: 0.7348469228349533
     reservation:
       size: 248
+      rows_per_episode: 124  # outside the validated range (DEPENDENCE.md, Change 9)
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 100
   walker2d:
@@ -156,10 +139,8 @@ datasets:
       batch_size: 1024
       critic_bc_coef: 0.01
       critic_learning_rate: 0.001
-    bca:
-      affinity:
-        bandwidth: 0.36742346141747667
     reservation:
       size: 1024
+      rows_per_episode: 23  # outside the validated range (DEPENDENCE.md, Change 9)
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 1000

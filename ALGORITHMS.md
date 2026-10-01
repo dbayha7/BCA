@@ -1,13 +1,15 @@
 # JAX hosts and hosts + BCA: complete pseudocode
 
 This document specifies the **current two-method implementation**: `host` and
-`bca`. Each host algorithm below includes its complete update and the BCA
-extension. The shared calibration procedures are defined explicitly first.
-The accompanying YAML files supply dataset-specific numerical settings.
-The current first stage uses `calibration_weighting: none`: equal importance
-factors, unchanged Bayesian bootstrap masses, both radius components, and
-unchanged native host losses. The optional `host` setting below reproduces the
-previous fitting heuristics for a separately declared IW study.
+`bca` (run identity `bca-wbcp`). Each host algorithm below includes its complete
+update and the BCA extension. The shared calibration procedures are defined
+explicitly first. The accompanying YAML files supply dataset-specific numerical
+settings. The frozen threshold is **weighted Bayesian conformal prediction**
+(WBCP; Lou and Luo, arXiv:2604.06464v3, Algorithm 1) with uniform weights, the
+exchangeable case that recovers BQ-CP (Snell and Griffiths, 2025). The scale fit
+and the host losses are unchanged. The previous Bayesian/conformal-maximum
+radius, fitting importance weights and ESS gate are preserved only at the local
+`bca-bayesmax-archive` tag.
 
 For exact implementation excerpts at every attachment point, read the
 [BCA integration map](INTEGRATION.md). The README gives the short
@@ -25,9 +27,9 @@ Historical results must retain their original recipe identities.
 - [The calibration pipeline](#the-calibration-pipeline)
 - [Notation and state](#notation-and-state)
 - [Algorithm 0: data preparation and initialization](#algorithm-0-data-preparation-and-initialization)
-- [Procedure A: fitting weights and ESS gate](#procedure-a-fitting-weights-and-ess-gate)
+- [Procedure A: Bayesian bootstrap masses for the scale fit](#procedure-a-bayesian-bootstrap-masses-for-the-scale-fit)
 - [Procedure B: fit the positive residual scale](#procedure-b-fit-the-positive-residual-scale)
-- [Procedure C: freeze a Bayesian/conformal reference](#procedure-c-freeze-a-bayesianconformal-reference)
+- [Procedure C: freeze a WBCP reference](#procedure-c-freeze-a-wbcp-reference)
 - [Procedure D: turn frozen width into a host adjustment](#procedure-d-turn-frozen-width-into-a-host-adjustment)
 - [Algorithm 1: IQL + BCA](#algorithm-1-iql--bca)
 - [Algorithm 2: TD3+BC + BCA](#algorithm-2-td3bc--bca)
@@ -60,16 +62,13 @@ precise update order and parameter versions; this diagram does not replace them.
 flowchart LR
     T[Training transitions] --> H[Host Bellman target and Q]
     H --> E[Detached absolute residual]
-    W[Equal importance factors by default; optional host heuristic] --> S[Positive scale fit with ESS gate]
-    E --> S
+    E --> S[Positive scale fit with Bayesian bootstrap masses]
     S --> F[Frozen scale and residual unit]
-    C[Held-out transitions] --> R[Unweighted residual scores]
+    C[Held-out transitions] --> R[Nonconformity scores: residual / frozen scale]
     F --> R
-    R --> B[Bayesian bootstrap radius]
-    R --> K[Finite-rank conformal radius]
-    B --> M[Maximum of both radii]
-    K --> M
-    M --> U[Frozen width for a training transition]
+    R --> P[Weighted Bayesian bootstrap posterior with test atom]
+    P --> K[beta-credible threshold, clamped at the empirical quantile]
+    K --> U[Frozen width for a training transition]
     F --> U
     U --> D[Detached host-specific adjustment]
     D --> L[One host loss term]
@@ -78,22 +77,23 @@ flowchart LR
 | Operation | Inputs → output | Purpose and code owner |
 |---|---|---|
 | Residual definition | Host's Bellman target and Q → absolute residual | Match the fitted quantity to that host's target. Defined by each `*_bca.py`; IQL uses [its target adapter](calibration/iql_targets.py). |
-| Fitting importance weights | Equal factors by default; optional AWR, density or affinity → tempered masses and an ESS decision | Choose how fitting examples influence the **scale loss**. [Common stabilization](calibration/weights.py), [density/affinity gate](calibration/policy_weights.py), [IQL fitting](calibration/iql_scale.py). |
-| Positive scale fit | Detached residuals, fitting masses and bootstrap draw → updated scale parameters and live unit | Learn state/action variation in residual magnitude. [Scale network](calibration/network.py), [IQL scale network/loss](calibration/iql_network.py); host extensions construct the appropriate loss. |
-| Radius refresh | Held-out residuals divided by the frozen scale/unit → two radii and their maximum | Set the global residual-band size for that frozen reference. [Radius math](calibration/posterior.py), [reference construction](calibration/reference.py), [IQL reference](calibration/iql_reference.py). |
-| Host consumption | Frozen scale × frozen unit × radius → detached loss adjustment | Translate residual width into the specific intervention in the table above. [BC/CQL multiplier](calibration/dose.py), [IQL post-cap weights](calibration/advantage.py). |
+| Positive scale fit | Detached residuals and a Bayesian bootstrap draw → updated scale parameters and live unit | Learn state/action variation in residual magnitude, so the score is locally adaptive. [Scale network](calibration/network.py), [IQL scale network/loss](calibration/iql_network.py); host extensions construct the appropriate loss. |
+| Threshold refresh | Held-out residuals divided by the frozen scale/unit → WBCP threshold and its posterior | Set the global threshold on the normalized score for that frozen reference. [WBCP](calibration/wbcp.py), [frozen reference](calibration/reference.py), [IQL reference](calibration/iql_reference.py). |
+| Host consumption | Frozen scale × frozen unit × threshold → detached loss adjustment | Translate residual width into the specific intervention in the table above. [BC/CQL multiplier](calibration/dose.py), [IQL post-cap weights](calibration/advantage.py). |
 | Execution and evidence | Config, data and event schedule → checkpoints, metrics and evaluations | Keep data, RNGs, counters and evaluation semantics reproducible. [Entry point](train.py), [config resolution](runtime/config.py), per-host `runtime` modules. |
 
-There are three different kinds of weights: **fitting importance weights**,
-**Bayesian bootstrap masses**, and **host objective weights**. They serve different
-purposes and must not be interchanged. The held-out radius calculation currently
-uses unweighted residual scores. The Bayesian component is a distribution over
-score masses, not an additional Bayesian actor or critic model.
+Two kinds of Dirichlet masses appear and must not be interchanged: the
+**scale-fit bootstrap masses** on a training minibatch (Procedure A), and the
+**WBCP posterior masses** on held-out scores (Procedure C). Host objective
+weights are a third, separate quantity. WBCP weights are uniform in the current
+design; a likelihood-ratio study would supply them as a separately declared change.
+The posterior is over the held-out score distribution, not over the actor,
+critic parameters or dynamics.
 
 The live scale changes during fitting; the host consumes a **frozen** reference
 between refreshes. Keeping these states separate makes the consumed width
 reconstructible. Before the first usable reference, the host uses its native
-weighting. Increasing a positive global radius changes width magnitude; it does
+weighting. Increasing a positive global threshold changes width magnitude; it does
 not improve the ordering of actions by width.
 
 The exact Unifloral implementations are [bundled baseline references](baselines/README.md),
@@ -117,21 +117,22 @@ silently substituted into these algorithms.
 | `Polyak(target,source,tau)` | `(1-tau)*target + tau*source` |
 | `eta_psi(s,a)>0` | Learned dimensionless residual-scale network |
 | `u>0` | Live residual-unit exponential moving average, initialized to 1 |
-| `F=(psi_f,u_f,Rconf,Rbayes,R,ready)` | Frozen scale parameters, unit and radius reference |
+| `F=(psi_f,u_f,lambda_hat,lambda_HPD,R,n_eff,ready)` | Frozen scale parameters, unit and WBCP threshold `R=max(lambda_hat,lambda_HPD)` |
 | `U(s,a)` | `R * u_f * max(eta_psi_f(s,a),1e-6)`; the code calls this **width** |
 
 `U` is a **half-width**: the corresponding symmetric residual band is
 `[Q-U,Q+U]`, with total length `2U`. “Full width BCA” means using the complete
-Bayesian/conformal reference, not multiplying `U` by two.
+WBCP threshold, not multiplying `U` by two.
 
-All BCA fitting targets, critic predictions, fitting weights, frozen widths,
+All BCA fitting targets, critic predictions, bootstrap masses, frozen widths,
 and objective multipliers are detached from the host gradients. Scale fitting
 updates only `psi`; host optimization does not backpropagate through the
-calibrator, radius calculation, ESS search, or fitting-weight source.
+calibrator or the threshold calculation.
 
-The declared defaults are `alpha_cal=0.1`, bootstrap credibility `c=0.95`,
-`M=128` radius draws, soft-coverage slope `k=20`, width penalty `lambda_w=0.005`,
-scale learning rate `0.001`, and scale-unit EMA coefficient `0.99`.
+The declared defaults are `alpha_cal=0.1`, posterior credibility `beta=0.95`
+(YAML `credibility`), `M=1000` posterior draws, soft-coverage slope `k=20`,
+width penalty `lambda_w=0.005`, scale learning rate `0.001`, and scale-unit EMA
+coefficient `0.99`.
 `alpha_cal` is distinct from TD3's Q coefficient and CQL's entropy/conservative
 coefficients. Read the resolved YAML rather than relying on class defaults.
 
@@ -154,10 +155,14 @@ INPUT: algorithm, dataset, method in {host,bca}, declared seed, new output direc
 
 3. Map converted transitions to original terminal/timeout episode blocks.
    Use the documented observation-discontinuity fallback only when raw timeout
-   identities are unavailable. Randomly permute whole blocks with reservation seed.
-   Reserve enough whole blocks to reach the configured target number of rows.
-   Reject if the actual reservation exceeds the declared maximum fraction.
-   Dcal = reserved blocks; Dtr = their complement.
+   identities are unavailable. With the reservation seed, withhold m = ceil(target/K)
+   distinct blocks with inclusion probability proportional to length (systematic
+   sampling over a random block order) and take one uniform row from each of K equal
+   segments of every withheld block (K = rows_per_episode, declared per dataset).
+   Reject if the withheld rows exceed the declared maximum fraction.
+   Dcal = the K rows of each withheld block; Dtr = the complement of the withheld
+   blocks. Withheld rows outside Dcal are used for nothing. Whole blocks as Dcal make
+   the posterior overconfident (experiments/wbcp/DEPENDENCE.md).
    Audit retained raw-row dependencies; disjoint row IDs alone do not prove
    independent trajectories or eliminate every terminal next-observation overlap.
 
@@ -174,11 +179,8 @@ INPUT: algorithm, dataset, method in {host,bca}, declared seed, new output direc
    IQL BCA: copy the initial actor and optimizer into {host_actor,bca_actor};
             share a single initialized twin-Q, target-Q and V system.
 
-6. For BCA, declare the fixed training reference used at radius refreshes:
-   IQL: up to fit_size=4096 evenly spaced Dtr indices.
-   TD3/ReBRAC/CQL: the configured seeded subset of Dtr, sorted in dataset order.
-   All current runs use ONE global radius group; the training reference does
-   not introduce additional quantile groups or train on Dcal.
+6. For BCA, no training-reference subset is drawn: the threshold uses only Dcal
+   and the frozen scale; there are no quantile groups.
 
 OUTPUT: prepared pools/statistics/identities, host state, optional live/frozen BCA state
 ```
@@ -203,73 +205,33 @@ The host files own parameter initialization, including their PyTorch-style or
 orthogonal initializers and optimizer conventions. The BCA extensions reuse
 those initializers; they do not create replacement critics or ensembles.
 
-## Procedure A: fitting weights and ESS gate
+## Procedure A: Bayesian bootstrap masses for the scale fit
 
-Source: [ESS and bootstrap product](calibration/weights.py),
-[IQL AWR fitting](calibration/iql_scale.py), and the three BCA extensions.
+Source: [bootstrap draw](calibration/network.py) and the host extensions.
 
-These weights enter the **training-minibatch scale objective**. They are not
-the held-out radius weights and are not asserted to be policy/behavior
-importance-sampling ratios.
+These masses enter only the **training-minibatch scale objective** (Procedure B).
+They are independent of the held-out WBCP posterior in Procedure C.
 
 ```text
-FIT_WEIGHTS(host, minibatch B, detached host state, detached IQL advantage A, key):
-
-0. If calibration_weighting == none (CURRENT STANDARD BCA):
-       Set all importance factors to 1; do not calculate a host-specific score.
-       Draw e_i ~ Exponential(1); return w_i=e_i/sum_j e_j.
-       The importance-factor ESS fraction is 1; bootstrap ESS is separate.
-       Retain all finite-value checks. IQL actor AWR is unaffected.
-       Stop this procedure here.
-
-1. Otherwise (the separately declared host-specific IW setting), compute ell_i:
-   IQL:      ell_i = min(beta*A_i, log(100)).
-             beta is the same host beta used by BOTH actors; mixing=1.
-   TD3/      ell_i = -0.5 * sum_j ((a_ij - pi(s_i)_j)/h)^2.
-   ReBRAC:   h = 0.15*sqrt(action_dimension) in the declared RMS-0.15 recipe.
-   CQL:      ell_i = tanh-Gaussian log density at the recorded action (see below).
-
-2. Set tau_min from the declared fitting recipe:
-       IQL/CQL: 0.05; TD3/ReBRAC affinity: 0.0.
-   For tau in [tau_min,1], form p_i(tau) proportional to exp(tau*(ell_i-max ell)).
-   The effective sample-size fraction is ESSf(tau)=1/(|B|*sum_i p_i(tau)^2).
-   If ESSf(1)>=0.25: choose tau=1.
-   Otherwise, if ESSf(tau_min)>=0.25:
-       bisect 32 times to retain the largest feasible tau in [tau_min,1].
-   Otherwise: record ESS-infeasible at tau=tau_min; DO NOT lower the minimum.
-
-3. Draw independent e_i ~ Exponential(1); b_i=e_i/sum_j e_j.
-   Form w_i = b_i*exp(tau*(ell_i-max ell)) / sum_j same_product_j.
-   Implement this product in log space; detach all resulting weights.
-   Log prior ESS, fitting-score ESS, product ESS and tau separately.
-
-4. Return w, numerical-valid flag, and ESS-feasible flag.
-   The 0.25 gate applies to p(tau), NOT to the bootstrap product w.
+FIT_MASSES(minibatch B, key):
+    Draw e_i ~ Exponential(1) for every row of B; return w_i = e_i / sum_j e_j.
+    Detach w. Retain all finite-value checks.
+    IQL applies the same draw only to its scale fitter; its actor uses native AWR.
 ```
 
-In the optional policy-density IW branch, CQL fitting density uses `a_clip=clip(a,-1+1e-6,1-1e-6)`, `z=atanh(a_clip)`,
-and actor outputs `(mu,log_sigma)`:
-
-```text
-ell_i = sum_j [-0.5*((z_ij-mu_ij)*exp(-log_sigma_ij))^2
-               - log_sigma_ij - 0.5*log(2*pi) - log(1-a_clip_ij^2)]
-```
-
-The implementation uses the actor's emitted log standard deviation here;
-the **sampling** helper separately clips log standard deviation to `[-20,2]`.
-Do not silently substitute one convention for the other. Log the action-clipping
-fraction. The current CQL fitting convention requires action bound 1.
+There is no importance tilt, tempering search or ESS gate: every scale-fit
+proposal that passes the numerical checks is committed.
 
 ## Procedure B: fit the positive residual scale
 
 Source: `fit_scale` in [TD3](algorithms/td3_bc_bca.py),
 [ReBRAC](algorithms/rebrac_bca.py), [CQL](algorithms/cql_bca.py),
-and `IWScaleFitter.update` in [IQL](calibration/iql_scale.py).
+and the IQL scale fitter in [calibration/iql_scale.py](calibration/iql_scale.py).
 
 ```text
-FIT_SCALE(B, detached target y, detached prediction q, detached fitting log scores):
+FIT_SCALE(B, detached target y, detached prediction q):
 
-1. Obtain w, numerical-valid and ESS-feasible from FIT_WEIGHTS.
+1. Obtain w from FIT_MASSES.
 2. Choose the residual unit used IN THIS objective:
    TD3/ReBRAC/CQL: u_loss = live u BEFORE this update.
    IQL:           u_loss = std_B(y-q) + 1e-6.
@@ -282,32 +244,28 @@ FIT_SCALE(B, detached target y, detached prediction q, detached fitting log scor
 4. Propose psi_new and Adam state by differentiating L_scale ONLY with respect to psi.
    TD3/ReBRAC/CQL: u_new = 0.99*u + 0.01*max(std_B(y-q),1e-6).
    IQL:           u_new = 0.99*u + 0.01*u_loss.
-5. Validate targets, predictions, weights, loss, gradients, proposed parameters,
+5. Validate targets, predictions, masses, loss, gradients, proposed parameters,
    optimizer state and positive residual unit.
-   If numerically valid AND ESS feasible AND supported:
-       commit psi_new, Adam state and u_new; increment accepted-fit counter.
-   If valid but ESS infeasible:
-       preserve psi, Adam state and u; log an ESS abstention.
-       Host learning can continue using the previously frozen reference.
-   If numerically invalid:
-       reject the invalid proposal and surface a failure; do not count it as
-       ordinary ESS abstention or silently continue/retry the experiment.
-6. Leave F unchanged. This live fit cannot change today's frozen decision width.
+   If numerically valid: commit psi_new, Adam state and u_new; count the accepted fit.
+   If numerically invalid: reject the proposal and surface a failure; do not
+   silently continue or retry the experiment.
+6. Leave F unchanged. This live fit cannot change the current frozen decision width.
 ```
 
 Fitting happens from the first update. The 10k warmup delays **consumption of
-the frozen posterior**, not fitting. IQL uses its pre-V-update target and
+the frozen reference**, not fitting. IQL uses its pre-V-update target and
 post-Q-update online critic in this loss; the other hosts fit before their host
 update. The four algorithms below make those orders explicit.
 
-## Procedure C: freeze a Bayesian/conformal reference
+## Procedure C: freeze a WBCP reference
 
-Source: [reference construction](calibration/reference.py),
-[radius order statistics](calibration/posterior.py),
-[IQL refresh](calibration/iql_reference.py).
+Source: [WBCP, Algorithm 1](calibration/wbcp.py),
+[frozen reference](calibration/reference.py),
+[IQL refresh](calibration/iql_reference.py). Paper: Lou and Luo,
+*Weighted Bayesian Conformal Prediction*, arXiv:2604.06464v3.
 
 ```text
-REFRESH(host state, live psi,u, Dcal, fixed training reference, refresh key):
+REFRESH(host state, live psi,u, Dcal, refresh key):
 
 1. Freeze current psi and u into psi_f,u_f. These form one inseparable reference.
 2. On each held-out transition compute its current host Bellman target y_j:
@@ -319,34 +277,38 @@ REFRESH(host state, live psi,u, Dcal, fixed training reference, refresh key):
    Use the dedicated pinned refresh key for stochastic target actions.
 3. q_j = min_k CURRENT online Q_k(s_j,a_j).
    sigma_j = u_f*max(eta_psi_f(s_j,a_j),1e-6).
-   score_j = |y_j-q_j|/sigma_j.
-   Require finite nonnegative scores and strictly positive finite scales.
+   rho_j = |y_j-q_j|/sigma_j   (nonconformity scores, n = |Dcal|).
+   Require finite scores and strictly positive finite scales.
 
-4. CONFORMAL COMPONENT (unweighted held-out scores):
-   Sort n scores: score_(1)<=...<=score_(n).
-   k_conf = ceil((n+1)*(1-alpha_cal)), computed with decimal rank arithmetic.
-   Rconf = score_(k_conf) if k_conf<=n; otherwise +infinity.
-   This is equivalent to adding one equal-weight query mass at +infinity.
+4. EMPIRICAL SELECTION, Eq. (1), weights w_j = 1:
+   lambda_hat = the smallest sorted score whose weighted empirical miscoverage
+   sum_{rho_i > lambda} w_i / sum_i w_i is at most alpha_cal (ties count as covered).
 
-5. BAYESIAN-BOOTSTRAP COMPONENT:
-   For m=1,...,M:
-       draw e_mj ~ Exponential(1) independently over the n scores;
-       normalize their masses (or use equivalent unnormalized cumulative sums);
-       q_m = the smallest score whose cumulative mass reaches 1-alpha_cal.
-   Rbayes = sorted(q_1,...,q_M)[ceil(M*c)] (one-based index).
-   R = max(Rconf,Rbayes).
+5. POSTERIOR, Eqs. (3), (6), (7), Algorithm 1:
+   For m = 1..M:
+       draw E_1..E_{n+1} ~ Exponential(1) from the refresh key;
+       masses V_j proportional to w_j*E_j on the sorted scores and wbar*E_{n+1}
+       on one extra TEST ATOM at the worst-case loss (wbar = 1 here);
+       lambda^(m) = the first sorted score whose cumulative posterior mass reaches
+       (1-alpha_cal) of the total, test atom included; +infinity if none does.
+   lambda_HPD = the ceil(beta*M)-th smallest lambda^(m)  (smallest beta-credible score).
+   R = max(lambda_hat, lambda_HPD); R = +infinity means nothing is certifiable.
 
-6. Validate both components and their exact max relationship.
-   Commit F=(psi_f,u_f,Rconf,Rbayes,R,ready=true) only on valid input.
-   Save component radii, quantile-draw identity, reference hashes and counter state.
-   Preserve the live psi,u for continued minibatch fitting.
+6. Commit F=(psi_f,u_f,lambda_hat,lambda_HPD,R,n_eff,ready=true) only on valid input.
+   Log R, lambda_hat, lambda_HPD, sigma_post=std(lambda^(m)), n_eff, whether the
+   clamp bound and whether R is finite. Preserve the live psi,u for fitting.
 ```
 
-The held-out scores in these implementations are **unweighted**. Training AWR,
-affinity or policy-density weights do not reappear in Step 4 or 5. Both radius
-components remain present even when one is smaller than the other. With one
-global group, the training-reference scale predictions are checked, but there
-are no group boundaries to fit.
+With uniform weights the masses are exactly Dirichlet(1,...,1) over the n
+scores plus the test atom, which is the BQ-CP posterior; `n_eff = n`. The
+test atom is what lets the posterior say that the next point may be worse than
+every observed score: omitting it (the archived construction) overstates the
+credibility. Each draw crosses only when the test atom's mass, Beta(1,n), is at
+most `alpha_cal`, so the crossing draws are Binomial(M, 1-(1-alpha_cal)^n) and a
+finite threshold needs ceil(beta*M) of them. Preparation therefore rejects a BCA
+held-out bank unless certification fails with probability at most 1e-6
+(`calibration.reference.certifiable`; n >= 36 at 0.1 / 0.95 / M=1000). The
+declared banks (248 to 8192 rows) always certify.
 
 ## Procedure D: turn frozen width into a host adjustment
 
@@ -382,7 +344,8 @@ IQL_ACTOR_WEIGHTS(F,B,A,beta):
 TD3/ReBRAC/CQL multipliers lie in `[1,1.5]`; finite positive widths give an
 interior value. The frozen unit algebraically cancels in `U/(U+u_f)` but is
 still needed to define the width in reward/value units. Numerically stable
-rescaling is used in the code to avoid overflow.
+rescaling is used in the code to avoid overflow. These consumption formulas are
+unchanged by the WBCP rewrite; only `R` changed.
 
 IQL uses **post-cap shrinkage**, not `exp(beta*(A-U))`, not a lower-confidence
 Bellman target, and not a gain sweep. Its positive-advantage actor weight lies
@@ -422,8 +385,7 @@ for t=1,...,N:
 
     # Fit the single BCA scale; host Q/V receive no calibration gradients.
     q_fit_i <- sg(min_k Q_new_k(s_i,a_i))
-    ell_i <- 0 for standard BCA; otherwise min(beta*A_i,log(100))
-    FIT_SCALE(B,y,q_fit,ell) using IQL's current-batch unit and coverage variance term.
+    FIT_SCALE(B,y,q_fit) using IQL's current-batch unit and coverage variance term.
     Preserve the previously frozen F during both actor updates.
 
     # Same nuisance advantage and same beta for both actors.
@@ -485,9 +447,8 @@ for t=1,...,N:
     # Uses pre-host-update networks and a separate folded noise key.
     y_fit <- TD3_TARGET(B,fold_in(K,FIT_NOISE))
     q_fit <- sg(min_k Q_old_k(s,a))
-    ell <- 0 for standard BCA; otherwise detached affinity scores at recorded actions
-    FIT_SCALE(B,y_fit,q_fit,ell)
-    m <- BC_OR_CQL_MULTIPLIER(F,B)  # old frozen psi_f,u_f,R
+    FIT_SCALE(B,y_fit,q_fit)
+    m <- BC_OR_CQL_MULTIPLIER(F,B)  # frozen psi_f,u_f,R from the last refresh
 
     # Unchanged host critic update; host noise is not the fitter's noise draw.
     y <- TD3_TARGET(B,K)
@@ -505,7 +466,7 @@ for t=1,...,N:
     else:
         keep actor, target actor and target critics unchanged
 
-    Validate accepted updates and scale-fit/ESS-abstention counters.
+    Validate accepted updates and scale-fit counters.
     At refresh boundaries t<N: REFRESH using TD3_TARGET and current online Q;
                               use the declared dedicated refresh random key.
     Save scheduled checkpoints; evaluate the actor at declared boundaries.
@@ -543,8 +504,7 @@ for k=0,...,N-1:   # preserve the host's ZERO-BASED actor-update phase
     Split training key and sample uniform B from Dtr.
     y_fit <- REBRAC_TARGET(B,folded dedicated fitting-noise key)
     q_fit <- sg(min_k Q_old_k(s,a))
-    ell <- 0 for standard BCA; otherwise detached affinity scores at recorded actions
-    FIT_SCALE(B,y_fit,q_fit,ell)
+    FIT_SCALE(B,y_fit,q_fit)
     m <- BC_OR_CQL_MULTIPLIER(F,B)
 
     Split the host update key for target-action noise.
@@ -623,8 +583,7 @@ for t=1,...,N:
     # Pre-host-update scale fit; separate fitting target sample.
     y_fit <- CQL_TARGET(B,fold_in(K,FIT_NOISE))
     q_fit <- sg(min(Q_1_old(s,a),Q_2_old(s,a)))
-    ell <- 0 for standard BCA; otherwise recorded-action policy log density (Procedure A)
-    FIT_SCALE(B,y_fit,q_fit,ell)
+    FIT_SCALE(B,y_fit,q_fit)
     m <- BC_OR_CQL_MULTIPLIER(F,B)
 
     # All the following loss gradients use the SAME pre-update host snapshot.
@@ -692,7 +651,7 @@ Source: [experiment schedule](configs/experiment.yaml),
 |---|---|---|
 | Training budget | 1M shared Q/V updates; 1M attempted steps per actor | 1M host/critic updates |
 | Actor steps | Host: 1M; BCA: measured accepted count with abstentions | TD3/ReBRAC: 500k; CQL: 1M |
-| Scale fitting | Attempt every host update; save accepted and ESS-abstained counts | Same |
+| Scale fitting | Attempt every host update; save the accepted count | Same |
 | First frozen reference | After update 10,000; used starting at 10,001 | Same |
 | Refreshes | 10k,15k,...,995k: 198 total | Same |
 | Periodic evaluation | Every 5k: 200 banks, **2 episodes per actor** | Every 5k: 200 banks, **10 episodes** |
@@ -713,7 +672,7 @@ average their logged zero placeholders for skipped actor steps into an
 “actor-update mean.”
 
 Every accepted run saves the resolved configuration, source/data identities,
-training/held-out/reference identities, preprocessing metadata, event records,
+training/held-out identities, preprocessing metadata, event records,
 network/optimizer checkpoints, evaluations and failure/completion receipts.
 Completion requires matching actual optimizer counters, scheduled banks and
 checkpoint identities. A retained loss value alone does not prove its optimizer
@@ -723,21 +682,25 @@ replaced by a silent retry.
 ## What the calibration does and does not establish
 
 The score being calibrated is an **absolute one-step Bellman residual**,
-normalized by a learned positive scale and a residual unit. The bootstrap is
-over calibration-score masses; it is not a Bayesian posterior over the host
-actor, critic parameters or environment dynamics. Training-scale reweighting
-and held-out radius construction are different operations with different
-measures.
+normalized by a learned positive scale and a residual unit. The WBCP posterior
+is over the held-out score distribution (a Dirichlet-process prior in its
+noninformative limit); it is not a posterior over the host actor, critic
+parameters or environment dynamics. The scale-fit bootstrap masses and the
+held-out threshold posterior are different operations with different measures.
 
-The code implements a split-conformal-style finite-rank component and a
-Bayesian-bootstrap quantile component, combined by their maximum. Repeated
-reuse of the held-out bank influences later policies and critics through BCA;
-offline trajectory dependence and evolving Bellman targets also matter.
-Therefore the rank formula by itself does not establish independent-score
+The threshold is WBCP's beta-credible selection clamped at the empirical
+quantile (Algorithm 1 of Lou and Luo). Its data-conditional guarantee (their
+Theorem 2 and Corollary 3) is stated for i.i.d. calibration scores from a fixed
+model and, with weights, a fixed correct likelihood ratio. Here the same held-out
+bank is rescored at every refresh with critics shaped by BCA's own feedback,
+offline transitions within a trajectory are dependent, and the Bellman targets
+evolve. Therefore the construction by itself does not establish independent-score
 exchangeability, conditional action-wise coverage, off-policy return coverage,
-or a policy-safety theorem for the full adaptive training loop.
+or a policy-safety theorem for the full adaptive training loop. Uniform weights
+also mean the threshold targets the calibration (behavior) distribution, not the
+learned policy's state-action distribution.
 
-A positive global radius can rescale widths but cannot repair their ordering
+A positive global threshold can rescale widths but cannot repair their ordering
 across actions. Good residual coverage, accepted scale fits, or a larger
 conservative multiplier do not prove useful behavioral-harm ranking or better
 whole-policy performance. Those require their own held-out measurements and

@@ -10,8 +10,8 @@ The BCA files import the corresponding host. They reuse its networks, initializa
 optimizers and update equations. Both methods use the same host hyperparameters.
 
 Read the **[complete pseudocode for all four hosts + BCA](ALGORITHMS.md)**:
-host losses, fitting weights, ESS abstention, Bayesian/conformal radius refresh,
-frozen-width consumption, update order, and evaluation/checkpoint schedules.
+host losses, the scale fit, the weighted Bayesian conformal (WBCP) threshold
+refresh, frozen-width consumption, update order, and evaluation/checkpoint schedules.
 
 Read **[every BCA entry point, with exact code snippets](INTEGRATION.md)** to see
 where BCA reads the host, changes its losses, adds state and gates updates.
@@ -19,6 +19,7 @@ where BCA reads the host, changes its losses, adds state and gates updates.
 Read the **[OOD experiment design](docs/superpowers/plans/2026-09-24-ood-experiment.md)**
 for separate tests of support novelty, residual coverage and behavioral harm,
 including controls, sample budgets and a checked implementation sequence.
+It belongs to the archived study (see [Reproduction status](#reproduction-status)).
 
 | JAX host | Host + BCA | What BCA changes |
 | --- | --- | --- |
@@ -33,7 +34,7 @@ including controls, sample budgets and a checked implementation sequence.
 | --- | --- | --- |
 | `algorithms/<host>.py` | Networks, initialization, optimizers and the host's original update equations | You can read the learning rule without reading calibration. Plain hosts import no BCA code. |
 | `algorithms/<host>_bca.py` | Connect that host's residuals to calibration and insert the resulting detached adjustment into one loss term | The exact intervention is visible; the host equations are reused. |
-| `calibration/` | Fitting weights, positive residual scale, Bayesian/conformal radii and width-to-weight formulas | These are distinct mathematical operations, shared where their definitions agree. |
+| `calibration/` | Positive residual scale, the WBCP threshold ([`wbcp.py`](calibration/wbcp.py)), the frozen reference and width-to-weight formulas | These are distinct mathematical operations, shared where their definitions agree. |
 | `runtime/` | Resolve settings, prepare data, execute schedules, evaluate and save/verify state; shared initialization/data types live in `networks.py` | Execution bookkeeping should not obscure the host's update. |
 | `configs/` | One experiment schedule; one host/BCA configuration per algorithm with dataset overrides | Each setting has one owner; the resolved config is saved with every run. |
 
@@ -43,24 +44,27 @@ then use the [component-level pseudocode map](ALGORITHMS.md#the-calibration-pipe
 
 The BCA pipeline has three separate operations:
 
-1. **Fit a scale** to detached Bellman residuals. Standard BCA uses equal importance
-   factors and retains Bayesian bootstrap masses. Only the scale network is optimized here.
-2. **Freeze a reference** using held-out residual scores. Retain both the Bayesian
-   and conformal radii and take their maximum.
+1. **Fit a scale** to detached Bellman residuals with Bayesian bootstrap masses.
+   Only the scale network is optimized here.
+2. **Freeze a reference**: score held-out residuals by the frozen scale and select
+   the threshold with weighted Bayesian conformal prediction (Lou and Luo,
+   arXiv:2604.06464v3, Algorithm 1): normalized weighted Bayesian bootstrap
+   masses plus one test atom, the beta-credible crossing, clamped at the
+   empirical quantile. Weights are uniform, which is BQ-CP.
 3. **Use the frozen width** in the host objective. It strengthens actor BC in
    TD3+BC/ReBRAC, weights CQL's conservative gap, or shrinks IQL's excess AWR
    weight above one. The host cannot backpropagate through calibration.
 
-Fitting weights, bootstrap masses and the final host multiplier are different
-quantities. The pseudocode names each separately. The current radius stage uses
-**unweighted held-out scores**; fitting importance weights do not turn it into a
-weighted-conformal covariate-shift theorem.
+Scale-fit bootstrap masses, the WBCP posterior masses and the final host
+multiplier are different quantities. The pseudocode names each separately.
+With uniform weights the threshold targets the calibration (behavior)
+distribution; a likelihood-ratio study would be a separately declared change.
 
 ## Layout
 
 ```text
 algorithms/       # Four plain hosts and four *_bca.py extensions
-calibration/      # Shared scale fitting, importance weights and radius math
+calibration/      # Shared scale fitting, WBCP threshold and width math
 runtime/          # Data preparation, evaluation, checkpoints and validation
 configs/          # experiment.yaml, four algorithm YAMLs, source/reference manifests
 baselines/        # Complete pinned original Unifloral tree and reference notes
@@ -92,7 +96,7 @@ posterior refreshes. Evaluation has 200 periodic banks and a separate 20-episode
 final bank; periodic banks contain ten episodes, or two per actor for IQL.
 
 IQL `bca` explicitly trains **two actors: `host` and `bca`**, with one shared Q/V
-state and one calibrator with no importance tilt by default. Their beta is the native value and decision
+state and one calibrator. Their beta is the native value and decision
 gain is fixed at 1. The standalone `host` option trains only the host actor on the
 same pool. There are no beta sweeps, floor-only actors, permutation arms or fixed-
 strength control arms in the active interface.
@@ -138,19 +142,23 @@ runs share the existing GPU reservation. Do not edit a checkout while it trains.
 
 ## Calibration and provenance
 
-BCA retains both Bayesian and conformal radii and consumes their maximum.
-`configs/experiment.yaml` selects **`calibration_weighting: none`** for the first
-stage: every example has importance factor 1, while Bayesian bootstrap masses
-remain active. IQL retains its native AWR actor loss. BCA run names include
-`bca-noiw` so these runs cannot be confused with prior IW experiments.
+BCA freezes one threshold per refresh with weighted Bayesian conformal prediction
+([calibration/wbcp.py](calibration/wbcp.py)); the weights are uniform, so the
+posterior is BQ-CP with its test atom. `alpha`, `credibility` (the paper's beta)
+and `draws` (M) are the `bca` YAML settings (under `bca.posterior` for CQL). IQL retains its native AWR actor loss.
+BCA run names use the identity `bca-wbcp`, so these runs cannot be confused with the
+earlier `bca-noiw` (Bayesian/conformal maximum) or importance-fitting experiments.
 
-The explicit `host` setting preserves the earlier host-specific fitting heuristics:
-action affinity for TD3+BC/ReBRAC, policy density for CQL, and capped pre-BCA AWR
-for IQL. This setting describes calibration weighting, not the plain `host` method.
-Those settings are available for a separately declared later study; they are not
-selected as a best IW method. Posterior residual-score calibration stays unweighted. A fitted
-scale or conformal floor does not by itself guarantee behavioral-harm detection
-or improved return under adaptive training.
+The earlier construction (the maximum of a finite-rank conformal radius and a
+Bayesian bootstrap quantile without a test atom, plus optional fitting importance
+weights with an ESS gate) is preserved at the local tag `bca-bayesmax-archive`,
+together with the OOD tooling that reads its checkpoints. Its frozen 280-run
+manifest and standard runner describe that archived study.
+
+[experiments/wbcp/](experiments/wbcp/) checks the WBCP module against exact
+Dirichlet identities and reproduces Table 1 of the paper. A fitted scale or a
+credible threshold does not by itself guarantee behavioral-harm detection or
+improved return under adaptive training.
 
 `configs/sources.json` records source identity and verification limits. The code
 is derived from the JAX CORL hosts used in this research, with attribution to
@@ -219,6 +227,41 @@ runtime correction. Their saved results retain that provenance; a direct
 upstream invocation is not a reconstruction of their instrumentation.
 
 ## Reproduction status
+
+The WBCP calibration on this branch is validated on CPU, without training or
+simulator steps:
+
+```bash
+python -m unittest experiments.wbcp.test_wbcp experiments.wbcp.test_reference
+JAX_PLATFORMS=cpu python -m unittest experiments.test_wbcp_configs \
+  experiments.wbcp.test_td3_bc_host experiments.wbcp.test_rebrac_host \
+  experiments.wbcp.test_cql_host experiments.wbcp.test_iql_host
+python experiments/wbcp/reproduce_table1.py --gamma 1
+```
+
+They check the WBCP module against exact Dirichlet identities and the paper's
+Table 1, and drive each host through native updates, an eager WBCP refresh and
+updates that consume the frozen threshold, with stub environments. Before the
+first refresh the host and BCA arms of TD3+BC and ReBRAC stay bitwise identical,
+and the pre-refresh BCA updates of all four hosts match `bca-bayesmax-archive`
+bitwise. CQL's host and BCA arms diverge numerically before any refresh because
+only the BCA branch wraps its update in a validity `lax.cond`; this predates the
+rewrite and is unchanged by it. None of this constitutes completed 1M runs,
+fresh-environment installation validation or GPU reproducibility results.
+
+### Archived study (`bca-bayesmax-archive`)
+
+The OOD tooling, the frozen 280-run `bca-noiw` manifest and its standard runner,
+the `experiments/standard_bca` audits and the `analysis/` readers describe the
+archived Bayesian/conformal-maximum study. They read that stack's checkpoints and
+APIs, so on this branch `experiments.ood.test_analysis` and
+`experiments.ood.test_outcomes` fail by design. Run them from the tag:
+
+```bash
+git worktree add ../BCA-archive bca-bayesmax-archive
+```
+
+The notes below are that study's status, preserved as written.
 
 The OOD implementation has one fully commented [configuration](configs/ood.yaml),
 one [protocol module](experiments/ood/protocol.py), and tested read-only adapters

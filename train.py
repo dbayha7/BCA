@@ -82,7 +82,7 @@ def execute(row, objects, out, prepared):
         driver, m, options = objects
         from runtime.iql_checkpoint import checkpoint_counts as iql_counts
 
-        base = driver.IWRuntime if row["mode"] == "shared" else driver.GroupRuntime
+        base = driver.PairRuntime if row["mode"] == "shared" else driver.GroupRuntime
 
         class CheckedRuntime(base):
 
