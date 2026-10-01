@@ -197,9 +197,9 @@ frozen reference's scale parameters. `models[:3]` are the actor and twin critics
 `models[3]` is the added scale network. The `host` arm returns earlier in the same
 function, calling `cql_update` without `conservative_multiplier`.
 
-[algorithms/cql_bca.py, lines 277–292](algorithms/cql_bca.py#L277-L292)
+[algorithms/cql_bca.py, lines 284–299](algorithms/cql_bca.py#L284-L299)
 
-<!-- source: algorithms/cql_bca.py:277:292 -->
+<!-- source: algorithms/cql_bca.py:284:299 -->
 ```python
 fitted, fit_diag = fit_scale(args, config, models, state, batch, rng, max_action)
 frozen_predictions = models[3].apply(
@@ -652,9 +652,9 @@ return (
 )
 ```
 
-[algorithms/cql_bca.py, lines 119–132](algorithms/cql_bca.py#L119-L132)
+[algorithms/cql_bca.py, lines 126–139](algorithms/cql_bca.py#L126-L139)
 
-<!-- source: algorithms/cql_bca.py:119:132 -->
+<!-- source: algorithms/cql_bca.py:126:139 -->
 ```python
 rng, native, (actor, c1, c2) = BASE.initialize(
     args, obs_dim, action_dim, max_action
@@ -773,9 +773,9 @@ prior = jax.lax.stop_gradient(
 twin minimum. The masses weight only the scale objective, not actor or Bellman
 losses.
 
-[algorithms/cql_bca.py, lines 170–186](algorithms/cql_bca.py#L170-L186)
+[algorithms/cql_bca.py, lines 177–193](algorithms/cql_bca.py#L177-L193)
 
-<!-- source: algorithms/cql_bca.py:170:186 -->
+<!-- source: algorithms/cql_bca.py:177:193 -->
 ```python
 target = native_target(
     args,
@@ -966,9 +966,9 @@ result = state._replace(posterior=reference) if valid else state
 
 CQL scores its configured sampled target-policy backup:
 
-[algorithms/cql_bca.py, lines 232–256](algorithms/cql_bca.py#L232-L256)
+[algorithms/cql_bca.py, lines 239–263](algorithms/cql_bca.py#L239-L263)
 
-<!-- source: algorithms/cql_bca.py:232:256 -->
+<!-- source: algorithms/cql_bca.py:239:263 -->
 ```python
 target = native_target(
     args,
@@ -1305,9 +1305,9 @@ metrics.update(diag, inputs_valid=valid)
 return (result, key, metrics)
 ```
 
-[algorithms/cql_bca.py, lines 293–300](algorithms/cql_bca.py#L293-L300)
+[algorithms/cql_bca.py, lines 300–307](algorithms/cql_bca.py#L300-L307)
 
-<!-- source: algorithms/cql_bca.py:293:300 -->
+<!-- source: algorithms/cql_bca.py:300:307 -->
 ```python
 valid = (
     fit_diag["scale_inputs_valid"]

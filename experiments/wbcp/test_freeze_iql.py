@@ -100,10 +100,11 @@ class FrozenIQLTests(unittest.TestCase):
                               alpha=0.1, beta=0.95, draws=1000)
         self.assertEqual((ours.threshold, ours.lambda_hat, ours.lambda_hpd),
                          (record["wbcp"]["threshold"], record["wbcp"]["lambda_hat"], record["wbcp"]["lambda_hpd"]))
-        # independent recomputation: r + (1 - d) gamma V(s') - min Q(s, a), eta from the live scale network
+        # independent recomputation: r + (1 - d) gamma V(s') - min Qbar(s, a) over the Polyak target heads (the
+        # copy IQL's actor advantage reads), eta from the live scale network
         agent = t.carry.nuisance
         target = bank.reward + (1 - bank.done) * p.args.discount * agent.vf.apply_fn(agent.vf.params, bank.next_obs)
-        q = jnp.min(agent.qf.apply_fn(agent.qf.params, bank.obs, bank.action), -1)
+        q = jnp.min(agent.qf_target.apply_fn(agent.qf_target.params, bank.obs, bank.action), -1)
         np.testing.assert_array_equal(a["residual"], np.asarray(target - q, np.float64))
         eta = extra.calibration.calibrator.apply_fn(extra.calibration.calibrator.params, bank.obs, bank.action)
         np.testing.assert_array_equal(self.result["scored"]["eta"], np.asarray(eta))

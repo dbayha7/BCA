@@ -230,7 +230,7 @@ def score_rows(fitter, cal_state, agent_state, actor, actor_params, data, discou
     cal_state = the variant's live BCAState and agent_state = carry.nuisance) computes
         pred_cal = stop_gradient(fitter.predictions(cal_state, cal_state.calibrator.params, cal))
         target = cal.reward + (1.0 - cal.done) * discount * agent_state.vf.apply_fn(vf.params, cal.next_obs)
-        q = jnp.min(agent_state.qf.apply_fn(qf.params, cal.obs, cal.action), axis=-1)
+        q = jnp.min(agent_state.qf_target.apply_fn(qf_target.params, cal.obs, cal.action), axis=-1)
         residual = stop_gradient(target - q)
     and calibration.reference.freeze_reference scores |residual| / positive_scale(pred_cal,
     cal_state.resid_scale). The target is deterministic: no noise and no key. Each chunk of
@@ -246,7 +246,7 @@ def score_rows(fitter, cal_state, agent_state, actor, actor_params, data, discou
         cal = jax.tree_util.tree_map(lambda x: x[start:start + batch_size], data)
         pred_cal = jax.lax.stop_gradient(fitter.predictions(cal_state, cal_state.calibrator.params, cal))
         target = cal.reward + (1.0 - cal.done) * discount * agent_state.vf.apply_fn(agent_state.vf.params, cal.next_obs)
-        q = jnp.min(agent_state.qf.apply_fn(agent_state.qf.params, cal.obs, cal.action), axis=-1)
+        q = jnp.min(agent_state.qf_target.apply_fn(agent_state.qf_target.params, cal.obs, cal.action), axis=-1)
         residual = jax.lax.stop_gradient(target - q)
         values = dict(target=target, q=q, residual=residual, eta=pred_cal,
                       sigma=positive_scale(pred_cal, cal_state.resid_scale),
@@ -296,7 +296,8 @@ def build_metadata(*, row, prepared, maps, arrays, scored, trained, score_seed, 
             score="|residual| / sigma in float64 from float32 y - q and sigma, as calibration.reference.freeze_reference",
             residual="y - q", sigma="max(eta, 1e-6) * u (calibration.reference.positive_scale)",
             y="reward + (1 - done) * discount * V(s') with the current value network (calibration.iql_reference.refresh)",
-            q="min over the twin online Q heads at (obs, action) (calibration.iql_reference.refresh)",
+            q=("min over the twin Polyak target Q heads at (obs, action), the copy IQL's actor advantage reads "
+               "(calibration.iql_reference.refresh)"),
             eta=("live scale network at (obs, action): BootstrapScaleFitter.predictions with the live calibrator "
                  "parameters, as refresh freezes them"),
             u=unit,
