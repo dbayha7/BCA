@@ -212,8 +212,14 @@ class GateTests(unittest.TestCase):
         local = lambda c: (lambda block, cid, q: {"P2L": dict(C=c)} if block == "C" or cid.startswith("cone") else {})
         g = card(scenario(fp=local(0.05))).g2()
         self.assertTrue(g["passed"])
+        self.assertEqual(g["data"], "poor")  # amendment P
         self.assertTrue(g["placements"]["P2L"]["passed"] and not g["placements"]["P1L"]["passed"])
         self.assertFalse(card(scenario(fp=local(0.004))).g2()["passed"])
+        # the gate reads poor data only: an effect at expert alone passes G2_expert but not G2
+        expert_only = lambda block, cid, q: {"P2L": dict(C=0.05)} if block == "C" and q == "expert" else {}
+        sc = card(scenario(fp=expert_only))
+        self.assertFalse(sc.g2()["passed"])
+        self.assertTrue(sc.g2("expert")["passed"])
         g2b = card(scenario(fp=local(0.05))).g2b()
         self.assertEqual(g2b["flag_kappa"], "2")
         self.assertTrue(g2b["passed"])

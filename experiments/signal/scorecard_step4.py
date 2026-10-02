@@ -41,7 +41,7 @@ Gates. G0: every [derived] check of stage0.json, matched_knobs.json and values.j
 float32/eps]' check ('eps') fails G0 only above 100x its tolerance; 'procedural' checks are counted. G1 (X-CS, FP, N =
 clean, noisy_reward; 2 cases x 4 levels, an 8-test Holm family per placement): T_STRAT material and Holm-significant in
 at most 1 of 8 for each weighting placement; for P3, |R| material in at most 1 of 8, else P3 is nuisance-confounded and
-ineligible for D4RL. G2 (block C, FP, expert, S2): C = G(OR2) - G(SHUF) pooled over the two localized cases >=
+ineligible for D4RL. G2 (block C, FP, poor data since amendment P; expert reported as G2_expert, S2): C = G(OR2) - G(SHUF) pooled over the two localized cases >=
 materiality with one-sided p < alpha, for P1L or P2L; a failure means stop and redesign. G2b (X-CS cone, FP, expert,
 S2): reported per kappa; its flag reads kappa = 2 (expectations item 2.25), or the largest kappa run.
 
@@ -104,6 +104,8 @@ EPS_FACTOR = 100.0
 # ---------------------------------------------------------------------------------------------------------
 # Loading
 
+
+G2_DATA = "poor"  # amendment P (2026-10-02, informed by the pilot): G2 reads block C's poor-data cells
 
 class Cell:
     """One cell-replicate: its runner record, J arrays and gap, and its evidence set."""
@@ -477,17 +479,20 @@ class Scorecard:
                 nuisance = (not passed) if with_data else None
         return dict(placements=out, p3_nuisance_confounded=nuisance)
 
-    def g2(self):
+    def g2(self, data=None):
+        """G2 on block C's localized cells. The gate reads poor data (G2_DATA, amendment P: the registered expert-data
+        gate had no power in the pilot); the expert-data version is reported as G2_expert, descriptive only."""
+        data = data or G2_DATA
         out = {}
         for p in ("P1L", "P2L"):
             per = {}
             for level in LEVELS:
-                cells = self.pool.select(block="C", level="expert", case=("q1opt-local", "tilt-local"))
+                cells = self.pool.select(block="C", level=data, case=("q1opt-local", "tilt-local"))
                 per[level] = self.pool.pooled(cells, "FP", p, "C", level)
             s = per["S2"]
             out[p] = dict(levels=per, passed=bool(s["mean"] is not None and s["mean"] >= self.mat
                                                   and s["p_pos"] is not None and s["p_pos"] < self.alpha))
-        return dict(placements=out, passed=any(v["passed"] for v in out.values()))
+        return dict(placements=out, passed=any(v["passed"] for v in out.values()), data=data)
 
     def g2b(self):
         cones = sorted({c.rec["kappa"] for c in self.cells if c.block == "X-CS" and c.case == "cone"})
@@ -844,7 +849,7 @@ class Scorecard:
         lost["flagged_contrasts"] = sum(t["flag"] for t in tables)
         return dict(materiality=self.mat, alpha=self.alpha,
                     primary_level={f"{p}/{r}": v for (p, r), v in self.primary.items()},
-                    G0=self.g0(), G1=g1, G2=self.g2(), G2b=self.g2b(), DR1=verdicts, DR2=info, DR3=carry,
+                    G0=self.g0(), G1=g1, G2=self.g2(), G2_expert=self.g2("expert"), G2b=self.g2b(), DR1=verdicts, DR2=info, DR3=carry,
                     DR4=self.poor_data(verdicts, carry), DR5=self.step_order(info), DR6=self.hypothesis(),
                     DR6b=self.mixed_pathway(), DR7=self.hook(), meaningful=self.meaningful(), lost=lost,
                     tables=tables)
@@ -860,7 +865,10 @@ def markdown(result):
         verdict = ("not testable (no data)" if not g.get("testable", True) else 'pass' if g['passed'] else 'FAIL')
         lines.append(f"- G1 {p}: {g['contrast']} material{'' if p == 'P3' else ' and Holm-significant'} in "
                      f"{g['count']} of 8: {verdict}")
-    lines.append(f"- G2 (block C): {'pass' if result['G2']['passed'] else 'FAIL (stop and redesign)'}")
+    lines.append(f"- G2 (block C, {result['G2']['data']} data; amendment P): "
+                 f"{'pass' if result['G2']['passed'] else 'FAIL (stop and redesign)'}")
+    lines.append(f"- G2 at expert data (as first registered; descriptive only): "
+                 f"{'pass' if result['G2_expert']['passed'] else 'fail'}")
     lines.append(f"- G2b (cone, kappa {result['G2b']['flag_kappa']}): {'pass' if result['G2b']['passed'] else 'fail'}")
     lines += ["", "## DR1 verdicts (X-CS M, FP)", "", "| placement | " + " | ".join(QUALITIES) + " |",
               "|---|" + "---|" * len(QUALITIES)]

@@ -148,8 +148,8 @@ def table(rows, columns):
     return pd.DataFrame(rows, columns=columns)
 
 
-display(table([[k, p["rows"]["population"], p["rows"]["population_episodes"], p["rows"]["training"], p["updates"]]
-               for k, p in D["pools"].items()], ["Score pool", "Pool rows", "Pool episodes", "Training rows", "TD3+BC updates"]))"""),
+display(table([[k, p["dataset"], p["rows"]["population"], p["rows"]["population_episodes"], p["rows"]["training"], p["updates"]]
+               for k, p in D["pools"].items()], ["Score pool", "D4RL dataset", "Pool rows", "Pool episodes", "Training rows", "TD3+BC updates"]))"""),
 
 ("md", r"""**Terms.**
 
@@ -160,6 +160,80 @@ display(table([[k, p["rows"]["population"], p["rows"]["population_episodes"], p[
 | ρ, design effect | ρ is the correlation between misses in the same episode; the design effect 1 + (K − 1) ρ is how much that inflates a bank's variance. |
 | Normalized / raw | The score with and without BCA's learned scale σ(s, a). |
 | λ* | The true threshold that exactly 10% of test rows exceed. |"""),
+
+("md", r"""**Inside the score pools.** Each pool row is one held-out transition of a D4RL dataset. The pool stores the state
+and action (normalized with the training half's mean and SD), the frozen actor's action `pi`, the residual y − q, the
+scale σ and the score |y − q| / σ. The first cell below summarizes all seven pools and shows the first rows of each.
+The second rebuilds the full transitions (s, a, r, s′, done) from the D4RL files in `~/.d4rl/datasets`, checks that
+every pool row matches its raw row, and summarizes rewards and terminals.
+
+Two of the seven critics did not converge (DEPENDENCE.md, Change 12): pen-human's diverged and pen-cloned's mean Q
+lies above any value its rewards allow. Their scores are exact for those critics but describe no trained TD3+BC
+critic, which is why pen-human's residuals are about 10⁹. The Critic column is `host_matrix.critic_health`."""),
+("code", r"""import json
+
+from experiments.wbcp.host_matrix import critic_health
+
+
+def pool(k):
+    # obs and action are normalized with the training half's statistics
+    with np.load(ROOT / "runs" / D["pools"][k]["dir"] / "frozen.npz", allow_pickle=False) as z:
+        return {name: z[name] for name in z.files}
+
+
+def wide(prefix, a):
+    return {f"{prefix}{j}": a[:, j] for j in range(a.shape[1])}
+
+
+HEAD, rows, heads = 5, [], {}
+for k in D["pools"]:
+    P = pool(k)
+    length = np.bincount(P["episode"])
+    length = length[length > 0]
+    q50, q90, q99 = np.quantile(P["score"], [0.5, 0.9, 0.99])
+    health = critic_health(f"runs/{D['pools'][k]['dir']}", D["pools"][k]["key"])
+    rows.append([k, f"{health['status']} (Q {100 * health['q_growth_last_fifth']:+.0f}% over the last fifth)", P["obs"].shape[1],
+                 P["action"].shape[1], f"{np.median(length):.0f} [{length.min()}, {length.max()}]", round(q50, 3), round(q90, 3),
+                 round(q99, 3), f"{100 * np.mean(P['score'] <= 1):.1f}%", f"{P['residual'].mean():.4g}", f"{P['residual'].std():.4g}",
+                 f"{np.median(P['sigma']):.4g}"])
+    heads[k] = pd.DataFrame({**{c: P[c][:HEAD] for c in ("row", "episode", "timestep", "score", "residual", "sigma")},
+                             **wide("s", P["obs"][:HEAD]), **wide("a", P["action"][:HEAD]), **wide("pi", P["policy_action"][:HEAD])})
+del P
+display(Markdown("**The seven pools: shapes, episode lengths and score distribution**"))
+display(table(rows, ["Score pool", "Critic", "State dim", "Action dim", "Episode length, median [min, max]", "Score median",
+                     "Score 90% (λ* without shift)", "Score 99%", "Score ≤ 1", "Residual mean", "Residual SD", "σ median"]))
+with pd.option_context("display.max_columns", None):
+    for k, df in heads.items():
+        display(Markdown(f"**{k}: first {HEAD} pool rows** (normalized s and a; pi is the frozen actor's action)"))
+        display(df.round(3))"""),
+("code", r"""import h5py
+
+DATA = Path.home() / ".d4rl" / "datasets"
+summary = []
+with pd.option_context("display.max_columns", None):
+    for k, p in D["pools"].items():
+        meta = json.loads((ROOT / "runs" / p["dir"] / "frozen.json").read_text())
+        path = DATA / p["file"]
+        if not path.is_file() or path.stat().st_size != meta["dataset_file"]["size_bytes"]:
+            display(Markdown(f"**{k}:** `{path}` is missing or incomplete. Download `{p['file']}` (SHA-256 `{p['sha256']}`) to rebuild its transitions."))
+            continue
+        P = pool(k)
+        with h5py.File(path, "r") as f:
+            raw = {name: f[name][()] for name in ("observations", "actions", "rewards", "terminals", "timeouts")}
+        idx = np.flatnonzero(~raw["timeouts"][:-1].astype(bool))[P["row"]]  # conversion drops timeout rows and the last raw row
+        mean, std = (np.asarray(meta["obs_normalization"][name], np.float32) for name in ("obs_mean", "obs_std"))
+        assert np.allclose(P["obs"] * std + mean, raw["observations"][idx], atol=1e-4), f"{k}: pool rows do not match the D4RL file"
+        r, done = raw["rewards"][idx], raw["terminals"][idx].astype(bool)
+        summary.append([k, p["dataset"], round(float(r.mean()), 3), round(float(r.std()), 3), round(float(r.min()), 3),
+                        round(float(r.max()), 3), int(done.sum()), f"{100 * done.mean():.3f}%"])
+        h = idx[:HEAD]
+        display(Markdown(f"**{k}: first {HEAD} transitions** ({p['dataset']}; s and s′ as logged, not normalized)"))
+        display(pd.DataFrame({"row": P["row"][:HEAD], "episode": P["episode"][:HEAD], "t": P["timestep"][:HEAD],
+                              **wide("s", raw["observations"][h]), **wide("a", raw["actions"][h]), "r": r[:HEAD],
+                              **wide("s'", raw["observations"][h + 1]), "done": done[:HEAD], "score": P["score"][:HEAD]}).round(3))
+        del P, raw
+display(Markdown("**Rewards and terminals over each pool's rows** (raw D4RL rewards: the reward transform applies only to antmaze)"))
+display(table(summary, ["Score pool", "D4RL dataset", "Reward mean", "Reward SD", "Reward min", "Reward max", "Terminals", "Terminal share"]))"""),
 
 ("md", r"""## 2. Findings and prediction scorecard
 

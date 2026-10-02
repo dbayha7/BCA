@@ -126,11 +126,14 @@ def first_line(rel):
 def build():
     exps, blocks = experiments()
     pools = {}
-    for key, rel in (("hopper-medium", "wbcp_frozen/hopper-medium-v2-s202609171-u100000/frozen.json"),
-                     ("walker2d-medium-replay", "wbcp_frozen/walker2d-s202609171-u100000/frozen.json"),
-                     ("pen-cloned", "wbcp_frozen/pen-cloned-s202609171-u100000/frozen.json")):
-        meta = load(rel)
-        pools[key] = dict(rows=meta["rows"], updates=meta.get("updates"))
+    for label, key, name in (("halfcheetah-medium-expert", "halfcheetah", "halfcheetah"),
+                             ("hopper-medium", "hopper", "hopper-medium-v2"), ("maze2d-large", "maze2d", "maze2d"),
+                             ("pen-cloned", "pen-cloned", "pen-cloned"), ("pen-expert", "pen-expert", "pen-expert"),
+                             ("pen-human", "pen-human", "pen-human"), ("walker2d-medium-replay", "walker2d", "walker2d")):
+        rel = f"wbcp_frozen/{name}-s202609171-u100000"
+        meta = load(rel + "/frozen.json")
+        pools[label] = dict(key=key, rows=meta["rows"], updates=meta.get("updates"), dir=rel, dataset=meta["dataset"],
+                            file=meta["dataset_file"]["filename"], sha256=meta["dataset_file"]["sha256"])
     pred = {
         "hopper": predictions(f"{HOP}/predictions.json"),
         "hopper-spacing": predictions(f"{SPA}/predictions.json"),

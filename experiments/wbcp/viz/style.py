@@ -78,6 +78,29 @@ def figure(nrows=1, ncols=1, **kw):
     return plt.subplots(nrows, ncols, **kw)
 
 
+DECK_FIGSIZE = (16.64, 6.4)  # a slide's visual area under a one-line headline: 1664 x 640 px at 100 dpi
+DECK_BASE, DECK_TICK = 22, 20  # read from across a room: about 30 px on the slide
+
+
+def deck_figure(nrows=1, ncols=1, **kw):
+    """A single-message chart for the slides: one idea, big type, direct labels, no title (the slide has it)."""
+    setup()
+    matplotlib.rcParams.update({"font.size": DECK_BASE, "axes.labelsize": DECK_BASE, "xtick.labelsize": DECK_TICK,
+                                "ytick.labelsize": DECK_TICK, "legend.fontsize": DECK_TICK, "lines.linewidth": 4.0})
+    kw.setdefault("figsize", DECK_FIGSIZE)
+    kw.setdefault("constrained_layout", True)
+    return plt.subplots(nrows, ncols, **kw)
+
+
+def save_deck(fig, key):
+    """Write runs/wbcp_viz/deck/<key>.png at 200 dpi (3328 x 1280 for a full-size deck chart) and return its path."""
+    folder = OUT / "deck"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / f"{key}.png"
+    fig.savefig(path, dpi=200)
+    return path
+
+
 def panel_label(ax, text, x=0.0, y=1.02):
     """A short panel caption above an axis, e.g. 'a  Bootstrap CDFs'. The slide title carries the figure's title."""
     ax.text(x, y, text, transform=ax.transAxes, ha="left", va="bottom", fontsize=BASE, fontweight="semibold",

@@ -35,7 +35,7 @@ Last updated: 2026-10-02.
 | 8 | Critic health | Done | 7 of 28 critics flagged |
 | 9 | Critic alignment (TD3+BC) | Done; switch on hold | A min band misses Q1's error in 8–82% of banks |
 | 10 | Signal study, steps 1–3 | Done, audited | The dose acts as near-uniform extra BC |
-| 11 | Signal study, step 4 (placement) | Pilot analysed; G2 decision needed | The expert-data positive control has no power; the poor-data one does |
+| 11 | Signal study, step 4 (placement) | Main run computing (started 2026-10-02) | G2 moved to poor data (a pilot-informed amendment) |
 | 12 | Signal study, steps 5–6 | Not started | — |
 | 13 | Full D4RL training (return) | Not started; needs permission | No WBCP-era return evidence yet |
 
@@ -164,7 +164,7 @@ Last updated: 2026-10-02.
 - **Means:** through today's hook, a valid band reaches the actor almost as uniform extra BC.
 - **Where:** experiments/signal/SIGNAL_STUDY.md; runs/wbcp_signal.
 
-### 11. Signal study, step 4: where to apply the signal (pilot analysed; G2 decision needed)
+### 11. Signal study, step 4: where to apply the signal (main run computing)
 - **Why:** test whether any placement of the signal beats plain extra BC. The three placements are BC amplification,
   actor-Q trust and a critic-side bound. They are compared at matched policy displacement, against shuffled,
   stratified, reversed and nuisance controls.
@@ -186,11 +186,17 @@ Last updated: 2026-10-02.
   - The addendum was appended 2026-10-02T11:28:59Z; the pre-registration's sha256 is now bcbeff47….
 - **Means:** as registered, the decisive gate G2 (block C, expert data) will probably fail, and the pre-registration
   then says "stop and redesign". The pilot exists to catch exactly this before the main run.
-- **Next, the user's decision:**
-  - G2: (a) run as registered; (b) amend G2 to poor data (an amendment informed by the pilot); or (c) redesign the
-    positive control.
-  - The cone's κ set: {2, 3} under the rule as written.
-  - Main-run compute: about 18 process-hours (about 27 CPU-h), roughly 2 h of wall time at 12 processes in parallel.
+- **Decided by the user** (Addendum A part 3, appended 2026-10-02T11:37:12Z, before any main-run J; the
+  pre-registration's sha256 is now c86ed140…):
+  - **Amendment P, informed by the pilot:** G2 reads block C's poor-data cells. The expert version is reported as
+    G2_expert, descriptive only. G2 now certifies detection only where BC is harmful. The scorecard's sha256 is
+    625af396…, and its 24 tests pass.
+  - **Amendment Q:** the cone's κ set is {2, 3}. Stage 0 was rerun (sha256 5ff59adb…); every non-cone row and set is
+    identical.
+  - **Amendment R:** the full main run is approved. It is 120 processes, 12 at a time, about 2 h, output in
+    runs/wbcp_signal/step4/main. It started 11:37Z.
+- **Next:** J (score_values), the frozen scorecard, the s = 0.47 robustness run, then an independent audit of the
+  write-up.
 - **Where:** experiments/signal/STEP4_DESIGN.md; runs/wbcp_signal/step4/expectations.md (Addendum A part 2);
   experiments/signal/pilot_report.py; runs/wbcp_signal/step4/pilot_report.{json,md}.
 
@@ -204,7 +210,7 @@ Last updated: 2026-10-02.
   only.
 
 ## Decisions waiting on the user
-1. Step 4: the G2 decision (run as registered, amend G2 to poor data, or redesign), the cone's κ set, and the main-run compute from the clean timing.
+1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
 2. The TD3+BC Q1 switch: the pre-registered rule says now; it is on hold until step 4.
 3. The K rule: K from measured ρ per host × dataset, or test the n/D posterior correction.
 4. Importance weights: adopt them at all, and toward which target distribution?
@@ -249,4 +255,6 @@ Last updated: 2026-10-02.
   - advisor deck restructured to put the models first, add code snapshots, and lead through seven questions.
   - TD3+BC host matrix finished (all four hosts done);
   - step 4 pilot analysed, with retunes, a clean timing run and an audited Addendum A part 2. The expert-data positive
-    control has no power, and the G2 decision goes to the user.
+    control has no power, and the G2 decision goes to the user;
+  - the user's decisions recorded as amendments P–R, and the step 4 main run launched (11:37Z);
+  - the deck is being rebuilt to be visual-first, with charts and few words.
