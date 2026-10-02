@@ -47,10 +47,11 @@ class CommandTests(unittest.TestCase):
             self.assertEqual(argv[1], f"experiments/wbcp/{M.FREEZE[host]}")
             self.assertEqual(argv[argv.index("--output") + 1], target)
 
-    def test_td3_bc_keeps_existing_pool_names_and_others_are_prefixed(self):
+    def test_td3_bc_uses_its_min_q_pools_and_other_hosts_are_prefixed(self):
+        self.assertEqual(M.frozen_name("cql", "hopper"), "cql-hopper-s202609171-u100000")
         self.assertEqual(M.frozen_name("td3_bc", "hopper"), "hopper-medium-v2-s202609171-u100000")
         self.assertEqual(M.frozen_name("td3_bc", "pen-human"), "pen-human-s202609171-u100000")
-        self.assertEqual(M.frozen_name("cql", "hopper"), "cql-hopper-s202609171-u100000")
+        self.assertEqual(M.run_root("td3_bc"), "runs/wbcp_hosts/td3_bc")
 
     def test_predictions_cover_the_configured_k_with_both_samplers(self):
         (_, _, argv), = M.commands("td3_bc", "predict", ["walker2d"])

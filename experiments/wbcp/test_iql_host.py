@@ -299,7 +299,7 @@ class IQLWBCPSmoke(unittest.TestCase):
         self.assertEqual((meta["training_size"], meta["withheld_size"], meta["calibration_size"],
                           meta["dataset_rows"], meta["rows_per_episode"]),
                          (len(train), len(withheld), len(cal), n, k))
-        self.assertFalse(meta["dependence_validated"])  # 40 episodes, below the validated 100
+        self.assertNotIn("dependence_validated", meta)  # evidence lives in the resolved row (runtime/config.py)
         self.assertEqual(meta["withheld_indices_sha256"], self.m.P.fingerprint(withheld))
         plain = self.driver.D.plain
         self.assertEqual(self.driver.D.verify_data_partition(

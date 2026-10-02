@@ -1,0 +1,601 @@
+{
+ "schema": "bca-dependence-evidence-v1",
+ "generator": "experiments/wbcp/dependence_evidence.py",
+ "budget": 0.05,
+ "status_rule": "consistent with the 5% budget if the 95% interval's lower bound is at most 0.05; exceeds the 5% budget otherwise; not validated for this host/dataset/K without an entry matching host, dataset, K, n, sampler and score exactly; a configured bank is looked up with the score its host's BCA calibrates (calibration.bank.evidence_status, DEPLOYED_SCORE)",
+ "sources": [
+  "runs/wbcp_dependence/all-datasets/*_resv*.json",
+  "runs/wbcp_dependence/other-datasets/w_resv*.json",
+  "runs/wbcp_dependence/other-datasets/p_resv*.json",
+  "runs/wbcp_dependence/hopper-u100000-reservation/r*_*.json",
+  "runs/wbcp_hosts/cql/*_resv*.json",
+  "runs/wbcp_hosts/cql/superseded_pre_trim/*_resv*.json"
+ ],
+ "entries": [
+  {
+   "host": "cql",
+   "dataset": "hopper-medium-v2",
+   "config_dataset": "hopper",
+   "rows_per_episode": 6,
+   "size": 1024,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.05125,
+   "ci95": [
+    0.04462149034631429,
+    0.05854327697643355
+   ],
+   "failures": 205,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1026.0,
+    "min": 1026,
+    "max": 1026
+   },
+   "source": "runs/wbcp_hosts/cql/superseded_pre_trim/hopper_resv6.json",
+   "source_sha256": "dac6bcb40208216ab49d2b240ecab7d66683d6a8d3895b7a6e8e2dec55a2542b",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/cql-hopper-s202609171-u100000",
+   "pool_npz_sha256": "b06163a132540a971b4ebca308a433b487887f3829085e8e297862240350407a",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 92.30500773620605,
+    "q_pool_mean": 91.93831231098973,
+    "q_bounds": [
+     20.669460869001867,
+     223.7911518241056
+    ],
+    "q_growth_last_fifth": 0.04113506367337201,
+    "loss_ratio": 1.01237594217823
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,026 rows against n = 1,024. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "halfcheetah-medium-expert-v2",
+   "config_dataset": "halfcheetah",
+   "rows_per_episode": 6,
+   "size": 1024,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.05325,
+   "ci95": [
+    0.046495317224661735,
+    0.060666212384620805
+   ],
+   "failures": 213,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1026.0,
+    "min": 1026,
+    "max": 1026
+   },
+   "source": "runs/wbcp_dependence/all-datasets/halfcheetah_resv6.json",
+   "source_sha256": "ec3bf138fed9e11c2f44732419077d18c3fd93c8400d3fb6041d3ef563155332",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/halfcheetah-s202609171-u100000",
+   "pool_npz_sha256": "65945905aa9d7604288f4a7deb45854c31d1beada0f0a3c9ab7a9ffdbe6321cc",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 808.9934969482422,
+    "q_pool_mean": 794.401102272469,
+    "q_bounds": [
+     -301.34999999999974,
+     1385.4599999999987
+    ],
+    "q_growth_last_fifth": 0.037797464575505875,
+    "loss_ratio": 219.01933525447245
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,026 rows against n = 1,024. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "halfcheetah-medium-expert-v2",
+   "config_dataset": "halfcheetah",
+   "rows_per_episode": 17,
+   "size": 8192,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.06275,
+   "ci95": [
+    0.0554311777796728,
+    0.07071519003789305
+   ],
+   "failures": 251,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 8194.0,
+    "min": 8194,
+    "max": 8194
+   },
+   "source": "runs/wbcp_dependence/all-datasets/halfcheetah_resv17_big.json",
+   "source_sha256": "5abf92c0147ebd2d3269d8e341e0b7a2e05b107bc74c1807b8b501c1748c362e",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/halfcheetah-s202609171-u100000",
+   "pool_npz_sha256": "65945905aa9d7604288f4a7deb45854c31d1beada0f0a3c9ab7a9ffdbe6321cc",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 808.9934969482422,
+    "q_pool_mean": 794.401102272469,
+    "q_bounds": [
+     -301.34999999999974,
+     1385.4599999999987
+    ],
+    "q_growth_last_fifth": 0.037797464575505875,
+    "loss_ratio": 219.01933525447245
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 8,194 rows against n = 8,192. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "hopper-medium-v2",
+   "config_dataset": "hopper",
+   "rows_per_episode": 5,
+   "size": 1103,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.051,
+   "ci95": [
+    0.04438746215199902,
+    0.05827771121264318
+   ],
+   "failures": 204,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1105.0,
+    "min": 1105,
+    "max": 1105
+   },
+   "source": "runs/wbcp_dependence/hopper-u100000-reservation/r1_resv_k5.json",
+   "source_sha256": "a1baa9fad5f2715a9343b3c47aa827a3af49f012bc6157fe7963a7d940814f8d",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/hopper-medium-v2-s202609171-u100000",
+   "pool_npz_sha256": "673360c1d6873c458a3b9be85108b32ac24d677c91695191ae9093ebdd7ea0aa",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 227.63805810546876,
+    "q_pool_mean": 227.46289132388424,
+    "q_bounds": [
+     54.899999999999956,
+     594.4099999999994
+    ],
+    "q_growth_last_fifth": 0.022753150007694147,
+    "loss_ratio": 13.435246512519896
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,105 rows against n = 1,103. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "hopper-medium-v2",
+   "config_dataset": "hopper",
+   "rows_per_episode": 18,
+   "size": 8192,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.05025,
+   "ci95": [
+    0.04368565190761678,
+    0.057480741441779226
+   ],
+   "failures": 201,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 8208.0,
+    "min": 8208,
+    "max": 8208
+   },
+   "source": "runs/wbcp_dependence/hopper-u100000-reservation/r3_resv_k18_n8192.json",
+   "source_sha256": "aab87583b431487aec0972342334a300aa109f89965e7feb5490097de944d9f0",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/hopper-medium-v2-s202609171-u100000",
+   "pool_npz_sha256": "673360c1d6873c458a3b9be85108b32ac24d677c91695191ae9093ebdd7ea0aa",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 227.63805810546876,
+    "q_pool_mean": 227.46289132388424,
+    "q_bounds": [
+     54.899999999999956,
+     594.4099999999994
+    ],
+    "q_growth_last_fifth": 0.022753150007694147,
+    "loss_ratio": 13.435246512519896
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 8,208 rows against n = 8,192. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "maze2d-large-v1",
+   "config_dataset": "maze2d",
+   "rows_per_episode": 5,
+   "size": 1024,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.0645,
+   "ci95": [
+    0.057082949292380475,
+    0.07256065799973566
+   ],
+   "failures": 258,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1025.0,
+    "min": 1025,
+    "max": 1025
+   },
+   "source": "runs/wbcp_dependence/all-datasets/maze2d_resv5.json",
+   "source_sha256": "75436de6f0ae88eabe258ff75da09ced33fa6773857d93cb90c5a1fc8ff598c3",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/maze2d-s202609171-u100000",
+   "pool_npz_sha256": "fb91dc26aac8d09f9ad4c298786d21eebd2549498f78e32cb6b9799bf85dde26",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 8.470146847724914,
+    "q_pool_mean": 8.421106929742194,
+    "q_bounds": [
+     0.0,
+     99.99999999999991
+    ],
+    "q_growth_last_fifth": 0.07445530767567576,
+    "loss_ratio": 42.0625931412167
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,025 rows against n = 1,024. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "maze2d-large-v1",
+   "config_dataset": "maze2d",
+   "rows_per_episode": 5,
+   "size": 8192,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.06575,
+   "ci95": [
+    0.058263770333714306,
+    0.07387787035755354
+   ],
+   "failures": 263,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 8195.0,
+    "min": 8195,
+    "max": 8195
+   },
+   "source": "runs/wbcp_dependence/all-datasets/maze2d_resv5_big.json",
+   "source_sha256": "99667ffaed7c95f780f92a65c01d941c3a9ed9d2a03c16724e3c9b0f69735485",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/maze2d-s202609171-u100000",
+   "pool_npz_sha256": "fb91dc26aac8d09f9ad4c298786d21eebd2549498f78e32cb6b9799bf85dde26",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 8.470146847724914,
+    "q_pool_mean": 8.421106929742194,
+    "q_bounds": [
+     0.0,
+     99.99999999999991
+    ],
+    "q_growth_last_fifth": 0.07445530767567576,
+    "loss_ratio": 42.0625931412167
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 8,195 rows against n = 8,192. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "pen-cloned-v1",
+   "config_dataset": "pen-cloned",
+   "rows_per_episode": 5,
+   "size": 1024,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.06275,
+   "ci95": [
+    0.0554311777796728,
+    0.07071519003789305
+   ],
+   "failures": 251,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1025.0,
+    "min": 1025,
+    "max": 1025
+   },
+   "source": "runs/wbcp_dependence/other-datasets/p_resv5_n1024.json",
+   "source_sha256": "89386fb01dc1536efa1d9af6c4367ffab0a296071e4b88ba5e3c3a82fd396668",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/pen-cloned-s202609171-u100000",
+   "pool_npz_sha256": "0bf12bc68fc5672570715721a5b2cb39106a90da69234cfdb1a1567ed08d8b1c",
+   "critic_health": {
+    "status": "Q outside its possible range",
+    "q_final": 9160.808783203125,
+    "q_pool_mean": 8979.295812487659,
+    "q_bounds": [
+     -622.5599999999995,
+     6098.049999999995
+    ],
+    "q_growth_last_fifth": 0.456956921310648,
+    "loss_ratio": 145.91572259157917
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,025 rows against n = 1,024. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "pen-cloned-v1",
+   "config_dataset": "pen-cloned",
+   "rows_per_episode": 11,
+   "size": 8192,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.09475,
+   "ci95": [
+    0.08584751114411493,
+    0.1042493681591657
+   ],
+   "failures": 379,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 8195.0,
+    "min": 8195,
+    "max": 8195
+   },
+   "source": "runs/wbcp_dependence/other-datasets/p_resv11_n8192.json",
+   "source_sha256": "3bf6984e56c2b7170b106d2a4a471ca5a0b2d1c21c415ad060eb5ad974854537",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/pen-cloned-s202609171-u100000",
+   "pool_npz_sha256": "0bf12bc68fc5672570715721a5b2cb39106a90da69234cfdb1a1567ed08d8b1c",
+   "critic_health": {
+    "status": "Q outside its possible range",
+    "q_final": 9160.808783203125,
+    "q_pool_mean": 8979.295812487659,
+    "q_bounds": [
+     -622.5599999999995,
+     6098.049999999995
+    ],
+    "q_growth_last_fifth": 0.456956921310648,
+    "loss_ratio": 145.91572259157917
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 8,195 rows against n = 8,192. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "pen-expert-v1",
+   "config_dataset": "pen-expert",
+   "rows_per_episode": 5,
+   "size": 1024,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.0545,
+   "ci95": [
+    0.04766785990843412,
+    0.06199165521346915
+   ],
+   "failures": 218,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1025.0,
+    "min": 1025,
+    "max": 1025
+   },
+   "source": "runs/wbcp_dependence/all-datasets/penexpert_resv5.json",
+   "source_sha256": "0299e20efd63b0559a0f64feaeea6aeb146dfdee4a2ab3517a44a19a17a2be3e",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/pen-expert-s202609171-u100000",
+   "pool_npz_sha256": "bdc5ee32d7a6ef2afbb69db55b3ce10c82505264a374bec83b4d12f2566f7e64",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 5041.30594921875,
+    "q_pool_mean": 4970.629973661322,
+    "q_bounds": [
+     -623.3999999999994,
+     6099.469999999995
+    ],
+    "q_growth_last_fifth": 0.014024639714418818,
+    "loss_ratio": 28.878633530995614
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,025 rows against n = 1,024. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "pen-expert-v1",
+   "config_dataset": "pen-expert",
+   "rows_per_episode": 7,
+   "size": 8192,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.05275,
+   "ci95": [
+    0.04602659783384374,
+    0.060135739481240624
+   ],
+   "failures": 211,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 8197.0,
+    "min": 8197,
+    "max": 8197
+   },
+   "source": "runs/wbcp_dependence/all-datasets/penexpert_resv7_big.json",
+   "source_sha256": "9fd3764d62b6d6cb033ce14154029319cd408c809b2b7f8715075b0559873e81",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/pen-expert-s202609171-u100000",
+   "pool_npz_sha256": "bdc5ee32d7a6ef2afbb69db55b3ce10c82505264a374bec83b4d12f2566f7e64",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 5041.30594921875,
+    "q_pool_mean": 4970.629973661322,
+    "q_bounds": [
+     -623.3999999999994,
+     6099.469999999995
+    ],
+    "q_growth_last_fifth": 0.014024639714418818,
+    "loss_ratio": 28.878633530995614
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 8,197 rows against n = 8,192. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "pen-human-v1",
+   "config_dataset": "pen-human",
+   "rows_per_episode": 124,
+   "size": 248,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.3325,
+   "ci95": [
+    0.31790218087498207,
+    0.34734287066515124
+   ],
+   "failures": 1330,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 248.0,
+    "min": 248,
+    "max": 248
+   },
+   "source": "runs/wbcp_dependence/all-datasets/penhuman_resv124.json",
+   "source_sha256": "c6ac2380356361c167075cdc9970be312e16d796c2aa80b07667886ffc78fad4",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/pen-human-s202609171-u100000",
+   "pool_npz_sha256": "ebc46f03643472a38e07e58dc9f25ce7c23152878d64662bddacdbd1fbedc49c",
+   "critic_health": {
+    "status": "diverged",
+    "q_final": 15468284907.52,
+    "q_pool_mean": 13103523294.35485,
+    "q_bounds": [
+     -85.61999999999992,
+     6096.459999999995
+    ],
+    "q_growth_last_fifth": 1.1346464300728676,
+    "loss_ratio": 3.575166320862558e+17
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01). No bank exceeded n rows, so the trim never fires on this design and a rerun reproduces it bit for bit."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "pen-human-v1",
+   "config_dataset": "pen-human",
+   "rows_per_episode": 199,
+   "size": 1194,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.2975,
+   "ci95": [
+    0.2833598806713426,
+    0.31193647622441656
+   ],
+   "failures": 1190,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1194.0,
+    "min": 1194,
+    "max": 1194
+   },
+   "source": "runs/wbcp_dependence/all-datasets/penhuman_resv199_big.json",
+   "source_sha256": "ba7eb3a4c368f5070be4507c0b6eaa413e12e2dbd991d95db8e1edb9de4b6404",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/pen-human-s202609171-u100000",
+   "pool_npz_sha256": "ebc46f03643472a38e07e58dc9f25ce7c23152878d64662bddacdbd1fbedc49c",
+   "critic_health": {
+    "status": "diverged",
+    "q_final": 15468284907.52,
+    "q_pool_mean": 13103523294.35485,
+    "q_bounds": [
+     -85.61999999999992,
+     6096.459999999995
+    ],
+    "q_growth_last_fifth": 1.1346464300728676,
+    "loss_ratio": 3.575166320862558e+17
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01). No bank exceeded n rows, so the trim never fires on this design and a rerun reproduces it bit for bit."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "walker2d-medium-replay-v2",
+   "config_dataset": "walker2d",
+   "rows_per_episode": 23,
+   "size": 1024,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.1765,
+   "ci95": [
+    0.1647998566105163,
+    0.18867466150675952
+   ],
+   "failures": 706,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 1033.25475,
+    "min": 1002,
+    "max": 1035
+   },
+   "source": "runs/wbcp_dependence/other-datasets/w_resv23_n1024.json",
+   "source_sha256": "2117ef62de77d7e6afabee35dc1e4c73aadd058dfabb8e0438502ffcb67e203a",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/walker2d-s202609171-u100000",
+   "pool_npz_sha256": "8defd5d63ab11f0905d223d43f9a6108dd53b2b2dd4496a58752d05f9b17f83f",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 191.66660150146484,
+    "q_pool_mean": 187.30426072828465,
+    "q_bounds": [
+     -471.30999999999955,
+     855.3099999999993
+    ],
+    "q_growth_last_fifth": 0.016339221542810537,
+    "loss_ratio": 102.62200980660894
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 1,002-1,035 rows (mean 1,033.3) against n = 1,024. The trim now removes the surplus at random; rerun to confirm."
+  },
+  {
+   "host": "td3_bc",
+   "dataset": "walker2d-medium-replay-v2",
+   "config_dataset": "walker2d",
+   "rows_per_episode": 67,
+   "size": 8192,
+   "sampler": "reservation",
+   "score": "min(Q1,Q2) residual / sigma, normalized",
+   "uniform_bca_failure": 0.234,
+   "ci95": [
+    0.2209528434417347,
+    0.2474368008748922
+   ],
+   "failures": 936,
+   "trials": 4000,
+   "bank_rows": {
+    "mean": 8176.1915,
+    "min": 7888,
+    "max": 8241
+   },
+   "source": "runs/wbcp_dependence/other-datasets/w_resv67_n8192.json",
+   "source_sha256": "adf83c8b5be320b0c53393fa50a3ef0f3a6975ca20a78f6d41feb89bb696bf6a",
+   "benchmark_seed": 2026093001,
+   "pool": "runs/wbcp_frozen/walker2d-s202609171-u100000",
+   "pool_npz_sha256": "8defd5d63ab11f0905d223d43f9a6108dd53b2b2dd4496a58752d05f9b17f83f",
+   "critic_health": {
+    "status": "ok",
+    "q_final": 191.66660150146484,
+    "q_pool_mean": 187.30426072828465,
+    "q_bounds": [
+     -471.30999999999955,
+     855.3099999999993
+    ],
+    "q_growth_last_fifth": 0.016339221542810537,
+    "loss_ratio": 102.62200980660894
+   },
+   "bank_trim": null,
+   "note": "Measured before the remainder trim (2026-10-01): these banks held 7,888-8,241 rows (mean 8,176.2) against n = 8,192. The trim now removes the surplus at random; rerun to confirm."
+  }
+ ]
+}

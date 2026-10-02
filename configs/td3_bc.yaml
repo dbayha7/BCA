@@ -26,6 +26,8 @@ reservation:
   # rows_per_episode (per dataset): K calibration rows from each withheld episode; the
   # smallest K >= 5 that keeps withheld rows within max_fraction for 1,000 simulated seeds
   # (experiments/wbcp/choose_rows_per_episode.py; DEPENDENCE.md, Change 9).
+  # Whether a bank meets the 5% budget is measured per host, dataset, K, n and score: see
+  # dependence_evidence in the resolved bca row (calibration/dependence_evidence.json).
   seed: 911
   max_fraction: 0.1
 datasets:
@@ -86,7 +88,7 @@ datasets:
       filename: pen-human-v1.hdf5
     reservation:
       size: 248
-      rows_per_episode: 124  # outside the validated range (DEPENDENCE.md, Change 9)
+      rows_per_episode: 124  # budget status: dependence_evidence in the resolved bca row
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 100
   walker2d:
@@ -96,6 +98,6 @@ datasets:
       filename: walker2d_medium_replay-v2.hdf5
     reservation:
       size: 1024
-      rows_per_episode: 23  # outside the validated range (DEPENDENCE.md, Change 9)
+      rows_per_episode: 23  # budget status: dependence_evidence in the resolved bca row
     refresh_banks: [refresh_seed_1, refresh_seed_2, refresh_seed_3, refresh_seed_4, refresh_seed_5]
     max_episode_steps: 1000

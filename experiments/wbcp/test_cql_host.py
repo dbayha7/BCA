@@ -326,7 +326,7 @@ class RuntimeTests(unittest.TestCase):
             np.testing.assert_array_equal(recorded, expected)
         self.assertEqual(m["reservation"], again[3])
         self.assertEqual(m["reservation"]["rows_per_episode"], protocol.calibration_rows_per_episode)
-        self.assertFalse(m["reservation"]["dependence_validated"])  # 4 episodes, below the validated 100
+        self.assertNotIn("dependence_validated", m["reservation"])  # evidence lives in the resolved row
 
     def test_prepare_and_run_journal_the_wbcp_refresh(self):
         tiny = dict(num_updates=4, eval_interval=4, eval_workers=1, eval_final_episodes=1)

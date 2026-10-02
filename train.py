@@ -11,7 +11,7 @@ import sys
 import traceback
 
 ROOT = Path(__file__).resolve().parent
-from runtime.config import read_config, resolve, typed
+from runtime.config import bank_evidence, read_config, resolve, typed
 from runtime.provenance import sha, source_files, source_identity, write
 
 
@@ -313,6 +313,8 @@ def main(argv=None):
     with guard:
         output.mkdir(parents=True, exist_ok=False)
         write(output / "resolved.json", row)
+        if row["method"] == "bca":
+            write(output / "dependence_evidence.json", bank_evidence(config_path, opt.dataset))
         write(output / "source.json", source_identity())
         inventory = source_files()
         for name, digest in inventory.items():

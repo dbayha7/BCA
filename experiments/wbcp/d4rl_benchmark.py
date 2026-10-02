@@ -59,12 +59,16 @@ is keyed by (--seed, stage, n, trial, tilt, gamma, score), so a block's numbers 
 not depend on the rest of the sweep or on --workers. --blocks draws whole episodes,
 uniformly with replacement, until at least n rows: a dependence stress test, under
 which exchangeability holds between episodes only. --per-episode K draws ceil(n/K)
-episodes with probability proportional to length and K rows inside each (a thinned
-bank); --spacing stratified takes one row from each of K equal segments of the episode,
-so the rows sit about L/K steps apart; --spacing reservation runs BCA's own reservation
-sampler (calibration/bank.py: distinct episodes with inclusion probability exactly
-proportional to length, stratified rows, ceil(n/K) K rows). Every mode keeps each pool row's expected count
-equal, so the modes differ only in within-bank dependence.
+episodes with probability proportional to length and K rows inside each, then keeps a
+uniformly random n of those rows (a thinned bank); --spacing stratified takes one row
+from each of K equal segments of the episode, so the rows sit about L/K steps apart;
+--spacing reservation runs BCA's own reservation sampler (calibration/bank.py: distinct
+episodes with inclusion probability exactly proportional to length, stratified rows, the
+surplus over n removed at random). Every mode keeps each pool row's expected count equal,
+so the modes differ only in within-bank dependence. Each result records this sampler
+revision as bank_trim (calibration.bank.REMAINDER_TRIM); a result without it was drawn
+before the remainder trim (2026-10-01), when per-episode banks lost the last draw's final
+rows ('random', 'stratified') or kept the surplus ('reservation').
 
 python experiments/wbcp/d4rl_benchmark.py --frozen runs/wbcp_frozen/hopper_medium \
     --tilt policy density state --gamma 0 0.5 1 --n 1103 --trials 1000 --score both \
@@ -88,7 +92,7 @@ from scipy import special, stats
 from scipy.spatial import cKDTree
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from calibration.bank import stratified_bank  # noqa: E402
+from calibration.bank import REMAINDER_TRIM, stratified_bank  # noqa: E402
 from calibration.wbcp import calibrate  # noqa: E402
 from experiments.wbcp.reproduce_table1 import rcps_index, weighted_crc  # noqa: E402
 
@@ -330,14 +334,17 @@ def episode_groups(episode, timestep):
 def draw_calibration(rng, n, size, groups=None, per_episode=None, spacing="random"):
     """Scored calibration rows: n iid uniform pool rows; whole episodes (uniform, with
     replacement) until at least n rows; or, with per_episode=K, ceil(n/K) episode draws with
-    probability proportional to length and K rows inside each, truncated to n. The K rows are
-    uniform over the episode (spacing 'random') or one uniform row in each of K equal
-    segments (spacing 'stratified', so rows sit about L/K steps apart). Spacing
-    'reservation' is BCA's sampler (calibration/bank.py): ceil(n/K) distinct episodes with
-    inclusion probability exactly proportional to length, one row per K segments, not
-    truncated. In every mode each pool row has the same expected count (in 'reservation',
-    rows of episodes shorter than K excepted), so the modes differ only in how strongly the
-    calibration rows depend on each other."""
+    probability proportional to length and K rows inside each. The K rows are uniform over
+    the episode (spacing 'random') or one uniform row in each of K equal segments (spacing
+    'stratified', so rows sit about L/K steps apart). When K does not divide n, a uniformly
+    random n of the K ceil(n/K) drawn rows are kept, in draw order (one more draw from rng;
+    none when K divides n). Cutting the last draw's final slots instead would under-sample
+    late timesteps. Spacing 'reservation' is BCA's sampler (calibration/bank.py): ceil(n/K)
+    distinct episodes with inclusion probability exactly proportional to length, one row per
+    K segments, the surplus over n removed uniformly at random. In every mode each pool row
+    has the same expected count (in 'reservation', only when no reserved episode is shorter
+    than K), so the modes differ only in how strongly the calibration rows depend on each
+    other."""
     if groups is None:
         return rng.integers(size, size=n)
     order, starts, lengths = groups
@@ -353,7 +360,8 @@ def draw_calibration(rng, n, size, groups=None, per_episode=None, spacing="rando
         elif spacing != "random":
             raise ValueError(f"unknown spacing {spacing!r}")
         offsets = np.minimum((position * lengths[episodes, None]).astype(np.int64), lengths[episodes, None] - 1)
-        return order[starts[episodes, None] + offsets].ravel()[:n]
+        rows = order[starts[episodes, None] + offsets].ravel()
+        return rows if rows.size == n else rows[np.sort(rng.choice(rows.size, n, replace=False))]
     chosen, total = [], 0
     while total < n:
         episode = int(rng.integers(len(starts)))
@@ -579,7 +587,7 @@ def run(args):
         blocks.extend(summarize(setup, n, sizes, thresholds, diagnostics))
     pool = setup.pool
     return dict(
-        settings=vars(args), frozen=pool.metadata,
+        settings=vars(args), bank_trim=REMAINDER_TRIM, frozen=pool.metadata,
         population=dict(rule=pool.population, rows=pool.size, artifact_rows=pool.artifact_rows,
                         episodes=int(np.unique(pool.episode).size)),
         lambda_star_uniform=uniform, tilts=describe_tilts(setup), blocks=blocks, timings=timings,
@@ -638,7 +646,8 @@ def parse_args(argv=None):
                         help="density tilt feature: log k-NN distance (default) or the raw distance")
     parser.add_argument("--blocks", action="store_true", help="draw whole episodes (dependence stress test)")
     parser.add_argument("--per-episode", type=int, default=None, metavar="K",
-                        help="thinned bank: ceil(n/K) length-proportional episode draws, K rows each")
+                        help="thinned bank: ceil(n/K) length-proportional episode draws, K rows each, "
+                             "a uniformly random n of them kept")
     parser.add_argument("--spacing", choices=("random", "stratified", "reservation"), default="random",
                         help="with --per-episode: rows uniform in the episode, one per K equal segments, "
                              "or BCA's reservation sampler (distinct episodes, stratified rows)")

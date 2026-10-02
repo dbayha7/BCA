@@ -503,9 +503,16 @@ state = state._replace(actor=S.actor_at(actors, representative))
 **Dataset boundary.** Before learning, reservation withholds whole blocks (episodes or
 effective raw-dependency components), chosen with probability proportional to length,
 and keeps K = `rows_per_episode` rows of each, one per K equal segments, as the
-calibration bank. Whole blocks as the bank make the posterior overconfident, because
-rows of one block are correlated (experiments/wbcp/DEPENDENCE.md). Both active `host`
-and `bca` methods train on the same complement of the withheld blocks and share the
+calibration bank. When K does not divide the target n, the K ceil(n/K) drawn rows are
+cut to n by removing the surplus uniformly at random, unless episodes shorter than K
+leave fewer; every withheld block still leaves training. Whole blocks as the bank make
+the posterior overconfident, because rows of one block are correlated
+(experiments/wbcp/DEPENDENCE.md). Whether a configured bank stays within the 5% budget
+is measured per host, dataset, K, n and score: each resolved `bca` row carries
+`dependence_evidence` for the score its host's BCA calibrates (`DEPLOYED_SCORE`),
+looked up in `calibration/dependence_evidence.json`, and "not validated" when no run
+matches. Both
+active `host` and `bca` methods train on the same complement of the withheld blocks and share the
 same host preprocessing. Thus reservation is part of the paired experimental protocol,
 not a hidden BCA-only reduction in data. Withheld rows are excluded from scale gradient
 fitting as well as host gradient updates; the bank rows are the only rows a refresh
@@ -554,9 +561,9 @@ ceil(credibility·M) of them. The gate requires that failure to have probability
 most 1e-6, which at the declared 0.1 / 0.95 / 1000 means n ≥ 36. The `host` arm
 has no gate.
 
-[calibration/reference.py, lines 123–135](calibration/reference.py#L123-L135)
+[calibration/reference.py, lines 124–136](calibration/reference.py#L124-L136)
 
-<!-- source: calibration/reference.py:123:135 -->
+<!-- source: calibration/reference.py:124:136 -->
 ```python
 def certifiable(n, config, tolerance=1e-6):
     """Whether a uniform-weight bank of n held-out scores certifies a finite threshold.
@@ -595,8 +602,9 @@ if calibration_size is not None and not POST.certifiable(
 | ReBRAC data preparation | [`prepare`](runtime/rebrac.py#L549), [bank-size gate](runtime/rebrac.py#L558) |
 | CQL data preparation | [`prepare`](runtime/cql.py#L355), [bank-size gate](runtime/cql.py#L381) |
 | IQL data preparation | [`prepare_dataset`](calibration/iql_reference.py#L263), [bank-size gate](calibration/iql_reference.py#L295) |
-| Thinned reservation primitive | [`reserve_calibration`](calibration/reference.py#L49), [`stratified_bank`](calibration/bank.py#L21) |
-| Certifiability of a uniform-weight bank | [`certifiable`](calibration/reference.py#L123) |
+| Thinned reservation primitive | [`reserve_calibration`](calibration/reference.py#L49), [`stratified_bank`](calibration/bank.py#L45) |
+| Dependence evidence of a configured bank | [`dependence_evidence`](calibration/bank.py#L128), [`evidence_status`](calibration/bank.py#L105), [`DEPLOYED_SCORE`](calibration/bank.py#L38), [`resolve`](runtime/config.py#L81) |
+| Certifiability of a uniform-weight bank | [`certifiable`](calibration/reference.py#L124) |
 
 **Initialization boundary.** BCA reuses the host initialization and adds a
 separate calibrator optimizer, a residual unit of one and a not-ready frozen
@@ -695,9 +703,9 @@ return SharedPairCarry(
 thresholds, unit one, `n_eff` zero and `ready` false. Until the first refresh the
 hosts keep their native weighting (see the width boundary below).
 
-[calibration/reference.py, lines 138–144](calibration/reference.py#L138-L144)
+[calibration/reference.py, lines 139–145](calibration/reference.py#L139-L145)
 
-<!-- source: calibration/reference.py:138:144 -->
+<!-- source: calibration/reference.py:139:145 -->
 ```python
 def initial_reference(cal_params):
     """Not ready: hosts keep their native weighting until the first refresh."""
@@ -1040,9 +1048,9 @@ producing a threshold, and calls WBCP without weights. It stores the threshold
 and both of its components as float32, and refuses a finite threshold that would
 overflow when stored.
 
-[calibration/reference.py, lines 163–187](calibration/reference.py#L163-L187)
+[calibration/reference.py, lines 164–188](calibration/reference.py#L164-L188)
 
-<!-- source: calibration/reference.py:163:187 -->
+<!-- source: calibration/reference.py:164:188 -->
 ```python
 scale = np.asarray(positive_scale(predictions, residual_scale), np.float64)
 residuals = np.asarray(residuals, np.float64)
@@ -1221,7 +1229,7 @@ return jax.tree_util.tree_map(jax.lax.stop_gradient, result)
 
 | Component | Exact function entry points |
 |---|---|
-| Frozen reference | [`WBCPConfig`](calibration/reference.py#L17), [`FrozenReference`](calibration/reference.py#L31), [`initial_reference`](calibration/reference.py#L138), [`positive_scale`](calibration/reference.py#L147), [`freeze_reference`](calibration/reference.py#L151), [`reference_valid`](calibration/reference.py#L200) |
+| Frozen reference | [`WBCPConfig`](calibration/reference.py#L17), [`FrozenReference`](calibration/reference.py#L31), [`initial_reference`](calibration/reference.py#L139), [`positive_scale`](calibration/reference.py#L148), [`freeze_reference`](calibration/reference.py#L152), [`reference_valid`](calibration/reference.py#L201) |
 | WBCP threshold | [`calibrate`](calibration/wbcp.py#L57), [`crossings`](calibration/wbcp.py#L43) |
 | BC/CQL frozen width and detached dose | [`frozen_level_dose`](calibration/dose.py#L65), [`level_critic_dose`](calibration/dose.py#L23) |
 | IQL frozen width/weight | [`posterior_width`](calibration/iql_reference.py#L157), [`weights_at_reference`](calibration/iql_reference.py#L174) |

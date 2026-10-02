@@ -4,6 +4,7 @@ from copy import deepcopy
 from functools import lru_cache
 from pathlib import Path
 import yaml
+from calibration.bank import DEPLOYED_SCORE, dependence_evidence
 
 ROOT = Path(__file__).resolve().parents[1]
 METHODS = ("host", "bca")
@@ -75,6 +76,19 @@ def schedule(spec):
             episode_seeds=list(range(first, first + spec["final_episodes"])),
         )
     ]
+
+
+def bank_evidence(path, dataset):
+    """Measured dependence evidence for a config's configured bank, or "not validated" when no
+    benchmark run matches host, dataset, K, n and the score the host's BCA calibrates
+    (calibration/bank.py, DEPLOYED_SCORE). It is kept out of the resolved row on purpose: it
+    describes validation, not the run, so regenerating the registry must not change a run's
+    identity (matrix_sha256). train.py writes it next to resolved.json for every bca run."""
+    config = read_config(path)
+    data = config["datasets"][dataset]
+    reservation = merge(config["reservation"], data.get("reservation", {}))
+    return dependence_evidence(config["algorithm"], data["environment"], reservation["rows_per_episode"],
+                               reservation["size"], score=DEPLOYED_SCORE[config["algorithm"]])
 
 
 def resolve(path, method, seed, output_dir, dataset=None):

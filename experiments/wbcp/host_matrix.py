@@ -46,8 +46,7 @@ PYTHON = "/opt/bca-venv/bin/python"
 
 
 def run_root(host):
-    # TD3+BC's matrix extends the seven-dataset run of DEPENDENCE.md (Change 12) in place
-    return "runs/wbcp_dependence/all-datasets" if host == "td3_bc" else f"runs/wbcp_hosts/{host}"
+    return f"runs/wbcp_hosts/{host}"
 
 
 def prefix(dataset):
@@ -55,7 +54,10 @@ def prefix(dataset):
 
 
 def frozen_name(host, dataset):
-    if host == "td3_bc":  # the pools made before this matrix existed keep their names
+    # TD3+BC's pools calibrate min(Q1, Q2), what BCA deploys today; they were built before this matrix existed and
+    # keep their names. Whether TD3+BC should calibrate Q1 instead waits on the signal study's step 4
+    # (experiments/signal/SIGNAL_STUDY.md); a Q1 matrix would get its own pools and root.
+    if host == "td3_bc":
         return ("hopper-medium-v2" if dataset == "hopper" else dataset) + f"-s{SEED}-u{UPDATES}"
     return f"{host}-{dataset}-s{SEED}-u{UPDATES}"
 
@@ -94,7 +96,7 @@ def designs(host, dataset):
 
 
 def prediction_name(host, dataset):
-    return f"predictions_{prefix(dataset)}" + ("_small" if host == "td3_bc" else "")
+    return f"predictions_{prefix(dataset)}"
 
 
 def prediction_args(host, dataset):
@@ -254,7 +256,7 @@ def critic_health(pool_dir, dataset=None):
     def series(*keys):
         return next(([b[k] for b in blocks] for k in keys if blocks and k in blocks[0]), None)
 
-    q, loss = series("q_mean", "average_qf1"), series("critic_loss", "qf_loss", "q_loss")
+    q, loss = series("q_mean", "average_qf1", "q_min"), series("critic_loss", "qf_loss", "q_loss")
     cut = len(blocks) - max(1, len(blocks) // 5)
     growth = None if q is None else (q[-1] - q[cut]) / max(abs(q[cut]), 1e-12)
     # CQL's qf_loss includes its conservative penalty and can be negative; a ratio is meaningful only for a positive loss

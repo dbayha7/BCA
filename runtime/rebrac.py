@@ -595,7 +595,7 @@ def prepare(
     _finite((cm, cs), "calibrator-only fixed statistics")
     settings = _settings(args, specification, protocol)
     metadata = dict(
-        schema="native-rebrac-prepared-v3",
+        schema="native-rebrac-prepared-v4",
         settings=settings,
         settings_sha256=_digest(settings),
         execution=_execution(specification),
@@ -719,7 +719,7 @@ def validate_prepared(args, specification, protocol, prepared):
         raise ValueError("prepared metadata digest mismatch")
     m = prepared.metadata
     if (
-        m.get("schema") != "native-rebrac-prepared-v3"
+        m.get("schema") != "native-rebrac-prepared-v4"
         or m["settings"] != _settings(args, specification, protocol)
         or m["settings_sha256"] != _digest(m["settings"])
         or (m["execution"] != _execution(specification))

@@ -302,7 +302,7 @@ class ReBRACRuntimeTests(unittest.TestCase):
     def test_bca_run_logs_wbcp_refreshes(self):
         prepared, result = self.run_arm("bca")
         m = prepared.metadata
-        self.assertEqual(m["schema"], "native-rebrac-prepared-v3")
+        self.assertEqual(m["schema"], "native-rebrac-prepared-v4")
         self.assertNotIn("reference_converted_ids", m)
         self.assertNotIn("reference_effective_raw_rows", m["partition"])
         self.assertFalse(hasattr(prepared, "reference"))

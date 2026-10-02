@@ -305,7 +305,7 @@ class TD3RuntimeTests(unittest.TestCase):
     def test_bca_run_logs_wbcp_refreshes(self):
         prepared, result = self.run_arm("bca")
         m = prepared.metadata
-        self.assertEqual(m["schema"], "native-td3-prepared-v4")
+        self.assertEqual(m["schema"], "native-td3-prepared-v5")
         self.assertNotIn("reference_converted_ids", m)
         self.assertNotIn("reference_effective_raw_rows", m["partition"])
         self.assertFalse(hasattr(prepared, "reference"))

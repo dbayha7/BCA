@@ -53,7 +53,9 @@ def reserve_calibration(
     """Withhold length-weighted episodes from training and calibrate on K rows of each.
 
     Returns (training, withheld, calibration, metadata) row indices: training and withheld
-    partition the data, calibration is the thinned subset of withheld (calibration/bank.py).
+    partition the data, calibration is the thinned subset of withheld (calibration/bank.py),
+    target_size rows unless episodes shorter than K leave fewer. Its dependence evidence is
+    looked up per host and dataset by runtime/config.resolve (bank.dependence_evidence).
     rows_per_episode=None withholds whole episodes in seeded-permutation order until the
     target is covered and returns all their rows as calibration. That is only for splitting
     a dataset into populations (experiments/wbcp/freeze_scores.py): as a calibration bank,
@@ -102,7 +104,8 @@ def reserve_calibration(
             "boundary_rule": rule,
             "design": ("whole episodes (population split, not a calibration design)"
                        if rows_per_episode is None
-                       else "length-proportional episodes, one row per K equal segments"),
+                       else "length-proportional episodes, one row per K equal segments, "
+                            "surplus over the target removed at random"),
             "target_size": int(target_size),
             "rows_per_episode": None if rows_per_episode is None else int(rows_per_episode),
             "calibration_size": len(cal),
@@ -111,8 +114,6 @@ def reserve_calibration(
             "training_size": len(train),
             "reserved_blocks": len(chosen),
             "total_blocks": len(lengths),
-            "dependence_validated": (rows_per_episode is not None
-                                     and bank.dependence_validated(rows_per_episode, len(chosen))),
             "seed": int(seed),
             "calibration_indices_sha256": digest(cal),
             "withheld_indices_sha256": digest(withheld),

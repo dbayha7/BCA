@@ -147,6 +147,10 @@ INPUT: algorithm, dataset, method in {host,bca}, declared seed, new output direc
 
 1. Resolve experiment.yaml + algorithm YAML + dataset overrides.
    Freeze the resolved configuration, source hashes, data hash, and event banks.
+   A bca row also records dependence_evidence: the measured no-shift failure of
+   this host's configured bank (host, dataset, K, n, and the score its BCA
+   calibrates) from calibration/dependence_evidence.json, or "not validated"
+   without a matching run.
    Require a fresh output directory. Acquire the shared GPU lock if using CUDA.
 
 2. Check the cached HDF5 file's SHA-256 before converting any data.
@@ -160,9 +164,12 @@ INPUT: algorithm, dataset, method in {host,bca}, declared seed, new output direc
    sampling over a random block order) and take one uniform row from each of K equal
    segments of every withheld block (K = rows_per_episode, declared per dataset).
    Reject if the withheld rows exceed the declared maximum fraction.
-   Dcal = the K rows of each withheld block; Dtr = the complement of the withheld
-   blocks. Withheld rows outside Dcal are used for nothing. Whole blocks as Dcal make
-   the posterior overconfident (experiments/wbcp/DEPENDENCE.md).
+   If the drawn rows exceed the target, remove the surplus uniformly at random
+   across them (one further draw; none without a surplus); every withheld block
+   stays withheld. Dcal = the remaining rows, at most K from each withheld block;
+   Dtr = the complement of the withheld blocks. Withheld rows outside Dcal are used
+   for nothing. Whole blocks as Dcal make the posterior overconfident
+   (experiments/wbcp/DEPENDENCE.md).
    Audit retained raw-row dependencies; disjoint row IDs alone do not prove
    independent trajectories or eliminate every terminal next-observation overlap.
 

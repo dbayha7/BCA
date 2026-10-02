@@ -14,6 +14,7 @@ import unittest
 import numpy as np
 from scipy import stats
 
+from calibration import bank
 from experiments.wbcp import d4rl_benchmark as bench
 
 
@@ -215,13 +216,58 @@ class SamplingTests(unittest.TestCase):
                 self.assertEqual(np.unique(ids[begin:end]).size, 1)
 
     def test_per_episode_bank_draws_k_rows_from_each_episode_draw(self):
+        # n = 105 is a multiple of every K here, so no row is trimmed and the slots stay in blocks
         groups = bench.episode_groups(self.pool.episode, self.pool.timestep)
         for k in (1, 3, 7):
-            rows = bench.draw_calibration(np.random.default_rng(k), 100, self.pool.size, groups, per_episode=k)
-            self.assertEqual(rows.shape, (100,))
+            rows = bench.draw_calibration(np.random.default_rng(k), 105, self.pool.size, groups, per_episode=k)
+            self.assertEqual(rows.shape, (105,))
             ids = self.pool.episode[rows]
-            for start in range(0, 100, k):  # every block of k slots comes from one episode draw
+            for start in range(0, 105, k):  # every block of k slots comes from one episode draw
                 self.assertEqual(np.unique(ids[start:start + k]).size, 1)
+
+    def test_without_a_remainder_per_episode_draws_are_unchanged_bit_for_bit(self):
+        # The sampler before the remainder trim cut the last draw's final slots; with K | n it
+        # cut nothing, and the trim must then draw nothing either.
+        def truncated(rng, n, groups, k, spacing):
+            order, starts, lengths = groups
+            draws = -(-n // k)
+            episodes = rng.choice(len(starts), size=draws, p=lengths / lengths.sum())
+            position = rng.random((draws, k))
+            if spacing == "stratified":
+                position = (np.arange(k) + position) / k
+            offsets = np.minimum((position * lengths[episodes, None]).astype(np.int64), lengths[episodes, None] - 1)
+            return order[starts[episodes, None] + offsets].ravel()[:n]
+
+        groups = bench.episode_groups(self.pool.episode, self.pool.timestep)
+        for spacing in ("random", "stratified"):
+            for n, k in ((1024, 2), (1025, 5), (115, 23), (100, 1)):
+                new, old = np.random.default_rng(n + k), np.random.default_rng(n + k)
+                np.testing.assert_array_equal(
+                    bench.draw_calibration(new, n, self.pool.size, groups, per_episode=k, spacing=spacing),
+                    truncated(old, n, groups, k, spacing))
+                self.assertEqual(new.bit_generator.state, old.bit_generator.state)
+
+    def test_every_per_episode_spacing_keeps_n_rows_and_every_position_equally(self):
+        # K = 23 does not divide n = 1,024 (45 draws, 1,035 rows). With every episode longer than
+        # K each pool row has expected count n / N in all three spacings, so each relative-position
+        # bin expects n times its share of pool rows. Cutting the last draw's final slots left
+        # late positions short in 'stratified'; the untrimmed reservation sampler held 1,035 rows.
+        lengths = np.random.default_rng(8).integers(40, 121, size=300)
+        starts = np.concatenate([[0], np.cumsum(lengths)[:-1]])
+        groups, bins, n, trials = (np.arange(lengths.sum()), starts, lengths), 4, 1024, 1500
+        position = (np.arange(lengths.sum()) - np.repeat(starts, lengths) + 0.5) / np.repeat(lengths, lengths)
+        which = np.minimum((position * bins).astype(np.int64), bins - 1)
+        expected = n * np.bincount(which, minlength=bins) / lengths.sum()
+        for spacing in ("random", "stratified", "reservation"):
+            counts = np.empty((trials, bins))
+            for seed in range(trials):
+                rows = bench.draw_calibration(np.random.default_rng(seed), n, lengths.sum(), groups,
+                                              per_episode=23, spacing=spacing)
+                self.assertEqual(rows.size, n)
+                counts[seed] = np.bincount(which[rows], minlength=bins)
+            z = (counts.mean(0) - expected) / (counts.std(0, ddof=1) / np.sqrt(trials))
+            with self.subTest(spacing=spacing):
+                self.assertLess(float(np.max(np.abs(z))), 4.5, (counts.mean(0), expected))
 
     def test_per_episode_rows_are_marginally_uniform_over_the_pool(self):
         # Each slot is uniform over pool rows iff the episode draw is proportional to length and
@@ -267,7 +313,7 @@ class SamplingTests(unittest.TestCase):
             ids = self.pool.episode[rows]
             self.assertEqual(np.unique(rows).size, rows.size)
             drawn = np.unique(ids)
-            self.assertEqual(drawn.size, 25)  # ceil(100 / 4) distinct episodes, not truncated
+            self.assertEqual(drawn.size, 25)  # ceil(100 / 4) distinct episodes; K | n, so nothing is trimmed
             np.testing.assert_array_equal(np.bincount(ids, minlength=lengths.size)[drawn], np.minimum(4, lengths[drawn]))
 
     def test_heldout_population_excludes_training_rows(self):
@@ -378,6 +424,7 @@ class BenchmarkTests(unittest.TestCase):
             with open(path) as handle:
                 saved = json.load(handle)
             self.assertEqual(saved["frozen"]["schema"], bench.SCHEMA)
+            self.assertEqual(saved["bank_trim"], bank.REMAINDER_TRIM)  # dependence_evidence.py reads this marker
             self.assertEqual(len(saved["blocks"]), 2)
             self.assertEqual(set(saved["blocks"][0]["arms"]), set(bench.ARMS))
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):

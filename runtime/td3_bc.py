@@ -716,7 +716,7 @@ def prepare(
         seed for event in protocol.evaluation_events for seed in event.episode_seeds
     ]
     metadata = {
-        "schema": "native-td3-prepared-v4",
+        "schema": "native-td3-prepared-v5",
         "settings": settings,
         "settings_sha256": _digest(settings),
         "execution": _execution_identity(specification),
@@ -841,7 +841,7 @@ def validate_prepared(args, specification, protocol, prepared):
     ):
         raise ValueError("complete prepared metadata digest mismatch")
     m = prepared.metadata
-    if m.get("schema") != "native-td3-prepared-v4" or m.get(
+    if m.get("schema") != "native-td3-prepared-v5" or m.get(
         "execution"
     ) != _execution_identity(specification):
         raise ValueError("prepared schema or execution identity mismatch")

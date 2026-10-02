@@ -1222,6 +1222,163 @@ exceedances.
   - What this step adds is the mechanism, the dependence on bank size, and the role of
     alignment with the score.
 
+## Change 12: all seven datasets (TD3+BC host, min(Q1, Q2) score)
+
+**What changed.** Four more frozen score pools, built with the same recipe as Change 10
+(TD3+BC with BCA's scale fit, 100k updates on half the episodes, CPU, about 6-7 minutes each):
+
+| Dataset | Pool rows | Pool episodes |
+|---|---|---|
+| halfcheetah-medium-expert | 999,000 | 1,000 |
+| maze2d-large | 1,992,027 | 8,168 |
+| pen-expert | 247,146 | 2,501 |
+| pen-human | 2,587 | 13 |
+
+On each pool the same set of designs ran (`runs/wbcp_dependence/all-datasets/run_benchmarks.sh`):
+- independent rows;
+- K = 2, 5 and 10 spaced;
+- whole episodes;
+- the configured TD3+BC-family bank with BCA's sampler;
+- independent rows at 8,192 rows (1,194 on pen-human);
+- the configured IQL bank with both samplers;
+- K = 5 spaced under the six tilts.
+
+walker2d and pen-cloned got the K = 2 and K = 10 spaced runs they lacked.
+
+**Why.** Change 10 showed that hopper's K = 5 does not carry over to two other datasets. The user asked to
+see all seven configured datasets before deciding how to choose K.
+
+**Why it makes sense.** Same design effect logic as Change 10. The four new datasets span the structures
+the configs cover:
+- halfcheetah-medium-expert mixes two policies;
+- maze2d-large comes from one waypoint controller;
+- pen-expert has short expert episodes;
+- pen-human has 25 human demonstrations.
+
+**Expectation (pre-registered, `runs/wbcp_dependence/all-datasets/expectations.md`).**
+- **Stage A** (16:08:41 UTC, before the pools; hash `8f6463e2…`): rho ranges per dataset
+  (halfcheetah 0.03-0.15, maze2d 0.02-0.10, pen-expert 0.03-0.15, pen-human 0.05-0.30) and the configured-bank
+  failures they imply.
+- **Stage B** (16:43:21 UTC, after the pools, before any benchmark; hash `a701261b…`): the Monte Carlo
+  predictions below, each no-shift design within about ±2 points (±5 where D > 3).
+  - Under shift: uniform BCA fails badly under density and state, and WBCP fails more than 5% at the
+    strongest aligned tilts but far less than uniform BCA.
+  - At the large bank: estimated weights hurt where the policy tilt moves lambda\* a lot, and not
+    elsewhere.
+- **Stage B2** (hash `ef45d9ec…`): predictions for the full design set on hopper, walker2d and pen-cloned at
+  n = 1,024. Those runs were stopped unrun when the score definition changed (Change 13), so B2 is not
+  scored here.
+
+**Result.**
+
+*Dependence* (normalized score; raw in brackets). Every rho is inside its Stage A range:
+
+| Dataset | rho | Lag correlation at 1 / 50 / 200 steps |
+|---|---|---|
+| halfcheetah-medium-expert | 0.033 (0.047) | 0.12 / 0.04 / 0.04 |
+| maze2d-large | 0.073 (0.095) | 0.38 / 0.09 / 0.00 |
+| pen-expert | 0.054 (0.067) | 0.21 / 0.04 / (episodes under 200 steps) |
+| pen-human | 0.090 (0.179) | 0.92 / 0.20 / (episodes under 200 steps) |
+
+*Designs without shift* (uniform BCA, normalized score, 4,000 trials; prediction in brackets):
+
+| Dataset | Independent | K = 2 | K = 5 | K = 10 | Configured, BCA sampler | Whole episodes |
+|---|---|---|---|---|---|---|
+| halfcheetah | 4.7% | 4.7% (5.5) | 5.5% (5.9) | 6.5% (7.5) | K = 6: 5.3% (6.1) | **33.1% (39.0)** |
+| maze2d | 4.8% | 4.6% (5.3) | 6.2% (6.7) | 9.1% (8.9) | K = 5: 6.5% (6.5) | 40.0% (35.4) |
+| pen-expert | 4.3% | 5.6% (5.1) | 6.0% (6.2) | 7.8% (8.5) | K = 5: 5.5% (6.0) | 27.4% (25.8) |
+| pen-human ⚠ | 4.1% | 2.6% (4.1) | 2.7% (3.5) | 5.2% (6.7) | K = 124: 33.2% (30.0) | 39.5% (34.7) |
+| walker2d | | 5.3% (5.7) | | 12.2% (12.3) | | |
+| pen-cloned ⚠ | | 5.1% (5.8) | | 10.7% (11.7) | | |
+
+The configured IQL banks run on these pools also land on their predictions (BCA sampler / spaced):
+- halfcheetah K = 17: 6.3% / 8.9% against 7.1 / 9.1;
+- maze2d K = 5: 6.6% / 6.6% against 6.2 / 6.8;
+- pen-expert K = 7: 5.3% / 7.0% against 5.6 / 7.2;
+- pen-human K = 199: 29.8% / 36.9% against 30.3 / 34.7.
+
+*Independent rows at the large bank, no shift* (normalized; raw in brackets):
+
+| Dataset | Uniform BCA | WBCP, estimated weights | WBCP, exact weights |
+|---|---|---|---|
+| halfcheetah (8,192) | 5.1% | 6.9% (6.5%) | 5.1% |
+| maze2d (8,192) | 5.4% | 7.8% (7.1%) | |
+| pen-expert (8,192) | 5.0% | 6.1% (6.4%) | |
+| pen-human (1,194) | 4.2% | 8.2% (8.5%) | |
+
+*K = 5 spaced under shift* (WBCP with exact weights; uniform BCA in brackets; normalized):
+
+| Tilt | maze2d | pen-expert | pen-human ⚠ |
+|---|---|---|---|
+| policy 0.5 | 6.2% (0.2%) | 5.4% (0.7%) | 4.9% (0.0%) |
+| policy 1 | 5.6% (0.0%) | 5.9% (0.2%) | 6.5% (0.0%) |
+| density 0.5 | 7.0% (18.6%) | 18.0% (99.9%) | 5.4% (71.8%) |
+| density 1 | 6.3% (30.0%) | abstains in every bank (100%) | 7.0% (96.7%) |
+| state 0.5 | 7.2% (1.9%) | 16.2% (99.6%) | 7.5% (97.5%) |
+| state 1 | 7.2% (1.8%) | abstains in every bank (100%) | 11.2% (100%) |
+
+The halfcheetah shift run crashed. Under a strong tilt, every calibration weight in a bank can underflow
+next to the test mass, and the Kish effective-size diagnostic then divided by zero. The diagnostic now
+rescales by the largest weight (`d4rl_benchmark._kish`, with a test); thresholds and failures were never
+affected. The run was not repeated before the score changed (Change 13).
+
+**Met?** Mostly, for the dependence model; partly for the rest.
+- **Stage A: yes.** Every rho is inside its range, and the implied configured-bank failures are inside
+  theirs.
+- **Stage B, no shift: 60 of 64 dataset × design × score cells met.** All four misses are designs with a
+  design effect above 6:
+  - halfcheetah whole episodes, 33.1% and 33.8%, against 39.0% and 40.4% (lower);
+  - pen-human with the raw score: K = 124 at 43.4% against 35.5%, and whole episodes at 50.6% against
+    38.9% (higher).
+- **Stage B, shift: mostly.**
+  - Uniform BCA fails badly under density on all three, and under state on pen-expert and pen-human. On
+    maze2d the state tilt barely hurts it (1.8-1.9%).
+  - WBCP stays far below uniform BCA wherever uniform BCA fails, but on pen-expert it fails 16-18% at
+    gamma 0.5 under density and state. At gamma 1 it abstains in every bank (n_eff 41 and 148). That is
+    valid, but it gives no threshold.
+- **Stage B, large bank: no.** Estimated weights cost 1.1-4.0 points on all four datasets, not only where
+  the policy tilt moves lambda\* much. walker2d and pen-cloned (Change 10) show the same effect at its
+  largest.
+
+**Why the misses (my reading, not tested).**
+- **Design effect above 6.** A bank of whole episodes, or of K = 124 rows from 2 episodes, holds 1-2
+  episodes. Its miss rate is then essentially one episode's miss rate, so failure depends on the shape of
+  the distribution of per-episode miss rates, not only its variance. The normal approximation uses only
+  the variance. halfcheetah has two behaviour policies, which makes that distribution two-humped, and the
+  approximation runs high there. pen-human has 13 episodes and a heavy tail, and it runs low there. In
+  every case those designs fail far above 5%.
+- **Estimated weights.** The cost grows with n everywhere. Change 10's explanation (the posterior
+  concentrates on a slightly wrong risk curve) needs no large lambda\* shift, only a score that varies with
+  the covariates the weight model sees. Stage B's restriction to "where the policy tilt moves lambda\*"
+  was too narrow.
+
+**Post hoc: two of these critics never converged (found after the runs).** Another session flagged the
+pen-human pool. A check of every pool's training log then showed:
+- **pen-human diverged.** The critic loss grew from 391 to 1.7×10¹⁹ and mean Q from 77 to 1.5×10¹⁰.
+- **pen-cloned is still diverging.** Pen rewards are used raw (at most 61) with gamma 0.99, so no value
+  can exceed about 6,100. Its mean Q reaches 9,160 and grew 46% over the last 20% of training.
+- **The other five are stable.** Q grew 1-7% over the last 20% of training.
+
+This matches CORL's published TD3+BC scores: -3.9 on pen-human, 5.1 on pen-cloned, 122.5 on pen-expert. The
+check (`host_matrix.critic_health`) now runs on every pool. It looks at Q's growth over the last fifth of
+training, the critic loss against its minimum, and the pool's mean Q against [min reward, max reward] /
+(1 - gamma) on the host's reward scale. Its thresholds were set after seeing these pools.
+
+What that changes:
+- Results on pen-human and pen-cloned (⚠ above) are exact for those scores, but they do not describe a
+  trained TD3+BC critic. They are left out of conclusions about dependence.
+- **Correction to Change 10.** pen-cloned was one of the two datasets behind "K = 5 does not transfer".
+  That conclusion now rests on walker2d (rho 0.120, a healthy critic), with support from maze2d (0.073).
+
+**What this means.**
+1. **The design-effect model predicts thinned banks well on every healthy dataset.** Within ±2 points from
+   K = 2 to K = 10 on all five, so rho measured on a pool is a usable basis for choosing K.
+2. **rho ranges from 0.016 (hopper) to 0.120 (walker2d) across the healthy datasets.** K = 5 keeps
+   failure near 6% on halfcheetah and pen-expert, 6.5% on maze2d and about 8% on walker2d. A rho-based K
+   rule would give K of about 5 on the first three and 1-2 on walker2d.
+3. **Estimated weights need more fitting data as the bank grows,** on every dataset. This is now the
+   clearest open issue for WBCP itself.
+
 ## What this means for BCA
 
 - **Vanilla BCA's shift failure persists with the recommended bank, in this benchmark.**

@@ -4,8 +4,9 @@ User rule (2026-09-30): K = 5 where it fits the config's withholding cap, otherw
 until it does (DEPENDENCE.md, Change 9). "Fits" means the withheld rows stay within
 max_fraction of the dataset for every one of --seeds simulated reservation seeds, with
 BCA's own sampler (calibration/bank.py) on the dataset's D4RL episode boundaries. Also
-reports the withheld share at the configured reservation seed and whether the bank is in
-the validated range.
+reports the withheld share at the configured reservation seed and the bank's measured
+dependence evidence for the score the host's BCA calibrates (calibration/bank.py,
+dependence_evidence and DEPLOYED_SCORE).
 
 python experiments/wbcp/choose_rows_per_episode.py --output runs/rows_per_episode.json
 """
@@ -20,7 +21,7 @@ import numpy as np
 import yaml
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
-from calibration.bank import dependence_validated, stratified_bank  # noqa: E402
+from calibration.bank import DEPLOYED_SCORE, dependence_evidence, stratified_bank  # noqa: E402
 from calibration.reference import qlearning_episode_ids  # noqa: E402
 
 HOSTS = ("td3_bc", "rebrac", "cql", "iql")
@@ -73,11 +74,13 @@ def main(argv=None):
             row = dict(target=target, cap=cap, rows_per_episode=k, episodes=len(episodes),
                        calibration_rows=int(sum(len(o) for o in offsets)),
                        withheld_share_at_seed=float(lengths[episodes].sum() / lengths.sum()),
-                       dataset_episodes=int(lengths.size), dependence_validated=dependence_validated(k, len(episodes)))
+                       dataset_episodes=int(lengths.size),
+                       dependence_evidence=dependence_evidence(host, entry["environment"], k, target,
+                                                               score=DEPLOYED_SCORE[host])["status"])
             report.setdefault(host, {})[name] = row
             print(f"{host:7s} {name:12s} n={target:<5d} cap={cap:.2f}  K={k:<4d} episodes={row['episodes']:<5d} "
                   f"bank={row['calibration_rows']:<5d} withheld={100 * row['withheld_share_at_seed']:5.1f}%  "
-                  f"validated={row['dependence_validated']}", flush=True)
+                  f"{row['dependence_evidence']}", flush=True)
     with open(args.output, "x") as handle:
         json.dump(dict(seeds=args.seeds, minimum=args.minimum, hosts=report), handle, indent=1)
 

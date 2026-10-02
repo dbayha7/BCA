@@ -314,7 +314,6 @@ def prepare_dataset(args, converted, raw, *, population_split=False):
             "withheld_fraction": 0.0,
             "calibration_size": 0,
             "rows_per_episode": None,
-            "dependence_validated": False,
             "reserved_blocks": 0,
             "total_blocks": len(np.unique(ids)),
         }

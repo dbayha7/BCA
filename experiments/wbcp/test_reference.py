@@ -2,6 +2,7 @@
 
 JAX_PLATFORMS=cpu python -m unittest experiments.wbcp.test_reference
 """
+import hashlib
 import math
 import unittest
 
@@ -126,7 +127,29 @@ class ReservationTests(unittest.TestCase):
         self.assertEqual((meta["reserved_blocks"], meta["rows_per_episode"]), (80, 5))
         self.assertEqual((meta["calibration_size"], meta["withheld_size"]), (cal.size, withheld.size))
         self.assertAlmostEqual(meta["withheld_fraction"], withheld.size / ids.size)
-        self.assertFalse(meta["dependence_validated"])  # 80 episodes is below the validated 100
+        # the evidence label lives in the resolved row, where host and dataset are known
+        self.assertNotIn("dependence_validated", meta)
+        self.assertNotIn("dependence_evidence", meta)
+
+    def test_a_surplus_is_trimmed_and_the_metadata_describes_the_trimmed_bank(self):
+        # Every episode is longer than K, so the draws hold 23 * 45 = 1,035 and 7 * 72 = 504 rows.
+        lengths = np.random.default_rng(6).integers(30, 160, size=600)
+        ids = episodes_of(lengths)
+        for target, k in ((1024, 23), (500, 7)):
+            train, withheld, cal, meta = reserve(lengths, target, k, max_fraction=0.9)
+            with self.subTest(target=target, k=k):
+                reserved = np.unique(ids[withheld])
+                self.assertEqual(cal.size, target)
+                self.assertEqual((meta["calibration_size"], meta["target_size"]), (target, target))
+                self.assertEqual(meta["reserved_blocks"], -(-target // k))  # every drawn episode stays withheld
+                self.assertEqual(reserved.size, meta["reserved_blocks"])
+                self.assertEqual(meta["withheld_size"], withheld.size)
+                self.assertEqual(withheld.size, lengths[reserved].sum())
+                self.assertTrue(set(cal) <= set(withheld) and not set(ids[train]) & set(reserved))
+                self.assertEqual(meta["calibration_indices_sha256"],
+                                 hashlib.sha256(np.sort(cal).astype("<i8").tobytes()).hexdigest())
+                self.assertTrue(np.all(np.bincount(ids[cal], minlength=lengths.size)[reserved]
+                                       <= np.minimum(k, lengths[reserved])))
 
     def test_inferred_boundaries_match_explicit_episode_ids(self):
         # Without IDs, episodes end at a terminal or where next_obs breaks from the next obs.
@@ -139,7 +162,7 @@ class ReservationTests(unittest.TestCase):
         explicit = reserve(self.lengths, 400, 5)
         for a, b in zip(inferred[:3], explicit[:3]):
             np.testing.assert_array_equal(a, b)
-        self.assertTrue(inferred[3]["dependence_validated"] is explicit[3]["dependence_validated"])
+        self.assertEqual(inferred[3]["calibration_indices_sha256"], explicit[3]["calibration_indices_sha256"])
 
     def test_cap_counts_every_withheld_row_and_raises(self):
         _, withheld, cal, _ = reserve(self.lengths, 400, 5)
@@ -156,7 +179,7 @@ class ReservationTests(unittest.TestCase):
         np.testing.assert_array_equal(withheld, expected)
         np.testing.assert_array_equal(cal, expected)
         self.assertEqual(train.size + withheld.size, self.lengths.sum())
-        self.assertFalse(meta["dependence_validated"])
+        self.assertNotIn("dependence_validated", meta)
         self.assertIsNone(meta["rows_per_episode"])
 
     def test_same_seed_same_reservation(self):

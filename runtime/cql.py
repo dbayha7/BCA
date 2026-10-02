@@ -460,7 +460,7 @@ def prepare(raw, args, config, protocol, *, max_action, max_episode_steps):
     hashes = {k: _array_hash(raw[k]) for k in sorted(raw)}
     settings = _settings(args, config, protocol)
     metadata = {
-        "schema": "native-cql-prepared-explicit-evaluation-v3",
+        "schema": "native-cql-prepared-explicit-evaluation-v4",
         "calibration": "wbcp_uniform" if config.arm == "bca" else "not_applicable",
         "settings": settings,
         "settings_sha256": _digest(settings),
