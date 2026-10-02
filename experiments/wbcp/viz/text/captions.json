@@ -1,0 +1,32 @@
+{
+ "wbcp_threshold": {
+  "title": "How WBCP turns a calibration bank into a threshold",
+  "caption": "WBCP on a real TD3+BC hopper bank. Each Bayesian-bootstrap draw of the score CDF (masses on the scores plus a never-covered test atom) crosses 1 - alpha once. BCA deploys the 95%-credible crossing, not the empirical 90% point, and the margin shrinks as the bank grows. 'misses' is each threshold's true miscoverage on the rest of the pool.",
+  "takeaway": "The empirical quantile alone sits on the truth and can miss more than alpha. WBCP deploys the beta-credible crossing of its posterior, which adds a margin that is large for small banks and shrinks with n."
+ },
+ "shift_weighting": {
+  "title": "Importance weights under shift: uniform BQ-CP vs WBCP",
+  "caption": "On a real hopper pool tilted toward sparse states, the uniform threshold (orange) is exact for the calibration law but misses 13% of test rows. WBCP's importance weights push the threshold right and cut bank failures from 89.5% to 7.55% at gamma = 1, at the cost of a smaller effective sample (n_eff 391 of 1,103).",
+  "takeaway": "Under covariate shift, uniform BQ-CP certifies the wrong law and fails up to 100% of banks. WBCP's weights bring failures back near the 5% budget (7.55% at gamma = 1, a finite-sample excess) by trading effective sample size for a wider, more conservative threshold."
+ },
+ "bank_dependence": {
+  "title": "Why the calibration bank is thinned",
+  "caption": "Rows within an episode are correlated, so a bank of whole episodes behaves like far fewer independent rows (design effect D) and fails 27–48% of the time. BCA's thinned bank (a few spaced rows from each of many withheld episodes) brings D near 1, and failures near the 5% budget.",
+  "takeaway": "Whole-episode banks fail 27–48% because within-episode correlation inflates the design effect. Thinning to a few spaced rows per episode restores about 5% (hopper: 5.1%), with K set by each dataset's measured rho."
+ },
+ "critic_alignment": {
+  "title": "Calibrating the critic the actor actually follows",
+  "caption": "a, Illustration, exact LQ-harness Q: when Q1 is optimistic and Q2 accurate, min(Q1, Q2) equals Q2, so the residual BCA calibrated carries none of Q1's error. b, real frozen D4RL TD3+BC critics: the min-calibrated band fails for Q1's residual in 10-82% of 4,000 banks. Calibrating Q1 brings this to 4.0-5.1%, at 2-10% more width.",
+  "takeaway": "A band calibrated on min(Q1, Q2) does not certify the Q1 that TD3+BC's actor climbs: 10-82% of banks fail against a 5% budget. Calibrating Q1 restores validity at 2-10% more width."
+ },
+ "bc_dose": {
+  "title": "Width to BC dose: same mean, unequal strength",
+  "caption": "BCA maps the certified width to a BC multiplier bounded below 1.5. On five real D4RL pools, the per-row doses sit near 1.3 and spread little, so in practice the dose acts as nearly uniform extra BC (a). Post hoc, in the step-3 LQ harness: a dose with the same mean is not a dose of the same strength. The oracle's BC gradient was 2-3× the constant dose's in the one case where it moved J a lot (b).",
+  "takeaway": "BCA's dose acts as about 1.3× nearly uniform extra BC, and step 3's oracle \"targeting\" effect was mostly strength, so the controls must match realized strength, not mean dose."
+ },
+ "pipeline": {
+  "title": "BCA pipeline: from training to testing",
+  "caption": "How BCA works in each host. The host trains on the episodes that are not withheld. At each refresh, BCA scores a thinned held-out bank with the current critic and sets a WBCP (uniform = BQ-CP) threshold. Between refreshes, the frozen width becomes a detached dose on one host loss term. Four tests check the pieces; their status is marked.",
+  "takeaway": "BCA calibrates a held-out one-step residual and turns it into a detached multiplier on one host loss term. Threshold validity and the known-MDP signal test are done. Placement is still running and full D4RL training is next."
+ }
+}
