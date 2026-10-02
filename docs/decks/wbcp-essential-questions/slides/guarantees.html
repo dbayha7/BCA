@@ -1,0 +1,25 @@
+<section id="guarantees" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">Three kinds of guarantee</h2>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:32px;padding-top:12px">
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FDFCF9;border:1px solid #E3E1DA;border-radius:16px;padding:36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#A3530E">Marginal</p>
+<h3 style="font-size:32px;font-weight:600">W‑CRC</h3>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">Miscoverage ≤ α on average over banks. A single bank can be far over α, so our test fails it often, by design.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FDFCF9;border:1px solid #E3E1DA;border-radius:16px;padding:36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#2F6DB5">High-probability</p>
+<h3 style="font-size:32px;font-weight:600">RCPS · BQ‑CP</h3>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">At least 95% of banks have miscoverage ≤ α when rows are exchangeable. RCPS proves it with a concentration bound; for BQ‑CP, 95% credibility equals 95% confidence, so its 5% is exact.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FDFCF9;border:1px solid #E3E1DA;border-radius:16px;padding:36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#14213D">Posterior credibility</p>
+<h3 style="font-size:32px;font-weight:600">WBCP with weights</h3>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">Given this bank, P(miscoverage ≤ α) ≥ 95% (Corollary 3). The frequentist bound (Theorem 4) adds slack of 0.32 even with no shift at n = 1,103, so counting banks is an empirical check.</p>
+</div>
+</div>
+<p style="font-size:32px;line-height:1.35;font-weight:500">Our test, at most 5% of banks failing, is the high-probability standard.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Sources: experiments/wbcp/DEPENDENCE.md (Change 11: credibility vs confidence; Theorem 4 slack); Lou &amp; Luo, arXiv:2604.06464v3.</p>
+</section>

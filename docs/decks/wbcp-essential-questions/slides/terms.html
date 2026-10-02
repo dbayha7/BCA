@@ -1,0 +1,19 @@
+<section id="terms" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">Words and symbols used throughout</h2>
+<div style="flex:1;display:flex;gap:48px;padding-top:8px">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Score</b> = |y − q| / σ(s, a). y is the host's TD target, q = min(Q1, Q2) of the critic's two heads (IQL: target heads), σ is BCA's learned scale.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Threshold λ</b>: the cut-off a rule certifies. Miscoverage of λ: the share of test rows whose score exceeds it. Target α = 0.1.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Frozen pool</b>: one dataset's held-out rows, scored once by a critic trained 100k updates (one seed). Any λ's miscoverage on it is exact.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Bank</b>: n rows drawn from the pool. Independent-row bank: n rows drawn iid. Whole-episode bank: every row of a few episodes (BCA's original rule). Thinned bank: K spaced rows from each of many episodes (BCA today).</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Shift (tilt)</b>: reweight the pool's rows by exp(γ z), with z a feature of (s, a) only. γ = 0 is no shift.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">ρ</b>: within-episode correlation of misses. <b style="color:#14213D">K</b>: rows per episode. <b style="color:#14213D">Logged action</b>: the dataset's action; every D4RL check uses it, never the actor's own action π(s).</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Datasets</b>: hopper-medium, halfcheetah-medium-expert, walker2d-medium-replay, maze2d-large, pen-expert, pen-cloned, pen-human. Hopper is the test bed for questions 2–3 (n = 1,103; others 1,024; IQL configs 8,192).</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Not in any result yet</b>: the training loop itself, where the bank is rescored at every refresh.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">The pipeline figure writes the deployed threshold as R; everywhere else it is λ.</p>
+</section>

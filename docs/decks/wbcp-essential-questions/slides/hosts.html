@@ -1,0 +1,32 @@
+<section id="hosts" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Question 4 · Does it hold on every host?</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:56px;font-weight:600;line-height:1.12;color:#14213D">Does calibration hold on every host?</h2>
+<div style="flex:1;display:flex;gap:56px;align-items:flex-start">
+<div style="width:1000px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;color:#4A5568">Configured bank: % of banks failing (budget 5%). (f) = critic flagged unhealthy.</p>
+<table style="font-size:26px;color:#14213D">
+<tr><th style="width:28%;text-align:left">Dataset (K)</th><th style="width:18%;text-align:right">CQL</th><th style="width:18%;text-align:right">ReBRAC</th><th style="width:18%;text-align:right">TD3+BC</th><th style="width:18%;text-align:right">IQL</th></tr>
+<tr><td>hopper (6)</td><td>5.1</td><td>4.3</td><td>4.5</td><td>5.5</td></tr>
+<tr><td>halfcheetah (6)</td><td>4.7</td><td>5.3</td><td>5.3</td><td>5.2</td></tr>
+<tr><td>walker2d (23)</td><td>10.5</td><td>18.3</td><td>17.6</td><td>18.1</td></tr>
+<tr><td>maze2d (5)</td><td>5.6 (f)</td><td>7.5 (f)</td><td>6.4</td><td>5.1</td></tr>
+<tr><td>pen-cloned (5)</td><td>8.4 (f)</td><td>8.3</td><td>6.3 (f)</td><td>12.1</td></tr>
+<tr><td>pen-expert (5)</td><td>5.9 (f)</td><td>7.1</td><td>5.4</td><td>5.6</td></tr>
+<tr><td>pen-human (124)</td><td>49.4 (f)</td><td>34.2</td><td>33.3 (f)</td><td>52.4</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#4A5568">Under shift, exact-weight WBCP reaches 14.2% (CQL halfcheetah, density γ = 0.5) and 22.8% (ReBRAC pen-expert, state γ = 0.5): hopper's excess is not the worst case.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:30px">
+<p style="font-size:32px;line-height:1.3;font-weight:500">Independent rows: yes. Deployed banks: near 5% where ρ is low, far above on walker2d and pen-human.</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.05;color:#2F6DB5">3.8–5.0%</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">of independent-row banks fail, all 7 datasets, CQL and ReBRAC</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.05;color:#14213D">46/48 · 91/96</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">predictions met on healthy critics (CQL · ReBRAC); IQL 92 of 98, TD3+BC 77 of 80</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Sources: results_{cql,rebrac,iql,td3_bc}.ipynb (all four finished October 2). IQL banks: n = 8,192 with its own K.</p>
+</section>

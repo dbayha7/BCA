@@ -1,0 +1,23 @@
+<section id="effective-size" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">Two ways a bank holds less than its n</h2>
+<div style="display:flex;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FDFCF9;border:1px solid #E3E1DA;border-radius:16px;padding:32px 36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#2F6DB5">Uneven weights · “n_eff (weights)”</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">Kish n_eff = (Σw)² / Σw². A few heavy rows dominate each posterior draw, so λ widens. Under the density tilt at γ = 1 on hopper, 1,103 rows count as 391.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px;background:#FDFCF9;border:1px solid #E3E1DA;border-radius:16px;padding:32px 36px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#A3530E">Correlated rows · “n/D (dependence)”</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">If misses in one episode have correlation ρ and the bank takes K rows per episode, the design effect D ≈ 1 + (K − 1)ρ makes the bank count as n/D rows. The posterior assumes D = 1, so P(fail) ≈ 1 − Φ(1.645/√D) instead of 5%.</p>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">calibration/wbcp.py · line 116: n_eff is reported, not used to pick λ</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap">n_eff = float(weights.sum() ** <span style="color:#F0B070">2</span> / np.dot(weights, weights))  <span style="color:#8FA1B3"># weights rescaled above</span></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">experiments/wbcp/dependence.py · lines 102–103: the predicted failure rate for a design effect D</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap"><span style="color:#8DB4E8">def</span> predicted_failure(design_effect, beta):<br>&#160;&#160;&#160;&#160;<span style="color:#8DB4E8">return</span> float(stats.norm.sf(stats.norm.isf(<span style="color:#F0B070">1</span> - beta) / math.sqrt(design_effect)))</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Question 2 meets the first in practice, question 3 the second.</p>
+</section>

@@ -1,0 +1,18 @@
+<section id="weights" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models · rule 2 of 4</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">Exact vs estimated weights</h2>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">experiments/wbcp/d4rl_benchmark.py · logistic_log_ratio, lines 310–317 (excerpt): estimated weights</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap"><span style="color:#8DB4E8">def</span> logistic_log_ratio(cal_features, test_features, ridge):<br><span style="color:#8FA1B3">#&#160;…</span><br>&#160;&#160;&#160;&#160;features = np.vstack([cal_features, test_features])<br>&#160;&#160;&#160;&#160;design = np.column_stack([np.ones(len(features)), features])<br>&#160;&#160;&#160;&#160;labels = np.concatenate([np.zeros(len(cal_features)), np.ones(len(test_features))])<br>&#160;&#160;&#160;&#160;theta = fit_logistic(design, labels, ridge)<br>&#160;&#160;&#160;&#160;offset = theta[<span style="color:#F0B070">0</span>] + math.log(len(cal_features) / len(test_features))<br>&#160;&#160;&#160;&#160;<span style="color:#8DB4E8">return</span> <span style="color:#8DB4E8">lambda</span> values: offset + np.asarray(values, np.float64) @ theta[<span style="color:#F0B070">1</span>:]</p>
+</div>
+<div style="display:flex;gap:32px;align-items:flex-start">
+<div style="width:860px;display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">make_tilt, lines 247–250: the imposed shift</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap"><span style="color:#8DB4E8">def</span> make_tilt(name, z, gamma):<br>&#160;&#160;&#160;&#160;exponent = float(gamma) * np.asarray(z, np.float64)<br>&#160;&#160;&#160;&#160;log_mass = exponent - exponent.max()<br>&#160;&#160;&#160;&#160;mass = np.exp(log_mass)<br><span style="color:#8FA1B3">#&#160;…</span></p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Exact (“oracle”):</b> we impose the shift, mass a_i = exp(γ z_i), so the true ratio w* = a/mean(a) is known. Tilts: policy z = −‖a − π(s)‖, state z = ‖s‖, density z = log distance to the 10th neighbour (sparse rows gain mass).</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Estimated:</b> a logistic classifier separates uniform pool draws from tilted draws, both independent of the scored bank. It sees the tilt's own feature, so it is well specified: a best case. Fit on 1,000 + 1,000 rows.</p>
+</div>
+</div>
+</section>

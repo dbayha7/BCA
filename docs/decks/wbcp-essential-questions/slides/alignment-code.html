@@ -1,0 +1,16 @@
+<section id="alignment-code" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Question 5 · Is the band measuring the error the actor uses?</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">TD3+BC: the actor reads Q1, BCA calibrates min(Q1, Q2)</h2>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">algorithms/td3_bc.py · actor loss, lines 129–131: head 1 only</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap">pi = actor_apply_fn(params, batch.obs)<br>q = critic_apply_fn(critic_params, batch.obs, pi)[..., <span style="color:#F0B070">0</span>]<br>lmbda = args.alpha / jax.lax.stop_gradient(jnp.abs(q).mean())</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">algorithms/td3_bc_bca.py · refresh, lines 252–256: the min over both heads</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap">q = (<br>&#160;&#160;&#160;&#160;models[<span style="color:#F0B070">1</span>]<br>&#160;&#160;&#160;&#160;.apply(state.native.critic.params, heldout.obs, heldout.action)<br>&#160;&#160;&#160;&#160;.min(axis=-<span style="color:#F0B070">1</span>)<br>)</p>
+</div>
+<div style="display:flex;gap:40px">
+<p style="flex:1;font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Where Q1 is optimistic and Q2 accurate,</b> min(Q1, Q2) = Q2, so the calibrated residual carries none of Q1's error. ReBRAC's and CQL's actors maximize the min they calibrate; IQL's code is fixed.</p>
+<p style="flex:1;font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Three signals compared:</b> min (BCA today), q1, and maxabs = max(|t − Q1|, |t − Q2|), which covers both heads but is 1.09–1.19× wider than q1 and was dropped by judgment.</p>
+</div>
+</section>

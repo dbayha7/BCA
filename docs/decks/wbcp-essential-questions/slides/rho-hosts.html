@@ -1,0 +1,31 @@
+<section id="rho-hosts" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Question 4 · Does it hold on every host?</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:56px;font-weight:600;line-height:1.12;color:#14213D">Is episode dependence a property of the dataset?</h2>
+<div style="flex:1;display:flex;gap:56px;align-items:flex-start">
+<div style="width:960px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;color:#4A5568">Within-episode correlation ρ of misses, same withheld episodes. (f) = critic flagged.</p>
+<table style="font-size:26px;color:#14213D">
+<tr><th style="width:28%;text-align:left">Dataset</th><th style="width:18%;text-align:right">TD3+BC</th><th style="width:18%;text-align:right">CQL</th><th style="width:18%;text-align:right">ReBRAC</th><th style="width:18%;text-align:right">IQL</th></tr>
+<tr><td>hopper</td><td>0.016</td><td>0.002</td><td>0.012</td><td>0.012</td></tr>
+<tr><td>halfcheetah</td><td>0.033</td><td>0.028</td><td>0.034</td><td>0.018</td></tr>
+<tr><td>walker2d</td><td>0.120</td><td>0.048</td><td>0.143</td><td>0.050</td></tr>
+<tr><td>maze2d</td><td>0.073</td><td>0.057 (f)</td><td>0.153 (f)</td><td>0.050</td></tr>
+<tr><td>pen-expert</td><td>0.054</td><td>0.055 (f)</td><td>0.165</td><td>0.064</td></tr>
+<tr><td>pen-cloned</td><td>0.108 (f)</td><td>0.168 (f)</td><td>0.177</td><td>0.213</td></tr>
+<tr><td>pen-human</td><td>0.090 (f)</td><td>0.201 (f)</td><td>0.105</td><td>0.388</td></tr>
+</table>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:30px">
+<p style="font-size:32px;line-height:1.3;font-weight:500">No. The host changes ρ, so K must be set per host × dataset.</p>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.05;color:#A3530E">0.57–0.63</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">rank agreement with TD3+BC's ordering (Spearman), against a pre-registered forecast of at least 0.7</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.05;color:#14213D">up to 8×</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">change in ρ from the host alone (hopper: CQL 0.002 vs TD3+BC 0.016)</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Sources: runs/wbcp_hosts/{cql,rebrac,iql}/expectations.md, Stage B. Health thresholds were set post hoc, after the TD3+BC pen pools.</p>
+</section>

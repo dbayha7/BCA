@@ -55,8 +55,8 @@ data:
 - Under each figure, a table lists every number it shows with its source.
 
 **What these figures do not show.** All D4RL evidence comes from frozen critics (one 100k-update critic per host and
-dataset, one seed) at logged actions. No WBCP training run exists yet, so nothing here measures return. The
-TD3+BC host benchmark is still running, and the step-4 placement study has no outcomes yet.
+dataset, one seed) at logged actions. No WBCP training run exists yet, so nothing here measures return, and the
+step-4 placement study has no outcomes yet.
 
 To rebuild after new runs: `python experiments/wbcp/visualizations_notebook.py`. The figure files are
 `experiments/wbcp/viz/fig_<key>.py` and the explanations `experiments/wbcp/viz/text/<key>.md`."""

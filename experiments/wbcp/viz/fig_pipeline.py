@@ -27,8 +27,8 @@ hopper study of experiments/wbcp/README.md, 4,000 per design in experiments/wbcp
 known-MDP linear-quadratic harness (experiments/signal/lq_harness.py, SIGNAL_STUDY.md step 3); (3) the step-4
 placement study (experiments/signal/run_step4.py; pilot running, no outcomes); (4) full D4RL training for return
 and regret (train.py; not run, needs approval). Status of (1) per host comes from the result files under
-runs/wbcp_hosts/<host>/ (ReBRAC 60, CQL 60 and IQL 55 benchmark runs on all 7 datasets; TD3+BC's host matrix
-started on 2026-10-02, after IQL finished) and DEPENDENCE.md Change 12 (TD3+BC pools, seven datasets).
+runs/wbcp_hosts/<host>/ (ReBRAC 60, CQL 60, IQL 55 and TD3+BC 60 benchmark runs on all 7 datasets, all finished
+on 2026-10-02) and DEPENDENCE.md Change 12 (TD3+BC pools, seven datasets).
 
 Numbered tags tie each test to the part of the pipeline it checks. This is a schematic of code paths, not data.
 """
@@ -203,8 +203,8 @@ def make():
     for k, (x, w, title, body) in enumerate(tests, start=1):
         _box(ax, x, ty, w, th, "test", title, body, title_x=x + PAD + 0.52)
         _tag(ax, x + PAD + 0.2, ty + th - 0.29, k)
-    _chip(ax, tx[0] + PAD, chip_y + 0.44, "done", "TD3+BC study; ReBRAC, CQL, IQL")
-    _chip(ax, tx[0] + PAD, chip_y, "running", "TD3+BC matrix")
+    _chip(ax, tx[0] + PAD, chip_y + 0.44, "done", "TD3+BC, ReBRAC, CQL, IQL")
+    _chip(ax, tx[0] + PAD, chip_y, "done", "TD3+BC dependence study")
     _chip(ax, tx[1] + PAD, chip_y, "done", "step 3")
     _chip(ax, tx[2] + PAD, chip_y, "running", "pilot")
     _chip(ax, tx[3] + PAD, chip_y, "next")
@@ -282,8 +282,8 @@ def _facts():
           "results_cql.ipynb"),
         f("test 1 status: IQL host matrix", "done (55 of 55 benchmark runs, 2026-10-02)",
           "host_matrix.py --host iql --stage status; experiments/wbcp/results_iql.ipynb"),
-        f("test 1 status: TD3+BC host matrix", "running (benchmark started 2026-10-02 after IQL finished)",
-          "host_matrix.py --host td3_bc --stage status; runs/wbcp_hosts/td3_bc/"),
+        f("test 1 status: TD3+BC host matrix", "done (60 of 60 benchmark runs, 2026-10-02)",
+          "host_matrix.py --host td3_bc --stage status; experiments/wbcp/results_td3_bc.ipynb"),
         f("test 2: known-MDP linear-quadratic harness, exact Q^pi, true Q error and true value change J", "done",
           "experiments/signal/lq_harness.py; experiments/signal/SIGNAL_STUDY.md step 3"),
         f("test 3: step-4 placement study (P1, P2, P3, P1pi, P2pi at matched strength vs controls)",

@@ -1,0 +1,18 @@
+<section id="dose-code" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 2 · How BCA uses them</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">How the calibrated width becomes a dose</h2>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">calibration/dose.py · frozen_level_dose lines 74–76, level_critic_dose lines 53–60 (excerpt)</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap">threshold, unit = reference.threshold, reference.residual_scale<br>scale = jnp.maximum(predictions, <span style="color:#F0B070">1e-06</span>) * unit<br>width = threshold * scale<br><span style="color:#8FA1B3">#&#160;…</span><br>safe_u, safe_c = (jnp.where(support, widths, <span style="color:#F0B070">0.0</span>), jnp.where(valid_unit, unit, <span style="color:#F0B070">1.0</span>))<br><span style="color:#8FA1B3">#&#160;…</span><br>ratio = u_norm / (u_norm + c_norm)<br>dose = <span style="color:#F0B070">1.0</span> + jnp.where(valid_blend, blend, <span style="color:#F0B070">0.0</span>) * ratio</p>
+</div>
+<div style="display:flex;gap:40px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Width U = λ × σ(s, a)</b> at each logged row; u = the residual unit. In the code, safe_u is U and safe_c is u (rescaled as u_norm, c_norm).</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Dose m = 1 + 0.5 · U/(U + u)</b> (blend 0.5), i.e. m = 1 + 0.5·λη/(1 + λη). It runs from 1, the host's own weight, toward 1.5, which no finite width reaches.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Edge cases:</b> an abstaining threshold (λ = ∞) or a not-yet-ready reference gives m = 1, the native weight.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">σ is learned online:</b> η takes one Adam step per batch on a coverage loss; u tracks the residual spread. Frozen-critic studies reuse that fit (critic alignment) or refit σ (signal study step 2).</p>
+</div>
+</div>
+</section>

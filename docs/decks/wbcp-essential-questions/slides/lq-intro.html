@@ -1,0 +1,20 @@
+<section id="lq-intro" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models · the test environment</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">A known-MDP harness where the true error is known</h2>
+<div style="flex:1;display:flex;gap:40px;align-items:flex-start;padding-top:8px">
+<div style="flex:1;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">The MDP:</b> linear dynamics s′ = As + Ba + ε, quadratic reward, linear actor a = −K_π s. The true Q^π and the true value J are exact.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Behaviour data:</b> “good” is the LQR-optimal gain plus noise (J = −2.30); “poor” has no feedback (J = −4.43).</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Critic heads = Q^π + a built-in error.</b> q1_optimistic: Q1 optimistic away from the data, Q2 exact. q2_optimistic: the reverse. shared_bias: both heads share a Bellman-consistent bias. independent_errors: separate random errors. Controls: clean, noisy reward.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">A cell</b> = case × error size κ × how far the start policy sits from the behaviour policy.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Doses compared:</b> BCA's; a constant dose with the same mean; BCA's doses shuffled across rows; an oracle built from the true Q1 error.</p>
+</div>
+<div style="width:820px;display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">experiments/signal/lq_harness.py · case_critic,</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">lines 274–282 (excerpt; shared_bias elided)</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap"><span style="color:#8DB4E8">if</span> case == <span style="color:#A8D5A2">"q1_optimistic"</span>:<br>&#160;&#160;&#160;&#160;kap[<span style="color:#F0B070">0</span>] = kappa<br><span style="color:#8DB4E8">elif</span> case == <span style="color:#A8D5A2">"q2_optimistic"</span>:<br>&#160;&#160;&#160;&#160;kap[<span style="color:#F0B070">1</span>] = kappa<br><span style="color:#8FA1B3">#&#160;…</span><br><span style="color:#8DB4E8">elif</span> case == <span style="color:#A8D5A2">"independent_errors"</span>:<br>&#160;&#160;&#160;&#160;W[<span style="color:#F0B070">0</span>], W[<span style="color:#F0B070">1</span>] = scale * forms[<span style="color:#F0B070">0</span>], scale * forms[<span style="color:#F0B070">1</span>]</p>
+<p style="font-family:'IBM Plex Sans', Arial, sans-serif;font-size:24px;line-height:1.35;color:#BFC8D6;padding-top:8px">Head k's error is κ_k‖a − β(s)‖² + zᵀW_k z + w_k, so kap[0] makes only Q1 optimistic away from the behaviour policy β.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Used in questions 5–7 (signal study steps 3 and 4). LQ errors are constructed: a negative result here does not carry over to D4RL as a negative.</p>
+</section>

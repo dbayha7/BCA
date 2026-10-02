@@ -1,0 +1,22 @@
+<section id="wbcp" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models · rule 2 of 4</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">WBCP: BQ‑CP with importance weights</h2>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">calibration/wbcp.py · calibrate(), lines 66–69: no weights means uniform</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap"><span style="color:#8DB4E8">if</span> weights <span style="color:#8DB4E8">is</span> <span style="color:#8DB4E8">None</span>:<br>&#160;&#160;&#160;&#160;<span style="color:#8DB4E8">if</span> test_mass <span style="color:#8DB4E8">is</span> <span style="color:#8DB4E8">not</span> <span style="color:#8DB4E8">None</span>:<br>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;raise ValueError(<span style="color:#A8D5A2">"test_mass requires explicit calibration weights"</span>)<br>&#160;&#160;&#160;&#160;weights, test_mass = np.ones_like(scores), <span style="color:#F0B070">1.0</span></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">calibration/wbcp.py · crossings(), lines 51–52: weights scale each draw's masses</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap">mass = exponentials[:, :-<span style="color:#F0B070">1</span>] * sorted_weights<br>total = mass.sum(axis=<span style="color:#F0B070">1</span>) + exponentials[:, -<span style="color:#F0B070">1</span>] * test_mass</p>
+</div>
+<div style="display:flex;gap:40px;padding-top:4px">
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Lou &amp; Luo (arXiv:2604.06464v3).</b> Row i gets w_i = p_test(x_i) / p_cal(x_i), x = (state, action). The test atom gets w̄ = E_test[w] (the paper's Eq. 6).</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Same crossing rule</b> with masses w_i·E_i, so it corrects covariate shift: (s, a) moves, the error given (s, a) does not.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Uniform weights recover BQ‑CP exactly.</b> BCA does not deploy weights.</p>
+<p style="font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Price:</b> when a few rows carry most of the weight (Kish n_eff = (Σw)²/Σw² summarizes it), crossings spread and λ widens. If the test atom alone exceeds α in more than 5% of draws, the rule abstains.</p>
+</div>
+</div>
+</section>

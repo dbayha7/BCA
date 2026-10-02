@@ -1,0 +1,24 @@
+<section id="rows-per-episode" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Question 3 · Does BCA's own bank keep the guarantee?</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:56px;font-weight:600;line-height:1.12;color:#14213D">How many rows per episode keep the bank valid?</h2>
+<div style="flex:1;display:flex;gap:56px;align-items:flex-start">
+<div style="width:1000px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;color:#4A5568">% of banks failing, no shift, uniform BCA, K spaced rows per episode. Budget: 5%.</p>
+<table style="font-size:28px;color:#14213D">
+<tr><th style="width:24%;text-align:left">Dataset</th><th style="width:12%;text-align:right">ρ</th><th style="width:22%;text-align:right">Whole episodes</th><th style="width:14%;text-align:right">K = 2</th><th style="width:14%;text-align:right">K = 5</th><th style="width:14%;text-align:right">K = 10</th></tr>
+<tr><td>hopper</td><td>0.016</td><td>27.8</td><td>4.4</td><td>5.2</td><td>5.4</td></tr>
+<tr><td>halfcheetah</td><td>0.033</td><td>33.1</td><td>4.7</td><td>5.5</td><td>6.5</td></tr>
+<tr><td>pen-expert</td><td>0.054</td><td>27.4</td><td>5.6</td><td>6.0</td><td>7.8</td></tr>
+<tr><td>maze2d</td><td>0.073</td><td>40.0</td><td>4.6</td><td>6.2</td><td>9.1</td></tr>
+<tr><td>walker2d</td><td>0.120</td><td>48.0</td><td>5.3</td><td>7.5</td><td>12.2</td></tr>
+</table>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:22px">
+<p style="font-size:32px;line-height:1.3;font-weight:500">A few rows per episode, and fewer where ρ is high.</p>
+<p style="font-size:27px;line-height:1.35;color:#4A5568">Hopper holds near 5% up to K = 10. Walker2d already fails 7.5% at K = 5.</p>
+<p style="font-size:27px;line-height:1.35;color:#4A5568">The design effect D = 1 + (K − 1)ρ predicts thinned-bank failure within ±2 points on all five datasets.</p>
+<p style="font-size:27px;line-height:1.35;color:#4A5568">The cost is withheld training data (about 10.7% of hopper at K = 5), not band width. Its effect on training is unmeasured.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Sources: DEPENDENCE.md Changes 3, 4, 6, 10, 12; TD3+BC frozen pools, 4,000 banks each; hopper n = 1,103, others n = 1,024.</p>
+</section>

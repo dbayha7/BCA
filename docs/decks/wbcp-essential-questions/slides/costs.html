@@ -1,0 +1,17 @@
+<section id="costs" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 4 · What it adds up to</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:56px;font-weight:600;line-height:1.12;color:#14213D">What does validity cost?</h2>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:32px;padding-top:8px">
+<table style="font-size:27px;color:#14213D">
+<tr><th style="width:34%;text-align:left">What validity needs</th><th style="width:40%;text-align:left">What it costs</th><th style="width:26%;text-align:left">Measured?</th></tr>
+<tr><td>Thinned bank, hopper K = 5</td><td>About 10.7% of the data withheld from training</td><td>Share only</td></tr>
+<tr><td>Configured hopper bank, K = 6</td><td>8.3% withheld (171 episodes)</td><td>Share only</td></tr>
+<tr><td>Hopper K = 10</td><td>About 5.4% withheld; failure rises to 5.7%</td><td>Share only</td></tr>
+<tr><td>Q1 band instead of min</td><td>1.02–1.10× the min band's width</td><td>Yes, frozen TD3+BC</td></tr>
+<tr><td>maxabs band (dropped)</td><td>1.09–1.19× the Q1 band's width</td><td>Yes, frozen TD3+BC</td></tr>
+<tr><td>Whole episodes, posterior n / D</td><td>Band width instead of training data</td><td>Untested</td></tr>
+</table>
+<p style="font-size:32px;line-height:1.35;font-weight:500">The effect of withholding episodes on training has never been measured.</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Sources: DEPENDENCE.md (Change 4, What this means for BCA, Limits); SIGNAL_STUDY.md step 2 (width ratios).</p>
+</section>

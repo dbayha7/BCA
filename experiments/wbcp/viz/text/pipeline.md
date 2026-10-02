@@ -47,7 +47,7 @@ Everything is detached from the gradient. Before the first refresh there is no d
   3. where the dose should be applied;
   4. return after full training.
 - **Status chips.** Solid blue means **done**, dashed light blue **running**, and dotted grey **next**.
-  - **Test 1** is done on TD3+BC's pools (DEPENDENCE.md, Change 12) and in the ReBRAC, CQL and IQL host matrices (IQL finished on 2026-10-02: 55 of 55 runs, `results_iql.ipynb`). TD3+BC's host matrix started after IQL finished and is running.
+  - **Test 1** is done on TD3+BC's pools (DEPENDENCE.md, Change 12) and in all four host matrices (ReBRAC, CQL, IQL and TD3+BC; the last two finished on 2026-10-02, `results_iql.ipynb`, `results_td3_bc.ipynb`).
   - **Test 3**, the step-4 placement study, is in its pilot and has no outcomes yet.
   - **Test 4**, full D4RL training, has not been run and needs approval.
 

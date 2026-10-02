@@ -1,0 +1,18 @@
+<section id="compare" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">The five rules side by side, and what theory predicts</h2>
+<table style="font-size:24px;color:#14213D">
+<tr><th style="width:26%;text-align:left">Rule</th><th style="width:30%;text-align:left">Guarantee</th><th style="width:14%;text-align:left">Weights</th><th style="width:13%;text-align:left">Sees shift?</th><th style="width:17%;text-align:left">In BCA?</th></tr>
+<tr style="background:#E6EDF7"><td><b>BQ‑CP (“Uniform BCA”)</b></td><td>High-probability (exact, uniform weights)</td><td>None</td><td>No</td><td><b>Deployed</b></td></tr>
+<tr><td>WBCP, exact weights</td><td>Posterior credibility</td><td>True ratio</td><td>Yes</td><td>Benchmark only</td></tr>
+<tr><td>WBCP, estimated weights</td><td>Posterior credibility</td><td>Classifier</td><td>Yes</td><td>No</td></tr>
+<tr><td>RCPS</td><td>High-probability (frequentist)</td><td>None</td><td>No</td><td>Baseline</td></tr>
+<tr><td>W‑CRC</td><td>Marginal</td><td>Classifier</td><td>Yes</td><td>Paper baseline</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:10px;padding-top:8px">
+<p style="font-size:24px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#A3530E">What theory predicts (written for this deck, not pre-registered)</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568"><b style="color:#14213D">No shift:</b> BQ‑CP, RCPS and exact-weight WBCP fail ≤ 5%; W‑CRC far more, by design; estimated weights only if the classifier's noise leaves a non-pivotal score alone.</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568"><b style="color:#14213D">A shift that moves the score's law:</b> shift-blind rules fail; WBCP stays near 5%, a little above at strong shift, or abstains.</p>
+<p style="font-size:26px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Dependent banks:</b> every rule can fail, since all of them assume independent rows.</p>
+</div>
+</section>

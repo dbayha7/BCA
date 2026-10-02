@@ -1,0 +1,19 @@
+<section id="hosts-intro" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 1 · The models · the hosts</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">The four host algorithms BCA plugs into</h2>
+<table style="font-size:24px;color:#14213D">
+<tr><th style="width:14%;text-align:left">Host</th><th style="width:26%;text-align:left">The actor follows</th><th style="width:28%;text-align:left">Score BCA calibrates</th><th style="width:32%;text-align:left">Where the dose enters</th></tr>
+<tr><td><b>TD3+BC</b></td><td>Q1 only (head 1)</td><td>min(Q1, Q2), online heads</td><td>The actor's BC term</td></tr>
+<tr><td><b>ReBRAC</b></td><td>min(Q1, Q2)</td><td>min(Q1, Q2), online heads</td><td>The actor's BC term</td></tr>
+<tr><td><b>CQL</b></td><td>min(Q1, Q2)</td><td>min(Q1, Q2), online heads</td><td>The conservative critic gap</td></tr>
+<tr><td><b>IQL</b></td><td>Advantage-weighted regression</td><td>min of the target heads</td><td>Shrinks the capped advantage weight above 1 by A/(A + U)</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:6px;background:#1B2433;border-radius:16px;padding:16px 28px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;color:#8FA1B3;white-space:nowrap">calibration/bank.py · lines 36–38: the score each host's BCA calibrates</p>
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace;font-size:24px;line-height:1.25;color:#E6E9EF;white-space:nowrap">MIN_Q = <span style="color:#A8D5A2">"min(Q1,Q2) residual / sigma, normalized"</span><br>TARGET_MIN_Q = <span style="color:#A8D5A2">"min(target Q1, target Q2) residual / sigma, normalized"</span><br>DEPLOYED_SCORE = dict(td3_bc=MIN_Q, rebrac=MIN_Q, cql=MIN_Q, iql=TARGET_MIN_Q)</p>
+</div>
+<div style="display:flex;gap:40px">
+<p style="flex:1;font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Configs:</b> bank size n and rows per episode K are set per host × dataset in configs/*.yaml (n = 1,024 for most TD3+BC, CQL and ReBRAC banks, 8,192 for IQL).</p>
+<p style="flex:1;font-size:24px;line-height:1.35;color:#4A5568"><b style="color:#14213D">Critic health:</b> a frozen critic is flagged if its Q keeps growing, diverges or leaves its possible range. 7 of 28 are flagged; their numbers are exact but left out of conclusions.</p>
+</div>
+</section>

@@ -1,0 +1,22 @@
+<section id="pipeline" data-transition="fade" style="background:#F7F6F2;color:#14213D;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#2F6DB5">Part 2 · How BCA uses them</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:52px;font-weight:600;line-height:1.12;color:#14213D">How does BCA run, from training to testing?</h2>
+<div style="flex:1;display:flex;gap:40px;align-items:flex-start">
+<img src="/_blob/cb65d5cf70445b204807aa26e5db34d2" alt="Pipeline diagram. Training band: D4RL dataset, episode reservation with a thinned bank of K spaced rows per withheld episode, host training of critics and actor for 1M updates, and a dose that scales one host loss term. Calibration band: a scale fit every update, then at each of 198 refreshes the held-out bank is scored and a WBCP threshold R set; width R times sigma becomes the dose m = 1 + 0.5 U/(U+u). Testing band: calibration validity (done for all four host matrices and the TD3+BC dependence study), known-MDP test (done), placement study (pilot running), full D4RL training (next, needs approval)." style="width:1151px;height:650px;object-fit:contain">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px;padding-top:8px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600">Training</h3>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">The host runs unchanged, except for one detached multiplier on one loss term.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600;color:#2F6DB5">Calibration</h3>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">At each of 198 refreshes, BCA scores the held-out bank with the current critic and sets R by WBCP.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600">Testing</h3>
+<p style="font-size:26px;line-height:1.35;color:#4A5568">Validity and the known-MDP test are done. Placement is running. Full training needs approval.</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6672">Figure: experiments/wbcp/viz/fig_pipeline.py, checked against ALGORITHMS.md, calibration/*.py and configs/*.yaml.</p>
+</section>
