@@ -35,7 +35,7 @@ Last updated: 2026-10-02.
 | 8 | Critic health | Done | 7 of 28 critics flagged |
 | 9 | Critic alignment (TD3+BC) | Done; switch on hold | A min band misses Q1's error in 8–82% of banks |
 | 10 | Signal study, steps 1–3 | Done, audited | The dose acts as near-uniform extra BC |
-| 11 | Signal study, step 4 (placement) | Pilot run; analysis next | Pre-registered; no outcomes yet |
+| 11 | Signal study, step 4 (placement) | Pilot analysed; G2 decision needed | The expert-data positive control has no power; the poor-data one does |
 | 12 | Signal study, steps 5–6 | Not started | — |
 | 13 | Full D4RL training (return) | Not started; needs permission | No WBCP-era return evidence yet |
 
@@ -164,21 +164,35 @@ Last updated: 2026-10-02.
 - **Means:** through today's hook, a valid band reaches the actor almost as uniform extra BC.
 - **Where:** experiments/signal/SIGNAL_STUDY.md; runs/wbcp_signal.
 
-### 11. Signal study, step 4: where to apply the signal (pilot run; analysis next)
+### 11. Signal study, step 4: where to apply the signal (pilot analysed; G2 decision needed)
 - **Why:** test whether any placement of the signal beats plain extra BC. The three placements are BC amplification,
   actor-Q trust and a critic-side bound. They are compared at matched policy displacement, against shuffled,
   stratified, reversed and nuisance controls.
 - **Expected:** pre-registered 2026-10-02. The forecast is sceptical: no placement is expected to show real targeting
   on the natural misleading cases.
-- **Progress:**
-  - Stage 0 is done. Its boundary rule was corrected before any outcome existed.
-  - The pilot ran all 12 jobs cleanly in 2 h 09 m. One replicate takes about 11 process-hours, so the 15–20 CPU-h
-    estimate for the main run is too low.
-- **Next:**
-  1. Pilot analysis and Addendum A part 2.
-  2. Re-cost the main run.
-  3. Ask the user for compute.
-- **Where:** experiments/signal/STEP4_DESIGN.md; runs/wbcp_signal/step4/expectations.md.
+- **Pilot results (replicate 99, excluded from analysis; Addendum A part 2, independently audited):**
+  - All 1,926 built-in checks pass.
+  - Met: the cone's shape in X-CS (it misses in X-EP), the fixed-point identities, fixed-point definiteness, and the
+    BC-pull cosines.
+  - Reachability is near complete.
+  - **The power check missed.**
+    - Block C's oracle positive control does not beat its shuffled control with expert data: pooled C = −0.004 (P1L)
+      and −0.033 (P2L), against a forecast of ≥ 0.03.
+    - The pre-registered retune (doubling κ) makes the reference fixed point undefined, so it cannot be scored. The
+      cone fails too, even after its retune.
+    - With poor data the same control works clearly: pooled C = 0.166 (P1L) and 0.082 (P2L).
+  - **Timing:** the pilot ran under heavy load. A clean re-run is 3.8–5.6× faster, which puts the full main run at
+    about 18 process-hours (about 27 CPU-h), against the earlier estimate of 15–20 CPU-h.
+  - The addendum was appended 2026-10-02T11:28:59Z; the pre-registration's sha256 is now bcbeff47….
+- **Means:** as registered, the decisive gate G2 (block C, expert data) will probably fail, and the pre-registration
+  then says "stop and redesign". The pilot exists to catch exactly this before the main run.
+- **Next, the user's decision:**
+  - G2: (a) run as registered; (b) amend G2 to poor data (an amendment informed by the pilot); or (c) redesign the
+    positive control.
+  - The cone's κ set: {2, 3} under the rule as written.
+  - Main-run compute: about 18 process-hours (about 27 CPU-h), roughly 2 h of wall time at 12 processes in parallel.
+- **Where:** experiments/signal/STEP4_DESIGN.md; runs/wbcp_signal/step4/expectations.md (Addendum A part 2);
+  experiments/signal/pilot_report.py; runs/wbcp_signal/step4/pilot_report.{json,md}.
 
 ### 12. Signal study, steps 5–6 (not started)
 - **Step 5:** coverage at the actor's own actions, and reused vs fresh banks.
@@ -190,7 +204,7 @@ Last updated: 2026-10-02.
   only.
 
 ## Decisions waiting on the user
-1. Step 4 main-run compute, re-costed from the pilot.
+1. Step 4: the G2 decision (run as registered, amend G2 to poor data, or redesign), the cone's κ set, and the main-run compute from the clean timing.
 2. The TD3+BC Q1 switch: the pre-registered rule says now; it is on hold until step 4.
 3. The K rule: K from measured ρ per host × dataset, or test the n/D posterior correction.
 4. Importance weights: adopt them at all, and toward which target distribution?
@@ -233,3 +247,6 @@ Last updated: 2026-10-02.
   - commits cad0c61, 8d9ad4f, e3c4143;
   - visualization notebook built;
   - advisor deck restructured to put the models first, add code snapshots, and lead through seven questions.
+  - TD3+BC host matrix finished (all four hosts done);
+  - step 4 pilot analysed, with retunes, a clean timing run and an audited Addendum A part 2. The expert-data positive
+    control has no power, and the G2 decision goes to the user.
