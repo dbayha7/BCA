@@ -1,0 +1,619 @@
+{
+ "kind": "glq-acceptance-verdict",
+ "stage": "verdict",
+ "prereg_sha256": "255369889b400c2b93d5c92ca2e861c71d39554bf490b3c9489a5661be177baf",
+ "prereg_path": "/home/user/bca/experiments/signal/glq_preregistration.json",
+ "preset": "real",
+ "dependency_override": false,
+ "machine": "vm",
+ "argv": [
+  "experiments/signal/glq_acceptance.py",
+  "verdict",
+  "--path",
+  "lean",
+  "--retune",
+  "base"
+ ],
+ "seconds": 1.4180203159994562,
+ "finished": "2026-10-11T20:13:38+0000",
+ "step": 12,
+ "retune": "base",
+ "path": "lean",
+ "alpha": 2.5,
+ "rows": [
+  {
+   "step": 1,
+   "id": "B1",
+   "requirement": "Bellman identity per context",
+   "pass_mark": "max relative residual of V = r + gamma E V <= 1e-12 (K*, K2, behaviour, K = 0); another policy's (P, h) gives > 1e-3",
+   "measured": "max residual 1.3e-15; control 0.0044",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 1,
+   "id": "B2",
+   "requirement": "Monte Carlo against the closed form",
+   "pass_mark": "|z| <= 3 per context: 100-step J of the behaviour clone and of the noisy behaviour",
+   "measured": "max |z| 2.0191 (3000 episodes)",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 1,
+   "id": "B3",
+   "requirement": "Finite-horizon recursion",
+   "pass_mark": "forward vs backward recursion <= 1e-10 relative; 4000 steps vs Lyapunov <= 1e-9",
+   "measured": "5.582e-16; 7.215e-15",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 1,
+   "id": "B4",
+   "requirement": "Riccati optimum gradient",
+   "pass_mark": "max |grad J_inf| at K* <= 1e-5 x at 0.5 K*, per context",
+   "measured": "max ratio 9.025e-09",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 1,
+   "id": "B5",
+   "requirement": "Harness steps equal td3_bc_update",
+   "pass_mark": "bit for bit: harness_update hooks off (it 1 and 2), with a bc_multiplier, and Tier A's loop against td3_bc_update with the critic restored",
+   "measured": "4/4 bitwise",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 1,
+   "id": "B6",
+   "requirement": "Oracle-weight identities",
+   "pass_mark": "OR-wrong, OR-thin, ANTI, EVEN, SHUF multisets, knob 0 = NONE, CAP in [1, 1.5), OR-D mean 1, OR-D = [-e_A]_+",
+   "measured": "13/13 identities",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 1,
+   "id": "B7",
+   "requirement": "Unit test suites",
+   "pass_mark": "test_gapped_lq and test_glq_train: 0 failures and 0 errors",
+   "measured": "ran 66, failures 0, errors 0",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "S1",
+   "requirement": "Rich behaviour is mediocre",
+   "pass_mark": "(J(f K*) - J(0)) / (J(K*) - J(0)) <= 0.5 in every rich context",
+   "measured": "0.4586",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "S2",
+   "requirement": "Thin contexts hold room",
+   "pass_mark": "thin mix share x g >= 0.15 of the total gap",
+   "measured": "0.1776",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "S3",
+   "requirement": "Transfer is costly in T_wrong",
+   "pass_mark": "K*_T_right in T_wrong: discounted-stable and loses >= 2 g against the behaviour",
+   "measured": "8.3959 g, radius 0.9869",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "S4",
+   "requirement": "Action scale",
+   "pass_mark": ">= 95% of logged and of optimal actions in [-1, 1]^4",
+   "measured": "0.9708",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "DECOY",
+   "requirement": "Decoy noise",
+   "pass_mark": "decoy median aleatoric target SD >= 3x the rich median",
+   "measured": "6.7498",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "S5",
+   "requirement": "R0 in closed form",
+   "pass_mark": "the R0 marks on the exact behaviour state laws",
+   "measured": "min PR 9.2852, transient 0.3500, IACT 17.0656",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "S6",
+   "requirement": "Ideal transferred policy leaves the log",
+   "pass_mark": "|K*_Tr,34 s| >= 0.3 on >= 30% of thin behaviour states",
+   "measured": "0.4218",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 2,
+   "id": "STAB",
+   "requirement": "Every policy used is stable",
+   "pass_mark": "sqrt(gamma) rho(A - B K) < 1 for all of them",
+   "measured": "transplant sqrt(gamma) rho 0.9869",
+   "result": "pass",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 3,
+   "id": "R0_pr",
+   "requirement": "R0 participation ratio",
+   "pass_mark": ">= 6.0 of 10 in every context, every seed",
+   "measured": "min 9.1242",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 3,
+   "id": "R0_transient",
+   "requirement": "R0 transient rows",
+   "pass_mark": "pooled transient share >= 0.30",
+   "measured": "0.3800 to 0.4000",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 3,
+   "id": "R0_iact",
+   "requirement": "R0 autocorrelation time",
+   "pass_mark": "pooled IACT in [10, 50] steps",
+   "measured": "16.6884 to 17.7322",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 3,
+   "id": "R0_scale",
+   "requirement": "R0 state scale",
+   "pass_mark": ">= 99% of rows with every |s_i| <= 5",
+   "measured": "0.9998 to 1.0000",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 4,
+   "id": "R1a_rich",
+   "requirement": "R1(a) rich actions explore",
+   "pass_mark": "all 4 action-covariance eigenvalues >= 0.05 in R0, R1, DECOY",
+   "measured": "0.0888 to 0.0905",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 4,
+   "id": "R1a_thin",
+   "requirement": "R1(a) thin actions at the rung",
+   "pass_mark": "thin actuator-3-4 SD within 5% of the rung (rung 0: rank 2 and exact zeros), every rung",
+   "measured": "5 rungs; SD / rung 0.9863 to 1.0104",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 4,
+   "id": "R1b",
+   "requirement": "R1(b) thin share",
+   "pass_mark": "thin share of training rows = thin mix share +/- 0.03",
+   "measured": "0.3000 to 0.3000",
+   "result": "pass",
+   "seeds": "5/5 (need 5)",
+   "note": ""
+  },
+  {
+   "step": 5,
+   "id": "R2_ratio",
+   "requirement": "R2 error sits in T_wrong",
+   "pass_mark": "mean E in T_wrong >= 3x the rich mean (HOST and FQE)",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 5,
+   "id": "R2_thin_E2",
+   "requirement": "R2 thin share of E^2",
+   "pass_mark": "thin contexts carry >= 60% of sum E^2",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 5,
+   "id": "R2_rel",
+   "requirement": "R2 rich critic accurate",
+   "pass_mark": "rich median |Q1(s, pi(s)) - Q_td3(s, pi(s))| / |Q^pi| <= 5%, Q_td3 = Q^pi + c_c the fixed point of TD3's smoothed target (a perfect critic reads 0; against Q^pi alone it reads 0.16-0.18); the deterministic-reference value is reported",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 5,
+   "id": "R2_ladder_falls",
+   "requirement": "R2 dose-response",
+   "pass_mark": "thin mean E falls in >= 3 of the 4 rung steps (HOST and FQE)",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 5,
+   "id": "R2_ladder_top",
+   "requirement": "R2 dose-response top rung",
+   "pass_mark": "at rung 0.3, thin / rich mean E within [1/1.5, 1.5]",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 6,
+   "id": "R3_cost",
+   "requirement": "R3 off-support cost",
+   "pass_mark": "w_Tw x off-support cost in T_wrong >= 0.05 x the mixture gap",
+   "measured": "0.0710 to 0.1167 (alpha 10)",
+   "result": "pass",
+   "seeds": "5/5 (need 4)",
+   "note": "a seed passes when all four R3 marks hold"
+  },
+  {
+   "step": 6,
+   "id": "R3_ns_gap",
+   "requirement": "R3 host below EXACT",
+   "pass_mark": "NS(host) <= NS(EXACT) - 0.10",
+   "measured": "NS(EXACT) - NS(host) 0.3262 to 0.4342 (alpha 10)",
+   "result": "pass",
+   "seeds": "5/5 (need 4)",
+   "note": "a seed passes when all four R3 marks hold"
+  },
+  {
+   "step": 6,
+   "id": "R3_thin_shortfall",
+   "requirement": "R3 shortfall in thin contexts",
+   "pass_mark": ">= 60% of the host-vs-EXACT shortfall in the thin contexts",
+   "measured": "0.3954 to 0.5959 (alpha 10)",
+   "result": "FAIL",
+   "seeds": "0/5 (need 4)",
+   "note": "a seed passes when all four R3 marks hold"
+  },
+  {
+   "step": 6,
+   "id": "R3_rich_ns",
+   "requirement": "R3 critic useful where rich",
+   "pass_mark": "host NS in the rich contexts (R0, R1) >= 0.30",
+   "measured": "0.4855 to 0.5956 (alpha 10)",
+   "result": "pass",
+   "seeds": "5/5 (need 4)",
+   "note": "a seed passes when all four R3 marks hold"
+  },
+  {
+   "step": 6,
+   "id": "alpha",
+   "requirement": "Host alpha (ladder 2.5, 5, 10)",
+   "pass_mark": "smallest alpha whose R3 passes",
+   "measured": "2.5: fail, 5: fail, 10: fail",
+   "result": "FAIL",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 7,
+   "id": "R6a",
+   "requirement": "R6(a) thin off-support use",
+   "pass_mark": "|pi(s)_34| >= 0.3 on >= 30% of thin states",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 7,
+   "id": "R6b",
+   "requirement": "R6(b) rich shift",
+   "pass_mark": ">= 20% of rich states beyond 2 logged-noise SDs",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 7,
+   "id": "R6c",
+   "requirement": "R6(c) Kish ESS",
+   "pass_mark": "ESS fraction in [0.05, 0.8] in at least one context",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 7,
+   "id": "R6d",
+   "requirement": "R6(d) BC start does not shift",
+   "pass_mark": "BC start: <= 5% on (a) and on (b)",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 7,
+   "id": "R1c",
+   "requirement": "R1(c) host leaves thin support",
+   "pass_mark": ">= 20% of the host's thin actions below 1% of the behaviour's peak density",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 8,
+   "id": "R5_confound",
+   "requirement": "R5(i) confounds",
+   "pass_mark": "|Spearman(E, aleatoric SD / |s| / distance)| <= 0.5, each context and pooled",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 8,
+   "id": "R5_tright",
+   "requirement": "R5(i) T_right below T_wrong",
+   "pass_mark": "mean E in T_right <= 0.5 x T_wrong",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 8,
+   "id": "R5_band_spearman",
+   "requirement": "R5(ii) band tracks E",
+   "pass_mark": "Spearman(population band, E) >= 0.3",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 8,
+   "id": "R5_auroc_wrong_rich",
+   "requirement": "R5(ii) band finds T_wrong",
+   "pass_mark": "AUROC of the band, T_wrong vs rich rows >= 0.7",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 8,
+   "id": "R5_auroc_thin_decoy",
+   "requirement": "R5(ii) band is not noise",
+   "pass_mark": "AUROC of the band, thin vs decoy rows >= 0.7",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 8,
+   "id": "R5_ideal",
+   "requirement": "R5 ideal regressor beats noise",
+   "pass_mark": "AUROC(high-error rows) of the |t - Q1| regressor >= the noise-only one + 0.10",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": ""
+  },
+  {
+   "step": 9,
+   "id": "L1",
+   "requirement": "Level-1 screen (not a stop)",
+   "pass_mark": "OR-wrong first-order gain - EVEN's at m = 2 > 0",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "0/5 seeds run",
+   "note": "screen, not a stop"
+  },
+  {
+   "step": 9,
+   "id": "R4_1",
+   "requirement": "R4(1) OR-wrong beats EVEN",
+   "pass_mark": "mean NS(OR-wrong) - NS(EVEN) >= 0.05, p < 0.01, >= 80% of seeds positive",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 9,
+   "id": "R4_2",
+   "requirement": "R4(2) OR-thin beats EVEN",
+   "pass_mark": "mean NS(OR-thin) - NS(EVEN) >= 0.03, p < 0.05",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 9,
+   "id": "R4_3a",
+   "requirement": "R4(3) best OR-thin vs best EVEN",
+   "pass_mark": "mean best-minus-best >= 0.02",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 9,
+   "id": "R4_3b",
+   "requirement": "R4(3) caution helps at all",
+   "pass_mark": "mean best OR-wrong - NONE >= 0.03",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 9,
+   "id": "R4_4",
+   "requirement": "R4(4) anchors",
+   "pass_mark": "OR-thin - SHUF >= 0.05 and SHUF - ANTI >= 0.05",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 9,
+   "id": "R4_cap",
+   "requirement": "Capped oracle (report)",
+   "pass_mark": "report NS(CAP-wrong) - NS(EVEN) at the R4 level (best - best when CAP-wrong cannot reach it); < 0.02 means the BCA test uses P1L placement",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7a",
+   "requirement": "R7(a) minimum detectable effect",
+   "pass_mark": "MDE <= 0.02 NS at 10 seeds (else the seeds needed, <= 20)",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7b",
+   "requirement": "R7(b) anchors",
+   "pass_mark": "OR-wrong - SHUF >= 0.05 and SHUF - ANTI >= 0.05",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7c",
+   "requirement": "R7(c) expert-data null world",
+   "pass_mark": "|mean NS(OR-wrong) - NS(EVEN)| < 0.02",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7_gl",
+   "requirement": "Global-linear class",
+   "pass_mark": "mean NS(OR-wrong) - NS(EVEN) < 0.02",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7d",
+   "requirement": "R7(d) strength matching",
+   "pass_mark": "|S/S* - 1| <= 5% for >= 90% of (family, target, seed)",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7_null_pairs",
+   "requirement": "Null SHUF-vs-SHUF pairs",
+   "pass_mark": "<= 1 pair beyond 2 SE",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 10,
+   "id": "R7e",
+   "requirement": "R7(e) Monte Carlo SE",
+   "pass_mark": "not applicable: no Monte Carlo actor class in this gate",
+   "measured": "-",
+   "result": "n/a",
+   "seeds": "",
+   "note": ""
+  },
+  {
+   "step": 11,
+   "id": "TB",
+   "requirement": "Tier B co-trained confirmation",
+   "pass_mark": "NS(OR-wrong) - NS(EVEN) > 0 and >= 0.5 x Tier A's mean, in >= 70% of seeds",
+   "measured": "-",
+   "result": "not run",
+   "seeds": "",
+   "note": "lean path: Tier A only"
+  }
+ ],
+ "step_status": {
+  "1": true,
+  "2": true,
+  "3": true,
+  "4": true,
+  "5": null,
+  "6": false,
+  "7": null,
+  "8": null,
+  "9": null,
+  "10": null,
+  "11": null
+ },
+ "outcome": "step(s) 6 fail at this world (base): next pre-registered retune: thin_share (each thin context's episode share 0.15 -> 0.25 (mix R0 0.20, R1 0.20, T_wrong 0.25, T_right 0.25, DECOY 0.10))"
+}

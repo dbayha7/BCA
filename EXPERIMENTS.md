@@ -4,7 +4,7 @@ This file records every experiment in one place. Each entry says why the experim
 what happened, what it means, and what comes next. Update it whenever an experiment starts, finishes or changes
 plan. Details live in the linked write-ups; this file stays short.
 
-Last updated: 2026-10-02.
+Last updated: 2026-10-11.
 
 ## The big picture
 
@@ -38,6 +38,8 @@ Last updated: 2026-10-02.
 | 11 | Signal study, step 4 (placement) | Main run computing (started 2026-10-02) | G2 moved to poor data (a pilot-informed amendment) |
 | 12 | Signal study, steps 5–6 | Not started | — |
 | 13 | Full D4RL training (return) | Not started; needs permission | No WBCP-era return evidence yet |
+| 14 | Toy-world audit and the Gapped LQ world | Done (lean gate): world rejected | R3 fails at every alpha; room to win exists (information only) |
+| 15 | D4RL rollout truth (option C) | Built; real runs need data + checkpoints | Tested on synthetic data only |
 
 ## Experiments
 
@@ -209,6 +211,60 @@ Last updated: 2026-10-02.
 - **Only return evidence:** one archived-radius pair (TD3+BC walker2d, one seed, 77.2 → 82.9). It is descriptive
   only.
 
+### 14. Toy-world audit and the Gapped LQ world (done, lean gate: the world is rejected)
+- **Why:**
+  - The 2026-10-09/10 audit found that the 3-state LQ toy world could not test BCA. It has no thin data, its
+    critic errors are planted formulas, its policy is 6 numbers, and the shift is tiny.
+  - Even caution recovered 97–99.9% of the possible improvement, and perfect placement added −1.6 to +0.04 points.
+  - The environment card is the artifact "LQ Toy World".
+  - The user approved a replacement (option A): 10 states, 4 actuators and 5 contexts. Two rare contexts log
+    actuators 3–4 only thinly, and in one of them (T_wrong) those actuators are reversed. A noisy decoy context is
+    added. The critic is learned with td3_bc_update, and truth is exact per context.
+- **Expected:** the gate, with 57 pass marks, was pre-registered and hashed before any training (sha256
+  255369889b…). Stop rule: if step 5, 6 or 9 fails, try the next retune; after the last, reject the world.
+- **Found** (lean path, seeds 0–4; 70 critic runs):
+  - **Steps 1–4 pass.** Every build check passes, Stage 0 passes (after moving 4 free scales, closed form only),
+    R0 state richness passes (participation ratio ≥ 8.96 of 10) and R1 thin data passes.
+  - **Step 6 (R3) fails at alpha 2.5, 5 and 10.** The base world passes 0/1/0 of 5 seeds and the thin_share retune
+    3 of 5 at its best, with 4 needed.
+    - The failing mark: at least 60% of the host's shortfall against EXACT must sit in the thin contexts. It is
+      0.40–0.60 (base) and 0.56–0.74 (retune).
+    - The cost, the EXACT gap and the rich-NS marks pass at alpha 10.
+  - **Retune 2 (wrong_gain) fails Stage 0** (the transplant is unstable, √γ·ρ = 1.0023). The world is rejected,
+    and BCA is not run in it.
+  - **R2 (information):** the learned critics miss the ≤ 5% accuracy mark by a wide margin (0.46–1.15). Most of it is
+    a level offset, consistent with clipped double-Q underestimation at γ = 0.98. The co-trained critic's steering
+    error is not concentrated in T_wrong (1.0–1.6× the rich contexts'); FQE's is (3.4–6.2×).
+  - **Room to win (information only; base world, alpha 10; not counted by the gate):**
+    - Caution placed exactly in T_wrong beats even caution at matched strength by +0.060 NS (p = 0.0001, 5 of 5
+      seeds). Caution in both thin contexts beats it by +0.045, and best against best by +0.088.
+    - Row-by-row error placement (OR-err, OR-D) gains only +0.016 to +0.024.
+    - Within BCA's dose range [1, 1.5) the oracle cannot reach the matched strength.
+- **Means:**
+  - This world does what the toy world could not. Its data is thin, its critic is learned, the errors cost return
+    in the predicted direction, and placing caution by situation clearly wins.
+  - But its own gate rejects it: the learned critic is also wrong where data is rich, so the loss is not
+    concentrated in the thin contexts.
+  - The information-only result says the room lies in placing caution by situation (context), not in per-row error
+    magnitude, the kind of signal BCA's band gives.
+- **Where:** experiments/signal/gapped_lq.py, glq_train.py, glq_acceptance.py, GAPPED_LQ.md;
+  outputs/glq/lean-v1/README.md (verdict tables, R3, R2, R4).
+
+### 15. D4RL rollout truth, option C (built; real runs need data and checkpoints)
+- **Why:** measure true Q^π of real TD3+BC hosts (Hopper, Walker2d) by restoring logged MuJoCo states and rolling out.
+  This shows whether real critic errors sit where data is thin.
+- **Built:** experiments/truth/
+  - state restore with a one-step reproduction gate;
+  - a batched mujoco_py rollout labeller;
+  - pools L, Pi and T, and R1–R7 stages;
+  - extraction on frozen critics;
+  - a pre-registration hash gate.
+  53 tests pass. The synthetic end-to-end run uses simulator-made D4RL-format data only, and none of it is a finding.
+- **Blocked in the cloud container:** the D4RL files (rail.eecs.berkeley.edu is blocked by the network policy) and
+  the trained host checkpoints (on the local machine). The first real step, truth labels for the existing Hopper
+  checkpoint seed 202609171 (R1, R2, R5-world, R6), costs about 1.5 process-hours. The commands are in
+  experiments/truth/README.md.
+
 ## Decisions waiting on the user
 1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
 2. The TD3+BC Q1 switch: the pre-registered rule says now; it is on hold until step 4.
@@ -216,6 +272,11 @@ Last updated: 2026-10-02.
 4. Importance weights: adopt them at all, and toward which target distribution?
 5. Permissions: actor fine-tuning (4B-1), TD3+BC pools on the random datasets, and later full training (4B-2).
 6. Provenance: commit each expectation file before its run.
+7. Gapped LQ (entry 14): accept the rejection, or amend the gate under a new pre-registration. Candidate amendments:
+   R2's accuracy mark on the critic's gradient instead of its level, and R3's shortfall share. Either is post hoc,
+   because the outcomes are known.
+8. Option C (entry 15): run the first truth-label stage on the local machine, or allow rail.eecs.berkeley.edu in
+   the cloud environment and provide the checkpoints.
 
 ## Deliverables
 - **Notebooks:**
@@ -258,3 +319,10 @@ Last updated: 2026-10-02.
     control has no power, and the G2 decision goes to the user;
   - the user's decisions recorded as amendments P–R, and the step 4 main run launched (11:37Z);
   - the deck is being rebuilt to be visual-first, with charts and few words.
+- **2026-10-11:**
+  - options A (Gapped LQ) and C (D4RL rollout truth) built, tested (86 and 53 tests) and adversarially reviewed;
+    the Gapped LQ gate was pre-registered (255369889b…);
+  - the Gapped LQ lean gate ran: steps 1–4 pass, and R3 fails at every alpha in the base world and the thin_share
+    retune. Retune 2 is unstable, so the world is rejected. The base world's information-only Tier A shows room to
+    win for context-level caution (entry 14);
+  - option C is blocked on D4RL data and checkpoints in the cloud (entry 15).
