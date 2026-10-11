@@ -1,0 +1,662 @@
+{
+ "alpha_ladder": [
+  2.5,
+  5.0,
+  10.0
+ ],
+ "alpha_rule": "the host alpha is the smallest alpha of the ladder whose R3 passes; each rung is tried once, in order",
+ "bca": {
+  "band": "off (r5world refuses R5(iii) without --allow-bca-band)",
+  "training_arm": "off (glq_train.cotrain refuses mode BCA without allow_bca)"
+ },
+ "code_sha256": {
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_acceptance.py": "d05e742d454fbf9109a325dab990f6604a28681c4aa84885a3840d08933f3246",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/glq_train.py": "6f71740f3147400e453e707417c4b5dace6de59ccb96f07bb89be385be8b8ad0"
+ },
+ "config": {
+  "alpha_ladder": [
+   2.5,
+   5.0,
+   10.0
+  ],
+  "bca_fit_steps": 5000,
+  "chunk": 1000,
+  "control_families": [
+   "EVEN",
+   "OR-wrong",
+   "OR-thin"
+  ],
+  "data_seed": 20261012,
+  "full_seeds": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "ladder_rungs": [
+   0.0,
+   0.01,
+   0.03,
+   0.1,
+   0.3
+  ],
+  "ladder_seeds": [
+   0,
+   1,
+   2
+  ],
+  "lean_seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "match_rounds": 5,
+  "match_tol": 0.01,
+  "mc_episodes": 3000,
+  "n_shuf": 4,
+  "preset": "real",
+  "primary_rung": 0.01,
+  "r2_snapshot": 1.0,
+  "r5_chunk_rows": 256,
+  "r5_draws": 256,
+  "r5_extra_snapshots": [
+   0.5
+  ],
+  "r5_snapshot": 1.0,
+  "regressor_batch": 256,
+  "regressor_lr": 0.001,
+  "regressor_steps": 5000,
+  "sizes": [
+   500,
+   200,
+   300
+  ],
+  "snapshots": [
+   0.25,
+   0.5,
+   1.0
+  ],
+  "tier_a_refresh": 1000,
+  "tier_a_snapshot": 0.5,
+  "tier_a_steps": 10000,
+  "tier_b_arms": [
+   "EVEN",
+   "OR-wrong",
+   "OR-thin",
+   "SHUF0",
+   "ANTI"
+  ],
+  "train_seed": 20261013,
+  "unit_suites": [
+   "experiments.signal.test_gapped_lq",
+   "experiments.signal.test_glq_train"
+  ],
+  "updates": 100000
+ },
+ "created": "2026-10-11T06:46:13+0000",
+ "decoy": {
+  "behaviour": "rich (f K* + 0.3 noise)",
+  "context": "DECOY",
+  "mix_share": 0.1,
+  "noise_sd": 0.3,
+  "ns_reporting": "mixture NS includes the decoy; rich marks use R0 and R1; per-context NS is always reported"
+ },
+ "density_ladder": {
+  "alpha": 2.5,
+  "modes": [
+   "HOST",
+   "FQE"
+  ],
+  "primary": 0.01,
+  "rungs": [
+   0.0,
+   0.01,
+   0.03,
+   0.1,
+   0.3
+  ],
+  "seeds": [
+   0,
+   1,
+   2
+  ]
+ },
+ "dependency_sha256": {
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/signal/placement_harness.py": "f1292f8bc0bd140e50b0ec776f454cbae3fb6088068bcaedf09d915268637722",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607"
+ },
+ "jax": "0.6.2",
+ "kind": "glq-preregistration",
+ "numpy": "2.2.6",
+ "pass_marks": {
+  "B1": {
+   "control_min": 0.001,
+   "mark": "max relative residual of V = r + gamma E V <= 1e-12 (K*, K2, behaviour, K = 0); another policy's (P, h) gives > 1e-3",
+   "max": 1e-12,
+   "name": "Bellman identity per context",
+   "step": 1
+  },
+  "B2": {
+   "mark": "|z| <= 3 per context: 100-step J of the behaviour clone and of the noisy behaviour",
+   "max_abs_z": 3.0,
+   "name": "Monte Carlo against the closed form",
+   "step": 1
+  },
+  "B3": {
+   "mark": "forward vs backward recursion <= 1e-10 relative; 4000 steps vs Lyapunov <= 1e-9",
+   "max_forward_backward": 1e-10,
+   "max_lyapunov": 1e-09,
+   "name": "Finite-horizon recursion",
+   "step": 1
+  },
+  "B4": {
+   "mark": "max |grad J_inf| at K* <= 1e-5 x at 0.5 K*, per context",
+   "max_ratio": 1e-05,
+   "name": "Riccati optimum gradient",
+   "step": 1
+  },
+  "B5": {
+   "mark": "bit for bit: harness_update hooks off (it 1 and 2), with a bc_multiplier, and Tier A's loop against td3_bc_update with the critic restored",
+   "name": "Harness steps equal td3_bc_update",
+   "step": 1
+  },
+  "B6": {
+   "mark": "OR-wrong, OR-thin, ANTI, EVEN, SHUF multisets, knob 0 = NONE, CAP in [1, 1.5), OR-D mean 1, OR-D = [-e_A]_+",
+   "name": "Oracle-weight identities",
+   "step": 1
+  },
+  "B7": {
+   "mark": "test_gapped_lq and test_glq_train: 0 failures and 0 errors",
+   "name": "Unit test suites",
+   "step": 1
+  },
+  "DECOY": {
+   "mark": "decoy median aleatoric target SD >= 3x the rich median",
+   "min": 3.0,
+   "name": "Decoy noise",
+   "step": 2
+  },
+  "L1": {
+   "mark": "OR-wrong first-order gain - EVEN's at m = 2 > 0",
+   "min": 0.0,
+   "name": "Level-1 screen (not a stop)",
+   "seed_frac": 0.8,
+   "step": 9
+  },
+  "R0_iact": {
+   "hi": 50.0,
+   "lo": 10.0,
+   "mark": "pooled IACT in [10, 50] steps",
+   "name": "R0 autocorrelation time",
+   "step": 3
+  },
+  "R0_pr": {
+   "mark": ">= 6.0 of 10 in every context, every seed",
+   "min": 6.0,
+   "name": "R0 participation ratio",
+   "step": 3
+  },
+  "R0_scale": {
+   "bound": 5.0,
+   "mark": ">= 99% of rows with every |s_i| <= 5",
+   "min": 0.99,
+   "name": "R0 state scale",
+   "step": 3
+  },
+  "R0_transient": {
+   "mark": "pooled transient share >= 0.30",
+   "min": 0.3,
+   "name": "R0 transient rows",
+   "step": 3
+  },
+  "R1a_rich": {
+   "mark": "all 4 action-covariance eigenvalues >= 0.05 in R0, R1, DECOY",
+   "min": 0.05,
+   "name": "R1(a) rich actions explore",
+   "step": 4
+  },
+  "R1a_thin": {
+   "mark": "thin actuator-3-4 SD within 5% of the rung (rung 0: rank 2 and exact zeros), every rung",
+   "name": "R1(a) thin actions at the rung",
+   "rank_rel": 1e-12,
+   "rel_tol": 0.05,
+   "step": 4
+  },
+  "R1b": {
+   "mark": "thin share of training rows = thin mix share +/- 0.03",
+   "name": "R1(b) thin share",
+   "step": 4,
+   "tol": 0.03
+  },
+  "R1c": {
+   "density": 0.01,
+   "floor": 0.01,
+   "mark": ">= 20% of the host's thin actions below 1% of the behaviour's peak density",
+   "min": 0.2,
+   "name": "R1(c) host leaves thin support",
+   "seed_frac": 0.8,
+   "step": 7
+  },
+  "R2_ladder_falls": {
+   "mark": "thin mean E falls in >= 3 of the 4 rung steps (HOST and FQE)",
+   "min": 3,
+   "name": "R2 dose-response",
+   "step": 5
+  },
+  "R2_ladder_top": {
+   "factor": 1.5,
+   "mark": "at rung 0.3, thin / rich mean E within [1/1.5, 1.5]",
+   "name": "R2 dose-response top rung",
+   "step": 5
+  },
+  "R2_ratio": {
+   "mark": "mean E in T_wrong >= 3x the rich mean (HOST and FQE)",
+   "min": 3.0,
+   "name": "R2 error sits in T_wrong",
+   "seed_frac": 0.8,
+   "step": 5
+  },
+  "R2_rel": {
+   "mark": "rich median |Q1(s, pi(s)) - Q_td3(s, pi(s))| / |Q^pi| <= 5%, Q_td3 = Q^pi + c_c the fixed point of TD3's smoothed target (a perfect critic reads 0; against Q^pi alone it reads 0.16-0.18); the deterministic-reference value is reported",
+   "max": 0.05,
+   "name": "R2 rich critic accurate",
+   "reference": "td3_fixed_point",
+   "seed_frac": 0.8,
+   "step": 5
+  },
+  "R2_thin_E2": {
+   "mark": "thin contexts carry >= 60% of sum E^2",
+   "min": 0.6,
+   "name": "R2 thin share of E^2",
+   "seed_frac": 0.8,
+   "step": 5
+  },
+  "R3_cost": {
+   "mark": "w_Tw x off-support cost in T_wrong >= 0.05 x the mixture gap",
+   "min": 0.05,
+   "name": "R3 off-support cost",
+   "seed_frac": 0.8,
+   "step": 6
+  },
+  "R3_ns_gap": {
+   "mark": "NS(host) <= NS(EXACT) - 0.10",
+   "min": 0.1,
+   "name": "R3 host below EXACT",
+   "seed_frac": 0.8,
+   "step": 6
+  },
+  "R3_rich_ns": {
+   "mark": "host NS in the rich contexts (R0, R1) >= 0.30",
+   "min": 0.3,
+   "name": "R3 critic useful where rich",
+   "seed_frac": 0.8,
+   "step": 6
+  },
+  "R3_thin_shortfall": {
+   "mark": ">= 60% of the host-vs-EXACT shortfall in the thin contexts",
+   "min": 0.6,
+   "name": "R3 shortfall in thin contexts",
+   "seed_frac": 0.8,
+   "step": 6
+  },
+  "R4_1": {
+   "mark": "mean NS(OR-wrong) - NS(EVEN) >= 0.05, p < 0.01, >= 80% of seeds positive",
+   "min": 0.05,
+   "name": "R4(1) OR-wrong beats EVEN",
+   "p_max": 0.01,
+   "positive_frac": 0.8,
+   "step": 9
+  },
+  "R4_2": {
+   "mark": "mean NS(OR-thin) - NS(EVEN) >= 0.03, p < 0.05",
+   "min": 0.03,
+   "name": "R4(2) OR-thin beats EVEN",
+   "p_max": 0.05,
+   "step": 9
+  },
+  "R4_3a": {
+   "mark": "mean best-minus-best >= 0.02",
+   "min": 0.02,
+   "name": "R4(3) best OR-thin vs best EVEN",
+   "step": 9
+  },
+  "R4_3b": {
+   "mark": "mean best OR-wrong - NONE >= 0.03",
+   "min": 0.03,
+   "name": "R4(3) caution helps at all",
+   "step": 9
+  },
+  "R4_4": {
+   "mark": "OR-thin - SHUF >= 0.05 and SHUF - ANTI >= 0.05",
+   "min_gap": 0.05,
+   "name": "R4(4) anchors",
+   "step": 9
+  },
+  "R4_cap": {
+   "decision": 0.02,
+   "mark": "report NS(CAP-wrong) - NS(EVEN) at the R4 level (best - best when CAP-wrong cannot reach it); < 0.02 means the BCA test uses P1L placement",
+   "name": "Capped oracle (report)",
+   "step": 9
+  },
+  "R5_auroc_thin_decoy": {
+   "mark": "AUROC of the band, thin vs decoy rows >= 0.7",
+   "min": 0.7,
+   "name": "R5(ii) band is not noise",
+   "seed_frac": 0.7,
+   "step": 8
+  },
+  "R5_auroc_wrong_rich": {
+   "mark": "AUROC of the band, T_wrong vs rich rows >= 0.7",
+   "min": 0.7,
+   "name": "R5(ii) band finds T_wrong",
+   "seed_frac": 0.7,
+   "step": 8
+  },
+  "R5_band_spearman": {
+   "mark": "Spearman(population band, E) >= 0.3",
+   "min": 0.3,
+   "name": "R5(ii) band tracks E",
+   "seed_frac": 0.7,
+   "step": 8
+  },
+  "R5_confound": {
+   "mark": "|Spearman(E, aleatoric SD / |s| / distance)| <= 0.5, each context and pooled",
+   "max_abs": 0.5,
+   "name": "R5(i) confounds",
+   "seed_frac": 0.7,
+   "step": 8
+  },
+  "R5_ideal": {
+   "mark": "AUROC(high-error rows) of the |t - Q1| regressor >= the noise-only one + 0.10",
+   "min_margin": 0.1,
+   "name": "R5 ideal regressor beats noise",
+   "quantile": 0.75,
+   "seed_frac": 0.7,
+   "step": 8
+  },
+  "R5_tright": {
+   "mark": "mean E in T_right <= 0.5 x T_wrong",
+   "max": 0.5,
+   "name": "R5(i) T_right below T_wrong",
+   "seed_frac": 0.7,
+   "step": 8
+  },
+  "R6a": {
+   "mark": "|pi(s)_34| >= 0.3 on >= 30% of thin states",
+   "min": 0.3,
+   "name": "R6(a) thin off-support use",
+   "seed_frac": 0.8,
+   "step": 7,
+   "threshold": 0.3
+  },
+  "R6b": {
+   "distance": 2.0,
+   "mark": ">= 20% of rich states beyond 2 logged-noise SDs",
+   "min": 0.2,
+   "name": "R6(b) rich shift",
+   "seed_frac": 0.8,
+   "step": 7
+  },
+  "R6c": {
+   "hi": 0.8,
+   "lo": 0.05,
+   "mark": "ESS fraction in [0.05, 0.8] in at least one context",
+   "name": "R6(c) Kish ESS",
+   "seed_frac": 0.8,
+   "step": 7
+  },
+  "R6d": {
+   "mark": "BC start: <= 5% on (a) and on (b)",
+   "max": 0.05,
+   "name": "R6(d) BC start does not shift",
+   "seed_frac": 0.8,
+   "step": 7
+  },
+  "R7_gl": {
+   "mark": "mean NS(OR-wrong) - NS(EVEN) < 0.02",
+   "max": 0.02,
+   "name": "Global-linear class",
+   "step": 10
+  },
+  "R7_null_pairs": {
+   "mark": "<= 1 pair beyond 2 SE",
+   "max": 1,
+   "name": "Null SHUF-vs-SHUF pairs",
+   "se": 2.0,
+   "step": 10
+  },
+  "R7a": {
+   "alpha": 0.05,
+   "at_seeds": 10,
+   "mark": "MDE <= 0.02 NS at 10 seeds (else the seeds needed, <= 20)",
+   "max": 0.02,
+   "max_seeds": 20,
+   "name": "R7(a) minimum detectable effect",
+   "power": 0.8,
+   "step": 10
+  },
+  "R7b": {
+   "mark": "OR-wrong - SHUF >= 0.05 and SHUF - ANTI >= 0.05",
+   "min_gap": 0.05,
+   "name": "R7(b) anchors",
+   "step": 10
+  },
+  "R7c": {
+   "mark": "|mean NS(OR-wrong) - NS(EVEN)| < 0.02",
+   "max_abs": 0.02,
+   "name": "R7(c) expert-data null world",
+   "step": 10
+  },
+  "R7d": {
+   "mark": "|S/S* - 1| <= 5% for >= 90% of (family, target, seed)",
+   "min": 0.9,
+   "name": "R7(d) strength matching",
+   "step": 10,
+   "tol": 0.05
+  },
+  "R7e": {
+   "mark": "not applicable: no Monte Carlo actor class in this gate",
+   "name": "R7(e) Monte Carlo SE",
+   "step": 10
+  },
+  "S1": {
+   "mark": "(J(f K*) - J(0)) / (J(K*) - J(0)) <= 0.5 in every rich context",
+   "max": 0.5,
+   "name": "Rich behaviour is mediocre",
+   "step": 2
+  },
+  "S2": {
+   "mark": "thin mix share x g >= 0.15 of the total gap",
+   "min": 0.15,
+   "name": "Thin contexts hold room",
+   "step": 2
+  },
+  "S3": {
+   "mark": "K*_T_right in T_wrong: discounted-stable and loses >= 2 g against the behaviour",
+   "min": 2.0,
+   "name": "Transfer is costly in T_wrong",
+   "step": 2
+  },
+  "S4": {
+   "mark": ">= 95% of logged and of optimal actions in [-1, 1]^4",
+   "min": 0.95,
+   "name": "Action scale",
+   "step": 2
+  },
+  "S5": {
+   "mark": "the R0 marks on the exact behaviour state laws",
+   "name": "R0 in closed form",
+   "step": 2
+  },
+  "S6": {
+   "mark": "|K*_Tr,34 s| >= 0.3 on >= 30% of thin behaviour states",
+   "min": 0.3,
+   "name": "Ideal transferred policy leaves the log",
+   "step": 2
+  },
+  "STAB": {
+   "mark": "sqrt(gamma) rho(A - B K) < 1 for all of them",
+   "name": "Every policy used is stable",
+   "step": 2
+  },
+  "TB": {
+   "mark": "NS(OR-wrong) - NS(EVEN) > 0 and >= 0.5 x Tier A's mean, in >= 70% of seeds",
+   "min_fraction": 0.5,
+   "name": "Tier B co-trained confirmation",
+   "seed_frac": 0.7,
+   "step": 11
+  }
+ },
+ "python": "3.10.20",
+ "retune_rule": "at most two retunes, applied one at a time to the Stage-0 world in the listed order, only when step 5, 6 or 9 fails; a retuned world reruns the gate from Stage 0",
+ "retunes": [
+  {
+   "change": {
+    "mix": [
+     0.2,
+     0.2,
+     0.25,
+     0.25,
+     0.1
+    ]
+   },
+   "name": "thin_share",
+   "text": "each thin context's episode share 0.15 -> 0.25 (mix R0 0.20, R1 0.20, T_wrong 0.25, T_right 0.25, DECOY 0.10)"
+  },
+  {
+   "change": {
+    "wrong_gain": 1.5
+   },
+   "name": "wrong_gain",
+   "text": "T_wrong's actuator-3-4 gain x 1.5 (WorldSpec.wrong_gain = 1.5)"
+  }
+ ],
+ "seed_rule": "a mark 'in >= f of 10 seeds' needs >= ceil(f n) of the path's n seeds",
+ "seeds": {
+  "full": [
+   0,
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "ladder": [
+   0,
+   1,
+   2
+  ],
+  "lean": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "statement": "Every pass mark, seed list, retune, alpha rung and setting of the Gapped LQ acceptance gate, fixed before any acceptance stage trains anything. glq_acceptance.load_prereg refuses every stage when this file, its sidecar or a hashed code file differs.",
+ "step_names": {
+  "1": "build tests",
+  "2": "Stage 0",
+  "3": "R0 state richness",
+  "4": "R1 thinness",
+  "5": "R2 learned errors",
+  "6": "R3 errors cost return",
+  "7": "R6 policy shift",
+  "8": "R5 world gates",
+  "9": "R4 Tier A",
+  "10": "R7 measurement validity",
+  "11": "R4 Tier B"
+ },
+ "stop_steps": [
+  5,
+  6,
+  9
+ ],
+ "train_settings": {
+  "actor": "context_linear",
+  "actor_init": "zero",
+  "alpha": 2.5,
+  "batch_size": 256,
+  "chunk": 1000,
+  "exact_lambda": "exact",
+  "exact_level": "td3",
+  "exact_refresh": 100,
+  "gamma": 0.98,
+  "gs_hidden": 64,
+  "lr": 0.0003,
+  "noise_clip": 0.5,
+  "policy_freq": 2,
+  "policy_noise": 0.2,
+  "probe": "kstar",
+  "seed": 20261013,
+  "snapshots": [
+   0.25,
+   0.5,
+   1.0
+  ],
+  "tau": 0.005,
+  "updates": 100000
+ },
+ "world": {
+  "matrices_sha256": "8ead3bafd9cf02b673216188cd5611eedf65d31855e8d0ea017605c72b6903af",
+  "spec": {
+   "action_cost": 1.605555555555556,
+   "behaviour_fraction": 0.2,
+   "coupling_norm": 0.02,
+   "coupling_seed": 20261011,
+   "decoy_noise_sd": 0.3,
+   "gain": 0.085,
+   "gamma": 0.98,
+   "init_sd": 1.0,
+   "length": 100,
+   "max_radius": 1.0,
+   "mix": [
+    0.3,
+    0.3,
+    0.15,
+    0.15,
+    0.1
+   ],
+   "noise_sd": 0.1,
+   "r1_scale": 0.6,
+   "rho_step": 0.005,
+   "rho_top": 0.98,
+   "rich_noise_sd": 0.3,
+   "theta": [
+    0.1,
+    0.2,
+    0.35,
+    0.55,
+    0.8
+   ],
+   "thin_noise_sd": 0.1,
+   "thin_rung": 0.01,
+   "wrong_gain": 1.0,
+   "wrong_map": "negate"
+  },
+  "spec_sha256": "4f94a0a5de7ba3622a9deb43ff4f448e494fbc0d57299fdcef3ba30185eab577"
+ }
+}

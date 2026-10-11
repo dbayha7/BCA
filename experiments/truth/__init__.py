@@ -1,0 +1,10 @@
+"""D4RL-RT truth instrument: the true Q^pi of a frozen policy at logged and visited Hopper/Walker2d states.
+
+Modules (see experiments/truth/README.md for stages, commands and costs):
+  state_restore  converted row -> raw row -> qpos/qvel (infos, or rebuilt from the observation), the exact
+                 env step on bare MjSim instances, and the one-step reproduction gate
+  labeller       batched rollout truth Q^pi(s, a): many MjSims in lockstep, one jitted actor call per step;
+                 deterministic, jitter and noisy-target modes; central-difference action gradients;
+                 resumable shards with a strict JSON manifest
+  synthetic      D4RL-format HDF5 files made in the real simulator, for tests only (never findings)
+"""
