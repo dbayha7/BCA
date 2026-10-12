@@ -41,28 +41,29 @@ from scipy import linalg
 from experiments.shift import thruster_chain as TC
 
 TRIGGER = 0.565
-OPERATOR_BANK_STREAM = (7, 1)  # np.random.default_rng([7, 1]): noise (n, 100, 4) then coin (n, 100), every bank
+RECORDING_BANK_STREAM = (7, 1)  # np.random.default_rng([7, 1]): noise (n, 100, 4) then coin (n, 100), every bank
 
 
 @dataclass(frozen=True)
 class RecorderSpec:
     """The recording controller's numbers.
 
-    damping: the share of the textbook float feedback K_s it applies (0.25). wobble: SD of the noise added to the
-    throttle demand (0.3). hand_cap: normal-driving commands stay strictly inside +-hand_cap via hand_cap *
-    tanh(u / hand_cap) (0.8). press_probability: the chance per step of the full-throttle command inside the
-    full-throttle region (0.5). jitter: SD of the noise on the full-throttle command (0.03). trigger: the water's
-    push c + w1 above which the full-throttle region starts (0.565). press_share_target: the share of full-throttle
-    commands the trigger bisection aims at (0.13).
+    damping: the share of the textbook float feedback K_s it applies in normal driving (0.25). wobble: standard
+    deviation of the noise added to the throttle demand (0.3). normal_driving_cap: normal-driving commands stay inside
+    +-normal_driving_cap via normal_driving_cap * tanh(u / normal_driving_cap) (0.8). full_throttle_probability: the
+    chance per step of the full-throttle command inside the full-throttle region (0.5). jitter: standard deviation of
+    the noise on the full-throttle command (0.03). trigger: the water's push c + w1 above which the full-throttle
+    region starts (0.565). full_throttle_share_target: the share of full-throttle commands the trigger bisection aims
+    at (0.13).
     """
 
     damping: float = 0.25
     wobble: float = 0.3
-    hand_cap: float = 0.8
-    press_probability: float = 0.5
+    normal_driving_cap: float = 0.8
+    full_throttle_probability: float = 0.5
     jitter: float = 0.03
     trigger: float = TRIGGER
-    press_share_target: float = 0.13
+    full_throttle_share_target: float = 0.13
 
     def as_dict(self):
         return asdict(self)
@@ -94,9 +95,9 @@ def full_throttle_pattern(K):
     return -K[:, TC.CURRENT] / abs(K[0, TC.CURRENT])
 
 
-def _linear(x, M, scale_floats=1.0, xp=np):
-    """y = scale_floats * (x_s @ M_s.T) + x_e @ M_e.T for M (4 x 13), as fixed-order column sums (shape independent).
-    Returns (floats part, current-and-wave part) so callers combine them in one fixed order."""
+def _linear(x, M, xp=np):
+    """The two parts of M x for M (4 x 13): (x_s @ M_s.T, x_e @ M_e.T), each a fixed-order sum over columns, so the
+    result does not depend on the batch shape. Callers combine the parts in one fixed order."""
     cols = [np.asarray(M[:, j], np.float64) for j in range(TC.DX)]
     if xp is not np:
         cols = [xp.asarray(c, x.dtype) for c in cols]
@@ -149,7 +150,8 @@ class LinearController(Controller):
 
 
 class HandOnly(Controller):
-    """Normal driving without wobble: hand_cap * tanh(-(damping K_s s + K_e e) / hand_cap). It never goes past 80%."""
+    """Normal driving without wobble: normal_driving_cap * tanh(-(damping K_s s + K_e e) / normal_driving_cap). It
+    never goes past 80%."""
 
     def __init__(self, K, spec=DEFAULT_SPEC):
         self.K = np.asarray(K, np.float64)
@@ -159,14 +161,14 @@ class HandOnly(Controller):
     def __call__(self, x):
         fl, ex = _linear(np.asarray(x, np.float64), self.K)
         u = -(self.spec.damping * fl + ex)
-        return self.spec.hand_cap * np.tanh(u / self.spec.hand_cap)
+        return self.spec.normal_driving_cap * np.tanh(u / self.spec.normal_driving_cap)
 
     def jax(self, x):
         import jax.numpy as jnp
 
         fl, ex = _linear(x, self.K, xp=jnp)
         u = -(self.spec.damping * fl + ex)
-        return self.spec.hand_cap * jnp.tanh(u / self.spec.hand_cap)
+        return self.spec.normal_driving_cap * jnp.tanh(u / self.spec.normal_driving_cap)
 
 
 class CappedController(Controller):
@@ -211,14 +213,14 @@ class Recorder:
         u = -(self.spec.damping * fl + ex)
         if noise is not None:
             u = u + self.spec.wobble * np.asarray(noise, np.float64)
-        hand = self.spec.hand_cap * np.tanh(u / self.spec.hand_cap)
+        hand = self.spec.normal_driving_cap * np.tanh(u / self.spec.normal_driving_cap)
         full = self.pattern if noise is None else self.pattern + self.spec.jitter * np.asarray(noise, np.float64)
         full = np.clip(full, -1.0, 1.0)
         region = self.in_region(x)
         if coin is None:
             press = np.zeros(region.shape, bool)
         else:
-            press = region & (np.asarray(coin, np.float64) < self.spec.press_probability)
+            press = region & (np.asarray(coin, np.float64) < self.spec.full_throttle_probability)
         command = np.where(press[..., None], np.broadcast_to(full, hand.shape), hand)
         return command, region, press
 
@@ -238,7 +240,7 @@ class StreamedRecorder(Controller):
         self.name = "recording controller (fixed noise and coin streams)"
 
     @classmethod
-    def on_bank(cls, recorder, n=TC.BANK_SIZE, length=TC.STALL.length, stream=OPERATOR_BANK_STREAM):
+    def on_bank(cls, recorder, n=TC.BANK_SIZE, length=TC.STALL.length, stream=RECORDING_BANK_STREAM):
         rng = np.random.default_rng(list(stream))
         noise = rng.standard_normal((n, length, TC.DA))
         coin = rng.uniform(size=(n, length))

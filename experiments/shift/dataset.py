@@ -14,7 +14,7 @@ Splits, by episode (sizes (500, 200, 300)): episodes 0-499 train (50,000 rows), 
 bank takes 5 rows from each of these 200 episodes through calibration/bank.stratified_bank with
 default_rng([20261012, rep, 10]): 1,000 rows), 700-999 evaluation (held out, never trained on).
 
-Arrays (D4RL / Minari names):
+Arrays (D4RL field names):
   observations (N, 13) float32, actions (N, 4) float32, rewards (N,) float32, next_observations (N, 13) float32,
   terminals (N,) bool (all False: episodes only end by the time limit), timeouts (N,) bool (True at t = 99, so TD3+BC
   bootstraps through the time limit);
@@ -24,9 +24,18 @@ Arrays (D4RL / Minari names):
   diagnostic only. Log hides it from ordinary item access (log[key] refuses it); only log.diagnostic(key) returns it
   and counts the read, so a test can prove that no learner, removal rule or scorer reads it.
 
-HDF5 (write_hdf5 / read_hdf5): every array under its name, written without timestamps so regeneration gives the same
-bytes; a JSON manifest beside it holds the SHA-256 of the file and of every array, the generator settings and the
-SHA-256 of the experiments/shift code. Reading verifies every hash and refuses on any mismatch.
+HDF5 (write_hdf5 / read_hdf5): the FULL log, all three splits, every array under its name, written without timestamps
+so regeneration gives the same bytes; a JSON manifest beside it holds the SHA-256 of the file and of every array, the
+generator settings and the SHA-256 of the experiments/shift code. Reading verifies every hash and refuses on any
+mismatch. The full log is not a training set: a D4RL-style loader that reads it would train on the calibration and
+held-out evaluation episodes too (infos/split: 0 train, 1 calibration, 2 evaluation), and on the full rather than the
+gapped log. Train only on rows with infos/split == 0, and only on the rows a removal keeps.
+
+Training files (write_d4rl_training): plain D4RL files that hold nothing but the six D4RL arrays of the training rows a
+removal keeps (removal 'none': the whole training split; 'gap': the gapped training set, the test's offline dataset;
+'random': the random-removal control), so a standard loader trains on exactly those rows. Use next_observations, never
+observations[i + 1]: each kept row stores its own true next observation, and after a removal the next stored row may
+belong to a later step.
 """
 
 import argparse
@@ -161,7 +170,7 @@ def simulate(recorder, physics, starts, noise, coin, length=TC.STALL.length):
         x, r = TC.dynamics(x, a32.astype(np.float64), physics)
         S.append(x), C.append(a32), R.append(r), G.append(region), P.append(press)
     st = lambda v: np.stack(v, 1)
-    return dict(states=st(S), commands=st(C), rewards=st(R), region=st(G), press=st(P))
+    return dict(states=st(S), commands=st(C), rewards=st(R), region=st(G), full_throttle=st(P))
 
 
 def generate(rep, world="stall", spec=RC.DEFAULT_SPEC, sizes=SIZES, stall_slope=1.5):
@@ -198,7 +207,8 @@ def generate(rep, world="stall", spec=RC.DEFAULT_SPEC, sizes=SIZES, stall_slope=
         "observations": flat(obs[:, :-1]), "actions": flat(act), "rewards": flat(rew),
         "next_observations": flat(obs[:, 1:]), "terminals": flat(term), "timeouts": flat(trunc),
         "infos/state": flat(X[:, :-1]), "infos/next_state": flat(X[:, 1:]),
-        "infos/episode": np.repeat(np.arange(E, dtype=np.int32), L), "infos/t": np.tile(np.arange(L, dtype=np.int32), E),
+        "infos/episode": np.repeat(np.arange(E, dtype=np.int32), L),
+        "infos/t": np.tile(np.arange(L, dtype=np.int32), E),
         "infos/split": _split_codes(sizes, L), "infos/full_throttle_command": flat(press),
     }
     n_cal = int(sizes[1])
@@ -226,8 +236,8 @@ def d4rl_dict(log, rows):
 # ------------------------------------------------------------------------------------------------ HDF5
 
 def write_hdf5(log, path):
-    """Write the log's arrays to path (HDF5, no timestamps) and the manifest to path + '.manifest.json'. Returns
-    the manifest."""
+    """Write the full log's arrays (all three splits; FULL_LOG_NOTE) to path (HDF5, no timestamps) and the manifest to
+    path + '.manifest.json'. Returns the manifest. For training, use write_d4rl_training."""
     import h5py
 
     path = Path(path)
@@ -237,13 +247,50 @@ def write_hdf5(log, path):
             arr = log._arrays[key]
             f.create_dataset(key, data=arr, track_times=False)
         f.attrs["schema"] = SCHEMA
+        f.attrs["about"] = FULL_LOG_NOTE
         f.attrs["meta"] = json.dumps(log.meta, sort_keys=True)
-    manifest = dict(schema=SCHEMA, file=path.name, file_sha256=sha256_file(path),
+    manifest = dict(schema=SCHEMA, file=path.name, file_sha256=sha256_file(path), about=FULL_LOG_NOTE,
                     arrays={k: dict(sha256=sha256_array(v), dtype=str(v.dtype), shape=list(v.shape))
                             for k, v in log._arrays.items()},
                     meta=log.meta, code_sha256=code_hashes())
     manifest_path = Path(str(path) + ".manifest.json")
     manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2))
+    return manifest
+
+
+FULL_LOG_NOTE = ("the full recorded log of all three splits (infos/split: 0 train, 1 calibration, 2 evaluation); "
+                 "not a training set: train only on rows with infos/split == 0 that a removal keeps, for example from "
+                 "the *_train_gapped.hdf5 file written by write_d4rl_training")
+
+
+def write_d4rl_training(log, removal, path):
+    """A plain D4RL training file: only the six D4RL arrays (D4RL_KEYS) at removal.kept_train_rows(log), in row order;
+    no infos, no calibration or evaluation rows and no recording-controller flag. Every row keeps its own true next
+    observation (read next_observations; never splice observations[i + 1]). A JSON manifest beside it holds the SHA-256
+    of the file, of every array and of the kept row indices, the removal kind and the log's settings. Returns the
+    manifest."""
+    import h5py
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    rows = np.asarray(removal.kept_train_rows(log), np.int64)
+    if np.any(log["infos/split"][rows] != SPLITS.index("train")):
+        raise AssertionError("a training file may hold training rows only")
+    arrays = d4rl_dict(log, rows)
+    about = (f"D4RL training set of ThrusterChain data seed {log.meta['rep']} ({log.meta['world']} world), removal "
+             f"'{removal.kind}': the {len(rows)} kept training rows only; read next_observations (each row's own true "
+             "next observation), never observations[i + 1]")
+    with h5py.File(path, "w", libver="earliest") as f:
+        for key in D4RL_KEYS:
+            f.create_dataset(key, data=arrays[key], track_times=False)
+        f.attrs["schema"] = SCHEMA + "-d4rl-training"
+        f.attrs["about"] = about
+    manifest = dict(schema=SCHEMA + "-d4rl-training", file=path.name, file_sha256=sha256_file(path), about=about,
+                    removal=removal.kind, rows=int(len(rows)), rows_sha256=sha256_array(rows),
+                    arrays={k: dict(sha256=sha256_array(v), dtype=str(v.dtype), shape=list(v.shape))
+                            for k, v in arrays.items()},
+                    meta=log.meta, code_sha256=code_hashes())
+    Path(str(path) + ".manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2))
     return manifest
 
 
@@ -318,13 +365,27 @@ def main(argv=None):
     p.add_argument("--seeds", type=int, nargs="+", required=True)
     p.add_argument("--world", choices=sorted(TC.WORLDS), default="stall")
     p.add_argument("--replay", action="store_true", help="replay every row through env.step after writing")
+    p.add_argument("--no-training-files", action="store_true",
+                   help="write only the full log, not the three D4RL training files (full, gapped, random removal)")
     a = p.parse_args(argv)
     out = refuse_protected(a.out)
     for rep in a.seeds:
         log = generate(rep, a.world)
         path = out / f"thrusterchain_{a.world}_seed{rep}.hdf5"
         manifest = write_hdf5(log, path)
-        line = f"{path.name}: {log.n_rows} rows, file sha256 {manifest['file_sha256'][:16]}"
+        line = (f"{path.name}: the full log ({log.n_rows} rows, all three splits; not a training set), file sha256 "
+                f"{manifest['file_sha256'][:16]}")
+        if not a.no_training_files:
+            from experiments.shift import shift as SH
+
+            gap, _ = SH.define_gap(log)
+            names = {"none": "train_full", "gap": "train_gapped", "random": "train_random"}
+            for kind, tag in names.items():
+                if gap is None and kind != "none":
+                    continue
+                m = write_d4rl_training(log, SH.make_removal(log, kind, gap), out /
+                                        f"thrusterchain_{a.world}_seed{rep}_{tag}.hdf5")
+                line += f"; {tag}: {m['rows']} rows"
         if a.replay:
             rp = replay(log)
             line += f"; replay {rp['rows']} rows, {rp['mismatches']} mismatches"

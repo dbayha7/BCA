@@ -2,9 +2,10 @@
 # Install the shift environment's dependencies (requirements-shift.txt: gymnasium 1.0.0 and three small helpers)
 # into their own directory, never into the shared virtual environment.
 #
-#   BCA_SHIFT_DEPS    target directory (default: ~/.cache/bca-shift/py); experiments/shift/__init__.py puts it
-#                     first on sys.path
-#   BCA_SHIFT_PYTHON  the Python that will import the packages (default: python3); only its version is used
+#   BCA_SHIFT_DEPS    target directory (default: ~/.cache/bca-shift/py); experiments/shift/__init__.py appends it
+#                     to the end of sys.path (it can add these packages but never shadow the environment's modules)
+#   BCA_SHIFT_PYTHON  the Python that will import the packages: the repository's environment (requirements.txt,
+#                     numpy 2.2.6) (default: python3); only its version is used
 #
 # The script refuses a target inside that Python's own environment (sys.prefix), installs with --no-deps and
 # hash checking, and then checks that gymnasium 1.0.0 imports from the target while numpy still comes from the
@@ -40,7 +41,7 @@ fi
 "$PYTHON" - "$TARGET" <<'EOF'
 import os, sys
 target = os.path.realpath(sys.argv[1])
-sys.path.insert(0, target)
+sys.path.append(target)
 import gymnasium, numpy
 where = os.path.realpath(gymnasium.__file__)
 if gymnasium.__version__ != "1.0.0" or not where.startswith(target + os.sep):

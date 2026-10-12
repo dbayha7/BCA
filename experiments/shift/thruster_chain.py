@@ -15,7 +15,10 @@ Dynamics (deterministic, no noise anywhere):
   with B1 = gapped_lq.base_input(1.0) and v pushing the speed of every float equally.
 Thrust per thruster, after clipping the command a to [-1, 1]: thrust(a) = a while |a| <= 0.8; past 80% the
 propeller stalls and the push falls: thrust(a) = sign(a) (0.8 - 1.5 (|a| - 0.8)), so 0.65 at 90% and 0.5 at full
-throttle. In the no-stall comparison world thrust(a) = a everywhere. Below 80% the two worlds are identical.
+throttle. In the no-stall comparison world thrust(a) = a everywhere. At or below 80% the two worlds are identical.
+The 80% point (the knee, KNEE) is the float32 number nearest 0.8, 0.800000011920929: the action space is float32, so
+a command of exactly 80% sent through env.step arrives as float32(0.8), and it must sit at the knee, not past it.
+(Every value above therefore holds to within 3e-8: thrust is 0.65000003 at 90% and 0.50000003 at full throttle.)
 Reward r = -(|s|^2 + 0.3 |a|^2) on the clipped command: energy follows the throttle even while a thruster stalls.
 
 One dynamics function. dynamics(x, a, physics) (numpy) and dynamics_jax (JAX, same arithmetic order) are the only
@@ -30,7 +33,8 @@ float32, then to float64, and clips it, as MuJoCo clamps its control range. Epis
 options={"state": 13 numbers} restarts from an exact state inside the start set (|s| <= 100, 0 <= c <= 1.5, wave
 amplitude <= 1); options={"start": {...}} overrides the start law's ranges. Step info: state (float64), t, push (the
 water's push c + w1 at the state the command was given), thrust, stalled (|a_k| > 0.8; always False in the no-stall
-world), command (the clipped float64 command). render_mode="ansi" returns one line of text.
+world; a command of exactly 80% does not stall), command (the clipped float64 command). render_mode="ansi" returns
+one line of text.
 
 Registered ids (max_episode_steps = 100). Within a world only the start law differs:
   BCAShift/ThrusterChain-v0                recorded conditions: c ~ U[0.1, 0.7], wave amplitude ~ U[0.1, 0.4],
@@ -70,6 +74,9 @@ FLOAT_BOUND = 300.0          # observation_space bound on every float coordinate
 START_FLOAT_RADIUS = 100.0   # start set: |s_0| <= 100
 START_CURRENT = (0.0, 1.5)   # start set: 0 <= c <= 1.5
 START_WAVE_AMPLITUDE = 1.0   # start set: wave amplitude <= 1
+WAVE_ROUNDING = 1e-9         # the wave's turn keeps its amplitude in exact arithmetic; float64 rounding may lift it
+                             # a few ulps above 1, so the start set allows amplitude <= 1 + 1e-9
+KNEE = float(np.float32(0.8))  # the 80% point: the float32 number nearest 0.8, so float32(0.8) is at the knee
 OBS_LOW = np.array([-FLOAT_BOUND] * DS + [0.0, -1.0, -1.0], np.float32)
 OBS_HIGH = np.array([FLOAT_BOUND] * DS + [1.5, 1.0, 1.0], np.float32)
 
@@ -99,14 +106,15 @@ class Physics:
 
     stall: True for the stalling world, False for the no-stall comparison world (thrust keeps rising to 100%).
     stall_slope: how fast the push falls past the knee (1.5: push 0.5 at full throttle; the pre-registered retune
-    uses 3.0: push 0.2). knee: the throttle where the stall starts (0.8). gain: thruster and water push per unit
+    uses 3.0: push 0.2). knee: the throttle where the stall starts, 80% (KNEE: the float32 number nearest 0.8, so a
+    float32 command of exactly 80% is at the knee and does not stall). gain: thruster and water push per unit
     (0.3). throttle_cost: the weight of the squared throttles in the cost (0.3). wave_turn: radians per step (0.27).
     gamma: the discount every learner and the truth use (0.98). length: steps per episode (100).
     """
 
     stall: bool = True
     stall_slope: float = 1.5
-    knee: float = 0.8
+    knee: float = KNEE
     gain: float = 0.3
     throttle_cost: float = 0.3
     wave_turn: float = 0.27
@@ -180,11 +188,14 @@ def _columns(gain, wave_turn):
 
 
 def thrust(a, physics=STALL):
-    """The push each thruster applies for clipped commands a (numpy): a up to the knee, then falling."""
+    """The push each thruster applies for clipped commands a (numpy): a up to the knee, then falling.
+
+    Written as clip(a, -knee, knee) - slope sign(a) max(|a| - knee, 0): the same numbers, bit for bit, as
+    sign(a) (min(|a|, knee) - slope max(|a| - knee, 0)), but its JAX form (thrust_jax) has the right derivative 1 at
+    a command of exactly 0 (autodiff takes the derivative of sign as 0, which would make the slope 0 there)."""
     a = np.asarray(a, np.float64)
-    m = np.abs(a)
     knee, slope = physics.thrust_knee, physics.thrust_slope
-    return np.sign(a) * (np.minimum(m, knee) - slope * np.maximum(m - knee, 0.0))
+    return np.clip(a, -knee, knee) - slope * np.sign(a) * np.maximum(np.abs(a) - knee, 0.0)
 
 
 def dynamics(x, a, physics=STALL):
@@ -211,11 +222,11 @@ def dynamics(x, a, physics=STALL):
 
 
 def thrust_jax(a, physics=STALL):
+    """thrust() in JAX, the same arithmetic order; its autodiff slope is 1 below the knee, 0 included."""
     import jax.numpy as jnp
 
-    m = jnp.abs(a)
     knee, slope = physics.thrust_knee, physics.thrust_slope
-    return jnp.sign(a) * (jnp.minimum(m, knee) - slope * jnp.maximum(m - knee, 0.0))
+    return jnp.clip(a, -knee, knee) - slope * jnp.sign(a) * jnp.maximum(jnp.abs(a) - knee, 0.0)
 
 
 def dynamics_jax(x, a, physics=STALL):
@@ -241,13 +252,15 @@ def dynamics_jax(x, a, physics=STALL):
 
 
 def past_knee(a, physics=STALL):
-    """Per row: does any thruster's command go past 80% throttle (|a_k| > 0.8)? These are the throttles the gapped
-    log no longer shows ('unrecorded throttle'). Uses the knee of the physics even in the no-stall world."""
+    """Per row: does any thruster's command go past 80% throttle (|a_k| > the knee)? These are the throttles the
+    gapped log no longer shows ('unrecorded throttle'). Uses the knee of the physics even in the no-stall world. A
+    command of exactly 80%, in float64 (0.8) or in float32 (0.800000011920929), is not past it."""
     return np.any(np.abs(np.asarray(a, np.float64)) > physics.knee, axis=-1)
 
 
 def stalled(a, physics=STALL):
-    """Per thruster: is it stalling? |a_k| > knee in the stalling world; never in the no-stall world."""
+    """Per thruster: is it stalling? |a_k| > knee in the stalling world (a command of exactly 80%, float32 or
+    float64, is not); never in the no-stall world."""
     a = np.asarray(a, np.float64)
     if not physics.stall:
         return np.zeros(a.shape, bool)
@@ -303,12 +316,16 @@ def draw_starts(n, rng, law):
 
 
 def in_start_set(x):
-    """Per row: |s| <= 100, 0 <= c <= 1.5 and wave amplitude <= 1 (and every number finite)."""
+    """Per row: |s| <= 100, 0 <= c <= 1.5 and wave amplitude <= 1 (and every number finite). The amplitude test
+    allows 1 + WAVE_ROUNDING (1e-9): the wave's turn keeps the amplitude constant in exact arithmetic, but float64
+    rounding can lift a start of amplitude 1 a few ulps above it, and a state the environment itself produced from
+    an allowed start must be accepted again for replay and truth."""
     x = np.asarray(x, np.float64)
     finite = np.all(np.isfinite(x), axis=-1)
     with np.errstate(invalid="ignore"):
         return (finite & (float_radius(x) <= START_FLOAT_RADIUS) & (x[..., CURRENT] >= START_CURRENT[0])
-                & (x[..., CURRENT] <= START_CURRENT[1]) & (wave_amplitude(x) <= START_WAVE_AMPLITUDE))
+                & (x[..., CURRENT] <= START_CURRENT[1])
+                & (wave_amplitude(x) <= START_WAVE_AMPLITUDE + WAVE_ROUNDING))
 
 
 def bank_starts(situation, n=BANK_SIZE):
@@ -343,7 +360,7 @@ def observation_bound(physics_list=(STALL, NO_STALL), terms=5000):
     v_norm = np.linalg.norm(A[:DS, CURRENT])
     largest_thrust = max(np.linalg.norm(thrust(np.full(DA, 1.0), p)) if not p.stall
                          else np.linalg.norm(np.full(DA, p.knee)) for p in physics_list)
-    per_step = b_norm * largest_thrust + v_norm * (START_CURRENT[1] + START_WAVE_AMPLITUDE)
+    per_step = b_norm * largest_thrust + v_norm * (START_CURRENT[1] + START_WAVE_AMPLITUDE + WAVE_ROUNDING)
     growth = float(norms.sum() * per_step)
     return dict(sup_norm=float(norms.max()), sum_norm=float(norms.sum()), input_norm=float(b_norm),
                 push_norm=float(v_norm), largest_thrust_norm=float(largest_thrust), per_step_input=float(per_step),

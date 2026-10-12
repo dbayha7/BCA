@@ -323,14 +323,24 @@ def _quantiles(v, qs=(0.1, 0.5, 0.9, 0.99)):
 def shift_card(policy, situation, physics, ref, anchors=None, ms_states=2000, knn_states=5000,
                seed=(TC.DATA_SEED, TAG_CARD)):
     """Measures 1-8 (module docstring) for a policy (a recorder.Controller; the recording controller on a bank is a
-    recorder.StreamedRecorder) on a situation's bank. anchors: optional dict(operator=J, top=J) to report points."""
+    recorder.StreamedRecorder) on a situation's bank. anchors: optional dict(recording=J, top=J) to report points."""
     from experiments.shift import truth as TR
 
     x0 = TC.bank_starts(situation)
     run = TR.rollout(policy, x0, physics, record=True)
     capped = TR.rollout(RC.CappedController(policy), x0, physics)
-    xs = run.states[:, :-1].reshape(-1, TC.DX)
-    cs = run.commands.reshape(-1, TC.DA)
+    out = dict(situation=situation, policy=getattr(policy, "name", str(policy)), starts=int(len(x0)))
+    out.update(card_measures(run.states[:, :-1], run.commands, ref, physics, run.J, capped.J, anchors, ms_states,
+                             knn_states, seed))
+    return out
+
+
+def card_measures(states, commands, ref, physics, J=None, J_capped=None, anchors=None, ms_states=2000,
+                  knn_states=5000, seed=(TC.DATA_SEED, TAG_CARD)):
+    """Measures 1-8 on given visited states (..., 13) and applied commands (..., 4); measure 8 needs the per-start
+    returns J of the policy and J_capped of the same policy capped at 80%."""
+    xs = np.asarray(states, np.float64).reshape(-1, TC.DX)
+    cs = np.asarray(commands, np.float64).reshape(-1, TC.DA)
     over = TC.past_knee(cs, physics)
     region = ref.recorder.in_region(xs)
     outside, by_c, by_w, by_f = TC.outside_recorded_conditions(xs, ref.float_mean, ref.float_sd,
@@ -343,10 +353,8 @@ def shift_card(policy, situation, physics, ref, anchors=None, ms_states=2000, kn
     kn_pick = np.sort(rng.choice(len(xs), min(knn_states, len(xs)), replace=False))
     q = np.concatenate([xs[kn_pick], cs[kn_pick]], 1)
     dist = ref.tree.query((q - ref.xa_mean) / ref.xa_sd, k=ref.k)[0][:, -1]
-    loss = capped.J - run.J
     out = dict(
-        situation=situation, policy=getattr(policy, "name", str(policy)), world="stall" if physics.stall else "no_stall",
-        removal=ref.removal.kind, starts=int(len(x0)), visited_states=int(len(xs)),
+        world="stall" if physics.stall else "no_stall", removal=ref.removal.kind, visited_states=int(len(xs)),
         removed_share=dict(mean=float(m.mean()), quantiles=_quantiles(m), states=int(len(m)),
                            max_se=float(m_se.max()) if len(m_se) else 0.0),
         unrecorded_throttle_share=float(over.mean()),
@@ -359,15 +367,18 @@ def shift_card(policy, situation, physics, ref, anchors=None, ms_states=2000, kn
         distance_to_data=dict(visited=_quantiles(dist, (0.5, 0.9)), heldout_log_rows=_quantiles(
             ref.heldout_distance, (0.5, 0.9)), k=ref.k, space="standardised (state, command)"),
         covered_share=float(np.mean(~outside[over])) if over.any() else None,
-        loss_from_unrecorded_throttle=dict(J=float(loss.mean()), se=float(loss.std() / math.sqrt(len(loss)))),
-        J=dict(policy=float(run.J.mean()), capped=float(capped.J.mean()), policy_se=float(run.J.std() / math.sqrt(
-            len(run.J)))),
     )
-    if anchors is not None:
-        scale = 100.0 / (anchors["top"] - anchors["operator"])
-        out["points"] = dict(policy=float((run.J.mean() - anchors["operator"]) * scale),
-                             capped=float((capped.J.mean() - anchors["operator"]) * scale),
-                             loss_from_unrecorded_throttle=float(loss.mean() * scale))
+    if J is not None and J_capped is not None:
+        J, J_capped = np.asarray(J, np.float64), np.asarray(J_capped, np.float64)
+        loss = J_capped - J
+        out["loss_from_unrecorded_throttle"] = dict(J=float(loss.mean()), se=float(loss.std() / math.sqrt(len(loss))))
+        out["J"] = dict(policy=float(J.mean()), capped=float(J_capped.mean()),
+                        policy_se=float(J.std() / math.sqrt(len(J))))
+        if anchors is not None:
+            scale = 100.0 / (anchors["top"] - anchors["recording"])
+            out["points"] = dict(policy=float((J.mean() - anchors["recording"]) * scale),
+                                 capped=float((J_capped.mean() - anchors["recording"]) * scale),
+                                 loss_from_unrecorded_throttle=float(loss.mean() * scale))
     return out
 
 
