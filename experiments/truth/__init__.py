@@ -7,4 +7,7 @@ Modules (see experiments/truth/README.md for stages, commands and costs):
                  deterministic, jitter and noisy-target modes; central-difference action gradients;
                  resumable shards with a strict JSON manifest
   synthetic      D4RL-format HDF5 files made in the real simulator, for tests only (never findings)
+  pools, extraction, acceptance   option C's pools, room-to-win machinery and R1-R7 acceptance gate
+  gap, gap_train, gap_acceptance  the action-gap track: the frozen densest-cluster gap and the gapped copy, the
+                 gapped-host training wrapper around train.py, and the G0-G4 protocol with its verdict table
 """

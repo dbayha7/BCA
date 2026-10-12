@@ -19,6 +19,11 @@ observation-rebuild fallback of state_restore.py.
 
 The stored state is float32, as in D4RL, so a restored state differs from the simulated one by float32
 rounding. The one-step gate therefore reproduces the next observation to about 1e-6, not bit for bit.
+
+planted (action-gap tests only; default None leaves every file bit for bit as before): dict(center, share, sd).
+At each step, with probability share (stream default_rng([seed, 99])), the action is clip(center + sd z, -1, 1),
+z ~ N(0, I), instead of the linear-tanh action. The simulator steps with that action, so the file stays consistent
+with the dynamics (the one-step gate passes) and holds a dense action cluster at a known centre.
 """
 
 from pathlib import Path
@@ -31,13 +36,18 @@ MARK = ("NOT D4RL DATA: synthetic rows from experiments/truth/synthetic.py (seed
         "real simulator), for tests only; no number computed on this file is a finding.")
 
 
-def generate(physics, n_rows, seed, *, max_path=25, scale=0.3, noise=0.2):
+def generate(physics, n_rows, seed, *, max_path=25, scale=0.3, noise=0.2, planted=None):
     """Raw D4RL-format arrays: complete episodes until at least n_rows rows."""
     require(type(n_rows) is int and n_rows >= 2 and type(seed) is int and seed >= 0, "explicit sizes and seed")
     require(type(max_path) is int and 1 <= max_path <= physics.env._max_episode_steps, "invalid max_path")
     task = physics.task
     g = np.random.default_rng(seed)
     w = g.normal(scale=scale / np.sqrt(task.obs_dim), size=(task.action_dim, task.obs_dim))
+    if planted is not None:
+        centre = np.asarray(planted["center"], np.float64)
+        require(centre.shape == (task.action_dim,) and 0 < planted["share"] < 1 and planted["sd"] >= 0,
+                "planted needs center (action_dim,), share in (0, 1) and sd >= 0")
+        mix = np.random.default_rng([seed, 99])
     env, sim = physics.env, physics.base.sim
     keys = ("observations", "actions", "next_observations", "rewards", "terminals", "timeouts", "qpos", "qvel")
     data = {k: [] for k in keys}
@@ -49,6 +59,8 @@ def generate(physics, n_rows, seed, *, max_path=25, scale=0.3, noise=0.2):
         t = 0
         while True:
             a = np.tanh(w @ s + noise * g.normal(size=task.action_dim)).astype(np.float32)
+            if planted is not None and mix.random() < planted["share"]:
+                a = np.clip(centre + planted["sd"] * mix.normal(size=task.action_dim), -1, 1).astype(np.float32)
             qpos, qvel = sim.data.qpos.ravel().copy(), sim.data.qvel.ravel().copy()
             ns, r, done, _ = env.step(a)
             t += 1
@@ -72,7 +84,10 @@ def generate(physics, n_rows, seed, *, max_path=25, scale=0.3, noise=0.2):
     raw["infos/qpos"] = np.asarray(data["qpos"], np.float32)
     raw["infos/qvel"] = np.asarray(data["qvel"], np.float32)
     return raw, dict(episodes=episode, rows=int(len(raw["rewards"])), seed=seed, max_path=max_path, scale=scale,
-                     noise=noise, terminals=int(raw["terminals"].sum()), timeouts=int(raw["timeouts"].sum()))
+                     noise=noise, terminals=int(raw["terminals"].sum()), timeouts=int(raw["timeouts"].sum()),
+                     planted=None if planted is None else dict(center=[float(x) for x in planted["center"]],
+                                                               share=float(planted["share"]),
+                                                               sd=float(planted["sd"])))
 
 
 def write_hdf5(path, raw, *, with_infos=True, description=MARK):
@@ -95,13 +110,13 @@ def is_synthetic(path):
         return "bca_synthetic" in f.attrs
 
 
-def write_synthetic(directory, dataset, *, n_rows=3000, seed=0, max_path=25, physics=None):
+def write_synthetic(directory, dataset, *, n_rows=3000, seed=0, max_path=25, physics=None, planted=None):
     """Write <task>_synthetic.hdf5 (with infos/*) and <task>_synthetic_noinfos.hdf5 into directory."""
     task = task_spec(dataset)
     own = physics is None
     physics = Physics(task.dataset) if own else physics
     try:
-        raw, meta = generate(physics, n_rows, seed, max_path=max_path)
+        raw, meta = generate(physics, n_rows, seed, max_path=max_path, planted=planted)
     finally:
         if own:
             physics.close()

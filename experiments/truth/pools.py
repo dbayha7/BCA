@@ -70,6 +70,7 @@ train.prepare path, so restore_host is tested end to end here. Nothing in this m
 band or arm is involved.
 """
 
+import contextlib
 from dataclasses import dataclass, field
 import hashlib
 import json
@@ -250,8 +251,14 @@ def adapt_archived_row(row):
     return row, changes
 
 
-def restore_host(run_dir, *, data_dir=DEFAULT_DATA, step=None, expected_sha256=None, audit="default"):
-    """Restore a finished td3_bc host run (train.py output) with its data split; see the module docstring."""
+def restore_host(run_dir, *, data_dir=DEFAULT_DATA, step=None, expected_sha256=None, audit="default",
+                 gap_manifest=None):
+    """Restore a finished td3_bc host run (train.py output) with its data split; see the module docstring.
+
+    A gapped run (experiments/truth/gap_train.py; resolved.json carries action_gap) is restored with the same
+    projected reservation it trained with (gap.projection), after its gap manifest (the recorded path, or
+    gap_manifest) is verified against the recorded sha256 and the frozen sidecar; without it the restore refuses.
+    Its episode ids become the ORIGINAL D4RL episode ids (never the flag fragments), for thinness and blocks."""
     import jax.numpy as jnp  # noqa: F401  (JAX must import before flax restores)
 
     from algorithms import td3_bc_bca as P
@@ -297,7 +304,13 @@ def restore_host(run_dir, *, data_dir=DEFAULT_DATA, step=None, expected_sha256=N
             require(pinned is None or file_sha256(run_dir / name) == pinned, f"{run_dir / name} differs from {audit}")
         audit_record = dict(path=str(audit), sha256=file_sha256(audit))
     data_file, data_sha = cache_path(row, data_dir)
-    (_, args, spec, _), prepared = FS.prepare(row, data_file.parent)
+    gap_context, gap = contextlib.nullcontext(), None
+    if row.get("action_gap") is not None:
+        from experiments.truth import gap as GAP
+
+        gap_context, gap = GAP.host_projection(row, gap_manifest)
+    with gap_context:
+        (_, args, spec, _), prepared = FS.prepare(row, data_file.parent)
     verification = verify_preparation(run_dir, prepared)
     config = spec.config()
     obs_dim, action_dim = prepared.training.obs.shape[1], prepared.training.action.shape[1]
@@ -311,6 +324,8 @@ def restore_host(run_dir, *, data_dir=DEFAULT_DATA, step=None, expected_sha256=N
             "converted raw rows differ from the preparation's dependency map")
     require(np.array_equal(episodes, np.asarray(meta["original_terminal_timeout_episode_ids"], np.int64)),
             "episode ids differ from the preparation")
+    if gap is not None:
+        episodes = gap.original_episodes(rows)  # original D4RL episodes, not the fragments the flags create
     mean = np.asarray(prepared.obs_mean, np.float32)
     std = np.asarray(prepared.obs_std, np.float32)
     training = np.asarray(meta["training_converted_ids"], np.int64)
@@ -339,7 +354,10 @@ def restore_host(run_dir, *, data_dir=DEFAULT_DATA, step=None, expected_sha256=N
                    target_size=row["protocol"]["reservation"]["target_size"]),
         normalization_sha256=array_sha256(np.concatenate([mean, std])),
         actor_params_sha256=_tree_sha(native.actor.params), critic_params_sha256=_tree_sha(native.critic.params),
-        synthetic_host=(run_dir / "SYNTHETIC_HOST.txt").is_file())
+        synthetic_host=(run_dir / "SYNTHETIC_HOST.txt").is_file(),
+        action_gap=None if gap is None else dict(manifest=str(gap.path), manifest_sha256=gap.sha256,
+                                                 centre=gap.data["gap"]["centre"], rho=gap.data["gap"]["rho"],
+                                                 episodes="original D4RL episode ids (gap manifest)"))
     return host
 
 
