@@ -141,9 +141,10 @@ ratios are exact too.
 
 TD3's target adds clipped smoothing noise (SD 0.2, clip 0.5) to the next action. So even a perfect TD3
 critic converges to Q^pi + c_c, not Q^pi, with c_c = gamma var tr(H_aa) / (1 - gamma), about -13.3 here.
-That is 0.15-0.21 of the median |Q^pi| in R0 and R1. Action gradients do not change. R2's accuracy mark
-therefore measures the level error against Q^pi + c_c (`World.td3_level`); the error against Q^pi itself
-is reported too. EXACT's Q tables include c_c as well, so its lambda is on the host critic's scale.
+That is 0.15-0.21 of the median |Q^pi| in R0 and R1. Action gradients do not change. R2's level accuracy
+therefore measures the error against Q^pi + c_c (`World.td3_level`); the error against Q^pi itself is
+reported too. Since Amendment A1 both are reported, not gated. EXACT's Q tables include c_c as well, so its
+lambda is on the host critic's scale.
 
 ## The acceptance gate
 
@@ -162,17 +163,103 @@ pre-registration's SHA-256>/`. No stage trains a BCA arm. BCA's own band (R5(iii
 | 1 | `build_checks` | no | Bellman identity, Monte Carlo vs closed form, recursions, Riccati, bitwise steps, oracle identities, unit suites |
 | 2 | `stage0` | no | S1-S6, decoy noise, stability (closed form) |
 | 3-4 | `r0r1` | no | R0 state richness and R1 thinness on the log |
-| 5 | `critics`, `r2` | yes | learned errors sit in T_wrong; dose-response over the density ladder |
+| 5 | `critics`, `r2` | yes | the FQE critic's errors sit in T_wrong and the thin contexts; dose-response over the density ladder (HOST and accuracy reported) |
 | 6 | `r3` | reads | errors cost return (host vs EXACT); picks the host alpha (2.5, then 5, then 10) |
 | 7 | `r6` | reads | the host leaves the data (and R1(c)) |
 | 8 | `r5world` | fits two small regressors | confounds, population band, ideal vs noise-only regressor |
-| 9 | `level1`, `tierA`, `r4` | yes (oracle actors) | first-order screen; placed vs even caution at matched strength |
+| 9 | `level1`, `tierA`, `r4` | yes (oracle actors) | first-order screen; placed vs even caution at matched strength (up to 10 matching rounds) |
 | 10 | `r7` | reads | power, anchors, null world, global-linear class, matching quality, null SHUF pairs |
 | 11 | `tierB` | yes | co-trained confirmation (full path only) |
 | 12 | `verdict` | no | the table and the stop rule |
 
 Stop rule: if step 5, 6 or 9 fails, the next pre-registered retune is tried; after the last, the world is
 rejected and BCA is never run in it. If step 8 fails, the world tests thin-data placement only.
+
+## Amendment A1 (2026-10-12)
+
+The gate's lean run on seeds 0-4 rejected the world (`outputs/glq/lean-v1/README.md`). The user then
+re-registered the gate with the four changes below, and nothing else.
+
+**This amendment is post hoc.** The new thresholds were chosen after seeing seeds 0-4. Those seeds keep
+their original verdict: the world was rejected under the original pre-registration (`255369889b400c2b...`).
+The amended gate is tested only on fresh seeds: 5-9 (lean), 5-14 (full) and 5-7 (density ladder). These
+seeds are the confirmatory test. None of them has been through a training stage or an R2-R7 evaluation.
+The only earlier outputs on any of them are data-only r0r1 checks of seeds 5-9, and every mark passed:
+
+- both earlier pre-registrations (`218e1af1...` and `255369889b400c2b...`) ran them in the base world on
+  2026-10-11, as steps 3-4 of their full path;
+- this amendment's first draft (`12db2dd5...`) ran them in the base and thin_share worlds. The review
+  replaced that draft before anything trained, because the draft's record said these seeds had never been
+  run.
+
+Those marks are unchanged by the amendment and say nothing about R2-R7. The new pre-registration records
+the amendment: its id, date, the original pre-registration's SHA-256, each change with its old and new
+rule, the statement that it is post hoc, and these earlier outputs (`prior_outputs_on_fresh_seeds`). No
+BCA arm and no BCA band fit is approved.
+
+Unchanged: the world, Stage 0, the retunes (wrong_gain still fails Stage 0, so it cannot be used), the
+training settings, every other pass mark and the stop rule.
+
+### 1. R2 (step 5): gated on the FQE critic, on where its error sits
+
+- **Old rule.** Both critics (HOST at the host alpha, and FQE) had to pass three marks in at least 4 of 5
+  seeds. Mean E in T_wrong at least 3x the rich contexts' (R0, R1). The thin contexts carry at least 60% of
+  sum E^2. In the rich contexts, the median level error |Q1 - Q_td3| / |Q^pi| is at most 5%. The
+  density-ladder marks were judged on both critics.
+- **New rule.** Only the FQE critic is gated, and only on concentration:
+  - (a) mean E in T_wrong at least 3x the rich mean (same threshold as before);
+  - (b) the thin contexts' share of sum E^2 (all 5 contexts pooled, as before) at least 1.5x their share
+    of rows. That is 0.45 in the base world (rows 0.30) and 0.75 in thin_share (rows 0.50).
+
+  Both must hold in at least 80% of seeds (4 of 5 on the lean path). The density-ladder marks stay, judged
+  on FQE only.
+- **Reported, not gated.** The HOST critic's R2 values. Accuracy, for both critics, as two numbers:
+  - the level error |e1| / |Q^pi|, as before;
+  - a new slope measure: the rich-context median of |H_aa^-1 (grad_a Q1 - grad_a Q^pi)| / 2 at
+    (s, pi(s)). H_aa is the action block of the exact Q^pi of the policy the diagnostics evaluate. The
+    number says how far the critic's error moves the action the critic recommends. For scale, the rich
+    logging noise SD is 0.3.
+- **What seeds 0-4 showed.** FQE's error had the designed pattern: E in T_wrong 3.4-6.2x the rich
+  contexts', thin share of sum E^2 38-80%. HOST's did not: 1.0-1.6x and 13-37%. Every critic missed the 5%
+  accuracy mark by far (0.46-1.15), mostly through a level offset. The slope is no better. Measured
+  afterwards with the new slope measure on the saved rows of seeds 0-4, the critic error moves the
+  recommended action by 1.7-3.6 units in the rich contexts of the base world (1.8-4.2 in thin_share; FQE,
+  and HOST at every alpha), against logging noise 0.3.
+
+### 2. R3 (step 6): where the return shortfall sits
+
+- **Old rule.** The thin contexts hold at least 60% of the host-vs-EXACT shortfall.
+- **New rule.** The thin contexts' share of that shortfall is at least 1.5x their mix share: 0.45 in the
+  base world, 0.75 in thin_share. The other three R3 marks, the alpha ladder (2.5, 5, 10) and the
+  80%-of-seeds rule are unchanged. In the base world the new mark is looser than before; in thin_share it
+  is stricter (0.75 against 0.60).
+- **What seeds 0-4 showed.** This was the mark that rejected the world. At alpha 10 the thin share was
+  0.40-0.60 (base) and 0.56-0.74 (thin_share), while the other three marks passed. A fixed 60% takes no
+  account of the thin contexts' share of the episodes (0.30 or 0.50).
+
+### 3. Strength matching (R4 and R7)
+
+- **Old rule.** At most 5 matching rounds. R4 was judged at S2 only if OR-wrong and OR-thin were matched
+  at S2 in every seed, otherwise at S1. A seed with an unmatched family failed every pooled mark.
+- **New rule.** At most 10 matching rounds. R4 is judged at S2 when OR-wrong and OR-thin are both matched
+  there in at least 80% of seeds (4 of 5 on the lean path). Otherwise it is judged at S1 under the same
+  rule. If neither level qualifies, R4 fails. At the chosen level, a seed whose family is unmatched counts
+  as a non-positive seed; it is never dropped silently. It is left out only of the means and t-tests, and
+  the output lists the seeds left out. The R4(4) and R7(b) anchors use the same level. R7(d)'s
+  matching-quality mark is unchanged.
+- **Two rules the amendment leaves as they were.** A seed whose Tier A run failed (its HOST critic
+  stopped early) still fails every pooled mark. The null world (R7(c)) and the global-linear control keep
+  their own level rule (S2 only when every seed matched OR-wrong there) and still need every seed.
+- **What seeds 0-4 showed** (Tier A at alpha 10, information only). Matching hit its 5-round cap with 4-8
+  unmatched pairs per seed. OR-wrong was matched at S2 in 4 of 5 seeds, so R4 fell back to S1. There the
+  R4(4) anchors missed: 0.045 and 0.028 against 0.05.
+
+### 4. Seeds
+
+- **Old.** Lean 0-4, full 0-9, density ladder 0-2.
+- **New.** Lean 5-9, full 5-14, density ladder 5-7. None has been through a training stage. The only
+  earlier outputs are the data-only r0r1 checks of seeds 5-9 listed above.
+- **Why.** Seeds 0-4 informed the new thresholds, so they cannot test them.
 
 ## How to run
 
@@ -188,23 +275,26 @@ $GATE plan --path full
 
 ### Lean path (5 seeds, Tier A only)
 
+Seeds 5-9 (Amendment A1; seeds 0-4 belong to the superseded pre-registration). The density ladder uses
+seeds 5-7.
+
 ```bash
 $GATE prereg                                   # once; never overwritten without --force
 $GATE build_checks                             # steps 1-4: no training
 $GATE stage0 --search
-for k in 0 1 2 3 4; do $GATE r0r1 --seeds $k; done
+for k in 5 6 7 8 9; do $GATE r0r1 --seeds $k; done
 # --- approval boundary: training below ---
-for k in 0 1 2 3 4; do for m in HOST FQE EXACT; do echo "critics --seeds $k --mode $m"; done; done \
+for k in 5 6 7 8 9; do for m in HOST FQE EXACT; do echo "critics --seeds $k --mode $m"; done; done \
   | xargs -P 2 -L 1 $GATE
-for r in rung0 rung0.03 rung0.1 rung0.3; do for k in 0 1 2; do for m in HOST FQE; do
+for r in rung0 rung0.03 rung0.1 rung0.3; do for k in 5 6 7; do for m in HOST FQE; do
   echo "critics --seeds $k --mode $m --variant $r"; done; done; done | xargs -P 2 -L 1 $GATE
 $GATE r3 --path lean --alpha 2.5
 # if r3 fails: critics --mode HOST and EXACT --alpha 5 for every seed, r3 --alpha 5; then alpha 10
 $GATE r2 --path lean
-for k in 0 1 2 3 4; do for s in r6 r5world level1 tierA; do echo "$s --seeds $k --path lean"; done; done \
+for k in 5 6 7 8 9; do for s in r6 r5world level1 tierA; do echo "$s --seeds $k --path lean"; done; done \
   | xargs -P 2 -L 1 $GATE
-for k in 0 1 2 3 4; do $GATE critics --seeds $k --mode HOST --variant null --alpha auto --path lean; done
-for k in 0 1 2 3 4; do for v in null global_linear; do echo "tierA --seeds $k --variant $v --path lean"; done; done \
+for k in 5 6 7 8 9; do $GATE critics --seeds $k --mode HOST --variant null --alpha auto --path lean; done
+for k in 5 6 7 8 9; do for v in null global_linear; do echo "tierA --seeds $k --variant $v --path lean"; done; done \
   | xargs -P 2 -L 1 $GATE
 $GATE r4 --path lean
 $GATE r7 --path lean
@@ -213,10 +303,10 @@ $GATE verdict --path lean
 
 ### Full gate (10 seeds plus Tier B)
 
-The same commands with seeds 0-9 and `--path full`, then Tier B and the verdict:
+The same commands with seeds 5-14 and `--path full`, then Tier B and the verdict:
 
 ```bash
-for k in $(seq 0 9); do for a in EVEN OR-wrong OR-thin SHUF0 ANTI; do
+for k in $(seq 5 14); do for a in EVEN OR-wrong OR-thin SHUF0 ANTI; do
   echo "tierB --seeds $k --arm $a --path full"; done; done | xargs -P 2 -L 1 $GATE
 $GATE verdict --path full
 ```
@@ -242,7 +332,7 @@ about half the process time.
 | r6 | about 2 s per seed | measured components (A3: Kish ESS 1.1 s) |
 | r5world | about 60 s per seed | measured components (A3: band 25.4 s per snapshot x 2, regressors 7.3 s) |
 | level1 | 29 s per seed | measured (A2 pilot) |
-| tierA main | 0.30 h per seed | ladder measured on 2,000 steps; matching assumes 3 rounds (A2 pilot) |
+| tierA main | 0.30 h per seed | ladder measured on 2,000 steps; matching assumes 3 rounds (A2 pilot). The lean run took about 21 min per seed with the old 5-round cap; Amendment A1 allows up to 10 |
 | tierA null / global_linear | 0.06 h per seed each | extrapolated (A2 pilot) |
 | tierB | 257 s per arm, 5 arms per seed | from the HOST run (A2 pilot) |
 
@@ -257,21 +347,40 @@ The worst alpha case reruns HOST and EXACT at alpha 5 and 10 (FQE does not depen
 
 ## Status
 
-The adversarial review (A-review) changed three hashed files before any training: R2's accuracy reference,
-EXACT's lambda scale, the pre-registration check and the pooled seed rule. The earlier pre-registration
-`218e1af1...` is void. The current one is `255369889b400c2b93d5c92ca2e861c71d39554bf490b3c9489a5661be177baf`,
-with outputs in `runs/glq/255369889b400c2b/` (runs/ is gitignored). Steps 0-4 were rerun under it and
-every mark passes again, with the same numbers as below. The unit suites ran 66 tests with 0 failures.
+**Current pre-registration (Amendment A1):**
+`8528a61385157a764e53b9b37fad764ed53bdc0b1089c9755344454429a81f32`, with outputs in
+`runs/glq/8528a61385157a76/` (runs/ is gitignored). It supersedes `255369889b400c2b...`, whose outputs in
+`runs/glq/255369889b400c2b/` are kept, and whose lean verdict on seeds 0-4 (the world is rejected) stands
+for those seeds. It also replaces A1's first draft `12db2dd5...` (outputs kept in
+`runs/glq/12db2dd5f33bbad4/`). The review corrected the draft's record, which had said seeds 5-14 were
+never run; no rule changed, and nothing trained under the draft. Under A1 only the no-training stages
+have run so far, on the fresh seeds 5-9. Their numbers are identical under both versions, and every mark
+passes:
 
+- Unit suites: test_gapped_lq 32, test_glq_train 34, test_glq_acceptance 30 tests, 0 failures.
 - Build checks: Bellman residual 1.3e-15 (control 0.0044); max Monte Carlo |z| 2.02 (3,000 episodes per
   context); recursions agree to 5.6e-16 and 7.2e-15; Riccati gradient ratio 9.0e-9; 4 of 4 bitwise checks;
-  12 of 12 oracle identities; unit suites 61 tests, 0 failures.
-- Stage 0: S1 0.457 / 0.427 / 0.459 (R0 / R1 / DECOY; mark <= 0.5); S2 0.178 (>= 0.15); S3 8.40 g at
-  radius 0.987 (>= 2 g); S4 0.993 logged, 0.971 optimal (>= 0.95); decoy noise ratio 6.75 (>= 3); S6 0.422
-  (>= 0.30); the search reproduces the spec.
-- R0/R1, 10 seeds: participation ratio 9.06-9.75 (>= 6); transient share 0.36-0.41 (>= 0.30); IACT
-  16.7-17.7 steps (10-50); rows with every |s_i| <= 5: 99.98-100%; rich action eigenvalues >= 0.088
-  (>= 0.05); thin actuator-3-4 SD within 5% of every rung (rank 2 at rung 0); thin share 0.300.
-- Retune worlds, Stage 0: thin_share passes every target (S2 0.313). **wrong_gain fails S3 and stability:**
-  K*_T_right in that T_wrong has sqrt(gamma) x radius 1.0023, so the transferred policy diverges. As
-  pre-registered, retune 2 cannot be used; changing it needs a new pre-registration before any training.
+  13 of 13 oracle identities; unit suites (B7) 66 tests, 0 failures.
+- Stage 0, base world: S1 max 0.459 (mark <= 0.5); S2 0.178 (>= 0.15); S3 8.40 g at radius 0.987 (>= 2 g);
+  S4 0.971 (>= 0.95); decoy noise ratio 6.75 (>= 3); S6 0.422 (>= 0.30); the search reproduces the spec.
+  thin_share: every target passes (S2 0.313).
+- R0/R1, seeds 5-9, base world: participation ratio 9.06-9.30 (>= 6); transient share 0.36-0.41 (>= 0.30);
+  IACT 16.8-17.3 steps (10-50); rows with every |s_i| <= 5: 99.98-100%; rich action eigenvalues >= 0.088
+  (>= 0.05); thin actuator-3-4 SD 0.99-1.02 x every rung (rank 2 at rung 0); thin share 0.300.
+- R0/R1, seeds 5-9, thin_share: participation ratio 9.10-9.36; transient share 0.35-0.39; IACT
+  16.6-17.0; rows within 5: 99.98-100%; rich eigenvalues >= 0.088; thin SD 0.99-1.01 x every rung; thin
+  share 0.500.
+
+No critic, Tier A or other training stage has run under A1.
+
+**History.** The adversarial review (A-review) changed three hashed files before any training: R2's
+accuracy reference, EXACT's lambda scale, the pre-registration check and the pooled seed rule. The earlier
+pre-registration `218e1af1...` is void. Its successor,
+`255369889b400c2b93d5c92ca2e861c71d39554bf490b3c9489a5661be177baf`, ran the lean gate on seeds 0-4, and
+the world was rejected (`outputs/glq/lean-v1/README.md`). Its steps
+0-4 (10 seeds) had passed: participation ratio 9.06-9.75, transient share 0.36-0.41, IACT 16.7-17.7 steps,
+S4 0.993 logged and 0.971 optimal.
+
+Retune worlds, Stage 0: thin_share passes every target (S2 0.313). **wrong_gain fails S3 and stability:**
+K*_T_right in that T_wrong has sqrt(gamma) x radius 1.0023, so the transferred policy diverges. Retune 2
+cannot be used; Amendment A1 leaves this unchanged.

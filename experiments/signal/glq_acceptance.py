@@ -10,11 +10,12 @@ confound Spearmans within each context and pooled). The world and its exact trut
 are imported and called. The environment card and the commands are experiments/signal/GAPPED_LQ.md.
 
 PRE-REGISTRATION (stage `prereg`, gate step 0). Writes experiments/signal/glq_preregistration.json (strict JSON, sorted
-keys) and its .sha256 sidecar: every pass mark (PASS_MARKS, the numbers the code reads), the seed-count rule of each
-pooled mark, the lean (5) and full (10) seed lists, the density-ladder seeds and rungs, the primary rung (0.01), the
-decoy settings, the retune list (RETUNES, at most two, applied one at a time to the Stage-0 world, in order), the
-alpha ladder (2.5, then 5, then 10), every size and training setting (GateConfig and glq_train.TrainSettings), the
-world spec and its SHA-256, and the SHA-256 of glq_acceptance.py, gapped_lq.py, glq_train.py and glq_match.py
+keys) and its .sha256 sidecar: Amendment A1's record (AMENDMENT: each changed rule, old and new, and that it is post
+hoc), every pass mark (PASS_MARKS, the numbers the code reads), the seed-count rule of each pooled mark, the lean
+(seeds 5-9) and full (5-14) seed lists, the density-ladder seeds (5-7) and rungs, the primary rung (0.01), the decoy
+settings, the retune list (RETUNES, at most two, applied one at a time to the Stage-0 world, in order), the alpha ladder
+(2.5, then 5, then 10), every size and training setting (GateConfig and glq_train.TrainSettings), the world spec and
+its SHA-256, and the SHA-256 of glq_acceptance.py, gapped_lq.py, glq_train.py and glq_match.py
 (CODE_FILES; glq_match.py is added to the three the task names because Tier A's blind matching runs it) and of the
 reused repository files (DEPENDENCY_FILES). Every later stage calls load_prereg first and refuses to run when the
 file's SHA-256 differs from its sidecar, when any recorded code hash differs from the file on disk, when the recorded
@@ -51,16 +52,22 @@ refuses to run without --allow-bca-band, which the approved scope does not give.
  5 critics       Per (seed, mode): glq_train.cotrain HOST / FQE / EXACT (100k updates, snapshots 25/50/100%, exact
                  diagnostics on the evaluation split). Variants: main (primary rung), rung<r> (density ladder, HOST and
                  FQE, ladder seeds, alpha = the ladder's first), null (expert rich behaviour f = 1, HOST only, R7(c)).
-   r2            Pooled. Per seed and critic (HOST at the host alpha, FQE), 100% snapshot: mean E in T_wrong >= 3x the
-                 rich (R0, R1) mean; thin share of sum E^2 >= 0.60; rich median |Q1 - Q_td3| / |Q^pi| at (s, pi(s))
-                 <= 0.05, Q_td3 = Q^pi + c_c the fixed point of TD3's smoothed target (gapped_lq.World.td3_level;
-                 against Q^pi itself a perfect TD3 critic reads 0.16-0.18 here, so that reading is reported). Pass:
-                 all three in >= ceil(0.8 n) seeds for both critics. Ladder (ladder seeds, seed means of the thin rows'
-                 mean E, HOST and FQE each): E falls between consecutive rungs in >= 3 of 4 steps, and at rung 0.3 the
-                 thin / rich ratio is within [1 / 1.5, 1.5]. Reported: mean E T_wrong / T_right.
+   r2            Pooled (Amendment A1: gated on the FQE critic only, on concentration only). Per seed, FQE critic,
+                 100% snapshot: (a) mean E in T_wrong >= 3x the rich (R0, R1) mean; (b) the thin contexts' share of
+                 sum E^2 (pooled over all 5 contexts) >= 1.5 x their share of the rows (0.45 in the base world, 0.75
+                 in thin_share). Pass: both in >= ceil(0.8 n) seeds. Ladder (ladder seeds, seed means of the thin
+                 rows' mean E, judged on FQE): E falls between consecutive rungs in >= 3 of 4 steps, and at rung 0.3
+                 the thin / rich ratio is within [1 / 1.5, 1.5]. Reported, not gated: the HOST critic's values (at
+                 the host alpha) of every R2 mark; accuracy for both critics, the level (rich median |Q1 - Q_td3| /
+                 |Q^pi| at (s, pi(s)), Q_td3 = Q^pi + c_c the fixed point of TD3's smoothed target,
+                 gapped_lq.World.td3_level; against Q^pi itself, also reported, a perfect TD3 critic reads 0.16-0.18)
+                 and the slope (rich median |H_aa^-1 (grad_a Q1 - grad_a Q^pi)| / 2 at (s, pi(s)) from the saved
+                 errors_<pct>.npz rows, H_aa the action block of the exact per-context Q^pi of the evaluated policy:
+                 how far the critic's error moves the action it recommends; slope_shift); mean E T_wrong / T_right.
  6 r3            Pooled, per alpha. Per seed: w_Tw x (J_Tw(K_host with rows 3-4 zeroed) - J_Tw(K_host)) >= 0.05 x the
-                 mixture gap sum_c w_c (J_opt,c - J_BC,c); NS_mix(host) <= NS_mix(EXACT) - 0.10; thin contexts hold >=
-                 60% of the shortfall sum_c w_c (J_EXACT,c - J_host,c); rich (R0, R1) host NS >= 0.30. Pass: all four
+                 mixture gap sum_c w_c (J_opt,c - J_BC,c); NS_mix(host) <= NS_mix(EXACT) - 0.10; the thin contexts'
+                 share of the shortfall sum_c w_c (J_EXACT,c - J_host,c) >= 1.5 x their mix share (Amendment A1; 0.45
+                 base, 0.75 thin_share); rich (R0, R1) host NS >= 0.30. Pass: all four
                  in >= ceil(0.8 n) seeds. The host alpha is the smallest alpha of the ladder whose r3 passes; stages
                  below resolve --alpha auto to it and refuse when R3 failed at every alpha (the stop rule).
  7 r6            Per seed, host at 100%: (a) |pi(s)_34| >= 0.3 on >= 30% of thin evaluation states; (b) >= 20% of rich
@@ -83,7 +90,10 @@ refuses to run without --allow-bca-band, which the approved scope does not give.
    tierA         Per (seed, variant): glq_train.tier_a on the 50% snapshot (blind record and its hashes written before
                  any return). Variants: main (every family), null (null critic and world; EVEN, OR-wrong, OR-thin) and
                  global_linear (main critic; the 40-number class; EVEN, OR-wrong, OR-thin).
-   r4            Pooled. Level S2 (m = 2) when OR-wrong and OR-thin are matched there in every seed, else S1. (1) mean
+   r4            Pooled. Level (Amendment A1): S2 (m = 2) when OR-wrong and OR-thin are both matched there in >=
+                 ceil(0.8 n) seeds, else S1 under the same rule, else R4 fails; at the level a seed whose family is
+                 unmatched counts as non-positive and is excluded from the means and t-tests (recorded in
+                 excluded_seeds). (1) mean
                  NS(OR-wrong) - NS(EVEN) >= 0.05, one-sided paired t p < 0.01, >= ceil(0.8 n) seeds positive; (2) mean
                  NS(OR-thin) - NS(EVEN) >= 0.03, p < 0.05; (3) mean best OR-thin - best EVEN >= 0.02 and mean best
                  OR-wrong - NONE >= 0.03; (4) OR-thin - SHUF >= 0.05 and SHUF - ANTI >= 0.05 (SHUF = the SHUF
@@ -105,10 +115,20 @@ refuses to run without --allow-bca-band, which the approved scope does not give.
 
 Seed counts: a mark "in >= f of 10 seeds" is applied as >= ceil(f n) of the n seeds of the path (lean: 4 of 5 for both
 f = 0.8 and f = 0.7). R7(a) at the lean path projects the observed paired SD to 10 seeds. A pooled mean (R4 (1)-(4),
-R7 (b), (c), global-linear) counts only when every seed of the path contributes: a seed whose run failed, or whose
-family is unmatched at the level, fails the mark rather than leaving the mean. R7(c) is gated in the null world's own
+R7 (b), (c), global-linear) counts only when every seed of the path contributes: a seed whose run failed fails the mark
+rather than leaving the mean. At R4's level (and so for R4 (1), (2), (4) and R7 (b)) a seed whose family is unmatched is
+instead excluded from the mean and counted as not positive (Amendment A1); R7(c) and the global-linear control keep
+their own level (S2 when every seed matched OR-wrong there) and need every seed. R7(c) is gated in the null world's own
 NS units (its mixture gap is the thin contexts' only, 5.6x smaller than the main world's) and also reported in the main
 world's units.
+
+AMENDMENT A1 (2026-10-12; AMENDMENT, recorded in the pre-registration with each old and new rule). Post hoc: the lean
+run on seeds 0-4 under pre-registration 255369889b400c2b... rejected the world, and the new thresholds were chosen after
+seeing it. Changes: (1) R2 is gated on the FQE critic's concentration marks only (ratio >= 3x; thin share of sum E^2 >=
+1.5 x the thin row share), with the ladder judged on FQE; accuracy (level and slope) and the HOST critic are reported,
+not gated; (2) R3's thin-shortfall mark is 1.5 x the thin mix share; (3) matching runs up to 10 rounds (was 5) and R4's
+level needs >= 80% of seeds matched, an unmatched seed counting as not positive and leaving the means; (4) fresh seeds:
+lean 5-9, full 5-14, density ladder 5-7. Seeds 0-4 keep their original verdict. Everything else is unchanged.
 
 python experiments/signal/glq_acceptance.py prereg
 python experiments/signal/glq_acceptance.py plan --path lean
@@ -217,25 +237,34 @@ PASS_MARKS = {
                      mark="thin actuator-3-4 SD within 5% of the rung (rung 0: rank 2 and exact zeros), every rung"),
     "R1b": dict(step=4, name="R1(b) thin share", tol=0.03,
                 mark="thin share of training rows = thin mix share +/- 0.03"),
-    # step 5: R2
-    "R2_ratio": dict(step=5, name="R2 error sits in T_wrong", min=3.0, seed_frac=0.8,
-                     mark="mean E in T_wrong >= 3x the rich mean (HOST and FQE)"),
-    "R2_thin_E2": dict(step=5, name="R2 thin share of E^2", min=0.60, seed_frac=0.8,
-                       mark="thin contexts carry >= 60% of sum E^2"),
-    "R2_rel": dict(step=5, name="R2 rich critic accurate", max=0.05, seed_frac=0.8, reference="td3_fixed_point",
-                   mark="rich median |Q1(s, pi(s)) - Q_td3(s, pi(s))| / |Q^pi| <= 5%, Q_td3 = Q^pi + c_c the fixed "
-                        "point of TD3's smoothed target (a perfect critic reads 0; against Q^pi alone it reads "
-                        "0.16-0.18); the deterministic-reference value is reported"),
-    "R2_ladder_falls": dict(step=5, name="R2 dose-response", min=3,
-                            mark="thin mean E falls in >= 3 of the 4 rung steps (HOST and FQE)"),
-    "R2_ladder_top": dict(step=5, name="R2 dose-response top rung", factor=1.5,
-                          mark="at rung 0.3, thin / rich mean E within [1/1.5, 1.5]"),
+    # step 5: R2 (Amendment A1: gated on the FQE critic's concentration only; accuracy and HOST reported, not gated)
+    "R2_ratio": dict(step=5, name="R2 error sits in T_wrong", min=3.0, seed_frac=0.8, gated_critic="FQE",
+                     mark="FQE critic: mean E in T_wrong >= 3x the rich (R0, R1) mean (HOST: reported, not gated)"),
+    "R2_thin_E2": dict(step=5, name="R2 thin share of E^2", share_factor=1.5, seed_frac=0.8, gated_critic="FQE",
+                       mark="FQE critic: the thin contexts' share of sum E^2 (pooled over all 5 contexts) >= 1.5 x "
+                            "their share of rows (base world 0.45, thin_share 0.75) (HOST: reported, not gated)"),
+    "R2_rel": dict(step=5, name="R2 rich critic level accuracy", gated=False, reference="td3_fixed_point",
+                   mark="reported, not gated: rich median |Q1(s, pi(s)) - Q_td3(s, pi(s))| / |Q^pi|, Q_td3 = Q^pi + "
+                        "c_c the fixed point of TD3's smoothed target (a perfect critic reads 0; against Q^pi alone "
+                        "it reads 0.16-0.18; the former mark was <= 5%); the deterministic-reference value is "
+                        "reported too"),
+    "R2_slope": dict(step=5, name="R2 rich critic slope accuracy", gated=False, scale="rich logging noise SD 0.3",
+                     mark="reported, not gated: rich (R0, R1) median |H_aa^-1 (grad_a Q1 - grad_a Q^pi)| / 2 at (s, "
+                          "pi(s)), H_aa of the exact Q^pi of the policy the diagnostics evaluate: how far the "
+                          "critic's error shifts the recommended action"),
+    "R2_ladder_falls": dict(step=5, name="R2 dose-response", min=3, gated_critic="FQE",
+                            mark="FQE critic: thin mean E falls in >= 3 of the 4 rung steps (HOST: reported, not "
+                                 "gated)"),
+    "R2_ladder_top": dict(step=5, name="R2 dose-response top rung", factor=1.5, gated_critic="FQE",
+                          mark="FQE critic: at rung 0.3, thin / rich mean E within [1/1.5, 1.5] (HOST: reported, "
+                               "not gated)"),
     # step 6: R3
     "R3_cost": dict(step=6, name="R3 off-support cost", min=0.05, seed_frac=0.8,
                     mark="w_Tw x off-support cost in T_wrong >= 0.05 x the mixture gap"),
     "R3_ns_gap": dict(step=6, name="R3 host below EXACT", min=0.10, seed_frac=0.8, mark="NS(host) <= NS(EXACT) - 0.10"),
-    "R3_thin_shortfall": dict(step=6, name="R3 shortfall in thin contexts", min=0.60, seed_frac=0.8,
-                              mark=">= 60% of the host-vs-EXACT shortfall in the thin contexts"),
+    "R3_thin_shortfall": dict(step=6, name="R3 shortfall in thin contexts", share_factor=1.5, seed_frac=0.8,
+                              mark="the thin contexts' share of the host-vs-EXACT shortfall >= 1.5 x their mix share "
+                                   "(base world 0.45, thin_share 0.75)"),
     "R3_rich_ns": dict(step=6, name="R3 critic useful where rich", min=0.30, seed_frac=0.8,
                        mark="host NS in the rich contexts (R0, R1) >= 0.30"),
     # step 7: R6 and R1(c)
@@ -265,8 +294,14 @@ PASS_MARKS = {
     # step 9: Level-1 screen and R4 Tier A
     "L1": dict(step=9, name="Level-1 screen (not a stop)", min=0.0, seed_frac=0.8,
                mark="OR-wrong first-order gain - EVEN's at m = 2 > 0"),
+    "R4_level": dict(step=9, name="R4 strength level", seed_frac=0.8, families=["OR-wrong", "OR-thin"],
+                     levels=["m=2.0", "m=1.3"],
+                     mark="S2 (EVEN m = 2) when OR-wrong and OR-thin are both matched there in >= 80% of seeds, else "
+                          "S1 (m = 1.3) under the same rule, else R4 fails; at the level a seed with an unmatched "
+                          "family counts as non-positive and is excluded from means and t-tests (recorded)"),
     "R4_1": dict(step=9, name="R4(1) OR-wrong beats EVEN", min=0.05, p_max=0.01, positive_frac=0.8,
-                 mark="mean NS(OR-wrong) - NS(EVEN) >= 0.05, p < 0.01, >= 80% of seeds positive"),
+                 mark="mean NS(OR-wrong) - NS(EVEN) >= 0.05, p < 0.01, >= 80% of seeds positive (an unmatched seed "
+                      "is not positive)"),
     "R4_2": dict(step=9, name="R4(2) OR-thin beats EVEN", min=0.03, p_max=0.05,
                  mark="mean NS(OR-thin) - NS(EVEN) >= 0.03, p < 0.05"),
     "R4_3a": dict(step=9, name="R4(3) best OR-thin vs best EVEN", min=0.02, mark="mean best-minus-best >= 0.02"),
@@ -295,6 +330,69 @@ STEP_NAMES = {1: "build tests", 2: "Stage 0", 3: "R0 state richness", 4: "R1 thi
               10: "R7 measurement validity", 11: "R4 Tier B"}
 STOP_STEPS = (5, 6, 9)  # the stop rule's steps: a failure goes to the next retune or rejects the world
 
+# Amendment A1 (the user's decision of 2026-10-12): recorded verbatim in the pre-registration (prereg_payload).
+ORIGINAL_PREREG_SHA256 = "255369889b400c2b93d5c92ca2e861c71d39554bf490b3c9489a5661be177baf"
+AMENDMENT = dict(
+    id="A1", date="2026-10-12", original_prereg_sha256=ORIGINAL_PREREG_SHA256, post_hoc=True,
+    informed_by_seeds=[0, 1, 2, 3, 4], fresh_seeds=list(range(5, 15)),
+    # Every output on a fresh seed outside this pre-registration's own directory (an audit of runs/glq/ on 2026-10-12):
+    # data-only checks of the generated logs (steps 3-4), none of which bears on an amended mark. The first two ran as
+    # the earlier pre-registrations' full-path steps 1-4; the third under this amendment's first draft, which the review
+    # replaced (it corrected this record) before anything trained.
+    prior_outputs_on_fresh_seeds=[
+        dict(stage="r0r1", steps="3-4", trains=False, world=world, seeds=[5, 6, 7, 8, 9], date=date,
+             preregistration_sha256=sha, result="every R0 and R1 mark passed in every seed",
+             note=note + "; data-only checks of the generated log (R0 state richness, R1 thinness), whose marks this "
+                         "amendment does not change and which say nothing about R2-R7")
+        for sha, world, date, note in (
+            ("218e1af17fdf9c177b1a652a644d8916e4b036bb0d22ee32a6e0956a61c65860", "base", "2026-10-11",
+             "the void pre-registration before the A-review"),
+            (ORIGINAL_PREREG_SHA256, "base", "2026-10-11", "the original pre-registration"),
+            ("12db2dd5f33bbad473944513d909683f4ba641fd42cc0d077ba75f02e58d4471", "base and thin_share", "2026-10-12",
+             "this amendment's first draft (replaced before anything trained)"))],
+    statement="POST HOC. This amendment re-registers the gate after the lean run on seeds 0-4 under pre-registration "
+              "255369889b400c2b... (outputs in runs/glq/255369889b400c2b/, record in outputs/glq/lean-v1/README.md) "
+              "rejected the world (step 6 failed at alpha 2.5, 5 and 10 in the base world and the thin_share retune "
+              "on the thin-shortfall mark; retune wrong_gain fails Stage 0). The new thresholds were chosen after "
+              "seeing seeds 0-4: those seeds informed the amendment and keep their original verdict. Seeds 5-14 have "
+              "never been through a training stage (critics, Tier A, Tier B, R5's regressors) or an R2-R7 "
+              "evaluation; the only earlier outputs on any of them are data-only r0r1 checks of seeds 5-9 (listed in "
+              "prior_outputs_on_fresh_seeds), whose marks this amendment does not change. They are fresh for every "
+              "amended mark and are the confirmatory test. No BCA arm and no BCA band fit is approved.",
+    changes=[
+        dict(id="R2", step=5,
+             old="R2 gated on HOST (at the host alpha) and FQE: per seed and critic, mean E in T_wrong >= 3x the rich "
+                 "(R0, R1) mean, thin share of sum E^2 >= 0.60, rich median |Q1 - Q_td3| / |Q^pi| <= 0.05; all three "
+                 "in >= 80% of seeds for both critics; density-ladder marks on HOST and FQE",
+             new="R2 gated on the FQE critic only, on concentration only: (a) mean E in T_wrong >= 3x the rich (R0, "
+                 "R1) mean; (b) the thin contexts' share of sum E^2 (pooled over all 5 contexts) >= 1.5 x their "
+                 "share of rows (base 0.30 -> 0.45; thin_share 0.50 -> 0.75); both in >= 80% of seeds (lean 4 of "
+                 "5). Density-ladder marks unchanged but judged on FQE only. Accuracy is measured and reported, not "
+                 "gated: the level |e1| / |Q^pi| as before and the slope, the rich median |H_aa^-1 (grad_a Q1 - "
+                 "grad_a Q^pi)| / 2 at (s, pi(s)) with the exact per-context Q^pi of the evaluated policy. The HOST "
+                 "critic's R2 values are reported, not gated"),
+        dict(id="R3_thin_shortfall", step=6,
+             old="the thin contexts hold >= 60% of the host-vs-EXACT shortfall",
+             new="the thin contexts' share of the host-vs-EXACT shortfall >= 1.5 x their mix share (base 0.45, "
+                 "thin_share 0.75); the other three R3 marks, the alpha ladder (2.5, 5, 10) and the 80%-of-seeds "
+                 "rule are unchanged"),
+        dict(id="matching", step=9,
+             old="matching round cap 5; R4 at S2 when OR-wrong and OR-thin are matched at S2 in every scored seed, "
+                 "else S1; a seed with an unmatched family fails every pooled mark",
+             new="matching round cap 10; R4 at S2 when OR-wrong and OR-thin are matched at S2 in >= 80% of seeds "
+                 "(lean 4 of 5), else at S1 under the same rule, else R4 fails; at the chosen level a seed whose "
+                 "family is unmatched counts as a non-positive seed (never dropped silently) and is excluded only "
+                 "from means and t-tests, and the payload records the excluded seeds; R4(4) and R7(b) anchors are "
+                 "evaluated at the same level; R7(d)'s matching-quality mark is unchanged"),
+        dict(id="seeds", step=None,
+             old="lean 0-4, full 0-9, density ladder 0-2",
+             new="fresh, never-run seeds (never through a training stage or an R2-R7 evaluation; the data-only r0r1 "
+                 "checks of seeds 5-9 listed in prior_outputs_on_fresh_seeds are the only earlier outputs): lean "
+                 "5-9, full 5-14, density ladder 5-7; seeds 0-4 keep the original verdict"),
+    ],
+    unchanged="the world spec, Stage 0, the retunes (wrong_gain stays unusable: it fails Stage 0), the training "
+              "settings, every other pass mark and the stop rule")
+
 
 # ---------------------------------------------------------------------------------------------------------
 # Configuration
@@ -305,9 +403,9 @@ class GateConfig:
     preset: str = "real"
     data_seed: int = G.DATA_SEED
     sizes: tuple = (500, 200, 300)
-    lean_seeds: tuple = (0, 1, 2, 3, 4)
-    full_seeds: tuple = tuple(range(10))
-    ladder_seeds: tuple = (0, 1, 2)
+    lean_seeds: tuple = (5, 6, 7, 8, 9)  # Amendment A1: fresh seeds (0-4 informed the amendment and keep their verdict)
+    full_seeds: tuple = tuple(range(5, 15))
+    ladder_seeds: tuple = (5, 6, 7)
     ladder_rungs: tuple = G.LADDER
     primary_rung: float = G.PRIMARY_RUNG
     alpha_ladder: tuple = (2.5, 5.0, 10.0)
@@ -323,7 +421,7 @@ class GateConfig:
     tier_a_refresh: int = T.ORACLE_REFRESH
     n_shuf: int = T.N_SHUF
     match_tol: float = 0.01
-    match_rounds: int = 5
+    match_rounds: int = 10  # Amendment A1 (was 5)
     control_families: tuple = ("EVEN", "OR-wrong", "OR-thin")
     tier_b_arms: tuple = ("EVEN", "OR-wrong", "OR-thin", "SHUF0", "ANTI")
     r5_draws: int = 256
@@ -428,8 +526,11 @@ def prereg_payload(cfg):
     return dict(
         kind="glq-preregistration", created=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         statement="Every pass mark, seed list, retune, alpha rung and setting of the Gapped LQ acceptance gate, "
-                  "fixed before any acceptance stage trains anything. glq_acceptance.load_prereg refuses every stage "
-                  "when this file, its sidecar or a hashed code file differs.",
+                  "fixed before any acceptance stage of this pre-registration trains anything. It carries Amendment "
+                  "A1 (see 'amendment'): post hoc, informed by seeds 0-4 of the original pre-registration, tested "
+                  "on fresh seeds 5-14. glq_acceptance.load_prereg refuses every stage when this file, its sidecar or "
+                  "a hashed code file differs.",
+        amendment=AMENDMENT,
         pass_marks=PASS_MARKS, config=config_dict(cfg), stop_steps=list(STOP_STEPS), step_names=STEP_NAMES,
         seed_rule="a mark 'in >= f of 10 seeds' needs >= ceil(f n) of the path's n seeds",
         seeds=dict(lean=list(cfg.lean_seeds), full=list(cfg.full_seeds), ladder=list(cfg.ladder_seeds)),
@@ -1131,47 +1232,108 @@ def _thin_rich_E(diag):
     return thin, diag["pooled"]["mean_E_rich_main"]
 
 
-def r2_values(rec, fraction):
+R2_GATED, R2_REPORTED = "FQE", "HOST"  # Amendment A1: R2 is gated on the FQE critic; HOST's values are reported
+
+
+def slope_shift(world, K, context, grad_q1, grad_qpi):
+    """Per row, |H_aa,c^-1 (grad_a Q1 - grad_a Q^pi)| / 2 at (s, pi(s)) (R2's slope accuracy, reported, not gated).
+
+    Q^pi_c(s, a) = z^T H_c z + h_c (z = (s, a)) is concave in a with action block H_aa,c (negative definite), so
+    argmax_a Q^pi = -H_aa^-1 H_as s. A critic error whose action gradient at the action is delta = grad_a Q1 - grad_a
+    Q^pi (to first order Q1 = Q^pi + delta . a) moves the maximiser to the root of 2 H_aa a + 2 H_as s + delta: a
+    shift of -H_aa^-1 delta / 2. Its length is how far the critic's error moves the action it recommends. H_c is the
+    exact Q^pi of the per-context linear policy K that the diagnostics evaluate (lq_harness.exact_q); rows of a context
+    whose closed loop is not discounted-stable are NaN."""
+    K = G.World.per_context(K)
+    context = np.asarray(context, np.int64)
+    delta = np.asarray(grad_q1, np.float64) - np.asarray(grad_qpi, np.float64)
+    out = np.full(len(context), np.nan)
+    for c, system in enumerate(world.systems):
+        rows = context == c
+        if not rows.any():
+            continue
+        try:
+            H, _, _ = LQ.exact_q(system, K[c])
+        except ValueError:
+            continue
+        out[rows] = np.linalg.norm(np.linalg.solve(H[DS:, DS:], delta[rows].T).T, axis=1) / 2
+    return out
+
+
+def r2_slope(world, rec, key, run_dir):
+    """R2's slope accuracy of one snapshot (reported, not gated) from the per-row action gradients that
+    glq_train.cotrain saved with it (errors_<pct>.npz: grad_q1_pi, grad_qpi_pi, context) and the gains its diagnostics
+    evaluated."""
+    pct = int(round(100 * int(key) / rec["updates"]))
+    path = Path(run_dir) / f"errors_{pct:03d}.npz"
+    if not path.exists():
+        return dict(median_rich=None, per_context=None, note=f"{path.name} is missing")
+    with np.load(path) as z:
+        ctx, g1, ge = z["context"], z["grad_q1_pi"], z["grad_qpi_pi"]
+    shift = slope_shift(world, np.asarray(rec["diagnostics"][key]["K"], np.float64), ctx, g1, ge)
+    return dict(median_rich=T._nanmedian(shift[np.isin(ctx, G.RICH_MAIN)]),
+                per_context={G.CONTEXTS[c]: T._nanmedian(shift[ctx == c]) for c in range(NC)},
+                rich_logging_sd=float(world.spec.rich_noise_sd), file=path.name, note=None)
+
+
+def r2_values(rec, fraction, world=None, run_dir=None):
+    """One critic's R2 values at a snapshot. Gated marks (FQE, Amendment A1): R2_ratio and R2_thin_E2 (threshold
+    share_factor x the thin share of the evaluation rows over which sum E^2 is pooled). Reported, not gated: the level
+    accuracy (rel) and, with world and run_dir, the slope accuracy (slope_shift's rich median)."""
+    m = PASS_MARKS
     key = snapshot_key(rec, fraction)
     if key is None:  # a run that stopped early fails its seed
-        return dict(ratio=None, thin_E2=None, rel=None, rel_logged=None, rel_deterministic=None,
-                    rel_deterministic_logged=None, Twrong_over_Tright=None, thin_mean_E=None,
-                    rich_mean_E=None, unstable_contexts=None, note=stopped_note(rec),
-                    marks=dict(R2_ratio=False, R2_thin_E2=False, R2_rel=False), all=False)
+        return dict(ratio=None, thin_E2=None, thin_share_rows=None, thin_E2_min=None, rel=None, rel_logged=None,
+                    rel_deterministic=None, rel_deterministic_logged=None, slope=None, slope_detail=None,
+                    Twrong_over_Tright=None, thin_mean_E=None, rich_mean_E=None, unstable_contexts=None,
+                    note=stopped_note(rec), marks=dict(R2_ratio=False, R2_thin_E2=False),
+                    reported=dict(R2_rel=None, R2_slope=None), all=False)
     d = rec["diagnostics"][key]
     p = d["pooled"]
     thin, rich = _thin_rich_E(d)
-    m = PASS_MARKS
-    vals = dict(ratio=p["ratio_E_Twrong_rich_main"], thin_E2=p["thin_share_sum_E2"],
+    rows = p.get("thin_share_rows")
+    vals = dict(ratio=p["ratio_E_Twrong_rich_main"], thin_E2=p["thin_share_sum_E2"], thin_share_rows=rows,
+                thin_E2_min=m["R2_thin_E2"]["share_factor"] * rows if rows is not None else None,
                 rel=p["rich_main_median_rel_e1_td3_pi"], rel_logged=p["rich_main_median_rel_e1_td3_logged"],
                 rel_deterministic=p["rich_main_median_rel_e1_pi"],
-                rel_deterministic_logged=p["rich_main_median_rel_e1_logged"],
+                rel_deterministic_logged=p["rich_main_median_rel_e1_logged"], slope=None, slope_detail=None,
                 Twrong_over_Tright=p["ratio_E_Twrong_Tright"], thin_mean_E=thin, rich_mean_E=rich,
                 unstable_contexts=p["unstable_contexts"])
+    if world is not None and run_dir is not None:
+        vals["slope_detail"] = r2_slope(world, rec, key, run_dir)
+        vals["slope"] = vals["slope_detail"]["median_rich"]
     ok = lambda x, f: x is not None and f(x)
     vals["marks"] = dict(R2_ratio=ok(vals["ratio"], lambda x: x >= m["R2_ratio"]["min"]),
-                         R2_thin_E2=ok(vals["thin_E2"], lambda x: x >= m["R2_thin_E2"]["min"]),
-                         R2_rel=ok(vals["rel"], lambda x: x <= m["R2_rel"]["max"]))
+                         R2_thin_E2=ok(vals["thin_E2"], lambda x: vals["thin_E2_min"] is not None and
+                                       x >= vals["thin_E2_min"]))
+    vals["reported"] = dict(R2_rel=vals["rel"], R2_slope=vals["slope"])
     vals["all"] = all(vals["marks"].values())
     return vals
 
 
 def r2_evaluate(prereg, retune, path, alpha):
-    """R2 from the finished critics runs (evaluated live; the r2 stage writes it)."""
+    """R2 from the finished critics runs (evaluated live; the r2 stage writes it). Amendment A1: the pass rests on the
+    FQE critic only (its main runs and its density ladder); HOST at `alpha` is evaluated the same way and reported, and
+    a missing HOST run is listed under missing_reported without holding the gate back."""
     cfg = prereg.config
     seeds = cfg.path_seeds[path]
-    per, missing = {}, []
+    world = G.World(world_spec(cfg, retune))
+    per, missing, missing_reported = {}, [], []
+    lost = lambda mode: missing if mode == R2_GATED else missing_reported  # noqa: E731
     for mode in ("HOST", "FQE"):
         per[mode] = {}
         for rep in seeds:
             rec = _run_record(prereg, retune, "main", mode, alpha, rep)
             if rec is None:
-                missing.append(f"critics {mode} seed {rep} alpha {alpha:g}")
+                lost(mode).append(f"critics {mode} seed {rep}" + (f" alpha {alpha:g}" if mode != "FQE" else ""))
                 continue
-            per[mode][rep] = r2_values(rec, cfg.r2_snapshot)
+            per[mode][rep] = r2_values(rec, cfg.r2_snapshot, world, critic_dir(prereg, retune, "main", mode, alpha,
+                                                                                  rep))
     need = seed_need(PASS_MARKS["R2_ratio"]["seed_frac"], len(seeds))
     counts = {mode: sum(v["all"] for v in per[mode].values()) for mode in per}
-    ladder, ladder_missing = {}, []
+    by_mark = {mode: {k: sum(v["marks"][k] for v in per[mode].values()) for k in ("R2_ratio", "R2_thin_E2")}
+               for mode in per}
+    ladder = {}
     a0 = float(cfg.alpha_ladder[0])
     for mode in ("HOST", "FQE"):
         means = []
@@ -1180,7 +1342,7 @@ def r2_evaluate(prereg, retune, path, alpha):
             for rep in cfg.ladder_seeds:
                 rec = _run_record(prereg, retune, rung_variant(cfg, rung), mode, a0, rep)
                 if rec is None:
-                    ladder_missing.append(f"critics {mode} {rung_variant(cfg, rung)} seed {rep}")
+                    lost(mode).append(f"critics {mode} {rung_variant(cfg, rung)} seed {rep}")
                     continue
                 key = snapshot_key(rec, cfg.r2_snapshot)
                 vals.append(_thin_rich_E(rec["diagnostics"][key]) if key else (None, None))
@@ -1196,13 +1358,22 @@ def r2_evaluate(prereg, retune, path, alpha):
         ladder[mode] = dict(rungs=means, falls=falls, steps=len(E) - 1, top_ratio=ratio,
                             falls_pass=falls is not None and falls >= PASS_MARKS["R2_ladder_falls"]["min"],
                             top_pass=ratio is not None and 1 / f <= ratio <= f)
-    complete = not missing and not ladder_missing
-    marks = dict(main={mode: counts[mode] >= need for mode in counts},
-                 ladder_falls=all(ladder[m]["falls_pass"] for m in ladder),
-                 ladder_top=all(ladder[m]["top_pass"] for m in ladder))
-    passed = complete and all(marks["main"].values()) and marks["ladder_falls"] and marks["ladder_top"]
-    return dict(alpha=alpha, seeds=list(seeds), need=need, per_seed=per, passing_seeds=counts, ladder=ladder,
-                missing=missing + ladder_missing, complete=complete, marks=marks, pass_=passed if complete else None)
+    complete = not missing
+    g = R2_GATED
+    marks = dict(main=counts[g] >= need, ladder_falls=ladder[g]["falls_pass"], ladder_top=ladder[g]["top_pass"])
+    span = lambda xs: [min(xs), max(xs)] if xs else None  # noqa: E731
+    reported = {
+        R2_REPORTED: dict(gated=False, passing_seeds=counts[R2_REPORTED], passing_by_mark=by_mark[R2_REPORTED],
+                          main=counts[R2_REPORTED] >= need, ladder_falls=ladder[R2_REPORTED]["falls_pass"],
+                          ladder_top=ladder[R2_REPORTED]["top_pass"]),
+        "accuracy": {mode: dict(gated=False, rel=span([v["rel"] for v in per[mode].values() if v["rel"] is not None]),
+                                slope=span([v["slope"] for v in per[mode].values() if v["slope"] is not None]))
+                     for mode in per}}
+    passed = complete and all(marks.values())
+    return dict(alpha=alpha, seeds=list(seeds), need=need, gated_critic=g, per_seed=per, passing_seeds=counts,
+                passing_by_mark=by_mark, ladder=ladder, reported=reported, missing=missing,
+                missing_reported=missing_reported, complete=complete, marks=marks,
+                pass_=passed if complete else None)
 
 
 def stage_r2(prereg, path="lean", retune="base", alpha="auto", force=False, log=print):
@@ -1219,7 +1390,9 @@ def stage_r2(prereg, path="lean", retune="base", alpha="auto", force=False, log=
     payload = stage_payload(prereg, "r2", started, step=5, retune=retune, path=path, alpha_note=note, **res)
     payload = finish(pooled_path(prereg, "r2", retune, path, alpha), payload)
     log(f"r2 {retune} {path} alpha {alpha:g}: " + ("incomplete" if not res["complete"] else
-                                                   ("pass" if res["pass_"] else "FAIL")))
+                                                   ("pass" if res["pass_"] else "FAIL")) +
+        f" (gated on FQE: {res['passing_seeds'][R2_GATED]}/{len(res['seeds'])} seeds, need {res['need']}; HOST "
+        f"{res['passing_seeds'][R2_REPORTED]}/{len(res['seeds'])}, reported, not gated)")
     return payload
 
 
@@ -1232,13 +1405,21 @@ R3_KEYS = ("off_support_cost_T_wrong", "cost_share_of_gap", "off_support_cost_T_
            "rich_NS_host", "stable_host", "stable_exact")
 
 
+def thin_mix_share(world):
+    """The thin contexts' (T_wrong, T_right) share of the world's episode mix: 0.30 in the base world, 0.50 in
+    thin_share."""
+    return float(world.mix[list(G.THIN)].sum())
+
+
 def r3_values(world, host_rec, exact_rec):
     m = PASS_MARKS
+    thin_min = m["R3_thin_shortfall"]["share_factor"] * thin_mix_share(world)  # Amendment A1 (was 0.60)
     K_host, K_exact = final_gains(host_rec), final_gains(exact_rec)
     if K_host is None or K_exact is None:  # a run that stopped early fails its seed
         note = "; ".join(f"{name}: {stopped_note(r)}" for name, r, K in (("HOST", host_rec, K_host),
                                                                          ("EXACT", exact_rec, K_exact)) if K is None)
-        return dict({k: None for k in R3_KEYS}, note=note, all=False,
+        return dict({k: None for k in R3_KEYS}, thin_mix_share=thin_mix_share(world), thin_shortfall_min=thin_min,
+                    note=note, all=False,
                     marks=dict(R3_cost=False, R3_ns_gap=False, R3_thin_shortfall=False, R3_rich_ns=False))
     J_host, J_exact = world.j_finite(K_host), world.j_finite(K_exact)
     K0 = K_host.copy()
@@ -1257,12 +1438,12 @@ def r3_values(world, host_rec, exact_rec):
                     [K_host[G.T_RIGHT, :2], np.zeros((2, DS))])) - J_host[G.T_RIGHT]),
                 NS_host=ns_host, NS_exact=ns_exact, NS_host_per_context=world.normalised(J_host)[0],
                 NS_exact_per_context=world.normalised(J_exact)[0], shortfall_per_context=short,
-                thin_shortfall_share=thin_share, rich_NS_host=rich_ns,
-                stable_host=[bool(r < 1) for r in world.radius(K_host)],
+                thin_shortfall_share=thin_share, thin_mix_share=thin_mix_share(world), thin_shortfall_min=thin_min,
+                rich_NS_host=rich_ns, stable_host=[bool(r < 1) for r in world.radius(K_host)],
                 stable_exact=[bool(r < 1) for r in world.radius(K_exact)])
     vals["marks"] = dict(R3_cost=cost_share >= m["R3_cost"]["min"],
                          R3_ns_gap=ns_host <= ns_exact - m["R3_ns_gap"]["min"],
-                         R3_thin_shortfall=thin_share is not None and thin_share >= m["R3_thin_shortfall"]["min"],
+                         R3_thin_shortfall=thin_share is not None and thin_share >= thin_min,
                          R3_rich_ns=rich_ns >= m["R3_rich_ns"]["min"])
     vals["all"] = all(vals["marks"].values())
     return vals
@@ -1730,10 +1911,26 @@ def _matched(score, family, tag):
     return rec if rec is not None and rec.get("NS_mix") is not None and rec.get("reachable") else None
 
 
-def r4_level(scores, families=("OR-wrong", "OR-thin")):
-    """'m=2.0' when every scored seed matched the families at S2, else 'm=1.3' (pre-registered fallback)."""
+def control_level(scores, families=("OR-wrong",)):
+    """The level of R7(c)'s null world and the global-linear control (rule unchanged by Amendment A1): 'm=2.0' when
+    every scored seed matched the families at S2, else 'm=1.3'."""
     ok = all(_matched(v["score"], f, "m=2.0") for v in scores.values() if v["score"] for f in families)
     return "m=2.0" if ok else "m=1.3"
+
+
+def r4_choose_level(scores, seeds):
+    """Amendment A1's R4 level (PASS_MARKS['R4_level']): S2 ('m=2.0') when OR-wrong and OR-thin are both matched there
+    in >= ceil(0.8 n) of the path's n seeds, else S1 ('m=1.3') under the same rule, else None (R4 fails). A seed whose
+    Tier A run failed, or that is missing, is not matched. Returns (level or None, {level: counts and seeds})."""
+    mk = PASS_MARKS["R4_level"]
+    need = seed_need(mk["seed_frac"], len(seeds))
+    rule = {}
+    for tag in mk["levels"]:
+        ok = [rep for rep in seeds if (scores.get(rep) or {}).get("score") and
+              all(_matched(scores[rep]["score"], f, tag) for f in mk["families"])]
+        rule[tag] = dict(matched_seeds=ok, unmatched_seeds=[rep for rep in seeds if rep not in ok], matched=len(ok),
+                         need=need, qualifies=len(ok) >= need)
+    return next((tag for tag in mk["levels"] if rule[tag]["qualifies"]), None), rule
 
 
 def _diff(score, family, tag):
@@ -1751,55 +1948,69 @@ def _shuf_ns(score, tag):
 
 
 def r4_evaluate(prereg, retune, path, alpha):
+    """R4 at Amendment A1's level (r4_choose_level). At the level, a seed whose family is unmatched counts as a
+    non-positive seed and is excluded only from the means and t-tests (listed under excluded_seeds); a seed whose Tier A
+    run failed still fails every pooled mark (unchanged rule). With no qualifying level R4 fails; its values are then
+    computed at S1 for information only (evaluated_at)."""
     cfg, m = prereg.config, PASS_MARKS
     seeds = cfg.path_seeds[path]
     scores, missing = tier_a_scores(prereg, retune, "main", alpha, seeds)
     if not scores:
         return dict(complete=False, missing=missing, pass_=None)
-    tag = r4_level(scores)
-    d1 = paired_t([_diff(v["score"], "OR-wrong", tag) for v in scores.values()])
-    d2 = paired_t([_diff(v["score"], "OR-thin", tag) for v in scores.values()])
+    n = len(seeds)
+    tag, rule = r4_choose_level(scores, seeds)
+    at = tag if tag is not None else m["R4_level"]["levels"][-1]
+    failed = [rep for rep, v in scores.items() if not v["score"]]
+    scored = {rep: v["score"] for rep, v in scores.items() if v["score"]}
+    diffs = {fam: {rep: _diff(sc, fam, at) for rep, sc in scored.items()} for fam in ("OR-wrong", "OR-thin")}
+    d1, d2 = paired_t(list(diffs["OR-wrong"].values())), paired_t(list(diffs["OR-thin"].values()))
     best_thin = paired_t([(v["score"] or {}).get("best_OR_thin_minus_best_EVEN") for v in scores.values()])
     best_wrong = paired_t([(v["score"] or {}).get("best_OR_wrong_minus_NONE") for v in scores.values()])
     anchors = []
-    for v in scores.values():
-        sc = v["score"]
-        thin, wrong, anti, shuf = (_matched(sc, "OR-thin", tag), _matched(sc, "OR-wrong", tag),
-                                   _matched(sc, "ANTI", tag), _shuf_ns(sc, tag))
-        anchors.append(dict(thin_minus_shuf=thin["NS_mix"] - shuf if thin and shuf is not None else None,
+    for rep, sc in scored.items():
+        thin, wrong, anti, shuf = (_matched(sc, "OR-thin", at), _matched(sc, "OR-wrong", at),
+                                   _matched(sc, "ANTI", at), _shuf_ns(sc, at))
+        anchors.append(dict(seed=rep, thin_minus_shuf=thin["NS_mix"] - shuf if thin and shuf is not None else None,
                             wrong_minus_shuf=wrong["NS_mix"] - shuf if wrong and shuf is not None else None,
                             shuf_minus_anti=shuf - anti["NS_mix"] if anti and shuf is not None else None))
-    n = len(seeds)
-    # a pooled mean counts only when every seed of the path contributes: a failed or unmatched seed fails the mark
-    # instead of silently leaving the mean (the gate's rule: a failed seed is counted, never dropped)
-    mean = lambda k: (lambda t: t["mean"] if t["n"] == n else None)(paired_t([a[k] for a in anchors]))
-    cap = paired_t([_diff(v["score"], "CAP-wrong", tag) for v in scores.values()])
+    # Amendment A1: an unmatched seed leaves the mean (recorded below); a failed seed fails the mark (no_failed)
+    mean = lambda k: paired_t([a[k] for a in anchors])["mean"]  # noqa: E731
+    excluded = {"R4_1 (OR-wrong)": [rep for rep, d in diffs["OR-wrong"].items() if d is None],
+                "R4_2 (OR-thin)": [rep for rep, d in diffs["OR-thin"].items() if d is None],
+                **{k: [a["seed"] for a in anchors if a[k] is None]
+                   for k in ("thin_minus_shuf", "wrong_minus_shuf", "shuf_minus_anti")}}
+    cap = paired_t([_diff(v["score"], "CAP-wrong", at) for v in scores.values()])
     cap_best = paired_t([((v["score"] or {}).get("best_capped_minus_best_EVEN") or {}).get("CAP-wrong")
                          for v in scores.values()])
     need_pos = seed_need(m["R4_1"]["positive_frac"], n)
     gap = m["R4_4"]["min_gap"]
-    ge = lambda x, t: x is not None and x >= t
+    ge = lambda x, t: x is not None and x >= t  # noqa: E731
+    level_ok, no_failed = tag is not None, not failed and len(scores) == n
     marks = dict(
-        R4_1=ge(d1["mean"], m["R4_1"]["min"]) and d1["p"] is not None and d1["p"] < m["R4_1"]["p_max"] and
-        d1["positive"] >= need_pos and d1["n"] == n,
-        R4_2=ge(d2["mean"], m["R4_2"]["min"]) and d2["p"] is not None and d2["p"] < m["R4_2"]["p_max"] and
-        d2["n"] == n,
-        R4_3a=ge(best_thin["mean"], m["R4_3a"]["min"]) and best_thin["n"] == n,
+        R4_level=level_ok,
+        # positive counts only the included seeds' differences: an unmatched (excluded) seed is never positive
+        R4_1=level_ok and no_failed and ge(d1["mean"], m["R4_1"]["min"]) and d1["p"] is not None and
+        d1["p"] < m["R4_1"]["p_max"] and d1["positive"] >= need_pos,
+        R4_2=level_ok and no_failed and ge(d2["mean"], m["R4_2"]["min"]) and d2["p"] is not None and
+        d2["p"] < m["R4_2"]["p_max"],
+        R4_3a=ge(best_thin["mean"], m["R4_3a"]["min"]) and best_thin["n"] == n,  # best over the ladder: no level
         R4_3b=ge(best_wrong["mean"], m["R4_3b"]["min"]) and best_wrong["n"] == n,
-        R4_4=ge(mean("thin_minus_shuf"), gap) and ge(mean("shuf_minus_anti"), gap))
+        R4_4=level_ok and no_failed and ge(mean("thin_minus_shuf"), gap) and ge(mean("shuf_minus_anti"), gap))
     if cap["n"] == len(scores):
-        cap_margin, cap_form = cap["mean"], f"NS(CAP-wrong) - NS(EVEN) matched at {tag}"
+        cap_margin, cap_form = cap["mean"], f"NS(CAP-wrong) - NS(EVEN) matched at {at}"
     else:
         cap_margin, cap_form = cap_best["mean"], "best CAP-wrong - best EVEN (CAP-wrong unmatched at the level)"
     decision = ("P1L placement (the capped oracle's margin is below 0.02)" if cap_margin is None or cap_margin <
                 m["R4_cap"]["decision"] else "the deployed hook's range (capped margin >= 0.02)")
     complete = not missing
-    return dict(level=tag, n=n, seeds=list(seeds), need_positive=need_pos, R4_1=d1, R4_2=d2,
+    return dict(level=tag, evaluated_at=at, level_rule=rule, n=n, seeds=list(seeds), need_positive=need_pos,
+                failed_seeds=failed, excluded_seeds=excluded, R4_1=d1, R4_2=d2,
                 best_OR_thin_minus_best_EVEN=best_thin, best_OR_wrong_minus_NONE=best_wrong, anchors=anchors,
                 anchor_means=dict(thin_minus_shuf=mean("thin_minus_shuf"), wrong_minus_shuf=mean("wrong_minus_shuf"),
                                   shuf_minus_anti=mean("shuf_minus_anti")),
                 capped=dict(matched=cap, best_minus_best_EVEN=cap_best, margin=cap_margin, form=cap_form,
                             bca_test_uses=decision),
+                note=None if level_ok else "no level qualifies (R4 fails); values at S1 for information only",
                 marks=marks, missing=missing, complete=complete,
                 pass_=all(marks.values()) if complete else None)
 
@@ -1826,21 +2037,24 @@ def r7_evaluate(prereg, retune, path, alpha):
     seeds = cfg.path_seeds[path]
     r4 = r4_evaluate(prereg, retune, path, alpha)
     out = dict(missing=list(r4.get("missing", [])))
-    if r4.get("level") is None:
-        return dict(out, complete=False, pass_=None)
-    tag, d1 = r4["level"], r4["R4_1"]
+    if r4.get("level") is None:  # Tier A missing, or (Amendment A1) no R4 level qualifies: R4 fails, R7 has no level
+        note = "no R4 level qualifies (R4 fails)" if r4.get("level_rule") else None
+        return dict(out, complete=False, pass_=None, note=note)
+    tag, d1 = r4["level"], r4["R4_1"]  # R7(a) reads R4(1)'s SD over its included seeds; R7(b) the anchors at the level
     ma = m["R7a"]
     at = mde(d1["sd"], ma["at_seeds"], ma["alpha"], ma["power"])
     out["R7a"] = dict(sd=d1["sd"], n=d1["n"], mde_at_10=at, mde_at_n=mde(d1["sd"], d1["n"], ma["alpha"], ma["power"]),
                       seeds_needed=seeds_for_mde(d1["sd"], ma["max"], ma["max_seeds"], ma["alpha"], ma["power"])
                       if d1["sd"] else None)
     out["R7b"] = dict(wrong_minus_shuf=r4["anchor_means"]["wrong_minus_shuf"],
-                      shuf_minus_anti=r4["anchor_means"]["shuf_minus_anti"])
+                      shuf_minus_anti=r4["anchor_means"]["shuf_minus_anti"], level=tag,
+                      excluded_seeds={k: r4["excluded_seeds"][k] for k in ("wrong_minus_shuf", "shuf_minus_anti")},
+                      failed_seeds=r4["failed_seeds"])
     ctrl = {}
     for variant in ("null", "global_linear"):
         sc, miss = tier_a_scores(prereg, retune, variant, alpha, seeds)
         out["missing"] += miss
-        lvl = r4_level(sc, ("OR-wrong",)) if sc else None
+        lvl = control_level(sc) if sc else None
         ctrl[variant] = dict(level=lvl, diff=paired_t([_diff(v["score"], "OR-wrong", lvl) for v in sc.values()])
                              if sc else None)
         ctrl[variant]["every_seed"] = bool(ctrl[variant]["diff"]) and ctrl[variant]["diff"]["n"] == len(seeds)
@@ -1881,7 +2095,8 @@ def r7_evaluate(prereg, retune, path, alpha):
     gap = m["R7b"]["min_gap"]
     out["marks"] = dict(
         R7a=at is not None and at <= ma["max"],
-        R7b=ge(out["R7b"]["wrong_minus_shuf"], gap) and ge(out["R7b"]["shuf_minus_anti"], gap),
+        R7b=not r4["failed_seeds"] and ge(out["R7b"]["wrong_minus_shuf"], gap) and
+        ge(out["R7b"]["shuf_minus_anti"], gap),
         R7c=ctrl["null"]["every_seed"] and lt(abs(ctrl["null"]["diff"]["mean"]) if ctrl["null"]["diff"]["mean"]
                                                is not None else None, m["R7c"]["max_abs"]),
         R7_gl=ctrl["global_linear"]["every_seed"] and lt(ctrl["global_linear"]["diff"]["mean"], m["R7_gl"]["max"]),
@@ -1925,6 +2140,8 @@ def stage_tier_b(prereg, seed, arm, path="full", alpha="auto", retune="base", fo
         raise PreregError(f"tierB needs every main Tier A of the {path} path first (the knobs come from Tier A at "
                           f"R4's level): missing " + ", ".join(r4.get("missing", [])))
     tag = r4["level"]
+    if tag is None:
+        raise PreregError("tierB has no knobs: no R4 strength level qualifies (R4 fails; Amendment A1's level rule)")
     blind = read_json(tier_a_dir(prereg, retune, "main", alpha, seed) / "tierA_blind.json")
     if blind is None:
         raise FileNotFoundError(f"tierB needs the main Tier A of seed {seed}")
@@ -2078,30 +2295,44 @@ def verdict_rows(prereg, path, retune):
     chosen, alpha_note, r3_evals = host_alpha(prereg, retune, path)
     r2 = r2_evaluate(prereg, retune, path, chosen if chosen is not None else float(cfg.alpha_ladder[0]))
     flags = []
+    span = lambda vals: f"{_fmt(min(vals))} to {_fmt(max(vals))}" if vals else "-"  # noqa: E731
     if r2["complete"]:
-        for k in ("R2_ratio", "R2_thin_E2", "R2_rel"):
-            parts = []
-            ok_all = True
-            for mode in ("HOST", "FQE"):
+        g, h = R2_GATED, R2_REPORTED
+        for k, key in (("R2_ratio", "ratio"), ("R2_thin_E2", "thin_E2")):
+            for mode in (g, h):
                 per = r2["per_seed"][mode]
                 c = sum(v["marks"][k] for v in per.values())
-                key = {"R2_ratio": "ratio", "R2_thin_E2": "thin_E2", "R2_rel": "rel"}[k]
-                vals = [v[key] for v in per.values() if v[key] is not None]
-                parts.append(f"{mode} {_fmt(min(vals)) if vals else '-'}-{_fmt(max(vals)) if vals else '-'} ({c}/{n})")
-                ok_all &= c >= r2["need"]
-            rows.append(_row(5, k, "; ".join(parts), _res(ok_all), f"need {r2['need']}/{n} per critic",
-                             "a seed passes when all three R2 marks hold"))
-        flags.append(r2["marks"]["main"]["HOST"] and r2["marks"]["main"]["FQE"])
+                meas = span([v[key] for v in per.values() if v[key] is not None])
+                if k == "R2_thin_E2":
+                    thr = sorted({round(v["thin_E2_min"], 12) for v in per.values() if v["thin_E2_min"] is not None})
+                    meas += f" (threshold {', '.join(_fmt(x) for x in thr) or '-'})"
+                if mode == g:
+                    rows.append(_row(5, k, f"{mode} {meas}", _res(c >= r2["need"]), f"{c}/{n} (need {r2['need']})",
+                                     "gated on FQE; a seed passes when both concentration marks hold"))
+                else:
+                    rows.append(dict(_row(5, k, f"{mode} {meas} (alpha {r2['alpha']:g})", "reported, not gated",
+                                          f"{c}/{n}" if per else f"0/{n} run"),
+                                     requirement=PASS_MARKS[k]["name"] + " - HOST critic"))
+        for k, key in (("R2_rel", "rel"), ("R2_slope", "slope")):
+            meas = "; ".join(f"{mode} {span([v[key] for v in r2['per_seed'][mode].values() if v[key] is not None])}"
+                             for mode in (g, h))
+            rows.append(_row(5, k, meas, "reported, not gated", f"{n} seeds",
+                             "rich logging noise SD 0.3 for scale" if k == "R2_slope" else ""))
+        flags.append(r2["marks"]["main"])
         lad = r2["ladder"]
-        rows.append(_row(5, "R2_ladder_falls", "; ".join(f"{m_} falls {lad[m_]['falls']}/{lad[m_]['steps']}"
-                                                       for m_ in lad), _res(r2["marks"]["ladder_falls"]),
-                         f"{len(cfg.ladder_seeds)} ladder seeds"))
-        rows.append(_row(5, "R2_ladder_top", "; ".join(f"{m_} {_fmt(lad[m_]['top_ratio'])}" for m_ in lad),
+        rows.append(_row(5, "R2_ladder_falls", f"FQE falls {_fmt(lad[g]['falls'])}/{lad[g]['steps']}; HOST falls "
+                                               f"{_fmt(lad[h]['falls'])}/{lad[h]['steps']} (reported, not gated)",
+                         _res(r2["marks"]["ladder_falls"]), f"{len(cfg.ladder_seeds)} ladder seeds"))
+        rows.append(_row(5, "R2_ladder_top", f"FQE {_fmt(lad[g]['top_ratio'])}; HOST {_fmt(lad[h]['top_ratio'])} "
+                                             f"(reported, not gated)",
                          _res(r2["marks"]["ladder_top"]), f"{len(cfg.ladder_seeds)} ladder seeds"))
         flags += [r2["marks"]["ladder_falls"], r2["marks"]["ladder_top"]]
+        if r2["missing_reported"]:
+            rows[-1]["note"] = f"reported HOST runs missing: {len(r2['missing_reported'])}"
     else:
-        for k in ("R2_ratio", "R2_thin_E2", "R2_rel", "R2_ladder_falls", "R2_ladder_top"):
-            rows.append(_row(5, k, "-", "not run"))
+        for k in ("R2_ratio", "R2_thin_E2", "R2_rel", "R2_slope", "R2_ladder_falls", "R2_ladder_top"):
+            rows.append(_row(5, k, "-", "not run", "", "reported, not gated" if PASS_MARKS[k].get("gated") is False
+                             else "gated on FQE; HOST reported, not gated"))
         flags.append(None)
     status(5, flags)
     # step 6: R3 over the alpha ladder (live)
@@ -2118,6 +2349,9 @@ def verdict_rows(prereg, path, retune):
             else:
                 vals = [v[key] for v in per if v[key] is not None]
                 meas = f"{_fmt(min(vals)) if vals else '-'} to {_fmt(max(vals)) if vals else '-'}"
+            if k == "R3_thin_shortfall":
+                thr = sorted({round(v["thin_shortfall_min"], 12) for v in show["per_seed"].values()})
+                meas += f" (threshold {', '.join(_fmt(x) for x in thr) or '-'})"
             c = show["passing_by_mark"][k]
             rows.append(_row(6, k, meas + f" (alpha {show['alpha']:g})", _res(c >= show["need"]),
                              f"{c}/{n} (need {show['need']})", "a seed passes when all four R3 marks hold"))
@@ -2150,19 +2384,30 @@ def verdict_rows(prereg, path, retune):
     r4 = r4_evaluate(prereg, retune, path, alpha)
     if r4.get("complete"):
         t1, t2 = r4["R4_1"], r4["R4_2"]
-        meas = {"R4_1": f"mean {_fmt(t1['mean'])}, p {_fmt(t1['p'])}, positive {t1['positive']}/{t1['n']}",
-                "R4_2": f"mean {_fmt(t2['mean'])}, p {_fmt(t2['p'])}",
+        rule, ex = r4["level_rule"], r4["excluded_seeds"]
+        rows.append(_row(9, "R4_level", "; ".join(f"{t}: {r['matched']}/{n} matched (need {r['need']})"
+                                                  for t, r in rule.items()), _res(r4["marks"]["R4_level"]),
+                         f"{n} seeds", f"level {r4['level']}" if r4["level"] else "no level qualifies: R4 fails"))
+        def excl(*keys):
+            parts = [f"{k.split(' ')[0]} {ex[k]}" for k in keys if ex[k]]
+            return "; excluded (unmatched) seeds " + ", ".join(parts) if parts else ""
+
+        meas = {"R4_1": f"mean {_fmt(t1['mean'])}, p {_fmt(t1['p'])}, positive {t1['positive']}/{n}" +
+                        excl("R4_1 (OR-wrong)"),
+                "R4_2": f"mean {_fmt(t2['mean'])}, p {_fmt(t2['p'])}" + excl("R4_2 (OR-thin)"),
                 "R4_3a": f"mean {_fmt(r4['best_OR_thin_minus_best_EVEN']['mean'])}",
                 "R4_3b": f"mean {_fmt(r4['best_OR_wrong_minus_NONE']['mean'])}",
                 "R4_4": f"OR-thin - SHUF {_fmt(r4['anchor_means']['thin_minus_shuf'])}, SHUF - ANTI "
-                        f"{_fmt(r4['anchor_means']['shuf_minus_anti'])}"}
+                        f"{_fmt(r4['anchor_means']['shuf_minus_anti'])}" + excl("thin_minus_shuf", "shuf_minus_anti")}
+        where = r4["level"] if r4["level"] else f"{r4['evaluated_at']} (information only)"
+        failed = f"; failed seeds {r4['failed_seeds']}" if r4["failed_seeds"] else ""
         for k in ("R4_1", "R4_2", "R4_3a", "R4_3b", "R4_4"):
-            rows.append(_row(9, k, meas[k] + f" at {r4['level']}", _res(r4["marks"][k]), f"{n} seeds pooled"))
+            rows.append(_row(9, k, meas[k] + f" at {where}" + failed, _res(r4["marks"][k]), f"{n} seeds pooled"))
         rows.append(_row(9, "R4_cap", f"{r4['capped']['form']}: {_fmt(r4['capped']['margin'])}", "report",
                          f"{n} seeds", "BCA test uses " + r4["capped"]["bca_test_uses"]))
         step_status[9] = all(r4["marks"].values())
     else:
-        for k in ("R4_1", "R4_2", "R4_3a", "R4_3b", "R4_4", "R4_cap"):
+        for k in ("R4_level", "R4_1", "R4_2", "R4_3a", "R4_3b", "R4_4", "R4_cap"):
             rows.append(_row(9, k, "-", "not run"))
         step_status[9] = None
     # step 10: R7
@@ -2271,6 +2516,13 @@ def verdict_markdown(prereg, path, retune, rows, step_status, verdict, extra):
     lines = [f"# Gapped LQ acceptance verdict ({path} path, world {retune})", "",
              f"Pre-registration SHA-256 `{prereg.digest}` (preset {prereg.config.preset}). Host alpha "
              f"{extra['alpha']:g} ({extra['alpha_note']}). Seeds: {list(prereg.config.path_seeds[path])}.", "",
+             f"Amendment {AMENDMENT['id']} ({AMENDMENT['date']}), POST HOC: its thresholds were chosen after seeing "
+             f"seeds {AMENDMENT['informed_by_seeds'][0]}-{AMENDMENT['informed_by_seeds'][-1]} of pre-registration "
+             f"`{AMENDMENT['original_prereg_sha256'][:16]}...` (which keep their original verdict); seeds "
+             f"{AMENDMENT['fresh_seeds'][0]}-{AMENDMENT['fresh_seeds'][-1]} are fresh. R2 is gated on the FQE "
+             "critic's concentration only (accuracy and the HOST critic: reported, not gated); R3's thin-shortfall "
+             "mark is 1.5 x the thin mix share; matching runs up to 10 rounds and R4's level needs >= 80% of seeds "
+             "matched.", "",
              f"**Outcome:** {verdict}", "", "| Step | Requirement | Pass mark | Measured | Result | Seeds |",
              "|---|---|---|---|---|---|"]
     esc = lambda x: str(x).replace("|", "\\|")
@@ -2291,7 +2543,8 @@ def stage_verdict(prereg, path="lean", retune="base", log=print):
     rows, step_status, extra = verdict_rows(prereg, path, retune)
     verdict = outcome(prereg, retune, step_status, path)
     payload = stage_payload(prereg, "verdict", started, step=12, retune=retune, path=path, alpha=extra["alpha"],
-                            rows=rows, step_status={str(k): v for k, v in step_status.items()}, outcome=verdict)
+                            amendment=AMENDMENT["id"], rows=rows,
+                            step_status={str(k): v for k, v in step_status.items()}, outcome=verdict)
     out = prereg.root / "verdict" / retune / path
     payload = finish(out / "verdict.json", payload)
     md = verdict_markdown(prereg, path, retune, rows, step_status, verdict, extra)
