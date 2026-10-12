@@ -1,0 +1,550 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{array,longtable,booktabs}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{titlesec}
+\usepackage{xurl}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+\definecolor{heading}{HTML}{1F3864}
+\titleformat{\section}{\Large\bfseries\color{heading}}{}{0pt}{}
+\titleformat{\subsection}{\large\bfseries\color{heading}}{}{0pt}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{}{0pt}{}
+\titlespacing*{\subsubsection}{0pt}{1.1em}{0.2em}
+
+% Reference entry with a 0.5in hanging indent (APA style).
+\newenvironment{hangref}{\par\hangindent=0.5in\hangafter=1\noindent}{\par}
+% Question heading inside a paper; also added to the PDF bookmarks.
+\newcommand{\question}[1]{\subsubsection*{#1}}
+\newcommand{\bookmarked}[3]{#1*{#3}\phantomsection\addcontentsline{toc}{#2}{#3}}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{\color{heading}Literature Review: Offline Reinforcement Learning\\[0.3em]\large Parts A and B}
+\author{[Student name]\\{}[Course]}
+\date{[Date]}
+
+\begin{document}
+\maketitle
+
+
+\bookmarked{\section}{section}{Research Problem}
+
+Offline reinforcement learning (RL) trains a decision-making policy entirely from a fixed dataset of previously logged interactions, with no further access to the environment. Because the learned policy can prefer actions that rarely or never appear in the data, the critic's value estimates for those actions are unreliable and tend to be overly optimistic, which pulls the policy toward poor behavior. Most offline RL methods counter this with a conservatism or behavior-regularization term whose strength is controlled by a single global coefficient that must be tuned for each dataset.
+
+My research problem is how to set the strength of that regularization in a calibrated, per-sample way rather than with one hand-tuned constant. The approach I am developing, Bayesian Conformal Aggregation (BCA), estimates the uncertainty of the critic's Bellman residuals, calibrates it with weighted Bayesian conformal prediction, and uses the resulting width to adjust the regularization term inside existing algorithms. The papers reviewed below form the foundation of that work: CQL, TD3+BC, IQL and ReBRAC are the four host algorithms that BCA modifies, and Unifloral supplies the unified implementation and evaluation protocol used to compare them.
+
+
+\clearpage
+
+\bookmarked{\section}{section}{Part A: Research Papers}
+
+\bookmarked{\subsection}{subsection}{Paper 1: Conservative Q-Learning for Offline Reinforcement Learning (CQL)}
+
+\question{1. What is the citation?}
+
+\begin{hangref}Kumar, A., Zhou, A., Tucker, G., \& Levine, S. (2020). Conservative Q-learning for offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{33}, 1179--1191. \url{https://proceedings.neurips.cc/paper/2020/hash/0d2b2061826a5df3221116a5085a6052-Abstract.html}\end{hangref}
+\begin{hangref}Version reviewed: Kumar, A., Zhou, A., Tucker, G., \& Levine, S. (2020). \emph{Conservative Q-learning for offline reinforcement learning} (arXiv:2006.04779v3) [Preprint]. arXiv. \url{https://doi.org/10.48550/arXiv.2006.04779}\end{hangref}
+
+\question{2. What is the research area?}
+
+The paper belongs to machine learning and, within deep RL, to offline (batch) RL, where a policy is learned from a fixed dataset of logged transitions without further interaction. CQL is model-free and can be instantiated as an actor-critic method (on soft actor-critic, for continuous control) or a value-based method (on QR-DQN, for discrete Atari control); its conservative evaluation step can also serve alone for off-policy evaluation. The problem family is overestimation of Q-values at actions missing from the dataset. Among prior approaches, CQL represents the value-regularization, or pessimistic critic, family. BEAR and both BRAC variants penalize divergence from an explicitly estimated behavior policy (BRAC-v also inside the critic target), and other methods use ensemble or uncertainty penalties; CQL instead penalizes the Q-values themselves and needs no behavior model.
+
+\question{3. What is the research question?}
+
+Can an offline RL agent avoid the overestimation caused by distribution shift by learning a Q-function whose expected value under the learned policy provably lower-bounds the policy's true value, and does optimizing a policy against such a conservative critic produce better policies than existing policy-constraint methods?
+
+The authors break this into several sub-questions. Theoretically, they ask whether pushing Q-values down under a chosen action distribution while pushing them up on dataset actions yields a bound tighter than a pointwise one, whether that bound survives sampling error and function approximation, and whether the resulting policy improves on the behavior policy with high probability. Empirically, they test whether the learned values really fall below true returns, whether the method beats baselines on data that mix several policies, come from human demonstrations or consist of image-based Atari replay, and which design choices (variant, maximization term, automatic tuning of \ensuremath{\alpha}) matter.
+
+\question{4. What is the significance of the question?}
+
+The question matters in practice because the domains where RL would be most useful, such as robotics, recommendation and medicine, make online trial and error expensive or hazardous, while logged data are often abundant. Reliable learning from such logs would let RL reuse large datasets much as supervised learning does. The authors stress that this promise had not been realized, because standard off-policy algorithms applied to static data usually fail.
+
+Technically, the failure comes from bootstrapping. The Bellman target evaluates the critic at actions proposed by the learned policy, which may lie outside the data; errors there are never corrected by new experience, and because the policy maximizes the critic, it is drawn toward exactly the inflated values. Earlier remedies either constrained the policy toward an estimated behavior model, which is hard when data come from several sources, or used uncertainty estimates that proved too unreliable offline. When the paper appeared, the D4RL benchmark had just shown that existing methods often could not beat behavior cloning on multi-modal or human-collected data, so a simpler and more robust method with formal guarantees addressed a clear gap in the field.
+
+\question{5. What are the contributions reported in this paper?}
+
+The central contribution is the CQL framework, a family of critic objectives indexed by a regularizer R(\ensuremath{\mu}) on the distribution whose Q-values are pushed down. The critic is trained with the usual Bellman error plus a penalty that lowers Q-values under \ensuremath{\mu}, chosen to favor high-valued actions, and raises them on dataset actions. Two members are derived in closed form: CQL(H), whose penalty is a log-sum-exp (soft maximum) of Q over actions, and CQL(\ensuremath{\rho}), which replaces the soft maximum with an exponentially weighted average of Q-values over actions sampled from the previous policy. An appendix adds a variance-penalizing variant, CQL(var), linked to distributionally robust optimization.
+
+The theoretical contributions are a chain of results: the simpler penalty yields a pointwise lower bound on Q; the full penalty yields a tighter lower bound on the policy's expected value; both extend to linear and neural-tangent-kernel approximation; the iterates stay conservative when the policy changes slowly; the update widens the value gap between in-data and unseen actions; and the induced policy objective is a penalized empirical return with a high-probability safe-improvement guarantee over the behavior policy. A further appendix result shows the maximization term must use the behavior distribution for the bound to hold.
+
+On the practical side, the paper provides an algorithm that adds about twenty lines to SAC or QR-DQN, needs no behavior-policy model, and can tune \ensuremath{\alpha} automatically through a Lagrangian threshold. Empirically, it contributes a broad evaluation on D4RL and offline Atari, direct measurements of value underestimation and gap expansion, and ablations of the main design choices.
+
+\question{6. What is the research method?}
+
+The research method combines algorithm design, theoretical analysis (mostly tabular, with extensions to linear and NTK approximation), and empirical benchmarking supported by diagnostic measurements and ablations.
+
+The approach modifies only the critic objective. For the CQL(H) variant used in most experiments, the critic minimizes \begin{equation*}\alpha\,\mathbb{E}_{s\sim\mathcal{D}}\Big[\log\sum_{a}\exp Q(s,a)-\mathbb{E}_{a\sim\hat{\pi}_{\beta}}Q(s,a)\Big]+\frac{1}{2}\,\mathbb{E}_{(s,a,s')\sim\mathcal{D}}\Big[\big(Q(s,a)-\hat{\mathcal{B}}^{\pi}\hat{Q}^{k}(s,a)\big)^{2}\Big].\end{equation*} The log-sum-exp term pushes down whatever actions the critic currently rates highly, while the second term props up actions that appear in the data, so the net effect falls on unseen actions. In continuous action spaces the log-sum-exp is estimated by importance sampling with ten uniform and ten policy actions per state; in discrete domains it is computed exactly. The actor is a SAC-style entropy-regularized policy maximizing $\mathbb{E}[Q(s,a)-\log\pi(a\mid s)]$, and no behavior policy is fitted.
+
+The trade-off coefficient \ensuremath{\alpha} is the key hyperparameter. For continuous control, dual gradient descent raises \ensuremath{\alpha} when the gap between soft-maximum and dataset Q-values exceeds a threshold \ensuremath{\tau} and lets it fall toward zero when the gap is below \ensuremath{\tau} (\ensuremath{\tau} = 10 for Gym-MuJoCo, \ensuremath{\tau} = 5 for Adroit and Kitchen); for Atari, \ensuremath{\alpha} is fixed at 0.5, 1.0 or 4.0 depending on the dataset. Guided by Theorem 3.3, the policy learning rate is reduced to 3e-5 while the critic keeps 3e-4; other settings, including twin critics and soft target updates, follow SAC, and D4RL runs last one million gradient steps.
+
+The experiments cover the D4RL Gym locomotion datasets (random, medium, expert, medium-expert, random-expert and mixed for three robots), Adroit hand manipulation from human and cloned data, AntMaze and Franka Kitchen, against BEAR, BRAC-p, BRAC-v, offline SAC and behavior cloning. Gym baseline scores come from the D4RL paper; no source is given for the others. A QR-DQN version, with QR-DQN's released hyperparameters left untuned, is compared with REM and QR-DQN on Atari games using two slices of the DQN-replay data: the first 20\% of an online DQN agent's samples, and subsets holding 1\% or 10\% of all its samples.
+
+\question{7. What are the results?}
+
+On single-policy Gym datasets, CQL(H) is usually close to the strongest baseline, losing narrowly on halfcheetah-expert (104.8 against BEAR's 108.2) and winning clearly on walker2d-expert (153.9 against BC's 125.7). The large gains come on most mixed datasets: 92.5, 91.1 and 110.5 on the three random-expert tasks, where the best baselines reach 53.0, 2.7 and 11.1, and 98.7 on walker2d-medium-expert against BC's 11.3, though BC edges it on hopper-medium-expert (111.9 against 111.0).
+
+On AntMaze, CQL(H) reaches 61.2 and 53.7 on the medium mazes, where the best baseline manages 8.0, and on the large mazes only the two CQL variants score above zero (CQL(H) 15.8 and 14.9). On Adroit, CQL(\ensuremath{\rho}) reaches 55.8 on pen-human against BC's 34.4, but BC wins on pen-cloned (56.9 against about 40). On Kitchen, CQL(H) beats BC on all three tasks (43.8 to 51.0). On Atari with the first 20\% of a DQN run, CQL generally matches or beats both baselines and stays stable on three of the four games; with 1\% of the replay data it reaches 14012.0 on Q*bert and 61.1 on Breakout, about 36 and 6 times the best baseline, but with 10\% it trails REM on Seaquest and QR-DQN on Asterix.
+
+CQL(H)'s predicted value lies below the true return on the three hopper datasets tested (\ensuremath{-}43.20, \ensuremath{-}10.93 and \ensuremath{-}7.48), the pointwise variant is far more pessimistic, and ensembles and BEAR overestimate. The sampled gap statistic stays negative for CQL but rises above zero for BEAR on hopper-expert, where BEAR's return later deteriorates. In the ablations, dropping the dataset maximization term lowers hopper-medium return from 1866.1 to 1028.4, CQL(H) beats CQL(\ensuremath{\rho}) on three MuJoCo tasks, and automatic tuning of \ensuremath{\alpha} helps most on AntMaze.
+
+\question{8. What are the impacts and limitations of the contributions?}
+
+The main impact is a simple way to make an offline critic pessimistic without modeling the behavior policy, usable with continuous and discrete actions and backed by lower-bound and safe-improvement results. It became a standard comparison point, appearing as a baseline in TD3+BC and IQL.
+
+In their discussion the authors name two open problems: the guarantees cover tabular, linear and NTK-style approximation rather than practical deep networks, and offline RL lacks a validation signal for early stopping. When setting up the problem they also note that the policy may still face unfamiliar states at test time, a shift the action-focused penalty does not address. Critical reading adds more. The bounds require an \ensuremath{\alpha} large enough relative to unknown constants, so in practice \ensuremath{\alpha} is governed by a threshold \ensuremath{\tau} that had to change across domains; \ensuremath{\tau} = 2 drove \ensuremath{\alpha} into the millions, while \ensuremath{\tau} = 10 sometimes let Q-values diverge on the human-demonstration datasets. The better variant (CQL(H) or CQL(\ensuremath{\rho})) and the better backup also depend on the domain, the sampled log-sum-exp adds action evaluations to every update, and the gains on single-policy datasets are usually small.
+
+For BCA, the theory is suggestive: the \ensuremath{\alpha} needed for a bound shrinks as a state-action pair's count grows, and Appendix E sketches a count-dependent penalty, yet the implementation applies one global \ensuremath{\alpha} to every transition. Appendix E also attributes the weakness of earlier uncertainty-based methods to poorly calibrated uncertainty, which is the gap that calibrated per-sample weighting of the conservative term is meant to close.
+
+\question{9. How were the results evaluated or validated?}
+
+Validation has three strands. Theoretical claims rest on appendix proofs, mostly for the tabular case. Performance claims are tested on D4RL with its normalized return metric, reporting a smoothed average of undiscounted return over four seeds, and on Atari with the datasets and protocol of Agarwal et al. The lower-bound claim is checked directly by comparing the critic's predicted policy value with the policy's actual discounted return, and the gap-expansion claim by tracking a sampled advantage statistic over training against BEAR. Appendix G ablations isolate the variant, the maximization term and the method of setting \ensuremath{\alpha}.
+
+The validation is broad but statistically thin. Four seeds is a small sample and the tables give only means; the Atari curves carry unexplained shaded bands, and neither the Atari seed count nor the number of evaluation episodes is stated. Gym baselines are copied from the D4RL paper rather than rerun, and the other baselines have no stated source. Dataset names carry the original -v0 suffix, so scores are not directly comparable with later papers using revised D4RL versions. Some entries look inconsistent: the walker2d-mixed baseline row duplicates walker2d-medium-expert, and hopper-mixed differs between Tables 6 and 7. The authors say \ensuremath{\tau} was chosen from predicted Q-values rather than online returns, but policy learning rates were compared by returns across tasks, implying some environment evaluation.
+
+\question{10. What are the ethical implications? How are they addressed?}
+
+The arXiv version reviewed here (v3, labeled a preprint under review) has no ethics or broader-impact section. NeurIPS 2020 required authors to include such a statement, and a published review of the submission refers to one (remarking that its first paragraph mostly summarized the method), but that statement does not appear in the arXiv text analyzed here. Within the arXiv text, the closest material is the introduction's point that gathering data by acting in the real world is expensive and can be risky, a discussion naming missing deep-network theory and overfitting as open problems, and an acknowledgment of DARPA Assured Autonomy funding.
+
+Several ethical issues follow. Offline RL appeals most in healthcare, robotics and recommendation, where a policy that looks good offline but fails in use can hurt people. CQL's safe-improvement result is only relative to the behavior policy, probabilistic, and based on assumptions deep networks do not meet, so calling it safe could invite misplaced trust. Because CQL's penalty keeps the policy close to dataset actions, any bias in the logging policy carries over to the learned one. All evidence comes from simulators and Atari, and without an offline stopping rule, performance is read from online returns a real deployment could not obtain beforehand. Compute costs go unreported.
+
+The paper addresses these issues only indirectly: conservatism is a technical step toward safer offline learning, but the arXiv text never discusses data bias, deployment safeguards or societal consequences.
+
+\question{11. What themes are suggested by this research? (minimum 3)}
+
+\textbf{Distribution shift and out-of-distribution value overestimation.} CQL is built on the observation that Bellman targets query the critic at actions missing from the data, where errors cannot be corrected offline and a maximizing policy exploits them. The paper documents the problem concretely, showing ensembles and BEAR overestimating policy values, ensembles by many orders of magnitude, and responds by suppressing out-of-distribution values inside the critic rather than relying on the actor to avoid them.
+
+\textbf{Conservatism versus policy improvement trade-off.} The paper treats pessimism as something to be dosed. The pointwise penalty proves needlessly pessimistic, so a dataset maximization term is added to tighten the bound to the policy's expected value, which also raises returns. The coefficient \ensuremath{\alpha} controls the balance, and no single setting suits every task: a fixed \ensuremath{\alpha} of 5 reached only 0.21 on antmaze-medium-diverse, against 0.53 when \ensuremath{\alpha} was tuned automatically against a threshold.
+
+\textbf{Behavior regularization and policy constraints.} Although CQL is presented as an alternative to policy constraints and needs no behavior model, Theorem 3.5 shows it implicitly maximizes empirical return minus a divergence between the learned and empirical behavior policies. This puts critic-side value regularization and actor-side behavior regularization on a common footing, which helps when comparing CQL with TD3+BC, which adds a behavior-cloning term only to the actor, and ReBRAC, which penalizes both actor and critic target with separate coefficients.
+
+\textbf{Theory versus practice.} The guarantees assume tabular or linearized critics, concentration bounds with unknown constants, slowly changing policies and a sufficiently large \ensuremath{\alpha}, whereas the experiments use deep networks, importance-sampled log-sum-exp estimates and a heuristically thresholded \ensuremath{\alpha}. The authors partly bridge this gap with direct empirical checks of underestimation and gap expansion, and they explicitly leave a rigorous analysis for deep networks to future work.
+
+\textbf{Dataset quality and composition.} CQL's advantage depends strongly on how the data were collected. On single-policy datasets it is usually close to the best baseline, with a few clear wins such as walker2d-expert. Its largest margins come on most multi-policy datasets, AntMaze, pen-human and the 1\% Atari subsets, yet BC still edges it on hopper-medium-expert and pen-cloned. The authors argue that heterogeneous data, which also make behavior-policy estimation hard, are the realistic case.
+
+
+\clearpage
+
+\bookmarked{\subsection}{subsection}{Paper 2: A Minimalist Approach to Offline Reinforcement Learning (TD3+BC)}
+
+\question{1. What is the citation?}
+
+\begin{hangref}Fujimoto, S., \& Gu, S. S. (2021). A minimalist approach to offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{34}, 20132--20145. \url{https://proceedings.neurips.cc/paper/2021/hash/a8166da05c5a094f7dc03724b41886e5-Abstract.html}\end{hangref}
+\begin{hangref}Version reviewed: Fujimoto, S., \& Gu, S. S. (2021). \emph{A minimalist approach to offline reinforcement learning} (arXiv:2106.06860v2) [Preprint]. arXiv. \url{https://doi.org/10.48550/arXiv.2106.06860}\end{hangref}
+
+\question{2. What is the research area?}
+
+The paper contributes to machine learning through deep reinforcement learning, specifically its offline (batch) branch, in which training draws only on a fixed dataset. Technically, TD3+BC is a model-free continuous-control algorithm built on TD3, an actor-critic method whose deterministic actor follows the deterministic policy gradient. It targets extrapolation error: critics trained on limited data misjudge actions absent from the dataset, and the actor exploits those mistakes. Among existing remedies, the work sits in the policy-constraint or behavior-regularization family (with BCQ and BRAC), as opposed to value regularization (CQL), critic regularization that needs a learned behavior model (Fisher-BRC), or advantage-weighted imitation (AWAC). It borrows its penalty from earlier demonstration learning that added behavior cloning to DDPG or SAC, and joins meta-analyses of how implementation details shape reported results.
+
+\question{3. What is the research question?}
+
+Can an existing online deep RL algorithm reach state-of-the-art offline performance while being changed as little as possible, and how much of the extra machinery in recent offline methods is actually needed?
+
+The authors split this into narrower questions. First, do the code-level adjustments that CQL and Fisher-BRC make to their SAC base matter for their scores, and what do they cost in training time? Second, is a behavior cloning penalty in TD3's actor update, together with standardized input states, enough to match those methods on the D4RL locomotion tasks? Third, how much does each ingredient (the cloning term, the normalization and the value of \ensuremath{\alpha}) contribute? Finally, the paper raises a side question that it does not resolve: are policies produced by offline training stable across episodes and across late checkpoints?
+
+\question{4. What is the significance of the question?}
+
+The first stake is practical. Offline RL is attractive where gathering new interaction is expensive, slow or dangerous, as with robots or patients, so a method that only works after many trial runs in the environment undercuts its own purpose. Every extra hyperparameter, pre-trained generative model, architectural change or actor pre-training phase is another choice that must be validated, and a truly offline user has no cheap way to validate it. Fewer moving parts mean fewer decisions that silently depend on online testing.
+
+Technically, the central obstacle is extrapolation error, in which critics overestimate unseen actions and the policy drifts toward them. Many fixes existed, but each arrived bundled with engineering tweaks, so it was unclear whether gains came from the stated idea or from the tweaks. A minimal method isolates the effect of the constraint itself. At the time, the field was producing increasingly elaborate algorithms, and the authors argued that simple options had been neglected. If a few lines of code could match the strongest existing methods, that would raise the bar that new, more elaborate algorithms must clear, and a cheap method matters more as offline datasets grow.
+
+\question{5. What are the contributions reported in this paper?}
+
+The paper offers three kinds of contribution. The first is diagnostic. It catalogs the algorithmic and implementation-level changes that CQL and Fisher-BRC make to SAC (Table 1), such as altered network sizes, actor pre-training, a constant reward bonus and removal of the entropy term from the target, and it measures what happens when those details are stripped away. It also documents a problem the authors consider neglected: policies trained offline can do far worse than their average on single episodes of one evaluation and on single evaluations among the last ten, unlike a policy trained online with TD3.
+
+The second is algorithmic. TD3+BC changes TD3 in two places only: the actor loss gains a squared-error behavior cloning penalty, and states are standardized with dataset statistics. Scaling the trade-off weight by the average magnitude of Q leaves a single hyperparameter, \ensuremath{\alpha}, held fixed across all tasks. Appendix B adds rules of thumb for setting \ensuremath{\lambda} by hand.
+
+The third is empirical and practical. The authors rerun CQL and Fisher-BRC from the original code under one shared protocol, time CQL, both Fisher-BRC implementations and TD3+BC (and, in the appendix, the Decision Transformer) on the same GPU and CPU, reimplementing Fisher-BRC in PyTorch so frameworks match, ablate each component, and add experiments on mixed random and expert data, AntMaze, state normalization inside other algorithms, and a comparison with the Decision Transformer. The full code is public.
+
+\question{6. What is the research method?}
+
+Methodologically, the paper mixes a critical analysis of existing algorithms, minimal algorithm design and empirical benchmarking with ablations; it has no theoretical results. For the analysis, the authors rerun CQL and Fisher-BRC without their implementation adjustments and report the percent change in score (Figure 1). Separately, for BC, CQL, Fisher-BRC, TD3+BC and online TD3, they measure how far the worst of the ten episodes at the final evaluation, and the worst of the last ten evaluations, falls below average (Figures 2 and 3).
+
+The algorithm starts from TD3, an off-policy actor-critic method whose deterministic actor normally maximizes Q(s, \ensuremath{\pi}(s)). TD3+BC instead maximizes \begin{equation*}\mathbb{E}_{(s,a)\sim\mathcal{D}}\big[\lambda Q(s,\pi(s))-(\pi(s)-a)^{2}\big],\end{equation*} so the actor balances estimated value against squared distance from the logged action. Because that penalty is bounded (at most 4 when actions lie in $[-1,1]$) while Q grows with the reward scale, \ensuremath{\lambda} is set to \ensuremath{\alpha} divided by the mean absolute Q-value, \begin{equation*}\lambda=\frac{\alpha}{\frac{1}{N}\sum_{i}\lvert Q(s_i,a_i)\rvert}.\end{equation*} The mean is computed per mini-batch and not differentiated through, and \ensuremath{\alpha} = 2.5 throughout. The second change standardizes every state feature by its dataset mean and standard deviation, with $\epsilon=10^{-3}$ added to the denominator. All TD3 settings stay at their defaults: Adam with learning rate $3\times10^{-4}$ for actor and critic, batch size 256, discount 0.99, target update rate $5\times10^{-3}$, target policy noise 0.2 clipped to \ensuremath{\pm}0.5, actor updates every second step, and two hidden layers of 256 ReLU units.
+
+Experiments use the D4RL v0 MuJoCo datasets for HalfCheetah, Hopper and Walker2d at five quality levels (random, medium, medium-replay, medium-expert and expert). Each method trains for one million steps and is evaluated every 5,000 steps. Baselines are behavior cloning (the authors' own code), CQL and Fisher-BRC (rerun from author code) and BRAC-p and AWAC (published scores). Ablations drop the BC term, the normalization or the value term, and sweep \ensuremath{\alpha} over 1, 2, 3 and 4. Run time is measured without evaluation on one GTX 1080 GPU. The appendix adds a 50/50 random-expert mixture, AntMaze (without normalization) and the D4RL v2 datasets for a Decision Transformer comparison.
+
+\question{7. What are the results?}
+
+Summed over the fifteen D4RL v0 datasets, TD3+BC scores 979.3 (\ensuremath{\pm}33.4 across seeds), effectively tied with Fisher-BRC at 974.6 (\ensuremath{\pm}108.3) and well ahead of CQL (764.3), behavior cloning (595.3) and BRAC-p's published total (284.1). Its largest margins over Fisher-BRC are on hopper-medium-expert (112.2 versus 90.6) and walker2d-expert (105.7 versus 79.9), with far smaller seed variance, although CQL comes close on both (111.4 and 103.8). It loses on halfcheetah-random (10.2 against 32.2 for Fisher-BRC and 21.7 for CQL) and walker2d-medium-replay (25.2 against 42.6 for Fisher-BRC). One million training steps took 39 minutes, only seconds more than plain TD3, against 2 h 8 min for the PyTorch Fisher-BRC, 2 h 12 min for the original Fisher-BRC code and 4 h 11 min for CQL.
+
+The ablations show both halves are needed: TD3 without the cloning term performs poorly except on some random datasets, and the full method never falls below plain BC, even on expert data. Normalization has the smallest effect but helps on several tasks. Setting \ensuremath{\alpha} to 2 or 3 gives practically the same results as the default 2.5, whereas \ensuremath{\alpha} = 1 or 4 degrades a few tasks. Removing the implementation tweaks of CQL and Fisher-BRC causes large drops on many datasets, and every offline method, TD3+BC included, shows much larger worst-case drops than online TD3. In the appendix, TD3+BC fails on the Walker2d random-expert mixture (28.8, near Fisher-BRC's 32.0 but far below CQL's 100.3), reaches 78.6 and 71.4 on the two U-maze datasets of AntMaze but at most 10.6 on the medium and large mazes, and roughly matches the Decision Transformer on the nine v2 tasks DT reports (677.4 versus 672.6) while training faster.
+
+\question{8. What are the impacts and limitations of the contributions?}
+
+TD3+BC's lasting effect on the field is a strong, cheap and transparent baseline. Because TD3+BC alters a few lines, keeps TD3's defaults and trains in roughly a sixth of CQL's time, it is easy to adopt with modest compute and makes gains in later methods easier to attribute to their stated ideas; the ReBRAC authors (Tarasov et al., 2023) later describe it as a de facto standard baseline. The paper shows that earlier state-of-the-art scores leaned on unexplained engineering choices, and it urges benchmarks to report the variability of final policies, not just means.
+
+The limitations are substantial. The method is weak wherever cloning the data hurts, as on halfcheetah-random, the Walker2d random-expert mixture and the medium and large AntMaze mazes, which plausibly reflects that a uniform pull toward logged actions cannot separate good transitions from bad ones (for that mixture, the authors instead hypothesize weak cloning on the walker2d-expert data). There is no theory, and a squared-error penalty on a deterministic actor pulls each action toward the average logged action, which can fall between modes when the data mix very different behaviors. The instability the authors diagnose is left open, and all tests are simulated. For BCA, the key point is that \ensuremath{\lambda} rescales Q by a batch-wide mean, so every transition in a batch receives the same constraint strength regardless of how well the data cover it. Calibrated per-sample weighting would let that strength follow coverage instead, and the paper's own advice to lower \ensuremath{\lambda} when value estimates diverge hints at the kind of value-error signal such a scheme could use.
+
+\question{9. How were the results evaluated or validated?}
+
+The claims are validated empirically. Each method the authors ran (BC, CQL, Fisher-BRC and TD3+BC) is trained with five seeds, evaluated every 5,000 steps over 10 episodes, and summarized by the D4RL normalized score (0 for a random policy, 100 for an expert) averaged over the last ten evaluations rather than the best checkpoint, with the standard deviation across seeds. CQL and Fisher-BRC were rerun from author code (CQL with its paper's settings, which beat the repository defaults), and the authors concede this CQL code falls short of its published scores. BRAC-p, AWAC and the three-seed Decision Transformer results were copied from earlier papers. Run times exclude evaluation and come from one GTX 1080 GPU. \ensuremath{\alpha} was swept over five values on hopper-medium and hopper-expert with a seed excluded from reported results; since both datasets are also test tasks, there is no held-out task split, a milder form of the gap the authors criticize in CQL and Fisher-BRC.
+
+The protocol is fair in its reruns and unusually transparent about software versions and commits. Its weaknesses are the absence of proofs, confidence intervals and significance tests, only five seeds despite the high variance the paper documents, ablation bars showing mean percent differences without spread, and a near-tie with Fisher-BRC well within seed spread, so the evidence supports parity rather than superiority.
+
+\question{10. What are the ethical implications? How are they addressed?}
+
+The paper contains a brief Broader Impact statement in Appendix A and no separate ethics or limitations section. The statement says offline RL could open up uses in robotics and healthcare, where gathering data is slow or costly, warns of misuse such as making social media more habit-forming, and notes that learned policies inherit biases from the dataset and the policy that produced it. It then argues that because TD3+BC's performance gain is small, its main effect would be wider and easier access to offline RL rather than new applications. Section 4 also links policy instability to safety-critical use.
+
+Further implications follow from the method itself. Behavior cloning ties the policy to logged behavior, so in medical or social settings it can reproduce inequities encoded in past decisions. The documented episode-to-episode variance means a policy with a good average can still fail badly on some runs, which matters for driving, robotics or patient care. Results come only from MuJoCo simulations and say nothing about real deployment. Tuning \ensuremath{\alpha} with rollouts and dropping normalization for AntMaze after seeing scores are forms of online selection that a true offline user could not repeat, although the appendix discloses them. Lower compute is a modest positive for energy use and access.
+
+Overall, the paper names bias and misuse but proposes no mitigation; its candor about instability is its most useful safety contribution.
+
+\question{11. What themes are suggested by this research? (minimum 3)}
+
+\textbf{Minimalism and simplicity in algorithm design.} TD3+BC is defined by a one-line change to TD3's actor loss plus state standardization, with every other default left alone. The authors argue that such restraint makes performance gains attributable, shrinks the tuning burden and adds no compute, and they end by suggesting that the field has rewarded algorithmic complexity while overlooking simple alternatives.
+
+\textbf{Behavior regularization and policy constraints.} The method counters extrapolation error by pulling the deterministic actor toward dataset actions with a squared-error penalty weighted against Q through \ensuremath{\lambda}. The paper treats the choice of distance as largely arbitrary and shows the constraint is indispensable on most datasets, yet its weak score on halfcheetah-random and its collapse on the Walker2d random-expert mixture (28.8 versus 100.3 for CQL) suggest that a uniform pull is a poor guide when much of the data is low quality.
+
+\textbf{Implementation details and hyperparameter sensitivity.} Table 1 and Figure 1 show that CQL and Fisher-BRC rely on architecture changes, actor pre-training, reward bonuses and similar tweaks whose removal sharply lowers scores on many datasets. TD3+BC narrows the tunable surface to a single \ensuremath{\alpha} by normalizing \ensuremath{\lambda} with the mean absolute Q, and its sweep shows nearly identical results for \ensuremath{\alpha} of 2 and 3 but degradation on some tasks at 1 and 4.
+
+\textbf{Online tuning and offline model selection.} Section 4 argues that every unexplained implementation change needs validation, and in a truly offline setting that validation requires the environment access offline RL is supposed to avoid. The checkpoint-to-checkpoint swings in Figure 3 make the stopping point another hidden choice. TD3+BC itself still fixed \ensuremath{\alpha} with a one-seed sweep on two Hopper datasets and dropped state normalization for AntMaze after finding it hurt performance there.
+
+\textbf{Evaluation rigor, reproducibility and fair comparison.} The authors rerun the strongest baselines under one protocol, publish code with exact commits and software versions, and report averages over late evaluations instead of peaks. They also argue that mean scores conceal large episode-level and checkpoint-level variance in offline policies and call for benchmarks that measure stability, a weakness their own method shares.
+
+\textbf{Computational efficiency.} Training time is treated as a primary criterion rather than an afterthought. Because TD3+BC needs no generative model, no sampled log-sum-exp and no enlarged networks, it trains in 39 minutes on the same GPU where Fisher-BRC needs over two hours and CQL over four, and it is also much faster than the transformer-based Decision Transformer.
+
+
+\clearpage
+
+\bookmarked{\subsection}{subsection}{Paper 3: Offline Reinforcement Learning with Implicit Q-Learning (IQL)}
+
+\question{1. What is the citation?}
+
+\begin{hangref}Kostrikov, I., Nair, A., \& Levine, S. (2022). Offline reinforcement learning with implicit Q-learning. In \emph{International Conference on Learning Representations (ICLR 2022)}. \url{https://openreview.net/forum?id=68n2s9ZJWF8}\end{hangref}
+\begin{hangref}Version reviewed: Kostrikov, I., Nair, A., \& Levine, S. (2021). \emph{Offline reinforcement learning with implicit Q-learning} (arXiv:2110.06169v1) [Preprint]. arXiv. \url{https://doi.org/10.48550/arXiv.2110.06169}\end{hangref}
+
+\question{2. What is the research area?}
+
+Within machine learning, this paper addresses offline (batch) deep reinforcement learning, in which a fixed log of transitions is the only source of experience. IQL is a model-free actor-critic method for continuous control whose state-value and Q-networks are trained by temporal-difference updates that involve no actor, with a Gaussian policy extracted afterward. The problem family it addresses is extrapolation error, which arises when a critic is evaluated at actions the dataset never contains. IQL departs from explicit policy constraints (BCQ, BEAR, TD3+BC) and from value regularization (CQL, Fisher-BRC). Its value learning is in-sample, like that of Onestep RL, but keeps multi-step dynamic programming, and its actor belongs to the advantage-weighted regression family (AWR, AWAC, CRR), whose implicit constraint acts only at extraction.
+
+\question{3. What is the research question?}
+
+Can an offline RL algorithm perform multi-step dynamic programming toward an optimal policy while training its value functions only on logged state-action pairs, so that the critic never has to evaluate an unseen action?
+
+Three testable claims follow from it. The first is theoretical: that an upper expectile of Q-values taken over dataset actions approaches, as \ensuremath{\tau} goes to one, the best value achievable within the data's support. The second is that this multi-step property matters in practice, so the method should clearly beat one-step methods built on the behavior policy's value on tasks that require stitching sub-optimal trajectories, while staying competitive on locomotion. The third is that such an in-sample method can be cheap to train and can serve as a good initialization for online fine-tuning.
+
+\question{4. What is the significance of the question?}
+
+Offline RL matters because fields such as robotics and industrial planning already keep large records of past decisions, whereas letting an untrained controller experiment on real equipment or real operations can be expensive or unsafe. The technical obstacle is that improving on the data-collecting policy requires estimating returns for actions the dataset does not contain. When a critic is maximized over such actions, its approximation errors are actively selected, and bootstrapping compounds them into overestimation. In 2021 the field handled this with policy constraints or with penalties on out-of-distribution values, and both force a compromise: tighter control reduces error but also caps how far the policy can improve. The alternative of fitting the behavior policy's value and improving on it once sidesteps the problem but, as the authors show, breaks down when near-optimal trajectories are rare or absent and good behavior must be assembled from suboptimal segments. A method that removes out-of-distribution queries from value learning while keeping multi-step backups would ease this central tension, and cost mattered too, since the original CQL implementation needed more than four hours per million updates.
+
+\question{5. What are the contributions reported in this paper?}
+
+The main contribution is the implicit Q-learning algorithm. Its value-learning stage replaces the mean-squared TD loss of SARSA-style evaluation with expectile regression, applied in a separate state-value network that estimates an upper expectile of target Q-values over dataset actions; the Q-network is then regressed with an ordinary squared loss onto the reward plus the discounted value of the next state. Separating the two networks is itself a design contribution, because it stops the expectile from rewarding transitions that reached good states only by chance under stochastic dynamics. The policy is obtained by advantage-weighted regression, so no stage of training evaluates an out-of-sample action and the critic never depends on the actor. The authors call it the first method to avoid unseen-action queries while keeping multi-step backups.
+
+The paper also contributes a short theoretical analysis: a lemma that expectiles approach the supremum of a bounded random variable as \ensuremath{\tau} goes to one, a monotonicity lemma for the recursively defined value functions, and a theorem that the limiting value equals the optimal value restricted to the behavior policy's support. An appendix relates IQL to BCQ: both target the same batch-constrained objective, but IQL enforces it through expectiles rather than through a generative model that can still propose unseen actions.
+
+Empirically, the authors supply a toy maze illustration contrasting one-step and multi-step evaluation, a D4RL comparison that runs every method on the -v2 locomotion datasets to correct an inconsistency in earlier comparisons, runtime measurements of JAX reimplementations, an expectile ablation, and an offline-to-online fine-tuning study. They also release a JAX/Flax implementation.
+
+\question{6. What is the research method?}
+
+IQL is developed through algorithm design and a limit-based theoretical argument, then tested by empirical benchmarking with an ablation and a fine-tuning study. The technical core is the asymmetric squared loss $L_2^{\tau}(u)=\lvert\tau-\mathbf{1}(u<0)\rvert\,u^{2}$, which for $\tau>0.5$ penalizes underestimates more heavily than overestimates. IQL fits $V_{\psi}(s)$ by minimizing $\mathbb{E}[L_2^{\tau}(Q_{\hat{\theta}}(s,a)-V_{\psi}(s))]$ over dataset pairs, using the minimum of two target Q-networks, and fits $Q_{\theta}$ by minimizing $\mathbb{E}[(r+\gamma V_{\psi}(s')-Q_{\theta}(s,a))^{2}]$, with target networks updated by Polyak averaging at rate 0.005. The policy maximizes $\mathbb{E}[\exp(\beta(Q(s,a)-V(s)))\log\pi(a\mid s)]$, where \ensuremath{\beta} is an inverse temperature and the exponentiated advantage is capped at 100; small \ensuremath{\beta} approaches behavior cloning and large \ensuremath{\beta} approaches greedy improvement.
+
+All networks are two-layer ReLU MLPs with 256 units trained by Adam at $3\cdot10^{-4}$, with a cosine schedule on the actor's learning rate and a Gaussian policy with a state-independent standard deviation. Settings differ by domain: \ensuremath{\tau} = 0.7 and \ensuremath{\beta} = 3.0 for locomotion, \ensuremath{\tau} = 0.9 and \ensuremath{\beta} = 10.0 for AntMaze, and \ensuremath{\tau} = 0.7 and \ensuremath{\beta} = 0.5 with 0.1 policy dropout for Kitchen and Adroit. Locomotion rewards are divided by the spread between the best and worst dataset returns, and AntMaze rewards are reduced by one. Training curves and runtimes cover 1M gradient steps; the batch size is not reported.
+
+The experiments comprise a stochastic u-shaped maze (one optimal and 99 random trajectories, \ensuremath{\gamma} = 0.9, \ensuremath{\tau} = 0.95) comparing IQL with Onestep RL; D4RL locomotion -v2 and AntMaze -v0 datasets against BC, 10\%BC, Decision Transformer, AWAC, Onestep RL, TD3+BC and CQL; a smaller Kitchen and Adroit comparison against BC, BRAC-p, BEAR, CQL and, on cloned Adroit tasks, Onestep RL; a \ensuremath{\tau} ablation over 0.5, 0.7 and 0.9 on the four medium and large AntMaze datasets; and fine-tuning against the original AWAC and CQL code, in which 1M offline gradient steps precede 1M online steps at one update per environment step (\ensuremath{\tau} = 0.8, \ensuremath{\beta} = 3.0, 25,000 offline steps and exploration noise of 0.03 on the hand tasks).
+
+\question{7. What are the results?}
+
+On the toy maze, one-step values faded toward zero a short distance from the goal, yielding a poor policy, whereas IQL's values closely matched the true optimum. Across the nine D4RL locomotion datasets IQL totaled 692.4 normalized points, slightly below CQL's 698.5 and above Onestep RL (684.6) and TD3+BC (677.4). Its advantage lay in AntMaze: 378.0 against 303.6 for CQL and 100.2 to 163.8 for the rest. On the two large mazes it reached 39.6 and 47.5 versus CQL's 15.8 and 14.9, while BC, Onestep RL and Decision Transformer scored near zero beyond umaze. IQL lost on some datasets: umaze-diverse (62.2 versus 84.0 for CQL), hopper-medium-expert (91.5 versus 110.9 for 10\%BC) and walker2d-medium-replay (73.9 versus 81.8 for TD3+BC). Its Kitchen and Adroit totals (159.8 and 118.1) beat BC (154.5, 104.5) and CQL (144.6, 93.6), but the Adroit lead over CQL came entirely from pen-human (71.5 versus 37.5), and the hammer, door and relocate tasks stayed below 10 points for every method.
+
+An IQL run took about 20 minutes, a quarter of the authors' JAX CQL (80 minutes) but no faster than TD3+BC, AWAC or Onestep RL. In the \ensuremath{\tau} ablation on the medium and large mazes, 0.5 stayed near zero and 0.7 peaked at roughly 15, while 0.9 reached about 40 to 75. In fine-tuning, IQL raised its AntMaze total from 370.1 to 473.7 (CQL 151.5 to 231.1, AWAC almost unchanged) and its hand total from 38.1 to 124.0. It still finished below CQL on both umaze mazes (96.0 and 84.0 versus 99.4) and below AWAC on pen-binary (60.7 versus 70.3), contrary to the Table 2 caption's claim that pen-binary is the only exception.
+
+\question{8. What are the impacts and limitations of the contributions?}
+
+IQL's main impact is to show that in-sample learning need not give up multi-step dynamic programming: a critic trained only on logged actions can still stitch trajectories. Because the critic never depends on the actor, the extraction step can be replaced or run alongside value learning, which is how IQL keeps training during online fine-tuning. It has since been reimplemented in later codebases, including the Unifloral framework this project builds on.
+
+The paper states few limitations: it notes that \ensuremath{\tau} close to one makes optimization harder, so \ensuremath{\tau} must be tuned, and concedes that Kitchen and Adroit barely separate methods. The analysis and experiments expose others. The theory assumes exact optimization as \ensuremath{\tau} \ensuremath{\to} 1, yet practice uses \ensuremath{\tau} = 0.7 or 0.9, and because a continuous state usually appears with a single logged action, the in-support maximum is reached only through the network's generalization across similar states. The separate value network guards against chance outcomes of the dynamics, but not against noise in the Q estimates themselves, which an upper expectile also tends to favor. Because the actor only reweights logged actions, it can favor only actions resembling those recorded in similar states, and the paper leaves unexplained why IQL trails filtered cloning on hopper-medium-expert.
+
+IQL applies one global \ensuremath{\beta} and a fixed cap of 100 to every transition, so an advantage inflated by critic error receives the same amplification as a reliable one. A calibrated per-sample width that tempers only the portion of the capped weight above one would damp that amplification while leaving the cloning baseline intact.
+
+\question{9. How were the results evaluated or validated?}
+
+Validation rests mainly on simulated D4RL benchmarks reported as averaged normalized scores, without restating the normalization formula. Locomotion results average 10 evaluation trajectories over 10 random seeds; AntMaze results average 100 evaluation trajectories, and no seed count is given for AntMaze, Kitchen, Adroit or fine-tuning. The tables give means only, with no standard deviations, confidence intervals or significance tests, and Table 1 does not say whether final or best checkpoints are reported (Table 2 states final performance).
+
+Baseline numbers come from mixed sources: TD3+BC and Onestep RL scores supplied by their authors (Onestep's scores used a different batch and network size from its timed run), CQL on -v2 from an author-suggested implementation, and CQL AntMaze scores taken from the original paper because the authors could not reproduce them, which is why CQL starts much lower in Table 2. Baseline runtimes come from the authors' JAX reimplementations. Hyperparameters vary by domain with no stated selection procedure, so online tuning cannot be ruled out. The toy-maze evidence that IQL recovers near-optimal values is visual, with no error metric; the proofs are short, one only sketched; and the sole ablation varies \ensuremath{\tau}, leaving \ensuremath{\beta}, the separate value network and the advantage cap untested. The breadth of datasets and the corrected -v2 comparison are strengths.
+
+\question{10. What are the ethical implications? How are they addressed?}
+
+IQL's arXiv v1 has no ethics statement and no broader-impact or limitations section. What comes nearest is the introduction's motivating list of application areas in which learning by trial and error would be risky or expensive, and a footnote linking the released code, which supports reproducibility.
+
+The method and its evaluation still carry ethical implications. Because IQL learns only from logged actions and reweights them by estimated advantage, any systematic bias in how the data were gathered, such as unsafe or inequitable decisions in a clinical or operational log, is inherited and can be amplified whenever those decisions score well under the recorded reward. The upper expectile is deliberately optimistic, and with limited data the exponential weight can magnify critic errors, which is a concern in safety-critical use. IQL is tested only on simulated tasks, and its fine-tuning study involves live exploration with Gaussian noise that would carry physical risk on real hardware. Domain-specific hyperparameters without a stated selection method also raise a research-integrity question, since tuning on online returns would contradict the offline premise. Its low compute cost does reduce energy use.
+
+None of these issues is raised explicitly. Its in-sample design offers some implicit protection against acting far outside the data, but this is presented as a performance property rather than a safety argument.
+
+\question{11. What themes are suggested by this research? (minimum 3)}
+
+\textbf{Distribution shift and out-of-distribution value overestimation.} IQL's design is a direct response to extrapolation error. Rather than penalizing or constraining unseen actions, it removes them from value learning entirely: both the value and Q losses use only dataset actions, and the actor is fit by weighted likelihood of logged actions. The authors argue that even the in-distribution constraints of earlier methods may not fully prevent extrapolation, so avoiding the query altogether is presented as the cleaner remedy.
+
+\textbf{Conservatism versus policy improvement trade-off.} The expectile \ensuremath{\tau} turns this trade-off into a single continuous dial: \ensuremath{\tau} = 0.5 recovers SARSA-style evaluation of the behavior policy, and \ensuremath{\tau} approaching one recovers Q-learning restricted to the data's support. On the medium and large AntMaze datasets, too little optimism (\ensuremath{\tau} = 0.5 or 0.7) cripples performance, although 0.7 is the setting used for locomotion, and the authors note that values near one are harder to optimize, so the dial is set per domain.
+
+\textbf{Behavior regularization and policy constraints.} Although value learning carries no explicit constraint, the policy remains tied to the data through advantage-weighted regression, whose inverse temperature \ensuremath{\beta} moves the actor between plain behavior cloning and greedy improvement. The domain-specific \ensuremath{\beta} of 0.5, 3 or 10 and the cap of 100 on exponentiated advantages therefore act as the real behavior constraint, so IQL moves conservatism from the critic into the actor rather than removing it.
+
+\textbf{Dataset quality and composition.} The paper argues that dataset composition determines which family of algorithms succeeds. Locomotion datasets with a substantial share of near-optimal trajectories let simple one-step methods do well, while AntMaze datasets in which near-optimal paths are scarce or missing demand stitching segments together through repeated Bellman backups. The toy maze, built from one optimal and 99 random trajectories, isolates this effect, and the AntMaze results confirm it at benchmark scale.
+
+\textbf{Minimalism and simplicity in algorithm design.} IQL is presented as a light adjustment to a familiar SARSA-style update: one extra critic trained with an asymmetric squared loss and an actor fit by weighted behavior cloning. The design is cheap as well as simple, since a million updates fit in under 20 minutes on a single GTX 1080 GPU, which makes IQL attractive both as a baseline and as a host for extensions.
+
+\textbf{Offline-to-online fine-tuning.} Because the actor does not influence the critic, IQL can keep learning while fresh experience enters its replay buffer, and the authors attribute its suitability for fine-tuning to a strong offline starting point and weighted-cloning extraction. It gained substantially on AntMaze and the hand tasks, whereas CQL sometimes collapsed (medium-play fell from 23.0 to 0.0) and AWAC barely moved on AntMaze, tying the choice of offline constraint to later adaptability.
+
+\textbf{Evaluation rigor, reproducibility and fair comparison.} The paper corrects earlier comparisons that scored CQL on older -v0 locomotion environments while reporting their own methods on -v2, and it evaluates every method on -v2. Its own protocol still has gaps: Appendix C admits that CQL's published AntMaze scores could not be reproduced, baseline numbers come from mixed sources, and the tables report means without any measure of spread or a stated rule for choosing hyperparameters.
+
+
+\clearpage
+
+\bookmarked{\subsection}{subsection}{Paper 4: Revisiting the Minimalist Approach to Offline Reinforcement Learning (ReBRAC)}
+
+\question{1. What is the citation?}
+
+\begin{hangref}Tarasov, D., Kurenkov, V., Nikulin, A., \& Kolesnikov, S. (2023). Revisiting the minimalist approach to offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{36}, 11592--11620. \url{https://proceedings.neurips.cc/paper_files/paper/2023/hash/26cce1e512793f2072fd27c391e04652-Abstract-Conference.html}\end{hangref}
+\begin{hangref}Version reviewed: Tarasov, D., Kurenkov, V., Nikulin, A., \& Kolesnikov, S. (2023). \emph{Revisiting the minimalist approach to offline reinforcement learning} (arXiv:2305.09836v2) [Preprint]. arXiv. \url{https://doi.org/10.48550/arXiv.2305.09836}\end{hangref}
+
+\question{2. What is the research area?}
+
+The ReBRAC paper works in offline (batch) reinforcement learning, a machine learning setting in which a control policy is trained on logged transitions without any interaction with the environment. The method is model-free and uses the deterministic actor-critic structure of TD3. Its lineage runs through BRAC and TD3+BC, the behavior-regularization (policy-constraint) family that pulls the learned policy toward dataset actions. The authors compare it with value regularization (CQL), in-sample learning (IQL), more elaborate ensemble-free methods that penalize unfamiliar actions through a learned novelty signal (SPOT and SAC-RND), and ensemble-based uncertainty methods (SAC-N, EDAC, RORL, MSG). Its critic penalty adds a value-regularization component, but the contribution lies in testing implementation choices on an existing method rather than in a new algorithmic principle.
+
+\question{3. What is the research question?}
+
+The central question is: how far can a minimalist, ensemble-free offline RL algorithm such as TD3+BC be improved simply by adopting the small design and implementation choices that newer methods introduced alongside their main ideas, and which of those choices account for the improvement?
+
+The paper tests this in stages. They ask whether a TD3+BC variant with deeper networks, critic layer normalization, larger batches, separately weighted actor and critic penalties, and a larger discount factor for sparse-reward tasks can reach state-of-the-art ensemble-free performance on proprioceptive (D4RL) and pixel-based (V-D4RL) benchmarks. They ask whether the same agent fine-tunes well once online interaction is allowed. Finally, they ask which modification carries the gain, whether additional depth helps further, and how sensitive the method is to its two penalty coefficients when only a few policies can be evaluated online.
+
+\question{4. What is the significance of the question?}
+
+Practitioners in fields such as robotics or medicine, where recorded data are plentiful but trial-and-error exploration is costly or risky, need offline methods they can trust and afford to run. Every such method must cope with extrapolation error: the critic must estimate values for actions the dataset never contains, and an actor that maximizes those estimates tends to exploit its mistakes. Many algorithms address this problem, but each new method tends to arrive with extra machinery and quiet engineering changes, which makes it hard to tell whether a gain comes from the core idea or from the scaffolding around it.
+
+When this paper appeared, TD3+BC was the standard simple baseline against which most new methods claimed improvements, yet no one had given TD3+BC the same engineering upgrades those methods enjoyed. Ensemble methods had pushed Gym-MuJoCo scores higher, but at substantial computational cost (SAC-N needed as many as 500 critics on hopper, and MSG needed 64 members on AntMaze). Establishing how strong a cheap baseline can become therefore affects how the field credits algorithmic progress, and it gives practitioners a fast default method.
+
+\question{5. What are the contributions reported in this paper?}
+
+ReBRAC's contributions fall into five groups. The first is a retrospective audit of recent methods (TD3+BC, CQL, EDAC, MSG, CNF, LB-SAC and SAC-RND) that catalogs which non-algorithmic choices each one adopted: deeper networks, larger batches, layer normalization, separate actor and critic penalties, and a modified discount factor.
+
+The second is ReBRAC (Revisited BRAC), an algorithm that layers these choices onto TD3+BC. It generalizes BRAC by penalizing both the actor and the critic with a mean-squared-error divergence from dataset actions, each with its own coefficient, while keeping TD3+BC's Q-value normalization and dropping its state normalization.
+
+The third is a broad evaluation on 51 datasets from D4RL (Gym-MuJoCo, AntMaze, Adroit) and V-D4RL, plus an offline-to-online fine-tuning study, with TD3+BC and IQL re-tuned under the same seed protocol so that the comparison is more even-handed.
+
+The fourth is a set of diagnostic studies: a leave-one-out ablation of each modification, tests that add each modification to TD3+BC on its own, a sweep over actor and critic depth, a comparison of LayerNorm with feature normalization, and a sensitivity analysis of the two penalty coefficients using Expected Online Performance.
+
+The fifth is a reproducibility package consisting of an open-source implementation (JAX for D4RL), per-dataset hyperparameter tables for ReBRAC and the re-tuned baselines, and compute-cost tables for the main offline benchmarks, the ablations and the depth study.
+
+\question{6. What is the research method?}
+
+The research method is algorithm design by composition, followed by large-scale empirical benchmarking and ablation; the paper contains no theoretical analysis. ReBRAC starts from TD3+BC, a deterministic actor-critic, and keeps most of its hyperparameters. The actor objective is \begin{equation*}\pi=\arg\max_{\pi}\,\mathbb{E}_{(s,a)\sim\mathcal{D}}\big[Q(s,\pi(s))-\beta_1(\pi(s)-a)^{2}\big],\end{equation*} where, as in TD3+BC, the Q term is divided by its batch-average magnitude so that $\beta_{1}$ is less scale-dependent. The critic regresses toward \begin{equation*}r+\gamma\big(\bar{Q}(s',a')-\beta_2(a'-\hat{a}')^{2}\big),\end{equation*} where $a'$ is the policy's action at the next state, $\hat{a}'$ is the next action stored in the dataset, and $\bar{Q}$ is a target network. Thus $\beta_{1}$ sets actor-side conservatism, while $\beta_{2}$ lowers the bootstrapped value when the policy departs from logged behavior; the original BRAC tied the two weights together.
+
+The other choices are three hidden layers of 256 units in both networks, LayerNorm between critic layers, batch size 1024 with learning rate 1e-3 on Gym-MuJoCo (batch 256 elsewhere), and \ensuremath{\gamma} = 0.999 rather than 0.99 on AntMaze, because $0.99^{1000}\approx4\cdot10^{-5}$ nearly erases a sparse terminal reward. AntMaze rewards are also multiplied by 100. Only $\beta_{1}$ and $\beta_{2}$ are tuned per dataset (plus learning rates on AntMaze), over grids such as $\beta_1\in\{0.001,0.01,0.05,0.1\}$ and $\beta_2\in\{0,0.001,0.01,0.1,0.5\}$ for Gym-MuJoCo and Adroit.
+
+Agents train for one million steps on D4RL Gym-MuJoCo v2 (18 datasets), AntMaze v2 (6) and Adroit v1 (12); 15 V-D4RL image datasets at 84\ensuremath{\times}84 pixels are added. D4RL baselines are TD3+BC, IQL, CQL and SAC-RND (plus behavior cloning on Adroit), with ensemble methods in an appendix; V-D4RL baselines (Offline DV2, DrQ+BC, LOMPO, CQL, behavior cloning) come from Lu et al. (2022). For fine-tuning against TD3+BC, IQL, CQL, SPOT and Cal-QL, ReBRAC sets $\beta_{2}$ to zero and linearly decays $\beta_{1}$ to half its value, without further tuning. Diagnostic runs disable one change at a time, add each change alone to TD3+BC in the same code, vary depth from two to six layers on AntMaze, and compute Expected Online Performance over the tuning grid.
+
+\question{7. What are the results?}
+
+ReBRAC averaged 81.2 on D4RL Gym-MuJoCo, second to SAC-RND (82.6) and ahead of CQL (73.6) and IQL (72.9). It led on AntMaze (76.8 versus 60.9 for SAC-RND) and Adroit (58.6 versus 53.4 for IQL). Ensemble methods stayed ahead on Gym-MuJoCo (EDAC 85.2) and AntMaze (MSG 80.5) but not on Adroit (RORL 41.0). On V-D4RL its average of 35.5 beat DrQ+BC (30.4) and behavior cloning (30.3), yet it was best on only four of fifteen datasets: Offline DV2 won the random and mixed walker and cheetah data, and behavior cloning the expert and most humanoid data.
+
+After online fine-tuning the overall average rose from 55.0 to 91.1, ahead of IQL (65.10) and Cal-QL (58.08), mostly through the cloned Adroit tasks (24.0 to 100.1). On AntMaze, however, Cal-QL (97.33) and SPOT (92.38) finished above ReBRAC (85.2), and antmaze-large-play fell from 47.0 to 39.5. ReBRAC's average cumulative regret, 0.18, was the lowest.
+
+In four-seed ablations, removing the actor penalty dropped the overall score from 72.2 to 11.4, and removing LayerNorm cut it to 38.0, with AntMaze falling to zero. On AntMaze, reverting to \ensuremath{\gamma} = 0.99 or dropping the third hidden layer cut the score from 75.3 to about 20, while the large batch helped only on Gym-MuJoCo. Removing the critic penalty or the decoupling changed the average by less than one percent, and TD3+BC, re-tuned or given any single modification, stayed at or below 62 overall. Four critic and three actor layers worked best on AntMaze. Expected Online Performance showed ReBRAC needing about ten evaluated policies to reach the ensemble-free state of the art; with one policy it beat IQL on AntMaze (67.9 versus 29.8) but trailed it on Gym-MuJoCo and Adroit.
+
+\question{8. What are the impacts and limitations of the contributions?}
+
+ReBRAC's main effect is to reset the baseline. A TD3+BC variant needing roughly 0.3 to 0.6 hours per D4RL run, against about two for IQL (the PyTorch CORL implementation the authors ran, not IQL's faster JAX code) and five for MSG, matches or beats more elaborate ensemble-free methods, although its image-based V-D4RL runs took about ten hours. New algorithms must now show gains over a properly engineered simple method, and the ablations give practical guidance: critic LayerNorm and the presence of an actor penalty are essential, and the discount factor matters for sparse rewards.
+
+The authors concede that they tested only a handful of changes, all on TD3+BC; whether these transfer to IQL, CQL or MSG, and whether untried options such as dropout, learning-rate schedules, wider networks or stochastic actors would add more, is left open. On close reading, performance also depends on per-dataset tuning of $\beta_{1}$ and $\beta_{2}$ chosen by evaluating policies in the environment, and the selected values span two orders of magnitude ($\beta_{1}$ from 0.001 to 0.1 on Gym-MuJoCo). Like other ensemble-free methods, ReBRAC scores below 10 on the human and cloned door, hammer and relocate datasets. No theory explains how the choices interact, AntMaze results vary widely across seeds, and no experiment leaves simulation.
+
+For BCA, the ablations single out the actor's behavior-cloning multiplier as the term worth calibrating: ReBRAC collapses without it, while the critic penalty moves the average score by under one percent. The best actor coefficient also shifts across datasets, so a global setting must be re-tuned per dataset; the paper never tests whether strength should also vary between samples within a dataset.
+
+\question{9. How were the results evaluated or validated?}
+
+Scores are D4RL-normalized, and V-D4RL returns are divided by ten to the same 0 to 100 scale. Hyperparameters were chosen on four training seeds, and the selected configuration was rerun on ten new seeds (two and five on V-D4RL), reporting the mean and standard deviation of the final checkpoint rather than the best one. Final evaluation used ten episodes on Gym-MuJoCo and Adroit and 100 on AntMaze. TD3+BC and IQL were re-tuned under the same protocol and SAC-RND was rerun, while CQL, the V-D4RL baselines and most fine-tuning baselines were copied from earlier papers. As a control, TD3+BC was run in the authors' code with its original and re-tuned coefficient, showing that the gains stem neither from implementation differences nor from tuning alone. Aggregate comparisons use the performance profiles and probability of improvement of Agarwal et al. (2021); ablations use four seeds; and Expected Online Performance measures sensitivity to the online evaluation budget.
+
+Separating tuning seeds from reporting seeds and reporting last checkpoints makes the protocol stronger than usual. Selection, however, still uses true environment returns, which a real offline user lacks. Copied baselines come from other protocols and seed counts (four seeds against ReBRAC's ten in fine-tuning), no formal significance tests are given, and a few tuned values in the hyperparameter tables fall outside the stated search grids.
+
+\question{10. What are the ethical implications? How are they addressed?}
+
+Societal consequences go undiscussed: the paper has no ethics statement or broader-impact section. Related material is limited to a short limitations paragraph in Section 6, which concerns scientific scope only, together with a compute-cost appendix and a link to the public code.
+
+ReBRAC's intended settings still raise issues the paper leaves aside. Offline RL is aimed at domains such as healthcare, driving and industrial robotics, where logged data are plentiful and exploration is dangerous. A policy constrained toward recorded behavior inherits whatever biases or unsafe habits that behavior contains, yet ReBRAC's evidence comes entirely from simulated locomotion, maze and manipulation tasks. Its hyperparameters were chosen by running candidate policies in the simulator, a step that would itself carry risk in a real system. The fine-tuning recipe also relaxes both penalties while the agent is acting, and on one AntMaze dataset the score fell during that phase; outside simulation, such a regression would mean worse behavior during live operation. On research integrity the paper is comparatively transparent: it describes its tuning protocol, releases code, and reports compute (by my sum of the appendix tables, roughly 18,500 run-hours on V100 and A100 GPUs). The energy cost is disclosed but not discussed.
+
+In short, the authors document tuning, code and compute carefully but say nothing about deployment safety, data bias or validation outside simulation.
+
+\question{11. What themes are suggested by this research? (minimum 3)}
+
+\textbf{Implementation details and hyperparameter sensitivity.} The paper's premise is that choices often treated as incidental, such as network depth, LayerNorm, batch size and the discount factor, explain much of the progress credited to new algorithms. Its ablations bear this out: removing critic LayerNorm roughly halves average performance, and the default discount cuts AntMaze performance by about 70 percent. The wide spread of the best penalty values across datasets shows that results also hinge on per-dataset tuning.
+
+\textbf{Minimalism and simplicity in algorithm design.} ReBRAC adds no new learned components to TD3+BC: no ensembles, generative models or density estimators, only a second MSE penalty and standard deep-learning practice. It still matches or beats more complex ensemble-free methods and, on D4RL, runs several times faster per run than the IQL, SAC-RND and MSG implementations the authors timed, which argues that simple baselines should be strengthened before complexity is added.
+
+\textbf{Behavior regularization and policy constraints.} ReBRAC is a behavior-regularized actor-critic in which an MSE penalty toward dataset actions is the main safeguard against extrapolation. The ablations separate the two penalties: without the actor penalty the method collapses on nearly every domain, while the critic penalty and decoupling add little on average. The best coefficients still differ by dataset, so constraint strength remains a single scalar re-tuned for each dataset.
+
+\textbf{Evaluation rigor, reproducibility and fair comparison.} The paper's case rests on giving an old baseline the engineering and tuning effort that newer methods had received. Its compute tables show ReBRAC and IQL each receiving 1,440 tuning runs on Gym-MuJoCo, and the authors concede that baselines whose scores they copied might score lower under their protocol. They also tune only the penalty weights, although per-task tuning of the design choices would raise scores further, which keeps the comparison closer to a practitioner's budget.
+
+\textbf{Online tuning and offline model selection.} Every reported score relies on selecting $\beta_{1}$ and $\beta_{2}$ by evaluating policies in the environment. The paper confronts this in part through Expected Online Performance, which shows that ReBRAC needs around ten online evaluations before its expected score reaches the ensemble-free state of the art, and that it is weaker than IQL on two domains when only one policy can be tested. Offline model selection without environment access is left open.
+
+\textbf{Offline-to-online fine-tuning.} ReBRAC was not built for fine-tuning, yet the authors simply continue training it online after switching off the critic penalty and decaying the actor penalty linearly to half, with no new tuning. This recipe gives the lowest average regret and lifts the cloned door and hammer tasks from near zero to above 100, but it trails Cal-QL and SPOT on AntMaze and loses ground on one large maze, so loosening a fixed constraint helps unevenly.
+
+
+\clearpage
+
+\bookmarked{\subsection}{subsection}{Paper 5: A Clean Slate for Offline RL (Unifloral)}
+
+\question{1. What is the citation?}
+
+\begin{hangref}Jackson, M. T., Berdica, U., Liesen, J., Whiteson, S., \& Foerster, J. N. (2025). A clean slate for offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{38}. \url{https://neurips.cc/virtual/2025/oral/119623}\end{hangref}
+\begin{hangref}Version reviewed: Jackson, M. T., Berdica, U., Liesen, J., Whiteson, S., \& Foerster, J. N. (2025). \emph{A clean slate for offline RL} (arXiv:2504.11453v1) [Preprint]. arXiv. \url{https://doi.org/10.48550/arXiv.2504.11453}\end{hangref}
+
+\question{2. What is the research area?}
+
+The paper's field is offline (batch) RL, the branch of reinforcement learning, and so of machine learning, that learns policies from a fixed log of transitions. Unlike papers that propose one new learning rule, it is mainly a methodology, evaluation and software contribution. It spans model-free actor-critic methods (TD3+BC, ReBRAC, IQL, SAC-N, EDAC, CQL), model-based methods that train on synthetic rollouts (MOPO, MOReL, COMBO) and imitation baselines (BC, Decision Transformer). Its problem family is hyperparameter and policy selection under limited online access, together with fair benchmarking. Instead of championing policy constraints, value penalties, in-sample learning, ensembles or dynamics models, it treats each as a configurable component, which places it beside earlier unification and evaluation-audit work such as Rainbow, CORL and studies of online evaluation budgets.
+
+\question{3. What is the research question?}
+
+How should offline RL methods be defined, implemented and compared so that reported performance reflects the online interaction actually spent tuning them, and can one cleanly implemented design space that contains prior algorithms be used to discover better ones?
+
+Several more specific questions sit beneath this. It asks which variant of the offline problem published work implicitly assumes, and how an algorithm's standing changes as the number of allowed online evaluation episodes grows from one to about two hundred. It asks whether any existing method performs well across D4RL tasks once tuning cost is counted, and whether a dozen established methods can be rewritten as compact, consistent JAX files that reproduce earlier scores and train faster. Finally, it tests two hypotheses: that replacing ReBRAC's behavior-cloning term with IQL-style advantage weighting helps (TD3-AWR), and that ReBRAC beats SAC-N or CQL as the policy learner inside a MOPO dynamics model (MoBRAC).
+
+\question{4. What is the significance of the question?}
+
+The practical appeal of offline RL is that useful controllers can be learned from records that already exist, in settings such as driving, robotics or medicine where trial-and-error deployment is expensive or dangerous. That appeal is undermined if published scores quietly depend on many online test runs used to pick hyperparameters, because a method that needs hundreds of evaluation episodes to choose its settings is not offline in any useful sense. The authors argue that most papers work in this tuned regime without stating the budget, so numbers from different papers blend algorithmic quality with tuning effort.
+
+The technical stakes come from the fact that offline algorithms fight value overestimation on poorly covered actions through conservatism hyperparameters (behavior-cloning weights, penalty coefficients, expectiles, ensemble sizes) whose best values vary by dataset, which makes results sensitive to how those values are chosen. When the paper appeared, the field had many competing methods, baselines copied from earlier papers, per-dataset hyperparameter tables (ReBRAC is a prominent case) and code bases whose incidental differences hid what each idea contributed. Without a common protocol and common code, claims of progress could not be checked.
+
+\question{5. What are the contributions reported in this paper?}
+
+The paper contributes on several fronts. Conceptually, it sets out a taxonomy of four offline RL settings, separated by whether policies may be tested online before deployment and whether they may adapt afterward: zero-shot deployment, online policy selection before deployment, policy selection after deployment, and offline-to-online fine-tuning. It also defines an offline RL method as an algorithm plus a fixed hyperparameter sampling range that does not change between datasets.
+
+Methodologically, it introduces an evaluation protocol for the pre-deployment selection setting, in which a UCB bandit chooses among trained policies while observing one noisy episode return per pull, so that performance is reported as a function of the online budget. It supplies a software interface for this protocol and recommends a nine-dataset D4RL subset.
+
+On the software and algorithmic side, it first arranges prior methods in a genealogy in which each algorithm is its parent plus a few added components (BC leads to IQL and to TD3+BC, which in turn leads to ReBRAC; SAC-N leads to LB-SAC, EDAC, CQL and MOPO, and MOPO to MOReL and COMBO). Following this tree, it releases single-file JAX reimplementations of twelve methods (BC, TD3+BC, ReBRAC, IQL, SAC-N, LB-SAC, EDAC, CQL, DT, MOPO, MOReL and COMBO), written so that each child differs minimally from its parent. It then presents Unifloral, a single implementation whose configuration space contains most of these methods, and uses it to build two new configurations, TD3-AWR and MoBRAC, without new code. All code is public.
+
+\question{6. What is the research method?}
+
+The research method is design-oriented and empirical: a conceptual analysis of evaluation practice, construction of a protocol and a software framework, large-scale benchmarking under that protocol, and two hypothesis-driven case studies. There is no new theory or proof.
+
+The protocol has two stages. First, P hyperparameter settings are drawn with replacement, each with a fresh seed, from the method's declared range; the P trained policies are rolled out for many episodes and their returns stored. Second, tuning is simulated from these stored returns: K policies are subsampled, a UCB bandit pulls arms that each reveal one episode's return, and after N pulls the arm with the highest estimate is scored by its true mean, repeated B times.
+
+Unifloral expresses algorithms through one loss family. The critic target is either an expectile-trained value v(s\ensuremath{'}), as in IQL, or the minimum over target critics at a noise-perturbed policy action, as in TD3; behavior-cloning, entropy and EDAC-style gradient-diversity terms are optional. The actor minimizes \begin{equation*}\beta_q L_q+\beta_{\mathrm{BC}}L_{\mathrm{BC}}-\beta_H\,\mathcal{H}(\pi),\end{equation*} where $L_q$ aggregates the ensemble by minimum, mean or first critic and $L_{\mathrm{BC}}$ is squared action error or negative log-likelihood, optionally multiplied by $\min(A_{\max},\exp(\eta(q-V)))$ to give advantage-weighted regression. An optional dynamics ensemble generates rollouts whose rewards are reduced in proportion to ensemble disagreement. The same space also covers architecture and optimizer settings that differ between methods, such as network depth and width, layer and observation normalization, learning rates and their schedule, batch size, critic-ensemble size and whether the actor is deterministic. ReBRAC's actor BC coefficient is sampled from [0.0005, 1.0] with batch size 1024, while IQL's AWR temperature spans [0.5, 10] with advantages capped at 100. TD3-AWR combines ReBRAC's settings with IQL's AWR settings; MoBRAC pairs MOPO's dynamics settings with ReBRAC's elsewhere.
+
+Experiments cover nine D4RL datasets (hopper-medium, halfcheetah-medium-expert, walker2d-medium-replay, pen-human, pen-cloned, pen-expert, antmaze-large-diverse, maze2d-large, kitchen-mixed) and ten baselines, sampling hyperparameters uniformly from each original paper's ranges, with 20 policies per algorithm and dataset, K = 8 and 500 bandit repetitions. Runtime is timed over one million updates on halfcheetah-medium-expert using one L40S GPU.
+
+\question{7. What are the results?}
+
+No prior algorithm was best on every dataset. ReBRAC reached the top score at some budget on five of the nine datasets and IQL on four, and ReBRAC was the only method with a non-trivial score on antmaze-large-diverse (about 20). The three model-based methods never ranked above sixth of ten on any non-locomotion dataset. The authors add that they never beat BC there, but on maze2d-large Figure 3 places MOPO (about 33) and COMBO (about 17) above BC (near zero). Some curves dipped as the budget grew; for ReBRAC on hopper-medium this was traced to distractor policies, and the chance that the bandit favored one rose from roughly 0.3 to above 0.6 while it enumerated arms, with deeper dips when more policies were subsampled.
+
+The reimplementations were compact (59 changed lines from TD3+BC to ReBRAC, versus 943 in CORL) and fast: CQL trained in 9.8 minutes against 203.9 in OfflineRL-Kit and 180.3 in CORL. A five-seed locomotion table is offered as evidence of faithful reproduction.
+
+TD3-AWR's curve strictly dominated ReBRAC on six datasets and was dominated on one (hopper-medium, about 94 versus 101), and it dominated IQL on seven. At full budget it beat both parents on walker2d-medium-replay (about 91 versus 74 for ReBRAC and 81 for IQL) and antmaze-large-diverse (about 26 versus 20, with IQL at zero), and it led ReBRAC at small budgets on pen-expert and halfcheetah-medium-expert although its search space was larger. IQL stayed well ahead on kitchen-mixed (about 52 versus 35). MoBRAC beat the other model-based methods on six of nine datasets by the authors' count (about 51 versus near zero on pen-human), but trailed MOPO on maze2d-large and, like them, scored almost nothing on AntMaze.
+
+\question{8. What are the impacts and limitations of the contributions?}
+
+What the paper chiefly gives the field is a shared yardstick and toolkit. Plotting score against online budget turns hidden tuning into an explicit cost, the fixed-range definition rules out per-dataset retuning, and building TD3-AWR and MoBRAC purely through configuration shows that component-level hypotheses can be tested cheaply.
+
+The authors flag two limits: model-based methods rely on hard-coded termination functions, which they call unrealistic, and K is fixed at 8. Only the pre-deployment setting is implemented, and the new methods were proposed and tested on the nine datasets that ranked the baselines. Rankings depend on the original papers' ranges and on UCB as the selector, and the paper never explains why IQL and ReBRAC, reported by their authors at about 47 (IQL, on older v0 data) and 54 on antmaze-large-diverse, reach only about 0 and 20 here. For ReBRAC, one likely factor is that Unifloral's configuration table (Appendix H) fixes \ensuremath{\gamma} = 0.99 and batch size 1024 on every dataset, whereas ReBRAC used 0.999 and 256 on AntMaze; ReBRAC's own ablations found these two settings cut its AntMaze average from 75.3 to 21.0 (\ensuremath{\gamma} = 0.99) and 41.0 (batch 1024). MoBRAC is compared only with model-based methods, though ReBRAC alone scores far higher on maze2d-large and antmaze-large-diverse (Figures 3 and 12). The stated average speedups (131.5\ensuremath{\times} and 74.8\ensuremath{\times}) cannot be recovered from Figure 6, whose per-algorithm ratios span about 1.3\ensuremath{\times} to 21\ensuremath{\times}.
+
+For BCA, Unifloral treats each host's conservatism as one global scalar sampled from a fixed range, with the bandit picking among the resulting policies (ReBRAC's BC coefficient, TD3+BC's Q coefficient with BC weight 1, IQL's AWR temperature; the advantage cap stays at 100), so its protocol can test whether calibrated per-sample widths ease that tuning, which would show up as stronger scores at small budgets. BCA's calibration settings would likewise need one range across datasets, and its CQL host lies outside the unified space, which omits CQL by design.
+
+\question{9. How were the results evaluated or validated?}
+
+For each algorithm and dataset, the authors train 20 policies with hyperparameters drawn uniformly from the original papers' ranges, store their episodic returns, and run 500 bootstrapped UCB bandit simulations over eight sampled arms, plotting the mean and 95\% confidence interval of the chosen policy's true score against the number of single-episode pulls. Online tuning is thus explicit, not hidden. Comparisons rest on curve dominance and dataset counts, not formal hypothesis tests. Correctness is checked by five-seed means and standard deviations on fifteen locomotion datasets, speed by timing one million updates, and the distractor effect by 100,000 random policy orderings. There are no proofs and no component ablation beyond the two case studies.
+
+The design improves on common practice because it treats each evaluation as one random episode return, fixes ranges across datasets and runs every method in one consistent code base. Its weaknesses are that the intervals reflect bandit and subsampling randomness over one pool of 20 policies rather than repeated training; that strict dominance is never defined; that the evaluation episodes per policy, the training length and the hyperparameters behind the reproduction table go unreported, with no reference scores beside it; and that no reported check shows Unifloral configured as ReBRAC or IQL matching the standalone files, so TD3-AWR's gains could partly reflect implementation differences.
+
+\question{10. What are the ethical implications? How are they addressed?}
+
+The supplied arXiv version has no ethics statement, broader-impact section or dedicated limitations section. Its ethically relevant content is a footnote calling hard-coded termination functions unrealistic, motivating examples such as autonomous search and rescue and autonomous vehicles tested with safety drivers, acknowledgments disclosing EPSRC, Amazon Web Services and Sony funding, and a pledge to publish code and run logs. The NeurIPS camera-ready version was not examined here and may differ.
+
+Much of the paper is itself a research-integrity intervention: undisclosed online tuning inflates claims of deployability and skews comparisons, and pricing that budget explicitly addresses the problem well. Other issues go unaddressed. In the safety-critical domains the paper cites, every pre-deployment evaluation episode carries risk, yet the protocol treats episodes as interchangeable and selects purely on mean return, ignoring constraint violations and bad tail outcomes. Distractor policies, with erratic returns and occasional high peaks, are precisely what a careless real selection process might deploy. The paper also leaves aside how behavior-regularized learners such as ReBRAC and TD3-AWR reproduce skewed or unsafe patterns in logged data, and every benchmark it uses is simulated. On the positive side, the speedups cut the energy and hardware needed for the many training runs the protocol demands and widen access for smaller labs. On balance, the paper takes research integrity seriously, despite gaps in its own reporting, while deployment safety and data bias are left to the reader.
+
+\question{11. What themes are suggested by this research? (minimum 3)}
+
+\textbf{Online tuning and offline model selection.} The paper's core claim is that most offline RL results silently depend on online evaluation to choose hyperparameters. It names this setting, prices it in evaluation episodes and simulates selection with a UCB bandit that sees one noisy episode return per pull. The distractor-policy finding shows that selection with few noisy evaluations can favor high-variance policies, so the selection rule matters alongside the learning algorithm.
+
+\textbf{Evaluation rigor, reproducibility and fair comparison.} By defining a method as an algorithm plus one hyperparameter range used on every dataset, rerunning all baselines in shared code instead of copying published numbers, reporting confidence intervals over bootstrapped tuning runs, and releasing its code, the paper tries to make comparisons fair. Reporting the whole budget curve also lets readers compare methods at the budget that matches their own deployment constraints rather than at one headline number.
+
+\textbf{Implementation details and hyperparameter sensitivity.} Unifloral expresses many algorithms as settings of one configuration space, ranging from batch size and layer normalization to behavior-cloning weights, advantage caps and ensemble size. TD3-AWR and MoBRAC arise from configuration changes alone, and the small amount of code distinguishing each algorithm from its parent suggests that much of what separates published methods is configuration rather than new principles.
+
+\textbf{Benchmark dependence (D4RL).} Every experiment uses D4RL. The authors show that many earlier methods were tested mostly on MuJoCo locomotion and that the model-based ones, evaluated only there, fall far behind on Adroit, AntMaze, Maze2D and Kitchen. Their nine-dataset subset broadens coverage, yet the new methods were designed and judged on those same nine datasets, so benchmark dependence is reduced rather than removed.
+
+\textbf{Behavior regularization and policy constraints.} The two strongest prior methods under the protocol, ReBRAC and IQL, both keep the policy close to dataset actions, and both new methods change how that pull is applied: TD3-AWR replaces ReBRAC's evenly weighted behavior-cloning penalty with an advantage-weighted one, and MoBRAC swaps SAC-N or CQL for ReBRAC's behavior-regularized learner inside a learned model. In Unifloral, the constraint strength is still one coefficient drawn from a fixed range.
+
+\textbf{Computational efficiency.} Because the whole training loop is compiled in JAX, the reimplementations train far faster than PyTorch libraries; COMBO, for example, needs 22 minutes instead of almost five hours in OfflineRL-Kit on one GPU. Here efficiency is more than convenience: the protocol requires training many policies for every algorithm and dataset, so cheap training is what makes budget-aware evaluation affordable for groups with modest compute.
+
+
+\clearpage
+
+\bookmarked{\section}{section}{Part B: Themes and Observations}
+
+\bookmarked{\subsection}{subsection}{Collected Themes}
+
+{\small
+\begin{longtable}{P{3.4cm} P{2.6cm} P{9.2cm}}
+\toprule
+\textbf{Theme} & \textbf{Papers} & \textbf{Significance} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Theme} & \textbf{Papers} & \textbf{Significance} \\
+\midrule
+\endhead
+Behavior regularization and policy constraints & CQL, TD3+BC, IQL, ReBRAC, Unifloral (5/5) & Every algorithm in the set keeps the learned policy close to logged behavior, whether through an explicit actor penalty (TD3+BC, ReBRAC), advantage-weighted cloning (IQL) or a critic penalty that CQL's own analysis shows to act as an implicit divergence term. This shared mechanism is offline RL's main defense against extrapolation, and in every paper its strength is set by a single global coefficient. \\
+\addlinespace
+Conservatism versus policy improvement trade-off & CQL, TD3+BC, IQL, ReBRAC, Unifloral (5/5) & Too much conservatism confines the policy to the behavior it imitates, while too little lets value errors take over, so each method exposes a dial (CQL's alpha, TD3+BC's alpha, IQL's tau and beta, ReBRAC's beta1 and beta2) whose best setting changes across datasets. Unifloral turns this into a measured cost by drawing such coefficients from fixed ranges and charging the online evaluations needed to choose among them. \\
+\addlinespace
+Distribution shift and out-of-distribution value overestimation & CQL, TD3+BC, IQL, ReBRAC (4/5) & Bootstrapped critics queried at actions absent from the data make errors that cannot be corrected offline and that a maximizing actor exploits, which is what separates offline RL from ordinary off-policy learning. The four algorithm papers answer it differently, by penalizing unseen values (CQL), constraining the actor (TD3+BC, ReBRAC) or never querying unseen actions (IQL), while Unifloral treats the problem as background. \\
+\addlinespace
+Online tuning and offline model selection & CQL, TD3+BC, ReBRAC, Unifloral (4/5) & Offline RL promises learning without interaction, yet hyperparameters and checkpoints are usually chosen by running policies in the environment, so reported scores blend algorithmic quality with an unstated online budget. CQL names the missing validation signal as an open problem, TD3+BC and ReBRAC expose the dependence, and Unifloral makes the budget an explicit axis of evaluation. \\
+\addlinespace
+Evaluation rigor, reproducibility and fair comparison & TD3+BC, IQL, ReBRAC, Unifloral (4/5) & Rerunning baselines under one protocol, reporting final rather than best checkpoints, separating tuning seeds from reporting seeds and releasing code decide whether a claimed gain reflects the algorithm or the comparison. The theme strengthens across the sequence, from TD3+BC's reruns to IQL's -v2 correction, ReBRAC's re-tuned baselines and Unifloral's shared code base, although none of the papers applies formal significance tests. \\
+\addlinespace
+Minimalism and computational efficiency & TD3+BC, IQL, ReBRAC, Unifloral (4/5) & Small changes to established algorithms make gains attributable, reduce the number of choices that need validation and cut training time, so a strong, cheap baseline raises the bar every new method must clear. Efficiency also makes rigor affordable, since Unifloral's budget-aware protocol requires training many policies per dataset. \\
+\addlinespace
+Implementation details and hyperparameter sensitivity & TD3+BC, ReBRAC, Unifloral (3/5) & Network depth, layer normalization, batch size, the discount factor and similar choices explain much of what was credited to new algorithmic ideas, as TD3+BC's stripped-down reruns of CQL and Fisher-BRC and ReBRAC's ablations show. Unifloral extends the point by expressing most prior methods as settings of one configuration space, which suggests that many published methods differ mainly in configuration. \\
+\addlinespace
+Dataset quality and composition & CQL, TD3+BC, IQL (3/5) & How the data were collected decides which family of methods succeeds: multi-policy, low-quality or stitching-heavy datasets reward methods that can depart from or recombine logged behavior, while a uniform pull toward the data fails, as TD3+BC's collapse on the Walker2d random-expert mixture shows. Because real logs are heterogeneous, the theme suggests that constraint strength should depend on how trustworthy each part of the data is. \\
+\addlinespace
+Offline-to-online fine-tuning & IQL, ReBRAC (2/5) & Once interaction becomes available, the constraint that protected offline learning can block adaptation, so methods differ in how gracefully they can be relaxed: IQL's actor-independent critic keeps improving, while ReBRAC's recipe of dropping the critic penalty and decaying the actor penalty helps unevenly. The theme ties the choice of offline constraint to later adaptability. \\
+\addlinespace
+Theory versus practice & CQL, IQL (2/5) & Guarantees derived for tabular or idealized settings, such as CQL's lower bound and IQL's limit as tau approaches one, do not carry over to the deep networks and finite settings used in experiments, while TD3+BC, ReBRAC and Unifloral offer no theory at all. CQL's analysis also implies that the needed penalty shrinks as state-action coverage grows, a per-sample prescription its implementation replaces with one global alpha. \\
+\addlinespace
+Benchmark dependence (D4RL) & Unifloral (1/5) & Only Unifloral examines this directly, but all five papers draw their evidence solely from simulated benchmarks dominated by D4RL, and Unifloral shows that rankings shift across domains, with methods tested only on locomotion falling far behind elsewhere. Conclusions about which constraint works best are therefore conditional on the benchmark mix. \\
+\bottomrule
+\end{longtable}}
+
+\bookmarked{\subsection}{subsection}{Meta-Themes}
+
+{\small
+\begin{longtable}{P{3.4cm} P{6.1cm} P{5.7cm}}
+\toprule
+\textbf{Meta-theme} & \textbf{Description} & \textbf{Themes included} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Meta-theme} & \textbf{Description} & \textbf{Themes included} \\
+\midrule
+\endhead
+Pessimism toward unsupported actions & The algorithmic core of the set: the extrapolation problem, the behavior constraints used to contain it, how strongly to apply them, how the right strength depends on data coverage, and how the constraint is relaxed once online interaction resumes. It appears in all five papers and accounts for the largest number of themes. & Behavior regularization and policy constraints; Conservatism versus policy improvement trade-off; Distribution shift and out-of-distribution value overestimation; Dataset quality and composition; Offline-to-online fine-tuning \\
+\addlinespace
+Credibility of evidence and the offline premise & Whether reported results can be trusted and would hold for a user without environment access, covering comparison protocols, hidden online tuning, the reach of formal guarantees and reliance on one benchmark suite. It touches every paper and becomes the main subject of Unifloral. & Online tuning and offline model selection; Evaluation rigor, reproducibility and fair comparison; Theory versus practice; Benchmark dependence (D4RL) \\
+\addlinespace
+Simplicity and engineering choices & The argument, introduced by TD3+BC and extended by IQL, ReBRAC and Unifloral, that much apparent progress comes from engineering details and that simple, cheap methods with transparent design choices make the most honest baselines. & Minimalism and computational efficiency; Implementation details and hyperparameter sensitivity \\
+\bottomrule
+\end{longtable}}
+
+\bookmarked{\subsection}{subsection}{Summary of Observations}
+
+The eleven themes form three meta-themes. The most prevalent, pessimism toward unsupported actions, spans all five papers: each algorithm holds the policy near the data and must set how strongly, since excess conservatism caps improvement while too little invites extrapolation error. Credibility of evidence also spans every paper; the later ones show that reported scores often rest on online tuning no truly offline user could perform and on unequal comparisons. The third, simplicity and engineering choices, holds that hidden design choices explain much apparent progress and that simple, cheap methods set the honest baseline. Two less prevalent themes carry unusual weight. Dataset composition explains why a uniform pull toward the data fails on mixed-quality logs, and the theory-practice gap reveals that CQL's bound calls for a penalty that shrinks with coverage, whereas every implementation applies one global coefficient, the mismatch calibrated per-sample conservatism targets.
+
+{\small\itshape\color{gray}(144 words)}
+
+\bookmarked{\section}{section}{References}
+
+\begin{hangref}Fujimoto, S., \& Gu, S. S. (2021). A minimalist approach to offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{34}, 20132--20145. \url{https://proceedings.neurips.cc/paper/2021/hash/a8166da05c5a094f7dc03724b41886e5-Abstract.html}\end{hangref}
+\begin{hangref}Jackson, M. T., Berdica, U., Liesen, J., Whiteson, S., \& Foerster, J. N. (2025). A clean slate for offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{38}. \url{https://neurips.cc/virtual/2025/oral/119623}\end{hangref}
+\begin{hangref}Kostrikov, I., Nair, A., \& Levine, S. (2022). Offline reinforcement learning with implicit Q-learning. In \emph{International Conference on Learning Representations (ICLR 2022)}. \url{https://openreview.net/forum?id=68n2s9ZJWF8}\end{hangref}
+\begin{hangref}Kumar, A., Zhou, A., Tucker, G., \& Levine, S. (2020). Conservative Q-learning for offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{33}, 1179--1191. \url{https://proceedings.neurips.cc/paper/2020/hash/0d2b2061826a5df3221116a5085a6052-Abstract.html}\end{hangref}
+\begin{hangref}Tarasov, D., Kurenkov, V., Nikulin, A., \& Kolesnikov, S. (2023). Revisiting the minimalist approach to offline reinforcement learning. \emph{Advances in Neural Information Processing Systems}, \emph{36}, 11592--11620. \url{https://proceedings.neurips.cc/paper_files/paper/2023/hash/26cce1e512793f2072fd27c391e04652-Abstract-Conference.html}\end{hangref}
+
+
+\end{document}
