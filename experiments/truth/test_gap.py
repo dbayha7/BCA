@@ -18,7 +18,12 @@ Every number here is a test fixture on synthetic data or fabricated arrays, NOT 
   - end to end (plan 'full', profile synthetic_smoke, two seeds, four random-init hosts): gap define/check/freeze,
     preregister, gap_train, stage0 + H0, freeze, run. Every stage writes its JSON under one pre-registration sha256,
     marked SYNTHETIC; the hash gate refuses a wrong hash, an edited pre-registration, an edited gap.json and a forged
-    body; a second run recomputes nothing; the enforced stop rule blocks G4 when G1 fails.
+    body; a second run recomputes nothing; the enforced stop rule blocks G4 when G1 fails;
+  - review regressions (GapReviewTest): gap_train refuses before the gap pre-registration exists (and records it in
+    resolved.json; H0 checks it); the JAX platform is chosen before JAX loads; H0 gates each seed pair's resolved
+    row and training code; G2 and G3 wait for G1-pre; the verdict re-verifies g0.json and h0.json and prints POST HOC
+    flags; marks edited in code before preregistering are flagged; G0a reruns the search; H0 can be re-verified after
+    a failure; K_match's balance is reported; one jitter scale for all hosts.
 JAX_PLATFORMS=cpu LD_LIBRARY_PATH=$HOME/.mujoco/mujoco210/bin python -m unittest experiments.truth.test_gap
 """
 
@@ -78,7 +83,7 @@ def setUpModule():
         for s in SEEDS:
             run = tmp / f"run_gap_{s}"
             train_records[s] = GT.run("hopper", world / "gap" / "gap.json", gap_sha, s, run, device="cpu",
-                                      prepare_only=True, synthetic_test=True)
+                                      prepare_only=True, synthetic_test=True, gap_prereg_sha256=prereg_gap)
             GT.attach_random_checkpoint(run)
             hosts[GA.host_key("gap", s)] = str(run)
             hosts[GA.host_key("full", s)] = PL.write_synthetic_run(tmp / f"run_full_{s}", "hopper", file, s)["run_dir"]
@@ -247,20 +252,21 @@ class GapDataTest(unittest.TestCase):
         self.assertTrue(resolved["run_id"].endswith(f"-gap15-{FIX['gap_sha'][:8]}"))
         self.assertEqual(resolved["cache"]["sha256"], self.m.data["gapped"]["sha256"])
         args = ["--task", "hopper", "--gap", str(FIX["world"] / "gap" / "gap.json"), "--gap-sha256",
-                FIX["gap_sha"], "--seed", str(SEEDS[0]), "--output", str(FIX["tmp"] / "never")]
+                FIX["gap_sha"], "--gap-prereg-sha256", FIX["prereg_gap"], "--seed", str(SEEDS[0]), "--output",
+                str(FIX["tmp"] / "never")]
         with self.assertRaisesRegex(GT.BandFitDisabled, "allow-bca-band"):
             GT.main(args + ["--method", "bca"])
         with self.assertRaisesRegex(GT.BandFitDisabled, "allow-bca-band"):
             GT.run("hopper", FIX["world"] / "gap" / "gap.json", FIX["gap_sha"], SEEDS[0], FIX["tmp"] / "never",
-                   method="bca")
+                   method="bca", gap_prereg_sha256=FIX["prereg_gap"])
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             GT.main(args + ["--allow-bca-band"])  # no such flag
         with self.assertRaisesRegex(ValueError, "hash mismatch"):
             GT.run("hopper", FIX["world"] / "gap" / "gap.json", "0" * 64, SEEDS[0], FIX["tmp"] / "never",
-                   prepare_only=True, synthetic_test=True)
+                   prepare_only=True, synthetic_test=True, gap_prereg_sha256=FIX["prereg_gap"])
         with self.assertRaisesRegex(ValueError, "synthetic"):
             GT.run("hopper", FIX["world"] / "gap" / "gap.json", FIX["gap_sha"], SEEDS[0], FIX["tmp"] / "never",
-                   prepare_only=True)
+                   prepare_only=True, gap_prereg_sha256=FIX["prereg_gap"])
         self.assertFalse((FIX["tmp"] / "never").exists())
 
     def test_restore_refuses_without_manifest(self):
@@ -518,6 +524,193 @@ class EndToEndTest(unittest.TestCase):
         if not g1["passed"]:
             self.assertFalse(allowed)
             self.assertIn("G1", reason)
+
+
+# ---------------------------------------------------------------- adversarial review (2026-10-12) regressions
+
+class GapReviewTest(unittest.TestCase):
+    """Defects found in the review of the action-gap code, pinned here (SYNTHETIC fixtures, NOT FINDINGS)."""
+
+    def fresh_frozen_world(self, name):
+        """A copy of the frozen gap (W/gap only): no gap pre-registration, no hosts, no analysis."""
+        target = FIX["tmp"] / name
+        target.mkdir()
+        shutil.copytree(FIX["world"] / "gap", target / "gap")
+        return target
+
+    def test_gapped_host_cannot_train_before_the_gap_prereg(self):
+        """Major: the marks must be frozen before the first gapped host trains (train.py prints returns); the
+        old check looked for W/host_* analysis directories and never at training runs."""
+        world = self.fresh_frozen_world("no_gap_prereg")
+        gap = world / "gap" / "gap.json"
+        out = FIX["tmp"] / "trained_too_early"
+        kw = dict(device="cpu", prepare_only=True, synthetic_test=True)
+        with self.assertRaisesRegex(ValueError, "missing"):
+            GT.run("hopper", gap, FIX["gap_sha"], SEEDS[0], out, gap_prereg_sha256=FIX["prereg_gap"], **kw)
+        for f in ("gap_prereg.json", "gap_prereg.json.sha256"):
+            shutil.copy(FIX["world"] / f, world / f)
+        with self.assertRaisesRegex(ValueError, "hash mismatch"):
+            GT.run("hopper", gap, FIX["gap_sha"], SEEDS[0], out, gap_prereg_sha256="0" * 64, **kw)
+        with self.assertRaisesRegex(ValueError, "not pre-registered"):
+            GT.run("hopper", gap, FIX["gap_sha"], 202609173, out, gap_prereg_sha256=FIX["prereg_gap"], **kw)
+        self.assertFalse(out.exists())
+        for s in SEEDS:  # the order is recorded before training, in resolved.json, and H0 checks it
+            record = json.loads((Path(FIX["hosts"][GA.host_key("gap", s)]) / "resolved.json").read_text())
+            self.assertEqual(record["action_gap"]["gap_prereg_sha256"], FIX["prereg_gap"])
+            self.assertEqual(record["action_gap"]["seed_role"], "pre-registered pair seed")
+            self.assertTrue(FIX["h0"]["hosts"][GA.host_key("gap", s)]["checks"]["trained_under_this_gap_prereg"])
+
+    def test_platform_is_chosen_before_jax_loads(self):
+        """Major: gap.projection imports runtime.td3_bc (JAX) before train.main sets JAX_PLATFORMS from --device,
+        so with the README's exported JAX_PLATFORMS=cpu a '--device cuda' gapped host trained on the CPU while its
+        full-data control trained on the GPU."""
+        import subprocess
+        import sys
+
+        code = ("import os\nos.environ['JAX_PLATFORMS'] = 'cpu'\n"
+                "from experiments.truth import gap_train as GT\n"
+                "GT.select_platform('cuda', False)\n"
+                "from runtime import td3_bc\n"  # what gap.projection imports before train.main runs
+                "import jax\nprint('PLATFORM', jax.config.jax_platforms)\n")
+        done = subprocess.run([sys.executable, "-c", code], cwd=str(GAP.ROOT), capture_output=True, text=True,
+                              timeout=240)
+        lines = [x for x in done.stdout.splitlines() if x.startswith("PLATFORM")]
+        self.assertEqual(lines, ["PLATFORM cuda"], done.stderr[-2000:])
+        with self.assertRaisesRegex(ValueError, "already loaded"):  # in process JAX runs on cpu: refuse, not ignore
+            GT.select_platform("cuda", False)
+        self.assertEqual(GT.select_platform("cpu", True), "cpu")
+        record = FIX["train"][SEEDS[0]]
+        self.assertEqual((record["jax_platform"], record["jax_backend"]), ("cpu", "cpu"))
+
+    def test_h0_gates_gap_prereg_and_seed_pair_identity(self):
+        """Major: H0 never compared the two hosts of a seed pair, so a control trained with another config or code
+        (172/173 are shared with option C and may be older) would pass and its difference be credited to the gap."""
+        world = FIX["world"]
+        gp, _ = GA.load_gap_prereg(world, FIX["prereg_gap"], FIX["gap_sha"])
+        m = GA.manifest(world, FIX["gap_sha"])
+        for s in SEEDS:
+            pair = FIX["h0"]["pairs"][str(s)]
+            self.assertTrue(pair["passed"] and pair["rows_identical_except_data"], pair)
+        for rec in FIX["h0"]["hosts"].values():
+            self.assertTrue(rec["checks"]["reservation_record_equals_rebuild"])
+        with quiet():
+            bad = GA.host_integrity(world, gp, m, FIX["hosts"], gp_sha="0" * 64)
+        self.assertFalse(bad["passed"])
+        self.assertFalse(bad["hosts"][GA.host_key("gap", SEEDS[0])]["checks"]["trained_under_this_gap_prereg"])
+        gap_run = Path(FIX["hosts"][GA.host_key("gap", SEEDS[0])])
+        other = FIX["tmp"] / "full_other_alpha"
+        shutil.copytree(FIX["hosts"][GA.host_key("full", SEEDS[0])], other)
+        row = json.loads((other / "resolved.json").read_text())
+        row["native_args"]["alpha"] = 5.0
+        (other / "resolved.json").write_text(json.dumps(row))
+        pair = GA.pair_checks(world, SEEDS[0], {"gap": gap_run, "full": other}, gp["frozen_utc"])
+        self.assertFalse(pair["passed"])
+        self.assertIn("native_args.alpha", pair["row_differences"])
+        # real (non-synthetic) runs also share the training code in source.json
+        runs = {}
+        for arm, src in (("gap", gap_run), ("full", Path(FIX["hosts"][GA.host_key("full", SEEDS[0])]))):
+            runs[arm] = FIX["tmp"] / f"pair_code_{arm}"
+            shutil.copytree(src, runs[arm])
+            (runs[arm] / "SYNTHETIC_HOST.txt").unlink()
+        source = json.loads((gap_run / "source.json").read_text())
+        changed = dict(source, **{"runtime/td3_bc.py": "0" * 64})
+        (runs["full"] / "source.json").write_text(json.dumps(changed))
+        pair = GA.pair_checks(world, SEEDS[0], runs, gp["frozen_utc"])
+        self.assertEqual((pair["code_identical"], pair["code_differences"], pair["passed"]),
+                         (False, ["runtime/td3_bc.py"], False))
+        readme_only = dict(source, **{"README.md": "1" * 64})
+        (runs["full"] / "source.json").write_text(json.dumps(readme_only))
+        pair = GA.pair_checks(world, SEEDS[0], runs, gp["frozen_utc"])
+        self.assertTrue(pair["code_identical"] and pair["passed"])
+        self.assertEqual(pair["other_source_differences"], ["README.md"])
+        self.assertFalse(pair["device_flag"])
+
+    def test_g2_and_g3_wait_for_g1_pre(self):
+        """Stop rule 3: no G result is computed until the integrity checks pass (only G1 waited)."""
+        world = FIX["tmp"] / "g1_pre_failed"
+        shutil.copytree(FIX["world"], world, ignore=shutil.ignore_patterns("g4"))
+        body, sha, _ = GA.load_prereg(world, FIX["sha"])
+        pre = json.loads((world / "scores" / "G1_pre.json").read_text())
+        pre["passed"] = False
+        (world / "scores" / "G1_pre.json").write_text(json.dumps(pre))
+        for req in ("G2", "G3"):
+            (world / "scores" / f"{req}.json").unlink()
+            with self.assertRaisesRegex(ValueError, "G1-pre has not passed"):
+                GA.stage_score(world, body, sha, requirements=[req])
+
+    def test_verdict_reverifies_g0_h0_and_prints_post_hoc(self):
+        self.assertIn("**POST HOC:**", (FIX["world"] / "verdict.md").read_text())
+        self.assertIn("the stop rule was not applied", FIX["verdict"]["post_hoc_flags"]["reasons"])
+        world = FIX["tmp"] / "h0_edited"
+        shutil.copytree(FIX["world"], world, ignore=shutil.ignore_patterns("g4", "host_*"))
+        body, sha, _ = GA.load_prereg(world, FIX["sha"])
+        (world / "h0.json").write_text((world / "h0.json").read_text() + " ")
+        with self.assertRaisesRegex(ValueError, "h0.json differs"):
+            GA.verdict(world, body, sha)
+
+    def test_design_pins_flag_edited_marks(self):
+        """pass_marks_equal_design compared the marks with the live PASS_MARKS, so marks edited in code before
+        preregistering read as 'equal to the design'. It now compares with pinned literal digests."""
+        from unittest import mock
+
+        self.assertEqual(GAP.canonical_sha256(GAP.DESIGN), GAP.SETTINGS_SHA256["design"])
+        self.assertEqual(GAP.canonical_sha256(GAP.SMOKE), GAP.SETTINGS_SHA256["synthetic_smoke"])
+        self.assertEqual(GA.canonical_sha256(GA.PASS_MARKS), GA.PINNED_SHA256["pass_marks"])
+        for name, protocol in GA.PROFILES.items():
+            self.assertEqual(GA.canonical_sha256(protocol), GA.PINNED_SHA256["protocol"][name])
+        body, _, _ = GA.load_prereg(FIX["world"], FIX["sha"])
+        self.assertTrue(body["pass_marks_equal_design"] and body["protocol_equal_design"])
+        world = self.fresh_frozen_world("marks_edited_in_code")
+        with mock.patch.dict(GA.PASS_MARKS["G1"], ratio_min=1.1), quiet():
+            digest = GA.preregister(world, "hopper", FIX["gap_sha"], profile="synthetic_smoke")
+        gp, _ = GA.load_gap_prereg(world, digest, FIX["gap_sha"])
+        self.assertFalse(gp["pass_marks_equal_design"])
+        self.assertTrue(gp["protocol_equal_design"])
+
+    def test_g0a_reruns_the_search(self):
+        """The frozen c* and rho must be the rule's output on the data, not an edited number."""
+        a = FIX["g0"]["g0a"]["passes"]
+        self.assertTrue(a["search_reproduces"] and a["settings_equal_pinned"])
+        world = self.fresh_frozen_world("moved_centre")
+        for f in ("g0.json", "gap.json.sha256", "freeze.json"):
+            (world / "gap" / f).unlink()
+        gap = json.loads((world / "gap" / "gap.json").read_text())
+        gap["gap"]["centre"][0] += 0.01
+        text = GAP.strict_json(gap)
+        (world / "gap" / "gap.json").write_text(text)
+        with quiet():
+            g0 = GAP.check(world, GAP.sha256_hex(text.encode()))
+        self.assertFalse(g0["g0a"]["passes"]["search_reproduces"])
+        self.assertFalse(g0["g0a"]["passed"])
+
+    def test_h0_can_be_reverified_after_a_failure(self):
+        """'Stop, fix and re-verify': a failed h0.json is kept as h0.failed-<n>.json and H0 reruns (the Stage 0 gate
+        of the same file is reused); a passed h0.json is never replaced."""
+        world = FIX["tmp"] / "h0_retry"
+        world.mkdir()
+        shutil.copytree(FIX["world"] / "gap", world / "gap")
+        shutil.copytree(FIX["world"] / "stage0", world / "stage0")
+        for f in ("gap_prereg.json", "gap_prereg.json.sha256"):
+            shutil.copy(FIX["world"] / f, world / f)
+        failed = dict(json.loads((FIX["world"] / "h0.json").read_text()), passed=False)
+        (world / "h0.json").write_text(json.dumps(failed))
+        with quiet():
+            _, h0 = GA.stage0(world, FIX["gap_sha"], FIX["prereg_gap"], FIX["hosts"])
+        self.assertTrue(h0["passed"])
+        self.assertFalse(json.loads((world / "h0.failed-0.json").read_text())["passed"])
+        with self.assertRaisesRegex(ValueError, "passed already"), quiet():
+            GA.stage0(world, FIX["gap_sha"], FIX["prereg_gap"], FIX["hosts"])
+
+    def test_k_match_balance_reported(self):
+        balance = FIX["g0"]["g0b"]["values"]["K_match_balance"]
+        self.assertGreater(balance["pairs"], 0)
+        self.assertLess(balance["max_abs_smd"], balance["random_kept_baseline_max_abs_smd"])
+
+    def test_one_jitter_scale_for_all_hosts(self):
+        sds = [np.load(GA.host_dir(FIX["world"], k) / "pools" / "jitter_sd.npz") for k in sorted(FIX["hosts"])]
+        for sd in sds[1:]:
+            np.testing.assert_array_equal(sd["qpos"], sds[0]["qpos"])
+            np.testing.assert_array_equal(sd["qvel"], sds[0]["qvel"])
 
 
 if __name__ == "__main__":

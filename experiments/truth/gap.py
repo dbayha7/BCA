@@ -67,7 +67,9 @@ Geometry: x = (standardized s with the native normalization, raw a), float64. r 
 distance from 5,000 seeded native withheld rows (default_rng([seed, 9])) to the native training tree; r_s the same in
 state-only space. 'Other episode' means another ORIGINAL episode (native _convert ids), never a flag fragment.
 
-G0 (check). G0a: training-split mass in [0.14, 0.16]; rho >= 0.05; no tie block split; the gapped conversion equals
+G0 (check). G0a: the whole search reruns on the training actions and gives the frozen c*, rho and rule exactly, under
+settings equal to the pinned approved ones (SETTINGS_SHA256); training-split mass in [0.14, 0.16]; rho >= 0.05; no
+tie block split; the gapped conversion equals
 native minus gap array for array (and _convert's own d4rl.qlearning_dataset identity check passes); every HDF5 key
 except timeouts has the original's array sha256 and timeouts differ exactly at the gap rows; the projected
 reservation equals the native split minus the gap by raw row; zero gap rows in gapped training, withheld or bank;
@@ -78,7 +80,8 @@ c_kept_all (kept, any episode), state-only c_s_full and c_s_kept at r_s (other e
 10; (ii) share with c_kept_all <= 2 >= 0.50; (iii) median (c_kept_oe + 1) / (c_full + 1) <= 0.20; (iv) median
 c_s_kept >= 10 and median (c_s_kept + 1) / (c_s_full + 1) >= 0.5; (v) at least 90% of G rows matched into K_match.
 Reported: 1-NN distances to kept vs full rows, gap run lengths within episodes, the share of gap states that are the
-next observation of a kept row, the same counts on G_held, the K_match distances.
+next observation of a kept row, the same counts on G_held, the K_match distances and K_match's covariate balance
+(per-dimension standardized mean differences against G, beside a random-kept-row baseline).
 
 Synthetic files (synthetic.py) are test fixtures: every output on one says SYNTHETIC and is NOT A FINDING.
 """
@@ -126,6 +129,11 @@ SMOKE["search"].update(candidates=256, score_rows=dict(hopper=None, walker2d=Non
 SMOKE["geometry"].update(radius_rows=200, contrast_centres=50, pair_samples=2000)
 SMOKE["pools"].update(G=24, G_held=8, K_far=24)
 PROFILES = {"design": DESIGN, "synthetic_smoke": SMOKE}
+# Canonical sha256 of each profile's settings as approved (2026-10-12). An edit of DESIGN (q, band, seeds, search,
+# pool sizes, G0 marks) changes the gap; `define` records whether the settings still equal these pins and G0a fails
+# otherwise, so a gap cannot be re-tuned in code without the edit showing.
+SETTINGS_SHA256 = {"design": "929e37a9c1ebf89592b60ebdd807d6f5389120593b36ae1f26d13962ba8ceb24",
+                   "synthetic_smoke": "8493882f9c65cdcf744aca98b9449810989ca19c34ca53a9a37f172596f173da"}
 
 
 def utc():
@@ -502,6 +510,11 @@ def _side(directory, name, array):
                 dtype=str(np.asarray(array).dtype))
 
 
+def search_settings(settings, task_name):
+    """The settings find_gap runs with: the profile's, with the task's scoring sample size."""
+    return dict(settings, search=dict(settings["search"], score_rows=settings["search"]["score_rows"][task_name]))
+
+
 def original_file(task, data_dir=DEFAULT_DATA, file=None):
     if file is not None:
         path = Path(file).expanduser().resolve()
@@ -526,8 +539,7 @@ def define(world, task, *, data_dir=DEFAULT_DATA, file=None, profile="design", g
     raw = PL.read_raw(path)
     converted, rows, episodes, maps, training, withheld, bank, record = native_split(raw, reservation)
     actions_all = converted["actions"].astype(np.float64)
-    gap = find_gap(actions_all[training], dict(settings, search=dict(
-        settings["search"], score_rows=settings["search"]["score_rows"][task.name])))
+    gap = find_gap(actions_all[training], search_settings(settings, task.name))
     out.mkdir(parents=True, exist_ok=True)
     mean, std = normalization(converted["observations"], training)
     side = {}
@@ -545,7 +557,9 @@ def define(world, task, *, data_dir=DEFAULT_DATA, file=None, profile="design", g
                     obs_mean=mean.tolist(), obs_std=std.tolist(),
                     normalization_sha256=array_sha256(np.concatenate([mean, std])),
                     normalization_rule="training-row mean and SD + 0.001 (runtime.common.compute_mean_std)"),
-        settings=settings, search=gap, code_sha256=code_pins(), created_utc=utc(), defined=bool(gap["defined"]))
+        settings=settings, settings_sha256=canonical_sha256(settings),
+        settings_equal_pinned=canonical_sha256(settings) == SETTINGS_SHA256[profile],
+        search=gap, code_sha256=code_pins(), created_utc=utc(), defined=bool(gap["defined"]))
     if not gap["defined"]:
         manifest["side_files"] = side
         _write_manifest(out, manifest)
@@ -820,9 +834,10 @@ def leak_counts(manifest, raw_rows_by_split):
     return {name: int(np.isin(np.asarray(rows, np.int64), gap).sum()) for name, rows in raw_rows_by_split.items()}
 
 
-def gapped_row(row, manifest):
+def gapped_row(row, manifest, extra=None):
     """A resolved td3_bc host row made into a gapped-host row: the gapped cache pin, run_id suffix and the
-    action_gap record train.py writes into resolved.json."""
+    action_gap record train.py writes into resolved.json (plus `extra`: gap_train adds the gap pre-registration
+    sha256, the seed's role and the JAX platform)."""
     m = manifest
     row = copy.deepcopy(row)
     require((row.get("algorithm"), row.get("method")) == ("td3_bc", "host"), "gapped hosts are td3_bc host runs only")
@@ -843,6 +858,9 @@ def gapped_row(row, manifest):
         projection="native reservation minus the gap rows, matched by raw row (experiments/truth/gap.py)",
         gap_code_sha256=file_sha256(ROOT / "experiments/truth/gap.py"),
         gap_train_sha256=file_sha256(ROOT / "experiments/truth/gap_train.py"), synthetic=m.data["synthetic"])
+    if extra:
+        require(not set(extra) & set(row["action_gap"]), "extra action_gap keys clash")
+        row["action_gap"].update(copy.deepcopy(dict(extra)))
     return row
 
 
@@ -892,6 +910,26 @@ def g0b_counts(x_q, s_q, ep_q, full_x, kept_x, full_s, kept_s, r, r_s, thin_max)
              nn_full=nn_full, nn_kept=nn_kept)
 
 
+def match_balance(s_all, g_ids, k_ids, kept_ids, seed):
+    """Covariate balance of K_match against its G rows in standardized state space (reported, never gated):
+    per-dimension standardized mean differences, with the same statistic for as many random kept training rows as a
+    no-matching baseline."""
+    def smd(a, b):
+        if len(a) < 2 or len(b) < 2:
+            return None
+        pooled = np.sqrt((a.var(0, ddof=1) + b.var(0, ddof=1)) / 2)
+        return np.where(pooled > 0, (a.mean(0) - b.mean(0)) / np.where(pooled > 0, pooled, 1.0), 0.0)
+
+    matched = smd(s_all[g_ids], s_all[k_ids])
+    pick = np.random.default_rng([seed, 10]).choice(kept_ids, size=min(len(k_ids), len(kept_ids)), replace=False)
+    baseline = smd(s_all[g_ids], s_all[pick]) if len(pick) else None
+    top = lambda v: None if v is None else float(np.abs(v).max())
+    return dict(pairs=int(len(k_ids)), max_abs_smd=top(matched),
+                mean_abs_smd=None if matched is None else float(np.abs(matched).mean()),
+                random_kept_baseline_max_abs_smd=top(baseline),
+                rule="standardized mean difference per state dimension, G (matched rows) vs K_match; reported only")
+
+
 def check(world, gap_sha256, *, data_dir=None, workers=1):
     """G0a and G0b: W/gap/g0.json (outcome-free; data only)."""
     from experiments.wbcp import freeze_scores as FS
@@ -924,6 +962,12 @@ def check(world, gap_sha256, *, data_dir=None, workers=1):
     rule_rows = rows[gap_conv]
     a = {}
     a["gap_rows_reproduce"] = bool(np.array_equal(rule_rows, m.array("gap_rows")))
+    # The mode is a deterministic function of the data: the whole search reruns and must give the frozen c*, rho and
+    # rule exactly, under settings equal to the pinned approved ones.
+    again = find_gap(actions[training], search_settings(d["settings"], d["task"]))
+    a["search_reproduces"] = bool(again["defined"] and again["centre"] == d["gap"]["centre"]
+                                  and again["rho"] == d["gap"]["rho"] and again["rule"] == d["gap"]["rule"])
+    a["settings_equal_pinned"] = bool(canonical_sha256(d["settings"]) == SETTINGS_SHA256[d["profile"]])
     mass = float(gap_conv[training].mean())
     a["mass_in_band"] = bool(marks["mass_min"] <= mass <= marks["mass_max"])
     a["rho_min"] = bool(m.rho >= marks["rho_min"])
@@ -1005,6 +1049,9 @@ def check(world, gap_sha256, *, data_dir=None, workers=1):
     match = m.array("pool_K_match_for_G")
     k_rows = match[match >= 0]
     values_b.update(match_rate=float(np.mean(match >= 0)) if len(match) else None, strata=strata,
+                    K_match_balance=match_balance(s_all, m.native_ids_of(m.array("pool_G")[match >= 0]),
+                                                  m.native_ids_of(k_rows), tr_kept,
+                                                  int(d["settings"]["search"]["seed"])),
                     K_match_d_over_rho=_summary(dist[m.native_ids_of(k_rows)] / m.rho) if len(k_rows) else None,
                     G_held=values_held, radius=r, radius_state=r_s,
                     run_lengths=_summary(run_lengths(gap_conv, episodes, rows)),

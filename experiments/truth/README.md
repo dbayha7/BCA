@@ -192,8 +192,8 @@ JAX_PLATFORMS=cpu OMP_NUM_THREADS=2 LD_LIBRARY_PATH=$HOME/.mujoco/mujoco210/bin 
   experiments.truth.test_gap
 ```
 
-75 tests, 166 s here (4 shared CPUs, 2026-10-12): 53 for option C (44 from the build, 9 in test_review.py) and 22 in
-test_gap.py (about 60 s; see the action-gap section below).
+85 tests, 187 s here (4 shared CPUs, 2026-10-12, after the action-gap review): 53 for option C (44 from the build, 9
+in test_review.py) and 32 in test_gap.py (about 80 s; see the action-gap section below).
 The end-to-end tests write synthetic files and random-init host runs, then run Stage 0, freeze, and every planned
 stage. Their outputs say SYNTHETIC and are test fixtures, not findings.
 
@@ -237,7 +237,10 @@ refuses `--method bca` with the `--allow-bca-band` wording and exposes no BCA fl
   whose 10 nearest training neighbours in (s, a) hold no gap row.
 - **Pre-registration before training.** `gap_acceptance preregister` freezes the plan, sizes, seeds and every G mark
   (`W/gap_prereg.json` with sha256), embedding the gap sha256. train.py prints returns while it trains, so this
-  comes first. After training, `stage0` (option C's restore gate on the gapped copy, plus H0 on the six hosts) and
+  comes first. `gap_train` enforces the order: it refuses without this file and records its sha256 in each gapped
+  run before training, and H0 checks it. The marks and the protocol are compared with pinned digests of the
+  approved design (`PINNED_SHA256`), so an edit made in code before preregistering shows as POST HOC in the
+  verdict. After training, `stage0` (option C's restore gate on the gapped copy, plus H0 on the six hosts) and
   `freeze` write `W/prereg.json`. That file embeds the gap sha256, the gap pre-registration sha256 and the
   checkpoints. Every later stage refuses on a hash mismatch, on an edited gap.json or gap pre-registration, or on a
   changed analysis source.
@@ -291,18 +294,34 @@ code. Seed 202609171 is retrained on this branch.
 
 ```bash
 for S in $SEEDS; do
-  $PY -m experiments.truth.gap_train --task hopper --gap $W/gap/gap.json --gap-sha256 $GAP --seed $S \
-      --output runs/td3-hopper-gap15-s$S --device cuda
+  $PY -m experiments.truth.gap_train --task hopper --gap $W/gap/gap.json --gap-sha256 $GAP \
+      --gap-prereg-sha256 $GPRE --seed $S --output runs/td3-hopper-gap15-s$S --device cuda
   [ -d runs/td3-hopper-host-s$S ] || \
   $PY train.py --algorithm td3_bc --dataset hopper --method host --seed $S --output runs/td3-hopper-host-s$S \
       --device cuda
 done
 ```
 
+`gap_train` refuses unless `$W/gap_prereg.json` exists and hashes to `$GPRE`. It writes that sha256 into the run's
+`resolved.json` before training, and H0 checks it. It also refuses a seed that is not pre-registered. It picks the
+JAX platform from `--device` before JAX loads, so the exported `JAX_PLATFORMS=cpu` does not turn a `--device cuda`
+run into a CPU run. It checks the backend JAX actually uses before training and records it in `action_gap.json`.
+An existing `runs/td3-hopper-host-s$S` is reused only if it is a valid control. H0 refuses any pair whose two
+`resolved.json` files differ in anything but the data pin and the run id, or whose training code differs (the
+`PAIR_CODE` files in `source.json`). In that case, retrain the control.
+
 **4. Stage 0 + H0, then the final freeze** (CPU minutes; no outcome is read). `stage0` runs option C's one-step
 gate on the gapped copy and H0 on the six hosts. H0 checks, by raw row, that gapped training, withheld and bank
-equal native minus gap, and that the full hosts' split equals the native split. It also checks checkpoint hashes,
-1M updates, the checkpoint schedule and train.py's `verify_events`, and it reports normalization differences.
+equal native minus gap, and that the full hosts' split equals the native split. It also checks:
+- checkpoint hashes, 1M updates, the checkpoint schedule and train.py's `verify_events`;
+- the reservation record in each run's own `preparation.json`;
+- that each gapped run was trained under `$GPRE`;
+- that the two runs of each seed are identical apart from their data (the resolved row and the training code).
+
+It reports normalization differences, a JAX platform difference within a pair, and a full control written before
+the gap pre-registration. These are flagged, never a stop. If H0 fails, fix the cause and run `stage0` again: it
+reuses the Stage 0 gate, keeps the failed result as `h0.failed-<n>.json` and checks again. A passed `h0.json` is
+never replaced.
 `freeze` refuses unless H0 passed, the gate passes and the misaligned negative control fails under the tolerances
 (add `--tol-next-obs X` etc. from `$W/stage0/summary.json` if the pilot needs them; `--state-source rebuilt` as in
 option C).
@@ -369,7 +388,7 @@ from the design: with 3 seed pairs, G3a's minimum detectable return cost is abou
 
 ### Tests and what ran here (synthetic only; not findings)
 
-`test_gap.py` has 22 tests and takes about 60 s here. It plants an action cluster in a synthetic Hopper file made in
+`test_gap.py` has 32 tests and takes about 80 s here. It plants an action cluster in a synthetic Hopper file made in
 the real simulator (`synthetic.generate(planted=...)`). The planted centre sits near the random-init hosts' actions,
 so the gapped hosts visit the gap and every in-gap path runs. The tests check:
 - the gap holds 15% +- 1% and is defined identically twice;
@@ -383,7 +402,8 @@ so the gapped hosts visit the gap and every in-gap path runs. The tests check:
 - the scorers give known answers on fabricated labels;
 - the whole protocol runs end to end on four random-init hosts, about 50 s, with every output marked SYNTHETIC;
 - the hash gate refuses an edited pre-registration, an edited gap.json and a forged body;
-- the smoothed-truth path works.
+- the smoothed-truth path works;
+- the fixes from the adversarial review (`GapReviewTest`, below) hold.
 
 On the test's synthetic file the planted centre is recovered within 0.008 (rho 0.095, training mass 0.150). G0a
 passes. G0b fails (ii) and (iii) while (i), (iv) and (v) pass: 1,500 rows in 14-D are too few for the thinness marks.
@@ -411,6 +431,45 @@ So the tests exercise the later stages through a synthetic-only override
   `Extractor`, blind matching under `forbid_simulator`, the lock) with OR_GAP and ANTI_GAP added.
 - The Stage 0 gate samples converted rows of the gapped copy. Gap rows are not converted rows there, but their
   states are the same raw rows (`infos/*`) as in the original.
+- Additions from the review (below): G0a reruns the whole search and requires settings equal to the pinned
+  approved digest; G0b reports K_match's covariate balance; H0 gates each gapped run's gap pre-registration and
+  each seed pair's identity; G2 and G3, like G1, wait for G1-pre (stop rule 3); every host's jitter scale is the
+  data SD over the native rows.
+
+### Adversarial review of the action-gap code (2026-10-12; synthetic only, not findings)
+
+Fixed, with regression tests in `test_gap.py` (`GapReviewTest`):
+- **Device (major).** `gap.projection` imported `runtime.td3_bc`, and with it JAX, before `train.main` set
+  `JAX_PLATFORMS` from `--device`. With the `export JAX_PLATFORMS=cpu` above, every `--device cuda` gapped host
+  would have trained on the CPU, slowly and while holding the GPU lock. Its `source.json` would still have said
+  cuda, and its full-data control (plain train.py) would have trained on the GPU. `gap_train` now picks the platform
+  before JAX loads, checks the backend before training and records it.
+- **Pre-registration order (major).** Nothing stopped a gapped host from training, and printing returns, before
+  the marks were frozen. `preregister` only looked for `W/host_*` analysis folders. `gap_train` now requires the
+  frozen gap pre-registration and records its sha256 in `resolved.json`, and H0 checks it.
+- **Seed-pair identity (major).** H0 never compared a gapped host with its full-data control beyond discount and
+  noise. A control trained with another config or code would have passed, and the difference would have been
+  credited to the gap; 172/173 are shared with option C and may be older. H0 now gates on equal resolved rows
+  (except the data pin and run id) and equal training code (`PAIR_CODE` in `source.json`).
+- **Minor fixes.**
+  - `pass_marks_equal_design` compared against the live constants; it now uses pinned digests.
+  - The verdict re-verifies `g0.json` and `h0.json`, and `verdict.md` prints a POST HOC line.
+  - G2 and G3 ran without G1-pre.
+  - G3 now checks that the two runs of a pair used the same reset bank.
+  - Jitter scales differed by arm.
+  - H0 read the restore's reservation record instead of the run's own.
+  - `gap_train` did not re-check `g0.json`, and its output lacked the SYNTHETIC mark.
+  - H0 could not be re-verified after a failure.
+
+Checked and not defects (evidence in the review record):
+- No gap row reaches training, the bank or the normalization fit: the conversion, the projected reservation,
+  `validate_prepared`'s normalization identity and H0 checks.
+- Every critic is queried in its own normalization (`CriticProbe` and the policy standardize with their host's
+  statistics).
+- e_A uses each host's own policy and labels.
+- The in-gap rule at evaluation is the frozen manifest's c* and rho, the same ones that removed the training rows.
+- Returns are paired by seed and reset state.
+- The `$(...)` captures in the commands receive only the hash; imports print nothing to stdout.
 
 ## Deviations from the design (design_d4rl_rt.json)
 

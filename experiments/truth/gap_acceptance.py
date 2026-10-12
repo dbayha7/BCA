@@ -10,10 +10,15 @@ Order of work per task, in a world directory W (README: 'Action gap'):
   gap define / check / freeze           (gap.py; data only)       W/gap/gap.json, g0.json, gap.json.sha256
   preregister --gap-sha256              before any host run       W/gap_prereg.json (+ .sha256): plan, sizes,
                                                                   seeds, every pass mark, the gap sha256
-  train 3 gapped (gap_train.py) and 3 full-data (train.py) hosts per task, seeds 202609171/172/173
+  train 3 gapped (gap_train.py --gap-prereg-sha256; it refuses without the frozen gap pre-registration and writes
+  its sha256 into resolved.json) and 3 full-data (train.py) hosts per task, seeds 202609171/172/173
   stage0 --gap-prereg-sha256 --host     no training               W/stage0/summary.json (option C's restore and
                                                                   one-step gate on the gapped copy, with its
-                                                                  misaligned negative control), W/h0.json (H0)
+                                                                  misaligned negative control), W/h0.json (H0:
+                                                                  splits, schedule, events, each gapped run's
+                                                                  gap pre-registration, and each seed pair's
+                                                                  resolved row and training code equal except
+                                                                  data; rerunnable after a failure)
   freeze                                refuses unless H0 passes  W/prereg.json (+ .sha256): hosts, checkpoint
                                         and the gate passes under sha256s, gate tolerances, the state source,
                                         the frozen tolerances     and the gap and gap-prereg sha256s
@@ -36,10 +41,11 @@ Pools per host (stage pools):
   T, Pi (gapped hosts, G4 plans) option C's pool T (50,000 of the host's own kept training rows, slots (data, pi))
        and pool Pi (3,000 states, 3 + 2d slots; its central differences give the true policy gradient).
 Labels (stage labels; resumable shards): G1 deterministic at both slots (all hosts); G1_rough (8 jitter rollouts at
-1e-4 data SD) and G1_gap (16 noisy-target rollouts) on 150 G rows x both slots (gapped hosts); V3 deterministic at
-pi (all hosts) and a_out (gapped hosts, in-gap states); V3_rough (8 jitter rollouts on 150 in-gap states x both
-slots, gapped hosts) for sigma_J; T and Pi (gapped hosts, G4). G1_smooth (8 jitter rollouts on every G1 point, all
-hosts) only when G1-pre requires the smoothed truth.
+1e-4 data SD; the data SD is over the NATIVE rows for all six hosts, so jitter never differs by arm) and G1_gap
+(16 noisy-target rollouts) on 150 G rows x both slots (gapped hosts); V3 deterministic at pi (all hosts) and a_out
+(gapped hosts, in-gap states); V3_rough (8 jitter rollouts on 150 in-gap states x both slots, gapped hosts) for
+sigma_J; T and Pi (gapped hosts, G4). G1_smooth (8 jitter rollouts on every G1 point, all hosts) only when G1-pre
+requires the smoothed truth.
 
 Scores (pass marks from the pre-registration, never from code constants):
   G1-pre  the Stage 0 gate passes under the frozen tolerances (and its negative control fails); per gapped host the
@@ -83,7 +89,8 @@ Scores (pass marks from the pre-registration, never from code constants):
   R7      (a) J(OR_signed*) - J(ANTI_signed*) >= 3 with z >= 3; (b) at most 1 of 6 SHUF pairs with |z| > 2; (c) MDE
           <= 2 for both placements (else add extraction seeds up to 8; still failing: inconclusive); (d) every match
           within 2% and Level-1 cos(Delta g_P, Delta g_P0) < 0.98 for both placements on every critic; (e) blind.
-Stop rule (pre-registered; protocol.stop_rule 'enforced'): G1 needs G1-pre; G4a runs only if G1 passes all of
+Stop rule (pre-registered; protocol.stop_rule 'enforced'): G1, G2 and G3 need G1-pre (no G result before the
+integrity checks pass; H0 is required by the freeze); G4a runs only if G1 passes all of
 (a)-(e), G2 passes and G3's mechanism part passes; G4b only if G4a passes for at least one placement. The
 synthetic_smoke profile sets 'exercise_all_stages' (refused on real data) so tests reach every stage; every
 output then says so.
@@ -160,6 +167,17 @@ SMOKE["g4"].update(pool_T=dict(rows=96), pool_Pi=dict(episodes=6, every=5, state
                    r4a=dict(level=2.0, shuf=6, s=0.83, clip=2.5),
                    extraction=json.loads(json.dumps(A.SMOKE["extraction"])))
 PROFILES = {"design": DESIGN, "synthetic_smoke": SMOKE}
+# Canonical sha256 of the approved pass marks and protocols (2026-10-12). The pre-registration compares against these
+# literals, not against the live constants, so an edit of PASS_MARKS or DESIGN made before `preregister` shows up as
+# pass_marks_equal_design / protocol_equal_design = False (POST HOC in the verdict) instead of passing silently.
+PINNED_SHA256 = dict(pass_marks="6fcc7cbbc6f55b3f1d062071827b4816e586928f6233639bb381f32660850193",
+                     protocol=dict(design="7b0007c4e4d7ac714daa07aa7236b7d324338d23677eb7c9fae8ac7650bb976c",
+                                   synthetic_smoke="f76cc25626499f25fc034b0a69335e81018c54bafe5d9665d0237bc1ebc77d2d"))
+# The training code a seed pair must share (source.json hashes; H0 gates on them). Other source differences are
+# reported.
+PAIR_CODE = ("train.py", "runtime/td3_bc.py", "runtime/common.py", "runtime/networks.py", "runtime/config.py",
+             "runtime/validation.py", "runtime/environment.py", "runtime/rewards.py", "runtime/published.py",
+             "algorithms/td3_bc.py", "algorithms/td3_bc_bca.py", "configs/td3_bc.yaml", "configs/experiment.yaml")
 
 
 # ---------------------------------------------------------------- small utilities
@@ -293,7 +311,9 @@ def _read_document(path, expected_sha256):
 
 def preregister(world, task, gap_sha256, *, profile="design", plan="full", pass_marks=None):
     """W/gap_prereg.json: plan, sizes, seeds and every pass mark, frozen BEFORE the first host run (train.py prints
-    returns while it trains). Embeds the gap sha256; refuses unless the gap is frozen."""
+    returns while it trains). Embeds the gap sha256; refuses unless the gap is frozen. The order is enforced where the
+    hosts are made: gap_train refuses without this file's sha256 and writes it into each gapped run's resolved.json
+    before training, and H0 checks it. Marks and protocol are compared with the pinned approved digests."""
     world = Path(world)
     task = SR.task_spec(task)
     require(profile in PROFILES and plan in PLANS, f"profile in {sorted(PROFILES)}, plan in {sorted(PLANS)}")
@@ -307,10 +327,13 @@ def preregister(world, task, gap_sha256, *, profile="design", plan="full", pass_
     require(not frozen["synthetic_g0_override"] or synthetic, "a G0 override exists only for synthetic data")
     for name in ("gap_prereg.json", "prereg.json"):
         require(not (world / name).exists(), f"{world / name} exists; preregister once per world")
-    require(not list(world.glob("host_*")), "host outputs exist; the pre-registration must precede them")
+    require(not list(world.glob("host_*")), "per-host analysis outputs (W/host_*) exist; the pre-registration must "
+            "precede them")
     protocol = json.loads(json.dumps(PROFILES[profile]))
     require(protocol["stop_rule"] == "enforced" or synthetic, "the stop rule is enforced on real data")
     marks = json.loads(json.dumps(PASS_MARKS if pass_marks is None else pass_marks))
+    marks_pinned = canonical_sha256(marks) == PINNED_SHA256["pass_marks"]
+    protocol_pinned = canonical_sha256(protocol) == PINNED_SHA256["protocol"][profile]
     body = dict(
         schema=GAP_PREREG_SCHEMA, world=WORLD, task=task.name, dataset=task.dataset, profile=profile,
         plan=PLANS[plan], plan_name=plan, synthetic=synthetic, gap_sha256=m.sha256,
@@ -320,7 +343,7 @@ def preregister(world, task, gap_sha256, *, profile="design", plan="full", pass_
         g0=dict(sha256=SR.file_sha256(world / "gap" / "g0.json"), passed=frozen["g0_passed"],
                 synthetic_override=frozen["synthetic_g0_override"]),
         hosts_planned=planned_keys(protocol), protocol=protocol, pass_marks=marks,
-        pass_marks_equal_design=canonical_sha256(marks) == canonical_sha256(PASS_MARKS),
+        pass_marks_equal_design=marks_pinned, protocol_equal_design=protocol_pinned,
         code_sha256=code_hashes(), frozen_utc=utc(),
         note=(SYNTHETIC_NOTE if synthetic else "Frozen before the first host run: every G mark, pool size and seed "
               "is pre-registered; anything else is POST HOC."))
@@ -420,8 +443,66 @@ def _events(run_dir):
         return [json.loads(line) for line in handle if line.strip()]
 
 
-def host_integrity(world, gp, m, hosts, *, data_dir=None):
-    """H0: every host restores exactly, trained the intended rows with the repo's code, on schedule."""
+def pair_row_signature(row):
+    """A resolved row without what may differ between the two hosts of a seed pair: the run id, the data pin and the
+    gap record (and a synthetic fixture's note). Everything else (hyperparameters, seed, evaluation banks, schedule,
+    reservation) must be equal."""
+    import copy
+
+    row = copy.deepcopy(row)
+    for k in ("run_id", "cache", "action_gap", "synthetic_note"):
+        row.pop(k, None)
+    row.get("protocol", {}).pop("run_id", None)
+    return row
+
+
+def _differing(a, b, prefix=""):
+    if isinstance(a, dict) and isinstance(b, dict):
+        out = []
+        for k in sorted(set(a) | set(b)):
+            out += _differing(a.get(k), b.get(k), f"{prefix}{k}.") if k in a and k in b else [f"{prefix}{k}"]
+        return out
+    return [] if a == b else [prefix.rstrip(".")]
+
+
+def pair_checks(world, seed, run_dirs, gp_frozen_utc):
+    """H0's seed-pair identity: the two runs of a seed share the resolved row except data and run id (gated), the
+    training code PAIR_CODE in source.json (gated, real runs only) and report the JAX platform and other source
+    differences (flagged)."""
+    rows = {arm: json.loads((Path(run_dirs[arm]) / "resolved.json").read_text(encoding="utf8")) for arm in ARMS}
+    sig = {arm: pair_row_signature(rows[arm]) for arm in ARMS}
+    same = canonical_sha256(jsonable(sig["gap"])) == canonical_sha256(jsonable(sig["full"]))
+    out = dict(rows_identical_except_data=same, row_differences=_differing(sig["gap"], sig["full"]))
+    synthetic = any((Path(run_dirs[arm]) / "SYNTHETIC_HOST.txt").is_file() for arm in ARMS)
+    sources = {arm: Path(run_dirs[arm]) / "source.json" for arm in ARMS}
+    if synthetic:
+        out["code_identical"] = "skipped: SYNTHETIC random-init host"
+    elif not all(p.is_file() for p in sources.values()):
+        out["code_identical"] = False
+        out["code_error"] = "source.json is missing (train.py writes it)"
+    else:
+        src = {arm: read_json(p) for arm, p in sources.items()}
+        code = [k for k in PAIR_CODE if src["gap"].get(k) != src["full"].get(k)]
+        other = sorted(k for k in set(src["gap"]) | set(src["full"])
+                       if k not in PAIR_CODE and k != "runtime" and src["gap"].get(k) != src["full"].get(k))
+        env = {arm: (src[arm].get("runtime") or {}).get("execution_environment", {}) for arm in ARMS}
+        platforms = {arm: env[arm].get("JAX_PLATFORMS") for arm in ARMS}
+        out.update(code_identical=not code, code_differences=code, other_source_differences=other,
+                   jax_platforms=platforms, device_flag=platforms["gap"] != platforms["full"])
+    # Informational: when the full-data control's resolved.json was written relative to the gap pre-registration
+    # (file time; the gapped run's order is enforced through its recorded gap pre-registration sha256).
+    mtime = datetime.fromtimestamp((Path(run_dirs["full"]) / "resolved.json").stat().st_mtime, timezone.utc)
+    out["full_resolved_written_utc"] = mtime.isoformat()
+    out["full_written_before_gap_prereg"] = bool(mtime < datetime.fromisoformat(gp_frozen_utc))
+    gates = [out["rows_identical_except_data"]] + ([out["code_identical"]] if isinstance(out["code_identical"], bool)
+                                                   else [])
+    out["passed"] = bool(all(gates))
+    return out
+
+
+def host_integrity(world, gp, m, hosts, *, gp_sha=None, data_dir=None):
+    """H0: every host restores exactly, trained the intended rows with the repo's code, on schedule; every gapped
+    host was trained under this gap pre-registration; the two hosts of each seed differ only in their data."""
     from runtime.config import typed
     from runtime.validation import verify_events
     from experiments.wbcp import freeze_scores as FS
@@ -475,19 +556,25 @@ def host_integrity(world, gp, m, hosts, *, data_dir=None):
                 np.array_equal(split[name], expect[arm][name]))
         leaks = GAP.leak_counts(m, split)
         details["gap_rows_inside"] = leaks
-        reservation = host.prepared.metadata["reservation"]
+        # The reservation record the run itself trained with (its preparation.json), not the restore's rebuild.
+        own = read_json(run_dir / "preparation.json")["metadata"]["reservation"]
+        rebuilt = canonical_sha256(PL._json_ready(host.prepared.metadata["reservation"]))
+        checks["reservation_record_equals_rebuild"] = canonical_sha256(PL._json_ready(own)) == rebuilt
         if arm == "gap":
             checks["no_gap_row_in_training_withheld_bank"] = all(v == 0 for v in leaks.values())
-            checks["projected_reservation_of_this_gap"] = reservation.get("gap_manifest_sha256") == m.sha256
+            checks["projected_reservation_of_this_gap"] = own.get("gap_manifest_sha256") == m.sha256
+            recorded = (row.get("action_gap") or {}).get("gap_prereg_sha256")
+            details["gap_prereg_sha256_recorded"] = recorded
+            checks["trained_under_this_gap_prereg"] = gp_sha is not None and recorded == gp_sha
         else:
-            checks["reservation_record_equals_manifest"] = (canonical_sha256(PL._json_ready(reservation))
+            checks["reservation_record_equals_manifest"] = (canonical_sha256(PL._json_ready(own))
                                                             == m.data["native"]["record_sha256"])
         norms[key] = (host.obs_mean.astype(np.float64), host.obs_std.astype(np.float64))
         bools = [v for v in checks.values() if isinstance(v, bool)]
         records[key] = dict(run_dir=str(run_dir), checkpoint=dict(path=str(ckpt), step=step, sha256=digest),
                             identity=host.identity, checks=checks, details=details, synthetic_host=synthetic_host,
                             passed=bool(all(bools)))
-    normalization = {}
+    normalization, pairs = {}, {}
     for seed in pr["seeds"]:
         g, f = host_key("gap", seed), host_key("full", seed)
         if g in norms and f in norms:
@@ -497,25 +584,47 @@ def host_integrity(world, gp, m, hosts, *, data_dir=None):
             normalization[str(seed)] = dict(max_mean_shift_in_sd=shift, max_abs_log_sd_ratio=scale,
                                             flagged=bool(max(shift, scale) > gp["pass_marks"]["H0"]
                                                          ["normalization_flag_sd"]))
-    passed = all(r["passed"] for r in records.values()) and len(records) == len(planned_keys(pr))
+        try:
+            pairs[str(seed)] = pair_checks(world, seed, {"gap": Path(hosts[g]).expanduser().resolve(),
+                                                         "full": Path(hosts[f]).expanduser().resolve()},
+                                           gp["frozen_utc"])
+        except Exception as error:  # recorded, never raised
+            pairs[str(seed)] = dict(passed=False, error=f"{type(error).__name__}: {error}")
+    passed = (all(r["passed"] for r in records.values()) and len(records) == len(planned_keys(pr))
+              and len(pairs) == len(pr["seeds"]) and all(p["passed"] for p in pairs.values()))
     return dict(schema=H0_SCHEMA, world=WORLD, task=gp["task"], gap_sha256=gp["gap_sha256"], synthetic=gp["synthetic"],
-                hosts=records, normalization=normalization, passed=bool(passed), utc=utc(),
+                hosts=records, pairs=pairs, normalization=normalization, passed=bool(passed), utc=utc(),
                 note=SYNTHETIC_NOTE if gp["synthetic"] else "H0 host integrity (no outcome is read)",
-                rule="every check exact; normalization differences are reported and flagged above the mark, never "
-                     "a stop")
+                rule="every check exact; each seed pair's resolved rows equal except data and run id, and (real runs) "
+                     "the training code PAIR_CODE equal; normalization differences, a JAX platform difference and a "
+                     "full control written before the gap pre-registration are reported and flagged, never a stop")
 
 
 def stage0(world, gap_sha256, gap_prereg_sha256, hosts, *, data_dir=None, rows=1000, seed=0):
     """Option C's Stage 0 restore and one-step gate on the gapped copy (W/stage0) and H0 on the planned hosts
-    (W/h0.json). Needs the finished host runs; reads no outcome."""
+    (W/h0.json). Needs the finished host runs; reads no outcome. After a failed H0 (a code or data fault: stop, fix,
+    re-verify) a rerun keeps the Stage 0 gate of the same gapped file, moves the failed h0.json to
+    h0.failed-<n>.json (kept for the record) and checks again. A passed h0.json is never replaced."""
+    world = Path(world)
     gp, gp_sha = load_gap_prereg(world, gap_prereg_sha256, gap_sha256)
     m = manifest(world, gap_sha256)
     require(sorted(hosts) == sorted(gp["hosts_planned"]), f"--host must name exactly {gp['hosts_planned']}")
+    require(not (world / "prereg.json").exists(), "the final pre-registration exists; H0 is not rerun after it")
     gapped = m.gapped_path(data_dir)
-    summary = A.stage0(world, gp["task"], file=gapped, rows=rows, seed=seed)
-    h0 = host_integrity(world, gp, m, hosts, data_dir=data_dir)
+    summary_path = world / "stage0" / "summary.json"
+    if summary_path.is_file():
+        summary = read_json(summary_path)
+        require(summary["file"]["sha256"] == m.data["gapped"]["sha256"], "W/stage0 holds a gate of another file")
+    else:
+        summary = A.stage0(world, gp["task"], file=gapped, rows=rows, seed=seed)
+    h0 = host_integrity(world, gp, m, hosts, gp_sha=gp_sha, data_dir=data_dir)
     h0["gap_prereg_sha256"] = gp_sha
-    write_once(Path(world) / "h0.json", h0)
+    path = world / "h0.json"
+    if path.exists():
+        require(not read_json(path)["passed"], f"{path} passed already; H0 is written once")
+        n = len(list(world.glob("h0.failed-*.json")))
+        path.rename(world / f"h0.failed-{n}.json")
+    write_once(path, h0)
     return summary, h0
 
 
@@ -565,7 +674,8 @@ def freeze(world, *, gap_sha256, gap_prereg_sha256, hosts, tolerances=None, stat
             reward_miss=pilot["reward_miss"], terminal_agreement=pilot["terminal_agreement"],
             rows_checked=pilot["rows_checked"]), negative_control_failed_under_frozen_tolerances=True),
         h0_sha256=SR.file_sha256(h0_path), gate_tolerances=tol, protocol=gp["protocol"], pass_marks=gp["pass_marks"],
-        pass_marks_equal_design=gp["pass_marks_equal_design"], g0=gp["g0"], code_sha256=code_hashes(),
+        pass_marks_equal_design=gp["pass_marks_equal_design"],
+        protocol_equal_design=gp.get("protocol_equal_design", False), g0=gp["g0"], code_sha256=code_hashes(),
         frozen_utc=utc(),
         note=(SYNTHETIC_NOTE if gp["synthetic"] else "Frozen after H0 and before any truth label; the marks are the "
               "gap pre-registration's."))
@@ -697,7 +807,10 @@ def stage_pools(world, body, prereg_sha, key, *, data_dir=None, host_dirs=None, 
             PL.save_pool(out, "Pi", arrays, dict(common, radius=radius, **meta))
     finally:
         physics.close()
-    sd_q, sd_v = SR.state_sd(SR.logged_states(host.task, host.raw, host.rows, source))
+    # One jitter scale for all six hosts: the data SD over the NATIVE converted rows (the raw state arrays are the
+    # same in the original and the gapped copy), so jitter truth never differs between the arms of a pair.
+    native_rows = m.array("native_raw_current").astype(np.int64)
+    sd_q, sd_v = SR.state_sd(SR.logged_states(host.task, host.raw, native_rows, source))
     np.savez(out / "jitter_sd.npz", qpos=sd_q, qvel=sd_v)
     return write_once(out / "summary.json", dict(common, pools=sorted(p.stem for p in out.glob("*.json")
                                                                       if p.stem != "summary")))
@@ -1163,9 +1276,15 @@ def stage_score(world, body, prereg_sha, *, requirements=None, data_dir=None, ho
         else:
             results["G1_pre"] = record("G1_pre", *score_g1_pre(world, body, prereg_sha, code_changed))
     m = manifest(world, body["gap_sha256"])
+    pre = results.get("G1_pre") or (read_json(out / "G1_pre.json") if (out / "G1_pre.json").exists() else None)
+    if pre is not None:
+        require(pre["prereg_sha256"] == prereg_sha, "scores/G1_pre.json was written under another pre-registration")
+
+    def integrity_passed():  # stop rule 3: no G result is computed until H0 and G1-pre pass
+        return "G1_pre" not in body["plan"] or (pre is not None and pre["passed"])
+
     if wanted("G1") and not (out / "G1.json").exists():
-        pre = results.get("G1_pre") or (read_json(out / "G1_pre.json") if (out / "G1_pre.json").exists() else None)
-        require(pre is not None and pre["passed"], "G1-pre has not passed: an integrity failure stops G1")
+        require(integrity_passed(), "G1-pre has not passed: an integrity failure stops G1")
         smooth = bool(pre["values"]["smoothed_truth_required"])
         if smooth:
             require(all(labels_complete(world, body, k) for k in planned_keys(pr)),
@@ -1175,6 +1294,7 @@ def stage_score(world, body, prereg_sha, *, requirements=None, data_dir=None, ho
         values["truth"] = "jitter mean (G1_smooth)" if smooth else "single deterministic rollout"
         results["G1"] = record("G1", values, passes)
     if wanted("G2") and not (out / "G2.json").exists():
+        require(integrity_passed(), "G1-pre has not passed: an integrity failure stops G2 (stop rule 3)")
         visits = {k: {n: _pool(world, k, "V")[0][n] for n in ("in_gap", "near", "episode", "d_pi")}
                   for k in planned_keys(pr)}
         cross = {}
@@ -1189,7 +1309,12 @@ def stage_score(world, body, prereg_sha, *, requirements=None, data_dir=None, ho
         values, passes = g2_score(visits, seeds, marks["G2"], reps, master, m.data["gap"]["masses"]["training"], cross)
         results["G2"] = record("G2", values, passes)
     if wanted("G3") and not (out / "G3.json").exists():
-        returns = {k: _pool(world, k, "V")[0]["episode_scores"] for k in planned_keys(pr)}
+        require(integrity_passed(), "G1-pre has not passed: an integrity failure stops G3 (stop rule 3)")
+        V = {k: _pool(world, k, "V")[0] for k in planned_keys(pr)}
+        for s in seeds:  # paired by seed AND by reset state: both hosts of a pair ran the same reset bank, in order
+            require(np.array_equal(V[host_key("gap", s)]["reset_seeds"], V[host_key("full", s)]["reset_seeds"]),
+                    f"the V pools of seed {s} ran different reset banks; G3's return pairing is broken")
+        returns = {k: V[k]["episode_scores"] for k in planned_keys(pr)}
         v3, sigma = {}, {}
         for k in planned_keys(pr):
             arrays, _ = _pool(world, k, "V3")
@@ -1624,6 +1749,10 @@ def verdict(world, body, prereg_sha, *, code_changed=False):
     verify_stage(world, body, prereg_sha, code_changed)
     world = Path(world)
     rows = []
+    require(SR.file_sha256(world / "gap" / "g0.json") == body["g0"]["sha256"],
+            "gap/g0.json differs from the one the pre-registration recorded; refusing")
+    require(SR.file_sha256(world / "h0.json") == body["h0_sha256"],
+            "h0.json differs from the one the final pre-registration recorded; refusing")
     g0 = read_json(world / "gap" / "g0.json")
     for part in ("g0a", "g0b"):
         r = g0.get(part)
@@ -1633,7 +1762,9 @@ def verdict(world, body, prereg_sha, *, code_changed=False):
         rows.append(dict(requirement=part.upper(), status=status, passes=None if r is None else r["passes"]))
     h0 = read_json(world / "h0.json")
     rows.append(dict(requirement="H0", status="pass" if h0["passed"] else "fail",
-                     normalization=h0["normalization"]))
+                     normalization=h0["normalization"],
+                     flags={s: dict(device=p.get("device_flag"), full_before_gap_prereg=p.get(
+                         "full_written_before_gap_prereg")) for s, p in h0.get("pairs", {}).items()}))
     mixed, flags = [], []
     for req in body["plan"]:
         if req == "G4a":
@@ -1680,12 +1811,20 @@ def verdict(world, body, prereg_sha, *, code_changed=False):
         meaning = "incomplete: see rows"
     if body["synthetic"]:
         meaning = "SYNTHETIC TEST RUN, NOT A FINDING: " + meaning
+    post_hoc = dict(code_changed=bool(code_changed or any(flags)),
+                    pass_marks_equal_design=body["pass_marks_equal_design"],
+                    protocol_equal_design=body.get("protocol_equal_design", False),
+                    g0_synthetic_override=body["g0"]["synthetic_override"],
+                    stop_rule=body["protocol"]["stop_rule"])
+    post_hoc["reasons"] = [text for flag, text in (
+        (post_hoc["code_changed"], "analysis code changed after the freeze (--allow-code-change)"),
+        (not post_hoc["pass_marks_equal_design"], "pass marks differ from the approved design's pinned digest"),
+        (not post_hoc["protocol_equal_design"], "protocol (sizes, seeds, plan settings) differs from the approved "
+                                                "design's pinned digest"),
+        (post_hoc["g0_synthetic_override"], "G0 failed and was overridden (synthetic only)"),
+        (post_hoc["stop_rule"] != "enforced", "the stop rule was not applied")) if flag]
     record = dict(stage_header(body, prereg_sha, "verdict", None, code_changed or any(flags)), rows=rows,
-                  statuses=statuses, meaning=meaning,
-                  post_hoc_flags=dict(code_changed=bool(code_changed or any(flags)),
-                                      pass_marks_equal_design=body["pass_marks_equal_design"],
-                                      g0_synthetic_override=body["g0"]["synthetic_override"],
-                                      stop_rule=body["protocol"]["stop_rule"]))
+                  statuses=statuses, meaning=meaning, post_hoc_flags=post_hoc)
     path = world / "verdict.json"
     if path.exists():
         path.unlink()
@@ -1710,7 +1849,11 @@ def verdict_markdown(record):
         lines += ["**SYNTHETIC TEST RUN. NOT A FINDING.** " + SYNTHETIC_NOTE, ""]
     lines += [f"# Action-gap verdict: {record['dataset']} (profile {record['profile']}, stop rule "
               f"{record['stop_rule']})", "", f"Pre-registration sha256 `{record['prereg_sha256']}`, gap sha256 "
-              f"`{record['gap_sha256']}`. {record['meaning']}.", "", "| Stage | Status | Key values |", "|---|---|---|"]
+              f"`{record['gap_sha256']}`. {record['meaning']}.", ""]
+    reasons = record.get("post_hoc_flags", {}).get("reasons") or []
+    if reasons:
+        lines += ["**POST HOC:** " + "; ".join(reasons) + ".", ""]
+    lines += ["| Stage | Status | Key values |", "|---|---|---|"]
     for row in record["rows"]:
         if "values" in row:
             text = ", ".join(f"{k} {_fmt(v)}" for k, v in row["values"].items())
@@ -1718,6 +1861,9 @@ def verdict_markdown(record):
             text = "placements " + _fmt(row["placements"])
         elif "reason" in row:
             text = row["reason"]
+        elif "flags" in row:
+            text = "pair flags " + _fmt(row["flags"]) + "; normalization " + _fmt(
+                {s: v["flagged"] for s, v in row["normalization"].items()})
         elif "passes" in row and row["passes"]:
             text = ", ".join(f"{k} {v}" for k, v in row["passes"].items())
         else:
