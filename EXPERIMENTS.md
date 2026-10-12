@@ -40,7 +40,7 @@ Last updated: 2026-10-12.
 | 13 | Full D4RL training (return) | Not started; needs permission | No WBCP-era return evidence yet |
 | 14 | Toy-world audit and the Gapped LQ world | Done: rejected twice (original gate, then Amendment A1 on fresh seeds) | The critic is wrong everywhere, so the loss is not where data are thin |
 | 15 | D4RL rollout truth (option C) and the action-gap protocol | Built; real runs need data + checkpoints | Tested on synthetic data only |
-| 16 | ThrusterChain: a Gymnasium environment with a controlled distribution shift | Being built | Harm checks first; BCA runs only after the user approves |
+| 16 | ThrusterChain: a Gymnasium environment with a controlled distribution shift | Done: stopped before BCA (no room) | The shift costs 99 points in strong current, but caution of BCA's kind cannot reach it |
 
 ## Experiments
 
@@ -284,7 +284,7 @@ Last updated: 2026-10-12.
   reviewed (3 major and 8 minor findings fixed); 85 truth tests pass on synthetic data. Hopper-medium-v2 first, on
   the user's machine.
 
-### 16. ThrusterChain: a Gymnasium environment with a controlled distribution shift (being built)
+### 16. ThrusterChain: a Gymnasium environment with a controlled distribution shift (done: stopped before BCA, no room)
 - **Why:** the user asked for a real Gymnasium environment in which a distribution shift is created on purpose and
   measured exactly, to show whether BCA finds where the critic's error causes harm and whether its caution helps the
   learned policy in situations the data did not cover, while it still improves on the recording.
@@ -300,6 +300,29 @@ Last updated: 2026-10-12.
   the user before any BCA run.
 - **Expected:** honest forecast from the design: the harm checks pass with about 25–30% probability; the most likely
   outcome is a stop before BCA, because TD3+BC stays close to the recorded commands.
+- **Ran** 2026-10-12 under pre-registration `68d9e8779e148b7b…` (commit bdb8c8a), base world, gate seeds 0–4. No BCA
+  arm, band fit or dose readout ran. Report: `outputs/shift/stop-report/README.md`.
+- **Result:**
+  - The critic is wrong where data are missing (H1, 6 of 6 marks). The gapped critic is 2.15–2.40× as wrong at the
+    removed commands, 0.68–0.80× far from them. Random removal (0.96–1.21×) and another initialisation (0.89–1.09×)
+    do not explain it, and the stall makes it 1.75–2.23× worse than the no-stall world. Pushing past 80% truly
+    costs 0.33–0.35; the gapped critic overrates it by 0.33–0.36, so it sees no cost (full-log critic: within 0.06).
+  - Acting on it costs return (H2). It failed at alpha 2.5 on one mark (pushes past 80% 1.46× as often, against
+    1.5) and passed at alpha 5 on all five. In strong current the gapped critic's actor loses 98.9 points
+    [96.2, 101.7] against the full-log critic's actor. Random removal explains 3.1 and the no-stall world 0.4. The
+    loss sits at the past-80% steps. Elsewhere: 5.8 (recorded), 16.6 (big waves), 11.8 (big kicks).
+  - Plain TD3+BC on the gapped log beats cloning by 27–47 points in three situations but loses 71 in strong current.
+  - No room (H3). Caution placed by the exact harm, with factors in [1, 1.5), beats strength-matched even,
+    amount-matched and shuffled caution by −1.9 to +1.1 points (mark: 3) in every situation. Factors up to 2 do no
+    better. Only even ×3 recovers part of the strong-current loss (17 of 99 points), at a cost of 5–13 elsewhere.
+    H4 refused, as designed.
+- **Meaning:** the world is sound and the harm is real and large. But it lies in states outside the recorded range,
+  where a stronger pull toward the recorded commands on training rows does not reach. The limit is in the mechanism,
+  not in BCA's signal. BCA's detection was not tested.
+- **Known bug (reporting only):** `acceptance.report_cards` passes all four situations' anchors to `shift.shift_card`.
+  The cards were recomputed outside the gate with that one change, labelled as such
+  (`outputs/shift/stop-report/cards/`), and match the gated scores to 3e-14 points. The bug gets fixed only under a
+  later pre-registration.
 
 ## Decisions waiting on the user
 1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
@@ -311,7 +334,9 @@ Last updated: 2026-10-12.
 7. Gapped LQ (entry 14): decided. The user amended the gate (A1); the world was rejected again on fresh seeds.
 8. Option C and the action gap (entry 15): run on the local machine (hopper-medium-v2 first), or allow
    rail.eecs.berkeley.edu in the cloud environment and provide the checkpoints.
-9. ThrusterChain (entry 16): approve or decline the BCA runs when the harm checks report.
+9. ThrusterChain (entry 16): the gate stopped before BCA (no room). Choose one: accept the stop; an exploratory
+   no-BCA test of caution that can reach states outside the data; an exploratory BCA detection check (needs approval);
+   or a redesign under a new pre-registration.
 
 ## Deliverables
 - **Notebooks:**
@@ -366,4 +391,6 @@ Last updated: 2026-10-12.
     in both versions (entry 14);
   - the D4RL action-gap protocol built, reviewed and synthetic-tested (entry 15);
   - environment page for the Gapped LQ world published and rewritten in plain words;
-  - ThrusterChain designed by a judge panel and being built (entry 16).
+  - ThrusterChain designed by a judge panel, built, reviewed and pre-registered (68d9e877…), then run to its stop:
+    the harm checks pass at alpha 5 (99 points lost in strong current), but no situation has room for caution of
+    BCA's kind, so the gate stopped before any BCA run (entry 16).
