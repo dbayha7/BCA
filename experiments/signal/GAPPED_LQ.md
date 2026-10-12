@@ -371,7 +371,10 @@ passes:
   16.6-17.0; rows within 5: 99.98-100%; rich eigenvalues >= 0.088; thin SD 0.99-1.01 x every rung; thin
   share 0.500.
 
-No critic, Tier A or other training stage has run under A1.
+**Verdict under A1 (2026-10-12): the world is rejected again.** Steps 1–4 pass; R2 and R3 fail in the base world and
+in thin_share, and wrong_gain still fails Stage 0, so no version is left. R3's thin share of the shortfall is
+0.33–0.55 against 0.45 (base) and 0.51–0.71 against 0.75 (thin_share), with at most 3 of 5 seeds passing at any
+alpha. See `outputs/glq/lean-a1/README.md`. BCA was never run in this world.
 
 **History.** The adversarial review (A-review) changed three hashed files before any training: R2's
 accuracy reference, EXACT's lambda scale, the pre-registration check and the pooled seed rule. The earlier

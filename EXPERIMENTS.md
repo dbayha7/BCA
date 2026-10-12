@@ -4,7 +4,7 @@ This file records every experiment in one place. Each entry says why the experim
 what happened, what it means, and what comes next. Update it whenever an experiment starts, finishes or changes
 plan. Details live in the linked write-ups; this file stays short.
 
-Last updated: 2026-10-11.
+Last updated: 2026-10-12.
 
 ## The big picture
 
@@ -38,8 +38,9 @@ Last updated: 2026-10-11.
 | 11 | Signal study, step 4 (placement) | Main run computing (started 2026-10-02) | G2 moved to poor data (a pilot-informed amendment) |
 | 12 | Signal study, steps 5–6 | Not started | — |
 | 13 | Full D4RL training (return) | Not started; needs permission | No WBCP-era return evidence yet |
-| 14 | Toy-world audit and the Gapped LQ world | Done (lean gate): world rejected | R3 fails at every alpha; room to win exists (information only) |
-| 15 | D4RL rollout truth (option C) | Built; real runs need data + checkpoints | Tested on synthetic data only |
+| 14 | Toy-world audit and the Gapped LQ world | Done: rejected twice (original gate, then Amendment A1 on fresh seeds) | The critic is wrong everywhere, so the loss is not where data are thin |
+| 15 | D4RL rollout truth (option C) and the action-gap protocol | Built; real runs need data + checkpoints | Tested on synthetic data only |
+| 16 | ThrusterChain: a Gymnasium environment with a controlled distribution shift | Being built | Harm checks first; BCA runs only after the user approves |
 
 ## Experiments
 
@@ -211,7 +212,7 @@ Last updated: 2026-10-11.
 - **Only return evidence:** one archived-radius pair (TD3+BC walker2d, one seed, 77.2 → 82.9). It is descriptive
   only.
 
-### 14. Toy-world audit and the Gapped LQ world (done, lean gate: the world is rejected)
+### 14. Toy-world audit and the Gapped LQ world (done: rejected by the original gate and by Amendment A1)
 - **Why:**
   - The 2026-10-09/10 audit found that the 3-state LQ toy world could not test BCA. It has no thin data, its
     critic errors are planted formulas, its policy is 6 numbers, and the shift is tiny.
@@ -247,8 +248,20 @@ Last updated: 2026-10-11.
     concentrated in the thin contexts.
   - The information-only result says the room lies in placing caution by situation (context), not in per-row error
     magnitude, the kind of signal BCA's band gives.
+- **Amendment A1 (2026-10-12, post hoc, labelled):** the user re-registered four rules after seeing seeds 0–4
+  (pre-registration 8528a613…): R2 gated on the fixed-policy critic's error concentration only; R3's thin-shortfall
+  mark at 1.5 × the thin contexts' share of episodes; matching up to 10 rounds; fresh seeds 5–9.
+  - **Found:** the world fails again in both allowed versions. R3 fails at every alpha (base 0/3/2 of 5 seeds at alpha
+    2.5/5/10; thin_share 0/0/0). The thin share of the shortfall is 0.33–0.55 against 0.45 (base) and 0.51–0.71
+    against 0.75 (thin_share). R2 fails too: the fixed-policy critic's error is 2.8–8.1× higher in the reversed
+    context, but the thin contexts hold only 0.38–0.78 of the squared error (3 and 2 of 5 seeds pass). The co-trained
+    critic's error is not concentrated at all (1.0–1.5×), and both critics are inaccurate where data are plentiful
+    (the recommended action is off by 1.8–4.8 units against recording noise 0.3).
+  - **Means:** the rejection is not a matter of where the marks were set. The learned critic is wrong almost
+    everywhere in this world, so it cannot test whether caution placed where data are missing helps. Replaced by
+    entry 16.
 - **Where:** experiments/signal/gapped_lq.py, glq_train.py, glq_acceptance.py, GAPPED_LQ.md;
-  outputs/glq/lean-v1/README.md (verdict tables, R3, R2, R4).
+  outputs/glq/lean-v1/README.md (original verdict, R3, R2, R4); outputs/glq/lean-a1/README.md (Amendment A1).
 
 ### 15. D4RL rollout truth, option C (built; real runs need data and checkpoints)
 - **Why:** measure true Q^π of real TD3+BC hosts (Hopper, Walker2d) by restoring logged MuJoCo states and rolling out.
@@ -264,6 +277,29 @@ Last updated: 2026-10-11.
   the trained host checkpoints (on the local machine). The first real step, truth labels for the existing Hopper
   checkpoint seed 202609171 (R1, R2, R5-world, R6), costs about 1.5 process-hours. The commands are in
   experiments/truth/README.md.
+- **Action-gap protocol (2026-10-12):** the user's D4RL test, "remove a commonly taken action and reintroduce it
+  during evaluation". The densest 15% of training actions (the smallest ball in action space holding 15% of rows) is
+  removed from training; gapped hosts are compared with full-data hosts of the same seed, then evaluated where the
+  action is allowed again. Built in experiments/truth/gap.py, gap_train.py and gap_acceptance.py; adversarially
+  reviewed (3 major and 8 minor findings fixed); 85 truth tests pass on synthetic data. Hopper-medium-v2 first, on
+  the user's machine.
+
+### 16. ThrusterChain: a Gymnasium environment with a controlled distribution shift (being built)
+- **Why:** the user asked for a real Gymnasium environment in which a distribution shift is created on purpose and
+  measured exactly, to show whether BCA finds where the critic's error causes harm and whether its caution helps the
+  learned policy in situations the data did not cover, while it still improves on the recording.
+- **Design** (judge panel of three designs; experiments/shift/SHIFT_ENV.md once built): five floats in a channel,
+  pushed by a current and waves and held by four thrusters. Past 80% throttle a thruster stalls. The recording
+  controller's most common command is a full-throttle command, so the D4RL 15% rule removes it, and the training data
+  then show nothing past 80%. Tested in recorded conditions and in three shifted situations (stronger current, bigger
+  waves, bigger starting pushes). Controls: nothing removed, the same number of rows removed at random, and a
+  no-stall comparison world where the removed data hide nothing. Truth is exact by deterministic simulation.
+- **Plan:** harm checks before BCA: the critic is wrong where data are missing (gapped vs full-data critic, same
+  seed), acting on it costs return, and caution placed by the exact harm can help. If no harm appears at TD3+BC's
+  alpha 2.5, alpha 5 and then 10 are tried, the same for every method and without looking at BCA. Then stop and ask
+  the user before any BCA run.
+- **Expected:** honest forecast from the design: the harm checks pass with about 25–30% probability; the most likely
+  outcome is a stop before BCA, because TD3+BC stays close to the recorded commands.
 
 ## Decisions waiting on the user
 1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
@@ -272,11 +308,10 @@ Last updated: 2026-10-11.
 4. Importance weights: adopt them at all, and toward which target distribution?
 5. Permissions: actor fine-tuning (4B-1), TD3+BC pools on the random datasets, and later full training (4B-2).
 6. Provenance: commit each expectation file before its run.
-7. Gapped LQ (entry 14): accept the rejection, or amend the gate under a new pre-registration. Candidate amendments:
-   R2's accuracy mark on the critic's gradient instead of its level, and R3's shortfall share. Either is post hoc,
-   because the outcomes are known.
-8. Option C (entry 15): run the first truth-label stage on the local machine, or allow rail.eecs.berkeley.edu in
-   the cloud environment and provide the checkpoints.
+7. Gapped LQ (entry 14): decided. The user amended the gate (A1); the world was rejected again on fresh seeds.
+8. Option C and the action gap (entry 15): run on the local machine (hopper-medium-v2 first), or allow
+   rail.eecs.berkeley.edu in the cloud environment and provide the checkpoints.
+9. ThrusterChain (entry 16): approve or decline the BCA runs when the harm checks report.
 
 ## Deliverables
 - **Notebooks:**
@@ -326,3 +361,9 @@ Last updated: 2026-10-11.
     retune. Retune 2 is unstable, so the world is rejected. The base world's information-only Tier A shows room to
     win for context-level caution (entry 14);
   - option C is blocked on D4RL data and checkpoints in the cloud (entry 15).
+- **2026-10-12:**
+  - the user re-registered the Gapped LQ gate (Amendment A1, post hoc, fresh seeds 5–9); the world is rejected again
+    in both versions (entry 14);
+  - the D4RL action-gap protocol built, reviewed and synthetic-tested (entry 15);
+  - environment page for the Gapped LQ world published and rewritten in plain words;
+  - ThrusterChain designed by a judge panel and being built (entry 16).
