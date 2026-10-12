@@ -59,8 +59,14 @@ def stub_pre(runs):
     A.write_json(A.pre_dir(runs) / "build_checks.json", dict(kind="shift-build-checks", passed=True, test_stub=True))
 
 
+def shift_runs_listing():
+    """Every file under runs/shift (None when it does not exist): the suite must leave it exactly as it found it."""
+    root = ROOT / "runs" / "shift"
+    return None if not root.exists() else sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+
 def setUpModule():
-    STATE["before"] = dict(earlier=A.earlier_gate_state(), env=A.environment_state())
+    STATE["before"] = dict(earlier=A.earlier_gate_state(), env=A.environment_state(), shift_runs=shift_runs_listing())
     tmp = Path(tempfile.mkdtemp(prefix="shift-acceptance-"))
     STATE["tmp"] = tmp
     runs = tmp / "runs"
@@ -807,7 +813,9 @@ class ZZEarlierGateUntouchedTest(unittest.TestCase):
     def test_earlier_gate_and_environment_unchanged(self):
         self.assertEqual(STATE["before"]["earlier"], A.earlier_gate_state())
         self.assertEqual(STATE["before"]["env"], A.environment_state())
-        self.assertFalse((ROOT / "runs" / "shift").exists())
+        # The suite writes only to temporary directories. runs/shift may already exist (the real gate runs this suite
+        # from its build checks, after writing there), so compare its contents before and after the suite.
+        self.assertEqual(STATE["before"]["shift_runs"], shift_runs_listing())
 
 
 if __name__ == "__main__":
