@@ -1,0 +1,542 @@
+{
+ "a1_lesson": "Change A1 (room spec v2, changes_before_any_run) found that a residual-based band carries an offset that does not come from harm: at recorded commands BCA's one-step residual delta*(s, a) averages +0.149 (seed 0), so the plan's literal |delta*| first FALLS just past the 80% knee and rewards the first points of over-throttle; measured from the row's own recorded command, [delta*(s, a_i) - delta*(s, a)]_+, the offset cancels and the penalty rises past 80%. Check (e) then required a penalty to rise past 80%. The lesson for Stage 2: (1) the paired marks compare the width at the command with the width at its 80% cap AT THE SAME STATE (direction: U(s, a) > U(s, cap(a)); any offset that does not change with the command cancels), never the width at the command against widths at other states or against a level; (2) a penalty is read relative to the recorded command at the same state, W_U(s, a) = [U(s, a) - U(s, a_i)]_+, which is what Stage 2's policy test applies at k = 1 (stage2/policy.py, k_paired), so the size mark uses the penalty difference ([U(s, a) - U(s, a_i)]_+ - [U(s, cap) - U(s, a_i)]_+) / over_pref; pair by pair this difference has the sign of the raw width difference U(s, a) - U(s, cap) (or is 0) and is never larger in size (0 <= paired <= raw when the width rises from the cap to the command, raw <= paired <= 0 when it falls), so a pair whose paired difference is at least c > 0 has a raw difference of at least c; the raw ratio is reported; (3) the knee_* measures read the width and the penalty at the 81% knee pair (every thruster clipped to 81%) against the cap: a related descriptive readout, NOT check (e) (which moves thruster 1 alone along a grid and also tests the slope and the best throttle) and not pass/fail; the share of pairs where the penalty falls and its mean change are reported beside check (e)'s (e1) 25% and (e2) mean-rise rules for reference only.",
+ "artifacts": "per world: the kept training rows of the gapped log (acceptance.load_seed(...).prepared('gap')), check 2's frozen fixed-controller gapped critic (get_critic(prereg, sd, 'gap', 'stall_aware', train=False)), check 2's saved gapped-critic actor ('gapped' / 'no_stall_gapped'), the saved cloned actor; the pinned room harness's SeedContext",
+ "bars_carried_forward": {
+  "comparability": "carried forward from a DIFFERENT readout and reported beside catch_rate_T3a_past80 for reference only: T3a scores 1,500 states of the actor's own UNCHANGED rollouts (first 200 strong-current starts), each signal flagged above its 95% level set on T4 (5,000 rows of the calibration split, gap removed, bank rows left out); the bars came from rule-modified rollouts, an exact-return switch (the 67%) and a different threshold pool (the 35%)",
+  "distance_check": 0.35,
+  "distance_check_readout": "trigger (b), new (state, command): the distance to the 10th-nearest training (state, command) row above its 95% split-conformal level, set on the held-out calibration-split rows (about 16,800 rows, the removal rule applied); 35% = the share of the actor's past-80% proposals it caught, counted along rollouts that the clip fallback changed whenever the trigger fired",
+  "exact_one_step_check": 0.67,
+  "exact_one_step_check_readout": "trigger (c), an exact-return comparison, not a scored signal and with no level: switch when the clipped command followed by the actor has a higher exact return than the actor's own command followed by the actor; 67% = the share of past-80% proposals on which it switched, counted along rollouts that the clip fallback changed",
+  "key": "catch_rate_T3a_past80",
+  "source": "runs/shift_explore/fallback (fallback.md, table 'Which harmful commands each check catches (strong current, clip fallback)'): the gapped critic's actor, strong current, first 200 starts, seeds 0-4"
+ },
+ "changes_before_any_run": [
+  {
+   "change": "a label parameter for the pair sets and labels that Stage 2 builds on fresh seeds (pairs.save, labels.save and run, detect.pair_sets); pair sets written once; the seed-0 check's timing projection fits every signal at once, as the signals phase does",
+   "finding": "the builder's own, before any run (v2 had no list; recorded here)",
+   "id": "C1 (spec v2) label parameter, write-once pair sets, timing projection",
+   "reason": "spec v2's stated reason; no pair set, label, signal or measure definition changed"
+  },
+  {
+   "change": "ranking_T1, ranking_T12, ranking_T12_among_past80 and false_flag_T1 (and its per-role values) are computed over the plan's roles only (pairs.PLAN_ROLES: T1 and T2 command, cap, recorded, cloned; T3 command, cap). The 81% knee pairs enter only the knee_* measures. The measures record n_pool_T12 and n_harmful_pool_T12. D3 and D14 reworded. A synthetic test in which the knee pairs would change ranking_T12 (test_detect.py test_measures) and a seed-0 check that ranking_T12 and ranking_T1 equal the plan-role values were added",
+   "evidence": "reviewer, seed-0 check files (two-head only, stalling world): 70 of the 613 knee pairs are labelled harmful; ranking_T12 0.6406 with the knee pairs, 0.6297 without; 543 of the 647 harmless past-80% pairs were knee pairs. Re-derived to verify the finding only: scratchpad/ood/review_detect_apply/verify_findings.py",
+   "finding": "review of the detect component, finding 1 (major)",
+   "id": "C2 (spec v3) the knee pairs leave every ranking and false-flag pool",
+   "reason": "D3 declared the knee pairs 'reported only' and the plan's four T1 commands unchanged, but the pools took every role of T1, so knee pairs (each labelled against its own cap) entered ranking_T12, a gated Stage 2 mark and the claim rule's comparison with the best stand-in, and D14 said 'every pair'. Plan 4.4 gives T1 four commands. The fix follows the plan's definition and D3's own declaration; it was not chosen by its effect on any number"
+  },
+  {
+   "change": "every record this component writes (pair sets, scores, labels, signals_done, measures, pooled) carries detect_spec_sha256 and detect_code_manifest_sha256 (common.stamp). Every reuse refuses unless they equal the current ones (common.check_version): pairs.load, labels.load, detect.labels, the join (scores, labels and pair sets), and in run_detect.py every existing output a phase would skip (also its spec_sha256 and code_manifest_sha256) and every measures record the pooled look reads. A record without the stamp is refused. A new spec version therefore starts in a fresh output folder or archives the old outputs first (v3 archived v2's seed-0 check in superseded/v2, v4 v3's in superseded/v3, v5 v4's in superseded/v4)",
+   "evidence": "run_detect.py v2 phase_measures ('if mo.exists(): C.read_json(mo); continue') and phase_pooled; checks/checks_seed0.json record_versions; test_detect.py",
+   "finding": "review of the detect component, finding 2 (minor)",
+   "id": "C3 (spec v3) records are reused only under the current spec and code manifest",
+   "reason": "every phase skipped an existing output, and the pooled look pooled it, after a sidecar check alone; a rerun under a new spec version (which the perfect-band sanity rule foresees) would have reused scores, labels and measures written under the old one and mixed versions in pooled.json; the room test guards against this (its change A7). The check sits in the module so that Stage 2, which reads the rehearsal's records through this module's loaders and join, meets it too. Stage 2's own phase_detect_standins reads the rehearsal's score records with its own reader; those scores reach a mark only through this module's join, which now refuses another version"
+  },
+  {
+   "change": "D4, the measures' doc and change A1's lesson no longer say the paired difference is 'never larger than the raw one'. They say: pair by pair it has the sign of the raw difference (or is 0) and is never larger in size; 0 <= paired <= raw when the score rises from the cap to the command, raw <= paired <= 0 when it falls. No definition changed",
+   "evidence": "reviewer's example s(cmd) 0, s(cap) 1, s(rec) 2: raw -1, paired 0",
+   "finding": "review of the detect component, finding 3 (minor)",
+   "id": "C4 (spec v3) the paired size's relation to the raw size stated correctly",
+   "reason": "the old wording was false whenever the score at the command is below the score at the cap. The reviewer's proposed wording ('when it falls, the paired form gives 0') was not exact either: with s(cmd) 3, s(cap) 4, s(rec) 0 the paired difference is -1. The reviewer's point that a pair with paired difference at least 1 has raw difference at least 1 holds pair by pair; the two medians are not ordered in general (two pairs, paired -0.5 and 2.5, raw -10 and 2.5: medians 1.0 and -3.75)"
+  },
+  {
+   "change": "beside knee_rise_* (strict rises; ties count as no rise) the measures now report, for the score and for the paired penalty against the cap over past-80% and harmful T1 pairs: knee_fall_* (the analogue of check (e1), which allows a fall on at most 25% of states), knee_tie_*_paired, and knee_mean_change_* (the analogue of check (e2), a rise of the mean). The spec, the measures' doc and change A1's lesson say plainly that these are a related descriptive readout and not check (e); nothing about them is pass/fail",
+   "evidence": "reviewer: two-head paired penalty, harmful T1 pairs, seed 0: rise 0.41, fall 0.24, ties 0.35, mean change +0.0008; re-derived (0.406, 0.244, 0.350, +0.00081) to verify the finding only",
+   "finding": "review of the detect component, finding 4 (minor)",
+   "id": "C5 (spec v3) the knee measures are a related descriptive readout, not check (e)",
+   "reason": "the builder's report and A1's lesson said the knee-rise measure 'carries over check (e)'s requirement'. It does not: the knee pair clips every thruster to 81%, while check (e) moves thruster 1 alone along a grid; it counts strict rises only, while check (e) asks that the penalty falls on at most 25% of states (e1), that its mean rises (e2), that its slope is positive (e3) and that the best throttle moves (e4). The two can disagree on the same penalty"
+  },
+  {
+   "change": "bars_carried_forward records each bar's own readout and drops '95% level' from the 67% bar: the 35% is trigger (b), new (state, command), at the 95% split-conformal level set on about 16,800 held-out calibration-split rows; the 67% is trigger (c), an exact-return comparison (switch when the clipped command has the higher exact return), with no level and not a scored signal; both were counted along rollouts that the clip fallback changed. catch_rate_T3a_past80 scores the actor's unchanged rollouts with a level set on T4. The bars are reported beside it for reference only",
+   "evidence": "fallback.md: trigger (c)'s definition and the table 'Which harmful commands each check catches (strong current, clip fallback)'",
+   "finding": "review of the detect component, finding 5 (minor)",
+   "id": "C6 (spec v3) the bars carried forward are recorded as coming from a different readout",
+   "reason": "the old source string tied both numbers to catch_rate_T3a_past80 as if measured the same way"
+  },
+  {
+   "change": "(a) the label of pairs.save, labels.save and labels.run, signals.score_signal and detect.pair_sets defaults to the output folder's (common.label_for): the Stage 1 label in runs/shift_explore/detect, LABEL_STAGE2_FRESH ('EXPLORATORY/STAGE 2 output ...') in runs/shift_explore/stage2. A Stage 1 label passed for Stage 2's folder, a Stage 2 label for the rehearsal's folder, or a label not starting with EXPLORATORY is refused. (b) D12 is enforced in the module for the rehearsal's folder: signals.score_signal refuses once the labels of that seed and world exist; labels.run refuses until signals_done.json exists under the current spec and manifest. (c) Stage 2's folder (fresh seeds 5-9) is exempt from D12",
+   "evidence": "stage2/run_stage2.py: locked_pair_sets calls D.pair_sets(ctx, world, out=root), phase_detect_labels calls LB.run(ctx, world, out=root, extra=...), phase_detect_standins calls D.score_signal(name, fns[name], ctx, world, None, pairs_out=root), none with label=; prereg_payload.run_order step 2; test_detect.py test_labels_by_folder and test_order_rule_in_module",
+   "finding": "review of the detect component, finding 6 (minor)",
+   "id": "C7 (spec v3) labels chosen by folder; the order rule (D12) in the module; Stage 2's folder exempt from D12",
+   "reason": "(a) Stage 2 never passes label=, so its fresh-seed pair sets, labels and stand-in scores would have carried the Stage 1 rehearsal's label; choosing by folder labels them correctly without a change to Stage 2's code (another component) and still refuses a wrong label passed explicitly. (b) the rule lived only in run_detect.py, not in the module Stage 2 imports. (c) Stage 2's documented order for seeds 5-9 is detect_pairs, detect_labels, detect_standins. There the stand-ins' code and fitting rules are fixed by this code manifest, which Stage 2's pre-registration pins before those seeds' data exist, so no signal can be adjusted after its labels are seen; D12 was a Stage 1 guard. Stage 2 may still score its stand-ins first"
+  },
+  {
+   "change": "launch.sh runs /home/user/bca/runs/shift_explore/detect/code/run_detect.py and is itself run as /home/user/bca/runs/shift_explore/detect/code/launch.sh, so the documented command does not depend on the scratchpad (common.check_code accepts the copies as the running code). Each log starts with the EXPLORATORY label and its .sha256 sidecar is rewritten when each phase ends, done or failed. The seed-0 check runs its phases through the same launch.sh (with DETECT_CHECK_OUT, DETECT_LOGDIR and DETECT_CHECK_SIGNALS, which only the check sets), so the documented command is exercised. common.write_log labels any log written from Python. The synthetic tests refuse to run from the pinned copies (their outputs would land in the rehearsal's folder)",
+   "evidence": "launch.sh v2 (D=<scratchpad>/detect); checks/logs in superseded/v2 hold four unlabelled logs",
+   "finding": "review of the detect component, finding 7 (minor)",
+   "id": "C8 (spec v3) launched from the pinned copies; labelled logs with sidecars",
+   "reason": "the launch command ran the scratchpad sources under /tmp; the logs had no label and no sidecar, against the rule that every output has both"
+  },
+  {
+   "change": "run_detect.py and checks_seed0.py refuse unless the process may run on exactly one CPU (launch.sh pins one with taskset -c <cpu>); every record also records cpus_visible",
+   "evidence": "scratchpad/ood/review_detect_apply/compare_pairs.py (v2 against v3 seed-0 check files) and affinity_probe.py: the actor's commands at the 1,500 T1 states equal v3's stored ones with taskset -c 1 and v2's with taskset -c 0-3",
+   "finding": "found by the builder in spec v3's seed-0 check, before any real run",
+   "id": "C9 (spec v4) every phase runs on exactly one CPU",
+   "reason": "XLA's CPU backend sums the float32 networks' products in an order that depends on how many CPUs the process sees. Spec v2's seed-0 check ran unpinned (4 CPUs) and v3's pinned (1 CPU): the stored commands differ by at most 4.5e-7 (43,580 float32 entries of the stalling world's pairs, T1-T3; T4 and every state identical), so the pair sets' content hash differs, and the critic's values at those commands by at most 2.3e-5. Every unsupported and harmful label was identical. Readers use the stored commands, but a phase or rebuild under another CPU count would not reproduce them bit for bit and could move a label that sits on a threshold. One CPU, the launch script's setting, is the rule; it was not chosen on any measured value"
+  },
+  {
+   "change": "pairs.build, labels.compute, signals.stand_in_signals and signals.score_signal (hence detect.pair_sets when it builds, labels.run and detect.score_bca_width) refuse unless the process may run on exactly one CPU; the synthetic tests run pinned too",
+   "evidence": "test_detect.py test_one_cpu_rule",
+   "finding": "the builder's, before any real run (the same reasoning as C7(b): a rule must sit in the module Stage 2 imports)",
+   "id": "C10 (spec v5) the one-CPU rule also in the module",
+   "reason": "in spec v4 only run_detect.py and checks_seed0.py held the rule; Stage 2 builds pair sets, labels and stand-in scores for seeds 5-9 and scores BCA's width through the module. Stage 2's launcher already pins one CPU, so this refuses only a call made outside it"
+  }
+ ],
+ "changes_rule": "No real run of this component has happened (no seed folder exists under runs/shift_explore/detect); only the seed-0 checks ran, into checks/. Each change above is recorded with its reason; none was chosen on returns or on any measured value. No room-test value, futility file or log was read. The seed-0 numbers quoted come from the review and were re-derived only to verify its findings",
+ "cheap_signal_for_the_seed0_check": "two_head",
+ "compute": "measured by checks_seed0.py under this spec (timing.json); the plan's estimate is about 2.5 process-hours",
+ "cpu_rule": "How many CPUs this process may run on. XLA's CPU backend sums the float32 networks' products in an order that\n    depends on it, so the actor's commands (and the critic's values) differ in their last bits between a process that\n    sees one CPU and one that sees four (spec change C9). Every phase runs on exactly one (launch.sh pins it).",
+ "deviations": [
+  {
+   "change": "the perfect band scored as the sanity check is the room's amended main oracle [delta*(s, ref) - delta*(s, a)]_+, not the plan's |delta*(s, a)|; the literal and the signed forms are scored beside it, reported",
+   "id": "D1 perfect band re-referenced (change A1)",
+   "reason": "room spec v2 change A1: |delta*| falls just past the knee; the task requires the re-referenced form"
+  },
+  {
+   "change": "ref = the world's cloned actor's command at the state (T3 states have no recorded command)",
+   "id": "D2 reference command at T3 states",
+   "reason": "the re-referenced form needs a command recorded at the same state; the cloned actor is the data's behaviour there. Fixed before any signal or label was computed"
+  },
+  {
+   "change": "T1 gets a fifth role 'knee' = float32(clip(command, -0.81, 0.81)) (every thruster clipped to 81%); it enters ONLY the knee_* measures (rise, fall and tie shares and the mean change of the score and of the paired penalty against the cap), never a ranking, catch-rate or false-flag pool (change C2); the plan's four roles and every measure built on them are unchanged",
+   "id": "D3 81% knee pairs added to T1 (reported)",
+   "reason": "a related, descriptive readout of whether a signal rises just past 80%, the question check (e) (room change A2) asks of a penalty; it is not check (e) and nothing about it is pass/fail (change C5)"
+  },
+  {
+   "change": "size_T1_raw = median (s(cmd) - s(cap)) / over_pref (plan 4.4's words) and size_T1_paired = median ([s(cmd) - s(rec)]_+ - [s(cap) - s(rec)]_+) / over_pref; Stage 2's size mark uses the paired one. Pair by pair the paired difference has the sign of the raw difference (or is 0) and is never larger in size: 0 <= paired <= raw when the score rises from the cap to the command, raw <= paired <= 0 when it falls (change C4). So a pair whose paired difference is at least c > 0 has a raw difference of at least c; the two medians are not ordered in general",
+   "id": "D4 size read two ways",
+   "reason": "A1's lesson: the consumer reads the width relative to the recorded command at the same state (stage2/policy.py k_paired [U(s, a) - U(s, a_i)]_+); 'so that k = 1 would cancel the false preference' (plan 5.2) is about that penalty"
+  },
+  {
+   "change": "behaviour density as N (not [N - q95]_+), classifier ratio as log w (not U_max softplus(log w - l*)), distance as the exact d10 (not the fitted surface of plan 4.2)",
+   "id": "D5 stand-ins scored as raw scores",
+   "reason": "the plan's forms are monotone in these scores above their limits, so the flags at the 95% level on T4 are the same (density) or reported beside (l*); the thresholded forms tie most pairs at 0, which blanks the paired and ranking measures; U_max is a BCA quantity and is not read; the surface exists only to give the training penalty a gradient"
+  },
+  {
+   "change": "delta_j with min over the two heads on both sides, logged transitions, stall-aware controller",
+   "id": "D6 residual evidence uses BCA's residual form",
+   "reason": "room change A3: BCA's own residual; the same form as the trace test bed (plan 4.6)"
+  },
+  {
+   "change": "at T1 and T2 states the neighbour search includes the row itself (plain 'nearest training rows')",
+   "id": "D7 in-sample neighbours at training states",
+   "reason": "the plan's definition and plan 4.2's stand-ins; BCA's band is likewise in-sample at its fit rows"
+  },
+  {
+   "change": "first 200 starts of the strong-current bank, exact 100-step rollouts, 1,500 of the 20,000 visited states per policy (default_rng tags 103, 0 / 103, 1), rounded to float32",
+   "id": "D8 how T3 states are drawn",
+   "reason": "the plan does not say; the fallback diagnostic and the anatomy readout used the same 200 starts"
+  },
+  {
+   "change": "true preference = exact Q of the stall-aware controller (the critic's scored policy) in the world's physics, 1,000 steps, float64; critic preference = Q1 (the head the actor climbs)",
+   "id": "D9 truth and critic preference",
+   "reason": "the plan does not name them; these are truth.pull_past_80's quantities and the critic's own target policy (also in the no-stall world, room deviation)"
+  },
+  {
+   "change": "the same rules and tags applied to the no-stall world's own log, gapped critic, gapped critic's actor ('no_stall_gapped') and cloned actor",
+   "id": "D10 'copies in the no-stall world'",
+   "reason": "selectivity compares each world's detector on its own actor's proposals (the fallback diagnostic's no-stall control); Stage 2's contract builds per world"
+  },
+  {
+   "change": "the recorded-range hinge is scored beside the stand-ins",
+   "id": "D11 range hinge scored (reported)",
+   "reason": "plan section 2 point 8: score everything against a plain recorded-range limit; not a stand-in"
+  },
+  {
+   "change": "in the rehearsal's folder (runs/shift_explore/detect) Stage 1 signals are scored before the labels of that seed and world exist: enforced in the module (signals.score_signal refuses once the labels exist; labels.run refuses until signals_done.json exists under the current spec and manifest) and in run_detect.py; Stage 2's folder is exempt (change C7)",
+   "id": "D12 order rule",
+   "reason": "a guard against any signal being adjusted on labels; not in the plan"
+  },
+  {
+   "change": "every pair (every role, every set) is labelled against its own 80% cap",
+   "id": "D13 labels for every pair",
+   "reason": "the ranking score needs a label for every pair; caps are harmless by construction"
+  },
+  {
+   "change": "ranking over every pair of the plan's roles in the set(s) (T1 and T2: command, cap, recorded, cloned; T3: command, cap; never the knee pairs, change C2); catch rate over harmful command pairs and over past-80% command pairs; false flags over the harmless pairs of the same pools (per plan role reported); level = the signal's own split-conformal 95% level on T4",
+   "id": "D14 ranking pool, catch rates and false flags",
+   "reason": "the plan gives the measures' names only; these are the readings fixed before any run"
+  },
+  {
+   "change": "a pair's command is the float32 actor at the stored float32 state; T3 rollouts use the float64 copy",
+   "id": "D15 commands are the float32 network's",
+   "reason": "the critic, BCA's width and every signal see the float32 command; the gate evaluates the copy"
+  }
+ ],
+ "gate_files_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/advantage.py": "a33f1361850d37d1dfd37c464dcbd65e91a9c1f06ff0a853f103421ba0ef8507",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/iql_actors.py": "87d2244d228ce5193e827990a61d5b074f52c26c4df305c3eca25cfec21a44ac",
+  "calibration/iql_imports.py": "39d7d161de9d652558bed549c29c90dd04bd95b83d0de27ff5b8b5079c6a0739",
+  "calibration/iql_loss.py": "31d60fa3be54032770a7582d524d32ee782dfc6834155cf2729f4927ad781832",
+  "calibration/iql_network.py": "51f1e0cc446a4896fbe5d04dd0a525b9fb8ce57655d071727db80543311a5acc",
+  "calibration/iql_reference.py": "9faccbaf69852a2afd4d754363781c776b99e98050f2565c02934b4a8d9f9bf9",
+  "calibration/iql_scale.py": "559b6670efcef6499ad897ee6457d4e9463f9e04a0d48725cd8909b405e16dce",
+  "calibration/iql_state.py": "d2225821a1815ac4229e7e9dbdddb355771463b0f35e6717856f3784bd303d66",
+  "calibration/iql_targets.py": "6c94831746b80cfede10c23a084c04cac5fe5a3277817d318685a3fa88c1fc5e",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "configs/experiment.yaml": "9c71c68632445b98d4aa0698fdb78ec2e7b420d42b3ee111e7da7af429d97aad",
+  "configs/td3_bc.yaml": "4598b0ec6b80e9d146af7a0e938bbd112daaa7800a05dd0e46a7da42c974ba68",
+  "experiments/shift/SHIFT_ENV.md": "18bbb253c8cf58da3478f4072d7cdecf69bb5a897b0cb415b906dbbcd54d36cf",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/install_deps.sh": "d5d747fc4ee4afd30f3400f2951df9c0ddd892c5aba730f5005d01e3a2a42620",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/requirements-shift.txt": "42a4af0538e9721c83512406f3c646602e35b77eda6f6fa2bc17816346d6a07e",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/test_acceptance.py": "9f76b50c684e4904313c21956c0ea22974993397cf530fb00ee9965a2077d157",
+  "experiments/shift/test_dataset.py": "212d0c1ed7aaf500525e6f1b55ebe0d2f303bd0b0aad18aaa19c3da2777c2ea7",
+  "experiments/shift/test_learners.py": "fec65fa8752977789feab1f7f90b8fb8bc27d7cf1068dadb711dff2f53879471",
+  "experiments/shift/test_shift.py": "d62f664aa84d517585ccb7f4a974a943c2c4d3b317c7f2d7c804697158722e8e",
+  "experiments/shift/test_thruster_chain.py": "546ea721ed28a999a26b123578c541f325c5d16bf31d606827814042fa789d52",
+  "experiments/shift/test_truth.py": "8691af40a33770649e6682c33d544109cd8e8f4cb6e92f32dd1716e260d55c7f",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "outputs/shift/stop-report/cards/cards_outside_gate.py": "0359f60ac3c66d112e86b91b261fdd1fed9dbf5733a1a43517a4c8b6ae41fdc3",
+  "runs/shift/preregistration.json": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "runs/shift/preregistration.json.sha256": "9f0266070bc11e24a1f1c4e6c369445fa4abfc15c80691370602e300403a81f8",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "join": "measures.py joins one signal's scores with the labels only after both are written and hashed: both records verified against their sidecars, both files against the file and content SHA-256 their records name, both naming the same pair sets (content SHA-256), the pair sets verified too; the joined SHA-256 are recorded in every measures file",
+ "kind": "detect-spec",
+ "label": "EXPLORATORY: Stage 1 detection rehearsal (plan section 4.4), computed outside the gate on saved gate artifacts; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (data-only stand-ins and oracles only)",
+ "labels": {
+  "harmful": "unsupported AND over_pref >= 0.1 AND true_pref <= -0.05; over_pref = critic_pref - true_pref; critic_pref = Q1(s, a) - Q1(s, cap); true_pref = Q^c(s, a) - Q^c(s, cap), c the stall-aware controller, exact float64, 1000 steps",
+  "module": "labels.py (a separate script; imports only common.py and pairs.py; refuses when signals.py, measures.py or detect.py is loaded; never opens a score file; run as its own process)",
+  "not_past_80": "a command not past 80% equals its cap bit for bit: preferences 0, harmless, not simulated",
+  "unsupported": "any thruster past 80% (thruster_chain.past_knee)"
+ },
+ "labels_by_folder": "The label of an output written at `path`: by default the Stage 1 rehearsal's label (runs/shift_explore/detect\n    and the synthetic-test folder) or Stage 2's (runs/shift_explore/stage2). A label passed by the caller must start\n    with EXPLORATORY and match the folder: the Stage 1 label is refused in Stage 2's folder and a Stage 2 label in the\n    rehearsal's folder.",
+ "launch": "runs/shift_explore/detect/code/launch.sh (the pinned copy; change C8)",
+ "marks": "none in Stage 1 (a rehearsal: every number is reported)",
+ "measures": {
+  "doc": "EXPLORATORY detection rehearsal (plan section 4.4), NO BCA: the JOIN of one signal's scores with the labels, and\nthe measures. The join runs only on two hashed files: the scores record (written by signals.score_signal, which never\nreads a label) and the labels record (written by labels.py, which never reads a signal). Both are verified against\ntheir sidecars and the file and content SHA-256 their records name, both must name the same pair sets (the same\npairs content SHA-256), which are loaded and verified too, and all three must have been written under the current\ndetect spec and code manifest (common.check_version). Nothing here fits anything.\n\nNotation per set T: for each state (pair id) the score at the command s(cmd), at its 80% cap s(cap), at the recorded\ncommand s(rec) (T1, T2) and at the 81% knee command s(knee) (T1); labels at the command: past80 (unsupported), harmful,\nover = over_pref. The paired penalty of the consumer (change A1): W(x) = [s(x) - s(rec)]_+ at the same state.\n\nPOOLS. The ranking and false-flag pools hold the plan's roles only (pairs.PLAN_ROLES: T1 and T2 command, cap,\nrecorded, cloned; T3 command, cap). The 81% knee pairs of T1 (spec D3, an addition) enter no ranking, catch-rate or\nfalse-flag pool; they enter only the knee_* measures (spec change C2).\n\n  level                    the signal's split-conformal 95% level on T4: the ceil((n + 1) 0.95)-th smallest T4 score\n                           (n = 5,000), unless a level is passed (Stage 2 passes its tau). flag = score > level.\n  widening_T_past80        share of past-80% command pairs of T with s(cmd) > s(cap)        (plan: paired widening)\n  widening_T_harmful       the same over harmful command pairs           (Stage 2's direction mark, T1 and T3)\n  widening_T_harmless_past80  the same over past-80% pairs that are not harmful (reported)\n  widening_T_harmful_paired   share of harmful pairs with W(cmd) > W(cap) (T1, T2; reported)\n  size_T_raw               median over harmful command pairs of (s(cmd) - s(cap)) / over       (value-unit signals)\n  size_T_paired            median over harmful command pairs of (W(cmd) - W(cap)) / over (T1, T2; Stage 2's size mark).\n                           Pair by pair W(cmd) - W(cap) has the sign of s(cmd) - s(cap) (or is 0) and is never larger\n                           in size: 0 <= paired <= raw when the score rises from the cap to the command, raw <= paired\n                           <= 0 when it falls. So a pair with a paired difference of at least c > 0 has a raw\n                           difference of at least c.\n  knee_*_T1_past80 / _harmful   DESCRIPTIVE, related to the room's check (e) but not check (e), and nothing here is\n                           pass/fail: the knee pair clips every thruster to 81% (check (e) moves thruster 1 alone along\n                           a grid); over past-80% / harmful T1 command pairs, d = s(knee) - s(cap) (raw) and\n                           d = W(knee) - W(cap) (_paired, the consumer's penalty):\n                             knee_rise_*        share with d > 0 (strict; ties count as no rise)\n                             knee_fall_*        share with d < 0   (_paired: the analogue of check (e1), which allows\n                                                                    a fall on at most 25% of states)\n                             knee_tie_*_paired  share with d = 0 (e.g. the penalty 0 at both points)\n                             knee_mean_change_* mean of d          (_paired: the analogue of check (e2), which asks\n                                                                    for a rise of the mean)\n  ranking_T12, ranking_T3  P(score of a random harmful pair > score of a random harmless pair) over the pool (the\n                           plan's roles) of T1 and T2 together / of T3; ties count one half (plan: ranking score)\n  ranking_T1, ranking_T2, ranking_T3a, ranking_T3b   the same per set (reported)\n  ranking_T12_among_past80, ranking_T3_among_past80  the same among past-80% pairs of the pool only\n  rate_above_level_T4      share of T4 rows flagged (about 5% at the signal's own level by construction)\n  catch_rate_T_harmful     share of harmful command pairs of T flagged    (plan: catch rate, T1, T2, T3, T3a, T3b)\n  catch_rate_T_past80      share of past-80% command pairs of T flagged; catch_rate_T3a_past80 is set beside the\n                           bars carried forward from the fallback diagnostic (a different readout: spec change C6)\n  false_flag_T             share of harmless pairs of T's pool flagged; false_flag_T_<role> per plan role\n  flag_rate_past80         share of past-80% command pairs of T1 and T3 together flagged; selectivity = this in the\n                           stalling world minus the same in the no-stall world (pooled phase); flag_rate_past80_T per set\n  n_*                      counts\nA measure over an empty group is None.\n",
+  "level": "split-conformal 95% on T4: the ceil((n + 1) 0.95)-th smallest T4 score; Stage 2 passes tau instead",
+  "module": "measures.py"
+ },
+ "no_bca": "No BCA band, calibrator, threshold, dose, BCA update or BCA training arm in Stage 1. Nothing from algorithms/td3_bc_bca.py, calibration/ or learners.bca_* is imported or called by this component (the gate's learners.py imports them; they are never called). The gate's data loader (experiments/shift/dataset.py, through acceptance.load_seed) calls calibration/bank.stratified_bank to regenerate the log's calibration-bank split: a NumPy row sampler, not a BCA signal. The Stage 2 hook (detect.score_bca_width) accepts a callable and imports nothing of BCA; it is never called in Stage 1.",
+ "oracles": [
+  "perfect_band",
+  "perfect_band_signed",
+  "perfect_band_literal"
+ ],
+ "order": "EXPLORATORY detection rehearsal (plan section 4.4), NO BCA: the phases, one per process.\n\n  python run_detect.py --phase pairs    --seed K --world stall|no_stall|both\n  python run_detect.py --phase signals  --seed K --world ... [--signals a,b,...]   (default: every Stage 1 signal)\n  python run_detect.py --phase labels   --seed K --world ...\n  python run_detect.py --phase measures --seed K --world ...\n  python run_detect.py --phase pooled\n\nOrder per seed and world: pairs -> signals -> labels -> measures; pooled after every seed and world.\n  - every phase first checks the spec, the gate files, the room pins and the code manifest (common.begin);\n  - pairs, scores, labels and measures are written once. An existing output is skipped only when it verifies AND\n    names the current spec and code manifest (its spec_sha256 / code_manifest_sha256 and the module's stamp,\n    common.check_version); one written under another spec or manifest refuses, as does a half-written one. A new spec\n    version therefore starts in a fresh output folder or archives the old outputs first;\n  - 'signals' refuses when the labels of that seed and world exist (every Stage 1 signal is scored blind to the\n    labels; signals.score_signal enforces the same in the rehearsal's folder) and writes signals_done.json; 'labels'\n    refuses until signals_done.json exists (labels.run enforces the same), runs in a process with no signal code\n    loaded (this file imports labels.py only in that phase) and never opens a score file;\n  - 'measures' joins each hashed scores record with the hashed labels record (measures.py);\n  - 'pooled' reads only measures written under the current spec and code manifest;\n  - every phase refuses unless the process may run on exactly one CPU (launch.sh pins it): the float32 networks'\n    last bits depend on the CPU count (spec change C9).\n--out: a folder under runs/shift_explore/detect for checks (default: runs/shift_explore/detect itself).\nNothing is written outside runs/shift_explore/detect. Launch: launch.sh, from the pinned copies in\nruns/shift_explore/detect/code (common.check_code accepts either the copies or the scratchpad sources).\n",
+ "outputs": {
+  "checks": "checks/ (seed-0 check, its logs in checks/logs), timing.json",
+  "logs": "logs/seed<k>.log, logs/pooled.log: first line the EXPLORATORY label, a .sha256 sidecar rewritten when each phase ends (change C8)",
+  "per_seed_world": "seed<k>/<world>/{pairs.npz, pairs.json, scores/<signal>.npz|.json, signals_done.json, labels.npz, labels.json, measures/<signal>.json}",
+  "pooled": "pooled.json",
+  "root": "/home/user/bca/runs/shift_explore/detect"
+ },
+ "pair_sets": {
+  "T1": "1500 full-throttle-region training states, default_rng([20261015, seed, 101]).choice(region rows)",
+  "T2": "1500 other training states, default_rng([20261015, seed, 102]).choice(non-region rows)",
+  "T3": "1500 strong-current states visited by the gapped critic's actor (T3a, tag [103, 0]) and 1500 by the stall-aware controller (T3b, tag [103, 1]): exact rollouts from the first 200 starts of the strong-current bank, 100 steps, states rounded to float32",
+  "T4": "5000 held-out recorded rows: calibration split, gap removed, bank rows left out, default_rng([20261015, seed, 81]) (the stand-ins' rule)",
+  "commands": "command: the world's gapped critic's actor (float32 network at the stored state); cap: float32(clip(float64(command), -0.8, 0.8)); recorded: the row's own command; cloned: the world's cloned actor; knee (T1): float32(clip(float64(command), -0.81, 0.81))",
+  "hashed": "pairs.npz (fixed zip timestamps) with a file sidecar; pairs.json records the file and content SHA-256",
+  "module": "pairs.py",
+  "plan_roles": {
+   "T1": [
+    "command",
+    "cap",
+    "recorded",
+    "cloned"
+   ],
+   "T2": [
+    "command",
+    "cap",
+    "recorded",
+    "cloned"
+   ],
+   "T3": [
+    "command",
+    "cap"
+   ],
+   "T4": [
+    "recorded"
+   ]
+  },
+  "pools": "the ranking and false-flag pools hold the plan's roles only (plan_roles); the knee pairs enter only the knee_* measures (D3, change C2)",
+  "ref": "recorded command at T1, T2, T4; cloned actor's command at T3 (for the re-referenced perfect band)",
+  "roles": {
+   "T1": [
+    "command",
+    "cap",
+    "recorded",
+    "cloned",
+    "knee"
+   ],
+   "T2": [
+    "command",
+    "cap",
+    "recorded",
+    "cloned"
+   ],
+   "T3": [
+    "command",
+    "cap"
+   ],
+   "T4": [
+    "recorded"
+   ]
+  },
+  "sets": [
+   "T1",
+   "T2",
+   "T3",
+   "T4"
+  ],
+  "states": "float64 of float32 numbers (what the environment returns and every critic and actor sees)"
+ },
+ "perfect_band_sanity": {
+  "if_not_met": "the script is not used to score BCA until the reason is found and recorded in a new spec version, which runs in a fresh output folder or after archiving every output of this one (change C3)",
+  "kind": "expected, reported; not a mark",
+  "ranking_T12_at_least": 0.9,
+  "signal": "perfect_band",
+  "widening_T1_harmful_at_least": 0.9,
+  "world": "stall"
+ },
+ "plan": {
+  "path": "/home/user/bca/outputs/shift/beyond-the-data/PLAN.md",
+  "sections": [
+   "4.4",
+   "5.2"
+  ],
+  "sha256": "7c60d71d950a95c2ab62d4f505fd62b370f001febbbffc4f62f9891523fa1ca3"
+ },
+ "pooled": {
+  "best_standin": "the best pooled stalling-world ranking among the five stand-ins (T12 and T3)",
+  "keys": [
+   "widening_T1_harmful",
+   "widening_T1_past80",
+   "widening_T1_harmless_past80",
+   "widening_T2_past80",
+   "widening_T3_harmful",
+   "widening_T3_past80",
+   "widening_T3_harmless_past80",
+   "widening_T3a_harmful",
+   "widening_T3b_harmful",
+   "widening_T1_harmful_paired",
+   "size_T1_raw",
+   "size_T1_paired",
+   "size_T3_raw",
+   "knee_rise_T1_past80",
+   "knee_fall_T1_past80",
+   "knee_mean_change_T1_past80",
+   "knee_rise_T1_past80_paired",
+   "knee_fall_T1_past80_paired",
+   "knee_tie_T1_past80_paired",
+   "knee_mean_change_T1_past80_paired",
+   "knee_rise_T1_harmful",
+   "knee_fall_T1_harmful",
+   "knee_mean_change_T1_harmful",
+   "knee_rise_T1_harmful_paired",
+   "knee_fall_T1_harmful_paired",
+   "knee_tie_T1_harmful_paired",
+   "knee_mean_change_T1_harmful_paired",
+   "ranking_T12",
+   "ranking_T3",
+   "ranking_T1",
+   "ranking_T2",
+   "ranking_T3a",
+   "ranking_T3b",
+   "ranking_T12_among_past80",
+   "ranking_T3_among_past80",
+   "rate_above_level_T4",
+   "catch_rate_T1_harmful",
+   "catch_rate_T3_harmful",
+   "catch_rate_T3_past80",
+   "catch_rate_T3a_past80",
+   "catch_rate_T3b_past80",
+   "false_flag_T1",
+   "false_flag_T2",
+   "false_flag_T3",
+   "false_flag_T1_cap",
+   "false_flag_T1_recorded",
+   "false_flag_T3_cap",
+   "flag_rate_past80",
+   "flag_rate_past80_T1",
+   "flag_rate_past80_T3",
+   "n_harmful_T1",
+   "n_harmful_T3",
+   "n_past80_T1",
+   "n_past80_T3",
+   "level"
+  ],
+  "selectivity": "flag_rate_past80 (and per set) in the stalling world minus the same in the no-stall world, per seed, at each world's own level"
+ },
+ "previous_spec": {
+  "archived": "spec_history/spec_v4.json",
+  "sha256": "37a6fb1688834cd00feebccc9fca22cc7fbc8830bfb374f89f985a81bb799d65",
+  "superseded_outputs": "superseded/v4 (its seed-0 check and timing)",
+  "version": 4
+ },
+ "reason": "v5 before any real run: change C10, the one-CPU rule (C9) also sits in the module's computing functions that Stage 2 calls. v4 is kept in spec_history; its seed-0 check in superseded/v4.",
+ "record_versions": "The detect spec's and code manifest's SHA-256 as they are now, each verified against its sidecar, the manifest\n    naming the spec. Every record this component writes (pair sets, scores, labels, signals_done, measures, pooled)\n    carries them (stamp()); every reuse of a record (a phase skipping an existing output, the join, the pooled look,\n    Stage 2's loads through this module) refuses unless they equal the current ones (check_version). The code itself\n    is checked against the manifest by every phase (begin) and by Stage 2 (its verify_component).",
+ "reported": [
+  "range_hinge"
+ ],
+ "room_change_A1": "runs/shift_explore/room/spec.json changes_before_any_run A1: the oracle is re-referenced to the row's recorded command, [delta*(s, a_i) - delta*(s, a)]_+; A2: check (e) requires a penalty to rise past 80%",
+ "room_pins": {
+  "room_harness_copy": "/home/user/bca/runs/shift_explore/room/code/harness.py",
+  "room_harness_sha256": "97f547b14d55c3afa392cbdf99508e45c1b862d8a285030808c5783a067ef2cf",
+  "room_manifest_sha256": "469ada26b9af7eff33be17b8241867e83e44c45a30d2d137dffe7deca3f32391",
+  "room_spec_sha256": "56bbda24cdbaa10cc0de0261450de5d9034e08e188c88e9432be83d8cf136bf4"
+ },
+ "run_order": "after the room test's pooled look passes, one process at a time on one free CPU: for each seed 0-4, sh /home/user/bca/runs/shift_explore/detect/code/launch.sh <seed> <cpu> both pairs signals labels measures; then sh /home/user/bca/runs/shift_explore/detect/code/launch.sh all <cpu> both pooled",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "signals": {
+  "classifier_ratio": {
+   "formula": "log w(s, a) = logit of g: Dense 64-ReLU-Dense 64-ReLU-Dense 1 on (normalised obs / 1.001, command); target pairs (s_i, clip(pi(s_i) + a_i - c(s_i), -1, 1)) = 1 vs recorded (s_i, a_i) = 0 at the same rows; pi the world's gapped critic's actor; c the cloned actor; loss mean softplus(-logit_target) + mean softplus(logit_recorded); 2,000 torch_adam steps, lr 0.001, 512 rows per step from default_rng([20261015, seed, 82]).integers(n, (2000, 512)); init PRNGKey(default_rng([20261015, seed, 84]).integers(2^31 - 1)). Identical to stage2/weights.py and standins.py fit_classifier. Also recorded: l* = log(0.1/0.9) + logsumexp over the calibration bank of log w, with flags at l* reported beside the 95% level",
+   "kind": "stand_in",
+   "units": "other"
+  },
+  "density": {
+   "formula": "N(s, a) = 1/2 sum_k ((a_k - c_k(s)) / sigma_k)^2; c the world's cloned actor (float32 network at the normalised float32 state); sigma_k = sqrt(mean over kept training rows of (a_ik - c_k(s_i))^2)",
+   "kind": "stand_in",
+   "units": "other"
+  },
+  "distance": {
+   "formula": "d10(s, a): Euclidean distance in z-space (state 13 + command 4, standardised by the mean and SD of the world's kept training rows) to the 10th-nearest kept training row; exact (scipy cKDTree); in-sample at training states",
+   "kind": "stand_in",
+   "units": "other"
+  },
+  "perfect_band": {
+   "formula": "[delta*(s, ref) - delta*(s, a)]_+ (the room's main oracle, change A1); delta*(s, a) = r(s, a) + 0.98 min_h Q_h(s', c(s')) - min_h Q_h(s, a), (s', r) one float64 step of thruster_chain.dynamics_jax in the world's physics, c the stall-aware controller (room harness oracle64, q_head='min'); ref = the recorded command at T1, T2, T4 states and the cloned actor's command at T3 states. The sanity check; excluded from 'best stand-in'",
+   "kind": "oracle",
+   "units": "value"
+  },
+  "perfect_band_literal": {
+   "formula": "|delta*(s, a)| (the plan's literal form, reported)",
+   "kind": "oracle",
+   "units": "value"
+  },
+  "perfect_band_signed": {
+   "formula": "-delta*(s, a) (reported)",
+   "kind": "oracle",
+   "units": "value"
+  },
+  "range_hinge": {
+   "formula": "100 sum_j ([a_j - hi_j]_+^2 + [lo_j - a_j]_+^2), lo_j / hi_j the 0.5% / 99.5% quantiles of the world's kept training commands (reported; not a stand-in)",
+   "kind": "reported",
+   "units": "other"
+  },
+  "residual_evidence": {
+   "formula": "-(1/10) sum over the 10 nearest kept training rows j of (s, a) in z-space (the distance's neighbours, in-sample) of delta_j; delta_j = r_j + 0.98 min_h Q_h(s'_j, c(s'_j)) - min_h Q_h(s_j, a_j), logged r_j and s'_j, c the stall-aware controller as the critic's target reads it (learners.FixedController), no noise",
+   "kind": "stand_in",
+   "units": "value"
+  },
+  "two_head": {
+   "formula": "|Q1(s, a) - Q2(s, a)| of the world's frozen gapped fixed-controller critic",
+   "kind": "stand_in",
+   "units": "value"
+  }
+ },
+ "stage2_hook": {
+  "contract": "scratchpad/ood/stage2/detect_contract.py (Stage 2's), names checked by checks_seed0.py",
+  "contract_sha256_when_written": "1a47e39b76d5e48017eea38e2e69102b6ef327044cdcaf31eed1a688bce8a4e1",
+  "doc": "DECLARED HOOK, Stage 2 only (plan 5.2). Never called in Stage 1.\n\n    Accepts BCA's width U(s, a) as a callable width_fn(states (m, 13) float64, commands (m, 4) float32) -> (m,)\n    (Stage 2's band.WidthReader: it reads the state rounded to float32 and normalised as the learners see it), with\n    attributes .name (starting 'bca_width') and .sha256 (its band file). Scores every pair of the locked pair sets of\n    (seed, world) exactly as the stand-ins were scored, in critic value units, and writes the widths once, hashed,\n    under out_dir (inside runs/shift_explore/stage2). The widths are joined with the labels only by measures(), after\n    both are hashed: Stage 2 then calls measures(<width record>, <labels record>, level=tau) and applies STAGE2_MARKS.\n    Refuses: out_dir outside Stage 2's folder, a callable without a BCA width name and SHA-256, an unknown version, a\n    malformed pre-registration SHA-256. This hook imports nothing of BCA and checks no approval itself: Stage 2's\n    WidthReader refuses without the user's approval of the Stage 2 pre-registration.",
+  "function": "detect.score_bca_width(width_fn, ctx, world, out_dir, *, stage2_prereg_sha256, version, pairs_out)",
+  "measure_keys": [
+   "widening_T1_harmful",
+   "widening_T3_harmful",
+   "size_T1_paired",
+   "size_T1_raw",
+   "ranking_T12",
+   "ranking_T3",
+   "rate_above_level_T4",
+   "catch_rate_T3_past80",
+   "flag_rate_past80",
+   "n_harmful_T1",
+   "n_harmful_T3"
+  ]
+ },
+ "stage2_marks": {
+  "a1_lesson": "Change A1 (room spec v2, changes_before_any_run) found that a residual-based band carries an offset that does not come from harm: at recorded commands BCA's one-step residual delta*(s, a) averages +0.149 (seed 0), so the plan's literal |delta*| first FALLS just past the 80% knee and rewards the first points of over-throttle; measured from the row's own recorded command, [delta*(s, a_i) - delta*(s, a)]_+, the offset cancels and the penalty rises past 80%. Check (e) then required a penalty to rise past 80%. The lesson for Stage 2: (1) the paired marks compare the width at the command with the width at its 80% cap AT THE SAME STATE (direction: U(s, a) > U(s, cap(a)); any offset that does not change with the command cancels), never the width at the command against widths at other states or against a level; (2) a penalty is read relative to the recorded command at the same state, W_U(s, a) = [U(s, a) - U(s, a_i)]_+, which is what Stage 2's policy test applies at k = 1 (stage2/policy.py, k_paired), so the size mark uses the penalty difference ([U(s, a) - U(s, a_i)]_+ - [U(s, cap) - U(s, a_i)]_+) / over_pref; pair by pair this difference has the sign of the raw width difference U(s, a) - U(s, cap) (or is 0) and is never larger in size (0 <= paired <= raw when the width rises from the cap to the command, raw <= paired <= 0 when it falls), so a pair whose paired difference is at least c > 0 has a raw difference of at least c; the raw ratio is reported; (3) the knee_* measures read the width and the penalty at the 81% knee pair (every thruster clipped to 81%) against the cap: a related descriptive readout, NOT check (e) (which moves thruster 1 alone along a grid and also tests the slope and the best throttle) and not pass/fail; the share of pairs where the penalty falls and its mean change are reported beside check (e)'s (e1) 25% and (e2) mean-rise rules for reference only.",
+  "calibration_sanity": {
+   "key": "rate_above_level_T4",
+   "note": "T4 is drawn from the same pool as tau's rows (calibration split, gap removed, bank rows left out); the check is informative only if tau is computed on rows of that pool outside T4 (pairs.npz holds T4's log rows: set == 'T4', log_row)",
+   "rule": "share of T4 rows with U above Stage 2's tau",
+   "target": 0.05,
+   "tolerance": 0.015
+  },
+  "claim_rule": "'BCA flags the actor's reliance on commands the critic cannot vouch for' only if direction, size and ranking hold AND BCA's ranking score (T12 and T3, each) is no more than 0.02 below the best data-only stand-in's (the best of distance, density, classifier_ratio, two_head, residual_evidence, each scored by this script at its own 95% level; the perfect band and the range hinge are not stand-ins). 'Identifies the harm' only with selectivity of at least 0.2 in a trace test bed.",
+  "direction": {
+   "T1_at_least": 0.75,
+   "T3_at_least": 0.65,
+   "chance": 0.5,
+   "keys": [
+    "widening_T1_harmful",
+    "widening_T3_harmful"
+   ],
+   "rule": "share of harmful past-80% pairs with U(s, command) > U(s, cap) at the same state"
+  },
+  "if_direction_or_size_fails": "declare the weighted version (Variant A-weighted) and repeat the detection test with this same script; no uniform-weight policy test runs",
+  "pooled": "mean over seeds 0-4 of the per-seed value; each mark also holds in at least 4 of 5 seeds; a missing or failed seed fails every mark (plan 5.2)",
+  "ranking": {
+   "T12_at_least": 0.75,
+   "T3_at_least": 0.7,
+   "keys": [
+    "ranking_T12",
+    "ranking_T3"
+   ],
+   "rule": "P(a random harmful pair has the larger width than a random harmless pair), ties one half, over the plan's roles only (T1 and T2: command, cap, recorded, cloned; T3: command, cap); the 81% knee pairs are in no ranking pool (spec change C2)"
+  },
+  "scored_band": "BCA's band fitted with settings unchanged on each seed's frozen gapped fixed-controller critic (residual target with the stall-aware controller at the next state), and on check 3's frozen host critic; widths read only at the locked pair sets through score_bca_width; marks on the fixed-critic band in the stalling world",
+  "seeds_needed": 4,
+  "selectivity": {
+   "gated": false,
+   "note": "reported in Stage 2; gated only in a trace test bed (plan 4.6)",
+   "rule": "flag_rate_past80 (at tau) in the stalling world minus the same in the no-stall world"
+  },
+  "size": {
+   "at_least": 1.0,
+   "key": "size_T1_paired",
+   "reported": "size_T1_raw (median of (U(s, a) - U(s, cap)) / over_pref)",
+   "rule": "median over harmful past-80% T1 pairs of ([U(s, a) - U(s, a_i)]_+ - [U(s, cap) - U(s, a_i)]_+) / over_pref, a_i the row's recorded command at the same state (change A1's lesson: the consumer's penalty at k = 1); at least 1, so that k = 1 would cancel the false preference"
+  },
+  "standin_margin": 0.02
+ },
+ "stage2_pins": "Stage 2's prereg.json (runs/shift_explore/stage2) pins this component's code manifest and detect.py by SHA-256. After this version it refuses until Stage 2's write_manifest.py and write_prereg.py are rerun and the new version approved (its own rule). This component wrote nothing in Stage 2's folder",
+ "stand_ins": [
+  "distance",
+  "density",
+  "classifier_ratio",
+  "two_head",
+  "residual_evidence"
+ ],
+ "version": 5,
+ "worlds": [
+  "stall",
+  "no_stall"
+ ]
+}
