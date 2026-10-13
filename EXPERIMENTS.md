@@ -338,6 +338,15 @@ Last updated: 2026-10-12.
     flags unsupported commands. Claiming it identifies harm needs data that carry a trace of the harm.
   - Next: Stage 1, a room test of the lower-edge channel with an exact one-step oracle against matched untargeted
     controls, still without BCA. Stage 2 (BCA) needs the user's typed approval and a new labelled pre-registration.
+- **Stage 1 result (2026-10-13; exploratory, no BCA; `outputs/shift/beyond-the-data/stage1/RESULTS.md`): all marks
+  pass.** A penalty at the actor's own command, equal to the critic's exact extra overrating of that command over the
+  recorded one, recovers 94 of the 99 strong-current points (−14.3 to 79.7). It beats matched even pull,
+  push-less-everywhere and random penalty surfaces by 89–99 points (5 of 5 seeds), and improves the other situations
+  by 8–20. The same information taken from another state recovers almost nothing (−0.3). In the no-stall world it
+  costs 1.3 points, where a plain clip to the recorded range costs 30.9 (the clip scores 93.1 in the stalling
+  world). It replicates on check 3's critic (84.7 against −2.8). The user asked for both claims, the flags claim
+  first: the Stage 2 pre-registration is written and awaits the user's approval on their own machine; the trace test
+  bed for the harm claim is running.
 - **Known bug (reporting only):** `acceptance.report_cards` passes all four situations' anchors to `shift.shift_card`.
   The cards were recomputed outside the gate with that one change, labelled as such
   (`outputs/shift/stop-report/cards/`), and match the gated scores to 3e-14 points. The bug gets fixed only under a
