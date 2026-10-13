@@ -4,7 +4,7 @@ This file records every experiment in one place. Each entry says why the experim
 what happened, what it means, and what comes next. Update it whenever an experiment starts, finishes or changes
 plan. Details live in the linked write-ups; this file stays short.
 
-Last updated: 2026-10-12.
+Last updated: 2026-10-13.
 
 ## The big picture
 
@@ -40,7 +40,7 @@ Last updated: 2026-10-12.
 | 13 | Full D4RL training (return) | Not started; needs permission | No WBCP-era return evidence yet |
 | 14 | Toy-world audit and the Gapped LQ world | Done: rejected twice (original gate, then Amendment A1 on fresh seeds) | The critic is wrong everywhere, so the loss is not where data are thin |
 | 15 | D4RL rollout truth (option C) and the action-gap protocol | Built; real runs need data + checkpoints | Tested on synthetic data only |
-| 16 | ThrusterChain: a Gymnasium environment with a controlled distribution shift | Done: stopped before BCA (no room) | The shift costs 99 points in strong current, but caution of BCA's kind cannot reach it |
+| 16 | ThrusterChain: a Gymnasium environment with a controlled distribution shift | Stopped before BCA (no room); Stage 1 passed; Stage 2 weighted detection passed, policy test running | The shift costs 99 points in strong current; pull-toward-data caution cannot reach it, a value penalty at the actor's command can |
 
 ## Experiments
 
@@ -347,6 +347,20 @@ Last updated: 2026-10-12.
   world). It replicates on check 3's critic (84.7 against −2.8). The user asked for both claims, the flags claim
   first: the Stage 2 pre-registration is written and awaits the user's approval on their own machine; the trace test
   bed for the harm claim is running.
+- **Results of 13 October (exploratory, seeds 0-4; `outputs/shift/beyond-the-data/results-2026-10-13/README.md`):**
+  - Data-only rivals in the lower-edge slot: only the range hinge captures the room (84.6 of 98.9 points back in
+    strong current, but 20.4 lost in the no-stall world); the classifier ratio wins back 36.8, the others under 10.
+    The range hinge is Stage 2's rival.
+  - Trace test bed (harm claim, seeds 0-2, shares 1-10% post hoc): no share passes. Harm stays above 50 points up to
+    5% kept, but a data-only residual signal never separates the worlds (at most 0.08 against 0.2).
+  - Deployment-check channel: open (a perfect detector beats random switching by 23.2 points in strong current).
+  - **Stage 2 detection, uniform version: fails** direction (0.50 / 0.73) and size (0.0004): BCA's band barely
+    changes past 80%. The pre-registered weighted version was declared.
+  - **Stage 2 detection, weighted version: passes direction (1.00 / 1.00), size (1.46) and ranking (0.99 / 0.86)**,
+    calibration 4.9%, but is 0.04 below the classifier ratio in strong current, so the claim rule is not met. Its
+    width adds a term from the same classifier, so its detection mostly reflects that classifier.
+  - Because a version passed direction and size, the policy test, deployment check and full host started on seeds
+    0-4 (13 Oct, 13:56 UTC), as the pre-registration orders.
 - **Known bug (reporting only):** `acceptance.report_cards` passes all four situations' anchors to `shift.shift_card`.
   The cards were recomputed outside the gate with that one change, labelled as such
   (`outputs/shift/stop-report/cards/`), and match the gated scores to 3e-14 points. The bug gets fixed only under a
@@ -427,3 +441,6 @@ Last updated: 2026-10-12.
     (mechanism, harm anatomy, deployment diagnostic, literature, judge panel of three designs): plan in
     `outputs/shift/beyond-the-data/PLAN.md` (entry 16);
   - the ThrusterChain page gained a task overview and Half-Cheetah-style component sections.
+  - Stage 1 passed; rivals, trace sweep and deployment check finished; Stage 2 approved by the user, its uniform
+    detection failed and its weighted detection passed direction, size and ranking; the policy test started
+    (entry 16; `outputs/shift/beyond-the-data/results-2026-10-13/`).
