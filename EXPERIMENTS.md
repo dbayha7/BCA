@@ -390,9 +390,11 @@ Last updated: 2026-10-13.
     first, `iw_explore/PLAIN_TWIN_PREREG.md`). It covers 38.6–48.1% at every shift. Its band is 0.22–0.32 times BCA's
     width and no wider at the removed hold. All four expectations were met; on medium-expert its coverage rose 1.4
     points under the shift instead of dropping or staying flat.
-  - **Data fact** (confirmed from the training files): the version-5 data hold no thruster-1 commands past +80% in the
-    expert data, and 3.6–9.9% in the other qualities, all random. The critic therefore guesses past 80% with or without
-    the hold removed (the page's "critic in action" section shows it).
+  - **Data fact** (recomputed from the training files, data seeds 0–4): in the expert data no command of any thruster
+    goes past 80%. In the other qualities, 3.25–10.11% of all training rows push thruster 1 upstream past 80%
+    (medium-expert 3.25–3.53%, random 9.98–10.11%), and every one is a uniform random command. The critic therefore
+    guesses past 80% with or without the hold removed (the page's "critic in action" section shows it). An earlier
+    note quoted 3.6–9.9%, which does not reproduce exactly (`docs/thrusterchain/notes/p4_facts.md`, section 8).
 - **Meaning:**
   - BCA's mechanics are verified, and weighting fixes coverage under a known shift.
   - Weighting did not raise return here. The band is calibrated on recorded commands. Rescaling it cannot create the
