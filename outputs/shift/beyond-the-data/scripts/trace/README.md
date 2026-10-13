@@ -1,0 +1,5 @@
+# Trace test bed code (harm claim; no BCA)
+
+The code that produced `results-2026-10-13/trace_pooled_v3.json`, copied from its pinned folder
+`runs/shift_explore/trace/code/` (gitignored), with the code manifest and spec that pin it (`code_manifest.json`,
+`spec.json`, each with its `.sha256` sidecar). Each file here is byte-identical to the pinned copy that ran.

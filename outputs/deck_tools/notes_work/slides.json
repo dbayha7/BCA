@@ -1,0 +1,2116 @@
+[
+ {
+  "slide": 1,
+  "text": [
+   "BCA PROJECT · CALIBRATION",
+   "WBCP Experiments:\nEssential Questions",
+   "Eight studies. For each: why, what changed, what we expected, what we got. Studies 6–8 are new.",
+   "David Bayha · October 13, 2026"
+  ],
+  "pictures": [],
+  "current_notes": "Hi everyone. This is everything we've learned from the WBCP experiments. The one-line idea: BCA draws a safety line that says 'the critic is probably wrong by no more than this much', and these experiments check whether that line actually holds. There are eight studies, and each one answers the same questions: why we did it, what we changed, what we expected before running it, what we got, and what it means for BCA."
+ },
+ {
+  "slide": 2,
+  "text": [
+   "THE KEY IDEA · THRESHOLD λ",
+   "λ: how far off the critic is allowed to be",
+   "1",
+   "Score the critic's error on each row",
+   "SCHEMATIC · ONE BANK OF HELD-OUT ROWS",
+   "score = |y − q| / σ: the gap between what the critic is trained toward (y) and what it predicts (q), in units of BCA's learned error scale σ.",
+   "cut-off λ",
+   "covered\nscore ≤ λ\nat least 90% of rows",
+   "2",
+   "Pick one cut-off λ from a bank",
+   "A rule reads a bank of n held-out rows and returns λ. Its claim: at most 10% of new rows score above λ (α = 0.1).",
+   "missed\nscore > λ\nat most 10% of rows",
+   "3",
+   "λ sets the band; the band sets the dose",
+   "The critic's error at (s, a) is claimed to be at most λ · σ(s, a). A wider band means less trust in the critic, so BCA adds more behaviour cloning.",
+   "0",
+   "1",
+   "2",
+   "3",
+   "error score |y − q| / σ",
+   "IF λ IS TOO LOW",
+   "IF λ IS TOO HIGH",
+   "SO EVERY RULE ADDS A MARGIN",
+   "The band is too narrow. More than 10% of rows fall outside it, and the actor trusts the critic exactly where it is wrong. This is a failure.",
+   "The band is too wide. The claim holds, but BCA adds more caution than the data call for. Safe, but costly.",
+   "A bank's own 90% point lands too low about half the time. Rules raise λ so it is high enough on at least 95% of banks.",
+   "Source  Cut-offs from a bank: conformal prediction as Bayesian quadrature (Snell & Griffiths, 2025) and its weighted form, WBCP (Lou & Luo, 2026)."
+  ],
+  "pictures": [],
+  "current_notes": "Before anything else, the one idea everything rests on: the cut-off lambda. For every held-out row, we measure how wrong the critic is: the gap between the target and the critic's value, scaled by BCA's learned unit. A rule reads a sample of these rows, which we call a bank, and picks one cut-off, lambda. Its promise is that at most 10 percent of new rows will be worse than that. Lambda times sigma is the safety band around the critic, and the width of that band becomes the dose. If lambda is too low, the band is too narrow and the actor trusts the critic where it's wrong. That's a failure. If it's too high, we're just more careful than we need to be. Because a sample's own 90 percent point lands too low about half the time, every rule adds a margin."
+ },
+ {
+  "slide": 3,
+  "text": [
+   "THE KEY IDEA · SUCCESS VS FAILURE",
+   "When does λ succeed, and when does it fail?",
+   "1",
+   "A ROW",
+   "2",
+   "A BANK",
+   "3",
+   "A RULE",
+   "Covered or missed",
+   "Passes or fails at α = 10%",
+   "Valid if at most 5% of banks fail",
+   "λ",
+   "10% target",
+   "8.3% missed: pass",
+   "covered",
+   "missed",
+   "13% missed: fail",
+   "20 banks: at most 1 may fail",
+   "error score →",
+   "A row is covered if its score is at most λ: the critic's error fits inside the band. Above λ, it is missed.",
+   "λ's miss rate is the share of all fresh rows in the frozen pool that score above it. The pool is frozen, so this number is exact.\nAbove 10%, the bank fails.",
+   "Each rule runs on 1,000 to 10,000 banks. It is valid if at most 1 bank in 20 fails (β = 0.95).\nA rule that abstains (λ = ∞) makes no claim, so that bank counts as a pass.",
+   "HOW TO READ EVERY RESULT IN THIS DECK",
+   "Each number is the share of banks that fail, set against the 5% line. WBCP fails 4.9%: valid. RCPS fails 1.5%: valid, but cautious. W-CRC fails 49%: not valid.",
+   "Source  The “at least 95% of banks” standard is a high-probability guarantee, as in Bates et al. (2021)."
+  ],
+  "pictures": [],
+  "current_notes": "So how do we decide if lambda worked? Three levels. A row is covered if its score is under lambda, missed if it's over. A bank fails if lambda misses more than 10 percent of all the fresh rows in the pool, and because the pool is frozen, that's exact, not estimated. And a rule is valid if at most 1 bank in 20 fails. Every number in the rest of the talk is that last one: the share of banks that fail, compared with 5 percent."
+ },
+ {
+  "slide": 4,
+  "text": [
+   "THE KEY IDEA · WORDS USED IN THIS DECK (1 OF 6)",
+   "The learning side: the agent and how BCA nudges it",
+   "Every term below appears on later slides. Symbols in blue are how the slides write it.",
+   "Offline reinforcement learning",
+   "Logged dataset   D4RL",
+   "Learning a decision policy from a fixed log of past behaviour, with no new trial and error.",
+   "A standard benchmark log, such as hopper, walker2d or pen. We use seven of them.",
+   "Episode",
+   "One run in the log from start to finish. Its rows are consecutive steps, so they are alike.",
+   "Source  Offline RL (Levine et al., 2020); D4RL (Fu et al., 2020); TD3+BC (Fujimoto & Gu, 2021); ReBRAC (Tarasov et al., 2023); CQL (Kumar et al., 2020); IQL (Kostrikov et al., 2022); two critic copies (Fujimoto et al., 2018)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 5,
+  "text": [
+   "THE KEY IDEA · WORDS USED IN THIS DECK (2 OF 6)",
+   "The learning side: the agent and how BCA nudges it",
+   "Every term below appears on later slides. Symbols in blue are how the slides write it.",
+   "Critic   Q1, Q2, min(Q1, Q2)",
+   "Actor   π, the policy",
+   "A network that predicts how good an action is. It keeps two copies; the min is the cautious reading.",
+   "The network that picks actions. It moves toward whatever the critic rates highly.",
+   "Host algorithm   TD3+BC, ReBRAC, CQL, IQL",
+   "The offline RL method BCA plugs into. BCA does not replace it; it adjusts it.",
+   "Source  Offline RL (Levine et al., 2020); D4RL (Fu et al., 2020); TD3+BC (Fujimoto & Gu, 2021); ReBRAC (Tarasov et al., 2023); CQL (Kumar et al., 2020); IQL (Kostrikov et al., 2022); two critic copies (Fujimoto et al., 2018)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 6,
+  "text": [
+   "THE KEY IDEA · WORDS USED IN THIS DECK (3 OF 6)",
+   "The learning side: the agent and how BCA nudges it",
+   "Every term below appears on later slides. Symbols in blue are how the slides write it.",
+   "Behaviour cloning   BC",
+   "Dose   m",
+   "A pull toward the actions in the log. More BC means more caution, less trust in the critic.",
+   "BCA's multiplier on that caution: 1 is the host's default, and it can rise toward 1.5.",
+   "Result   return, regret",
+   "How well the final policy performs, and how far it falls short of the best possible.",
+   "Source  Offline RL (Levine et al., 2020); D4RL (Fu et al., 2020); TD3+BC (Fujimoto & Gu, 2021); ReBRAC (Tarasov et al., 2023); CQL (Kumar et al., 2020); IQL (Kostrikov et al., 2022); two critic copies (Fujimoto et al., 2018)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 7,
+  "text": [
+   "THE KEY IDEA · WORDS USED IN THIS DECK (4 OF 6)",
+   "The testing side: how a cut-off is checked",
+   "These terms describe the tests. Each study slide uses them without re-defining them.",
+   "Held-out rows and the pool",
+   "Bank   n rows",
+   "Logged rows the agent never trains on. The pool is all of them for one dataset; λ is graded on the pool.",
+   "The sample of held-out rows a rule sees when it picks λ, from 248 to 8,192 rows.",
+   "Frozen critic",
+   "Rows per episode   K",
+   "A critic trained, then fixed, so its errors stay put and each λ's true miss rate is exact.",
+   "How many rows a bank takes from each episode. Fewer per episode means more episodes.",
+   "Source  Row weights under shift (Tibshirani et al., 2019); effective sample size and how alike rows are (Kish, 1965); abstaining (Lou & Luo, 2026)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 8,
+  "text": [
+   "THE KEY IDEA · WORDS USED IN THIS DECK (5 OF 6)",
+   "The testing side: how a cut-off is checked",
+   "These terms describe the tests. Each study slide uses them without re-defining them.",
+   "How alike an episode's rows are   ρ",
+   "Stable critic   “healthy”",
+   "High ρ means a bank holds less information than its size suggests.",
+   "One whose values settle in a sensible range. Unstable critics are left out of conclusions.",
+   "Shift   tilt, γ",
+   "Row weights   importance weights",
+   "When the rows that matter at test time differ from the bank's rows. γ sets how strong it is.",
+   "Weights that make the bank look like the test rows. WBCP uses them; BCA today does not.",
+   "Source  Row weights under shift (Tibshirani et al., 2019); effective sample size and how alike rows are (Kish, 1965); abstaining (Lou & Luo, 2026)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 9,
+  "text": [
+   "THE KEY IDEA · WORDS USED IN THIS DECK (6 OF 6)",
+   "The testing side: how a cut-off is checked",
+   "These terms describe the tests. Each study slide uses them without re-defining them.",
+   "Abstain   λ = ∞",
+   "Written before running   pre-registered",
+   "A rule declines to give a cut-off (“I can't promise anything”). It counts as a pass.",
+   "Each prediction was saved with a timestamp before the run, so it can't be adjusted to fit.",
+   "Verdicts",
+   "Met, partly met, missed, pending, or no forecast: how each result compares with its prediction.",
+   "Source  Row weights under shift (Tibshirani et al., 2019); effective sample size and how alike rows are (Kish, 1965); abstaining (Lou & Luo, 2026)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 10,
+  "text": [
+   "Types of Sampling",
+   "TABLE:\nSampler | How one bank is drawn | Where it's used | Hopper banks failing, no shift\nIndependent rows | n rows picked uniformly at random from the whole pool, ignoring episodes (d4rl_benchmark.draw_calibration). Two picked rows almost never share an episode. | Reference design in the benchmarks | 4.7%\nWhole episodes | Random whole episodes until there are n rows. On hopper that's 1,103 rows from about 3 episodes. | Old BCA | 27.8% (27–48% across datasets)\nK rows per episode (random or evenly spaced) | About n/K episodes, with K rows from each: at random positions, or one from each of K equal stretches of the episode | Study 3 | 5.2% at K = 5\nBCA's reservation sampler (deployed) | The spaced version, with distinct episodes chosen in exact proportion to length (calibration/bank.stratified_bank). Every row of a reserved episode is removed from training. Extra rows are trimmed at random. | Today's BCA, study 4 | depends on the K it's configured with"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 11,
+  "text": [
+   "EXPERIMENTAL SETUP",
+   "How every calibration test works",
+   "6",
+   "1",
+   "2",
+   "3",
+   "4",
+   "5",
+   "Data",
+   "Critic",
+   "Pool",
+   "Bank",
+   "Rule",
+   "Judge",
+   "7 D4RL datasets",
+   "4 algorithms, trained, frozen",
+   "score every held-out row",
+   "draw n rows, maybe shifted",
+   "picks a threshold λ",
+   "fail: λ misses > 10% of pool rows",
+   "Valid rule: ≤ 5% of banks fail",
+   "1,000–10,000 banks per setting",
+   "Exact: no training noise",
+   "Studies 6–8 use a second test bed: ThrusterChain, a simulated task where the true values are known exactly and the data gap is made on purpose.",
+   "Source  Datasets: D4RL (Fu et al., 2020). Algorithms: TD3+BC (Fujimoto & Gu, 2021); ReBRAC (Tarasov et al., 2023); CQL (Kumar et al., 2020); IQL (Kostrikov et al., 2022)."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide11_0.png",
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide11_1.png",
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide11_2.png",
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide11_3.png",
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide11_4.png"
+  ],
+  "current_notes": "Every test works the same way. We train a critic, freeze it, and score a big pile of held-out data. Because the pile never changes, we know the exact right answer. Then we draw thousands of random samples, which we call banks. A method draws its safety line from each one, and we count how often that line is wrong. A bank fails if its line is wrong more than 1 time in 10. A method passes if at most 1 bank in 20 fails. Think of it as checking a thermometer against a known temperature thousands of times. No training loop is involved, so every number is exact."
+ },
+ {
+  "slide": 12,
+  "text": [
+   "SETUP · HOW BCA RUNS",
+   "How BCA turns held-out data into a dose",
+   "held-out bank  scored at every refresh, never trained on",
+   "1",
+   "Reserve a bank",
+   "2",
+   "Host training step",
+   "3",
+   "Learn error scale σ",
+   "4",
+   "Score the bank",
+   "From each D4RL dataset (7 per host), withhold about n/K episodes.\nKeep K evenly spaced rows from each: that is the bank.\nThe host trains on the rest.",
+   "The host algorithm (TD3+BC, ReBRAC, CQL or IQL) updates its critic and actor\n1M steps on the training episodes",
+   "σ(s, a): how large the critic's error usually is at each state and action\nNudged a little at every training step",
+   "Use the current critic on every bank row\nscore = |y − q| / σ\ny: what the critic is trained toward; q: its prediction",
+   "errors",
+   "σ",
+   "a fixed multiplier on one loss term\nm = 1 until update 10k",
+   "n scores",
+   "7",
+   "Dose adds caution",
+   "6",
+   "Band width → dose",
+   "5",
+   "Set the cut-off λ",
+   "frozen\nλ, σ",
+   "TD3+BC, ReBRAC: stronger pull toward logged actions\nCQL: stronger penalty on unlogged actions\nIQL: actor copies logged actions more",
+   "dose m",
+   "Band width U = λ · σ on each training row\nDose m = 1 + 0.5 · U / (U + u): wider band, bigger dose, from 1 toward 1.5",
+   "Lowest λ that misses at most 10% of rows, with 95% confidence\nRule: WBCP (BCA today uses its equal-weight form, BQ-CP)",
+   "bank, n = 248 to 8,192",
+   "training episodes",
+   "ONCE · BEFORE TRAINING",
+   "EVERY UPDATE · 1M HOST UPDATES",
+   "EVERY REFRESH · 198×\nupdate 10k, then every 5k to 995k",
+   "Source  Hosts: TD3+BC (Fujimoto & Gu, 2021); ReBRAC (Tarasov et al., 2023); CQL (Kumar et al., 2020); IQL (Kostrikov et al., 2022). Cut-off rule: WBCP (Lou & Luo, 2026)."
+  ],
+  "pictures": [],
+  "current_notes": "Here's BCA on its own, start to finish. Once, before training, we set aside a bank: a few evenly spaced rows from each of many episodes. The algorithm never trains on those episodes. Then two loops run. The fast loop, in grey, runs every update: the host trains, BCA fits a scale on the residuals, and turns the current width into a dose. The slow loop, in blue, runs at each refresh, 198 times: score the bank with the current critic and draw the safety line with WBCP. Follow the numbers around. What the host finally gets is one detached number, between 1 and 1.5, that multiplies one term of its loss."
+ },
+ {
+  "slide": 13,
+  "text": [
+   "SETUP · HOW THE TESTS USE BCA",
+   "Each test opens BCA's loop at a different point",
+   "1",
+   "2",
+   "2",
+   "3–5",
+   "6",
+   "7",
+   "TEST",
+   "Bank",
+   "Critic",
+   "Actor",
+   "Cut-off λ",
+   "Dose",
+   "Caution",
+   "Result",
+   "WHY THIS DESIGN, AND WHAT WE FOUND",
+   "Does the cut-off hold?",
+   "redrawn thousands of times",
+   "trained, then frozen",
+   "not used",
+   "miss rate measured",
+   "Why  A frozen critic makes each λ's miss rate exact.\nShows  Holds only with few rows per episode.",
+   "Studies 2–4 · real datasets",
+   "finished",
+   "Which error to check?",
+   "BCA's own banks",
+   "TD3+BC, frozen",
+   "follows Q1 only",
+   "min vs Q1 compared",
+   "dose for each",
+   "Why  The actor follows Q1; BCA measured the min.\nShows  The min misses Q1's error; dose barely moves.",
+   "Study 5 · real datasets",
+   "finished",
+   "Full training",
+   "rescored 198×",
+   "trains",
+   "trains",
+   "live",
+   "live",
+   "live",
+   "score vs host alone",
+   "Why  Only run where the dose changes the critic it checks.\nShows  Not started yet.",
+   "real datasets · needs approval",
+   "not started",
+   "measured",
+   "set or planted by the test",
+   "runs as in BCA",
+   "frozen",
+   "not run",
+   "Studies 2–5 freeze the agent\nλ is graded exactly, but only on logged actions. How the agent behaves is never measured.",
+   "Studies 6–8 use a simulated task\nThe true result is known exactly, and the data gap is made on purpose.",
+   "Only full training closes the loop\nThe bank is rescored 198× while the critic learns under the dose. No result covers this yet."
+  ],
+  "pictures": [],
+  "current_notes": "And here's how each test plugs into that loop. Each row is a test, each column a step from the last slide. Dark means what the test measures, orange is what the test sets or plants, blue runs exactly as BCA does, grey is frozen. Studies 2 to 5 freeze the critic, so the calibration answer is exact, but the agent never moves and we only check logged actions. Studies 6 and 7 let the actor train, on a critic we built, so we know the true return, but the dose can't change that critic. Only full training closes the loop, where the dose changes the critic that BCA keeps rescoring. Nothing we've run covers that yet, which is why it comes last."
+ },
+ {
+  "slide": 14,
+  "text": [
+   "THE MODELS · WHAT A RULE DOES",
+   "A rule turns a bank into one cut-off λ",
+   "WHAT'S PLOTTED",
+   "HOW TO READ IT",
+   "TAKEAWAY",
+   "1,024 rows the critic never trained on. For each row we measured how far off the critic's prediction was, scaled so that 1 is a typical-sized miss. Each bar counts the rows with that size of error.",
+   "Bars count rows by score. The blue line is the cut-off λ a rule picked from this bank. The 8.3% is measured on fresh rows from the pool, not on this bank.",
+   "Every rule does one job: turn a bank into one λ. Every result in this deck asks how often that λ misses more than 10% of fresh rows.",
+   "Source  Cut-off rules: Snell & Griffiths (2025); Lou & Luo (2026)."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide14_0.png"
+  ],
+  "current_notes": "This is one real calibration sample: about a thousand rows from hopper. Each bar counts rows by how wrong the critic was. A method's whole job is to pick one cut-off. Here it's 1.15, and on fresh data only 8.3 percent of rows land above it, inside our 10 percent target. Every result later in the talk is about how often a cut-off like this is wrong."
+ },
+ {
+  "slide": 15,
+  "text": [
+   "THE MODELS · WBCP",
+   "WBCP: the cut-off 95% of reweighted banks agree on",
+   "WHAT'S PLOTTED",
+   "HOW TO READ IT",
+   "TAKEAWAY",
+   "We made 1,000 slightly different versions of the same bank by randomly changing how much each row counts. Each light line is one version (25 shown). It climbs as the cut-off moves right and more rows fall under it.",
+   "A line shows the share of rows below each cut-off. Where it crosses 90% is that version's cut-off (dot). Dots spread because a bank is only a sample.",
+   "WBCP uses the cut-off that 95% of versions fall below, here λ = 1.15, and never less than the bank's own 90% point. That is where “95% sure” comes from.",
+   "Source  WBCP (Lou & Luo, 2026), built on BQ-CP (Snell & Griffiths, 2025). Random row weights are a Bayesian bootstrap (Rubin, 1981)."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide15_0.png"
+  ],
+  "current_notes": "Here's how WBCP picks the line. It imagines many slightly different versions of the sample; each light curve is one. Each version would pick its own cut-off, shown as the dots. WBCP takes the cut-off that 95 percent of them agree on, and that's where '95 percent sure' comes from. With equal weights, this is exactly what BCA uses today. With importance weights, it can handle shift."
+ },
+ {
+  "slide": 16,
+  "text": [
+   "THE MODELS · WBCP IN CODE",
+   "Six lines decide the cut-off",
+   "calibration/wbcp.py · crossings() lines 51–54, calibrate() lines 115 and 117",
+   "mass = exponentials[:, :-1] * sorted_weights\ntotal = mass.sum(axis=1) + exponentials[:, -1] * test_mass\ncovered = np.cumsum(mass, axis=1) >= (1.0 - alpha) * total[:, None]\nreturn np.where(covered.any(axis=1), sorted_scores[covered.argmax(axis=1)], np.inf)\n# …\nlambda_hpd = float(posterior[math.ceil(Fraction(str(beta)) * int(draws)) - 1])\nreturn Calibration(max(lambda_hat, lambda_hpd), lambda_hat, lambda_hpd, posterior, n_eff)",
+   "1",
+   "Random weights on every bank row: one plausible version",
+   "2",
+   "One extra row always missed: the next row may be the worst",
+   "3",
+   "Use the 950th of 1,000 cut-offs, never below the bank's 90% point",
+   "Source  Algorithm 1 of Lou & Luo (2026)."
+  ],
+  "pictures": [],
+  "current_notes": "This is the actual code: six lines. First, give every sample point a random weight. Second, add one extra 'ghost' point that's never covered. It stands for the chance that the next data point is worse than anything we've seen. That ghost point is what the old method was missing, and it's why the old method was overconfident. Third, take the 950th of 1,000 cut-offs, and never go below the sample's own 90 percent point."
+ },
+ {
+  "slide": 17,
+  "text": [
+   "THE MODELS · THE FOUR RULES",
+   "Four rules: two candidates for BCA, two comparisons",
+   "CANDIDATES FOR BCA",
+   "COMPARISONS ONLY · NEVER DEPLOYED",
+   "BQ-CP",
+   "WBCP",
+   "RCPS",
+   "W-CRC",
+   "BCA TODAY",
+   "PROPOSED FIX",
+   "COMPARISON",
+   "COMPARISON",
+   "= WBCP with uniform weights",
+   "Lou & Luo (2026), Alg. 1",
+   "Bates et al. (2021)",
+   "weighted conformal risk control",
+   "PICKS λ BY",
+   "PICKS λ BY",
+   "PICKS λ BY",
+   "PICKS λ BY",
+   "the cut-off 95% of reweighted banks agree on",
+   "the same, but rows that resemble test rows count more",
+   "a worst-case bound on the miss rate",
+   "keeping the miss rate at 10% on average",
+   "WEIGHTS",
+   "WEIGHTS",
+   "WEIGHTS",
+   "WEIGHTS",
+   "none (uniform)",
+   "importance weights w(x)",
+   "none",
+   "importance weights w(x)",
+   "GUARANTEE",
+   "GUARANTEE",
+   "GUARANTEE",
+   "GUARANTEE",
+   "≥ 95% of banks within 10%, when rows are unrelated",
+   "95% sure for this bank, after weighting",
+   "≥ 95% of banks within 10%, from a worst-case bound",
+   "only on average: some banks may miss far more",
+   "LIMITATION",
+   "LIMITATION",
+   "WHY ONLY A COMPARISON",
+   "WHY ONLY A COMPARISON",
+   "Blind to shift: when test rows differ from the bank, it fails 25–100% of banks (study 2).",
+   "Only as good as its weights: poorly estimated weights fail 17–36% of banks. Under strong shift it may decline to give a λ.",
+   "Over-cautious: fails only 1.5% of banks against a 5% budget, so its λ is higher than needed. No shift correction: fails 86% of trials on the paper's Table 1 task.",
+   "Any single bank can miss far more than 10%: 41–49% of banks fail our test. It promises less than BCA needs.",
+   "IN THE RESULTS",
+   "IN THE RESULTS",
+   "IN THE RESULTS",
+   "IN THE RESULTS",
+   "BCA today (“uniform BCA”)",
+   "the fix under shift",
+   "reference for the strict guarantee",
+   "marginal baseline",
+   "BCA's bar in every result:  at most 5% of banks may miss more than 10% of fresh rows. Only the two candidates are ever deployed.",
+   "Source  BQ-CP (Snell & Griffiths, 2025); WBCP (Lou & Luo, 2026); RCPS (Bates et al., 2021); W-CRC: conformal risk control (Angelopoulos et al., 2024) with shift weights (Tibshirani et al., 2019)."
+  ],
+  "pictures": [],
+  "current_notes": "These are the four rules we compare throughout. The left two are candidates for BCA. BQ-CP is what BCA runs today; I'll call it uniform or vanilla BCA. WBCP is the same rule plus importance weights, and it's our fix for shift. The right two are comparisons only; we never deploy them. RCPS gives the strict guarantee, but it's over-cautious, and with no weights it fails badly on shifted data. W-CRC handles shift, but it only promises to be right on average, so about half of individual banks fail. Our bar in every result is the strict one: at most 1 bank in 20 may miss more than 10 percent."
+ },
+ {
+  "slide": 18,
+  "text": [
+   "THE MODELS · THREE GUARANTEES",
+   "Three rules, three kinds of guarantee",
+   "WHAT'S PLOTTED",
+   "HOW TO READ IT",
+   "TAKEAWAY",
+   "Each rule was handed thousands of different banks and set one cut-off per bank. We then checked every cut-off against all the rows in the pool. Each bar counts banks by the share of rows that cut-off really missed.",
+   "Dotted line: the 10% target α. Dark bars: banks that miss more than 10%, so they fail. Right: share of banks failing. A rule passes at 5% or less.",
+   "W-CRC controls only the average, so half its banks fail. RCPS passes but leaves budget unused. WBCP spends almost exactly 5%. BQ-CP shares WBCP's guarantee.",
+   "Source  Marginal: Angelopoulos et al. (2024). High-probability: Bates et al. (2021). Posterior-credible: Snell & Griffiths (2025); Lou & Luo (2026)."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide18_0.png"
+  ],
+  "current_notes": "Here are those promises side by side. Each row is one rule run on many banks. Every bank gives one cut-off, and we check how often that cut-off is wrong on the full pool. The dark bars past the dotted line are banks that fail. W-CRC only promises to be right on average, so about half of individual banks miss: 49 percent. RCPS is very cautious, at 1.5 percent. WBCP lands right at our 5 percent budget. Our bar is the strict kind: right for 19 out of 20 banks."
+ },
+ {
+  "slide": 19,
+  "text": [
+   "THE MODELS · HOW BCA USES Λ",
+   "BCA turns the width into a BC dose",
+   "WHAT'S PLOTTED",
+   "HOW TO READ IT",
+   "TAKEAWAY",
+   "Left: how the dose grows as the critic's error band gets wider. A narrow band adds almost no caution; a very wide one adds close to 50% more. Right: the doses real training rows actually got.",
+   "m = 1 is the host's own BC weight; m approaches 1.5 but never reaches it. The dark stretch of the curve and the shaded band show where real rows fall.",
+   "Real doses bunch near 1.3, with pool means of 1.26 to 1.33. With so little spread, the dose acts almost like a constant. Study 5 comes back to this."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide19_0.png"
+  ],
+  "current_notes": "Here's how BCA uses the line. The wider the line, the bigger the dose, which is the multiplier on 'stay close to the data'. It can only go from 1 to 1.5. On real data, almost every row lands near 1.3. Keep that in mind, because it comes back in studies 5 and 6."
+ },
+ {
+  "slide": 20,
+  "text": [
+   "THE MODELS · WHERE THE DOSE ENTERS",
+   "Where the dose enters TD3+BC's actor",
+   "algorithms/td3_bc.py · _actor_loss_fn, lines 130–139 (excerpt)",
+   "q = critic_apply_fn(critic_params, batch.obs, pi)[..., 0]\nlmbda = args.alpha / jax.lax.stop_gradient(jnp.abs(q).mean())\n# …\nbc = (\n    jax.lax.stop_gradient(bc_multiplier)\n    * jnp.square(pi - batch.action).mean(axis=-1)\n).mean()\nreturn (-lmbda * q.mean() + bc, (q.mean(), lmbda, bc))",
+   "1",
+   "[..., 0]: the actor follows critic copy Q1 only, but BCA checked min(Q1, Q2) → study 5",
+   "2",
+   "bc_multiplier: BCA's dose scales only the pull toward logged actions → studies 6–8",
+   "Source  TD3+BC actor loss (Fujimoto & Gu, 2021); two critic copies from TD3 (Fujimoto et al., 2018)."
+  ],
+  "pictures": [],
+  "current_notes": "This is where the dose actually enters TD3+BC. Two things to notice. First, the actor only listens to the first critic head, Q1, but BCA was checking a different number, the minimum of both heads. That's study 5. Second, the dose is just one multiplier on the behaviour-cloning term. If it's about the same everywhere, it can't aim at anything. That's studies 6 and 7."
+ },
+ {
+  "slide": 21,
+  "text": [
+   "HOW EACH STUDY IS REPORTED",
+   "Every study answers the same questions",
+   "1 · STUDY CARD",
+   "2 · EACH CHANGE",
+   "3 · CLOSER",
+   "Why are we doing it?",
+   "What changed, and why it makes sense",
+   "If not met, why?",
+   "What does it accomplish?",
+   "What it means for BCA",
+   "Expected: written before running",
+   "Setup: data, models, what varies, metric",
+   "The next question it raises",
+   "Got, and did it meet the expectation?",
+   "Met",
+   "Partly met",
+   "Missed",
+   "Pending",
+   "No forecast",
+   "VERDICTS",
+   "IN PLAIN TERMS  Each verdict compares a result with the prediction written before that run. “No forecast” means no prediction was written for that change."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide21_0.png",
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide21_1.png"
+  ],
+  "current_notes": "Every study follows the same pattern, which is what my advisor asked for. First a dark card: why we did it, what it gets us, and the setup. Then one slide per change, with a strip at the bottom: what we expected, written down before running, then what we got, and whether it matched. Then a wrap-up: if it didn't match, why not, and what it means for BCA."
+ },
+ {
+  "slide": 22,
+  "text": [
+   "ROADMAP (1 OF 2)",
+   "Studies 1–4: is BCA's guarantee real?",
+   "1",
+   "2",
+   "3",
+   "4",
+   "Code & paper",
+   "Shift",
+   "BCA's bank",
+   "4 algorithms",
+   "Is our WBCP code right?",
+   "Does it survive shift?",
+   "Does BCA's bank keep it?",
+   "Every algorithm and dataset?",
+   "RESULT\nMatches the paper; one gap left",
+   "RESULT\nNeeds row weights under shift",
+   "RESULT\nOnly with few rows per episode",
+   "RESULT\n2 datasets fail on every algorithm",
+   "FINISHED",
+   "FINISHED",
+   "FINISHED",
+   "FINISHED",
+   "Is the guarantee real?",
+   "studies 1–4 check the cut-off on real data"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 23,
+  "text": [
+   "ROADMAP (2 OF 2)",
+   "Studies 5–8: does it help the actor?",
+   "5",
+   "6",
+   "7",
+   "8",
+   "Error signal",
+   "Test world",
+   "The channel",
+   "New channel",
+   "Is it the error the actor follows?",
+   "Is there room to help?",
+   "Why can't caution reach it?",
+   "Does a new channel work?",
+   "RESULT\nMeasure Q1, not the min",
+   "RESULT\n99 points lost; no room for BCA's channel",
+   "RESULT\nRead where the critic is right",
+   "RESULT\nChannel works; the BCA band not yet",
+   "RUNNING NOW",
+   "FINISHED",
+   "FINISHED",
+   "FINISHED",
+   "Does it help the actor?",
+   "studies 5–8 check what it does to learning"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 24,
+  "text": [
+   "SCORECARD",
+   "The guarantee is sounder; there is no win for learning yet",
+   "Studies 1–5",
+   "No study yet",
+   "Studies 6–7",
+   "Study 8",
+   "Calibration: flaws found, fixed",
+   "BCA has not improved a policy",
+   "Today's channel can't reach the harm",
+   "A channel that works; BCA not yet",
+   "Four real flaws in how BCA sets its cut-off: wrong method, blind to shift, related rows in its bank, the wrong critic copy. Each one now has a fix, though it isn't installed in BCA everywhere yet.",
+   "Studies 1–5 used frozen critics, so none measured learning. The only return number is one seed on one dataset, and it is descriptive only.",
+   "BCA adds extra pull toward the logged data. Even placed perfectly, that pull wins back almost nothing of the 99 points the data gap costs.",
+   "Penalising the value of the actor's own command wins back 94 of 99 points with perfect information. BCA's band failed its first test; a weighted version is running.",
+   "In one sentence: studies 1–5 made the guarantee trustworthy; studies 6–8 asked whether it helps learning, and so far it does not in its current form."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 25,
+  "text": [
+   "STUDY 1 OF 8 · WBCP CODE & PAPER",
+   "Is our WBCP code right?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "BCA's cut-off rule comes from a paper (WBCP). First, confirm our code gives the paper's numbers.",
+   "Our code reproduces the paper's first table and most of its second.",
+   "The paper's synthetic data; no RL",
+   "Table 1: prediction task, 200 rows",
+   "Table 2: counting task, 250 rows",
+   "10,000 repeats; fail: error over α",
+   "FINISHED",
+   "All runs complete. Still unexplained: on Table 2 our code fails 10.2% of trials, the paper 7.9%. 15 of 18 predictions were written down before running.",
+   "IN PLAIN TERMS",
+   "BCA's cut-off rule comes from a published paper. Before trusting it on reinforcement learning data, we re-ran the paper's own experiments with our code and compared numbers. The first table matches; one result in the second table is still higher than the paper's.",
+   "Source  Paper reproduced: Lou & Luo (2026), Weighted Bayesian Conformal Prediction, arXiv:2604.06464."
+  ],
+  "pictures": [],
+  "current_notes": "Study 1: did we build it right? Before trusting any numbers on real data, we checked our code against the paper's own experiments. There's no reinforcement learning here, just the paper's synthetic setups."
+ },
+ {
+  "slide": 26,
+  "text": [
+   "STUDY 1 · CHANGE: REPLACE THE OLD METHOD",
+   "BCA's old cut-off method failed too often",
+   "CHANGE  Lou & Luo's rule, plus one always-missed row",
+   "WHY IT MAKES SENSE  the next row may be worse than any seen",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "Match the paper's rule (a goal, not a prediction)",
+   "Old: 9.7 / 6.8 / 5.6% fail; WBCP: 3.4 / 3.6 / 4.4%",
+   "IN PLAIN TERMS  Orange is BCA's old method, blue the published rule, at three bank sizes. The old method claimed 95% but failed up to 9.7% of banks; the new one stays under the 5% line."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide26_0.png"
+  ],
+  "current_notes": "The first change: we replaced BCA's old method with the paper's. The old one was overconfident. It claimed 95 percent but behaved more like 89 on small samples, and it failed up to 9.7 percent of the time. With the ghost point added, failures drop to 3 or 4 percent. One caveat: these numbers come from our write-up, not from a saved run file."
+ },
+ {
+  "slide": 27,
+  "text": [
+   "STUDY 1 · CHANGE: REPRODUCE TABLE 1",
+   "Table 1: we match the paper",
+   "CHANGE  run all four rules on the paper's task",
+   "WHY IT MAKES SENSE  Lou & Luo (2026) report the answer",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "Every rule within the paper's error bars (logged, not predicted)",
+   "WBCP 5.1% vs paper 5.0%; W-CRC 41.2% vs 42.8%",
+   "IN PLAIN TERMS  Dark bars are our runs, light bars the paper's. They agree closely; one comparison rule is 1.6 points off."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide27_0.png"
+  ],
+  "current_notes": "Then we re-ran the paper's Table 1. Dark bars are us, light bars are the paper. They're basically identical: WBCP comes out at 5.1 against the paper's 5.0. One baseline is about 1.6 points off, just outside the paper's range, so I call this 'partly met'."
+ },
+ {
+  "slide": 28,
+  "text": [
+   "STUDY 1 · CHANGE: A COUNTING-ERROR VERSION",
+   "Table 2: WBCP fails more often than in the paper",
+   "CHANGE  adapt WBCP to a count-based error",
+   "WHY IT MAKES SENSE  Table 2 counts errors, not misses",
+   "EXPECTED",
+   "GOT",
+   "Missed",
+   "WBCP fails 5–10%",
+   "10.2% (9.6 to 10.8); paper 7.9%",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "With perfect weights: 4–8% fail",
+   "7.0%; paper 5.6%"
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide28_0.png"
+  ],
+  "current_notes": "Table 2 is the one gap. We get 10.2 percent where the paper gets 7.9. About 1.4 of those 2.3 points show up even when we give the method perfect weights, and we haven't found out why. Bigger fitting samples close most of the gap, but that doesn't prove the paper used them."
+ },
+ {
+  "slide": 29,
+  "text": [
+   "STUDY 1 · WHAT IT ADDS UP TO",
+   "The code checks out wherever it can be tested",
+   "11",
+   "3",
+   "4",
+   "18 expectations:",
+   "11 met",
+   "3 partly met",
+   "4 missed",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "Of Table 2's 2.3-point gap, 1.4 points remain even with perfect weights. We have not found why.",
+   "BCA now runs the published rule. Its promise assumes bank rows are unrelated and look like test rows.",
+   "NEXT →",
+   "Study 2 · Does it hold when test rows differ from the bank?"
+  ],
+  "pictures": [],
+  "current_notes": "So the code checks out wherever we can test it, and we fixed a real overconfidence problem. One gap is still open. For BCA, the promise only holds if the calibration data looks like the test data, which leads straight into study 2."
+ },
+ {
+  "slide": 30,
+  "text": [
+   "STUDY 2 OF 8 · DISTRIBUTION SHIFT",
+   "Does the cut-off hold when the data shifts?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "BCA checks the critic on logged data, but the trained policy visits different states.",
+   "Under a shift we control, BCA today fails; row weights (WBCP) fix most of it.",
+   "hopper data, one frozen critic",
+   "3 kinds of shift, imposed by us",
+   "BCA today vs WBCP (with weights)",
+   "1,103-row banks, 2,000 per setting",
+   "FINISHED",
+   "All runs complete, on one dataset (hopper) only. 8 of 9 predictions were written down before running.",
+   "IN PLAIN TERMS",
+   "Once trained, the policy visits states the logged data rarely covers, and the critic's errors there are larger. We reweighted real rows to mimic that, so we know exactly how often each cut-off should fail. BCA's current rule ignores the shift and fails; WBCP's row weights correct most of it.",
+   "Source  Row weights under shift: Tibshirani et al. (2019); Lou & Luo (2026)."
+  ],
+  "pictures": [],
+  "current_notes": "Study 2 is the out-of-distribution study. The worry is that we calibrate on logged data, but the learned policy drifts somewhere else. We took real critic scores from hopper and shifted them in controlled ways, so we know the right answer. We test vanilla BCA first, then add importance weighting."
+ },
+ {
+  "slide": 31,
+  "text": [
+   "STUDY 2 · CHANGE: IMPOSE A KNOWN SHIFT",
+   "Under shift, large errors become more common",
+   "CHANGE  reweight real rows toward rarely seen states",
+   "WHY IT MAKES SENSE  so each rule's true miss rate is exact",
+   "Mechanism",
+   "EXPECTED",
+   "GOT",
+   "Shows the mechanism; no prediction",
+   "λ = 1.06 misses 13% of shifted rows; 1.20 needed",
+   "IN PLAIN TERMS  Grey: the rows as logged. Orange: the same rows reweighted toward rarely seen states. The cut-off that missed 10% now misses 13%."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide31_0.png"
+  ],
+  "current_notes": "Here's why shift is a problem. Grey is the calibration data; orange is the same data shifted toward rarely visited states. At the same cut-off, the miss rate jumps from 10 to 13 percent. You'd need a higher line, 1.20, to stay safe. Importance weights are how WBCP moves that line."
+ },
+ {
+  "slide": 32,
+  "text": [
+   "STUDY 2 · CHANGE: BCA TODAY VS WBCP",
+   "Shift breaks BCA today; WBCP holds or abstains",
+   "CHANGE  run BCA today and WBCP under each shift",
+   "WHY IT MAKES SENSE  today's rule vs the weighted fix",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "BCA today fails; WBCP near 5% (not predicted)",
+   "BCA today: 25–100% fail; WBCP: 1.0–8.0%",
+   "IN PLAIN TERMS  Each pair of bars is one kind of shift; γ is its strength. “Abstain” means WBCP declined to give a cut-off, which counts as safe."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide32_0.png"
+  ],
+  "current_notes": "This is the headline. Orange is vanilla BCA, blue is WBCP with weights. With no shift, both are fine. Under strong shift, vanilla BCA fails 25 percent up to 100 percent of the time, while WBCP stays between 1 and 8. At the strongest shifts, part of WBCP's safety comes from saying 'I can't promise anything', which counts as safe. So vanilla BCA has a blind spot, and that's the case for importance weighting."
+ },
+ {
+  "slide": 33,
+  "text": [
+   "STUDY 2 · CHANGE: GROW THE BANK",
+   "WBCP's overshoot shrinks as the bank grows",
+   "CHANGE  perfect weights; bank 1× to 8× larger",
+   "WHY IT MAKES SENSE  small-sample error shrinks; a bug would not",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "Overshoot shrinks, roughly as 1/√n",
+   "7.6 → 6.0% and 7.9 → 6.0%",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "Shuffled weights: 4.0–6.0% fail",
+   "5.7%, vs 7.6% with real weights"
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide33_0.png"
+  ],
+  "current_notes": "WBCP was a bit over budget, at 7 to 8 percent. Is that a bug? We tested it by giving it perfect weights and growing the sample eightfold. The excess shrinks toward 6, and a bug wouldn't shrink. When we shuffle the weights, it drops to 5.7. So the excess comes from weights lining up with the hard cases in small samples."
+ },
+ {
+  "slide": 34,
+  "text": [
+   "STUDY 2 · CHANGE: ESTIMATED WEIGHTS",
+   "Poorly estimated weights fail; good ones match perfect",
+   "CHANGE  estimate weights from raw state features",
+   "WHY IT MAKES SENSE  in practice, weights must be estimated",
+   "EXPECTED",
+   "GOT",
+   "No forecast",
+   "No prediction; a robustness check",
+   "Good: within 0.2 pts of perfect; bad: 17–36% fail",
+   "IN PLAIN TERMS  Grey: perfect weights. Blue: a good weight model. Orange: a poor one. Weighting only helps if the weights are estimated well."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide34_0.png"
+  ],
+  "current_notes": "The catch is that the weights have to be estimated well. Grey is perfect weights and blue is a good weight model; they're practically identical. Orange is a bad weight model, and 17 to 36 percent of samples fail. So importance weighting only works as well as the weight model behind it."
+ },
+ {
+  "slide": 35,
+  "text": [
+   "STUDY 2 · WHAT IT ADDS UP TO",
+   "BCA today is blind to shift; row weights are needed",
+   "4",
+   "3",
+   "2",
+   "9 expectations:",
+   "4 met",
+   "3 partly met",
+   "2 missed",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "WBCP's 7–8% under strong shift appears even with perfect weights. It is a small-bank effect, not a bug.",
+   "BCA today cannot see shift. Row weights fix most of it, if they are estimated well.",
+   "NEXT →",
+   "Study 3 · BCA's bank rows are related. Does its own bank keep the promise?"
+  ],
+  "pictures": [],
+  "current_notes": "The bottom line: vanilla BCA can't see when the policy wanders off. Importance weighting fixes most of that, as long as the weight model is good. But all of this used independent rows, and BCA's real calibration sample isn't independent. That's study 3."
+ },
+ {
+  "slide": 36,
+  "text": [
+   "STUDY 3 OF 8 · BANK DEPENDENCE",
+   "Does BCA's own calibration bank keep the guarantee?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "BCA's bank used whole episodes, but its guarantee assumes unrelated rows.",
+   "Found the cause, rebuilt BCA's bank, mapped where it still fails.",
+   "7 datasets, one frozen critic each",
+   "Banks redrawn 2,000–4,000 times",
+   "Whole episodes vs K rows each",
+   "Fail: miss > 10% · valid: ≤ 5% of banks",
+   "All runs complete. Still open: how to choose K, the rows per episode, for each dataset. 25 of 27 predictions were written down before running.",
+   "FINISHED",
+   "IN PLAIN TERMS",
+   "Rows from the same episode are alike, like polling 100 people from just three families. A bank built from whole episodes holds far less information than its size suggests, so its cut-off comes out too low. Taking a few rows from many episodes fixes this on some datasets, but not all.",
+   "Source  Design effect D = 1 + (K − 1)ρ and effective sample size: Kish (1965)."
+  ],
+  "pictures": [],
+  "current_notes": "Study 3 is about BCA's own calibration sample. BCA used to set aside whole episodes, but the math assumes every row is independent. Rows from the same episode aren't. It's like polling 100 people from three families."
+ },
+ {
+  "slide": 37,
+  "text": [
+   "STUDY 3 · CHANGE: WHOLE-EPISODE BANKS",
+   "Whole-episode banks break the guarantee",
+   "CHANGE  draw banks as whole episodes",
+   "WHY IT MAKES SENSE  test the bank BCA actually used",
+   "Direction only",
+   "EXPECTED",
+   "GOT",
+   "“Some loss”; no number given in advance",
+   "27–48% of banks fail; unrelated rows ~5%",
+   "IN PLAIN TERMS  Same bank size either way. Built from a few whole episodes, banks fail 27–48% of the time; built from unrelated rows, about 5%."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide37_0.png"
+  ],
+  "current_notes": "And it matters a lot. With whole episodes, 27 to 48 percent of samples fail, with no shift at all. Independent rows of the same size are fine, at about 5. To be honest, we only expected 'some loss' here, so this isn't a test of a real prediction. But the size of the effect drove everything that came after."
+ },
+ {
+  "slide": 38,
+  "text": [
+   "STUDY 3 · CHANGE: MEASURE HOW ALIKE ROWS ARE",
+   "Related rows make a bank act smaller",
+   "CHANGE  measure ρ, how alike an episode's rows are",
+   "WHY IT MAKES SENSE  WBCP treats every row as new",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "Model explains the 28% (fitted after the fact)",
+   "Predicted 26.1% vs observed 28.0%",
+   "IN PLAIN TERMS  Each curve predicts failures as K, the rows taken per episode, grows. Higher ρ (walker2d) climbs fastest; hopper's rows are nearly unrelated."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide38_0.png"
+  ],
+  "current_notes": "Here's the theory behind it. How alike the rows in an episode are, which we call rho, inflates the error. If you take K rows per episode, the inflation is about 1 plus K minus 1, times rho. Hopper's rho is tiny; walker2d's is big. This model predicted 26 percent where we saw 28, which is close, but we wrote it after seeing the result."
+ },
+ {
+  "slide": 39,
+  "text": [
+   "STUDY 3 · CHANGE: THIN THE BANK",
+   "On hopper, few rows per episode restore 5%",
+   "CHANGE  K rows from each of many episodes",
+   "WHY IT MAKES SENSE  rows from many episodes act unrelated",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "Failure falls toward 5% as K shrinks",
+   "K = 5: 5.2% fail; K = 100: 14.7% (forecast ~1 pt high)",
+   "IN PLAIN TERMS  Grey line: our prediction, written before running. Bars: what happened. Up to about 10 rows per episode stays near the 5% line."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide39_0.png"
+  ],
+  "current_notes": "The fix is to take a few rows from many episodes instead. On hopper, up to about 10 rows per episode stays near 5 percent; at 100 rows it climbs to 15. The grey line is our prediction, written beforehand. It tracks the data within about a point, running slightly high."
+ },
+ {
+  "slide": 40,
+  "text": [
+   "STUDY 3 · CHANGE: ρ ON EVERY DATASET",
+   "How alike episode rows are varies 7.5× by dataset",
+   "CHANGE  frozen critics on six more datasets",
+   "WHY IT MAKES SENSE  K = 5 was chosen from hopper alone",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "Four new datasets within predicted ρ ranges",
+   "All four inside",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "walker2d, pen-cloned: ρ 0.02–0.10",
+   "0.120 and 0.108, just above"
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide40_0.png"
+  ],
+  "current_notes": "But datasets differ. walker2d's rows are 7.5 times more alike than hopper's. Our predicted ranges held on the four new datasets, and were a bit too low for walker2d and pen-cloned. The two hatched bars are critics that diverged, so we leave them out."
+ },
+ {
+  "slide": 41,
+  "text": [
+   "STUDY 3 · CHANGE: K ON OTHER DATASETS",
+   "Hopper's K = 5 does not transfer",
+   "CHANGE  the same K test on other datasets",
+   "WHY IT MAKES SENSE  K = 5 was checked on hopper only",
+   "Missed",
+   "EXPECTED",
+   "GOT",
+   "Even K = 5 fails about 8–9%",
+   "6.1–7.7%: over 5%, below our range",
+   "IN PLAIN TERMS  On walker2d, even 5 rows per episode fails 7.5% of banks. The right K depends on the dataset."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide41_0.png"
+  ],
+  "current_notes": "So hopper's answer doesn't transfer. At 5 rows per episode hopper is fine, but walker2d fails 7.5 percent of the time, and at 10 rows it's 12. We predicted 8 to 9 percent, which was the wrong size but the right direction. The number of rows per episode has to be picked per dataset."
+ },
+ {
+  "slide": 42,
+  "text": [
+   "STUDY 3 · CHANGE: BCA'S REAL BANK",
+   "Fitting the bank under BCA's data limit fails walker2d",
+   "CHANGE  raise K until held-out data fits the limit",
+   "WHY IT MAKES SENSE  BCA can only hold back so much data",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "The rule gives K ≈ 5–6; walker2d ~21",
+   "Every K within 2; walker2d 23 and 67",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "Within ±2 pts of forecast (±5 if rows very alike)",
+   "60 of 64; misses: banks from 1–2 episodes"
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide42_0.png"
+  ],
+  "current_notes": "And BCA's own rule makes it worse. The rule raises the rows per episode until the set-aside data fits a budget. On walker2d, that forces 23 and 67 rows per episode, which fail 18 and 23 percent of the time. The other datasets are close to budget, at 5 to 6.6 percent."
+ },
+ {
+  "slide": 43,
+  "text": [
+   "STUDY 3 · WHAT IT ADDS UP TO",
+   "Spread the bank thin, and set K per dataset",
+   "9",
+   "14",
+   "3",
+   "27 expectations:",
+   "9 met",
+   "14 partly met",
+   "3 missed",
+   "1 pending",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "Forecasts ran about a point high. Banks from only 1–2 episodes are too lumpy for our forecast math.",
+   "Whole-episode banks fail 26–48%. Few rows per episode works only where rows are unrelated; the data limit pushes walker2d over budget.",
+   "NEXT →",
+   "Study 4 · Does this hold for every algorithm?"
+  ],
+  "pictures": [],
+  "current_notes": "So: spread the calibration sample across many episodes, and choose how many rows per episode for each dataset. Our forecasts ran about a point high, and samples drawn from only one or two episodes are hard to predict. Next question: does this hold beyond TD3+BC?"
+ },
+ {
+  "slide": 44,
+  "text": [
+   "STUDY 4 OF 8 · FOUR ALGORITHMS",
+   "Does the cut-off hold for every algorithm and dataset?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "BCA plugs into four algorithms; study 3 tested only one.",
+   "Tests the bank each algorithm really uses, on all 7 datasets, against predictions.",
+   "4 algorithms on 7 datasets",
+   "Each trained 100k steps, once",
+   "Each algorithm's own bank setup",
+   "4,000 banks per setting",
+   "FINISHED",
+   "All four algorithms tested on all seven datasets. 7 of 28 critics were unstable and left out of conclusions. All 13 predictions were written down before running.",
+   "IN PLAIN TERMS",
+   "Study 3's check, repeated for each algorithm BCA plugs into: TD3+BC, ReBRAC, CQL and IQL. Before each run we wrote down how often its bank should fail. Most predictions held, but two datasets, walker2d and pen-human, fail on every algorithm.",
+   "Source  Algorithms: TD3+BC (Fujimoto & Gu, 2021); ReBRAC (Tarasov et al., 2023); CQL (Kumar et al., 2020); IQL (Kostrikov et al., 2022)."
+  ],
+  "pictures": [],
+  "current_notes": "Study 4 covers all four algorithms: TD3+BC, CQL, ReBRAC and IQL, on all seven datasets. That's 28 trained critics, each tested with the calibration sample that algorithm actually uses."
+ },
+ {
+  "slide": 45,
+  "text": [
+   "STUDY 4 · CHANGE: CHECK EVERY CRITIC IS STABLE",
+   "7 of 28 critics were unstable",
+   "CHANGE  first check each critic's values are stable",
+   "WHY IT MAKES SENSE  a critic that blows up hasn't learned",
+   "No forecast",
+   "EXPECTED",
+   "GOT",
+   "No prediction; limits set after pen critics blew up",
+   "7 flagged; kept out of conclusions",
+   "IN PLAIN TERMS  Seven critics' values kept growing or left a sensible range. Their results are shown but not used in conclusions."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide45_0.png"
+  ],
+  "current_notes": "First, a health check. Seven of the 28 critics were unhealthy (diverging, out of range or still growing), so we keep them out of the conclusions. Fair warning: we set those thresholds after seeing some critics diverge."
+ },
+ {
+  "slide": 46,
+  "text": [
+   "STUDY 4 · CHANGE: A FORECAST FOR EVERY BANK SETUP",
+   "95% of predictions written in advance came true",
+   "CHANGE  a simulated forecast for every bank setup",
+   "WHY IT MAKES SENSE  a precise forecast turns each run into a test",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "Within ±2 pts (±5 if rows very alike)",
+   "306 of 322; 15 of 16 misses: few-episode banks",
+   "IN PLAIN TERMS  Before each run we simulated how often its bank should fail. 306 of 322 runs landed within the stated margin."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide46_0.png"
+  ],
+  "current_notes": "We wrote a prediction for every setup before running it, and 95 percent came true: 306 of 322. Almost all the misses were samples drawn from just a few episodes, which we'd flagged as risky in advance."
+ },
+ {
+  "slide": 47,
+  "text": [
+   "STUDY 4 · CHANGE: EACH ALGORITHM'S REAL BANK",
+   "The same two datasets fail for every algorithm",
+   "CHANGE  test the bank each algorithm really uses",
+   "WHY IT MAKES SENSE  banks differ by algorithm (IQL's are bigger)",
+   "Missed",
+   "EXPECTED",
+   "GOT",
+   "Each bank fails within its forecast range",
+   "In range: CQL 2/7, ReBRAC 5/7, IQL 1/7",
+   "IN PLAIN TERMS  Each cell is one algorithm on one dataset: the share of its banks that fail. Blue is within the 5% budget. walker2d and pen-human fail everywhere."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide47_0.png"
+  ],
+  "current_notes": "This is the big picture. Each cell shows how often the sample fails, and blue means fine. The same two datasets fail on every algorithm: walker2d at 10 to 18 percent, and pen-human at 33 to 52. Our predicted ranges assumed each algorithm would behave roughly like TD3+BC. That was off in 7 of 21 cases, so this one counts as missed."
+ },
+ {
+  "slide": 48,
+  "text": [
+   "STUDY 4 · CHANGE: SAME EPISODES, FOUR ALGORITHMS",
+   "The algorithm, not just the data, changes ρ",
+   "CHANGE  score the same episodes with each algorithm",
+   "WHY IT MAKES SENSE  so changes in ρ come from the algorithm",
+   "EXPECTED",
+   "GOT",
+   "Missed",
+   "Datasets rank as on TD3+BC (rank corr. ≥ 0.7)",
+   "0.57–0.63; the algorithm moves ρ ~3×",
+   "IN PLAIN TERMS  Same rows, different algorithm: how alike episode rows look changes about threefold. K can't be set from the dataset alone."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide48_0.png"
+  ],
+  "current_notes": "This is why. Same episodes, different algorithm, and how alike the rows are changes about threefold. We expected that to be mostly a property of the dataset. It isn't: the algorithm matters too, and we don't know why yet."
+ },
+ {
+  "slide": 49,
+  "text": [
+   "STUDY 4 · WHAT IT ADDS UP TO",
+   "10 of 21 stable setups exceed the 5% budget",
+   "3",
+   "6",
+   "3",
+   "13 expectations:",
+   "3 met",
+   "6 partly met",
+   "3 missed",
+   "1 pending",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "The algorithm changes how alike its errors are within an episode. We have not yet tested why.",
+   "Choose K for each algorithm and dataset from measured ρ, not from hopper.",
+   "NEXT →",
+   "Study 5 · Is BCA measuring the error the actor follows?"
+  ],
+  "pictures": [],
+  "current_notes": "So 10 of the 21 healthy setups are over budget, and the same two datasets fail everywhere. The number of rows per episode should be chosen per algorithm and per dataset. The next question: is BCA even measuring the right error?"
+ },
+ {
+  "slide": 50,
+  "text": [
+   "STUDY 5 OF 8 · WHICH ERROR SIGNAL",
+   "Does BCA measure the error the actor actually follows?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "The actor follows critic copy Q1; BCA measured min(Q1, Q2).",
+   "Compares three ways to measure the critic's error, and picks Q1.",
+   "5 stable, frozen TD3+BC critics",
+   "min (today) vs Q1 vs worst of both",
+   "Scale refit per choice; same banks",
+   "1,024-row banks · 4,000 each",
+   "FINISHED",
+   "All runs complete; the write-up was re-checked twice in independent reviews. All 26 predictions were written down before running.",
+   "IN PLAIN TERMS",
+   "The critic has two copies, Q1 and Q2. TD3+BC's actor only follows Q1, but BCA checked the error of whichever copy is lower. If Q1 is over-optimistic, that check can look fine while the actor is misled. Measuring Q1 directly fixes the check, though the dose barely changes.",
+   "Source  Two critic copies and their min: Fujimoto et al. (2018). Actor reads Q1: Fujimoto & Gu (2021)."
+  ],
+  "pictures": [],
+  "current_notes": "Study 5. The critic is really two judges, Q1 and Q2. TD3+BC's actor listens to judge 1, but BCA was checking the error of the stricter of the two, the minimum. Does that matter?"
+ },
+ {
+  "slide": 51,
+  "text": [
+   "STUDY 5 · CHANGE: CHECK EACH CHOICE FAIRLY",
+   "The min band misses Q1's error",
+   "CHANGE  refit the error scale for each choice",
+   "WHY IT MAKES SENSE  isolates which copy's error is covered",
+   "Partly met",
+   "EXPECTED",
+   "GOT",
+   "A min-based band misses Q1 in > 8% of banks",
+   "10.5–82.4% of banks",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "Each band on its own error: 3.5–6.5% fail",
+   "4.0–5.1% on all five datasets"
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide51_0.png"
+  ],
+  "current_notes": "On real critics, a line drawn on the minimum fails to cover judge 1's error in 10 to 82 percent of samples. A line drawn on judge 1 directly works, at 4 to 5 percent. We expected a miss, but it was much bigger than we predicted."
+ },
+ {
+  "slide": 52,
+  "text": [
+   "STUDY 5 · CHANGE: EACH CHOICE'S DOSE",
+   "The dose sits near 1.3 on every dataset",
+   "CHANGE  turn each signal's band into a dose",
+   "WHY IT MAKES SENSE  can the signal choice change training?",
+   "Met",
+   "EXPECTED",
+   "GOT",
+   "Average 1.25–1.33; choices differ ≤ 0.03",
+   "1.26–1.33; choices within 0.006",
+   "IN PLAIN TERMS  Whichever error we measure, the average dose lands near 1.3, and the three choices differ by less than 0.01."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide52_0.png"
+  ],
+  "current_notes": "But here's the twist. Whichever judge we measure, the dose comes out around 1.3, and the signals differ by less than 0.01. So switching fixes the measurement but doesn't change what the actor gets."
+ },
+ {
+  "slide": 53,
+  "text": [
+   "STUDY 5 · WHAT IT ADDS UP TO",
+   "Measure Q1; switching barely moves the dose",
+   "13",
+   "7",
+   "5",
+   "26 expectations:",
+   "13 met",
+   "7 partly met",
+   "5 missed",
+   "1 pending",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "Near the data, Q1 and Q2 differ by about one typical error, and the min's cut-off has little room to spare.",
+   "BCA's current band misses the error the actor follows. We now measure Q1, but have not switched BCA itself yet.",
+   "NEXT →",
+   "Study 6 · When missing data hide a trap, is there room for BCA's caution?"
+  ],
+  "pictures": [],
+  "current_notes": "So we were checking the wrong judge, and we now measure Q1. But that barely moves the dose, so we've held off switching the deployed version. Which raises the bigger question: if the dose is 1.3 everywhere, what is it actually doing?"
+ },
+ {
+  "slide": 54,
+  "text": [
+   "STUDY 6 OF 8 · A CONTROLLED SHIFT",
+   "When missing data hide a trap, is there room for BCA's caution?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "Toy worlds could not show whether caution lands where the critic is wrong.",
+   "Builds a world with exact truth and a known gap, and checks the harm before judging BCA.",
+   "ThrusterChain: exact values",
+   "Densest 15% of rows removed",
+   "4 situations, 3 control worlds",
+   "Pre-registered gate; 5 seeds",
+   "STOPPED",
+   "Run to its pre-registered stop on 12 Oct: the harm is real, but there is no room for BCA's kind of caution. BCA was not run, as designed.",
+   "IN PLAIN TERMS",
+   "We built a simulated channel where pushing a thruster past 80% backfires, then removed almost every past-80% command from the training data. The critic trained on that data thinks full throttle is fine, and the learned controller pays for it when the current is stronger than anything recorded. Could extra caution of BCA's kind win that back?",
+   "Source  outputs/shift/stop-report/README.md · experiments/shift/SHIFT_ENV.md · pre-registration 68d9e877…"
+  ],
+  "pictures": [],
+  "current_notes": "Study 6 replaces the toy world. The 3-state toy world could not test BCA: no thin data, planted errors, a 6-number policy. Its replacement, the Gapped LQ world, failed its own gate twice (next slide). So we built ThrusterChain, where truth is exact by simulation and the data gap is created on purpose. The gate checks the harm first, and only lets BCA be judged if caution of BCA's kind has room to help."
+ },
+ {
+  "slide": 55,
+  "text": [
+   "STUDY 6 · WHY A NEW WORLD: THE TOY WORLD'S REPLACEMENT",
+   "The Gapped LQ world failed its own gate twice",
+   "CHANGE  a 10-state world with thin, rare contexts",
+   "WHY IT MAKES SENSE  the 3-state toy world had no thin data",
+   "EXPECTED",
+   "GOT",
+   "Missed",
+   "Loss sits in thin data in ≥ 4 of 5 seeds",
+   "At most 3 of 5, at every alpha, in both gates",
+   "IN PLAIN TERMS  Its learned critic was wrong almost everywhere (best action off by 1.8–4.8 against noise 0.3), so it could not test placement."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide55_0.png"
+  ],
+  "current_notes": "Gate R3 asks whether the return lost sits where the data are thin. First gate (seeds 0-4): base world 0/1/0 of 5 seeds at alpha 2.5/5/10; the thin-share retune reached 3 of 5 at best; retune 2 was unstable. Amendment A1 (post hoc, labelled, fresh seeds 5-9): base 0/3/2, thin-share 0/0/0. The critic is inaccurate even where data are plentiful, so the world cannot isolate harm from missing data. BCA was never run there."
+ },
+ {
+  "slide": 56,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 1 OF 7 · DESCRIPTION",
+   "The task: hold five floats at rest against the water",
+   "WHAT  a Gymnasium environment, BCAShift/ThrusterChain-v0",
+   "WHY THIS WORLD  every value is exact, by simulation",
+   "THE GOAL",
+   "THE TWIST",
+   "Built",
+   "Floats at rest, using as little throttle as possible",
+   "Past 80% a thruster stalls: push falls to 0.5 at full",
+   "IN PLAIN TERMS  A good controller pushes up to 80% and no further. The data will hide that fact, and the test is whether a learner finds out the hard way."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide56_0.png"
+  ],
+  "current_notes": "Five floats sit in a row in a channel, tied together by weak springs. A steady current and waves push every float downstream. Four thrusters sit between neighbouring floats: thruster 1 pushes floats 1 and 2, thruster 2 pushes floats 2 and 3, and so on. The controller holds the floats at rest while spending little throttle. The twist: past 80% throttle the propeller stalls and the push falls (0.65 at 90%, 0.5 at full throttle, against 0.8 at 80%), while the throttle still costs energy. The next slides go through the standard Gymnasium card: spaces, dynamics, reward, start, episode end, versions; then the data and the reference controllers; then the methods; then the results."
+ },
+ {
+  "slide": 57,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 2 OF 7 · ACTION AND OBSERVATION SPACES",
+   "Four throttles in, thirteen numbers out",
+   "ACTION SPACE · Box(−1, 1, (4,), float32)",
+   "OBSERVATION SPACE · Box(low, high, (13,), float32)",
+   "TABLE:\nIndex | Action | Range\n0 | throttle of thruster 1 (floats 1 and 2) | −1 to 1\n1 | throttle of thruster 2 (floats 2 and 3) | −1 to 1\n2 | throttle of thruster 3 (floats 3 and 4) | −1 to 1\n3 | throttle of thruster 4 (floats 4 and 5) | −1 to 1",
+   "TABLE:\nIndex | Observation | Range\n0, 2, 4, 6, 8 | position of floats 1–5 (0 = at rest) | −300 to 300\n1, 3, 5, 7, 9 | speed of floats 1–5 | −300 to 300\n10 | strength of the current, c | 0 to 1.5\n11, 12 | the wave's place in its 23-step cycle, as two clock hands (w₁, w₂) | −1 to 1",
+   "import experiments.shift.thruster_chain   # registers the ids",
+   "env = gymnasium.make(\"BCAShift/ThrusterChain-v0\")   # check_env passes",
+   "IN PLAIN TERMS  step() rounds each command to float32 and clips it to [−1, 1]. The ±300 bound is proven: from any allowed start the floats stay within 256.4 of rest."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 58,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 3 OF 7 · TRANSITION DYNAMICS",
+   "Floats swing, water pushes, thrusters push back",
+   "1",
+   "2",
+   "3",
+   "The floats swing",
+   "The thrusters push",
+   "The water pushes",
+   "A · s",
+   "0.3 · B · thrust(a)",
+   "0.3 · v · (c + w₁)",
+   "Each float is a damped swing (periods 63, 31, 18, 11 and 8 steps; it loses 2–4% per step). Weak springs (size 0.02) pass a little of each float's motion to the others.",
+   "Thruster k pushes the speeds of floats k and k+1. Push = throttle up to 80%; past it 0.8 − 1.5(|a| − 0.8): 0.65 at 90%, 0.5 at full throttle.",
+   "The same push on every float: a current c that is fixed for the episode, plus a wave w₁ that turns 0.27 radians per step (a 23.3-step cycle).",
+   "NEXT STATE  s′ = A·s + 0.3·B·thrust(a) + 0.3·v·(c + w₁);  c′ = c;  the wave turns",
+   "Exact",
+   "NO-STALL WORLD",
+   "WHY IT MATTERS",
+   "Identical, except push = throttle all the way",
+   "Below 80% the worlds match; data can't tell them apart",
+   "IN PLAIN TERMS  s: the ten float numbers. a: the four throttles. No noise anywhere, so every value is exact by simulation."
+  ],
+  "pictures": [],
+  "current_notes": "One deterministic dynamics function, in numpy and in JAX with the same arithmetic order; step(), the data generator and the exact truth all call it. A is the five-oscillator plant (radii 0.98-0.96, angles 0.10 to 0.80 radians) plus a seeded random coupling of size 0.02, kept small so the world stays stable without thrust (largest growth factor 0.98) while the floats are not five independent problems. The no-stall comparison world is identical except thrust(a) = a, so there the removed commands are harmless."
+ },
+ {
+  "slide": 59,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 4 OF 7 · REWARD, STARTING STATE, EPISODE END",
+   "What is scored, how an episode starts, and when it ends",
+   "1",
+   "2",
+   "3",
+   "Reward",
+   "Starting state",
+   "Episode end",
+   "r = −(|s|² + 0.3·|a|²)",
+   "s₀ ~ N(0, 0.5²)",
+   "t = 100",
+   "Every step: the floats' squared distance from rest plus 0.3 × the squared throttles. Energy is paid even while a thruster stalls.",
+   "Float positions and speeds drawn N(0, 0.5²); current 0.1–0.7; wave size 0.1–0.4; the wave can be anywhere in its cycle.",
+   "Truncation only, never terminated. A return is the 100-step sum; learners and the truth use discount 0.98.",
+   "RETURN  100 rewards summed; closer to 0 is better",
+   "POINTS  0 = recording controller, 100 = stall-aware controller",
+   "Exact",
+   "A FIXED TEST",
+   "EXACT SCORES",
+   "1,000 fixed starts per situation, the same for everyone",
+   "Every controller is simulated, not estimated",
+   "IN PLAIN TERMS  points = 100 × (return − recording controller's) ÷ (stall-aware controller's − recording controller's), per situation."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 60,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 5 OF 7 · VERSIONS AND ARGUMENTS",
+   "Eight registered versions: two worlds × four situations",
+   "TABLE:\nId | World | Start law (what changes) | Outside the recorded range\nBCAShift/ThrusterChain-v0 | stalling | recorded conditions: current 0.1–0.7, wave 0.1–0.4, float spread 0.5 | none (training conditions)\nBCAShift/ThrusterChain-StrongCurrent-v0 | stalling | current 0.7–1.1 | every start\nBCAShift/ThrusterChain-BigWaves-v0 | stalling | wave size 0.4–0.7 | every start\nBCAShift/ThrusterChain-BigKicks-v0 | stalling | float start spread 1.5 | on part of the steps",
+   "BCAShift/ThrusterChainNoStall-v0 (+ the same 3 variants): the no-stall world, same four start laws",
+   "ThrusterChainEnv(stall=True, start=\"recorded\", render_mode=None, stall_slope=1.5)",
+   "info per step: state, t, push, thrust, stalled, command   ·   render_mode=\"ansi\": one line of text",
+   "IN PLAIN TERMS  Strong current and big waves lie entirely outside the recorded conditions: no recorded episode had a current above 0.7 or a wave above 0.4."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 61,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 6 OF 7 · THE DATA AND THE GAP",
+   "The data: one recording controller, then a deliberate gap",
+   "1",
+   "2",
+   "3",
+   "Recording controller",
+   "The log",
+   "The gap",
+   "87% normal driving",
+   "1,000 × 100 steps",
+   "densest 15% removed",
+   "Holds against the water, wobbles (noise 0.3), never past 80%. Where the water pushes hardest, half the time it gives full throttle on thruster 1: the log's most common command.",
+   "Split by episode: 500 training (50,000 rows), 200 calibration (a 1,000-row bank), 300 held out. D4RL format; every row replays exactly.",
+   "The D4RL rule removes the commands in the densest ball: 99.1–99.8% of full-throttle commands. Kept rows past 80%: 0.04–0.14%, from 12–14%.",
+   "CONTROLS  full log · the same number of rows removed at random · the no-stall world",
+   "Controls",
+   "WHAT STAYS",
+   "SO THE HOLE IS",
+   "46–48% of those states stay, with normal commands",
+   "In the commands, not in the states",
+   "IN PLAIN TERMS  The training data still visit the states where full throttle matters, but almost never show what full throttle does there."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 62,
+  "text": [
+   "STUDY 6 · THRUSTERCHAIN 7 OF 7 · REFERENCE CONTROLLERS",
+   "Fixed reference controllers set the points scale",
+   "TABLE:\nController | What it does | Recorded | Strong current | Big waves | Big kicks\nrecording controller | the log's source, both modes | −79.8 (0) | −253.9 (0) | −106.8 (0) | −263.2 (0)\nstall-aware controller | textbook controller, capped at 80% | −26.4 (100) | −103.8 (100) | −36.2 (100) | −163.5 (100)\nnormal driving only | the normal mode, without wobble | −37.9 (78.4) | −146.9 (71.3) | −55.6 (72.5) | −205.4 (58.0)\nrising-thrust controller | textbook controller, capped at 100%: assumes thrust keeps rising | −35.1 (83.6) | −335.2 (−54.1) | −61.8 (63.8) | −219.2 (44.2)",
+   "IN PLAIN TERMS  Exact 100-step returns (points in brackets), stalling world. The stall-aware controller is a reference, not proven optimal, so scores above 100 are possible."
+  ],
+  "pictures": [],
+  "current_notes": "The textbook controller is the discounted linear-quadratic regulator of the model in which thrust keeps rising with throttle. Capped at 80% it is the stall-aware controller (100 points). Capped at 100% it is the rising-thrust controller, which is right in the no-stall world and badly wrong in strong current in the stalling world (-54 points): exactly the mistake a critic that never saw the stall would make."
+ },
+ {
+  "slide": 63,
+  "text": [
+   "STUDY 6 · METHOD 1 OF 3 · THE LEARNER (TD3+BC)",
+   "The learner: a critic rates, an actor picks",
+   "1",
+   "2",
+   "3",
+   "Critic Q(s, a)",
+   "Actor π(s)",
+   "Alpha",
+   "y = r + 0.98·Q(s′, c(s′))",
+   "λ·Q1(s, π(s)) − (π(s) − a)²",
+   "λ = α / mean|Q|",
+   "Rates a command at a state, trained only on logged rows to match one-step targets. In the checks it scores following the stall-aware controller c, so its error is exact.",
+   "Picks the command. It climbs the critic's value at its own command, while a behaviour-cloning term pulls it toward the logged command a.",
+   "How far the actor may trust the critic over the data. A ladder fixed in advance: 2.5, then 5, then 10, the same for every method.",
+   "TWO CRITICS  one critic trained on the full log, one on the gapped log",
+   "FAIR  same start, rows and batches for both actors",
+   "Method",
+   "CLONED ACTOR",
+   "THE ONLY DIFFERENCE",
+   "Pure imitation of the gapped log: every actor's start",
+   "Only what the critic learned from the missing rows",
+   "IN PLAIN TERMS  TD3+BC (Fujimoto & Gu, 2021) is the learner BCA sits on. Plain TD3+BC, critic and actor trained together, is also reported."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 64,
+  "text": [
+   "STUDY 6 · METHOD 2 OF 3 · BCA AS IT IS TODAY",
+   "BCA today: a calibrated band, turned into extra pull",
+   "1",
+   "2",
+   "3",
+   "Band",
+   "Dose",
+   "Where it acts",
+   "U = R · u · η(s, a)",
+   "m = 1 + 0.5·U/(U + u)",
+   "m · (π(s) − a)²",
+   "η: a small network predicting the size of the critic's one-step error, fitted at logged rows. R: one threshold from held-out rows (WBCP), so about 90% of errors fall inside.",
+   "The band's width becomes a multiplier between 1 and 1.5. A band too wide to certify gives m = 1.",
+   "The dose multiplies the behaviour-cloning pull on each logged row: a wider band means a harder pull toward the logged command.",
+   "RECAP  the same BCA as studies 1–5",
+   "THE QUESTION  can extra pull on logged rows reach this harm?",
+   "Method",
+   "THE HOPE",
+   "HOW WE TEST IT",
+   "Wide band where the critic is wrong → caution there",
+   "Check 3 gives this channel the exact harm",
+   "IN PLAIN TERMS  u is the typical error size (a running average). Nothing in this channel ever looks at the actor's own command."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 65,
+  "text": [
+   "STUDY 6 · METHOD 3 OF 3 · THE HARM CHECKS",
+   "Four checks, fixed in advance, before BCA may be judged",
+   "TABLE:\nCheck | Question | Pass mark (pre-registered) | Rules out\n1 | Is the critic wrong where data are missing? | Gapped critic ≥ 2× as wrong as the full-log critic at the removed commands; about 1× far from them | random removal; another initialisation; a world without the stall\n2 | Does acting on that error cost return? | Harm ≥ 5 points, ≥ 3 more than random removal and the no-stall world explain | having less data; harm that needs no stall\n3 | Could caution of BCA's kind help? (room) | Pull placed by the exact harm, factors in [1, 1.5), beats strength-matched even, same-total and shuffled pull by ≥ 3 points | caution that helps by its amount, not its placement\n4 | Is there power to see BCA's effect? | Run only for situations check 3 certifies | —",
+   "IN PLAIN TERMS  Pre-registration 68d9e877… (commit bdb8c8a) hashed every file. BCA's band is fitted only if checks 1–3 pass. Seeds 0–4."
+  ],
+  "pictures": [],
+  "current_notes": "Check 3 is the key design choice. It asks whether caution in BCA's own form, the behaviour-cloning term multiplied by a per-row factor in BCA's range, can help at all if it is placed by the exact harm of each row: information BCA could never have. Controls are matched blind before any return is computed: even pull of the same strength (same change to the actor), the same total amount spread evenly, and the same factors shuffled across rows. If perfect placement cannot beat them, no BCA signal can."
+ },
+ {
+  "slide": 66,
+  "text": [
+   "STUDY 6 · CHECKS 1–2: IS THE HARM REAL?",
+   "The missing data cost 99 points in strong current",
+   "CHANGE  same actor, full log vs gapped log",
+   "WHY IT MAKES SENSE  only the missing data differ",
+   "EXPECTED",
+   "GOT",
+   "Met",
+   "Critic ≥ 2× as wrong at removed commands; harm ≥ 5",
+   "2.15–2.40× as wrong; harm 98.9 [96.2, 101.7]",
+   "IN PLAIN TERMS  Random removal (3.1 points) and the no-stall world (0.4) explain almost none of it: the missing stall data cause the harm."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide66_0.png"
+  ],
+  "current_notes": "Check 1 passed 6 of 6 marks: at the removed commands the gapped critic is 2.15-2.40x as wrong as the full-log critic; far from them 0.68-0.80x; random removal 0.96-1.21x; another initialisation 0.87-1.09x. Pushing past 80% truly costs 0.33-0.35; the gapped critic overrates it by 0.33-0.36, so it sees no cost. Check 2 passed at alpha 5 (one mark missed at 2.5). Points: 0 = recording controller, 100 = stall-aware controller. Plain TD3+BC on the gapped log beats cloning by 27-47 points in three situations but loses 71 in strong current."
+ },
+ {
+  "slide": 67,
+  "text": [
+   "STUDY 6 · CHECK 3: IS THERE ROOM?",
+   "Caution of BCA's kind cannot win it back",
+   "CHANGE  extra pull, placed by the exact harm",
+   "WHY IT MAKES SENSE  an upper bound for BCA's dose",
+   "EXPECTED",
+   "GOT",
+   "Missed",
+   "Harm-placed beats matched controls by ≥ 3 points",
+   "−1.9 to +1.1 points; no situation certified",
+   "IN PLAIN TERMS  Only even ×3 caution moves strong current (+17 of 99 points), and it costs 5–13 points everywhere else. The gate stopped before BCA."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide67_0.png"
+  ],
+  "current_notes": "This is the key negative result. Each arm is an actor trained against the gapped critic with extra pull toward the recorded command on each training row, exactly BCA's form (the behaviour-cloning term times a per-row factor in [1, 1.5)). The harm-placed arm uses the exact harm of each row, better information than BCA could ever learn. It beats strength-matched even caution, amount-matched and shuffled controls by -1.9 to +1.1 points; the mark was 3. Factors up to 2 do no better. So the limit is the channel, not the signal."
+ },
+ {
+  "slide": 68,
+  "text": [
+   "STUDY 6 · WHAT IT ADDS UP TO",
+   "The harm is real, but BCA's channel cannot reach it",
+   "2",
+   "1",
+   "1",
+   "4 checks:",
+   "2 passed",
+   "1 failed",
+   "1 not reached",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "The pull acts on logged rows, toward logged commands. In strong current the actor is far from both.",
+   "A better signal alone cannot help here. The channel the signal acts through has to change.",
+   "NEXT →",
+   "Study 7 · Why can't BCA's caution reach this harm?"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 69,
+  "text": [
+   "STUDY 7 OF 8 · WHY THE CHANNEL FAILS",
+   "Why can't BCA's caution reach harm that lies outside the data?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "Study 6 found no room. Before changing BCA, we needed the exact reason.",
+   "Traces the harm to one wrong belief, and shows where BCA reads its signal and acts.",
+   "BCA's code, read line by line",
+   "Study 6's saved critics, actors",
+   "Exact truth by simulation",
+   "No BCA run; 5 seeds",
+   "FINISHED",
+   "Diagnosis complete on 13 Oct. Exploratory: computed outside the gate on its saved artifacts; no pre-registered rule was changed.",
+   "IN PLAIN TERMS",
+   "BCA looks for trouble at the rows in the data, and its fix is to pull the actor back toward the logged command. But the critic is right at those rows. It is wrong only about commands the data never show, past 80%. The actor learns that wrong belief at ordinary training states and carries it into strong current.",
+   "Source  outputs/shift/beyond-the-data/mechanism.md, anatomy.md · algorithms/td3_bc_bca.py · calibration/dose.py"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 70,
+  "text": [
+   "STUDY 7 · THREE REASONS, FROM BCA'S CODE",
+   "BCA reads and acts where the critic is right",
+   "1",
+   "2",
+   "3",
+   "Reads at logged rows",
+   "Pulls toward the recorder",
+   "Capped, and blind to bias",
+   "dose(sᵢ, aᵢ)",
+   "mᵢ · (π(sᵢ) − aᵢ)²",
+   "1 ≤ dose < 1.5",
+   "The band is fitted, calibrated and read only at logged (state, command) rows. There the gapped critic is accurate (error 0.07). It is never read at the actor's own command.",
+   "The dose only scales the pull toward the logged command (throttle 1 ≈ 0.5). That says ‘drive like the recorder’, not ‘stop at 80%’, so it cannot cancel the critic's false slope.",
+   "The dose is capped at 1.5, and ‘cannot certify’ gives dose 1: no caution. The error BCA calibrates cannot see a critic that is consistently wrong, since it matches its own targets.",
+   "CHANGE  read BCA's code from fit to dose",
+   "WHY IT MAKES SENSE  where is the signal read and used?",
+   "Missed",
+   "EXPECTED",
+   "GOT",
+   "Caution where the critic is wrong",
+   "Caution where the critic is right",
+   "IN PLAIN TERMS  The signal and the fix both live at the data; the error lives at the actor's own commands past 80%."
+  ],
+  "pictures": [],
+  "current_notes": "From the code: BCA's scale network is trained on one-step errors at recorded training rows; the threshold is calibrated on held-out recorded rows; the dose is read at the training batch's recorded rows (algorithms/td3_bc_bca.py). Nothing evaluates the width at the actor's command pi(s). In TD3+BC the dose multiplies the behaviour-cloning pull on that recorded row (algorithms/td3_bc.py), so a dose of m acts like using alpha/m on that row, between alpha/1.5 and alpha. An infinite width (cannot certify) gives dose 1 (calibration/dose.py). And the one-step error is computed against targets built from the same critic, so a critic that consistently overrates pushing past 80% leaves small errors at recorded rows."
+ },
+ {
+  "slide": 71,
+  "text": [
+   "STUDY 7 · EVIDENCE 1: THE CRITIC'S BELIEF",
+   "The critic is right up to 80% and wrong past it",
+   "CHANGE  compare each critic with the exact values",
+   "WHY IT MAKES SENSE  find which belief the actor learns",
+   "EXPECTED",
+   "GOT",
+   "Met",
+   "The gapped critic errs where data are missing",
+   "Error +0.51 past 80%; 0.07 inside the data",
+   "IN PLAIN TERMS  At training states where the water pushes hardest, the gapped critic sees no cost past 80%; critics that saw the stall data do."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide71_0.png"
+  ],
+  "current_notes": "Values of thruster 1's throttle relative to holding it at 80%, averaged over training states in the full-throttle region (water's push above 0.565), other thrusters from the stall-aware controller. Truth is exact. The gapped critic matches the truth to within 0.01 up to 80% and then keeps rising. Its error in the preference for full throttle over 80% is +0.51 [0.48, 0.53]; the full-log critic -0.02, random removal -0.00. Inside the recorded range the gapped critic is no worse than the others (mean absolute error 0.07 against 0.12), which is exactly where BCA looks."
+ },
+ {
+  "slide": 72,
+  "text": [
+   "STUDY 7 · EVIDENCE 2: ONE BELIEF CAUSES THE HARM",
+   "Cap the actor at 80% and it scores 101.8 instead of −14.3",
+   "CHANGE  cap only the past-80% commands, when the actor runs",
+   "WHY IT MAKES SENSE  isolates the one wrong belief",
+   "EXPECTED",
+   "GOT",
+   "Met",
+   "The harm comes from commands past 80%",
+   "−14.3 → +101.8 points in strong current",
+   "IN PLAIN TERMS  Everything else the gapped critic taught is good: the fix needed is one value, at the actor's own commands, at training states."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide72_0.png"
+  ],
+  "current_notes": "The actor is trained only at training states, and every actor update reads the critic at the actor's own command there. The gapped critic's actor pushes past 80% at 42% of training states in the full-throttle region, against 10% for the full-log critic's actor. As the current grows beyond the recorded range its commands keep rising, so the same mistake is made at most steps in strong current. Cutting only those commands back to 80% at evaluation turns -14.3 into +101.8 points, above the full-log critic's actor (84.6)."
+ },
+ {
+  "slide": 73,
+  "text": [
+   "STUDY 7 · WHAT IT ADDS UP TO",
+   "BCA acts where the critic is right",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "Changing only where the band is read is not enough for TD3+BC: study 6 put the exact harm in this channel and found no room.",
+   "Read the band at the actor's own command, act on the value the actor climbs, drop the 1.5 cap, and treat ‘cannot certify’ as most caution.",
+   "Study 8 · Does a new channel work?",
+   "NEXT →"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 74,
+  "text": [
+   "STUDY 8 OF 8 · A NEW CHANNEL",
+   "Can caution reach the harm if it acts on the value the actor climbs?",
+   "WHY WE RAN IT",
+   "WHAT IT ACCOMPLISHES",
+   "SETUP",
+   "Study 7 found the error sits at the actor's own commands, not at the data.",
+   "Tests the new channel with perfect information, sets the bar, then tests BCA in it.",
+   "Stage 1: exact error, no BCA",
+   "Data-only rival signals",
+   "Trace test bed (harm claim)",
+   "Stage 2: BCA, pre-registered",
+   "RUNNING",
+   "Stage 1, the rivals and the trace test bed are finished. Stage 2 (BCA in the new channel) was approved and started on 13 Oct: detection first, then the policy test.",
+   "IN PLAIN TERMS",
+   "Instead of pulling the actor toward the data, lower the critic's value at the actor's own command by how much it is overrated there. With perfect information this wins back almost all of the harm, and it is cautious only where the missing commands are bad.",
+   "Source  outputs/shift/beyond-the-data/PLAN.md, stage1/RESULTS.md, stage2/PREREGISTRATION.md (v6, 9b38c7c4…)"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 75,
+  "text": [
+   "STUDY 8 · METHOD · THE NEW CHANNEL",
+   "Lower the value where the critic overrates the actor's own command",
+   "1",
+   "2",
+   "3",
+   "Lower edge",
+   "Stage 1 penalty",
+   "Controls",
+   "Q1(s, π(s)) − k · penalty",
+   "[err(s,π) − err(s,a)]₊",
+   "matched strength",
+   "The actor climbs the critic's value minus a penalty at its own command, at training states. There is no pull toward the data.",
+   "err: the critic's exact one-step error, by simulation. The penalty is how much more it overrates the actor's command than the logged one.",
+   "Even extra pull, push less everywhere, two random penalty surfaces: each tuned blind to change the actor as much, and locked before any return.",
+   "WHY EXACT FIRST  if perfect information fails here, no BCA version can",
+   "MARKS  ≥ 20 over every control; recover ≥ 49.5",
+   "Method",
+   "SETUP",
+   "WORLDS",
+   "Seeds 0–4; every actor starts from the cloned actor",
+   "Stalling world; the no-stall world gives the cost",
+   "IN PLAIN TERMS  Stage 2 puts BCA's band in place of the exact error; that is the version under test now."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 76,
+  "text": [
+   "STUDY 8 · STAGE 1: THE NEW CHANNEL, PERFECT INFORMATION",
+   "The new channel wins back 94 of 99 points",
+   "CHANGE  penalty = exact error at the actor's command",
+   "WHY IT MAKES SENSE  an upper bound for any signal in this slot",
+   "EXPECTED",
+   "GOT",
+   "Met",
+   "≥ 20 points over matched controls; recover ≥ 49.5",
+   "+89 to +99 over controls; recovered 93.9",
+   "IN PLAIN TERMS  Untargeted caution of equal strength recovers nothing, and the right information at the wrong state recovers little: placement is the effect."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide76_0.png"
+  ],
+  "current_notes": "Exploratory, no BCA. Spec and code committed before any return was computed; controls matched in strength blind and locked first. Every actor starts from the cloned actor and trains 20,000 steps against study 6's frozen gapped critic. Penalty: how much more the critic overrates the actor's command than the row's recorded command, by the exact one-step error. Marks (fixed in advance) all pass: beats each control by 92.4 / 89.4 / 99.0 / 94.2 points, 5 of 5 seeds; recovers 93.9 (half the harm was the mark); keeps the improvement elsewhere (recorded +7.9 over no caution, big waves +19.6, big kicks +16.9)."
+ },
+ {
+  "slide": 77,
+  "text": [
+   "STUDY 8 · METHOD · RIVAL SIGNALS AND THE TRACE TEST",
+   "The rivals BCA must beat, and how the trace test works",
+   "TABLE:\nSignal (data only) | What it measures at a state and command\nrange hinge | how far each throttle goes past the recorded range (squared)\nnovelty: density, distance | how far the command is from the recording controller's usual command, or from the nearest training rows\nclassifier ratio | a classifier's odds that the command came from the actor rather than the log\ntwo-head disagreement | the gap between the critic's two copies, Q1 and Q2",
+   "IN PLAIN TERMS  Trace test: keep some removed full-throttle rows; pass if harm stays ≥ 50 and a signal (residual evidence: the nearby rows' one-step error) flags past-80% commands ≥ 0.2 more often in the stalling world."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 78,
+  "text": [
+   "STUDY 8 · RIVALS: THE BAR FOR BCA",
+   "A perfect signal is cautious only where caution is needed",
+   "CHANGE  data-only signals in the same slot",
+   "WHY IT MAKES SENSE  the bar BCA has to clear",
+   "EXPECTED",
+   "GOT",
+   "Bar set",
+   "Some data-only signal captures the room",
+   "Only the range hinge: +84.6, but it costs 20.4",
+   "IN PLAIN TERMS  Clipping to the recorded range works only because every missing command is bad here; where they help, it costs 20."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide78_0.png"
+  ],
+  "current_notes": "Each rival is a data-only signal used in the same lower-edge slot, matched in strength. Gain: points won back over no caution in strong current in the stalling world. Cost: points lost in strong current in the no-stall world, where the missing commands are good. Only the range hinge captures the room (84.6). It is the rival Stage 2 compares BCA against. The perfect signal's no-stall cost (1.3) is from Stage 1."
+ },
+ {
+  "slide": 79,
+  "text": [
+   "STUDY 8 · TRACE TEST BED: CAN THE HARM ITSELF BE SEEN?",
+   "A trace of the stall in the data stayed invisible",
+   "CHANGE  keep 0.5–10% of the full-throttle rows",
+   "WHY IT MAKES SENSE  to test whether a signal finds the harm itself",
+   "EXPECTED",
+   "GOT",
+   "Missed",
+   "A share with harm ≥ 50 and separation ≥ 0.2",
+   "Separation ≤ 0.08 at every share",
+   "IN PLAIN TERMS  Seeds 0–2; shares 1–10% were added after the first look (post hoc). Testing the harm claim needs a new design."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide79_0.png"
+  ],
+  "current_notes": "The honest limit of study 6's world: there every missing command is bad, so a signal that only detects novelty looks as good as a perfect one. To test whether BCA identifies the harm itself (not just unsupported commands), the data must carry a trace of the harm. We kept a small share of the removed full-throttle rows. Harm stays above 50 points up to 5%, but the data-only residual signal never separates the stalling world from the no-stall world (at most 0.08 against a mark of 0.2). No share works."
+ },
+ {
+  "slide": 80,
+  "text": [
+   "STUDY 8 · STAGE 2: BCA IN THE NEW CHANNEL",
+   "BCA's band, read at the actor's own command",
+   "1",
+   "2",
+   "3",
+   "Read at the actor's command",
+   "Act on the value climbed",
+   "Check when it runs",
+   "U(s, π(s))",
+   "Q − k·[U(π) − U(a)]₊",
+   "flag → fall back",
+   "BCA's calibrated width, evaluated at the actor's own command and paired against the logged command's width, so only the extra uncertainty counts.",
+   "The actor climbs the critic's lower edge, with k = 1. No 1.5 cap; ‘cannot certify’ now means the most caution.",
+   "The same band screens each command while the controller runs; a flagged command falls back toward the recorded range.",
+   "CHANGE  pre-registered v6, approved 13 Oct",
+   "WHY IT MAKES SENSE  the flags claim, confirmed on fresh seeds",
+   "Pending",
+   "EXPECTED",
+   "GOT",
+   "BCA flags unsupported commands better than rivals",
+   "Uniform: missed. Weighted version: running",
+   "IN PLAIN TERMS  Confirmatory: fresh seeds 5–9 with every setting frozen, about 36–46 hours on 2 processes."
+  ],
+  "pictures": [],
+  "current_notes": "The flags claim: BCA's band, read at the actor's own command, flags commands the data do not support, and used as a penalty it recovers return in strong current at a small cost in the no-stall world. It is judged against the best data-only rival (the range hinge) and matched untargeted controls, on gate seeds 0-4 (exploratory) and then fresh seeds 5-9 (confirmatory). The claim sentence fixed in advance: in strong current BCA's lower edge recovers X of H points and keeps Y of TD3+BC's gain; the range limit recovers Z; in the no-stall world BCA costs W and the range limit V."
+ },
+ {
+  "slide": 81,
+  "text": [
+   "STUDY 8 · METHOD · HOW DETECTION IS SCORED",
+   "How BCA's detection is scored: four tests",
+   "TABLE:\nTest | Question | Pass mark (pooled, and in ≥ 4 of 5 seeds)\nDirection | Is the band wider at the actor's harmful past-80% command than at that command capped at 80%? | ≥ 75% of pairs (training states); ≥ 65% (strong current)\nSize | Is the extra penalty big enough to cancel the critic's false preference, with k = 1? | median ratio ≥ 1\nRanking | Does a harmful command score above a harmless one? | ≥ 0.75 (training states); ≥ 0.70 (strong current)\nBeat the rivals | Is BCA's ranking within 0.02 of the best data-only signal? | on both sets of states",
+   "IN PLAIN TERMS  Pairs: 1,500 training states where the water pushes hardest, 1,500 other training states, 3,000 strong-current states. Seeds 0–4 are exploratory; only fresh seeds 5–9 can carry a claim."
+  ],
+  "pictures": [],
+  "current_notes": "Harmful means the command really is worse than its 80% cap, by exact simulation. Calibration is also checked: about 5% of held-out logged rows should lie above BCA's cut-off. If direction or size fails with uniform weights, the pre-registration declares the weighted version (likelihood-ratio weights in WBCP) and repeats the test. If that also fails, no BCA training arm runs; the deployment check and the report remain."
+ },
+ {
+  "slide": 82,
+  "text": [
+   "STUDY 8 · STAGE 2 FIRST RESULT: DETECTION, UNIFORM VERSION",
+   "BCA's band barely changes past 80%",
+   "CHANGE  BCA's band at the actor's command, seeds 0–4",
+   "WHY IT MAKES SENSE  the first look, fixed in advance",
+   "EXPECTED",
+   "GOT",
+   "Missed",
+   "Direction, size, ranking pass; within 0.02 of rivals",
+   "Size 0.0004 (mark 1); direction 0.50; below rivals",
+   "IN PLAIN TERMS  Calibration holds (4.9% above the cut-off; target 5%). As pre-registered, the weighted version now runs; if it also fails, no BCA training arm runs."
+  ],
+  "pictures": [
+   "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/notes_work/pics/slide82_0.png"
+  ],
+  "current_notes": "Uniform version, seeds 0-4, finished 13 Oct 13:22 UTC. Direction: the band is wider at the harmful command than at its 80% cap in 50% of training-state pairs (mark 75%; 1 of 5 seeds) and 73% of strong-current pairs (mark 65%, but only 2 of 5 seeds). Size: the median paired penalty is 0.0004 of the critic's false preference (mark 1): the band does not widen where it must. Ranking: 0.80 on training states (passes) and 0.62 in strong current (mark 0.70). The classifier ratio, a data-only signal, ranks 0.99 and 0.90. The claim rule is not met; seeds 0-4 could not carry a claim anyway."
+ },
+ {
+  "slide": 83,
+  "text": [
+   "STUDY 8 · WHAT IT ADDS UP TO",
+   "The channel works; BCA's band does not yet",
+   "4",
+   "2",
+   "1",
+   "7 checks so far:",
+   "4 met",
+   "2 missed",
+   "1 pending: weighted",
+   "IF NOT MET, WHY",
+   "WHAT IT MEANS FOR BCA",
+   "BCA's band hardly changes between the actor's command and its 80% cap; the trace signal could not separate the worlds.",
+   "The channel works with perfect information, but BCA's uniform band does not supply the signal. The weighted version is the last pre-registered try.",
+   "NEXT →",
+   "Weighted version, then the policy test only if it passes"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 84,
+  "text": [
+   "WHAT IT ADDS UP TO",
+   "Eight questions, eight answers (1 of 2)",
+   "1",
+   "Is our WBCP code right?",
+   "→",
+   "Yes, where we can check; one gap open",
+   "2",
+   "Does it hold when data shifts?",
+   "→",
+   "BCA today: no. With row weights: mostly",
+   "3",
+   "Does BCA's own bank keep it?",
+   "→",
+   "Only with few rows per episode",
+   "4",
+   "For every algorithm and dataset?",
+   "→",
+   "No: two datasets fail on all four"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 85,
+  "text": [
+   "WHAT IT ADDS UP TO",
+   "Eight questions, eight answers (2 of 2)",
+   "5",
+   "Is it measuring the right error?",
+   "→",
+   "No: measure Q1, the copy the actor follows",
+   "6",
+   "Is there room in a controlled shift?",
+   "→",
+   "Harm of 99 points; no room for BCA's channel",
+   "7",
+   "Why can't caution reach it?",
+   "→",
+   "Read and applied where the critic is right",
+   "8",
+   "Does a new channel work?",
+   "→",
+   "Yes with perfect information; the BCA band not yet"
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 86,
+  "text": [
+   "NEXT",
+   "What happens next, in order",
+   "1",
+   "2",
+   "3",
+   "4",
+   "Weighted version",
+   "Policy test, if earned",
+   "Fresh seeds 5–9",
+   "Harm claim, real data",
+   "BCA's band with likelihood-ratio weights, seeds 0–4: running now",
+   "only if a version passes detection; otherwise the deployment check and report",
+   "the confirmatory run, every setting frozen",
+   "a trace test bed that works; the D4RL action-gap test",
+   "Every step gets the same treatment: expectations written first, then the run, then the verdict."
+  ],
+  "pictures": [],
+  "current_notes": "Here's what's next, in order. Score the running experiment. Get it independently audited. Decide how BCA picks the number of rows per episode. Check on real data whether today's dose is just uniform extra behaviour cloning. Then run full training, which needs approval."
+ },
+ {
+  "slide": 87,
+  "text": [
+   "SOURCES",
+   "References",
+   "Conformal risk control · W-CRC, marginal guarantee\nAngelopoulos, A. N., Bates, S., Fisch, A., Lei, L., & Schuster, T. (2024). Conformal risk control. ICLR 2024.",
+   "CQL · host algorithm\nKumar, A., Zhou, A., Tucker, G., & Levine, S. (2020). Conservative Q-learning for offline reinforcement learning. NeurIPS 2020.",
+   "RCPS · high-probability guarantee\nBates, S., Angelopoulos, A., Lei, L., Malik, J., & Jordan, M. I. (2021). Distribution-free, risk-controlling prediction sets. Journal of the ACM, 68(6).",
+   "Offline reinforcement learning\nLevine, S., Kumar, A., Tucker, G., & Fu, J. (2020). Offline reinforcement learning: Tutorial, review, and perspectives on open problems. arXiv:2005.01643.",
+   "D4RL · the logged datasets\nFu, J., Kumar, A., Nachum, O., Tucker, G., & Levine, S. (2020). D4RL: Datasets for deep data-driven reinforcement learning. arXiv:2004.07219.",
+   "WBCP · BCA's cut-off rule\nLou, X., & Luo, P. (2026). Weighted Bayesian conformal prediction. arXiv:2604.06464.",
+   "TD3 · two critic copies and their min\nFujimoto, S., van Hoof, H., & Meger, D. (2018). Addressing function approximation error in actor-critic methods. ICML 2018.",
+   "Bayesian bootstrap · random row weights\nRubin, D. B. (1981). The Bayesian bootstrap. The Annals of Statistics, 9(1), 130–134.",
+   "TD3+BC · host algorithm\nFujimoto, S., & Gu, S. S. (2021). A minimalist approach to offline reinforcement learning. NeurIPS 2021.",
+   "BQ-CP · BCA today\nSnell, J. C., & Griffiths, T. L. (2025). Conformal prediction as Bayesian quadrature. ICML 2025, PMLR 267, 56068–56084.",
+   "Design effect, effective sample size\nKish, L. (1965). Survey Sampling. New York: Wiley.",
+   "ReBRAC · host algorithm\nTarasov, D., Kurenkov, V., Nikulin, A., & Kolesnikov, S. (2023). Revisiting the minimalist approach to offline reinforcement learning. NeurIPS 2023.",
+   "IQL · host algorithm\nKostrikov, I., Nair, A., & Levine, S. (2022). Offline reinforcement learning with implicit Q-learning. ICLR 2022.",
+   "Importance weights under shift\nTibshirani, R. J., Barber, R. F., Candès, E. J., & Ramdas, A. (2019). Conformal prediction under covariate shift. NeurIPS 2019."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 88,
+  "text": [
+   "APPENDIX",
+   "Definitions, code and open inconsistencies",
+   "Terms · how a rule is judged · what every rule computes · guarantees · BQ-CP code · bank, dose, hook and alignment code · where the write-ups disagree"
+  ],
+  "pictures": [],
+  "current_notes": "Backup slides: definitions, the code, and a list of places where our write-ups disagree with each other."
+ },
+ {
+  "slide": 89,
+  "text": [
+   "PART 1 · THE MODELS",
+   "Words and symbols used throughout",
+   "Score = |y − q| / σ(s, a). y is the host's TD target, q = min(Q1, Q2) of the critic's two heads (IQL: target heads), σ is BCA's learned scale.",
+   "Shift (tilt): reweight the pool's rows by exp(γ z), with z a feature of (s, a) only. γ = 0 is no shift.",
+   "Threshold λ: the cut-off a rule certifies. Miscoverage of λ: the share of test rows whose score exceeds it. Target α = 0.1.",
+   "ρ: within-episode correlation of misses. K: rows per episode. Logged action: the dataset's action; every D4RL check uses it, never the actor's own action π(s).",
+   "Frozen pool: one dataset's held-out rows, scored once by a critic trained 100k updates (one seed). Any λ's miscoverage on it is exact.",
+   "Datasets: hopper-medium, halfcheetah-medium-expert, walker2d-medium-replay, maze2d-large, pen-expert, pen-cloned, pen-human. Hopper is the test bed for questions 2–3 (n = 1,103; others 1,024; IQL configs 8,192).",
+   "Bank: n rows drawn from the pool. Independent-row bank: n rows drawn iid. Whole-episode bank: every row of a few episodes (BCA's original rule). Thinned bank: K spaced rows from each of many episodes (BCA today).",
+   "Not in any result yet: the training loop itself, where the bank is rescored at every refresh."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 90,
+  "text": [
+   "PART 1 · THE MODELS",
+   "How is a rule judged?",
+   "experiments/wbcp/d4rl_benchmark.py · summarize_arm, lines 521–536 (excerpt)",
+   "def summarize_arm(thresholds, risk, alpha):\n    trials = thresholds.size\n    certified = np.isfinite(thresholds)\n    failures = int(np.sum(risk > alpha))\n# …\n    return dict(\n        fail=failures / trials, ci=[float(low), float(high)], failures=failures, trials=trials,\n# …\n        risk=float(np.mean(risk)), # abstentions count as risk 0\n# …\n        abstain=1.0 - float(np.mean(certified)),\n# …\n    )",
+   "Abstain (λ = ∞) counts as a pass here; the paper reproductions count certified trials only, so the two differ where abstention is common.",
+   "Fail: a bank whose threshold misses more than α = 10% of test rows. Valid: at most 5% of banks fail (1 − β, β = 0.95).",
+   "Banks per cell: 2,000 (D4RL benchmark), 4,000 (dependence, host matrix), 10,000 (paper reproductions), 1,000 (critic alignment)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 91,
+  "text": [
+   "PART 1 · THE MODELS",
+   "What does every rule compute?",
+   "experiments/wbcp/d4rl_benchmark.py · ExactRisk, lines 256–270 (excerpt)",
+   "class ExactRisk:\n    \"\"\"R(lambda) = sum_i a_i 1{s_i > lambda} / sum_i a_i over the pool, by binary search.\"\"\"\n\n    def __init__(self, scores, mass, order=None):\n        order = np.argsort(scores, kind=\"stable\") if order is None else order\n        self.sorted_scores = np.asarray(scores, np.float64)[order]\n        tail = np.cumsum(np.asarray(mass, np.float64)[order][::-1])[::-1] # tail[j] = sum_{i >= j}\n        self.tail = np.append(tail, 0.0)\n\n    def __call__(self, thresholds):\n        thresholds = np.asarray(thresholds, np.float64)\n# …\n        above = np.searchsorted(self.sorted_scores, thresholds, side=\"right\")\n        return self.tail[above] / self.tail[0]",
+   "In: a bank of n held-out scores. Out: one threshold λ. Each rule differs only in how it picks λ.",
+   "Miscoverage of λ = the test-law share of pool scores above λ. With no shift every row's mass a_i is 1.",
+   "The pool is finite and frozen, so every λ's miscoverage is exact, not estimated."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 92,
+  "text": [
+   "PART 1 · THE MODELS",
+   "Three kinds of guarantee",
+   "MARGINAL",
+   "HIGH-PROBABILITY",
+   "POSTERIOR CREDIBILITY",
+   "W‑CRC",
+   "RCPS · BQ‑CP",
+   "WBCP with weights",
+   "Miscoverage ≤ α on average over banks. A single bank can be far over α, so our test fails it often, by design.",
+   "At least 95% of banks have miscoverage ≤ α when rows are exchangeable. RCPS proves it with a concentration bound; for BQ‑CP, 95% credibility equals 95% confidence, so its 5% is exact.",
+   "Given this bank, P(miscoverage ≤ α) ≥ 95% (Corollary 3). The frequentist bound (Theorem 4) adds slack of 0.32 even with no shift at n = 1,103, so counting banks is an empirical check.",
+   "Our test, at most 5% of banks failing, is the high-probability standard.",
+   "Sources: experiments/wbcp/DEPENDENCE.md (Change 11: credibility vs confidence; Theorem 4 slack); Lou & Luo, arXiv:2604.06464v3."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 93,
+  "text": [
+   "PART 1 · THE MODELS · RULE 1 OF 4",
+   "BQ‑CP: a posterior over the threshold",
+   "calibration/wbcp.py · crossings(), lines 43–54 (excerpt)",
+   "def crossings(sorted_scores, sorted_weights, test_mass, exponentials, alpha):\n# …\n    mass = exponentials[:, :-1] * sorted_weights\n    total = mass.sum(axis=1) + exponentials[:, -1] * test_mass\n    covered = np.cumsum(mass, axis=1) >= (1.0 - alpha) * total[:, None]\n    return np.where(covered.any(axis=1), sorted_scores[covered.argmax(axis=1)], np.inf)",
+   "calibration/wbcp.py · calibrate(), lines 113–117",
+   "# Eq. (7): Pr(L+ <= alpha) at lambda is the fraction of draws crossing at or\n# below lambda, so the smallest beta-credible grid point is an order statistic.\nlambda_hpd = float(posterior[math.ceil(Fraction(str(beta)) * int(draws)) - 1])\nn_eff = float(weights.sum() ** 2 / np.dot(weights, weights)) # weights rescaled above\nreturn Calibration(max(lambda_hat, lambda_hpd), lambda_hat, lambda_hpd, posterior, n_eff)",
+   "Snell & Griffiths (2025). Each of M = 1,000 draws gives the n scores random Exp(1) masses (Dirichlet once normalized), plus one test atom that is never covered.",
+   "A draw's crossing: the first score where the covered mass reaches 1 − α of the total, test atom included. λ_hpd is the 950th smallest crossing.",
+   "Deployed λ = max(λ̂, λ_hpd), where λ̂ is the smallest score whose empirical coverage reaches 1 − α."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 94,
+  "text": [
+   "APPENDIX · STUDY 3 CODE",
+   "How BCA builds its bank today",
+   "calibration/bank.py · stratified_bank, lines 84–102 (excerpt)",
+   "order = rng.permutation(lengths.size)\npoints = (rng.random() + np.arange(draws)) * (total / draws)\nhits = np.searchsorted(np.cumsum(lengths[order]), points, side=\"right\")\nepisodes = order[np.minimum(hits, lengths.size - 1)] # guards a point rounded up to N\noffsets = []\nfor length in lengths[episodes]:\n# …\nsizes = np.array([rows.size for rows in offsets])\nsurplus = int(sizes.sum()) - int(target_size)\nif surplus > 0: # one uniform draw over all drawn rows; none at all without a surplus\n    keep = np.ones(int(sizes.sum()), bool)\n    keep[rng.choice(keep.size, surplus, replace=False)] = False\n    offsets = [rows[kept] for rows, kept in zip(offsets, np.split(keep, np.cumsum(sizes)[:-1]))]\nreturn episodes, offsets",
+   "Episodes: ⌈n/K⌉ distinct ones, chosen with probability proportional to length; inside each, one uniform row per K equal segments (short episodes enter whole). Whole reserved episodes leave training.",
+   "Remainder trim (added 2026‑10‑01): surplus rows over n are dropped at random. Most dependence results that follow were measured before it."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 95,
+  "text": [
+   "APPENDIX · BCA CODE",
+   "How the calibrated width becomes a dose",
+   "calibration/dose.py · frozen_level_dose lines 74–76, level_critic_dose lines 53–60 (excerpt)",
+   "threshold, unit = reference.threshold, reference.residual_scale\nscale = jnp.maximum(predictions, 1e-06) * unit\nwidth = threshold * scale\n# …\nsafe_u, safe_c = (jnp.where(support, widths, 0.0), jnp.where(valid_unit, unit, 1.0))\n# …\nratio = u_norm / (u_norm + c_norm)\ndose = 1.0 + jnp.where(valid_blend, blend, 0.0) * ratio",
+   "Width U = λ × σ(s, a) at each logged row; u = the residual unit. In the code, safe_u is U and safe_c is u (rescaled as u_norm, c_norm).",
+   "Edge cases: an abstaining threshold (λ = ∞) or a not-yet-ready reference gives m = 1, the native weight.",
+   "Dose m = 1 + 0.5 · U/(U + u) (blend 0.5), i.e. m = 1 + 0.5·λη/(1 + λη). It runs from 1, the host's own weight, toward 1.5, which no finite width reaches.",
+   "σ is learned online: η takes one Adam step per batch on a coverage loss; u tracks the residual spread. Frozen-critic studies reuse that fit (critic alignment) or refit σ (signal study step 2)."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 96,
+  "text": [
+   "APPENDIX · BCA CODE",
+   "The hook: where the dose enters TD3+BC's actor loss",
+   "The actor reads head 1 only: [..., 0]. Its weight λ uses TD3+BC's own α = 2.5, not the calibration α.",
+   "algorithms/td3_bc.py · _actor_loss_fn, lines 128–139",
+   "def _actor_loss_fn(params, critic_params):\n    pi = actor_apply_fn(params, batch.obs)\n    q = critic_apply_fn(critic_params, batch.obs, pi)[..., 0]\n    lmbda = args.alpha / jax.lax.stop_gradient(jnp.abs(q).mean())\n    if bc_multiplier is None:\n        bc = jnp.square(pi - batch.action).mean()\n    else:\n        bc = (\n            jax.lax.stop_gradient(bc_multiplier)\n            * jnp.square(pi - batch.action).mean(axis=-1)\n        ).mean()\n    return (-lmbda * q.mean() + bc, (q.mean(), lmbda, bc))",
+   "BCA passes its dose as bc_multiplier. It scales each row's BC error, detached by stop_gradient. The Q term is untouched.",
+   "“Today's hook” in the results means exactly this one detached multiplier."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 97,
+  "text": [
+   "APPENDIX · STUDY 5 CODE",
+   "TD3+BC: the actor reads Q1, BCA calibrates min(Q1, Q2)",
+   "algorithms/td3_bc.py · actor loss, lines 129–131: head 1 only",
+   "pi = actor_apply_fn(params, batch.obs)\nq = critic_apply_fn(critic_params, batch.obs, pi)[..., 0]\nlmbda = args.alpha / jax.lax.stop_gradient(jnp.abs(q).mean())",
+   "algorithms/td3_bc_bca.py · refresh, lines 252–256: the min over both heads",
+   "q = (\n    models[1]\n    .apply(state.native.critic.params, heldout.obs, heldout.action)\n    .min(axis=-1)\n)",
+   "Where Q1 is optimistic and Q2 accurate, min(Q1, Q2) = Q2, so the calibrated residual carries none of Q1's error. ReBRAC's and CQL's actors maximize the min they calibrate; IQL's code is fixed.",
+   "Three signals compared: min (BCA today), q1, and maxabs = max(|t − Q1|, |t − Q2|), which covers both heads but is 1.09–1.19× wider than q1 and was dropped by judgment."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 98,
+  "text": [
+   "APPENDIX",
+   "Where do the write-ups disagree? (1 of 2)",
+   "TABLE:\nTopic | Disagreement | Fix\nmin vs Q1 failure ranges | 8.2–70.2% with σ fit online vs 10.5–82.4% with σ refit | Always state which σ\nQ1 switch | \"Now\" (CRITIC_ALIGNMENT rule) vs \"on hold\" (host matrix) vs \"measurement signal\" (step 4) | Keep the three decisions apart\ndependence_validated | Removed from the code, still described in DEPENDENCE.md and the host notebooks | Update text, rebuild notebooks\nK recommendation | \"About K = 5 per dataset\", but the host moves ρ about 3× on healthy critics and maze2d K = 5 fails 6.5% | Key K by host × dataset",
+   "Found by the cross-check of all write-ups for this deck. None changes a result; each changes how a result should be stated."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ },
+ {
+  "slide": 99,
+  "text": [
+   "APPENDIX",
+   "Where do the write-ups disagree? (2 of 2)",
+   "TABLE:\nTopic | Disagreement | Fix\n\"ρ moves up to 8×\" | EXPERIMENTS.md's 8× is hopper, 0.002 vs 0.016: both negligible | Quote about 3× (walker2d, pen-expert)\nTD3+BC pen-cloned flag | \"Q outside its range\" (notebook) vs \"still growing\" (expectations file) | Pick one; the deck follows the notebook\n\"Small\" excess under shift | Shown on hopper only; exact-weight WBCP reaches 14.2–22.8% elsewhere | Scope the claim to hopper\nDEPENDENCE.md Summary, Limits | Written before Change 12 and the host matrices | Refresh both sections",
+   "Found by the cross-check of all write-ups for this deck. None changes a result; each changes how a result should be stated."
+  ],
+  "pictures": [],
+  "current_notes": ""
+ }
+]
