@@ -1,0 +1,55 @@
+/* full walkthrough mode: the page's sections one at a time in a pop-out, in reading order */
+.head-body { display: flex; flex-direction: column; gap: 18px; scroll-margin-top: 24px; }
+.wt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.wt-bar[hidden] { display: none; }
+.wt-bar .btn { min-height: 44px; padding: 9px 18px; font-size: 15px; display: inline-flex; align-items: center; gap: 9px; }
+.wt-bar .btn::before { content: ""; width: 14px; height: 11px; flex: none; border: 2px solid currentColor; border-radius: 2px;
+  box-shadow: 3px -3px 0 -1px var(--accent), 3px -3px 0 1px currentColor; margin-top: 3px; }
+.wt-bar .note { max-width: 52ch; }
+html.wt-lock { overflow: hidden; }
+dialog.wt { padding: 0; border: 1px solid var(--rule-strong); border-radius: 14px; background: var(--surface); color: var(--ink);
+  width: min(1000px, calc(100vw - 48px)); max-width: none; max-height: none;
+  height: min(920px, calc(100vh - 48px)); height: min(920px, calc(100dvh - 48px));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .35); overflow: hidden; }
+dialog.wt[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; animation: wt-pop .22s ease-out; }
+dialog.wt::backdrop { background: rgba(12, 16, 14, .6); animation: wt-fade .22s ease-out; }
+.wt-head { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center;
+  padding: 14px 20px 12px; border-bottom: 1px solid var(--rule); }
+.wt-count { grid-column: 1; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.wt-title { grid-column: 1; font-size: 24px; border: 0; padding: 0; }
+.wt-title:focus { outline: none; }
+.wt-keys { grid-column: 1; font-size: 13px; color: var(--muted); }
+.wt-close { grid-column: 2; grid-row: 1 / span 3; min-height: 44px; }
+.wt-progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; background: var(--rule); }
+.wt-progress span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+.wt-body { overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 18px 20px 28px; background: var(--bg); }
+.wt-body:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.wt-stage { display: flex; flex-direction: column; gap: 18px; min-width: 0; transition: opacity .17s ease, transform .17s ease; }
+.wt-stage.wt-leave-next { opacity: 0; transform: translateX(-28px); }
+.wt-stage.wt-leave-back { opacity: 0; transform: translateX(28px); }
+.wt-stage.wt-enter-next { opacity: 0; transform: translateX(28px); transition: none; }
+.wt-stage.wt-enter-back { opacity: 0; transform: translateX(-28px); transition: none; }
+/* the pop-out's title replaces the section's own heading while the section is inside it */
+.wt-stage > .wt-in > h2:first-of-type, .wt-stage > .wt-in > .panel-title { display: none; }
+.wt-foot { display: flex; align-items: center; gap: 12px; padding: 10px 20px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--rule); background: var(--surface); }
+.wt-foot .btn { min-height: 44px; min-width: 96px; }
+.wt-foot .btn:disabled { opacity: .4; cursor: default; }
+.wt-next-name { flex: 1 1 auto; min-width: 0; text-align: right; font-size: 14px; color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@keyframes wt-pop { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+@keyframes wt-fade { from { opacity: 0; } }
+@media (max-width: 640px) {
+  dialog.wt { width: 100%; height: 100vh; height: 100dvh; border: 0; border-radius: 0; margin: 0; }
+  .wt-head { padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; }
+  .wt-title { font-size: 20px; }
+  .wt-body { padding: 14px 16px 24px; }
+  .wt-foot { padding-inline: 16px; gap: 8px; }
+  .wt-foot .btn { min-width: 84px; }
+}
+@media (max-width: 640px), (pointer: coarse) { .wt-keys { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  dialog.wt[open], dialog.wt::backdrop { animation: none; }
+  .wt-stage, .wt-progress span { transition: none; }
+}

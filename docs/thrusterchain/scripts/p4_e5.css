@@ -1,0 +1,64 @@
+/* ---- page pass 4, edit 5: the final review's findings ---- */
+
+/* the widget's hidden live region (and anything absolutely placed in a widget) stays inside its figure, so the
+   walkthrough dialog never gains a hidden scrollable overflow */
+.ix { position: relative; }
+
+/* running text: justified at desktop widths only. At phone width a justified line opens wide gaps around words that
+   cannot break (code, formulas, numbers), so running text is left-aligned there; hyphenation stays on. */
+@media (max-width: 600px) {
+  :where(.wrap, dialog.wt) :where(p, li, dd, figcaption, blockquote) { text-align: start; }
+}
+:where(.wrap, dialog.wt) :where(p, li, dd) code { overflow-wrap: anywhere; }
+
+/* the stall chart: its in-plot labels sit on a halo of the figure's surface, so the crosshair never cuts them */
+.sc-svg text.lab, .sc-svg text.ann { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+
+/* readable ink: readout labels are often sentences (the live panel, the task diagram), not short labels */
+.ro .k { color: var(--ink-2); }
+/* the critic section's strip caption is a sentence; the task diagram's + signs are text */
+svg.qv-strip .qv-flow { fill: var(--ink-2); }
+svg.dg text.dg-m { fill: var(--ink-2); }
+/* the critic section's legend: an item that does not apply in the state on screen keeps readable text; only its key
+   fades, and the words say why */
+.qv-legend > span.qv-off { opacity: 1; }
+.qv-legend > span.qv-off > i { opacity: .4; }
+.qv-legend > span.qv-off .qv-lt::after { content: " (not in this state)"; color: var(--ink-2); }
+
+/* the full-throttle mark in running text carries the 1 px ring in its ink, like every gold tile */
+.km[data-k="region"] {
+  background-image: linear-gradient(var(--c), var(--c)), linear-gradient(var(--k-region-ink), var(--k-region-ink));
+  background-size: 0.62em 0.62em, calc(0.62em + 2px) calc(0.62em + 2px);
+  background-position: 0.06em 52%, calc(0.06em - 1px) 52%; }
+
+/* a step chip inside a legend's worked example sits on the example's grey: give it the surface and a rule */
+.symkey-ex .stepchip { background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+
+/* live panel option cards: the colour key sits on the first line of the name, also when the SELECTED badge wraps it */
+.opt b { align-items: flex-start; line-height: 1.4; }
+.opt[data-group="sit"] b::before { margin-top: calc(0.7em - 5.5px); }
+.opt[data-group="world"] b::before, .opt b > .sw { margin-top: calc(0.7em - 1.5px); }
+.opt[aria-pressed="true"] b::after { align-self: flex-start; margin-top: 4px; line-height: 13px; }
+
+/* phone cards of tables whose columns are situations: each value keeps its situation's dot before the column name */
+@media (max-width: 560px) {
+  table.stack.obs-tbl td:nth-child(3)::before { --c: var(--sit-rec); }
+  table.stack.obs-tbl td:nth-child(4)::before { --c: var(--sit-strong); }
+  table.stack.obs-tbl td:nth-child(5)::before { --c: var(--sit-waves); }
+  table.stack.obs-tbl td:nth-child(6)::before { --c: var(--sit-kicks); }
+  table.stack.p4-iwcov td:nth-child(n+2)::before { --c: var(--sit-rec); }
+  table.stack.p4-iwcov td:nth-child(n+5)::before { --c: var(--sit-strong); }
+  table.stack.obs-tbl td:nth-child(n+3)::before, table.stack.p4-iwcov td:nth-child(n+2)::before {
+    padding-left: 0.95em; background-repeat: no-repeat; background-position: 0.06em 0.37em; background-size: 0.66em 0.66em;
+    background-image: radial-gradient(circle closest-side, var(--c) 0 88%, transparent 100%); }
+}
+@media (forced-colors: active) { table.stack td::before { forced-color-adjust: none; } }
+
+/* the critic section's controls: one line under each group on the pipeline step it stands for */
+.qv-ctrl > .stepnote { flex-basis: 100%; margin: 0; }
+.qv-seg button .km { padding-left: 0.95em; }
+
+/* collapsed source notes, for the project team */
+details.srcs { margin: 10px 0 0; }
+details.srcs > summary { font-size: 14.5px; color: var(--ink-2); }
+details.srcs .note { margin: 6px 0 0; }

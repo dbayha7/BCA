@@ -1,0 +1,390 @@
+/* ===================================================================================================================
+   ThrusterChain, page pass 4: one colour system, readable ink, justified running text, aligned symbol legends,
+   the offline reinforcement-learning pipeline strip.
+   Design notes and measurements: notes/p4_design.md. Append this block after the page's main <style> rules (it relies
+   on winning ties by source order); it never touches the qviewer blocks' markup.
+   Colour rule: colour marks WHICH THING (a situation, a world, a region, a pipeline step); text always stays in the
+   ink tokens and a colour never appears without its label.
+   =================================================================================================================== */
+
+/* -------------------------------------------------------------------------------------------------------------------
+   1. Tokens. Light values here; dark values twice below (the system setting, and the page's data-theme toggle).
+   ------------------------------------------------------------------------------------------------------------------- */
+:root {
+  /* text ink: body text is --ink; --ink-2 is for secondary text and stays at least 10:1; --muted is for very short
+     labels only (axis ticks, chip text, a column name inside a phone card): at least 5.9:1 (light) and 5.4:1 (dark) on
+     every surface */
+  --ink: #1a201e;
+  --ink-2: #2b3330;
+  --muted: #4f5853;
+
+  /* the four test situations (OKLCH hue in brackets). Recorded conditions take the colour of the recorded data. */
+  --sit-rec: #00714f;          /* recorded conditions = in-distribution; also the recorded data and the recording controller (164) */
+  --sit-strong: #d56c00;       /* strong current = dynamics extrapolation (54) */
+  --sit-waves: #0092c1;        /* big waves = disturbance shift (230) */
+  --sit-kicks: #ce4c8e;        /* big starting pushes = initial-state shift (352) */
+  --sit-rec-soft: #e0eeea;
+  --sit-strong-soft: #faede0;
+  --sit-waves-soft: #e0f2f8;
+  --sit-kicks-soft: #f9eaf1;
+
+  /* the stall and the two worlds */
+  --k-stall: #9f2818;          /* the stall, the stalling world, throttle past 80% in that world (31) */
+  --k-stall-soft: #f3e3e1;
+  --k-rise: #7e53cc;           /* push keeps rising: the no-stall comparison world and the rising-thrust controller (296) */
+  --k-rise-soft: #f0eaf9;
+
+  /* the full-throttle region (water's push c + w1 above 0.565) and the full-throttle commands in it.
+     An area colour: drawn as a tint or a tile, never as a thin line, so it gets an ink for outlines and hatching. */
+  --k-region: #c6b042;         /* (98) below 3:1 on white by design: always labelled, always with --k-region-ink */
+  --k-region-ink: #735d10;     /* outline, hatch, dashed threshold line and label text of the region (6.4:1 on white) */
+  --k-region-soft: #f0eace;
+
+  /* the learned parts: the critic, the actor and BCA's band (the page's accent, so it doubles as the interface colour) */
+  --k-learn: #2346b8;
+  --k-learn-soft: #e3e8f7;
+
+  /* neutral identities: the stall-aware controller is the 100-point reference, drawn in ink; no throttle is dashed gray */
+  --k-ref: #2b3330;
+  --k-none: #8a928e;
+
+  /* "removed from the data": a hatch over whatever region the removal took */
+  --hatch: repeating-linear-gradient(135deg, var(--ink-2) 0 1.4px, transparent 1.4px 5px);
+
+  /* legacy tokens re-pointed into the system (no markup change needed for these) */
+  --warn: #9f2818;             /* text and marks of the stall: 7.5:1 on white, 6.0:1 on its own tint */
+  --warn-soft: var(--k-stall-soft);
+  --region: var(--k-region-soft);
+  --c-rec: var(--sit-rec);     /* the recording controller wears the recorded-data colour */
+  --c-sa: var(--k-ref);        /* the stall-aware controller: neutral reference ink */
+  --c-rt: var(--k-rise);       /* the rising-thrust controller: push keeps rising */
+  --c-none: var(--k-none);
+  --iw-train: var(--sit-rec);  /* weighting test: training and calibration data = the recorded data */
+  --iw-strong: var(--sit-strong); /* weighting test: the test leaning toward strong currents */
+  --iw-mild: var(--k-learn);   /* weighting test: today this token draws both the even (no-lean) test and the exactly
+                                  weighted band; the band is BCA's, so it takes the learned-model colour (see notes, section 6) */
+
+  /* pipeline steps borrow the colours of what they act on */
+  --step-collect: var(--sit-rec);
+  --step-remove: var(--k-region);
+  --step-train: var(--k-learn);
+  --step-band: var(--k-learn);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #e7ebe8; --ink-2: #d5dbd7; --muted: #a9b2ad;
+    --sit-rec: #10a07b; --sit-strong: #a95507; --sit-waves: #1176a2; --sit-kicks: #b1397c;
+    --sit-rec-soft: #17372e; --sit-strong-soft: #362817; --sit-waves-soft: #172f36; --sit-kicks-soft: #37232e;
+    --k-stall: #dc6e76; --k-stall-soft: #442f2f; --k-rise: #b06bd8; --k-rise-soft: #372d41;
+    --k-region: #ac9202; --k-region-ink: #c9b23a; --k-region-soft: #3c3915;
+    --k-learn: #758ae0; --k-learn-soft: #1e2640; --k-ref: #d5dbd7; --k-none: #8e9793;
+    --warn: #ec8b84;
+    /* the page's own dark blocks set these legacy tokens with a stronger selector, so they are re-pointed here too */
+    --warn-soft: var(--k-stall-soft); --region: var(--k-region-soft); --c-rec: var(--sit-rec); --c-sa: var(--k-ref);
+    --c-rt: var(--k-rise); --c-none: var(--k-none); --iw-train: var(--sit-rec); --iw-strong: var(--sit-strong); --iw-mild: var(--k-learn);
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #e7ebe8; --ink-2: #d5dbd7; --muted: #a9b2ad;
+  --sit-rec: #10a07b; --sit-strong: #a95507; --sit-waves: #1176a2; --sit-kicks: #b1397c;
+  --sit-rec-soft: #17372e; --sit-strong-soft: #362817; --sit-waves-soft: #172f36; --sit-kicks-soft: #37232e;
+  --k-stall: #dc6e76; --k-stall-soft: #442f2f; --k-rise: #b06bd8; --k-rise-soft: #372d41;
+  --k-region: #ac9202; --k-region-ink: #c9b23a; --k-region-soft: #3c3915;
+  --k-learn: #758ae0; --k-learn-soft: #1e2640; --k-ref: #d5dbd7; --k-none: #8e9793;
+  --warn: #ec8b84;
+  --warn-soft: var(--k-stall-soft); --region: var(--k-region-soft); --c-rec: var(--sit-rec); --c-sa: var(--k-ref);
+  --c-rt: var(--k-rise); --c-none: var(--k-none); --iw-train: var(--sit-rec); --iw-strong: var(--sit-strong); --iw-mild: var(--k-learn);
+}
+
+/* -------------------------------------------------------------------------------------------------------------------
+   2. Scoping: any element with data-sit / data-world / data-k carries --c (its colour) and --c-soft (its tint).
+      Keys follow the page's own option values: recorded, strong_current, big_waves, big_kicks; stall, no_stall.
+   ------------------------------------------------------------------------------------------------------------------- */
+[data-sit="recorded"]       { --c: var(--sit-rec);    --c-soft: var(--sit-rec-soft); }
+[data-sit="strong_current"] { --c: var(--sit-strong); --c-soft: var(--sit-strong-soft); }
+[data-sit="big_waves"]      { --c: var(--sit-waves);  --c-soft: var(--sit-waves-soft); }
+[data-sit="big_kicks"]      { --c: var(--sit-kicks);  --c-soft: var(--sit-kicks-soft); }
+[data-world="stall"]        { --c: var(--k-stall);    --c-soft: var(--k-stall-soft); }
+[data-world="no_stall"]     { --c: var(--k-rise);     --c-soft: var(--k-rise-soft); }
+[data-k="region"]           { --c: var(--k-region);   --c-soft: var(--k-region-soft); }
+[data-k="stall"]            { --c: var(--k-stall);    --c-soft: var(--k-stall-soft); }
+[data-k="learn"]            { --c: var(--k-learn);    --c-soft: var(--k-learn-soft); }
+[data-k="hold"]             { --c: var(--ink-2);      --c-soft: var(--surface-2); }  /* the weighting test's 80% hold */
+[data-k="recording"]        { --c: var(--sit-rec);    --c-soft: var(--sit-rec-soft); }
+[data-k="stall_aware"]      { --c: var(--k-ref);      --c-soft: var(--surface-2); }
+[data-k="rising_thrust"]    { --c: var(--k-rise);     --c-soft: var(--k-rise-soft); }
+[data-k="no_throttle"]      { --c: var(--k-none);     --c-soft: var(--surface-2); }
+
+/* -------------------------------------------------------------------------------------------------------------------
+   3. Keys: one small mark per kind of thing. The SHAPE says the kind, the COLOUR says which one.
+        dot  = a test situation          line = a world or a controller (a curve in a chart)
+        tile = a region (an area)        hatched tile = data removed
+   Use as <i class="key dot" data-sit="big_waves"></i> in legends, buttons and table headers.
+   ------------------------------------------------------------------------------------------------------------------- */
+.key { display: inline-block; flex: none; vertical-align: -0.08em; width: 0.72em; height: 0.72em; margin-right: 0.38em;
+  background: var(--c, var(--muted)); }
+.key.dot { border-radius: 50%; }
+.key.line { width: 1.15em; height: 0.2em; border-radius: 1px; vertical-align: 0.22em; }
+.key.dash { width: 1.15em; height: 0.2em; vertical-align: 0.22em;
+  background: repeating-linear-gradient(90deg, var(--c, var(--muted)) 0 4px, transparent 4px 7px); }
+.key.tile { border-radius: 2px; box-shadow: inset 0 0 0 1px var(--c-ink, color-mix(in srgb, var(--c) 70%, var(--ink))); }
+.key.tile[data-k="region"] { --c-ink: var(--k-region-ink); }
+.key.sitall { border-radius: 50%; background: conic-gradient(var(--sit-rec) 0 25%, var(--sit-strong) 0 50%,
+  var(--sit-waves) 0 75%, var(--sit-kicks) 0); }   /* "the situation you picked": all four */
+.key.removed { border-radius: 2px; background: var(--hatch), var(--c-soft, var(--surface-2));
+  box-shadow: inset 0 0 0 1px var(--c-ink, var(--ink-2)); }
+.key.removed[data-k="region"] { --c-ink: var(--k-region-ink); }
+
+/* a mention in running text: the label keeps the body ink; a coloured mark sits in front of it.
+   <span class="km" data-sit="strong_current">strong current</span>. The mark is a background in the span's own
+   padding, so it can never be separated from its word by a line break. Use it at the first mention in a section, in
+   lead-ins, captions and table row headers; not on every repetition. */
+.km { padding-left: 0.95em; background-repeat: no-repeat; background-position: 0.06em 52%; background-size: 0.66em 0.66em;
+  background-image: radial-gradient(circle closest-side, var(--c) 0 88%, transparent 100%);
+  -webkit-box-decoration-break: slice; box-decoration-break: slice; }
+.km[data-k="region"], .km[data-k="stall"] {
+  background-image: linear-gradient(var(--c), var(--c)); background-size: 0.62em 0.62em; border-radius: 0; }
+.km[data-world], .km[data-k="recording"], .km[data-k="stall_aware"], .km[data-k="rising_thrust"], .km[data-k="learn"] {
+  padding-left: 1.3em; background-image: linear-gradient(var(--c), var(--c)); background-size: 1.05em 0.2em; }
+.km[data-k="no_throttle"] { padding-left: 1.3em; background-size: 1.05em 0.2em;
+  background-image: repeating-linear-gradient(90deg, var(--c) 0 4px, transparent 4px 7px); }
+
+/* -------------------------------------------------------------------------------------------------------------------
+   4. Running text: readable ink, full column width, justified with hyphenation.
+      Put lang="en" on <div class="wrap"> and on <dialog class="wt"> (sections move into the dialog in walkthrough
+      mode, and hyphenation needs a language). Headings, table cells, code, formulas, buttons, chart labels,
+      tooltips, legends and the pipeline strip stay left-aligned.
+   ------------------------------------------------------------------------------------------------------------------- */
+/* explanatory notes, captions, lead-ins and definitions move from grey to the body ink */
+.note, figcaption, .sim-intro, .sim-key, .td-lead, .status, .kv dd, .cg dd, dl.pro dd, .symkey dd, .check .uses,
+.optlbl .q, .iw-sl, .qv-key, .qv-now, .qv-eplist, ul.leads, .explain { color: var(--ink); }
+caption, .tt-b, .tt-col, .tt-note, .tt-tuple .p > .v, .legend, .dr-name, .iw-step .s { color: var(--ink-2); }
+
+/* lift the line-length caps on running text and its boxes (they were 52ch to 86ch); charts keep their own widths */
+p, ul, ol, .callout, .box, .sim-intro, .ro-note, figcaption, .status, .td-lead p, .td-lead ul, .kv dd, p.worked,
+.iw-claims, .claims, .finding, .g-row p, .qv-now, .qv-cap, .qv-eplist, .qv-findings, .symkey { max-width: none; }
+
+/* justify: only real running text. :where() keeps this at zero specificity, so every exclusion below wins. */
+:where(.wrap, dialog.wt) :where(p, li, dd, figcaption, blockquote) {
+  text-align: justify; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 7 3 3; text-wrap: pretty;
+}
+/* exclusions: anything inside these stays left-aligned and unhyphenated */
+:is(td, th, caption, pre, code, .math-display, button, .btn, .opt, .optlbl, .ro, .readouts, .legend, .symkey, .tt,
+    .qv-tip, .iw-tip, .qv-legend, nav, .pipe, .tag, .iw-chip, .dr, .wt-head, .wt-foot, .wt-bar, .transport, .kv dt,
+    .cg dt, .chartbox > .note, .iw-chart > .note) :is(p, li, dd, figcaption),
+:is(td, th, caption, .legend, .symkey, .tt, .pipe, .ro, .opt) {
+  text-align: left; -webkit-hyphens: manual; hyphens: manual;
+}
+/* short label-like paragraphs: never justified */
+.crumb, .symkey-h, .symkey-g, .sim-k, .td-k, .qv-k, .cg-h, .find-t, .f-title, .g-k, .ex-head, .panel-title, .wt-count,
+.wt-keys, .tblwrap > .hint { text-align: left; -webkit-hyphens: manual; hyphens: manual; }
+/* phone: inside boxes the line is too short to justify without wide gaps (most browsers on a phone hyphenate, but
+   formulas, numbers and "0 = recording controller" stretches cannot break), so boxed text goes left-aligned there;
+   the main column stays justified */
+@media (max-width: 480px) {
+  :is(.panel, .box, .callout, .check, details, .finding, .explain, .sim-key, .qv-key, .claims) :is(p, li, dd) {
+    text-align: left; }
+}
+/* a word in a formula, a code word or a number never splits */
+:where(.wrap, dialog.wt) :is(code, .mono, .nw, mjx-container, .km, .sym) { -webkit-hyphens: manual; hyphens: manual; }
+
+/* -------------------------------------------------------------------------------------------------------------------
+   5. Symbol legends: one aligned two-column grid per legend. Every symbol sits in the left column and every
+      definition starts at the same left edge, across all groups of the legend (the legend box is the grid; its dl
+      and each row are subgrids, so the rows keep their boxes and their meaning for assistive technology).
+      Markup (unchanged for a plain legend; groups add <p class="symkey-g"> before each <dl>):
+        <div class="symkey"><p class="symkey-h">What the symbols mean</p>
+          <p class="symkey-g">What the controller reads</p><dl><div><dt>…</dt><dd>…</dd></div>…</dl>
+          <p class="symkey-g">Its fixed settings</p><dl>…</dl>
+          <p class="symkey-ex"><b>Worked example.</b> …</p></div>
+   ------------------------------------------------------------------------------------------------------------------- */
+.symkey { display: grid; grid-template-columns: fit-content(15em) minmax(0, 1fr); column-gap: 20px; align-items: start;
+  padding: 10px 16px 12px; }
+.symkey > .symkey-h, .symkey > .symkey-g, .symkey > .symkey-ex, .symkey > p { grid-column: 1 / -1; }
+.symkey-h { color: var(--ink-2); font-size: 12.5px; letter-spacing: .07em; margin: 0 0 4px; }
+.symkey-g { margin: 10px 0 2px; padding-top: 8px; border-top: 1px solid var(--rule-strong); font-family: var(--display);
+  font-size: 15px; font-weight: 700; line-height: 1.3; color: var(--ink); letter-spacing: 0; text-transform: none; }
+.symkey-h + .symkey-g { margin-top: 2px; padding-top: 0; border-top: 0; }
+.symkey-ex { margin: 10px 0 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-2); font-size: 14.5px;
+  line-height: 1.5; color: var(--ink); }
+.symkey > dl { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: 0 20px; margin: 0; font-size: 15px;
+  line-height: 1.5; }
+.symkey > dl > div { grid-column: 1 / -1; display: grid; grid-template-columns: subgrid; gap: 0 20px; align-items: baseline;
+  padding: 5px 0; border-top: 1px solid var(--rule); min-width: 0; }
+.symkey > dl > div:first-child { border-top: 0; }
+.symkey dt { color: var(--ink); font-weight: 600; white-space: normal; min-width: 0; }
+.symkey dt mjx-container, .symkey dt .nw { white-space: nowrap; }
+.symkey dd { margin: 0; color: var(--ink); min-width: 0; overflow-wrap: break-word; }
+.symkey dt .key { margin-right: 0.45em; }
+/* browsers without subgrid: rows keep their own two columns at a fixed split */
+@supports not (grid-template-columns: subgrid) {
+  .symkey, .symkey > dl { display: block; }
+  .symkey > dl > div { grid-template-columns: minmax(5em, 13em) minmax(0, 1fr); column-gap: 20px; }
+}
+/* phone: one column; the symbol on its own line and its definition under it, slightly indented */
+@media (max-width: 560px) {
+  .symkey { grid-template-columns: minmax(0, 1fr); padding: 9px 12px 11px; }
+  .symkey > dl > div { row-gap: 1px; padding: 6px 0; }
+  .symkey dd { padding-left: 12px; font-size: 14.5px; }
+  @supports not (grid-template-columns: subgrid) { .symkey > dl > div { grid-template-columns: minmax(0, 1fr); } }
+}
+
+/* -------------------------------------------------------------------------------------------------------------------
+   6. The live panel (#sim): the option buttons wear their thing's colour; the drawing is framed in the chosen
+      situation's colour. No markup change is needed: the buttons already carry data-group and data-value, and the
+      panel's current choice is read with :has() (without :has() the frame is simply not drawn).
+   ------------------------------------------------------------------------------------------------------------------- */
+.opt[data-group="sit"][data-value="recorded"]       { --c: var(--sit-rec);    --c-soft: var(--sit-rec-soft); }
+.opt[data-group="sit"][data-value="strong_current"] { --c: var(--sit-strong); --c-soft: var(--sit-strong-soft); }
+.opt[data-group="sit"][data-value="big_waves"]      { --c: var(--sit-waves);  --c-soft: var(--sit-waves-soft); }
+.opt[data-group="sit"][data-value="big_kicks"]      { --c: var(--sit-kicks);  --c-soft: var(--sit-kicks-soft); }
+.opt[data-group="world"][data-value="stall"]        { --c: var(--k-stall);    --c-soft: var(--k-stall-soft); }
+.opt[data-group="world"][data-value="no_stall"]     { --c: var(--k-rise);     --c-soft: var(--k-rise-soft); }
+.opt[data-group="ctrl"][data-value="recording"]     { --c: var(--sit-rec);    --c-soft: var(--sit-rec-soft); }
+.opt[data-group="ctrl"][data-value="stall_aware"]   { --c: var(--k-ref);      --c-soft: var(--surface-2); }
+.opt[data-group="ctrl"][data-value="rising_thrust"] { --c: var(--k-rise);     --c-soft: var(--k-rise-soft); }
+.opt[data-group="ctrl"][data-value="no_throttle"]   { --c: var(--k-none);     --c-soft: var(--surface-2); }
+.opt { color: var(--ink); border-left: 4px solid var(--c, var(--rule)); }
+.opt span { color: var(--ink-2); }
+.opt[data-group="sit"] b::before { content: ""; flex: none; width: 11px; height: 11px; border-radius: 50%; background: var(--c); }
+.opt[data-group="world"] b::before { content: ""; flex: none; width: 18px; height: 3px; border-radius: 2px; background: var(--c); }
+.opt:hover { border-color: var(--c, var(--accent)); }
+.opt[aria-pressed="true"] { background: var(--c-soft, var(--accent-soft)); border-color: var(--c, var(--accent));
+  box-shadow: inset 0 0 0 1px var(--c, var(--accent)); color: var(--ink); }
+.opt[aria-pressed="true"] span { color: var(--ink); }
+.opt[aria-pressed="true"] b::after { color: var(--ink); }
+.opt:focus-visible { outline-color: var(--accent); }
+
+/* the drawing's frame and the explanation box's "Situation" line follow the chosen situation */
+#sim:has(.opt[data-group="sit"][data-value="recorded"][aria-pressed="true"])       { --sit: var(--sit-rec); }
+#sim:has(.opt[data-group="sit"][data-value="strong_current"][aria-pressed="true"]) { --sit: var(--sit-strong); }
+#sim:has(.opt[data-group="sit"][data-value="big_waves"][aria-pressed="true"])      { --sit: var(--sit-waves); }
+#sim:has(.opt[data-group="sit"][data-value="big_kicks"][aria-pressed="true"])      { --sit: var(--sit-kicks); }
+#sim:has(.opt[data-group="world"][data-value="stall"][aria-pressed="true"])        { --world: var(--k-stall); }
+#sim:has(.opt[data-group="world"][data-value="no_stall"][aria-pressed="true"])     { --world: var(--k-rise); }
+#sim #channel { border-radius: 10px; outline: 3px solid var(--sit, transparent); outline-offset: 3px; }
+#sim .explain .kv dt:nth-of-type(1)::before, #sim .explain .kv dt:nth-of-type(2)::before { content: ""; display: inline-block;
+  margin-right: 7px; vertical-align: 0.05em; }
+#sim .explain .kv dt:nth-of-type(1)::before { width: 0.66em; height: 0.66em; border-radius: 50%; background: var(--sit, transparent); }
+#sim .explain .kv dt:nth-of-type(2)::before { width: 1.05em; height: 0.2em; vertical-align: 0.24em; background: var(--world, transparent); }
+/* the panel's lead-in cards: one strong ink; titles in ink with a coloured rule instead of blue text */
+.sim-key { color: var(--ink); }
+.sim-k, .td-k, .qv-k, .cg-h { color: var(--ink); }
+.sim-key b, .td-lead b { color: var(--ink); }
+
+/* -------------------------------------------------------------------------------------------------------------------
+   7. Tables: a situation's group row carries its colour. <tr class="sub" data-sit="strong_current"><td>
+      <span class="km" data-sit="strong_current">Strong current</span>…   (the row tint is the situation's tint)
+   ------------------------------------------------------------------------------------------------------------------- */
+tr.sub[data-sit] td { background: var(--c-soft); }
+tr.sub[data-sit] td:first-child { box-shadow: inset 4px 0 0 var(--c); padding-left: 14px; }
+table.card tr.sub[data-sit] td:first-child, table.rows8 tr.sub[data-sit] td:first-child { background: var(--c-soft); }
+th[data-sit], td[data-sit] { box-shadow: inset 0 3px 0 var(--c); }
+@media (max-width: 560px) {
+  table.stack.card tr.sub[data-sit] td:first-child { color: var(--ink); border-radius: 6px; }
+  table.stack.card tr.sub td:first-child { color: var(--ink); }
+}
+
+/* -------------------------------------------------------------------------------------------------------------------
+   8. Charts and drawings: the existing classes re-pointed into the system (the legends' inline swatches must follow:
+      see the table in p4_design.md, section 7).
+   ------------------------------------------------------------------------------------------------------------------- */
+svg.chart .ln-nostall { stroke: var(--k-rise); }
+svg.chart .pt-nostall { fill: var(--k-rise); }
+svg.chart .pt-ft { fill: var(--k-region); stroke: var(--k-region-ink); stroke-width: 1.2; }
+svg.chart .pt-normal { fill: var(--sit-rec); }
+/* the 80% stall line: add class "k80" to the three knee lines that mark 80% (Action Space push chart, #task-chart,
+   the recorded-episode chart); the knee lines of the dose chart in Methods mark BCA's dose cap and stay grey */
+svg.chart .knee.k80 { stroke: var(--k-stall); }
+/* the 0.565 threshold of the full-throttle region, wherever a chart draws it */
+svg.chart .k565 { stroke: var(--k-region-ink); stroke-width: 1.4; stroke-dasharray: 5 3; }
+svg.chart .ln-sa { stroke: var(--k-ref); }
+svg.chart .pt-sa { fill: var(--k-ref); }
+
+/* -------------------------------------------------------------------------------------------------------------------
+   9. The offline reinforcement-learning pipeline strip (replaces the at-a-glance block; a compact copy sits in the
+      live panel). Each step links to its section and borrows the colour of what it acts on.
+      <nav class="pipe" aria-label="…"><ol>
+        <li class="pipe-step" data-step="collect"><a href="#dataset"><span class="pipe-n">1</span>
+          <span class="pipe-t">Collect the data</span><span class="pipe-d">…</span></a></li> …</ol></nav>
+   ------------------------------------------------------------------------------------------------------------------- */
+.pipe { min-width: 0; }
+.pipe > ol { list-style: none; margin: 0; padding: 0; max-width: none; display: grid; gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pipe-step { position: relative; min-width: 0; display: flex; }
+.pipe-step > a { flex: 1 1 auto; display: flex; flex-direction: column; gap: 4px; min-width: 0; color: var(--ink);
+  text-decoration: none; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+  padding: 14px 12px 12px; position: relative; overflow: hidden; }
+.pipe-step > a::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--bar); }
+.pipe-step > a:hover { border-color: var(--rule-strong); background: var(--surface-2); }
+.pipe-step > a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pipe-n { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: none;
+  font-size: 13px; font-weight: 700; color: var(--ink); background: var(--surface-2); border: 1px solid var(--rule-strong); }
+.pipe-t { font-family: var(--display); font-size: 16px; font-weight: 700; line-height: 1.25; color: var(--ink); }
+.pipe-d { font-size: 14px; line-height: 1.45; color: var(--ink); }
+.pipe-d .key { margin-right: 0.3em; }
+.pipe-go { margin-top: auto; padding-top: 4px; font-size: 13px; font-weight: 600; color: var(--accent-ink); }
+.pipe-go::after { content: " \2192"; }
+.pipe-head { display: flex; align-items: center; gap: 8px; }
+/* the arrow between two steps */
+.pipe-step:not(:last-child)::after { content: ""; position: absolute; z-index: 1; right: -9px; top: 50%; width: 8px; height: 12px;
+  margin-top: -6px; background: var(--ink-2); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+/* each step's colour bar */
+.pipe-step[data-step="collect"] { --bar: var(--step-collect); }
+.pipe-step[data-step="remove"]  { --bar: var(--hatch), linear-gradient(90deg, var(--k-region) 0 50%, var(--surface-2) 50%); }
+.pipe-step[data-step="train"]   { --bar: var(--step-train); }
+.pipe-step[data-step="band"]    { --bar: linear-gradient(var(--step-band) 0 2px, var(--k-learn-soft) 2px 4px, var(--step-band) 4px); }
+.pipe-step[data-step="test"]    { --bar: linear-gradient(90deg, var(--sit-rec) 0 25%, var(--surface) 25% calc(25% + 2px),
+  var(--sit-strong) calc(25% + 2px) 50%, var(--surface) 50% calc(50% + 2px), var(--sit-waves) calc(50% + 2px) 75%,
+  var(--surface) 75% calc(75% + 2px), var(--sit-kicks) calc(75% + 2px)); }
+/* narrow: one step per row, the bar on the left, the arrow pointing down */
+@media (max-width: 760px) {
+  .pipe > ol { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .pipe-step > a { padding: 10px 12px 10px 18px; }
+  .pipe-step > a::before { right: auto; bottom: 0; width: 6px; height: auto; }
+  .pipe-step[data-step="test"] { --bar: linear-gradient(180deg, var(--sit-rec) 0 25%, var(--sit-strong) 25% 50%,
+    var(--sit-waves) 50% 75%, var(--sit-kicks) 75%); }
+  .pipe-step[data-step="remove"] { --bar: var(--hatch), linear-gradient(180deg, var(--k-region) 0 50%, var(--surface-2) 50%); }
+  .pipe-step:not(:last-child)::after { right: auto; left: 22px; top: auto; bottom: -11px; width: 12px; height: 8px;
+    margin: 0; clip-path: polygon(0 0, 100% 0, 50% 100%); }
+  .pipe-go { display: none; }
+}
+
+/* the compact strip: one row of five chips; the steps the current block stands for get .is-here */
+.pipe.pipe-sm > ol { display: flex; flex-direction: row; flex-wrap: wrap; gap: 6px 14px; padding: 0; }
+.pipe.pipe-sm .pipe-step > a { flex-direction: row; align-items: center; gap: 6px; padding: 5px 10px 6px; border-radius: 999px;
+  background: var(--bg); font-size: 14px; font-weight: 600; }
+.pipe.pipe-sm .pipe-step > a::before { top: auto; bottom: 0; left: 10px; right: 10px; height: 3px; width: auto; border-radius: 2px 2px 0 0; }
+.pipe.pipe-sm .pipe-n { width: 18px; height: 18px; font-size: 11.5px; }
+.pipe.pipe-sm .pipe-step:not(:last-child)::after { right: -11px; top: 50%; left: auto; bottom: auto; width: 6px; height: 9px;
+  margin-top: -4.5px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.pipe.pipe-sm .pipe-step.is-here > a { background: var(--surface); border-color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--ink-2); }
+.pipe.pipe-sm .pipe-step:not(.is-here) > a { color: var(--ink-2); }
+@media (max-width: 760px) {
+  .pipe.pipe-sm .pipe-step > a { padding: 4px 9px 6px; font-size: 13.5px; }
+  .pipe.pipe-sm .pipe-step > a::before { left: 9px; right: 9px; bottom: 0; top: auto; width: auto; height: 3px; }
+  .pipe.pipe-sm .pipe-step[data-step="test"] { --bar: linear-gradient(90deg, var(--sit-rec) 0 25%, var(--sit-strong) 25% 50%,
+    var(--sit-waves) 50% 75%, var(--sit-kicks) 75%); }
+  .pipe.pipe-sm .pipe-step[data-step="remove"] { --bar: var(--hatch), linear-gradient(90deg, var(--k-region) 0 50%, var(--surface-2) 50%); }
+  .pipe.pipe-sm .pipe-step:not(:last-child)::after { display: none; }
+}
+/* a one-line "which pipeline step this setting stands for" note under an option group or a setting */
+.stepnote { font-size: 14.5px; line-height: 1.5; color: var(--ink); margin: 0; }
+.stepchip { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; line-height: 1.5;
+  letter-spacing: .02em; color: var(--ink); background: var(--surface-2); border-radius: 999px; padding: 0 9px 0 4px;
+  margin-right: 6px; white-space: nowrap; vertical-align: 1px; }
+.stepchip::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--bar); flex: none; }
+.stepchip[data-step="collect"] { --bar: var(--step-collect); }
+.stepchip[data-step="remove"]  { --bar: var(--hatch), var(--k-region); }
+.stepchip[data-step="train"]   { --bar: var(--step-train); }
+.stepchip[data-step="band"]    { --bar: var(--step-band); }
+.stepchip[data-step="test"]    { --bar: conic-gradient(var(--sit-rec) 0 25%, var(--sit-strong) 0 50%, var(--sit-waves) 0 75%, var(--sit-kicks) 0); }
+
+/* -------------------------------------------------------------------------------------------------------------------
+   10. Colour never alone, and nothing moves for people who ask for less motion.
+   ------------------------------------------------------------------------------------------------------------------- */
+@media (forced-colors: active) {
+  .key, .km { forced-color-adjust: none; }
+  .pipe-step > a::before { forced-color-adjust: none; }
+}
+@media (prefers-reduced-motion: reduce) { .pipe-step > a { transition: none; } }

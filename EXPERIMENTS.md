@@ -481,5 +481,8 @@ Last updated: 2026-10-13.
   - the known-shift weighting test (spec version 5, five qualities) was frozen with the user's approval and run.
     Mechanics and weighted coverage hold; no quality qualified for BCA arms. The exploratory arms show no return gain
     from weighting. Plain TD3+BC's twin-critic band covers 39–48% (entry 17);
-  - the ThrusterChain page went through versions 11–12: plain-language tooltips, specification sections first,
-    Results rewritten for newcomers, and the "critic in action" section added.
+  - the ThrusterChain page went through versions 11–13: plain-language tooltips, specification sections first,
+    Results rewritten for newcomers, and the "critic in action" section added. Version 13 answers the owner's 33
+    page comments: one validated colour system, a five-step offline-RL pipeline strip tying every setting to its
+    step, aligned symbol legends, two interactive charts, and the weighting test's plain TD3+BC coverage and
+    exploratory BCA results. Page and sources: `docs/thrusterchain/`.
