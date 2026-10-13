@@ -1,0 +1,575 @@
+{
+ "alpha": 0.1,
+ "bank_nll": 0.5707277353463386,
+ "boundaries": {
+  "exact": {
+   "clone": {
+    "bank_rows": 851,
+    "kish_ess": 432.2703543565728,
+    "log_threshold": 4.480252400789334,
+    "zero_weight_share": 0.004700352526439483
+   },
+   "full": {
+    "bank_rows": 851,
+    "kish_ess": 75.80733903906737,
+    "log_threshold": 4.341547467314241,
+    "zero_weight_share": 0.0399529964747356
+   },
+   "gapped": {
+    "bank_rows": 851,
+    "kish_ess": 176.2546066701903,
+    "log_threshold": 4.218692061379386,
+    "zero_weight_share": 0.11515863689776733
+   }
+  },
+  "learned": {
+   "clone": {
+    "bank_rows": 851,
+    "kish_ess": 5.103786144338253,
+    "log_threshold": 6.3773035459474245,
+    "zero_weight_share": 0.0
+   },
+   "full": {
+    "bank_rows": 851,
+    "kish_ess": 1.0000014120007878,
+    "log_threshold": 19.92064264477703,
+    "zero_weight_share": 0.0
+   },
+   "gapped": {
+    "bank_rows": 851,
+    "kish_ess": 1.0040481131982657,
+    "log_threshold": 11.041934740985521,
+    "zero_weight_share": 0.0
+   }
+  }
+ },
+ "heldout_recorded_abstain_credible_full": 0.0,
+ "heldout_recorded_abstain_credible_gapped": 0.0,
+ "heldout_recorded_abstain_full": 0.0,
+ "heldout_recorded_abstain_gapped": 0.0,
+ "label": "EXPLORATORY: generic mixture-density behaviour model fitted on gapped training rows; stand-in weights for a weighted conformal band; score-free abstention only; no BCA code was run",
+ "model": {
+  "batch": 256,
+  "components": 8,
+  "hidden": 128,
+  "kind": "mixture density network",
+  "lr": 0.001,
+  "steps": 15000,
+  "train_nll_every_1000": [
+   0.00030613597482442856,
+   0.050695326179265976,
+   -0.1469074785709381,
+   -0.15019962191581726,
+   -0.1391046941280365,
+   -0.16548830270767212,
+   -0.2515502870082855,
+   -0.19976699352264404,
+   -0.24819166958332062,
+   -0.16728588938713074,
+   -0.2583380937576294,
+   -0.36071062088012695,
+   -0.4676591157913208,
+   -0.3679685890674591,
+   -0.3649703860282898
+  ]
+ },
+ "pools": {
+  "big_kicks|clone": {
+   "abstain_exact": 0.12966666666666668,
+   "abstain_learned": 0.14933333333333335,
+   "abstain_learned_credible": 0.15566666666666668,
+   "agreement_learned_exact": 0.9436666666666667,
+   "auroc_past80_by_learned_ell": 0.9015016030438444,
+   "catch_past80_learned": 0.8755364806866953,
+   "catch_past80_learned_credible": 0.8841201716738197,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -6.62676443385636,
+    -6.407321666951529,
+    -6.2175650052980105,
+    -5.742881690736167,
+    -1.8815958433107007
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -3.2952352933839477,
+    13.832220131878504,
+    83.45593791676009,
+    425.7378230638548,
+    3443.425705487257
+   ],
+   "flag_not_past80_learned": 0.08818214672930973,
+   "flag_not_past80_learned_credible": 0.0943259848211059,
+   "n": 3000,
+   "past_80_share": 0.07766666666666666
+  },
+  "big_kicks|full": {
+   "abstain_exact": 0.13566666666666666,
+   "abstain_learned": 0.07733333333333334,
+   "abstain_learned_credible": 0.07866666666666666,
+   "agreement_learned_exact": 0.9283333333333333,
+   "auroc_harm_by_exact_ell": 0.9972304283604135,
+   "auroc_harm_by_learned_ell": 0.9442494081463345,
+   "auroc_past80_by_learned_ell": 0.9470469343248451,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.613013698630137,
+   "catch_harmful_learned_credible": 0.6232876712328768,
+   "catch_past80_learned": 0.6058631921824105,
+   "catch_past80_learned_credible": 0.6156351791530945,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -20.369790346040457,
+    -20.079658419503897,
+    -19.898469478502005,
+    -19.601563007249563,
+    -18.524555212869373
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -16.704172522439688,
+    -8.949619442834585,
+    15.589049547300608,
+    193.4980787926772,
+    1584.297896593202
+   ],
+   "flag_harmless_exact": 0.042466765140324964,
+   "flag_harmless_learned": 0.019571639586410634,
+   "flag_harmless_learned_credible": 0.019940915805022157,
+   "flag_not_past80_learned": 0.01708132194578537,
+   "flag_not_past80_learned_credible": 0.017452655031563312,
+   "harmful_share": 0.09733333333333333,
+   "n": 3000,
+   "past_80_share": 0.10233333333333333
+  },
+  "big_kicks|gapped": {
+   "abstain_exact": 0.18766666666666668,
+   "abstain_learned": 0.12933333333333333,
+   "abstain_learned_credible": 0.13733333333333334,
+   "agreement_learned_exact": 0.931,
+   "auroc_harm_by_exact_ell": 0.9976303317535545,
+   "auroc_harm_by_learned_ell": 0.9630777332199133,
+   "auroc_past80_by_learned_ell": 0.9647213955026455,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.7158119658119658,
+   "catch_harmful_learned_credible": 0.7564102564102564,
+   "catch_past80_learned": 0.7083333333333334,
+   "catch_past80_learned_credible": 0.75,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -11.369942391360887,
+    -11.151624691928514,
+    -10.999227774585375,
+    -10.784497243608126,
+    -10.119063973868975
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -5.961417198623308,
+    -1.07635093971599,
+    10.11884485438954,
+    103.51091276363026,
+    565.6380327577949
+   ],
+   "flag_harmless_exact": 0.03751974723538705,
+   "flag_harmless_learned": 0.02093206951026856,
+   "flag_harmless_learned_credible": 0.022906793048973143,
+   "flag_not_past80_learned": 0.01904761904761905,
+   "flag_not_past80_learned_credible": 0.020634920634920634,
+   "harmful_share": 0.156,
+   "n": 3000,
+   "past_80_share": 0.16
+  },
+  "big_waves|clone": {
+   "abstain_exact": 0.043666666666666666,
+   "abstain_learned": 0.02666666666666667,
+   "abstain_learned_credible": 0.035666666666666666,
+   "agreement_learned_exact": 0.955,
+   "auroc_past80_by_learned_ell": 0.7768392985506277,
+   "catch_past80_learned": 0.24390243902439024,
+   "catch_past80_learned_credible": 0.2804878048780488,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -6.865150278087012,
+    -6.447538738723151,
+    -6.053243463511817,
+    -5.290616875167243,
+    -4.023921316142432
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -6.557947810764662,
+    -5.257579689498297,
+    -3.865090315814368,
+    -0.18770701217209496,
+    5.454274255756985
+   ],
+   "flag_not_past80_learned": 0.0205620287868403,
+   "flag_not_past80_learned_credible": 0.02878684030157642,
+   "n": 3000,
+   "past_80_share": 0.027333333333333334
+  },
+  "big_waves|full": {
+   "abstain_exact": 0.08366666666666667,
+   "abstain_learned": 0.004333333333333333,
+   "abstain_learned_credible": 0.005,
+   "agreement_learned_exact": 0.9193333333333333,
+   "auroc_harm_by_exact_ell": 0.9973840251133589,
+   "auroc_harm_by_learned_ell": 0.9028142382464708,
+   "auroc_past80_by_learned_ell": 0.8950688942799743,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.05263157894736842,
+   "catch_harmful_learned_credible": 0.06766917293233082,
+   "catch_past80_learned": 0.0472972972972973,
+   "catch_past80_learned_credible": 0.060810810810810814,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -20.503937644376485,
+    -20.070190936937063,
+    -19.60811457098934,
+    -18.7825870072982,
+    -17.6822469300172
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -18.603522053971023,
+    -17.969505932792156,
+    -16.620945662870138,
+    -14.587570101632803,
+    -6.726926810159402
+   ],
+   "flag_harmless_exact": 0.041158004883153125,
+   "flag_harmless_learned": 0.0020927799093128706,
+   "flag_harmless_learned_credible": 0.0020927799093128706,
+   "flag_not_past80_learned": 0.0021037868162692847,
+   "flag_not_past80_learned_credible": 0.0021037868162692847,
+   "harmful_share": 0.044333333333333336,
+   "n": 3000,
+   "past_80_share": 0.04933333333333333
+  },
+  "big_waves|gapped": {
+   "abstain_exact": 0.20733333333333334,
+   "abstain_learned": 0.05366666666666667,
+   "abstain_learned_credible": 0.06433333333333334,
+   "agreement_learned_exact": 0.8403333333333334,
+   "auroc_harm_by_exact_ell": 0.9945652173913043,
+   "auroc_harm_by_learned_ell": 0.9522697200064911,
+   "auroc_past80_by_learned_ell": 0.9502072853822393,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.28488372093023256,
+   "catch_harmful_learned_credible": 0.3391472868217054,
+   "catch_past80_learned": 0.27071823204419887,
+   "catch_past80_learned_credible": 0.32228360957642727,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -11.405947387660632,
+    -11.07075680538524,
+    -10.69422591968883,
+    -10.115517986262926,
+    -9.149767172778734
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -8.685009324992784,
+    -6.623072874988207,
+    -3.4626137141834583,
+    0.5161968345988903,
+    7.59888180450093
+   ],
+   "flag_harmless_exact": 0.0426731078904992,
+   "flag_harmless_learned": 0.005636070853462158,
+   "flag_harmless_learned_credible": 0.007246376811594203,
+   "flag_not_past80_learned": 0.005698005698005698,
+   "flag_not_past80_learned_credible": 0.007326007326007326,
+   "harmful_share": 0.172,
+   "n": 3000,
+   "past_80_share": 0.181
+  },
+  "recorded|clone": {
+   "abstain_exact": 0.007333333333333333,
+   "abstain_learned": 0.011666666666666667,
+   "abstain_learned_credible": 0.014333333333333333,
+   "agreement_learned_exact": 0.9883333333333333,
+   "auroc_past80_by_learned_ell": 0.8075595635715876,
+   "catch_past80_learned": 0.3333333333333333,
+   "catch_past80_learned_credible": 0.3333333333333333,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -6.599169974799506,
+    -6.418239807362906,
+    -6.2691566996530215,
+    -6.037117158646933,
+    -5.593523716206899
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -7.1458838932469995,
+    -4.998735034491173,
+    -2.0656483896330515,
+    3.535585040573724,
+    25.61058574390853
+   ],
+   "flag_not_past80_learned": 0.011022044088176353,
+   "flag_not_past80_learned_credible": 0.013694054776219105,
+   "n": 3000,
+   "past_80_share": 0.002
+  },
+  "recorded|full": {
+   "abstain_exact": 0.033666666666666664,
+   "abstain_learned": 0.0013333333333333333,
+   "abstain_learned_credible": 0.0016666666666666668,
+   "agreement_learned_exact": 0.967,
+   "auroc_harm_by_exact_ell": 0.9981362250084717,
+   "auroc_harm_by_learned_ell": 0.944660751457479,
+   "auroc_past80_by_learned_ell": 0.9520351473922902,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.061224489795918366,
+   "catch_harmful_learned_credible": 0.08163265306122448,
+   "catch_past80_learned": 0.05,
+   "catch_past80_learned_credible": 0.06666666666666667,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -20.422473508729666,
+    -20.11230427087757,
+    -19.915444285287588,
+    -19.6729965514085,
+    -19.02102754773113
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -17.407830662145347,
+    -17.002111301436155,
+    -16.283828855170935,
+    -13.156890452518194,
+    -5.853174621476857
+   ],
+   "flag_harmless_exact": 0.01762114537444934,
+   "flag_harmless_learned": 0.00033886818027787193,
+   "flag_harmless_learned_credible": 0.00033886818027787193,
+   "flag_not_past80_learned": 0.0003401360544217687,
+   "flag_not_past80_learned_credible": 0.0003401360544217687,
+   "harmful_share": 0.01633333333333333,
+   "n": 3000,
+   "past_80_share": 0.02
+  },
+  "recorded|gapped": {
+   "abstain_exact": 0.06366666666666666,
+   "abstain_learned": 0.014666666666666666,
+   "abstain_learned_credible": 0.018,
+   "agreement_learned_exact": 0.949,
+   "auroc_harm_by_exact_ell": 0.9985994397759104,
+   "auroc_harm_by_learned_ell": 0.987740234982882,
+   "auroc_past80_by_learned_ell": 0.9861490981667652,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.25,
+   "catch_harmful_learned_credible": 0.3125,
+   "catch_past80_learned": 0.23684210526315788,
+   "catch_past80_learned_credible": 0.3026315789473684,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -11.403715146030077,
+    -11.174305719579348,
+    -11.023960900748857,
+    -10.835280654276499,
+    -10.418658405984528
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -7.212666023219713,
+    -5.422024321998247,
+    -3.5032346372257557,
+    -0.4228483860145893,
+    5.206688522850391
+   ],
+   "flag_harmless_exact": 0.016456582633053222,
+   "flag_harmless_learned": 0.0028011204481792717,
+   "flag_harmless_learned_credible": 0.0031512605042016808,
+   "flag_not_past80_learned": 0.0028089887640449437,
+   "flag_not_past80_learned_credible": 0.0028089887640449437,
+   "harmful_share": 0.048,
+   "n": 3000,
+   "past_80_share": 0.050666666666666665
+  },
+  "strong_current|clone": {
+   "abstain_exact": 0.109,
+   "abstain_learned": 0.05733333333333333,
+   "abstain_learned_credible": 0.06966666666666667,
+   "agreement_learned_exact": 0.8996666666666666,
+   "auroc_past80_by_learned_ell": 0.6705318181603287,
+   "catch_past80_learned": 0.2576419213973799,
+   "catch_past80_learned_credible": 0.31877729257641924,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -6.800468926902167,
+    -6.335938101287238,
+    -5.84307462501084,
+    -4.852354025121085,
+    -3.07463938521897
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -8.080608677144399,
+    -6.077861731524817,
+    -3.774805729861609,
+    0.2765553541227659,
+    5.115299899105678
+   ],
+   "flag_not_past80_learned": 0.040779501984843015,
+   "flag_not_past80_learned_credible": 0.049079754601226995,
+   "n": 3000,
+   "past_80_share": 0.07633333333333334
+  },
+  "strong_current|full": {
+   "abstain_exact": 0.698,
+   "abstain_learned": 0.014333333333333333,
+   "abstain_learned_credible": 0.01633333333333333,
+   "agreement_learned_exact": 0.31366666666666665,
+   "auroc_harm_by_exact_ell": 0.9510326449033978,
+   "auroc_harm_by_learned_ell": 0.8022443565530474,
+   "auroc_past80_by_learned_ell": 0.8017839227095452,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.02068045363575717,
+   "catch_harmful_learned_credible": 0.02268178785857238,
+   "catch_past80_learned": 0.019441069258809233,
+   "catch_past80_learned_credible": 0.022478736330498177,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -20.044278556718556,
+    -19.317389071597784,
+    -18.45783791007015,
+    -17.388427302851408,
+    -15.619371730699267
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -18.506027252092093,
+    -17.46938383453998,
+    -15.831418306245535,
+    -13.335858256234854,
+    -10.903603405370443
+   ],
+   "flag_harmless_exact": 0.39640239840106595,
+   "flag_harmless_learned": 0.007994670219853431,
+   "flag_harmless_learned_credible": 0.009993337774816789,
+   "flag_not_past80_learned": 0.00812407680945347,
+   "flag_not_past80_learned_credible": 0.008862629246676515,
+   "harmful_share": 0.49966666666666665,
+   "n": 3000,
+   "past_80_share": 0.5486666666666666
+  },
+  "strong_current|gapped": {
+   "abstain_exact": 0.78,
+   "abstain_learned": 0.171,
+   "abstain_learned_credible": 0.21833333333333332,
+   "agreement_learned_exact": 0.389,
+   "auroc_harm_by_exact_ell": 0.9838709677419355,
+   "auroc_harm_by_learned_ell": 0.9548189923885466,
+   "auroc_past80_by_learned_ell": 0.956253037037037,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.22651685393258428,
+   "catch_harmful_learned_credible": 0.289438202247191,
+   "catch_past80_learned": 0.22444444444444445,
+   "catch_past80_learned_credible": 0.2866666666666667,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -12.294248116458544,
+    -11.264934045518526,
+    -10.723418069327959,
+    -9.883524728263506,
+    -8.410452913562544
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -6.559826922858843,
+    -4.767354739154467,
+    -3.0583706025730457,
+    -0.40803320452083014,
+    5.593825315986985
+   ],
+   "flag_harmless_exact": 0.14838709677419354,
+   "flag_harmless_learned": 0.011612903225806452,
+   "flag_harmless_learned_credible": 0.014193548387096775,
+   "flag_not_past80_learned": 0.010666666666666666,
+   "flag_not_past80_learned_credible": 0.013333333333333334,
+   "harmful_share": 0.7416666666666667,
+   "n": 3000,
+   "past_80_share": 0.75
+  },
+  "train|clone": {
+   "abstain_exact": 0.0023333333333333335,
+   "abstain_learned": 0.002,
+   "abstain_learned_credible": 0.004666666666666667,
+   "agreement_learned_exact": 0.997,
+   "auroc_past80_by_learned_ell": 0.9843228819212808,
+   "catch_past80_learned": 0.5,
+   "catch_past80_learned_credible": 0.5,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -6.822116821284644,
+    -6.526531641955725,
+    -6.272194033141486,
+    -5.925343459124915,
+    -5.352466016288153
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -3.4805465273812928,
+    -2.300287281747214,
+    -0.333188539023749,
+    1.633910203699716,
+    2.814169449333795
+   ],
+   "flag_not_past80_learned": 0.001667778519012675,
+   "flag_not_past80_learned_credible": 0.004336224149432955,
+   "n": 3000,
+   "past_80_share": 0.0006666666666666666
+  },
+  "train|full": {
+   "abstain_exact": 0.098,
+   "abstain_learned": 0.001,
+   "abstain_learned_credible": 0.001,
+   "agreement_learned_exact": 0.9023333333333333,
+   "auroc_harm_by_exact_ell": 0.9975878704341833,
+   "auroc_harm_by_learned_ell": 0.9594122280200846,
+   "auroc_past80_by_learned_ell": 0.9576109269885239,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.01020408163265306,
+   "catch_harmful_learned_credible": 0.01020408163265306,
+   "catch_past80_learned": 0.008928571428571428,
+   "catch_past80_learned_credible": 0.008928571428571428,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -20.47703717411968,
+    -20.0570177739999,
+    -19.623053670539587,
+    -18.896121338619917,
+    -17.71882070960018
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -17.73353312672588,
+    -16.589040965451925,
+    -14.296598703279226,
+    -12.149997622384756,
+    -8.148353273286551
+   ],
+   "flag_harmless_exact": 0.06753962784286699,
+   "flag_harmless_learned": 0.0006891798759476223,
+   "flag_harmless_learned_credible": 0.0006891798759476223,
+   "flag_not_past80_learned": 0.0006925207756232687,
+   "flag_not_past80_learned_credible": 0.0006925207756232687,
+   "harmful_share": 0.03266666666666666,
+   "n": 3000,
+   "past_80_share": 0.037333333333333336
+  },
+  "train|gapped": {
+   "abstain_exact": 0.155,
+   "abstain_learned": 0.027666666666666666,
+   "abstain_learned_credible": 0.03766666666666667,
+   "agreement_learned_exact": 0.87,
+   "auroc_harm_by_exact_ell": 0.9968236173393124,
+   "auroc_harm_by_learned_ell": 0.9821365959881156,
+   "auroc_past80_by_learned_ell": 0.982357268348849,
+   "catch_harmful_exact": 1.0,
+   "catch_harmful_learned": 0.2345679012345679,
+   "catch_harmful_learned_credible": 0.3148148148148148,
+   "catch_past80_learned": 0.22287390029325513,
+   "catch_past80_learned_credible": 0.2991202346041056,
+   "ell_minus_boundary_quantiles_not_past80": [
+    -11.580078208888658,
+    -11.203226757491716,
+    -10.812155378306993,
+    -10.147350413049349,
+    -9.093816078151352
+   ],
+   "ell_minus_boundary_quantiles_past80": [
+    -7.876600158656725,
+    -6.165798438037523,
+    -3.5778666858326282,
+    -0.45609332367289923,
+    3.702619778667799
+   ],
+   "flag_harmless_exact": 0.052690582959641255,
+   "flag_harmless_learned": 0.002615844544095665,
+   "flag_harmless_learned_credible": 0.004110612855007474,
+   "flag_not_past80_learned": 0.0026325686348251222,
+   "flag_not_past80_learned_credible": 0.004136893569010906,
+   "harmful_share": 0.108,
+   "n": 3000,
+   "past_80_share": 0.11366666666666667
+  }
+ },
+ "seconds": 45.619134587999724,
+ "seed": 0
+}

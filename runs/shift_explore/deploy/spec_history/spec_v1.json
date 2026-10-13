@@ -1,0 +1,383 @@
+{
+ "changes": [],
+ "component": "deploy: the deployment-check channel (plan section 4.3); no training",
+ "compute_estimate": "pre-smoke, from a probe under full contention: per job about 1 min of loading and signal fitting plus about 5-6 min of rules; 25 jobs about 2-3 process-hours; the smoke's timing replaces this",
+ "deviations": [
+  {
+   "id": "D1",
+   "what": "plain TD3+BC in the no-stall world is the stalling world's TD3+BC actor deployed there (its own input normalisation; the no-stall world's data, critic, cloned actor, range and anchors for triggers, fallbacks and points); the stalling world's gapped critic's actor is deployed there too, as its same-actor companion (reported)",
+   "why": "the gate trained TD3+BC hosts only in the stalling world (check 2 saved td3bc_gapped only there); training a no-stall TD3+BC would be a new training run, outside this no-training component"
+  },
+  {
+   "id": "D2",
+   "what": "the one-step trigger is re-referenced to r(s), the recording controller's own command at the state without its wobble, in place of the row's recorded command a_i (room change A1); the cloned actor's command is reported as the other reference, the plan's literal |delta*| as a third",
+   "why": "a deployment state has no recorded command, and the level must come from the same function of (state, command) at held-out pairs; with a_i itself every held-out score is 0 and the level is 0"
+  },
+  {
+   "id": "D3",
+   "what": "the critic-based triggers read the deployment world's frozen fixed-controller gapped critic for every actor, plain TD3+BC included (its own co-trained critic is not read)",
+   "why": "it is the room test's oracle critic and the plan's 'frozen critic'; a deployment check is a function of the (state, command) pair, so both actors face the same check; no no-stall TD3+BC critic exists"
+  },
+  {
+   "id": "D4",
+   "what": "the distance check (sa95) is re-run with the clip fallback only (reported)",
+   "why": "cost: its neighbour search is the slowest trigger (about 20 s per rule and situation); its cloned-actor numbers exist in the fallback diagnostic"
+  },
+  {
+   "id": "D5",
+   "what": "the levels use the whole held-out calibration split outside the removed ball, not only its non-bank rows (Variant B's tau)",
+   "why": "no band is calibrated on the bank here; this keeps the fallback diagnostic's rows and levels; bank rows are about 5% of them"
+  },
+  {
+   "id": "D6",
+   "what": "the classifier is fitted once per seed, world and actor, not refitted every 4,000 steps (plan 4.2)",
+   "why": "nothing is trained here; the deployed actor is fixed"
+  },
+  {
+   "id": "D7",
+   "what": "launch condition: after the room test's pooled look passes, as instructed; with --after-room-failure also after a failing look",
+   "why": "the instruction gates this component on the room's look; plan 4.8 keeps the deployment check when the room marks fail, so the override exists and is recorded"
+  },
+  {
+   "id": "D8",
+   "what": "the seed-0 smoke check withholds every point value",
+   "why": "so that no code or spec choice can be made on returns before the full run"
+  }
+ ],
+ "fallbacks": {
+  "cap80": "gate check only: the actor's command capped at +-0.8",
+  "clip99": "primary: the actor's command clipped per thruster to the recorded range, the 0.5% and 99.5% quantiles of the gapped training commands (fallback.Reference lo99 / hi99; checked equal to the room harness's hinge_bounds)",
+  "clone": "reported: the deployment world's cloned actor's command"
+ },
+ "gate_check": "world-matched jobs, every situation, before the rules: never switching and capping at 80% on the whole 1,000-start bank reproduce check 2's saved points and capped points within 1e-6, else the job stops (stop_<job>.json); cross-world jobs: not applicable",
+ "gate_files_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/advantage.py": "a33f1361850d37d1dfd37c464dcbd65e91a9c1f06ff0a853f103421ba0ef8507",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/iql_actors.py": "87d2244d228ce5193e827990a61d5b074f52c26c4df305c3eca25cfec21a44ac",
+  "calibration/iql_imports.py": "39d7d161de9d652558bed549c29c90dd04bd95b83d0de27ff5b8b5079c6a0739",
+  "calibration/iql_loss.py": "31d60fa3be54032770a7582d524d32ee782dfc6834155cf2729f4927ad781832",
+  "calibration/iql_network.py": "51f1e0cc446a4896fbe5d04dd0a525b9fb8ce57655d071727db80543311a5acc",
+  "calibration/iql_reference.py": "9faccbaf69852a2afd4d754363781c776b99e98050f2565c02934b4a8d9f9bf9",
+  "calibration/iql_scale.py": "559b6670efcef6499ad897ee6457d4e9463f9e04a0d48725cd8909b405e16dce",
+  "calibration/iql_state.py": "d2225821a1815ac4229e7e9dbdddb355771463b0f35e6717856f3784bd303d66",
+  "calibration/iql_targets.py": "6c94831746b80cfede10c23a084c04cac5fe5a3277817d318685a3fa88c1fc5e",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "configs/experiment.yaml": "9c71c68632445b98d4aa0698fdb78ec2e7b420d42b3ee111e7da7af429d97aad",
+  "configs/td3_bc.yaml": "4598b0ec6b80e9d146af7a0e938bbd112daaa7800a05dd0e46a7da42c974ba68",
+  "experiments/shift/SHIFT_ENV.md": "18bbb253c8cf58da3478f4072d7cdecf69bb5a897b0cb415b906dbbcd54d36cf",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/install_deps.sh": "d5d747fc4ee4afd30f3400f2951df9c0ddd892c5aba730f5005d01e3a2a42620",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/requirements-shift.txt": "42a4af0538e9721c83512406f3c646602e35b77eda6f6fa2bc17816346d6a07e",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/test_acceptance.py": "9f76b50c684e4904313c21956c0ea22974993397cf530fb00ee9965a2077d157",
+  "experiments/shift/test_dataset.py": "212d0c1ed7aaf500525e6f1b55ebe0d2f303bd0b0aad18aaa19c3da2777c2ea7",
+  "experiments/shift/test_learners.py": "fec65fa8752977789feab1f7f90b8fb8bc27d7cf1068dadb711dff2f53879471",
+  "experiments/shift/test_shift.py": "d62f664aa84d517585ccb7f4a974a943c2c4d3b317c7f2d7c804697158722e8e",
+  "experiments/shift/test_thruster_chain.py": "546ea721ed28a999a26b123578c541f325c5d16bf31d606827814042fa789d52",
+  "experiments/shift/test_truth.py": "8691af40a33770649e6682c33d544109cd8e8f4cb6e92f32dd1716e260d55c7f",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "outputs/shift/stop-report/cards/cards_outside_gate.py": "0359f60ac3c66d112e86b91b261fdd1fed9dbf5733a1a43517a4c8b6ae41fdc3",
+  "runs/shift/preregistration.json": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "runs/shift/preregistration.json.sha256": "9f0266070bc11e24a1f1c4e6c369445fa4abfc15c80691370602e300403a81f8",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "gate_prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+ "heldout": {
+  "check_rows": "fallback.Reference's 5,000 evaluation-split rows outside the removed ball; the share above each level is reported (about 5% expected)",
+  "level_rows": "the calibration split (200 recorded episodes no learner saw) minus rows whose command is in the removed ball: about 16,800 rows, exactly fallback.Reference's",
+  "level_rule": "q95 = the ceil((n + 1) * 0.95)-th smallest score at those rows (fallback.conformal_threshold)"
+ },
+ "inherited_from_room_spec": {
+  "change": "A1 main oracle re-referenced to the recorded command",
+  "main_penalty": {
+   "W": "[delta*(s_i, a_i) - delta*(s_i, a)]_+",
+   "amended": "change A1 (changes_before_any_run): the plan's literal |delta*(s, a)| is the reported arm perfect_band_literal",
+   "logged": "delta*(s_i, a_i) is computed once per training row with the same in-program float32 function and the same next command as the arm (shared['d_logged']); a constant in training",
+   "meaning": "the critic's extra overrating of the command a over the row's own recorded command a_i, by its exact one-step error; zero at a = a_i; the one-step counterpart of the long-run harm arm [e(s, a) - e(s, a_i)]_+"
+  },
+  "reading_here": "penalties and the one-step trigger are read relative to the recorded command at the same state; at a deployment state that command is r(s) (deviation D2)",
+  "residual": "delta*(s, a) = r(s, a) + 0.98 * min_h Q_h(s', c(s')) - min_h Q_h(s, a)",
+  "room_spec_sha256": "56bbda24cdbaa10cc0de0261450de5d9034e08e188c88e9432be83d8cf136bf4"
+ },
+ "interpretations": [
+  "Every score-based trigger, the classifier ratio included, uses the same rule as Variant B's tau and the plan's one-step trigger: above its 95% level on held-out recorded pairs.",
+  "The mark's 'at least 15 points' and 'cost at most 3' are pooled means of per-seed paired differences (as the room spec made its room mark exact); the plan gives no seed count for this mark, so seed counts are reported, not gated.",
+  "The mark is read on the gapped critic's actor (the plan's main actor; the room test's baseline); plain TD3+BC's reading is reported.",
+  "'Cost in recorded conditions' is the actor alone minus the perfect detector with the clip fallback.",
+  "Selectivity follows plan 4.2's 'stalling-world gain minus no-stall loss' and plan 4.4's catch-rate difference."
+ ],
+ "kind": "deploy-spec",
+ "label": "EXPLORATORY: Stage 1 deployment-check channel (plan section 4.3), computed outside the gate on saved gate actors; no training; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (stand-ins and oracles only)",
+ "launch": {
+  "commands": "launch.sh <seeds> <cpu> [--after-room-failure], then launch.sh summary <cpu>",
+  "condition": "a full job runs only after the room test's pooled look: runs/shift_explore/room/pooled.json for the pinned room spec, labelled, with its room, recovery and keeps-improvement marks passed; --after-room-failure lets it run after a look that did not pass (plan 4.8: the deployment check remains), which is recorded in every output",
+  "logs": "runs/shift_explore/deploy/logs/seed<k>.log and summary.log"
+ },
+ "marks": {
+  "channel_open": "'The channel is open' iff, on the gapped critic's actor in the stalling world with the clip fallback, pooled over seeds 0-4 (mean of the per-seed paired differences, every seed present): (i) points(perfect detector -> clip) - points(random at its own rate -> clip) >= 15 in strong current or in big kicks, and (ii) points(actor alone) - points(perfect detector -> clip) <= 3 in recorded conditions",
+  "reported": [
+   "the same reading for plain TD3+BC in the stalling world",
+   "for every trigger, fallback and job: trigger minus random at its own rate, change from the actor alone, cost in recorded conditions, catch rate and precision on past-80% proposals, share switched",
+   "for every trigger: whether it clears the channel-open bar (>= 15 over random in strong current or big kicks, cost <= 3) and plan 5.3's Stage-2 bar (>= 10 over random, cost <= 2)",
+   "seed counts (positive seeds) and standard errors over seeds"
+  ],
+  "selectivity": "reported, for three actor pairs (gapped critic's actor of each world; the stalling world's gapped critic's actor in both worlds; plain TD3+BC in both worlds), every trigger, fallback and situation, pooled over seeds: stalling-world gain minus no-stall loss = (T - alone)_stall + (T - alone)_no_stall; targeting = (T - random_T)_stall + (T - random_T)_no_stall; the same sum for clipping every step; catch-rate selectivity = catch rate of past-80% proposals, stalling minus no-stall"
+ },
+ "no_bca": "No BCA band, calibrator, threshold, dose or BCA update is fitted, read or called. Nothing from algorithms/td3_bc_bca.py or learners.bca_* is called. From calibration/ only calibration/bank.stratified_bank runs, because the gate's data loader (experiments/shift/dataset.py through acceptance.load_seed) calls it to regenerate the log's calibration-bank split (a NumPy row sampler). The refusal limit l* of the reported ratio_refuse trigger is the generic weighted split-conformal formula, computed in NumPy from classifier weights; no BCA code.",
+ "outcome_leakage": "Only saved check-2 actors, the gate's frozen fixed-controller critics, cloned actors and logs, and the fallback diagnostic's machinery are used. No room-test values, futility, lock or log file is read. At launch a full job reads only the three pass flags of the room's pooled.json (the launch condition); nothing computed depends on them. The smoke check withholds every point value.",
+ "outputs": "/home/user/bca/runs/shift_explore/deploy",
+ "per_rule_outputs": [
+  "points (mean over the 200 starts)",
+  "per-start points (5 decimals)",
+  "J",
+  "fire_share",
+  "changed_share",
+  "past80_proposed",
+  "past80_applied",
+  "recall_past80 (share of past-80% proposals on which the rule fired)",
+  "precision_past80 (share of firings on past-80% proposals)",
+  "flag_rate_not_past80",
+  "rate and coin seed (random rules)",
+  "seconds"
+ ],
+ "pinned": {
+  "fallback_functions_used": [
+   "Reference",
+   "conformal_threshold",
+   "fallback_command",
+   "run_rule (smoke equivalence check only)",
+   "EVAL_CHECK_ROWS"
+  ],
+  "fallback_py_sha256": "fa09489fa0a8ec77b42d1a6753ddeb9aa6a807cf84bdc42868c7a1701e4129b3",
+  "how": "the room harness runs from the exact bytes of runs/shift_explore/room/code/harness.py only when their SHA-256 equals the room code manifest's (whose sidecar must match and which must name the room spec); fallback.py from its exact bytes only when they have fallback_py_sha256. Both are executed in memory (no bytecode written).",
+  "room_harness_functions_used": [
+   "SeedContext (load_prereg, guard, load_seed, get_critic(train=False), clone, h2, anchors)",
+   "oracle64",
+   "hinge_bounds (check)",
+   "GATE_FILES",
+   "A, L, TC, RC, TR (the gate modules it imports)"
+  ],
+  "room_harness_sha256": "97f547b14d55c3afa392cbdf99508e45c1b862d8a285030808c5783a067ef2cf",
+  "room_manifest_sha256": "469ada26b9af7eff33be17b8241867e83e44c45a30d2d137dffe7deca3f32391",
+  "room_spec_sha256": "56bbda24cdbaa10cc0de0261450de5d9034e08e188c88e9432be83d8cf136bf4"
+ },
+ "plan": {
+  "path": "/home/user/bca/outputs/shift/beyond-the-data/PLAN.md",
+  "sections": [
+   "2 (item 7)",
+   "3 (Variant B)",
+   "4.3",
+   "4.8"
+  ],
+  "sha256": "7c60d71d950a95c2ab62d4f505fd62b370f001febbbffc4f62f9891523fa1ca3"
+ },
+ "pooling": "paired by seed (and by start within a seed); mean over seeds 0-4; standard error over seeds, ddof 1",
+ "random_control": {
+  "coin_seed": "default_rng([20261013, seed, 91, world index, actor tag, situation index, fallback index, trigger index])",
+  "rule": "for every trigger T and fallback F: a coin per start and step that fires with probability equal to the share of (start, step) pairs on which T -> F fired, for the same seed, world, actor, situation and fallback; the fallback is then applied exactly as for T"
+ },
+ "rules": [
+  "none:None",
+  "always:clip99",
+  "always:clone",
+  "unrec:clip99",
+  "random:unrec:clip99",
+  "unrec:clone",
+  "random:unrec:clone",
+  "onestep:clip99",
+  "random:onestep:clip99",
+  "onestep:clone",
+  "random:onestep:clone",
+  "density:clip99",
+  "random:density:clip99",
+  "density:clone",
+  "random:density:clone",
+  "ratio:clip99",
+  "random:ratio:clip99",
+  "ratio:clone",
+  "random:ratio:clone",
+  "heads:clip99",
+  "random:heads:clip99",
+  "heads:clone",
+  "random:heads:clone",
+  "onestep_lit:clip99",
+  "random:onestep_lit:clip99",
+  "onestep_lit:clone",
+  "random:onestep_lit:clone",
+  "onestep_clone:clip99",
+  "random:onestep_clone:clip99",
+  "onestep_clone:clone",
+  "random:onestep_clone:clone",
+  "ratio_refuse:clip99",
+  "random:ratio_refuse:clip99",
+  "ratio_refuse:clone",
+  "random:ratio_refuse:clone",
+  "sa95:clip99",
+  "random:sa95:clip99"
+ ],
+ "setup": {
+  "actor_command": "clip(pi(s), -1, 1), pi = learners.mlp_policy (float64 copy of the actor) with the actor's home world's input normalisation",
+  "actors_source": "check 2's saved actors: runs/shift/<prereg>/harm_return/base/alpha5/seed<k>/actors.msgpack, verified by the SHA-256 in its values.json (room harness SeedContext.h2)",
+  "alpha": 5.0,
+  "deployment_world_parts": "the deployment world's physics, gapped training rows, held-out rows, frozen fixed-controller gapped critic (acceptance.get_critic(prereg, sd, 'gap', 'stall_aware', train=False)), cloned actor (clone / no_stall_clone) and anchors",
+  "episode_steps": 100,
+  "jobs": [
+   {
+    "actor": "gapped",
+    "actor_home_world": "stall",
+    "role": "the gapped critic's actor (check 2), in its own world; the channel-open mark is read here",
+    "world": "stall"
+   },
+   {
+    "actor": "td3bc_gapped",
+    "actor_home_world": "stall",
+    "role": "plain TD3+BC on the gapped log (check 2's td3bc_gapped), in its own world",
+    "world": "stall"
+   },
+   {
+    "actor": "no_stall_gapped",
+    "actor_home_world": "no_stall",
+    "role": "the gapped critic's actor of the no-stall world (check 2), in its own world",
+    "world": "no_stall"
+   },
+   {
+    "actor": "td3bc_gapped",
+    "actor_home_world": "stall",
+    "role": "plain TD3+BC trained on the stalling world's gapped log, deployed in the no-stall world: the gate trained no TD3+BC in the no-stall world (deviation D1)",
+    "world": "no_stall"
+   },
+   {
+    "actor": "gapped",
+    "actor_home_world": "stall",
+    "role": "the stalling world's gapped critic's actor deployed in the no-stall world: the same-actor companion of TD3+BC's no-stall row (reported)",
+    "world": "no_stall"
+   }
+  ],
+  "scoring": "exact simulation (thruster_chain.dynamics, float64); points = 100 (J - J_recording) / (J_top - J_recording) with the gate's anchors of the deployment world (acceptance.anchors_of)",
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "situations": [
+   "recorded",
+   "strong_current",
+   "big_waves",
+   "big_kicks"
+  ],
+  "starts": "the first 200 starts of each 1,000-start evaluation bank (thruster_chain.bank_starts), the same starts as the fallback diagnostic, for every rule",
+  "variant": "base"
+ },
+ "smoke": "seed-0 check before any full run: every job of seed 0 with the first 20 starts of every bank, every rule; plus a 200-start timing probe in strong current for the gapped critic's actor. Outputs under smoke/; every point value withheld (finiteness and a hash only); the gate check runs as in a full job (its difference only); an equivalence check reruns the rules shared with the fallback diagnostic (never switch, every step to clip and to clone, perfect detector, distance check, a random coin at rate 0.25) through fallback.run_rule and records the largest difference; timing per rule",
+ "triggers": {
+  "density": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "score = 1/2 sum_k ((a_k - c_k(s)) / sigma_k)^2, c = clip(cloned actor, -1, 1), sigma_k = sqrt(mean_i (a_ik - c_k(s_i))^2) over the gapped training rows; fire iff score > q95 (the plan's penalty [score - q95]_+ is positive)",
+   "role": "primary (plan 4.3)",
+   "text": "behaviour density: 1/2 sum_k ((a_k - c_k(s)) / sigma_k)^2 above its 95% level on held-out recorded pairs"
+  },
+  "heads": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "score = |Q1(s, a) - Q2(s, a)| (learners.critic_rows); fire iff score > q95",
+   "role": "primary (plan 4.3)",
+   "text": "two-head disagreement: |Q1 - Q2|(s, a) above its 95% level on held-out recorded pairs"
+  },
+  "onestep": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "score = max(delta*(s, r(s)) - delta*(s, a), 0); fire iff score > q95. delta*(s, a) = r(s, a) + 0.98 * min_h Q_h(s', c(s')) - min_h Q_h(s, a) (room harness oracle64: one float64 step of thruster_chain.dynamics_jax, the frozen float32 critic at float32-rounded normalised states, c = recorder.stall_aware of the world's physics); r(s) = recorder.Recorder(spec, physics)(s): the recording controller's normal-driving command without wobble or the full-throttle command",
+   "role": "primary (plan 4.3)",
+   "text": "one-step oracle, re-referenced: [delta*(s, r(s)) - delta*(s, a)]_+ above its 95% level on held-out recorded pairs; r(s) the recording controller's command at s without its wobble"
+  },
+  "onestep_clone": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "as onestep with r(s) replaced by clip(c(s), -1, 1), c the world's cloned actor",
+   "role": "reported",
+   "text": "one-step oracle re-referenced to the cloned actor: [delta*(s, c(s)) - delta*(s, a)]_+ above its 95% level"
+  },
+  "onestep_lit": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "score = |delta*(s, a)|; fire iff score > q95",
+   "role": "reported",
+   "text": "the plan's literal one-step trigger: |delta*(s, a)| above its 95% level on held-out recorded pairs"
+  },
+  "ratio": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "score = logit g(normalise(s), a); g fitted by logistic loss to label 0 at (s_i, a_i) and label 1 at (s_i, clip(pi(s_i) + a_i - c(s_i), -1, 1)) for every gapped training row i (equal class sizes, so the logit is log w); pi the deployed actor (its own input normalisation), c the world's cloned actor; 2 hidden layers of 128 (ReLU), 10,000 Adam steps, learning rate 0.001, batch 512, rows drawn by default_rng([20261013, seed, 81, world index, actor tag]), init key from the same stream; fitted once per seed, world and actor; fire iff score > q95",
+   "role": "primary (plan 4.3)",
+   "text": "classifier ratio: log w_g(s, a) above its 95% level on held-out recorded pairs"
+  },
+  "ratio_refuse": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "fire iff logit g(s, a) > l* = log(0.1 / 0.9) + log sum_j exp(logit g(s_j, a_j)) over the world's gapped calibration-bank rows (Prepared.bank_rows)",
+   "role": "reported",
+   "text": "classifier ratio above plan 4.2's limit l* (score-free refusal of weighted split conformal at 0.1)"
+  },
+  "sa95": {
+   "fallbacks": [
+    "clip99"
+   ],
+   "formula": "fallback.Reference.sa.novel: the 10th-nearest-neighbour distance of (s, a) to the gapped training (state, command) rows in standard units above the fallback diagnostic's 95% split-conformal level",
+   "role": "reported",
+   "text": "distance check carried over from the fallback diagnostic: (state, command) 10th-neighbour distance above its 95% level"
+  },
+  "unrec": {
+   "fallbacks": [
+    "clip99",
+    "clone"
+   ],
+   "formula": "fire iff max_k |a_k| > 0.800000011920929 (thruster_chain.past_knee; the knee in both worlds)",
+   "role": "primary (plan 4.3)",
+   "text": "perfect detector: fires when the actor proposes past 80% on any thruster (uses knowledge of the gap)"
+  }
+ },
+ "version": 1
+}

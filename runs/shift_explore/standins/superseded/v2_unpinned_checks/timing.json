@@ -1,0 +1,133 @@
+{
+ "checks_sha256": "cd4e4254c7e388184af466cf7e22d893a0cdb05a1afe0ccceb3674de5ef59df0",
+ "code_manifest_sha256": "624003f8c4b6badb66778551519ad5098b6f3d5f764710e963c5d108f2419c31",
+ "fits": {
+  "no_stall": {
+   "build_shared_cpu": 102.345409655,
+   "classifier_fit_cpu": 2.7677884860000006,
+   "classifier_fit_first_cpu": 4.450773118000001,
+   "knn_cpu": 47.06265167100001,
+   "surface_cpu": 97.46998306100001,
+   "total_cpu": 115.07076119399999,
+   "total_wall": 95.67097517699949
+  },
+  "stall": {
+   "build_shared_cpu": 100.154446723,
+   "classifier_fit_cpu": 2.8105465390000006,
+   "classifier_fit_first_cpu": 3.79245075499999,
+   "knn_cpu": 48.660999079999996,
+   "surface_cpu": 95.53128739099999,
+   "total_cpu": 112.437085212,
+   "total_wall": 116.08195672100192
+  }
+ },
+ "kind": "standins-timing",
+ "label": "EXPLORATORY: Stage 1 data-only stand-ins in the lower-edge channel (plan section 4.2), computed outside the gate on saved gate artifacts and the room test's locked strengths; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (data-only stand-ins only)",
+ "per_kind": {
+  "no_stall": {
+   "classifier": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.075686537499919,
+    "n_arms": 1,
+    "refit_check_e_cpu_seconds_per_arm": 0.9322930619999994,
+    "refit_cpu_seconds_per_arm": 2.785470059000005
+   },
+   "density": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.059670221249988,
+    "n_arms": 2,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "distance": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.4992904499999895,
+    "n_arms": 2,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "hinge": {
+    "cpu_seconds_per_1000_steps_per_arm": 6.3368855650000455,
+    "n_arms": 1,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "plain": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.662624715000035,
+    "n_arms": 1,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "two_head": {
+    "cpu_seconds_per_1000_steps_per_arm": 6.184040470000021,
+    "n_arms": 2,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   }
+  },
+  "stall": {
+   "classifier": {
+    "cpu_seconds_per_1000_steps_per_arm": 6.445268920000018,
+    "n_arms": 1,
+    "refit_check_e_cpu_seconds_per_arm": 0.9332011460000018,
+    "refit_cpu_seconds_per_arm": 2.746897957999991
+   },
+   "density": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.130186855000005,
+    "n_arms": 2,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "distance": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.10728674500001,
+    "n_arms": 2,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "hinge": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.28576543749999,
+    "n_arms": 1,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "plain": {
+    "cpu_seconds_per_1000_steps_per_arm": 5.361837534999978,
+    "n_arms": 1,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   },
+   "two_head": {
+    "cpu_seconds_per_1000_steps_per_arm": 6.902281640000005,
+    "n_arms": 2,
+    "refit_check_e_cpu_seconds_per_arm": null,
+    "refit_cpu_seconds_per_arm": null
+   }
+  }
+ },
+ "projection": {
+  "assumptions": "per-arm cost linear in the vmapped group; matching rounds 3 (typical) / 5 (worst) and ladder extensions 1 / 3 per family, each one 20,000-step arm; a classifier arm adds 5 refits, each with its check (e) (spec change C2), at their measured cost; check (e) on every form before training at its measured cost on seed 0 (check_e_seconds_measured; spec change C5 replaced the earlier allowance of 60 CPU s per family); overhead 120 s per train phase; evaluation per actor = 2 x the room's measured evaluation cost (the exact evaluation and the per-thruster rollout), from the room's timing.json (a cost estimate, no return); process-hours are CPU-bound: one process per seed, at most 2 at once (spec run_order)",
+  "check_e_seconds_measured": {
+   "no_stall": 8.144303263008624,
+   "stall": 8.025293309005065
+  },
+  "room_timing_file_sha256": "57e52ef31370c5b644d5e9e8c50d90c92f76e7ed20d8f21da1ec78bfa35bcd55",
+  "typical": {
+   "arm_runs_stall": 65,
+   "five_seeds_process_hours": 13.210252630405366,
+   "no_stall_eval_minutes": 3.231495900407026,
+   "no_stall_train_minutes": 21.116868641033456,
+   "seed_minutes": 158.5230315648644,
+   "stall_eval_minutes": 3.231495900407026,
+   "stall_train_minutes": 130.94317112301687,
+   "wall_hours_two_lanes": 7.92615157824322
+  },
+  "worst": {
+   "arm_runs_stall": 97,
+   "five_seeds_process_hours": 18.424760365238704,
+   "no_stall_eval_minutes": 3.231495900407026,
+   "no_stall_train_minutes": 21.116868641033456,
+   "seed_minutes": 221.09712438286445,
+   "stall_eval_minutes": 3.231495900407026,
+   "stall_train_minutes": 193.51726394101695,
+   "wall_hours_two_lanes": 11.054856219143224
+  }
+ },
+ "spec_sha256": "1f78dc76b31a37913cc9df009929672c33bb3f687bd7e13f57885dd9dc8e6ea2"
+}

@@ -1,0 +1,443 @@
+{
+ "all_passed": true,
+ "code_manifest_sha256": "469ada26b9af7eff33be17b8241867e83e44c45a30d2d137dffe7deca3f32391",
+ "kind": "room-checks-seed0",
+ "label": "EXPLORATORY: Stage 1 room test of the lower-edge channel (plan sections 4.0, 4.1, 7), computed outside the gate on saved gate artifacts; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (stand-ins and oracles only) (seed-0 checks; no return, points or score computed)",
+ "parts_sha256": {
+  "a": "5e4a13c109321914950a582aaea244a9b6676d58d14bc4fb71a187a7555bf367",
+  "b": "8e7eeecd8d349d314b3f6bc58388017f0c05c1223861c08edbe29f436a0643a0",
+  "c": "99939455cd065027b0062911dee2c59bf5ed694d18373dc6655e5772339c05ee",
+  "d": "f1024d57a71110b39c869b5c624b4f98abd464d08cfc1527ef5721b641c140d6",
+  "e": "eb897d7ea3f74472ed717a1e69221faf8072d8398bd8ac6369f656299ab9687b"
+ },
+ "passed": {
+  "a": true,
+  "b": true,
+  "c": true,
+  "d": true,
+  "e": true
+ },
+ "projection": {
+  "all_runs_per_seed_minutes": 101.4026226370093,
+  "assumptions": {
+   "evaluation_seconds_per_actor": 6.694487701221078,
+   "matching": {
+    "arms_per_round": {
+     "plain": 1,
+     "push_less": 1,
+     "random": 2
+    },
+    "typical_rounds": 3,
+    "worst_rounds": 5
+   },
+   "note": "one pinned CPU per seed process; evaluation cost estimated from the policy's cost alone (no return computed in the checks)",
+   "overhead_seconds": 120.0,
+   "scored_actors_stall": 15
+  },
+  "no_stall_minutes_per_seed": 12.350177909482882,
+  "replication_minutes_per_seed": 13.607316860112778,
+  "seconds_per_1000_steps_per_arm": {
+   "band": 6.275694211666026,
+   "band_shuffled": 5.640569207507724,
+   "harm": 55.199153414996545,
+   "hinge": 3.0770508124987828,
+   "plain": 3.1184955849994367,
+   "plain_20000_step_group": 3.0637931712500173,
+   "push_less": 3.263511790000848,
+   "random": 3.018102269998053
+  },
+  "seconds_per_arm_20000_steps": {
+   "band": 125.51388423332051,
+   "band_shuffled": 112.81138415015448,
+   "harm": 1103.9830682999311,
+   "hinge": 61.541016249975655,
+   "plain": 61.275863425000345,
+   "push_less": 65.27023580001696,
+   "random": 60.36204539996106
+  },
+  "stall_eval_phase_minutes": 2.1736219253052695,
+  "stall_seed_total_minutes": {
+   "typical": 75.44512786741365,
+   "worst": 96.0509770361586
+  },
+  "stall_train_phase_minutes": {
+   "of_which_check_a": 3.3110000998000033,
+   "of_which_long_run_harm": 18.39971780499885,
+   "typical": 73.27150594210838,
+   "worst": 93.87735511085333
+  }
+ },
+ "spec_sha256": "56bbda24cdbaa10cc0de0261450de5d9034e08e188c88e9432be83d8cf136bf4",
+ "summary": {
+  "a": {
+   "full": {
+    "equal": true,
+    "max_abs_diff": 0.0
+   },
+   "gapped": {
+    "equal": true,
+    "max_abs_diff": 0.0
+   },
+   "random": {
+    "equal": true,
+    "max_abs_diff": 0.0
+   }
+  },
+  "b": {
+   "alone": {
+    "bitwise_equal": true,
+    "max_abs_diff": 0.0
+   },
+   "rows_sha256_equals_check2": true,
+   "run_configuration": {
+    "bitwise_equal": true,
+    "max_abs_diff": 0.0,
+    "passed": true
+   }
+  },
+  "c": {
+   "all_rows": {
+    "at_recorded_commands": {
+     "mean": 0.14885389799893606,
+     "median_abs": 0.14707928110066604
+    },
+    "float32_vs_float64": {
+     "max_abs_diff_actor_commands": 1.620993178619301e-05,
+     "max_abs_diff_recorded_commands": 1.491422147381627e-05,
+     "tol": 0.001
+    },
+    "min_form": {
+     "mean_past80": -0.657826687580011,
+     "mean_past80_region": -0.8126923631355222,
+     "median_abs_other": 0.14679123533236815
+    },
+    "n": 42500,
+    "past80_share": 0.11651764705882353,
+    "past80_share_in_region": 0.41482548831252003,
+    "q1_form": {
+     "mean_past80": -0.7695337663935546,
+     "median_abs_other": 0.1069347131145868
+    },
+    "region_share": 0.14696470588235294
+   },
+   "all_rows_main_oracle": {
+    "at_recorded_commands": "0 by construction",
+    "d_logged_vs_float64_max_abs": 1.491422147381627e-05,
+    "max_abs_float32_program_vs_float64": 1.6157949758621726e-05,
+    "mean_other": 0.025364406790194936,
+    "mean_past80": 0.8454809748605437,
+    "mean_past80_region": 1.0119414169651917,
+    "median_other": 0.0
+   },
+   "harm_value_gapped_actor": {
+    "max_abs_float32_vs_float64": 6.673207752783128e-05,
+    "max_abs_truncation_250_vs_1000": 0.11197400432855886,
+    "max_rel": 4.219082279326112e-06,
+    "median_abs_value": 7.071610793239675,
+    "rows": 4000
+   },
+   "plumbing_reproduces_readout": true,
+   "readout": {
+    "mean_past80": -0.7298295331793301,
+    "median_abs_other": 0.10657998468444241
+   },
+   "readout_rows": {
+    "main_oracle": {
+     "W": "[delta*(s, a_i) - delta*(s, a)]_+",
+     "delta_at_recorded_mean": 0.14719969838526667,
+     "mean_other": 0.02636847796729318,
+     "mean_past80": 0.7743015700581133,
+     "median_other": 0.0,
+     "share_zero_other": 0.5102272727272728
+    },
+    "min_form": {
+     "mean_past80": -0.5890212635203155,
+     "median_abs_other": 0.14457862842615654
+    },
+    "min_form_float32_program": {
+     "mean_past80": -0.5890219529469808,
+     "median_abs_other": 0.1445784568786621
+    },
+    "n": 3000,
+    "past80_share": 0.12,
+    "q1_form": {
+     "mean_past80": -0.7298294219709719,
+     "median_abs_other": 0.10657998003673264
+    },
+    "readout_past80_share": 0.12
+   },
+   "thruster1_gradient": {
+    "inside_0.79": {
+     "central_difference_float64_mean": 0.0848581562044748,
+     "finite_share": 1.0,
+     "mean_d_delta_d_push": 0.0843809304580791,
+     "median_abs_autodiff_minus_central": 0.005940652861326612,
+     "median_d_delta_d_push": 0.06894323229789734,
+     "negative_push_share": 0.995,
+     "rows": 2000
+    },
+    "past_0.805": {
+     "central_difference_float64_mean": -2.6378382759092833,
+     "finite_share": 1.0,
+     "mean_d_delta_d_push": -2.637992825433612,
+     "median_abs_autodiff_minus_central": 0.006067350502164004,
+     "median_d_delta_d_push": -1.532081961631775,
+     "negative_push_share": 0.995,
+     "rows": 2000
+    },
+    "past_0.81": {
+     "central_difference_float64_mean": -2.6460923538209125,
+     "finite_share": 1.0,
+     "mean_d_delta_d_push": -2.646200459688902,
+     "median_abs_autodiff_minus_central": 0.0059539079801140815,
+     "median_d_delta_d_push": -1.544356107711792,
+     "negative_push_share": 0.995,
+     "rows": 2000
+    }
+   },
+   "thruster1_gradient_main_penalty": {
+    "inside_0.79": {
+     "central_difference_float64_mean": -0.011806072677589263,
+     "finite_share": 1.0,
+     "mean_dW_d_push": -0.011746927457861602,
+     "share_dW_d_push_negative": 0.2175
+    },
+    "past_0.805": {
+     "central_difference_float64_mean": 1.5418729635003725,
+     "finite_share": 1.0,
+     "mean_dW_d_push": 1.5425129414498806,
+     "share_dW_d_push_negative": 0.05
+    },
+    "past_0.81": {
+     "central_difference_float64_mean": 1.8043281713449177,
+     "finite_share": 1.0,
+     "mean_dW_d_push": 1.8029487518519163,
+     "share_dW_d_push_negative": 0.0475
+    }
+   },
+   "trained_form_vs_readout": {
+    "diff_mean_past80": 0.1408082696590146,
+    "diff_median_abs_other": 0.03799864374171413,
+    "met": false,
+    "note": "reported, not a stop condition (spec change A3): the readout took Q1 on the Q(s, a) side; the trained residual takes the minimum over both heads, as BCA's own residual does; the plan's 7.3(b) reference values apply only to the Q1 form",
+    "tol": 0.01
+   }
+  },
+  "d": {
+   "no_stall_rising_thrust": {
+    "all_finite": true,
+    "timing": {
+     "band": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 5.743022199994812
+     }
+    }
+   },
+   "no_stall_stall_aware": {
+    "all_finite": true,
+    "timing": {
+     "band": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 6.9722329175056075
+     },
+     "hinge": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 2.986249682498965
+     },
+     "plain": {
+      "n_arms": 2,
+      "seconds_per_1000_steps_per_arm": 3.216087223750037
+     }
+    }
+   },
+   "replication": {
+    "all_finite": true,
+    "timing": {
+     "band": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 7.4724171524940175
+     },
+     "plain": {
+      "n_arms": 2,
+      "seconds_per_1000_steps_per_arm": 2.628425553748457
+     }
+    }
+   },
+   "stall": {
+    "all_finite": true,
+    "timing": {
+     "band": {
+      "n_arms": 6,
+      "seconds_per_1000_steps_per_arm": 6.275694211666026
+     },
+     "band_shuffled": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 5.640569207507724
+     },
+     "harm": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 55.199153414996545
+     },
+     "hinge": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 3.0770508124987828
+     },
+     "plain": {
+      "n_arms": 2,
+      "seconds_per_1000_steps_per_arm": 3.1184955849994367
+     },
+     "push_less": {
+      "n_arms": 1,
+      "seconds_per_1000_steps_per_arm": 3.263511790000848
+     },
+     "random": {
+      "n_arms": 2,
+      "seconds_per_1000_steps_per_arm": 3.018102269998053
+     }
+    }
+   }
+  },
+  "e": {
+   "all_forms_seed0_stall": {
+    "abs_lit (perfect_band_literal)": {
+     "best_past80": 0.7125,
+     "fall": 0.818,
+     "passed": false,
+     "rise": 0.182,
+     "slope_805": -1.9664072126746177
+    },
+    "abs_rel (perfect_band_centred)": {
+     "best_past80": 0.3485,
+     "fall": 0.465,
+     "passed": false,
+     "rise": 0.535,
+     "slope_805": 0.44703305746614935
+    },
+    "main (perfect_band)": {
+     "best_past80": 0.2575,
+     "fall": 0.051,
+     "passed": true,
+     "rise": 0.497,
+     "slope_805": 1.5425129414498806
+    },
+    "over_lit (overrating_half_literal)": {
+     "best_past80": 0.534,
+     "fall": 0.009,
+     "passed": true,
+     "rise": 0.059,
+     "slope_805": 0.33579280637949704
+    },
+    "under_rel (underrating_half)": {
+     "best_past80": 0.647,
+     "fall": 0.4745,
+     "passed": false,
+     "rise": 0.094,
+     "slope_805": -1.0954798839837312
+    }
+   },
+   "other_seeds_reported": {
+    "1": {
+     "replication": {
+      "best_past80": 0.293,
+      "fall_share_80_to_81": 0.071,
+      "mean_W_80": 0.0438,
+      "mean_W_81": 0.056,
+      "passed": true,
+      "q1_alone_best_past80": 0.603,
+      "slope_805": 1.251
+     },
+     "stall": {
+      "best_past80": 0.3295,
+      "fall_share_80_to_81": 0.046,
+      "mean_W_80": 0.0371,
+      "mean_W_81": 0.0518,
+      "passed": true,
+      "q1_alone_best_past80": 0.6175,
+      "slope_805": 1.461
+     }
+    },
+    "2": {
+     "replication": {
+      "best_past80": 0.3075,
+      "fall_share_80_to_81": 0.0645,
+      "mean_W_80": 0.0484,
+      "mean_W_81": 0.0595,
+      "passed": true,
+      "q1_alone_best_past80": 0.624,
+      "slope_805": 1.105
+     },
+     "stall": {
+      "best_past80": 0.325,
+      "fall_share_80_to_81": 0.0645,
+      "mean_W_80": 0.0444,
+      "mean_W_81": 0.057,
+      "passed": true,
+      "q1_alone_best_past80": 0.6095,
+      "slope_805": 1.257
+     }
+    },
+    "3": {
+     "replication": {
+      "best_past80": 0.2685,
+      "fall_share_80_to_81": 0.0805,
+      "mean_W_80": 0.0462,
+      "mean_W_81": 0.0569,
+      "passed": true,
+      "q1_alone_best_past80": 0.562,
+      "slope_805": 1.084
+     },
+     "stall": {
+      "best_past80": 0.27,
+      "fall_share_80_to_81": 0.059,
+      "mean_W_80": 0.0449,
+      "mean_W_81": 0.0591,
+      "passed": true,
+      "q1_alone_best_past80": 0.5715,
+      "slope_805": 1.445
+     }
+    },
+    "4": {
+     "replication": {
+      "best_past80": 0.309,
+      "fall_share_80_to_81": 0.0605,
+      "mean_W_80": 0.0414,
+      "mean_W_81": 0.0516,
+      "passed": true,
+      "q1_alone_best_past80": 0.582,
+      "slope_805": 1.016
+     },
+     "stall": {
+      "best_past80": 0.301,
+      "fall_share_80_to_81": 0.053,
+      "mean_W_80": 0.0415,
+      "mean_W_81": 0.0548,
+      "passed": true,
+      "q1_alone_best_past80": 0.5825,
+      "slope_805": 1.339
+     }
+    }
+   },
+   "seed0": {
+    "replication": {
+     "best_past80": 0.217,
+     "fall_share_80_to_81": 0.0755,
+     "mean_W_80": 0.0496,
+     "mean_W_81": 0.0622,
+     "passed": true,
+     "q1_alone_best_past80": 0.5455,
+     "slope_805": 1.261
+    },
+    "stall": {
+     "best_past80": 0.2575,
+     "fall_share_80_to_81": 0.051,
+     "mean_W_80": 0.0407,
+     "mean_W_81": 0.0561,
+     "passed": true,
+     "q1_alone_best_past80": 0.5695,
+     "slope_805": 1.543
+    }
+   }
+  }
+ },
+ "what_c_checks": "c passes on the plumbing (the readout's Q1 form reproduces the readout), the float32 bound and finite gradients. The trained residual (min over heads) does not reproduce the plan's 7.3(b) numbers; that is reported under c.trained_form_vs_readout, not as a pass (spec change A3). The literal |delta*| arm keeps an offset of about +0.15 at the data; the amended main oracle is zero there."
+}

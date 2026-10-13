@@ -1,0 +1,126 @@
+"""EXPLORATORY dry run of run_standins.py's bookkeeping (spec, manifest, room gate, lock, verify, refusals, stop,
+no-stall, marks) into a scratch directory (scratchpad/ood/standins/dryrun_out), with 40 actor steps, small data-side
+fits, the W = 0 tolerance switched off, a SYNTHETIC target strength, and the evaluation REPLACED BY A DUMMY: no
+return, points or score is computed. The room test's outputs are not read: the room gate, the room lock and the
+room's values are replaced by synthetic stand-ins. Nothing is written under runs/.
+
+Usage: python dryrun.py train | eval | no_stall | marks      (in this order; 'train' starts from a fresh directory)
+"""
+import shutil
+import sys
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import standins as S  # noqa: E402
+import run_standins as R  # noqa: E402
+import write_manifest as WM  # noqa: E402
+
+L, TC = S.L, S.TC
+TMP = HERE / "dryrun_out"
+TARGET = 0.004          # synthetic strength target (not the room's)
+
+
+class Short(S.StandinRunner):
+    last_rows_sha = None
+
+    def __init__(self, *a, **k):
+        k["steps"], k["chunk"] = 40, 20
+        super().__init__(*a, **k)
+        Short.last_rows_sha = self.rows_sha256
+
+
+class LazyLock(dict):
+    def __getitem__(self, k):
+        return Short.last_rows_sha if k == "rows_sha256" else super().__getitem__(k)
+
+
+def patch():
+    S.OUT = TMP
+    S.SPEC_PATH = TMP / "spec.json"
+    S.SURF_PER_TYPE, S.SURF_VALID, S.SURF_STEPS, S.CLS_STEPS = 1000, 1000, 200, 50
+    S.StandinRunner = Short
+    S.W0_TOL = float("inf")
+    S.SEEDS = (0,)
+    S.room_gate = lambda: dict(dryrun="synthetic room gate (the room's pooled.json is not read)")
+    S.room_lock_target = lambda rep, none: (TARGET, LazyLock(dryrun="synthetic target (the room's lock is not read)",
+                                                             target_strength=TARGET, rows_sha256="dryrun"))
+
+    def dummy_eval(ctx, lock, acts, prepared, world):
+        ev = {n: {s: dict(points=0.0, unrecorded_throttle_share=0.0, capped_points=0.0) for s in TC.SITUATIONS}
+              for n in lock["scored_names"]}
+        sh = {n: {s: [0.0] * TC.DA for s in TC.SITUATIONS} for n in lock["scored_names"]}
+        S.log(f"DUMMY evaluation of {len(ev)} actors (no return computed)")
+        return ev, sh
+
+    R.evaluate_locked = dummy_eval
+
+    def room_values(rep):
+        pts = {s: dict(perfect_band=60.0, none=0.0, **{"even_pull@1": 10.0}) for s in TC.SITUATIONS}
+        return (dict(situations={s: dict(points=pts[s]) for s in TC.SITUATIONS}, matched_names={"even_pull": "even_pull@1"}),
+                "synthetic")
+
+    R.room_values = room_values
+
+
+def refused(fn, *a, expect=""):
+    try:
+        fn(*a)
+    except SystemExit as e:
+        msg = str(e)
+        if expect and expect not in msg:
+            raise AssertionError(f"refused for another reason: {msg}")
+        print(f"REFUSED as expected ({getattr(fn, '__name__', fn)}{a}): {msg[:160]}")
+        return
+    raise AssertionError(f"{fn}{a} was not refused")
+
+
+def main(step):
+    patch()
+    if step == "train":
+        if TMP.exists():
+            shutil.rmtree(TMP)
+        TMP.mkdir()
+        S.write_json(S.SPEC_PATH, S.spec_payload())
+        WM.write_manifest(None)
+        refused(R.phase_eval, 0, expect="no lock")
+        refused(R.phase_no_stall_train, 0, expect="no lock")
+        refused(R.phase_marks, expect="neither values")
+        R.phase_train(0)
+        refused(R.phase_train, 0, expect="already locked")
+        lock = S.read_json(TMP / "seed0" / "lock.json")
+        print("matched:", lock["matched_names"], "unmatched strongest:", lock["unmatched_strongest_rung"])
+        print("scored:", lock["scored_names"])
+        print("check (b):", lock["checks"]["b"])
+        print("check (e) passed:", {f: v["passed"] for f, v in lock["checks"]["e"].items() if isinstance(v, dict)})
+    elif step == "eval":
+        R.phase_eval(0, "stall")
+        refused(R.phase_eval, 0, "stall", expect="exists")
+    elif step == "no_stall":
+        R.phase_no_stall_train(0)
+        refused(R.phase_no_stall_train, 0, expect="already locked")
+        R.phase_eval(0, "no_stall")
+        lock = S.read_json(TMP / "seed0" / "no_stall" / "lock.json")
+        print("no-stall arms:", lock["locked_from_stall"])
+        print("check (b) no-stall:", lock["checks"]["b"])
+    elif step == "marks":
+        R.phase_marks()
+        refused(R.phase_marks, expect="exists")
+        m = S.read_json(TMP / "marks.json")
+        print("captured_by (synthetic dummy points, meaningless):", m["captured_by"])
+        print({f: (v["c1_gain_at_least_half_of_perfect_band"], v["c2_recorded_at_least_none_minus_3"],
+                   v["c3_beats_even_pull_by_15"]) for f, v in m["marks"].items()})
+        # tamper: a changed lock must refuse an evaluation
+        p = TMP / "seed0" / "lock.json"
+        txt = p.read_text()
+        p.write_text(txt.replace('"rep": 0', '"rep": 9', 1))
+        refused(R.verify_lock, TMP / "seed0", S.load_spec()[1], expect="sidecar")
+        p.write_text(txt)
+        print("DRY RUN OK")
+    else:
+        raise SystemExit(__doc__)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1] if len(sys.argv) > 1 else "")

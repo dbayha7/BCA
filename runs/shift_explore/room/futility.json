@@ -1,0 +1,27 @@
+{
+ "code_manifest_sha256": "469ada26b9af7eff33be17b8241867e83e44c45a30d2d137dffe7deca3f32391",
+ "decision": "continue: run seeds 2-4 and the no-stall arms",
+ "kind": "room-futility",
+ "label": "EXPLORATORY: Stage 1 room test of the lower-edge channel (plan sections 4.0, 4.1, 7), computed outside the gate on saved gate artifacts; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (stand-ins and oracles only)",
+ "rule": "seeds 0 and 1 run first; if the perfect band beats the matched even pull by less than 5 points in strong current on both seeds, stop and go to plan section 4.5 (seeds 2-4 are not run). A missing difference counts as less than 5 points: the perfect band not finite, the even pull with no matched arm, or the seed stopped by a failed check (a), (b) or (e); futility.json names the reason per seed (change A8). The look refuses until both seeds have a verified values.json or stop.json",
+ "seeds": {
+  "0": {
+   "counts_as_below_5": false,
+   "file": "values.json",
+   "file_sha256": "4be846672ce1c80c168c4b5491e05d72097e9332a680dbce83a56174ac370096",
+   "missing_reason": null,
+   "perfect_band_minus_matched_even_pull": 91.71563578860504,
+   "status": "values"
+  },
+  "1": {
+   "counts_as_below_5": false,
+   "file": "values.json",
+   "file_sha256": "cf20326aac145f2baabc5a44323fc3e24d4054e82630b87a5da6df1225f4f9e8",
+   "missing_reason": null,
+   "perfect_band_minus_matched_even_pull": 99.78059845035997,
+   "status": "values"
+  }
+ },
+ "spec_sha256": "56bbda24cdbaa10cc0de0261450de5d9034e08e188c88e9432be83d8cf136bf4",
+ "stop": false
+}
