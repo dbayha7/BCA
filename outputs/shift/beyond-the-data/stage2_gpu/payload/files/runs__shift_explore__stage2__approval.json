@@ -1,0 +1,59 @@
+{
+ "defaults_accepted": "Approving this fingerprint accepts every default the pre-registration lists in open_choices; any other choice needs a new version of prereg.json and a new fingerprint.",
+ "git": {
+  "author": "David Bayha <35092758+dbayha7@users.noreply.github.com>",
+  "cloud_session_git_email": "noreply@anthropic.com",
+  "commit": "7dab7d545c49e0310176fc4f00b6a41492b30ea6",
+  "committed_sha256": "f7c96f77bfa32ab298430f5bec0be699258347a6a83d668eb947296bdfb3ed5c",
+  "committer": "David Bayha <35092758+dbayha7@users.noreply.github.com>",
+  "parents": [
+   "0af5e0a87c98dd24b5a5750a1b2ba04c868d09f3"
+  ],
+  "read_by": "approve.py import, with read-only git queries in the cloud session's checkout: the one commit on origin's branch that added the file, its author and committer, and the file as stored in that commit",
+  "remote_ref": "refs/remotes/origin/claude/main-bca-connection-x4o46s",
+  "remote_tip_at_import": "7dab7d545c49e0310176fc4f00b6a41492b30ea6",
+  "signature_status": "N"
+ },
+ "import_record": "outputs/shift/beyond-the-data/stage2/import_9b38c7c48a303cfd.json",
+ "imported_at": "2026-10-13T08:33:42Z",
+ "importer_process_chain": [
+  {
+   "cmd": "/tmp/claude-0/bcavenv/bin/python /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/ood/stage2/approve.py import",
+   "pid": 31675
+  },
+  {
+   "cmd": "/bin/bash -c source /root/.claude/shell-snapshots/snapshot-bash-1791841102553-g59c39.sh 2>/dev/null || true && export BUN_OPTIONS=\"--smol${BUN_OPTIONS:+ $BUN_OPTIONS}\" && shopt -u extglob 2>/dev/null || true && { \\builtin unalias -- 'unsetenv'; \\builtin unset -f -- 'unsetenv'; } >/dev/null 2>&1 || t",
+   "pid": 31669
+  },
+  {
+   "cmd": "/opt/claude-code/bin/claude --preload /home/claude/.claude/remote/spare.sock",
+   "pid": 98
+  },
+  {
+   "cmd": "/usr/local/bin/environment-manager task-run --stdin --session cse_01Ro4BnWxcsoeFi9CGcTQ5bx --session-mode resume --upgrade-claude-code=False",
+   "pid": 88
+  },
+  {
+   "cmd": "/bin/sh -c if [ -d /opt/claude-code ]; then ln -sf /opt/claude-code/bin/claude /opt/node22/bin/claude; fi; if [ -d /opt/env-runner ]; then ln -sf /opt/env-runner/environment-manager /usr/local/bin/environment-manager; fi; if [ -f /opt/env-runner/vitals-emitter-guest ]; then ln -sf /opt/env-runner/vi",
+   "pid": 84
+  }
+ ],
+ "kind": "stage2-approval",
+ "label": "BCA lower-edge consumer (new method version), exploratory on seeds 0-4, confirmatory on fresh seeds 5-9",
+ "local_approval": {
+  "approved_at_utc": "2026-10-13T08:32:23Z",
+  "git_head": "0af5e0a87c98dd24b5a5750a1b2ba04c868d09f3",
+  "hostname": "Zeus",
+  "local_user": "David",
+  "path": "outputs/shift/beyond-the-data/stage2/approval_9b38c7c48a303cfd.json",
+  "sha256": "f7c96f77bfa32ab298430f5bec0be699258347a6a83d668eb947296bdfb3ed5c",
+  "text": "{\n \"approve_local_sha256\": \"5bfac05530edf05facf70f2dd2307c78b93c2adc411330f82122cd10e13fa47c\",\n \"approved_at_utc\": \"2026-10-13T08:32:23Z\",\n \"code_manifest_sha256\": \"4b34af991a56066c41fbb55cb02db4074ae0b7e85b1e50802a53983edda2a753\",\n \"git_branch\": \"claude/main-bca-connection-x4o46s\",\n \"git_head\": \"0af5e0a87c98dd24b5a5750a1b2ba04c868d09f3\",\n \"hostname\": \"Zeus\",\n \"how\": \"Typed at a terminal on the approver's own machine with approve_local.py. It takes effect only after the approver commits and pushes it and the cloud session imports it (approve.py import), which records the commit and its author.\",\n \"kind\": \"stage2-local-approval\",\n \"label\": \"BCA lower-edge consumer (new method version), exploratory on seeds 0-4, confirmatory on fresh seeds 5-9\",\n \"local_user\": \"David\",\n \"mode\": \"local-terminal\",\n \"prereg_path\": \"outputs/shift/beyond-the-data/stage2/prereg.json\",\n \"prereg_sha256\": \"9b38c7c48a303cfd67e5db6f137e3a162997bb533d86b3f7647e0467b91ca3b1\",\n \"prereg_version\": 6,\n \"python\": \"3.10.11\",\n \"statement\": \"I approve the Stage 2 pre-registration whose SHA-256 is 9b38c7c48a303cfd67e5db6f137e3a162997bb533d86b3f7647e0467b91ca3b1 (version 6), and only that exact file: no earlier or later version, no edit of it and no other stage. Approving it accepts every default it lists and allows the BCA runs it names, under its rules.\",\n \"stdin_isatty\": true,\n \"tty\": null,\n \"typed\": \"9b38c7c48a303cfd\"\n}"
+ },
+ "local_mode_caveat": "Local-terminal mode: the approval was typed at a terminal on the user's own machine by approve_local.py, committed and pushed by the user, and imported here; import read the commit, its author and committer and the file stored in it with read-only git queries, and wrote an import record that must be committed and pushed before any BCA run. Nothing in this session typed or wrote the user's file. It still cannot prove who typed it: approve_local.py checks only that standard input is a terminal, and git's author and committer fields are set by whoever makes the commit and are not authenticated, so anyone able to push to the repository, an agent with push access included, could make such a commit under the user's name; an agent could also write this runs-side file by hand. The added strength holds only if the user checks on GitHub that the commit the import record names is the user's own.",
+ "mode": "local-terminal",
+ "prereg_path": "/home/user/bca/runs/shift_explore/stage2/prereg.json",
+ "prereg_sha256": "9b38c7c48a303cfd67e5db6f137e3a162997bb533d86b3f7647e0467b91ca3b1",
+ "statement": "Approved by the user at a terminal on the user's own machine (approve_local.py), committed and pushed by the user, and imported here after every check: this approval covers the pre-registration with SHA-256 9b38c7c48a303cfd67e5db6f137e3a162997bb533d86b3f7647e0467b91ca3b1 only.",
+ "stdin_isatty": true,
+ "typed": "9b38c7c48a303cfd"
+}
