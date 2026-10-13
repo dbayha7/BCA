@@ -319,6 +319,25 @@ Last updated: 2026-10-12.
 - **Meaning:** the world is sound and the harm is real and large. But it lies in states outside the recorded range,
   where a stronger pull toward the recorded commands on training rows does not reach. The limit is in the mechanism,
   not in BCA's signal. BCA's detection was not tested.
+- **The user's decision (2026-10-13): the stop is not accepted.** The question is now what must change for BCA to help
+  with harm outside the data. Exploratory analysis, no BCA (`outputs/shift/beyond-the-data/PLAN.md`):
+  - The harm is one wrong belief held at training states: in the full-throttle region the gapped critic rates full
+    throttle +0.06 against 80% (truth −0.46). The actor learns it there (past 80% on 42% of region rows, full-log
+    critic's actor 10%) and carries it into strong current.
+  - BCA never reads its band where that error is. It reads at recorded rows, where the gapped critic is accurate
+    (error 0.07). At the actor's own past-80% commands, the one-step error BCA calibrates averages −0.67 (typical
+    size 0.105). Its dose pulls toward the recorded command, which cannot cancel the critic's false slope.
+  - What must change, as a declared new method version: read the band at the actor's own command; act on the value
+    the actor climbs (lower edge Q − k·U, k = 1 fixed); no 1.5 cap; "cannot certify" means the most caution, not
+    none; let the gradient pass through the frozen scale network's command input; check the band widens past 80%
+    before training, and otherwise use likelihood-ratio weights. Also a deployment check that reads the same band and
+    clips into the recorded range.
+  - Deployment diagnostic (no BCA): a distance-to-data check with a clip fallback recovers 57 of 99 points in strong
+    current, 20 of them from targeting, at no cost in the recorded conditions. But clipping every command scores 91.0
+    in strong current here, and costs 61.8 in the no-stall world. So in this test bed BCA can at best show that it
+    flags unsupported commands. Claiming it identifies harm needs data that carry a trace of the harm.
+  - Next: Stage 1, a room test of the lower-edge channel with an exact one-step oracle against matched untargeted
+    controls, still without BCA. Stage 2 (BCA) needs the user's typed approval and a new labelled pre-registration.
 - **Known bug (reporting only):** `acceptance.report_cards` passes all four situations' anchors to `shift.shift_card`.
   The cards were recomputed outside the gate with that one change, labelled as such
   (`outputs/shift/stop-report/cards/`), and match the gated scores to 3e-14 points. The bug gets fixed only under a
@@ -334,9 +353,9 @@ Last updated: 2026-10-12.
 7. Gapped LQ (entry 14): decided. The user amended the gate (A1); the world was rejected again on fresh seeds.
 8. Option C and the action gap (entry 15): run on the local machine (hopper-medium-v2 first), or allow
    rail.eecs.berkeley.edu in the cloud environment and provide the checkpoints.
-9. ThrusterChain (entry 16): the gate stopped before BCA (no room). Choose one: accept the stop; an exploratory
-   no-BCA test of caution that can reach states outside the data; an exploratory BCA detection check (needs approval);
-   or a redesign under a new pre-registration.
+9. ThrusterChain (entry 16): the user did not accept the stop. Stage 1 of the plan (no BCA) runs first. Still to
+   decide: the claim wanted ("flags reliance on unsupported commands" is testable now; "identifies the harm" needs a
+   test bed whose data carry a trace of it). Stage 2 (BCA) needs typed approval.
 
 ## Deliverables
 - **Notebooks:**
@@ -394,3 +413,8 @@ Last updated: 2026-10-12.
   - ThrusterChain designed by a judge panel, built, reviewed and pre-registered (68d9e877…), then run to its stop:
     the harm checks pass at alpha 5 (99 points lost in strong current), but no situation has room for caution of
     BCA's kind, so the gate stopped before any BCA run (entry 16).
+- **2026-10-13:**
+  - the user did not accept the stop; exploratory analysis of what BCA needs to reach harm outside the data
+    (mechanism, harm anatomy, deployment diagnostic, literature, judge panel of three designs): plan in
+    `outputs/shift/beyond-the-data/PLAN.md` (entry 16);
+  - the ThrusterChain page gained a task overview and Half-Cheetah-style component sections.
