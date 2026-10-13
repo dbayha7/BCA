@@ -1,0 +1,756 @@
+{
+ "about": "H2 for one seed: actors trained against frozen critics that differ only in their data",
+ "actor_names": [
+  "clone",
+  "full",
+  "gapped",
+  "host_swap_full",
+  "host_swap_gapped",
+  "no_stall_clone",
+  "no_stall_full",
+  "no_stall_gapped",
+  "random",
+  "td3bc_gapped"
+ ],
+ "actors_sha256": "b010ab61166588d17177daee47d16e20cb092dac93157608221b2bac3ddc098e",
+ "alpha": 5.0,
+ "evaluations": {
+  "clone": {
+   "big_kicks": {
+    "J": -272.3879069937035,
+    "J_discounted": -217.5084227553755,
+    "J_se": 4.369991856238713,
+    "capped_points": 2.299247913454862,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 11.468401172389886,
+    "points": -9.169153258935024,
+    "points_se": 4.381457643633991,
+    "unrecorded_throttle_share": 0.07716
+   },
+   "big_waves": {
+    "J": -78.66120754340223,
+    "J_discounted": -43.752382337513886,
+    "J_se": 1.0226287877962315,
+    "capped_points": 41.56355994390975,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 1.7078418790481182,
+    "points": 39.85571806486163,
+    "points_se": 1.448156458560007,
+    "unrecorded_throttle_share": 0.02675
+   },
+   "recorded": {
+    "J": -52.26255235204032,
+    "J_discounted": -32.000720198471356,
+    "J_se": 0.7362119974385717,
+    "capped_points": 51.648783522994265,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 0.11946890192371405,
+    "points": 51.52931462107055,
+    "points_se": 1.3776508135380934,
+    "unrecorded_throttle_share": 0.00204
+   },
+   "strong_current": {
+    "J": -176.56058298292592,
+    "J_discounted": -88.46563051049391,
+    "J_se": 2.1378057501410437,
+    "capped_points": 55.65220043871505,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 4.114437852873486,
+    "points": 51.53776258584157,
+    "points_se": 1.4237851113355815,
+    "unrecorded_throttle_share": 0.07727
+   }
+  },
+  "full": {
+   "big_kicks": {
+    "J": -200.62693775541246,
+    "J_discounted": -170.3080827733403,
+    "J_se": 3.4398028223121053,
+    "capped_points": 84.50248118574201,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 21.722382014189474,
+    "points": 62.780099171552536,
+    "points_se": 3.4488280217037244,
+    "unrecorded_throttle_share": 0.11495
+   },
+   "big_waves": {
+    "J": -45.70005753452167,
+    "J_discounted": -27.569467649108212,
+    "J_se": 0.6197673232803631,
+    "capped_points": 88.03313326943795,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 1.5007493053205516,
+    "points": 86.5323839641174,
+    "points_se": 0.8776596774153645,
+    "unrecorded_throttle_share": 0.05271
+   },
+   "recorded": {
+    "J": -31.7791505201595,
+    "J_discounted": -20.928920924373756,
+    "J_se": 0.4337339009046804,
+    "capped_points": 90.68571424127609,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 0.8264412713906026,
+    "points": 89.85927296988547,
+    "points_se": 0.8116328768334706,
+    "unrecorded_throttle_share": 0.01721
+   },
+   "strong_current": {
+    "J": -130.50077484413933,
+    "J_discounted": -66.42932221234751,
+    "J_se": 2.0903232517202706,
+    "capped_points": 96.54255130072379,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 14.328816842951786,
+    "points": 82.213734457772,
+    "points_se": 1.392161623422307,
+    "unrecorded_throttle_share": 0.53432
+   }
+  },
+  "gapped": {
+   "big_kicks": {
+    "J": -211.28710273641562,
+    "J_discounted": -176.7164772276003,
+    "J_se": 3.7257448074837884,
+    "capped_points": 93.11209908815965,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 41.020134557346935,
+    "points": 52.09196453081272,
+    "points_se": 3.735520248550271,
+    "unrecorded_throttle_share": 0.16017
+   },
+   "big_waves": {
+    "J": -58.69916254679797,
+    "J_discounted": -34.098285992874715,
+    "J_se": 1.1765651199311105,
+    "capped_points": 91.95227991068847,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 23.82807895850746,
+    "points": 68.12420095218101,
+    "points_se": 1.6661474795917595,
+    "unrecorded_throttle_share": 0.17501
+   },
+   "recorded": {
+    "J": -34.82465039085222,
+    "J_discounted": -23.19534370138282,
+    "J_se": 0.6595085991359219,
+    "capped_points": 93.49023697618522,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 9.329914022174835,
+    "points": 84.16032295401037,
+    "points_se": 1.2341181090447808,
+    "unrecorded_throttle_share": 0.04914
+   },
+   "strong_current": {
+    "J": -273.4645581043263,
+    "J_discounted": -129.35372788043975,
+    "J_se": 4.059087998658628,
+    "capped_points": 102.03302612900612,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 115.03360478299918,
+    "points": -13.000578653993045,
+    "points_se": 2.703364914099329,
+    "unrecorded_throttle_share": 0.75688
+   }
+  },
+  "host_swap_full": {
+   "big_kicks": {
+    "J": -197.142410095618,
+    "J_discounted": -167.91692266882978,
+    "J_se": 3.4012861637884,
+    "capped_points": 87.33236431141583,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 21.05859493366728,
+    "points": 66.27376937774854,
+    "points_se": 3.410210304909813,
+    "unrecorded_throttle_share": 0.11183
+   },
+   "big_waves": {
+    "J": -43.73956316860179,
+    "J_discounted": -26.781872038442994,
+    "J_se": 0.5885830476539564,
+    "capped_points": 90.82899171891043,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 1.520328999629421,
+    "points": 89.30866271928099,
+    "points_se": 0.8334992638881691,
+    "unrecorded_throttle_share": 0.06264
+   },
+   "recorded": {
+    "J": -30.517685607875794,
+    "J_discounted": -20.389212843509565,
+    "J_se": 0.4175920405078477,
+    "capped_points": 92.99724653752588,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 0.7774331679949804,
+    "points": 92.2198133695309,
+    "points_se": 0.781427111123207,
+    "unrecorded_throttle_share": 0.01519
+   },
+   "strong_current": {
+    "J": -128.6320572488934,
+    "J_discounted": -66.13066984633457,
+    "J_se": 2.114494446679305,
+    "capped_points": 98.98905182838135,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 15.53074578629845,
+    "points": 83.4583060420829,
+    "points_se": 1.408259712551122,
+    "unrecorded_throttle_share": 0.57547
+   }
+  },
+  "host_swap_gapped": {
+   "big_kicks": {
+    "J": -211.359369507019,
+    "J_discounted": -176.99068260561754,
+    "J_se": 3.7723347750148135,
+    "capped_points": 93.1615485615427,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 41.14204041162433,
+    "points": 52.01950814991837,
+    "points_se": 3.7822324567352927,
+    "unrecorded_throttle_share": 0.15595
+   },
+   "big_waves": {
+    "J": -57.132405804716214,
+    "J_discounted": -33.531870937844104,
+    "J_se": 1.1747330097431827,
+    "capped_points": 93.85226757578896,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 23.509364273239285,
+    "points": 70.34290330254966,
+    "points_se": 1.663553007156499,
+    "unrecorded_throttle_share": 0.17325
+   },
+   "recorded": {
+    "J": -33.68374890574281,
+    "J_discounted": -22.604092403583856,
+    "J_se": 0.6323096600499355,
+    "capped_points": 94.15090935621257,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 7.855652626881666,
+    "points": 86.2952567293309,
+    "points_se": 1.1832215728710291,
+    "unrecorded_throttle_share": 0.04159
+   },
+   "strong_current": {
+    "J": -259.7217829196892,
+    "J_discounted": -125.53980476112173,
+    "J_se": 4.170536209303667,
+    "capped_points": 101.60667120604299,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 105.45451991952231,
+    "points": -3.8478487134793276,
+    "points_se": 2.7775897602954496,
+    "unrecorded_throttle_share": 0.66455
+   }
+  },
+  "no_stall_clone": {
+   "big_kicks": {
+    "J": -248.82475105035994,
+    "J_discounted": -200.77906657316709,
+    "J_se": 3.744379829218316,
+    "capped_points": 2.1609481679830167,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -4.545971648402989,
+    "points": 6.706919816386004,
+    "points_se": 3.5080234691942187,
+    "unrecorded_throttle_share": 0.06712
+   },
+   "big_waves": {
+    "J": -77.24914366528803,
+    "J_discounted": -43.15227030074818,
+    "J_se": 0.90222133869106,
+    "capped_points": 13.02800901738821,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -0.4115751708070924,
+    "points": 13.439584188195301,
+    "points_se": 1.769246857438408,
+    "unrecorded_throttle_share": 0.00873
+   },
+   "recorded": {
+    "J": -50.9768551163672,
+    "J_discounted": -31.895642412410027,
+    "J_se": 0.7201240534671686,
+    "capped_points": 47.81044743951148,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -0.05750629746930794,
+    "points": 47.867953736980795,
+    "points_se": 1.4843096609754762,
+    "unrecorded_throttle_share": 0.00169
+   },
+   "strong_current": {
+    "J": -184.39294487249165,
+    "J_discounted": -90.04472425935347,
+    "J_se": 2.0080021220720456,
+    "capped_points": -57.107468037199304,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -9.02605973276668,
+    "points": -48.08140830443263,
+    "points_se": 2.5681555129167157,
+    "unrecorded_throttle_share": 0.18325
+   }
+  },
+  "no_stall_full": {
+   "big_kicks": {
+    "J": -159.26128910378995,
+    "J_discounted": -137.54338643559097,
+    "J_se": 2.507161337974135,
+    "capped_points": 80.21190804578495,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -10.404962368866574,
+    "points": 90.61687041465154,
+    "points_se": 2.348901878500329,
+    "unrecorded_throttle_share": 0.1077
+   },
+   "big_waves": {
+    "J": -39.61781496223696,
+    "J_discounted": -23.99381839910654,
+    "J_se": 0.404223221694806,
+    "capped_points": 84.05730793727274,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -3.1769286204814904,
+    "points": 87.23423655775422,
+    "points_se": 0.7926776213525738,
+    "unrecorded_throttle_share": 0.12056
+   },
+   "recorded": {
+    "J": -29.482345060972765,
+    "J_discounted": -19.42586813397767,
+    "J_se": 0.36660835112300005,
+    "capped_points": 91.39487954497434,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -0.7772586995872849,
+    "points": 92.17213824456165,
+    "points_se": 0.7556480230679692,
+    "unrecorded_throttle_share": 0.0259
+   },
+   "strong_current": {
+    "J": -72.2165973168369,
+    "J_discounted": -38.70841097898793,
+    "J_se": 0.6308694152272002,
+    "capped_points": 58.14706478619123,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -37.24065088452495,
+    "points": 95.38771567071619,
+    "points_se": 0.8068570988233986,
+    "unrecorded_throttle_share": 0.64729
+   }
+  },
+  "no_stall_gapped": {
+   "big_kicks": {
+    "J": -158.8825738352078,
+    "J_discounted": -137.42490967564578,
+    "J_se": 2.5102306148384197,
+    "capped_points": 80.61125886362238,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -10.360421188652289,
+    "points": 90.97168005227466,
+    "points_se": 2.3517774135059786,
+    "unrecorded_throttle_share": 0.10691
+   },
+   "big_waves": {
+    "J": -39.82513815717106,
+    "J_discounted": -24.102667880563505,
+    "J_se": 0.40822549911376055,
+    "capped_points": 82.86978342549583,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -3.9578944582600717,
+    "points": 86.8276778837559,
+    "points_se": 0.8005260466141123,
+    "unrecorded_throttle_share": 0.1322
+   },
+   "recorded": {
+    "J": -29.022560995841953,
+    "J_discounted": -19.273708982610405,
+    "J_se": 0.3588865993549166,
+    "capped_points": 92.32224741991993,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -0.7975913306176008,
+    "points": 93.11983875053754,
+    "points_se": 0.7397320559594728,
+    "unrecorded_throttle_share": 0.02494
+   },
+   "strong_current": {
+    "J": -71.65999410320288,
+    "J_discounted": -38.50238230926516,
+    "J_se": 0.6322535232504246,
+    "capped_points": 59.694375435641845,
+    "finite": true,
+    "loss_from_unrecorded_throttle": -36.40521379132653,
+    "points": 96.09958922696838,
+    "points_se": 0.8086273183920155,
+    "unrecorded_throttle_share": 0.59934
+   }
+  },
+  "random": {
+   "big_kicks": {
+    "J": -202.28883429375605,
+    "J_discounted": -171.58878995330792,
+    "J_se": 3.5144669875348997,
+    "capped_points": 84.1089648720737,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 22.995122647993295,
+    "points": 61.11384222408042,
+    "points_se": 3.5236880873933063,
+    "unrecorded_throttle_share": 0.11552
+   },
+   "big_waves": {
+    "J": -47.38779819342779,
+    "J_discounted": -28.484921198184878,
+    "J_se": 0.6588273144438449,
+    "capped_points": 85.3508214890176,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 1.2084665997087782,
+    "points": 84.14235488930883,
+    "points_se": 0.9329729828393108,
+    "unrecorded_throttle_share": 0.02982
+   },
+   "recorded": {
+    "J": -31.723554339870738,
+    "J_discounted": -20.97894470634344,
+    "J_se": 0.4404013163224506,
+    "capped_points": 90.79590463059314,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 0.8325962425524457,
+    "points": 89.96330838804072,
+    "points_se": 0.8241094057496597,
+    "unrecorded_throttle_share": 0.01402
+   },
+   "strong_current": {
+    "J": -135.70602346993425,
+    "J_discounted": -69.18773548694863,
+    "J_se": 2.275816690747863,
+    "capped_points": 94.68808053466392,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 15.94105744377726,
+    "points": 78.74702309088669,
+    "points_se": 1.5157008162233823,
+    "unrecorded_throttle_share": 0.55301
+   }
+  },
+  "td3bc_gapped": {
+   "big_kicks": {
+    "J": -214.68022779650246,
+    "J_discounted": -179.62128158612742,
+    "J_se": 3.8275734949868694,
+    "capped_points": 93.91917694649607,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 45.229240204156014,
+    "points": 48.68993674234005,
+    "points_se": 3.8376161095676418,
+    "unrecorded_throttle_share": 0.16572
+   },
+   "big_waves": {
+    "J": -55.66933377674151,
+    "J_discounted": -33.54888685598422,
+    "J_se": 1.0967589669216025,
+    "capped_points": 94.5299015302674,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 22.115125000663387,
+    "points": 72.414776529604,
+    "points_se": 1.5531330629307492,
+    "unrecorded_throttle_share": 0.16102
+   },
+   "recorded": {
+    "J": -34.198714284024945,
+    "J_discounted": -23.054030172982543,
+    "J_se": 0.6534730062091019,
+    "capped_points": 94.41071182223598,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 9.079093929004765,
+    "points": 85.33161789323121,
+    "points_se": 1.222823890076946,
+    "unrecorded_throttle_share": 0.04782
+   },
+   "strong_current": {
+    "J": -287.6755485758935,
+    "J_discounted": -136.51077628252008,
+    "J_se": 4.686617366580848,
+    "capped_points": 101.22167584889361,
+    "finite": true,
+    "loss_from_unrecorded_throttle": 123.68681724410594,
+    "points": -22.465141395212324,
+    "points_se": 3.121301375779507,
+    "unrecorded_throttle_share": 0.73017
+   }
+  }
+ },
+ "failed": {
+  "clone": false,
+  "full": false,
+  "gapped": false,
+  "host_swap_full": false,
+  "host_swap_gapped": false,
+  "no_stall_clone": false,
+  "no_stall_full": false,
+  "no_stall_gapped": false,
+  "random": false,
+  "td3bc_gapped": false
+ },
+ "finished": "2026-10-12T18:43:32+0000",
+ "host_critic_errors": {
+  "full": {
+   "far": 0.06162692321687313,
+   "removed": 0.12738867818170707
+  },
+  "gapped": {
+   "far": 0.051296784384994965,
+   "removed": 0.22976502498365292
+  },
+  "ratio_far": 0.8323762035705552,
+  "ratio_removed": 1.8036534193087108
+ },
+ "kind": "shift-harm_return_seed",
+ "machine": "vm",
+ "prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+ "preset": "real",
+ "rep": 0,
+ "seconds": 2278.701846004995,
+ "situations": {
+  "big_kicks": {
+   "attribution": {
+    "loss_rate_other": -0.016317437120872486,
+    "loss_rate_past_80": 0.6667166277960038,
+    "max_sum_error": 6.821210263296962e-13,
+    "starts": 200,
+    "steps_other": 16774,
+    "steps_past_80": 3226,
+    "sum_loss_other": -273.7086902655151,
+    "sum_loss_past_80": 2150.8278412699083
+   },
+   "harm": 10.688134640739818,
+   "harm_minus_no_stall_harm": 11.042944278362938,
+   "host_swap_harm": 14.254261227830163,
+   "loss_from_unrecorded_throttle": {
+    "clone": 11.468401172389886,
+    "full": 21.722382014189474,
+    "gapped": 41.020134557346935,
+    "host_swap_full": 21.05859493366728,
+    "host_swap_gapped": 41.14204041162433,
+    "no_stall_clone": -4.545971648402989,
+    "no_stall_full": -10.404962368866574,
+    "no_stall_gapped": -10.360421188652289,
+    "random": 22.995122647993295,
+    "td3bc_gapped": 45.229240204156014
+   },
+   "no_stall_harm": -0.35480963762312,
+   "points": {
+    "clone": -9.169153258935024,
+    "full": 62.780099171552536,
+    "gapped": 52.09196453081272,
+    "host_swap_full": 66.27376937774854,
+    "host_swap_gapped": 52.01950814991837,
+    "no_stall_clone": 6.706919816386004,
+    "no_stall_full": 90.61687041465154,
+    "no_stall_gapped": 90.97168005227466,
+    "random": 61.11384222408042,
+    "td3bc_gapped": 48.68993674234005
+   },
+   "random_harm": 1.6662569474721138,
+   "specific": 9.021877693267705,
+   "td3bc_minus_cloning": 57.85909000127508,
+   "unrecorded_throttle_share": {
+    "clone": 0.07716,
+    "full": 0.11495,
+    "gapped": 0.16017,
+    "host_swap_full": 0.11183,
+    "host_swap_gapped": 0.15595,
+    "no_stall_clone": 0.06712,
+    "no_stall_full": 0.1077,
+    "no_stall_gapped": 0.10691,
+    "random": 0.11552,
+    "td3bc_gapped": 0.16572
+   }
+  },
+  "big_waves": {
+   "attribution": {
+    "loss_rate_other": -0.002319954393645262,
+    "loss_rate_past_80": 0.711376157235805,
+    "max_sum_error": 7.815970093361102e-14,
+    "starts": 200,
+    "steps_other": 16426,
+    "steps_past_80": 3574,
+    "sum_loss_other": -38.10757087001708,
+    "sum_loss_past_80": 2542.4583859607674
+   },
+   "harm": 18.408183011936387,
+   "harm_minus_no_stall_harm": 18.00162433793807,
+   "host_swap_harm": 18.96575941673133,
+   "loss_from_unrecorded_throttle": {
+    "clone": 1.7078418790481182,
+    "full": 1.5007493053205516,
+    "gapped": 23.82807895850746,
+    "host_swap_full": 1.520328999629421,
+    "host_swap_gapped": 23.509364273239285,
+    "no_stall_clone": -0.4115751708070924,
+    "no_stall_full": -3.1769286204814904,
+    "no_stall_gapped": -3.9578944582600717,
+    "random": 1.2084665997087782,
+    "td3bc_gapped": 22.115125000663387
+   },
+   "no_stall_harm": 0.4065586739983189,
+   "points": {
+    "clone": 39.85571806486163,
+    "full": 86.5323839641174,
+    "gapped": 68.12420095218101,
+    "host_swap_full": 89.30866271928099,
+    "host_swap_gapped": 70.34290330254966,
+    "no_stall_clone": 13.439584188195301,
+    "no_stall_full": 87.23423655775422,
+    "no_stall_gapped": 86.8276778837559,
+    "random": 84.14235488930883,
+    "td3bc_gapped": 72.414776529604
+   },
+   "random_harm": 2.3900290748085666,
+   "specific": 16.01815393712782,
+   "td3bc_minus_cloning": 32.55905846474237,
+   "unrecorded_throttle_share": {
+    "clone": 0.02675,
+    "full": 0.05271,
+    "gapped": 0.17501,
+    "host_swap_full": 0.06264,
+    "host_swap_gapped": 0.17325,
+    "no_stall_clone": 0.00873,
+    "no_stall_full": 0.12056,
+    "no_stall_gapped": 0.1322,
+    "random": 0.02982,
+    "td3bc_gapped": 0.16102
+   }
+  },
+  "recorded": {
+   "attribution": {
+    "loss_rate_other": -0.010742335975487825,
+    "loss_rate_past_80": 0.7325981265727122,
+    "max_sum_error": 7.283063041541027e-14,
+    "starts": 200,
+    "steps_other": 18971,
+    "steps_past_80": 1029,
+    "sum_loss_other": -203.79285579097953,
+    "sum_loss_past_80": 753.8434722433208
+   },
+   "harm": 5.6989500158750985,
+   "harm_minus_no_stall_harm": 6.646650521850987,
+   "host_swap_harm": 5.924556640199995,
+   "loss_from_unrecorded_throttle": {
+    "clone": 0.11946890192371405,
+    "full": 0.8264412713906026,
+    "gapped": 9.329914022174835,
+    "host_swap_full": 0.7774331679949804,
+    "host_swap_gapped": 7.855652626881666,
+    "no_stall_clone": -0.05750629746930794,
+    "no_stall_full": -0.7772586995872849,
+    "no_stall_gapped": -0.7975913306176008,
+    "random": 0.8325962425524457,
+    "td3bc_gapped": 9.079093929004765
+   },
+   "no_stall_harm": -0.9477005059758881,
+   "points": {
+    "clone": 51.52931462107055,
+    "full": 89.85927296988547,
+    "gapped": 84.16032295401037,
+    "host_swap_full": 92.2198133695309,
+    "host_swap_gapped": 86.2952567293309,
+    "no_stall_clone": 47.867953736980795,
+    "no_stall_full": 92.17213824456165,
+    "no_stall_gapped": 93.11983875053754,
+    "random": 89.96330838804072,
+    "td3bc_gapped": 85.33161789323121
+   },
+   "random_harm": -0.10403541815524875,
+   "specific": 5.802985434030347,
+   "td3bc_minus_cloning": 33.802303272160664,
+   "unrecorded_throttle_share": {
+    "clone": 0.00204,
+    "full": 0.01721,
+    "gapped": 0.04914,
+    "host_swap_full": 0.01519,
+    "host_swap_gapped": 0.04159,
+    "no_stall_clone": 0.00169,
+    "no_stall_full": 0.0259,
+    "no_stall_gapped": 0.02494,
+    "random": 0.01402,
+    "td3bc_gapped": 0.04782
+   }
+  },
+  "strong_current": {
+   "attribution": {
+    "loss_rate_other": -0.020584153391513666,
+    "loss_rate_past_80": 1.8954685709417791,
+    "max_sum_error": 5.400124791776761e-13,
+    "starts": 1000,
+    "steps_other": 24312,
+    "steps_past_80": 75688,
+    "sum_loss_other": -500.44193725448025,
+    "sum_loss_past_80": 143464.22519744138
+   },
+   "harm": 95.21431311176505,
+   "harm_minus_no_stall_harm": 95.92618666801724,
+   "host_swap_harm": 87.30615475556222,
+   "loss_from_unrecorded_throttle": {
+    "clone": 4.114437852873486,
+    "full": 14.328816842951786,
+    "gapped": 115.03360478299918,
+    "host_swap_full": 15.53074578629845,
+    "host_swap_gapped": 105.45451991952231,
+    "no_stall_clone": -9.02605973276668,
+    "no_stall_full": -37.24065088452495,
+    "no_stall_gapped": -36.40521379132653,
+    "random": 15.94105744377726,
+    "td3bc_gapped": 123.68681724410594
+   },
+   "no_stall_harm": -0.7118735562521863,
+   "points": {
+    "clone": 51.53776258584157,
+    "full": 82.213734457772,
+    "gapped": -13.000578653993045,
+    "host_swap_full": 83.4583060420829,
+    "host_swap_gapped": -3.8478487134793276,
+    "no_stall_clone": -48.08140830443263,
+    "no_stall_full": 95.38771567071619,
+    "no_stall_gapped": 96.09958922696838,
+    "random": 78.74702309088669,
+    "td3bc_gapped": -22.465141395212324
+   },
+   "random_harm": 3.4667113668853204,
+   "specific": 91.74760174487973,
+   "td3bc_minus_cloning": -74.00290398105389,
+   "unrecorded_throttle_share": {
+    "clone": 0.07727,
+    "full": 0.53432,
+    "gapped": 0.75688,
+    "host_swap_full": 0.57547,
+    "host_swap_gapped": 0.66455,
+    "no_stall_clone": 0.18325,
+    "no_stall_full": 0.64729,
+    "no_stall_gapped": 0.59934,
+    "random": 0.55301,
+    "td3bc_gapped": 0.73017
+   }
+  }
+ },
+ "software": {
+  "flags": {
+   "JAX_DEFAULT_MATMUL_PRECISION": null,
+   "JAX_ENABLE_X64": null,
+   "JAX_PLATFORMS": "cpu",
+   "OMP_NUM_THREADS": "1",
+   "XLA_FLAGS": null
+  },
+  "jax_backend": "cpu",
+  "jax_float64_enabled": false,
+  "packages": {
+   "flax": "0.10.7",
+   "gymnasium": "1.0.0",
+   "h5py": "3.16.0",
+   "jax": "0.6.2",
+   "jaxlib": "0.6.2",
+   "numpy": "2.2.6",
+   "optax": "0.2.8",
+   "scipy": "1.15.3"
+  },
+  "python": "3.10.20"
+ },
+ "stage": "harm_return_seed",
+ "variant": "base"
+}

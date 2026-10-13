@@ -1,0 +1,200 @@
+{
+ "finished": "2026-10-12T16:01:17+0000",
+ "kind": "shift-critic",
+ "machine": "vm",
+ "prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+ "preset": "real",
+ "result": {
+  "args": {
+   "algorithm": "corl_td3_bc",
+   "allow_off_config": false,
+   "alpha": 2.5,
+   "batch_size": 256,
+   "dataset": "bca-shift-thrusterchain",
+   "discount": 0.98,
+   "eval_final_episodes": 1000,
+   "eval_interval": 5000,
+   "eval_workers": 10,
+   "log": false,
+   "lr": 0.0003,
+   "noise_clip": 0.5,
+   "normalize": true,
+   "normalize_reward": false,
+   "num_updates": 100000,
+   "policy_freq": 2,
+   "policy_noise": 0.2,
+   "reward_bias": -5.0,
+   "reward_scale": 10.0,
+   "reward_transform": "rebrac_x100",
+   "seed": 440981267,
+   "tau": 0.005,
+   "wandb_group": "debug",
+   "wandb_project": "unifloral",
+   "wandb_team": "flair"
+  },
+  "chunks": [
+   {
+    "critic_loss": 0.047757431864738464,
+    "update": 5000
+   },
+   {
+    "critic_loss": 0.0634797140955925,
+    "update": 10000
+   },
+   {
+    "critic_loss": 0.06721967458724976,
+    "update": 15000
+   },
+   {
+    "critic_loss": 0.0664578229188919,
+    "update": 20000
+   },
+   {
+    "critic_loss": 0.06300786882638931,
+    "update": 25000
+   },
+   {
+    "critic_loss": 0.06146865338087082,
+    "update": 30000
+   },
+   {
+    "critic_loss": 0.05993328243494034,
+    "update": 35000
+   },
+   {
+    "critic_loss": 0.05880267918109894,
+    "update": 40000
+   },
+   {
+    "critic_loss": 0.05845235660672188,
+    "update": 45000
+   },
+   {
+    "critic_loss": 0.05894157662987709,
+    "update": 50000
+   },
+   {
+    "critic_loss": 0.0567874014377594,
+    "update": 55000
+   },
+   {
+    "critic_loss": 0.05751119554042816,
+    "update": 60000
+   },
+   {
+    "critic_loss": 0.055810149759054184,
+    "update": 65000
+   },
+   {
+    "critic_loss": 0.05647936463356018,
+    "update": 70000
+   },
+   {
+    "critic_loss": 0.05577592924237251,
+    "update": 75000
+   },
+   {
+    "critic_loss": 0.055994171649217606,
+    "update": 80000
+   },
+   {
+    "critic_loss": 0.05467132106423378,
+    "update": 85000
+   },
+   {
+    "critic_loss": 0.054089415818452835,
+    "update": 90000
+   },
+   {
+    "critic_loss": 0.054370563477277756,
+    "update": 95000
+   },
+   {
+    "critic_loss": 0.053901951760053635,
+    "update": 100000
+   }
+  ],
+  "controller": "stall_aware",
+  "critic_sha256": "15bdd355c33b7a9e53fa6ac6642cdd51b473a07f4679339ae3657f41fdffaa4d",
+  "data": {
+   "bank_rows": 850,
+   "eval_states": 5000,
+   "obs_mean": [
+    -0.08343436568975449,
+    0.03370310366153717,
+    0.02929205261170864,
+    -0.002976963995024562,
+    -0.09127587080001831,
+    0.029832107946276665,
+    -0.014218459837138653,
+    0.007322865072637796,
+    -0.07333631068468094,
+    0.037748683243989944,
+    0.3730104863643646,
+    -0.03036588616669178,
+    0.0012416912941262126
+   ],
+   "obs_std": [
+    0.22708924114704132,
+    0.25375333428382874,
+    0.23240885138511658,
+    0.2634330093860626,
+    0.22215473651885986,
+    0.23658089339733124,
+    0.22793544828891754,
+    0.2365434169769287,
+    0.1925009787082672,
+    0.1936473548412323,
+    0.17165440320968628,
+    0.1845434606075287,
+    0.1917862743139267
+   ],
+   "removal": "gap",
+   "rep": 0,
+   "rows": 42500,
+   "sha256": {
+    "bank": "b60952bf5a91a1be6666aead05252775758cfc8fa08252685c1d0cb2dafa86f7",
+    "bank_rows": "6861c8f51fb4674fd302f7cc931018ef36b73473eb1c878c1ff1918cb2356c93",
+    "eval_rows": "154be5f309089bac70ac729f9950e9864a934764401c072c790ba4fc00012a6f",
+    "normalization": "6f56435e796007628888601f13ffb92920e1e474068032690ca15c771b16f312",
+    "rows": "a936ad359dee06ac77426f38bd582739ebac782954a0cdfe56fe794971e28a08",
+    "train": "814e99857b30a08cc3ca6ba2fbf04b9b98f4139b7055c7e43d7ff57d17747ae4"
+   },
+   "world": "no_stall"
+  },
+  "failed": false,
+  "file_sha256": "b36c9e0030228273fa9f90e113311760ebd4936a44b0cc2d803c91a6751d07a9",
+  "final_update": 100000,
+  "initial_sha256": "9801dec1852ea2108be553cc27153a0e2c4ab47bfa8c16bdbfedc34df7789c8c",
+  "kind": "shift-fixed-critic",
+  "label": "stall-aware controller",
+  "placebo": false,
+  "rep": 0,
+  "seconds": 376.3771035469981,
+  "updates": 100000
+ },
+ "seconds": 376.42000293200545,
+ "software": {
+  "flags": {
+   "JAX_DEFAULT_MATMUL_PRECISION": null,
+   "JAX_ENABLE_X64": null,
+   "JAX_PLATFORMS": "cpu",
+   "OMP_NUM_THREADS": "1",
+   "XLA_FLAGS": null
+  },
+  "jax_backend": "cpu",
+  "jax_float64_enabled": false,
+  "packages": {
+   "flax": "0.10.7",
+   "gymnasium": "1.0.0",
+   "h5py": "3.16.0",
+   "jax": "0.6.2",
+   "jaxlib": "0.6.2",
+   "numpy": "2.2.6",
+   "optax": "0.2.8",
+   "scipy": "1.15.3"
+  },
+  "python": "3.10.20"
+ },
+ "stage": "critic"
+}
