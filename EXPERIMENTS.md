@@ -473,6 +473,21 @@ Last updated: 2026-10-14.
     from weighting for the actor's commands, which here acts as a calibrated support check: it refuses where
     the recorded commands never go and certifies elsewhere, with no knee or threshold given to it.
   - Write-up: `outputs/shift_iw/explore/channel/RESULTS_fallback_rerun.md`.
+- **Estimated instead of exact weights (2026-10-14; the user's go: "Proceed with all three").** The pass marks
+  were frozen first (`PASSMARKS_estimated_weights.md`, SHA-256 `4560769a…`).
+  - **Weights:** the current-law part is version 5's logistic-regression estimate. The command part is a
+    classifier separating recorded commands from the actor's command plus its spread, refitted every 4,000 steps.
+  - **Refusal:** "no value credit" applies where the estimated odds exceed those of every recorded command, or the
+    command is in the removed ball. Nothing exact about the recording process or the laws is used.
+  - **Expert: V1, V2 and X1–X3 met; X4 missed.** +29.4 return units under the strong shift (lower bound 25.8,
+    2.3 points, every seed +25 to +35), against +0.9 for an untargeted control. That is 40% of the exact
+    weights' gain (the bar was half).
+  - **Medium-expert: V1 and X3 met; V2, X1, X2 and X4 missed.** +1.5 (lower bound +0.2). The estimated rule finds
+    only 5% of the past-80% commands the exact rule refuses, because those depend on the episode's random share,
+    which the classifier cannot see.
+  - **Meaning:** the estimated band stays valid (coverage held on both). The return gain depends on estimating
+    where the data lack a command, which is easy on clean expert data and hard on mixed data.
+  - Write-up: `outputs/shift_iw/explore/channel/RESULTS_estimated_weights.md`.
 
 ## Decisions waiting on the user
 1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
@@ -488,7 +503,9 @@ Last updated: 2026-10-14.
    decide: the claim wanted ("flags reliance on unsupported commands" is testable now; "identifies the harm" needs a
    test bed whose data carry a trace of it). Stage 2 (BCA) needs typed approval.
 10. Known-shift weighting (entry 17): the return gain is shown (rerun, U1–U4 met on medium-expert and expert).
-   Open: estimated instead of exact weights; whether to fold the result into the ThrusterChain page; commits.
+   With estimated weights the gain holds on expert (+2.3 points) and vanishes on medium-expert. In progress:
+   learning curves for all five qualities × three test conditions (the user's request), and the ThrusterChain
+   page.
 
 ## Deliverables
 - **Notebooks:**
@@ -576,3 +593,8 @@ Last updated: 2026-10-14.
   ratio), version 5's capped threshold where the bank is merely too small. The rerun met U1–U4 on both
   qualities: +25.0 return units (medium-expert) and +74.2 (expert) under the strong shift, with every seed
   positive, no gain for an untargeted control of the same size, and no cost without the shift.
+  With estimated weights (pass marks frozen first): expert keeps a gain of +29.4 return units (2.3 points) under
+  the strong shift, 40% of the exact weights' gain; medium-expert's gain vanishes (+1.5), because the classifier
+  cannot see which episodes contain random commands. The user then asked for learning curves for every setup;
+  every curve reruns the original training with checkpoints and checks it against the saved final actor.
+  Version 5's runs reproduce only when pinned to one CPU, as they were trained.
