@@ -1,0 +1,396 @@
+{
+ "label": "EXPLORATORY, designed after seeing seeds 0-4; written before any step-1 critic is trained. Restructured BCA, step 1 (the decisive test). Outside the gate; changes no pre-registered rule and no v6/v7 file.",
+ "version": 1,
+ "approval": "User approval of 14 Oct 2026, verbatim: 'Train 10 fixed-controller critics (seeds 0-4, both worlds) on the gapped log without its surviving full-throttle rows, using the exact gate protocol (about 70 CPU-minutes). Then, read-only, recompute the certificate, the height and the deployment check from those rows' held-out residuals. Go/no-go, fixed now: the certificate is on in 5 of 5 stalling-world seeds and off in 5 of 5 no-stall seeds; the deployment net is at least 90; with outcomes shuffled, the net is at most half of that; the plain rank test is reported beside it. If any fails, BCA's own machinery cannot carry this in ThrusterChain; report BCA as no better than a range limit here and move the claim to a mixed world.' Nothing beyond this is approved (no actor training, no policy test, no band fit other than BCA's posterior on the residuals).",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "worlds": [
+  "stall",
+  "no_stall"
+ ],
+ "gate": {
+  "prereg_path": "runs/shift/preregistration.json",
+  "prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "variant": "base",
+  "data_loader": "experiments.shift.acceptance.load_seed(p.runs, p.config, variant, world, seed).prepared('gap', p.config.learn): regenerates the log and checks it, its gap and removals against the gate's data record",
+  "gate_critic_dir": "runs/shift/68d9e8779e148b7b/critics/base/<world>/stall_aware_gap/seed<k> (critic.msgpack, record.json)",
+  "what_the_gate_critic_trained_on": "the gapped training rows only: training-split episodes 0-499 (infos/split == 0) minus the gate's gap removal (42,500 rows per seed and world, the surviving full-throttle rows included), normalised with the mean and std (+0.001) of those rows' float32 observations. Never the calibration split (episodes 500-699, which holds the calibration bank: 5 rows per episode, minus the gap-removed bank rows, 827-851 rows) and never the evaluation split (episodes 700-999)."
+ },
+ "data": {
+  "training_rows": "the gate's gapped kept training rows of that seed and world (pg.rows) minus the survivors (groups.survivors). Built as shift.Removal('gap_minus_survivors', removed = gate removed OR survivor, bank_removed = gate's, gap = gate's) and learners.prepare(log, removal, sd.norm(), learn): the gate's normalisation (from the gapped kept rows, survivors included) is kept unchanged, so the critic sees inputs scaled exactly as the gate's critic did.",
+  "held_out_for_scoring": "survivors (training split, removed from this critic's training) and the calibration bank after the gap removal (pg.bank_rows, calibration split; never trained on by the gate's critic or the step-1 critic)",
+  "train_checks": [
+   "rows = gapped rows - survivors",
+   "no survivor among the training rows",
+   "bank rows unchanged",
+   "normalisation unchanged",
+   "evaluation rows unchanged",
+   "initial critic parameters equal the gate critic's (same seed)",
+   "learner arguments equal the gate critic's"
+  ]
+ },
+ "groups": {
+  "throttle_index": "t(a) = max over the four thrusters of |a_k|, float64 of the stored float32 command",
+  "gap_rule": {
+   "applied_to": "the commands of the gate's gapped kept training rows (pg.actions) of that seed and world; commands only, no outcome",
+   "upper_quantile": 0.99,
+   "quantile_method": "numpy default (linear)",
+   "rows_considered": "t strictly above the 99th percentile, sorted ascending",
+   "gap": "largest difference between consecutive sorted values; ties: the first (lowest) such pair",
+   "t_lo": "lower end of the gap",
+   "t_up": "upper end of the gap",
+   "min_gap": 0.05,
+   "min_tail": 9,
+   "defined_if": "t_up - t_lo >= 0.05 and at least 9 rows have t >= t_up",
+   "if_not_defined": "no full-throttle group: the certificate is off for that seed-world"
+  },
+  "full_throttle_group": "every held-out row with t > t_lo: the survivors plus the bank rows with t > t_lo",
+  "rest_group": "the bank rows with t <= t_lo",
+  "survivors": "the gapped kept training rows with t > t_lo (equivalently t >= t_up): 28-59 rows, all removed from step-1 training",
+  "expected_from_design": {
+   "stall/seed0": {
+    "t_lo": 0.7860120534896851,
+    "t_up": 0.9953150153160095,
+    "n_survivors": 34
+   },
+   "stall/seed1": {
+    "t_lo": 0.7868145704269409,
+    "t_up": 0.9874332547187805,
+    "n_survivors": 45
+   },
+   "stall/seed2": {
+    "t_lo": 0.791365921497345,
+    "t_up": 0.9765923619270325,
+    "n_survivors": 59
+   },
+   "stall/seed3": {
+    "t_lo": 0.790999710559845,
+    "t_up": 0.987615704536438,
+    "n_survivors": 42
+   },
+   "stall/seed4": {
+    "t_lo": 0.7870776057243347,
+    "t_up": 0.989324688911438,
+    "n_survivors": 45
+   },
+   "no_stall/seed0": {
+    "t_lo": 0.786250650882721,
+    "t_up": 0.9953150153160095,
+    "n_survivors": 37
+   },
+   "no_stall/seed1": {
+    "t_lo": 0.7842978239059448,
+    "t_up": 0.9874332547187805,
+    "n_survivors": 34
+   },
+   "no_stall/seed2": {
+    "t_lo": 0.7829492688179016,
+    "t_up": 0.9765923619270325,
+    "n_survivors": 52
+   },
+   "no_stall/seed3": {
+    "t_lo": 0.7839611172676086,
+    "t_up": 0.987615704536438,
+    "n_survivors": 28
+   },
+   "no_stall/seed4": {
+    "t_lo": 0.7853926420211792,
+    "t_up": 0.9934806227684021,
+    "n_survivors": 58
+   }
+  },
+  "both_groups_held_out": true,
+  "asymmetry_flag": "The survivors come from training episodes (their neighbouring steps stay in training); the rest group comes from calibration episodes that no critic trained on. One critic per seed-world cannot hold out a comparison group from training episodes without removing further rows, which the approval does not cover. The bank is BCA's own calibration bank, fully held out, and is used as approved. The no-stall world, where the survivors' outcomes are ordinary, is the control for this asymmetry: an artefact that inflated the full-throttle group's overestimate would switch the certificate on there and fail condition 1."
+ },
+ "training": {
+  "call": "experiments.shift.learners.fixed_critic(prepared_minus_survivors, 'stall_aware', p.config.learn, seed, placebo=False, updates=None, out_dir=<critic dir>, log=print)",
+  "same_as_gate": "acceptance.get_critic(p, sd, 'gap', 'stall_aware') calls learners.fixed_critic(sd.prepared('gap', learn), 'stall_aware', learn, seed, placebo=False, out_dir=d); step 1 changes only the prepared rows",
+  "controller": "stall_aware",
+  "controller_definition": "c(o) = clip(-K x, -0.8, 0.8), x = o * std + mean, K = recorder.textbook_gain(physics)",
+  "updates": 100000,
+  "batch_size": 256,
+  "gamma": 0.98,
+  "tau": 0.005,
+  "lr": 0.0003,
+  "policy_noise": 0.2,
+  "noise_clip": 0.5,
+  "policy_freq": 2,
+  "seed_rule": "td3_bc.Args.seed = default_rng([20261015, seed, TAG_INIT]).integers(2**31 - 1), as the gate; critic initialised from fold_in(PRNGKey(args.seed), KEY_TD3_INIT); batch rows randint(0, n_rows) from the run's own stream (n_rows is smaller by the survivors, so the row stream differs from the gate's; this is inherent in removing rows)",
+  "critic_target": "y = r + 0.98 (1 - d) min_h Q_target_h(o', clip(c(o') + clip(N(0, 0.2^2), -0.5, 0.5), -1, 1)); loss = sum over the two heads of mean (Q_h(o, a) - y)^2; soft target update tau 0.005",
+  "environment": {
+   "OMP_NUM_THREADS": "1",
+   "JAX_PLATFORMS": "cpu",
+   "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "pinning": "each training pinned to one CPU with taskset (the gate's numbers depend on the thread count; one CPU reproduces them)",
+  "out_dir": "runs/shift_explore/restructure/step1/critics/<world>/seed<k>/ (critic.msgpack, record.json, record.json.sha256), write-once",
+  "failed_or_missing": "a critic whose training goes non-finite (learners.fixed_critic failed=True) or that is missing is reported and NOT replaced; its seed-world then cannot satisfy condition 1, so the verdict is NO-GO. A run interrupted before writing anything may be rerun (the computation is deterministic).",
+  "preflight": "before any update is run, train_critics.py refuses unless learners.make_args(learn, seed) equals the gate critic's recorded learner arguments (the initial parameters follow from args.seed and are compared again after training)"
+ },
+ "scores": {
+  "definition": "s = min_h Q_h(o, a) - [r + gamma (1 - d) min_h Q_h(o', c(o'))]: the one-sided overestimate, value units, positive when the critic predicted more than the one-step outcome. s = -delta, delta the TD residual.",
+  "critic_params": "the step-1 critic's saved online parameters (critic.msgpack), both ends of the residual",
+  "heads": "min of the two heads at (o, a) and at (o', c(o'))",
+  "gamma": 0.98,
+  "done": "log terminals (all False in ThrusterChain)",
+  "next_action": "c(o') of the stall-aware controller, noiseless (as in the calibration design, e3_delta.py)",
+  "inputs": "normalised float32 observations (gate normalisation), float32 commands, float32 rewards; evaluated with learners.critic_rows (float64 out)"
+ },
+ "certificate": {
+  "posterior": "calibration.wbcp.calibrate (BCA's own WBCP), uniform weights, run separately on the full-throttle group and on the rest",
+  "alpha": 0.1,
+  "credibility": 0.95,
+  "draws": 1000,
+  "rng_tags": "full-throttle group default_rng([20261015, 9700, seed, w, 1]); rest default_rng([20261015, 9700, seed, w, 2]); w = 1 stalling world, 2 no-stall world",
+  "statistic": "q05 = the 5% quantile (numpy 'inverted_cdf') of the posterior gap lambda_tail_i - lambda_rest_j over all 1,000 x 1,000 pairs of the two posteriors' per-draw alpha-crossings (Calibration.crossings); +inf - finite = +inf, finite - inf = -inf, inf - inf = -inf",
+  "statistic_quantile": 0.05,
+  "margin": 0.1,
+  "margin_units": "value units (the critic's own units; the score needs no rescaling because the WBCP crossings are order statistics)",
+  "on_if": "q05 > 0.10",
+  "change_from_design": "The calibration design (e11) compared the full-throttle posterior with the rest's plain 90% quantile at margin 0. Step 1 uses BCA's posterior on BOTH groups (as the design text says) and a margin of 0.10; both changes make the certificate stricter. The e11 form is reported beside it for information.",
+  "seen_in_sample_e11_form": {
+   "stall/seed0": {
+    "q05": 0.29011345624923557,
+    "q50": 0.6431297469139086
+   },
+   "stall/seed1": {
+    "q05": 0.4595939111709591,
+    "q50": 0.7811152744293217
+   },
+   "stall/seed2": {
+    "q05": 0.36432358026504374,
+    "q50": 0.4335495805740343
+   },
+   "stall/seed3": {
+    "q05": 0.2801442956924429,
+    "q50": 0.5896986222267149
+   },
+   "stall/seed4": {
+    "q05": 0.4317020988464364,
+    "q50": 0.5067610168457044
+   },
+   "no_stall/seed0": {
+    "q05": -0.020324068069456306,
+    "q50": 0.020983865261078094
+   },
+   "no_stall/seed1": {
+    "q05": -0.01905747652053868,
+    "q50": 0.012964885234831417
+   },
+   "no_stall/seed2": {
+    "q05": -0.015413689613341212,
+    "q50": 0.025161008834837514
+   },
+   "no_stall/seed3": {
+    "q05": -0.028678040504455996,
+    "q50": -0.005815060138704807
+   },
+   "no_stall/seed4": {
+    "q05": -0.01980339527129971,
+    "q50": 0.0027782869338999257
+   }
+  },
+  "seen_in_sample_summary": "In-sample (the gate's critic trained on the survivors), e11 form: 5% bound +0.28 to +0.46 in the stalling world, -0.015 to -0.029 in the no-stall world; posterior median up to +0.025 in the no-stall world. Same data, step-1 statistic (both posteriors): stalling +0.28 to +0.46 against the training bulk, +0.26 to +0.44 against the held-out bank; no-stall -0.016 to -0.028 and -0.040 to -0.058, medians up to +0.025 and +0.003.",
+  "seen_held_out_testbed": "Trace test bed dumps (seeds 0-2; the gate's gapped critic, held-out REMOVED full-throttle rows, 20 random draws of k = 10, 30, 45 rows against the bank rows below 0.79): 5% bound in the stalling world 0.115 to 2.63 (k = 10), 0.42 to 1.55 (k = 30-45); no-stall -0.13 to +0.067. Computed while writing this spec from scratchpad/restructure/testbed/heldout_seed*_*.npz.",
+  "margin_rule": "0.10 is above every no-stall value of the statistic or its posterior median seen anywhere in the design (largest +0.067) and below every stalling value (smallest +0.115); in-sample it is 4 times the largest no-stall posterior median (+0.025) and about a third of the smallest stalling 5% bound (+0.26).",
+  "height": "R_tail - R_rest, R = wbcp threshold max(lambda_hat, lambda_hpd) of each group (value units); +inf when the full-throttle group cannot be certified. Reported; the height is not part of the go/no-go and is not used by the deployment check (it would set the training penalty in step 2, which is not approved)."
+ },
+ "deployment": {
+  "actor": "the saved no-caution actor 'none' of the v6 Stage 2 policy test, read-only: runs/shift_explore/stage2/policy/seed<k>/actors.msgpack (stalling world) and runs/shift_explore/stage2/policy/seed<k>/no_stall/actors.msgpack (no-stall world); lock.json's actors_file_sha256 and actor_sha256['none'] checked",
+  "policy": "learners.mlp_policy(actor, gate gapped prepared data): the network in float64 on float32-rounded observations, gate normalisation",
+  "situations": [
+   "strong_current",
+   "recorded"
+  ],
+  "starts": "thruster_chain.bank_starts(situation, 1000)[:200]",
+  "horizon": "physics.length = 100 steps; J = sum of rewards; points = truth.points(J, anchor), anchors = acceptance.anchors_of(p, 'base', world)[situation]; mean over the 200 starts",
+  "rule": "when the certificate is on: each step, a = clip(pi(x), -1, 1); if max_k |a_k| > t_lo (that seed-world's gap rule) the command is clipped to the recorded range, else executed. When off: never fires (points = no check).",
+  "recorded_range": "per thruster, the 0.5% and 99.5% quantiles (numpy linear) of the gapped kept training commands pg.actions (Stage 2's fallback)",
+  "random_switching": "reported: fire with probability equal to the check's own fire share (fired (start, step) pairs / all), coin default_rng([20261014, seed, wi, si, 993]), wi 0 stall / 1 no-stall, si 0 strong current / 1 recorded; the same fallback",
+  "net_across_worlds": "NET = mean over seeds 0-4 of [stall, strong current: points with the check - points without] minus mean over seeds 0-4 of [no-stall, strong current: points without the check - points with it]. The check's points equal the no-check points wherever the certificate is off.",
+  "always_computed": "both the 'on' and the 'never' rollouts are computed for every seed-world and situation (they do not depend on any critic), so the shuffle control and the forced-on comparator reuse them",
+  "seen_design_values": {
+   "stall/seed0/strong_current": {
+    "never": -13.646482434566705,
+    "on": 91.48979935569308,
+    "random_at_rate": 70.21869530412965,
+    "fire_share": 0.7295
+   },
+   "no_stall/seed0/strong_current": {
+    "never": 96.30729831423376,
+    "on": 33.78152765026263,
+    "fire_share": 0.72505
+   },
+   "stall/seed0/recorded": {
+    "never": 84.48144420813516,
+    "on": 92.58666400011217,
+    "random_at_rate": 85.41523550596031,
+    "fire_share": 0.0418
+   },
+   "no_stall/seed0/recorded": {
+    "never": 93.10326106447903,
+    "on": 91.14458264028923,
+    "fire_share": 0.05005
+   },
+   "stall/seed1/strong_current": {
+    "never": -21.760807310980326,
+    "on": 91.37263576641936,
+    "random_at_rate": 69.85890016101352,
+    "fire_share": 0.74595
+   },
+   "no_stall/seed1/strong_current": {
+    "never": 94.25940268292375,
+    "on": 34.65583257790171,
+    "fire_share": 0.7549499999999999
+   },
+   "stall/seed1/recorded": {
+    "never": 86.57694149367035,
+    "on": 94.04112517925667,
+    "random_at_rate": 87.15919213259961,
+    "fire_share": 0.0322
+   },
+   "no_stall/seed1/recorded": {
+    "never": 93.59471491899647,
+    "on": 91.72552392601257,
+    "fire_share": 0.03665
+   },
+   "stall/seed2/strong_current": {
+    "never": -13.670845244535087,
+    "on": 92.51065288766256,
+    "random_at_rate": 72.00513772780127,
+    "fire_share": 0.7307
+   },
+   "no_stall/seed2/strong_current": {
+    "never": 95.24523408220757,
+    "on": 33.11486257954896,
+    "fire_share": 0.7579499999999999
+   },
+   "stall/seed2/recorded": {
+    "never": 85.47863929216842,
+    "on": 93.11545390486752,
+    "random_at_rate": 86.17938990092676,
+    "fire_share": 0.0445
+   },
+   "no_stall/seed2/recorded": {
+    "never": 93.62796700726518,
+    "on": 91.83163456210376,
+    "fire_share": 0.05274999999999999
+   },
+   "stall/seed3/strong_current": {
+    "never": -14.34497318062875,
+    "on": 90.82258315405561,
+    "random_at_rate": 66.3207587368014,
+    "fire_share": 0.6849
+   },
+   "no_stall/seed3/strong_current": {
+    "never": 95.17537066013767,
+    "on": 27.53600255828545,
+    "fire_share": 0.7701499999999999
+   },
+   "stall/seed3/recorded": {
+    "never": 88.30599699253449,
+    "on": 93.58951029364982,
+    "random_at_rate": 88.48382420982075,
+    "fire_share": 0.0394
+   },
+   "no_stall/seed3/recorded": {
+    "never": 93.2267134041425,
+    "on": 91.11387284440144,
+    "fire_share": 0.05620000000000001
+   },
+   "stall/seed4/strong_current": {
+    "never": -11.354587634047448,
+    "on": 89.37319955373016,
+    "random_at_rate": 66.25759712571988,
+    "fire_share": 0.7018
+   },
+   "no_stall/seed4/strong_current": {
+    "never": 94.59282446235927,
+    "on": 37.935447950616116,
+    "fire_share": 0.6825500000000001
+   },
+   "stall/seed4/recorded": {
+    "never": 84.90950423405792,
+    "on": 92.1427191027754,
+    "random_at_rate": 85.37388384508643,
+    "fire_share": 0.03995
+   },
+   "no_stall/seed4/recorded": {
+    "never": 93.78297210383853,
+    "on": 92.07359913656022,
+    "fire_share": 0.04480000000000001
+   }
+  },
+  "seen_design_net": 106.06931330446382,
+  "reproduction_check": "evaluate.py refuses unless its rollouts reproduce these design values (|difference| <= 1e-9 points)"
+ },
+ "shuffle": {
+  "what": "outcomes: within each seed-world, the held-out overestimates of the two groups are pooled and randomly re-assigned to the groups (group sizes and commands fixed), which breaks any link between the command group and the outcome",
+  "permutations": 200,
+  "rng_tags": "permutation j (0..199): default_rng([20261015, 9800, seed, w, j + 1]).permutation(n_tail + n_rest); first n_tail scores = full-throttle group",
+  "posterior_rng": "the same tags as the real certificate (common random numbers)",
+  "statistic": "the shuffled net of permutation j uses every seed-world's shuffled certificate j; the go/no-go statistic is the MEAN shuffled net over the 200 permutations",
+  "condition": "mean shuffled net <= 0.5 x NET",
+  "also_reported": [
+   "95th percentile and maximum of the shuffled nets",
+   "share of permutations with shuffled net >= NET",
+   "per seed-world shuffled on-rate",
+   "per seed-world median shuffled height (information only; the design's own shuffled-height control, CAL/e4_tailband.json, gave 0.03-0.07)"
+  ]
+ },
+ "rank_test": {
+  "test": "scipy.stats.mannwhitneyu(full_throttle_scores, rest_scores, alternative='greater'), default method",
+  "direction": "one-sided: the full-throttle group's overestimates are stochastically larger than the rest's",
+  "same_scores": true,
+  "reported": "U, p and AUC per seed-world, beside the certificate; also which seed-worlds have p < 0.05 and the net if that were the switch (information only)",
+  "role": "condition 4 is that it is reported; its value does not decide go/no-go"
+ },
+ "go_no_go": {
+  "net_min": 90.0,
+  "shuffle_max_fraction": 0.5,
+  "conditions": [
+   "C1: the certificate is on in 5 of 5 stalling-world seeds and off in 5 of 5 no-stall seeds",
+   "C2: NET (deployment net across worlds, strong current, pooled mean over seeds 0-4) >= 90",
+   "C3: with outcomes shuffled, the mean shuffled net <= half of NET",
+   "C4: the plain rank test is reported beside the certificate (reporting only)"
+  ],
+  "go": "C1, C2 and C3 all hold (C4 is satisfied by reporting it)",
+  "meaning_go": "BCA's own residual posterior, fed held-out residuals, separates the worlds and carries the cross-world deployment gain on seeds 0-4. This is still exploratory (designed after seeing seeds 0-4); it licenses asking for step 2 (the policy pilot), not a claim. If the rank test gives the same yes/no, the claim stays 'BCA's residual score reads outcomes', not 'the Bayesian aggregation adds value'.",
+  "meaning_no_go": "BCA's own machinery cannot carry this in ThrusterChain. Report BCA as no better than a range limit here and move the claim to a mixed world (where the missing commands help in some states and harm in others). No retuning of the margin, the groups or the residual on these seeds.",
+  "c3_reading": "'half of that' is read as half of NET (the user's sentence follows 'the deployment net is at least 90'). The other reading, at most 45 (half of the 90-point bar), is stricter whenever C2 holds; it is reported beside C3 as information only and does not decide."
+ },
+ "information_only": [
+  "I1 trace test bed dose-response (the judges' check): the step-1 statistic and margin on the saved trace critics, seeds 0-2, shares 0 (the gate's gapped critic), 0.5, 1, 2, 3, 5 and 10%, both worlds; full-throttle group = the critic's training rows with t > t_lo of the gate's gap rule (survivors + added rows, in-sample); rest = (a) its training rows with t <= t_lo (in-sample, the judges' form) and (b) the trace log's bank rows with t <= t_lo (held out); also whether the gap rule is defined on the trace log's own commands. Trace logs rebuilt with tracebed.build_trace and checked against trace_rows.json; critics checked against lock.json.",
+  "I2 the e11 form (rest's plain 90% quantile, margin 0.10 and margin 0) on the held-out residuals",
+  "I3 a noisy-target residual (32 fixed draws of BCA's target smoothing, N(0, 0.2^2) clipped at 0.5, default_rng([20261015, 9900, seed, w, 1])) with the same certificate",
+  "I4 in-sample references with the gate's critic: the e11 numbers reproduced (refuse if not within 1e-9) and the step-1 statistic on in-sample survivors against the bank",
+  "I5 per-survivor overestimate under the gate's critic (in-sample) and the step-1 critic (held out): the fade effect",
+  "I6 the forced-on net (certificate ignored) and the rank-test-switched net",
+  "I7 group sizes, means and 90% quantiles of the overestimates"
+ ],
+ "outputs": {
+  "results": "runs/shift_explore/restructure/step1/results.json (+ .sha256) and results.md, write-once",
+  "logs": "runs/shift_explore/restructure/step1/logs/"
+ },
+ "budget": "10 trainings of about 400 s each on one CPU (the gate's critic took 402.7 s): about 67 CPU-minutes, 4 CPUs in parallel (about 20-25 minutes wall); evaluation about 10-20 minutes on one CPU",
+ "evaluation_rules": {
+  "official_record_refusals": "evaluate.py refuses an official critic record unless: mode official; trained under this prespec.json and code manifest; its world and seed; 100,000 updates; the gap-minus-survivors log; every training-data check true; one CPU; learner arguments and initial critic parameters equal the gate critic's; its survivors and its training rows (SHA-256) equal the gapped rows minus the survivors recomputed at evaluation",
+  "allow_missing": "--allow-missing (a missing critic then counts as NO-GO) is refused while runs/shift_explore/restructure/step1/run.lock exists, so that no premature write-once NO-GO can be written while trainings are still running",
+  "information_only_failures": "an error or refusal inside an information-only item (I1 trace test bed, I3 noisy target) is recorded in results.json as {error: ...} and does not stop the evaluation; after the official critics exist the code cannot be changed, so an information-only item must never block the go/no-go. The decisive items and the integrity checks (gap rule, rollout reproduction, e11 reproduction, critic hashes and records) still refuse"
+ },
+ "runner": "run_step1.sh, launched detached (setsid nohup sh run_step1.sh </dev/null >/dev/null 2>&1 &); progress in runs/shift_explore/restructure/step1/logs/run.log. Killed by a signal, it keeps run.lock (trainings it started may still be running); a normal end releases it.",
+ "review": {
+  "date": "2026-10-14",
+  "by": "independent reviewer, before any official step-1 critic was trained",
+  "notes": [
+   "Reproduction verified: the scratch reproduction critic (stall/seed 0, no rows removed) is byte-identical to the gate's (cmp; SHA-256 3a99f159...54b0); a second reproduction on no_stall/seed 3 with the final code is reported in PRESPEC.md, Review notes.",
+   "In-sample reference with the official random streams (I4, the writer's scratch evaluation): step-1 statistic +0.22 to +0.46 (stalling) and -0.040 to -0.060 (no-stall); the margin 0.10 stays below every stalling value. The +0.26 lower end quoted under seen_in_sample_summary came from other random streams.",
+   "Limit of the margin's basis: the held-out test-bed values that placed 0.10 came from the gate's critic, which trained on the survivors; a step-1 critic has no full-throttle row at all, so its extrapolation at full throttle in the no-stall world has not been seen. This is what condition 1 tests; nothing was changed for it."
+  ]
+ }
+}
