@@ -180,7 +180,11 @@ def summary(info):
                        "repeatability test P3 (the same training run, idle and under load, on two processors, must "
                        "give identical bytes): {}".format("passed" if p3.get("ok") is True else "NOT PASSED"),
                        "run at {} (laptop clock); imported by the cloud at {}".format(st.get("selftest_utc"),
-                                                                                     st.get("imported_utc"))]), ""]
+                                                                                     st.get("imported_utc")),
+                       "ran under the draft this final is built on: {}".format(
+                           "yes" if st.get("prereg_v7_sha256_at_selftest") and st.get("prereg_v7_sha256_at_selftest") ==
+                           h.get("draft_sha256") else "NO (ran under {})".format(
+                               str(st.get("prereg_v7_sha256_at_selftest"))[:16]))]), ""]
     remake = p.get("remake") or {}
     fc = h.get("forecast") or {}
     tol = remake.get("forecast_tolerance")

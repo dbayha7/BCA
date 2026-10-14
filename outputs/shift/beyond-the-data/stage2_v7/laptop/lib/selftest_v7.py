@@ -15,14 +15,18 @@ approval.
         the seed 2-4 reference copies; each record is written once and never rerun). Short (before every run and after
         every restore): ST1, ST2 (versions), ST3, ST4, ST6, ST7, ST8 and a check that the P1 and P2 records and the
         reference files exist and, after the handoff, match the final prereg_v7.json.
-  selftest_v7.py remake --probe ID      C7 'A damaged reference' (v7_probes.py remake, ledgered).
+  selftest_v7.py remake --probe ID      C7 'A damaged reference': a damaged probe record is put back from the cloud's
+        copy (V7/handoff/probes/selftest/, only when its SHA-256 equals the final pin; the damaged file is moved to
+        R7/interrupted/records/), then each damaged reference file is remade (v7_probes.py remake, ledgered).
   selftest_v7.py r1                     C7's R1, information only, after the v7 import (run_v7.sh runs it once every
         phase is done): for seeds 2-4 and both worlds, the weighted band recomputed with v6's pinned band code from the
         gate's 'none' and, where re-made, from the laptop's copy, compared with the cloud's; R7/info/ (v7_probes.py r1,
         ledgered like a probe; a written record is not rerun). It routes nothing.
-The last lines: 'READY', 'READY (waiting for handoff/approval)' or 'NOT READY (<what failed>)', then the probe results
-and a block to paste into the cloud session (the nine probe records, byte for byte, compressed; cloud/make_handoff.py
-import-selftest reads it).
+The last lines: 'READY', 'READY (waiting for handoff/approval)' (with a 'WAIT <what is missing>' line above it) or
+'NOT READY (<what failed>)', then the probe results and a block to paste into the cloud session (the nine probe records,
+byte for byte, compressed; cloud/make_handoff.py import-selftest reads it). ST8 does not count changes under
+V7/results/ (the results step rewrites it). ST9 compares the laptop's clock with github.com's; the full self-test runs
+no probe when they differ by more than 2 minutes (the probe records' times enter the handoff).
 
 It writes only to R7/selftest/ (reports, probe records, probe logs), R7/refs/ and R7/ledger/ (with --remake, also
 R7/interrupted/refs/ and R7/refs_remake/; the files of an interrupted probe and a torn attempt record are moved, never
@@ -73,6 +77,11 @@ APPROVAL_COMMIT = K.V6["approval_commit"]
 MIN_FREE_DISK_GB = 20
 MIN_WSL_MEMORY_GIB = 40                 # README step 0 gives WSL 48 GB (it shows as about 47 GiB); below this, a warning
 LANE_CANDIDATES = 16
+# ST9 clock (C6 step 3, C11): the laptop's clock against the Date of an HTTPS reply. The full self-test runs no probe when
+# they differ by more than this (the probe records' times are compared with the cloud's in the handoff); the short
+# self-test only warns. WSL's clock can fall behind after Windows sleeps; 'wsl --shutdown' sets it again.
+CLOCK_TOLERANCE_S = 120
+CLOCK_URL = "https://github.com"
 BLOCK_BEGIN = "==== BEGIN V7 SELF-TEST BLOCK: paste every line from here down to the END line into the cloud session ===="
 BLOCK_END = "==== END V7 SELF-TEST BLOCK ===="
 CHUNK = 96
@@ -585,7 +594,10 @@ def run_p1p2(cfg, cpus, out=print):
     run = [(pid, args) for pid, args in todo if have[pid][0] == "missing"]
     for pid, _ in todo:
         if have[pid][0] == "partial":
-            raise K.V7Refusal(f"HALT: probe record {pid} differs from its sidecar (R7 was damaged); ask the cloud")
+            raise K.V7Refusal(f"HALT: probe record {pid} differs from its sidecar (R7 was damaged); paste this to the "
+                              f"cloud. A written record is never rerun: once the cloud has imported it and written the "
+                              f"final prereg_v7.json, 'selftest_v7.sh --remake {pid}' puts back the cloud's copy; "
+                              f"before the cloud has a copy it cannot be repaired under v7")
     if run:
         out(f"INFO probes: running {', '.join(p for p, _ in run)}, up to {len(cpus)} side by side, each on its own "
             f"processor (about 6-15 minutes each at the cloud's speed)")
@@ -647,7 +659,10 @@ def run_p3(cfg, cpus, out=print):
             p.kill()
             p.wait()
     ok = all("error" not in r for r in rows) and PR.p3_compare(rows)[0]
-    return dict(ok=ok, runs=rows, distinct=len({(r.get("tree_sha256"), r.get("bytes_sha256")) for r in rows}))
+    finished = [r for r in rows if "error" not in r]
+    differ = len({(r.get("tree_sha256"), r.get("bytes_sha256")) for r in finished}) > 1
+    return dict(ok=ok, runs=rows, distinct=len({(r.get("tree_sha256"), r.get("bytes_sha256")) for r in rows}),
+                differ=differ, errors=len(rows) - len(finished))
 
 
 # --------------------------------------------------------------------------------------------- the report
@@ -664,8 +679,15 @@ class Report:
             self.failed.append(tag or name)
 
 
+def results_pathspec(cfg):
+    """The git pathspec that leaves V7/results/ out of ST8's check: the results step rewrites it, and a committed
+    interim copy would otherwise stop every restart (README step 13). [] when V7/ is not inside the clone."""
+    rel = os.path.relpath(cfg.v7_root / "results", cfg.root)
+    return [] if rel.startswith("..") else ["--", ".", f":(exclude){rel}"]
+
+
 def git_checks(cfg, r):
-    """ST8 (as GPU/lib/selftest_checks.py:203-231)."""
+    """ST8 (as GPU/lib/selftest_checks.py:203-231); changes under V7/results/ are not counted."""
     problems = []
     if git(cfg, "rev-parse", "--is-shallow-repository")[1] != "false":
         problems.append("the clone is shallow (run: git -C /home/user/bca fetch --unshallow)")
@@ -678,8 +700,11 @@ def git_checks(cfg, r):
     email = git(cfg, "config", "--get", "user.email")[1]
     if email and email.lower() in (K.APPROVER_EMAIL.lower(), "noreply@anthropic.com"):
         problems.append(f"git's user.email here is {email} (remove it: git config --global --unset user.email)")
-    if git(cfg, "status", "--porcelain", "--untracked-files=no")[1]:
-        problems.append("tracked files are changed in this clone (git status)")
+    changed = git(cfg, "status", "--porcelain", "--untracked-files=no", *results_pathspec(cfg))[1]
+    if changed:
+        paths = [ln[2:].strip() for ln in changed.splitlines()][:3]    # 'XY path' ('X' may be stripped)
+        problems.append(f"tracked files are changed in this clone ({', '.join(paths)}; git status); paste this to the "
+                        f"cloud (files under stage2_v7/results/ are not counted)")
     if problems:
         r.add("FAIL", "ST8 git", "; ".join(problems), "git: " + problems[0][:60])
     else:
@@ -772,13 +797,16 @@ def st_records(cfg, r, prereg, full):
     missing = [p for p, (s, _) in have.items() if s == "missing"]
     damaged = [p for p, (s, _) in have.items() if s == "partial"]
     if damaged:
-        r.add("FAIL", "probe records", f"HALT: probe record {damaged} differs from its sidecar", "HALT: probe record")
+        how = (f"; 'sh {LAPTOP}/selftest_v7.sh --remake <probe>' puts back the cloud's copy" if prereg.final else
+               "; before the cloud has written the final prereg_v7.json it cannot be repaired")
+        r.add("FAIL", "probe records", f"HALT: probe record {damaged} differs from its sidecar (R7 was damaged){how}; "
+                                       f"paste this to the cloud", "HALT: probe record")
         return None
     if missing:
         if not full:
             r.add("FAIL", "probe records", f"missing {missing}: run the full self-test first (README step 8)",
                   "P1/P2: records missing")
-        elif not any(t.startswith(("P1 ", "P2 ")) for t in r.failed):
+        elif not any(t.startswith(("P1 ", "P2 ", "clock")) for t in r.failed):
             r.add("FAIL", "probe records", f"missing {missing} after the probes ran", "P1/P2: records missing")
         return None
     recs = {p: rec for p, (s, rec) in have.items()}
@@ -792,6 +820,15 @@ def st_records(cfg, r, prereg, full):
             p = cfg.r7 / f["path"]
             if not p.is_file() or K.file_sha256(p) != f["sha256"]:
                 problems.append(f"HALT: reference {f['path']} differs from probe record {pid}")
+    binding = [(pid, PR.binding_problems(prereg.payload, rec, PR.BOUND_BY_DRAFT), rec)
+               for pid, rec in sorted(recs.items())]
+    binding = [b for b in binding if b[1]]
+    if binding:
+        r.add("FAIL", "probe records", f"{[b[0] for b in binding]} bind to another draft "
+                                       f"({sorted({x for b in binding for x in b[1]})}) than this prereg_v7.json: "
+                                       + PR.binding_advice([b[2] for b in binding]) + "; paste this to the cloud",
+              "P1/P2: records bind to another draft")
+        return None
     if prereg.final:
         pins = (prereg.payload.get("handoff") or {}).get("probe_records") or {}
         for pid in recs:
@@ -921,6 +958,60 @@ def settle_probes(cfg, out=print):
     return written
 
 
+# --------------------------------------------------------------------------------------------- the clock (ST9)
+
+def clock_check(cfg):
+    """The laptop's clock minus the Date header of an HTTPS reply from CLOCK_URL (curl; about one second's
+    resolution). offset_seconds is None when it could not be measured. A test fixture gives 'clock_offset'."""
+    now = K.utc_now()
+    if cfg.test:
+        off = cfg.extra.get("clock_offset")
+        return dict(offset_seconds=off, laptop_utc=now, reference_utc=None, source="test fixture",
+                    error=None if off is not None else "test fixture: not measured")
+    from email.utils import parsedate_to_datetime
+    t0 = time.time()
+    try:
+        done = subprocess.run(["curl", "-sSI", "--max-time", "15", CLOCK_URL], capture_output=True, text=True,
+                              timeout=30, env=dict(RN.BASE_ENV))
+    except (OSError, subprocess.SubprocessError) as error:
+        return dict(offset_seconds=None, laptop_utc=now, reference_utc=None, source=CLOCK_URL,
+                    error=f"curl could not run: {error}")
+    t1 = time.time()
+    date = next((ln.split(":", 1)[1].strip() for ln in done.stdout.splitlines() if ln.lower().startswith("date:")), None)
+    if done.returncode != 0 or not date:
+        return dict(offset_seconds=None, laptop_utc=now, reference_utc=None, source=CLOCK_URL,
+                    error=((done.stderr or "").strip() or f"curl exit {done.returncode}, no Date header")[-200:])
+    try:
+        ref = parsedate_to_datetime(date).timestamp()
+    except (TypeError, ValueError) as error:
+        return dict(offset_seconds=None, laptop_utc=now, reference_utc=date, source=CLOCK_URL, error=str(error))
+    return dict(offset_seconds=round((t0 + t1) / 2 - ref, 1), laptop_utc=now, reference_utc=date, source=CLOCK_URL,
+                error=None)
+
+
+def st_clock(cfg, r, full):
+    """ST9 clock. Returns False when the full self-test must not start a probe (the clock is off by more than
+    CLOCK_TOLERANCE_S), True otherwise."""
+    c = clock_check(cfg)
+    r.data["clock"] = c
+    off = c.get("offset_seconds")
+    if off is None:
+        r.add("WARN", "ST9 clock", f"the laptop's clock could not be compared with {CLOCK_URL} ({c.get('error')}); "
+                                   f"the probe records' times are used as they are")
+        return True
+    if abs(off) <= CLOCK_TOLERANCE_S:
+        r.add("INFO", "ST9 clock", f"the laptop's clock agrees with {CLOCK_URL} to within {abs(off):.0f} s")
+        return True
+    fix = ("in PowerShell type 'wsl --shutdown', open Ubuntu again (README step 2), and run the same command again")
+    if full:
+        r.add("FAIL", "ST9 clock", f"the laptop's clock is {off:+.0f} s off ({CLOCK_URL}'s time: "
+                                   f"{c.get('reference_utc')}); no probe was started: {fix}",
+              "clock: the laptop's clock is off")
+        return False
+    r.add("WARN", "ST9 clock", f"the laptop's clock is {off:+.0f} s off ({CLOCK_URL}); {fix}")
+    return True
+
+
 # --------------------------------------------------------------------------------------------- the self-test
 
 def self_test(cfg, full, out=print):
@@ -937,9 +1028,10 @@ def self_test(cfg, full, out=print):
         r.add("FAIL", "prereg_v7.json", str(error), "restore: prereg_v7.json")
         return finish(cfg, r, None, full, stamp, out)
     q7 = (prereg.payload.get("remake") or {}).get("q7_if_forecast_above_tolerance", "stop")
-    cpus = list(cfg.cpus) if cfg.cpus else RN.pick_cpus(LANE_CANDIDATES)
+    cpus = RN.checked_cpus(cfg)
     r.data["lane_processors"] = cpus
     st1(cfg, r, prereg)
+    clock_ok = st_clock(cfg, r, full)
     sw = run_check_probe(cfg, "software", cpus[0])
     r.data["software"] = sw
     st2(r, sw)
@@ -982,7 +1074,7 @@ def self_test(cfg, full, out=print):
         r.add("PASS", "ST6 load_seed", "every log array of seeds 0-4 in both worlds matches the gate's SHA-256 (with "
                                        "the constants)")
     recs = None
-    if full:
+    if full and clock_ok:
         try:
             res = run_p1p2(cfg, cpus, out)
             r.data["p1p2_runs"] = res
@@ -1010,10 +1102,15 @@ def self_test(cfg, full, out=print):
             secs = [x.get("seconds") for x in p3["runs"] if x.get("seconds") is not None]
             r.add("PASS", "P3 repeatability", f"{len(p3['runs'])} runs (idle and under load, processors "
                                               f"{sorted({x['cpu'] for x in p3['runs']})}) give identical bytes")
-        else:
+        elif p3["differ"]:
             r.add("FAIL", "P3 repeatability", f"{p3['distinct']} different results in {len(p3['runs'])} runs: "
                                               f"{[x.get('error') for x in p3['runs'] if x.get('error')][:2]}",
                   "P3: results depend on lane or load")
+        else:                                  # a run did not finish: it shows nothing about repeatability
+            r.add("FAIL", "P3 repeatability", f"{p3['errors']} of {len(p3['runs'])} runs did not finish: "
+                                              f"{[x.get('error') for x in p3['runs'] if x.get('error')][:2]}; the "
+                                              f"finished runs agree; run the self-test again",
+                  "P3: a run did not finish")
     git_checks(cfg, r)
     resources(cfg, r, full, cpus[0])
     return finish(cfg, r, prereg, full, stamp, out, recs, fc, q7)
@@ -1046,27 +1143,41 @@ def resources(cfg, r, full, cpu):
         r.add("INFO", "ST9 graphics card", str(res)[:300] + " (information only; every phase uses the processor)")
 
 
+PULL = "git -C /home/user/bca pull --ff-only"
+
+
 def ready_after_handoff(cfg, prereg):
-    """True when the final prereg_v7.json, HANDOFF.json and the v7 approval chain all verify (then 'READY')."""
+    """(True, None) when the final prereg_v7.json, HANDOFF.json and the v7 approval chain all verify (then 'READY');
+    else (False, what is missing and what to do), printed as a 'WAIT' line above the verdict."""
     import v7_verify as VF
-    if prereg is None or not prereg.final:
-        return False
+    if prereg is None:
+        return False, "prereg: prereg_v7.json could not be read"
+    if not prereg.final:
+        return False, (f"handoff: prereg_v7.json here is still the draft. If the cloud has said the handoff is done "
+                       f"(README step 9), type {PULL}, then restore_v7.sh, and run this again")
     try:
         VF.check_handoff(prereg, cfg.v7_root)
-        if cfg.check_chain:
+    except K.V7Refusal as error:
+        return False, f"handoff: {error}. Type {PULL}, then restore_v7.sh, and run this again; if it repeats, paste it"
+    if cfg.check_chain:
+        try:
             VF.verify_v7_chain(prereg, cfg.v7_root)
-    except K.V7Refusal:
-        return False
-    return True
+        except K.V7Refusal as error:
+            return False, (f"approval: {error}. If you have done steps 10 and 11 (your approval pushed, and the cloud "
+                           f"has said it pushed the import record), type {PULL} and run this again; otherwise do steps "
+                           f"10-11. If it repeats, paste this line to the cloud")
+    return True, None
 
 
 def finish(cfg, r, prereg, full, stamp, out, recs=None, fc=None, q7="stop"):
+    waiting = None
     if r.failed:
         verdict = f"NOT READY ({r.failed[0]}" + (f"; and {len(r.failed) - 1} more" if len(r.failed) > 1 else "") + ")"
-    elif ready_after_handoff(cfg, prereg):
-        verdict = "READY"
     else:
-        verdict = "READY (waiting for handoff/approval)"
+        ok, waiting = ready_after_handoff(cfg, prereg)
+        verdict = "READY" if ok else "READY (waiting for handoff/approval)"
+        if waiting:
+            out(f"WAIT {waiting}")
     out(verdict)
     for line in r.data.get("probe_lines") or []:
         out(line)
@@ -1074,8 +1185,10 @@ def finish(cfg, r, prereg, full, stamp, out, recs=None, fc=None, q7="stop"):
                    verdict=verdict, failed=r.failed, q7=q7, lane_processors=r.data.get("lane_processors"),
                    git_head=git(cfg, "rev-parse", "HEAD")[1], machine=(r.data.get("software") or {}).get("cpu"),
                    openblas=(r.data.get("software") or {}).get("openblas"),
-                   p3=dict(ok=(r.data.get("p3") or {}).get("ok"), distinct=(r.data.get("p3") or {}).get("distinct")),
-                   forecast=fc, probe_lines=r.data.get("probe_lines"),
+                   p3=dict(ok=(r.data.get("p3") or {}).get("ok"), distinct=(r.data.get("p3") or {}).get("distinct"),
+                           differ=(r.data.get("p3") or {}).get("differ"), errors=(r.data.get("p3") or {}).get("errors")),
+                   forecast=fc, probe_lines=r.data.get("probe_lines"), waiting_for=waiting,
+                   clock=r.data.get("clock"), clock_tolerance_seconds=CLOCK_TOLERANCE_S,
                    prereg_v7_sha256=None if prereg is None else prereg.sha256)
     records = {}
     if recs is not None:
@@ -1092,12 +1205,53 @@ def finish(cfg, r, prereg, full, stamp, out, recs=None, fc=None, q7="stop"):
     return verdict, report
 
 
+def restore_record(cfg, prereg, probe):
+    """C7 'A damaged reference', for the probe record itself: when R7/selftest/<probe>.json (or its sidecar) no longer
+    matches its pin in the final prereg_v7.json, the damaged files are moved (never deleted) to
+    R7/interrupted/records/<UTC time>/ and the cloud's copy V7/handoff/probes/selftest/<probe>.json is put back, only
+    when its SHA-256 equals the pin (it is the same bytes the laptop wrote). Returns the move record, or None when the
+    record matches. V7Refusal (HALT) when the cloud's copy does not match the pin either."""
+    import v7_probes as PR
+    want = (((prereg.payload.get("handoff") or {}).get("probe_records") or {}).get(probe) or {}).get("sha256")
+    if not want:
+        raise K.V7Refusal(f"the final prereg_v7.json pins no probe record {probe}")
+    rec = PR.record_path(cfg.r7, probe)
+    if rec.is_file() and K.file_sha256(rec) == want and K.sidecar_digest(rec) == want:
+        return None
+    src = cfg.v7_root / "handoff" / "probes" / "selftest" / f"{probe}.json"
+    if not src.is_file() or K.file_sha256(src) != want:
+        raise K.V7Refusal(f"HALT: probe record {probe} differs from its pin, and the cloud's copy {src} does not match "
+                          f"the pin either ({PULL} first, if you have not); it cannot be repaired under v7: paste this "
+                          f"to the cloud")
+    stamp = K.utc_stamp()
+    d = cfg.r7 / "interrupted" / "records"
+    rels = [rel for rel in (f"selftest/{probe}.json", f"selftest/{probe}.json.sha256") if (cfg.r7 / rel).exists()]
+    moved = LG.move_files_aside(rels, cfg.r7, d / stamp, d / f"{stamp}.json", probe=probe,
+                                why="the probe record no longer matched its pin; the cloud's copy, whose SHA-256 "
+                                    "equals the pin, was put back")
+    K.write_once(rec, src.read_bytes())
+    K.write_once(Path(str(rec) + ".sha256"), f"{want}  {rec.name}\n".encode("utf8"))
+    return moved
+
+
 def remake_cmd(cfg, probe, out=print):
     import v7_probes as PR
+    import v7_verify as VF
     if probe not in PR.all_probe_ids():
         out(f"refused: {probe} is not a probe with reference files ({PR.all_probe_ids()})")
         return 1
-    cpu = (list(cfg.cpus) if cfg.cpus else RN.pick_cpus(1))[0]
+    prereg = VF.load_prereg_v7(cfg.prereg)
+    VF.require_final(prereg)
+    moved = restore_record(cfg, prereg, probe)
+    if moved is not None:
+        out(f"PASS probe record {probe}: the cloud's copy (its SHA-256 equals the pin) was put back; the damaged file "
+            f"is kept in R7/interrupted/records/")
+    pins = (((prereg.payload.get("handoff") or {}).get("probe_records") or {}).get(probe) or {}).get("file_pins") or {}
+    damaged = [rel for rel, h in sorted(pins.items()) if not (cfg.r7 / rel).is_file() or K.file_sha256(cfg.r7 / rel) != h]
+    if not damaged:
+        out(f"PASS every reference file of {probe} matches its pin; nothing to remake")
+        return 0
+    cpu = RN.checked_cpus(cfg)[0]
     before = set((cfg.r7 / "refs_remake").glob("*.json")) if (cfg.r7 / "refs_remake").is_dir() else set()
     h = start_probe(cfg, f"remake_{probe}", ["remake", "--probe", probe], cpu)
 

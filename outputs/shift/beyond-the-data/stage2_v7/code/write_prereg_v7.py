@@ -8,7 +8,11 @@
       quoted (--q7-quote) and its UTC time (--q7-utc); both are stored in the re-make block, so the probe records bind
       to them. 'proceed' is refused unless it is such a recorded answer; nothing infers an answer.
       It pins code_manifest_v7.json, so write_manifest_v7.py runs first. Once any probe record exists, the re-make and
-      forecast block can no longer change (each record binds to its SHA-256, C7 'Probe records').
+      forecast block (Q7's answer included) and the probe script can no longer change (each record binds to their
+      SHA-256, C7 'Probe records'): it refuses when a record in V7/handoff/probes/selftest/ (the laptop's records the
+      cloud imported; the only ones the cloud has) or in R7/selftest/ would no longer bind. So before recording a Q7
+      answer, the cloud asks whether the full self-test (README step 8) has started; once it has, Q7 is fixed. Once
+      HANDOFF.json exists it refuses any draft other than the one HANDOFF.json was written for.
   write_prereg_v7.py final --handoff V7/handoff/HANDOFF.json [--records DIR]
       The final: the draft with ONLY the handoff fields filled in (approvable, missing, status, handoff), which this
       script enforces against the draft it builds on (kept in prereg_v7_history/). It needs HANDOFF.json (+ sidecar)
@@ -21,7 +25,8 @@
       pre-registration and v6's code manifest. It computes C7 step 2's table of re-made references from those pinned
       inputs and HANDOFF.json's inherited phases, the labels, and the check (b) forecast; with a forecast gap above
       1e-5 and Q7 'stop' it refuses (NOT READY). It refuses a HANDOFF.json written for another draft (its
-      draft_prereg_v7_sha256), and copies into the handoff block the full self-test the handoff rests on.
+      draft_prereg_v7_sha256) or resting on a full self-test that ran under another draft, and copies into the handoff
+      block the full self-test the handoff rests on.
 Both refuse once an approval or import record of the current prereg_v7.json's fingerprint exists. A replaced version
 is copied to prereg_v7_history/prereg_v7_<first 16>.json (+ .sha256) first. Nothing here writes an approval.
 """
@@ -249,13 +254,35 @@ def _existing(v7_root):
     return VF.load_prereg_v7(path) if path.exists() else None
 
 
-def _records_bound(r7):
+def imported_probes_dir(v7_root):
+    """Where cloud/make_handoff.py import-selftest stores the laptop's probe records (V7/handoff/probes/)."""
+    return Path(v7_root) / "handoff" / "probes"
+
+
+def existing_records(v7_root, r7):
+    """Every probe record that exists for this draft to keep binding: the cloud's imported copies
+    (V7/handoff/probes/selftest/, the only ones the cloud has) and R7/selftest/ (the laptop's). A record whose sidecar
+    differs counts too (it exists; it is never rerun). {where: {probe id: record or None}}."""
     out = {}
-    for pid in PR.all_probe_ids():
-        state, rec = K.read_record(PR.record_path(r7, pid))
-        if state == "ok":
-            out[pid] = (rec.get("inputs") or {}).get("remake_block_sha256")
+    for where in (imported_probes_dir(v7_root), Path(r7)):
+        for pid in PR.all_probe_ids():
+            p = PR.record_path(where, pid)
+            if p.exists() or Path(str(p) + ".sha256").exists():
+                state, rec = K.read_record(p)
+                out.setdefault(str(where), {})[pid] = rec if state == "ok" else None
     return out
+
+
+def unbound_records(v7_root, r7, body):
+    """[(where, probe id, problems)] for every existing probe record the draft body would no longer bind (C7 'Probe
+    records': Q7's answer and the re-make block, and the probe script, cannot change once any record exists)."""
+    bad = []
+    for where, recs in existing_records(v7_root, r7).items():
+        for pid, rec in sorted(recs.items()):
+            problems = ["unreadable"] if rec is None else PR.binding_problems(body, rec, PR.BOUND_BY_DRAFT)
+            if problems:
+                bad.append((where, pid, problems, rec))
+    return bad
 
 
 def q7_answered_in(payload):
@@ -268,7 +295,18 @@ def q7_args(payload):
     return r.get("q7_if_forecast_above_tolerance"), q7_answered_in(payload), r.get("q7_user_message")
 
 
+def handoff_draft(v7_root):
+    """The draft SHA-256 an existing HANDOFF.json was written for (None without one, or after WITHDRAWN.json)."""
+    hand = Path(v7_root) / "handoff" / "HANDOFF.json"
+    if not hand.exists() or (Path(v7_root) / "handoff" / "WITHDRAWN.json").exists():
+        return None
+    return str(K.read_json_verified(hand, "HANDOFF.json").get("draft_prereg_v7_sha256"))
+
+
 def write_draft(v7_root=None, r7=None, q7="stop", log=print, q7_answered=False, q7_quote=None, q7_utc=None):
+    """The draft. Refuses (C7 'Probe records', C6 step 3) when any probe record exists, imported into
+    V7/handoff/probes/ or in R7/, that the new draft would no longer bind (Q7's answer, the re-make block or the probe
+    script changed), and, once HANDOFF.json exists, any draft other than the one it was written for."""
     v7_root, r7 = Path(v7_root or K.V7), Path(r7 or K.R7)
     old = _existing(v7_root)
     if old is not None and frozen(v7_root, old):
@@ -276,10 +314,19 @@ def write_draft(v7_root=None, r7=None, q7="stop", log=print, q7_answered=False, 
     msha, man = _manifest(v7_root)
     body = draft_payload(msha, man, q7, q7_answered, dict(quote=q7_quote, utc=q7_utc) if q7_answered else None)
     block = K.block_sha256(body["remake"])
-    bound = {pid: b for pid, b in _records_bound(r7).items() if b != block}
-    if bound:
-        raise K.V7Refusal(f"probe records exist that bind to another re-make block ({sorted(bound)}); the re-make and "
-                          f"forecast block (and Q7's answer) can no longer change")
+    bad = unbound_records(v7_root, r7, body)
+    if bad:
+        raise K.V7Refusal(f"probe records exist that this draft would no longer bind ({sorted({p for _, p, _, _ in bad})}"
+                          f": {sorted({x for _, _, b, _ in bad for x in b})}); the re-make and forecast block (and Q7's "
+                          f"answer) and the probe script can no longer change once any probe record exists. "
+                          f"Nothing was written. " + PR.binding_advice([r for _, _, _, r in bad]))
+    digest = K.sha256_bytes(K.canonical(body).encode("utf8"))
+    tied = handoff_draft(v7_root)
+    if tied is not None and tied != digest:
+        raise K.V7Refusal(f"HANDOFF.json exists and was written for the draft {tied[:16]}...; it is written once, so after "
+                          f"the handoff no other draft can carry it (this one would be {digest[:16]}...). Nothing was "
+                          f"written. Write the draft HANDOFF.json names (the same files and Q7 arguments), or, if a v7 "
+                          f"file must change, end v7 with make_handoff.py withdraw (a changed v7 is a new version)")
     if old is not None:
         _archive(v7_root, old)
     digest = _write(v7_root, body)
@@ -297,22 +344,25 @@ def build_final(draft, draft_sha256, handoff_path, r7, require_files=True):
         raise K.V7Refusal("HANDOFF.json is not a v7 handoff record")
     if handoff.get("draft_prereg_v7_sha256") != draft_sha256:
         raise K.V7Refusal(f"HANDOFF.json was written for the draft {str(handoff.get('draft_prereg_v7_sha256'))[:16]}..., "
-                          f"not this draft {draft_sha256[:16]}...; a new draft needs a new handoff (or WITHDRAWN.json)")
+                          f"not this draft {draft_sha256[:16]}.... HANDOFF.json is written once, so no other draft can "
+                          f"carry it: write the draft it names again (the same files and Q7 arguments; "
+                          f"write_prereg_v7.py draft refuses any other), or, if a v7 file must change, end v7 with "
+                          f"make_handoff.py withdraw (a changed v7 is a new version)")
     st = handoff.get("selftest") or {}
     if not (st.get("form") == "full" and str(st.get("verdict") or "").startswith("READY") and
             (st.get("p3") or {}).get("ok") is True):
         raise K.V7Refusal("HANDOFF.json does not rest on a READY full self-test whose repeatability test P3 passed "
                           "(C3, C11)")
+    if st.get("prereg_v7_sha256_at_selftest") != draft_sha256:
+        raise K.V7Refusal(f"the full self-test HANDOFF.json rests on ran under prereg_v7 "
+                          f"{str(st.get('prereg_v7_sha256_at_selftest'))[:16]}..., not this draft {draft_sha256[:16]}... "
+                          f"(C11: the self-test must check the code this draft pins)")
     records, shas = PR.read_probe_records(r7)
-    block = K.block_sha256(draft["remake"])
     for pid, rec in records.items():
-        inp = rec.get("inputs") or {}
-        want = dict(remake_block_sha256=block, constants_sha256=draft["constants"]["sha256"],
-                    gate_prereg_sha256=K.GATE_PREREG_SHA256, v6_code_manifest_sha256=K.V6["code_manifest_sha256"],
-                    probe_script_sha256=(draft["code"]["files"] or {}).get("code/v7_probes.py"))
-        bad = sorted(k for k, v in want.items() if inp.get(k) != v)
+        bad = PR.binding_problems(draft, rec)
         if bad:
-            raise K.V7Refusal(f"probe record {pid} does not bind to this draft's inputs ({bad})")
+            raise K.V7Refusal(f"probe record {pid} does not bind to this draft's inputs ({bad}): "
+                              + PR.binding_advice([rec]))
     pins = {}
     for pid, rec in records.items():
         files = ([rec["p1a"]["reference_file"]] if rec["kind"] == "stage2-v7-probe-p1"
@@ -384,6 +434,11 @@ def write_final(handoff_path, v7_root=None, r7=None, log=print, require_files=Tr
         raise K.V7Refusal(f"required v7 files are missing: {man['missing_required']}")
     fresh = draft_payload(msha, man, *q7_args(base))
     if non_handoff(fresh) != non_handoff(dict(base, missing=None)):
+        if Path(handoff_path).exists():
+            raise K.V7Refusal("the files changed since the draft HANDOFF.json goes with (its code manifest or rules). "
+                              "HANDOFF.json is written once and only that draft can carry it: put the v7 files back as "
+                              "that draft pins them (git history), or, if a v7 file must change, end v7 with "
+                              "make_handoff.py withdraw (a changed v7 is a new version)")
         raise K.V7Refusal("the files changed since the draft (its code manifest or rules); write a new draft first")
     payload = build_final(base, base_sha, handoff_path, r7, require_files)
     _archive(v7_root, old)

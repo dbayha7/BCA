@@ -294,8 +294,10 @@ written once and counts against BCA (mark M4) (`S2C/policy.py:408-420`, `:550-55
 runner starts no new `policy_train` or `policy_no_stall_train` phase (the only phases that run the stand-in rival,
 `S2C/policy.py:410-420`, `:549-559`) and prints the error; every other phase continues. The lock stays (write-once).
 If the error names memory (`MemoryError`, `RESOURCE_EXHAUSTED` or "out of memory"), the provenance file labels that
-seed's stand-in comparison "machine-caused: memory". New policy training starts again only when the user restarts the
-runner with `--reviewed <phase>`, typed at a terminal.
+seed's stand-in comparison "machine-caused: memory". New policy training starts again only when the user's review is
+recorded with `run_v7.sh --reviewed <phase>`, typed at a terminal: from a second window while the runner runs (the
+runner picks it up within its retry poll, as it does a `--retry` request), or as a restart. Typing it again only says
+the review exists.
 
 **Compute budget (declared now; Q3).** v6's 72-92 process-hours stays an estimate that stops nothing. The provenance
 file reports the process-hours used: the cloud's from its logs, the laptop's from the ledger, killed attempts, reruns
@@ -506,10 +508,15 @@ while its session is active.
    chosen (or "default") and the write times of the nine P1/P2 records, so anyone can see the choice came first; the
    go-ahead's time; each Routine's id and final state; the processes stopped, the check that no `run_stage2.py` and
    no `explore_policy.sh` process is left, and the last log lines; for every seed and phase, whether it is inherited,
-   partial or not started; the list of partial files; the cloud's own time of the first self-test import (the stop
-   rule must be chosen before it too, and its time is given as `YYYY-MM-DDTHH:MM:SSZ` or "default"); the full
-   self-test it rests on (READY, with P3 passed); and the draft `prereg_v7.json` it goes with (the final refuses
-   another draft).
+   partial or not started; the list of partial files; the cloud's own time of the first self-test paste (the stop
+   rule must be chosen before it too, and its time is given as `YYYY-MM-DDTHH:MM:SSZ` or "default"; against the
+   records' write times, which are the laptop's clock, the comparison allows the 2 minutes to which the full self-test
+   checks that clock before any probe runs); every self-test pasted to the cloud, accepted or refused; the full
+   self-test it rests on, which must be the most recent full self-test pasted, READY, with P3 passed, run under the
+   committed draft (no pasted full self-test may have found different results in P3: that ends v7; a P3 run that did
+   not finish is only run again); and the draft `prereg_v7.json` it
+   goes with (the final refuses another draft, and once `HANDOFF.json` exists the draft writer refuses to write any
+   other draft, because `HANDOFF.json` is written once).
 4. **Accepted v6 outputs (a rule, not a choice).** A phase is **inherited** when its final record or failed-on-record
    file is in the final snapshot with a matching sidecar; all its table files are then inherited as is. Files under
    `OUT/` that belong to no phase (`prereg.json`, `code_manifest.json`, `approval.json`, `code/`, the history folders,
@@ -785,7 +792,9 @@ is written once. An interrupted probe (no record yet) has its files moved as in 
 never replaced, and no later self-test reruns it. Each record holds the fingerprints of its inputs, none of which the
 handoff can change: the constants file, the probe script, the gate's pre-registration (`68d9e877...`), the pinned v6
 code manifest, and the re-make and forecast block of the committed draft `prereg_v7.json` (this rule and the answer to
-Q7). The self-test prints each record's SHA-256, its `differs` flags and the forecast gaps; the cloud writes them, with
+Q7). So once any record exists, on the laptop or imported by the cloud, that block (Q7's answer included) and the probe
+script can no longer change: the draft writer refuses, and the self-test reports a record bound to another draft as
+NOT READY. The self-test prints each record's SHA-256, its `differs` flags and the forecast gaps; the cloud writes them, with
 the table of step 2, into the final `prereg_v7.json`, which cannot be written without all nine records. The short
 self-test and the runner (before anything starts) check every record and reference file against those pins, and the
 wrapper checks the reference file of a re-made entry it reads; a mismatch halts the run, because it means `R7/` was
@@ -796,7 +805,10 @@ damaged.
 relative path, recording its SHA-256; reruns the probe's call into the temporary folder `R7/refs_remake/<UTC time>/`;
 and moves the new file to the original path (one rename) only if its SHA-256 equals the pin. Otherwise the run stays
 halted. The redirect only ever reads the original path, after checking the pin. There is never a second, different
-reference, and the probe record is not replaced (the remake is ledgered).
+reference, and the probe record is not replaced (the remake is ledgered). A damaged probe record is put back by the
+same command from the cloud's byte copy (`V7/handoff/probes/selftest/<probe>.json`), only when that copy's SHA-256
+equals the final pin; the damaged file is moved to `R7/interrupted/records/<UTC time>/`. Before the cloud holds a copy
+and the final pins it, a damaged probe record cannot be repaired under v7.
 
 **R1 (information only, after the v7 import).** For seeds 2-4 and both worlds, recompute the weighted band with v6's
 pinned band code from the gate's "none" actor and, where re-made, from the laptop's copy, and compare each with the
@@ -934,7 +946,9 @@ completeness; the constants facts in every phase and probe attempt that computed
 hand-over or is done; an attempt interrupted before the constants step needs none) (in place of `gate_accepts True`,
 `GPU/cloud/check_return.py:150-151`);
 that inherited files are unchanged (BUNDLE.json against the final snapshot's sums); that no phase has both an inherited
-and a new output; that every new file under `OUT/` is named by a ledger entry written after the v7 import; that the
+and a new output; that every new file under `OUT/` is named, with its SHA-256, by a ledger attempt whose wrapper
+verified this v7 import record before the phase ran (the attempt's checks name the import record's SHA-256: an order
+that needs no clock, so the laptop's clock is never compared with the cloud's here); that the
 cloud's own copy of `OUT/` (outside `logs/`), if it still exists, still matches the final snapshot; that every commit
 touching `results/` or the laptop's run-files branch is the approver's; that the run-files branch's sums match the
 ledger, every model file matches the SHA-256 its lock records, and every reference file matches its pin; and that each
@@ -963,10 +977,11 @@ match the final `prereg_v7.json`.
 | P2. Host reproduction, seeds 2-4 (3 processes, about 8-15 min; 488 s at cloud speed for seed 2); makes R-host copies | required to finish; its result decides C7's table; full form only |
 | P3. Repeatability under load (C3) | required; full form only |
 | ST7. One processor visible per lane (as `GPU/lib/selftest_checks.py:158-159`) | required |
-| ST8. Git: full clone, `7dab7d5` present, origin branch present, no git identity equal to the approver's or Anthropic's, no changed tracked file (as `GPU/lib/selftest_checks.py:203-231`) | required |
-| ST9. WSL memory (a warning below 40 GiB), free disk (at least 20 GB), P3's training run time (no lane-hour estimate), GPU timing | information |
+| ST8. Git: full clone, `7dab7d5` present, origin branch present, no git identity equal to the approver's or Anthropic's, no changed tracked file outside `V7/results/` (which the results step rewrites; as `GPU/lib/selftest_checks.py:203-231`) | required |
+| ST9. WSL memory (a warning below 40 GiB), free disk (at least 20 GB), P3's training run time (no lane-hour estimate), GPU timing; the laptop's clock against the `Date` of an HTTPS reply from github.com | information, except the clock in the full form: more than 2 minutes off is NOT READY before any probe runs (the records' times enter the handoff, C6) |
 
-The last line reads `READY`, `READY (waiting for handoff/approval)` or `NOT READY (<what failed>)`, followed by the
+The last line reads `READY`, `READY (waiting for handoff/approval)` (after a `WAIT` line naming what is still missing:
+the handoff, or the approval chain with its reason) or `NOT READY (<what failed>)`, followed by the
 probe results (for each seed and world: "bit-identical", "gate's file kept (P1b reproduced it)" or "reference will be
 re-made if not inherited", and the two forecast gaps F_ref and F_fresh) and a block to paste into the cloud session.
 
@@ -1039,7 +1054,7 @@ default.
 | 4 | What if P1 or P2 shows the laptop does not reproduce the gate's training bit for bit for seed 2, 3 or 4? | The user rejected holding those phases: "figure out how to fix them and then proceed. dont hold up progress" | C7's re-make rule (designed by the agent, declared before any laptop outcome); C5 follows the same aim (machine-wide restarts never counted; an unfinished phase is retried until done) |
 | 5 | When should the cloud stop? | Option (c), "Keep going until handoff": the cloud keeps running v6 until the handoff; phases it finishes are inherited | C6 (until the handoff; step 1); the appendix |
 | 6 | Also push the laptop's new run files, model files included, to a new orphan branch? | Yes | C10, step 14 |
-| 7 | (New, from the second review.) If the self-test's check (b) forecast shows a gap above 1e-5 between two of the laptop's own programs, should v7 stop before anything starts (the cloud keeps running v6, and the user decides with the cloud on a new version), or proceed anyway, accepting that check (b) may then stop seeds 2-9 for a machine reason that no re-made reference can fix? | **Open. Default: stop (NOT READY).** The designer recommends the default: proceeding would likely spend the one-shot confirmatory seeds 5-9 on a machine artefact. The answer must be in the draft `prereg_v7.json` before any P1 record exists, with the user's words quoted and the time of their message (an answer is never inferred). The answer that governs is the one recorded in `prereg_v7.json` (`remake`: `q7_if_forecast_above_tolerance`, `q7_status`, `q7_user_message`), which the approval screen shows | C7 step 2b, C11, section 5 |
+| 7 | (New, from the second review.) If the self-test's check (b) forecast shows a gap above 1e-5 between two of the laptop's own programs, should v7 stop before anything starts (the cloud keeps running v6, and the user decides with the cloud on a new version), or proceed anyway, accepting that check (b) may then stop seeds 2-9 for a machine reason that no re-made reference can fix? | **Open. Default: stop (NOT READY).** The designer recommends the default: proceeding would likely spend the one-shot confirmatory seeds 5-9 on a machine artefact. The answer must be in the draft `prereg_v7.json` before any P1 record exists, with the user's words quoted and the time of their message (an answer is never inferred); the draft writer refuses a later change, the probe records the cloud imported included, so the cloud asks whether step 8 has started before it records an answer. The answer that governs is the one recorded in `prereg_v7.json` (`remake`: `q7_if_forecast_above_tolerance`, `q7_status`, `q7_user_message`), which the approval screen shows | C7 step 2b, C11, section 5 |
 
 One choice is left open by Q5 and has a default: at the handoff, running cloud phases stop at once; the user may
 instead say "let them finish". The choice must be made **before the full self-test (step 8)**, because which phases
@@ -1098,21 +1113,30 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
 1. **How the probe records reach the cloud.** After its verdict, the full self-test prints a block of lines holding
    the nine probe records byte for byte (compressed, each with its SHA-256). You paste it into the cloud session
    (README.md, step 8, which shows how to copy the saved report with `clip.exe`). `cloud/make_handoff.py
-   import-selftest` refuses unless the block comes from a READY full self-test whose repeatability test P3 passed,
-   checks each record's fingerprint and that it binds to the committed draft (its re-make and forecast block, the
-   constants file, the gate's pre-registration, version 6's code manifest and the probe script), stores it, once, in
-   `handoff/probes/selftest/`, and writes an import record with the cloud's own time. The final `prereg_v7.json` is
+   import-selftest --from-transcript` reads your message byte for byte from the cloud session's own transcript (one
+   wrong character would fail the block's SHA-256 check, so nothing is retyped). It refuses unless the block comes
+   from a READY full self-test whose repeatability test P3 passed (a refused block is recorded, with why, and none of
+   its records is stored), checks each record's fingerprint and that it binds to the committed draft (its re-make and
+   forecast block, the constants file, the gate's pre-registration, version 6's code manifest and the probe script),
+   all before storing any, stores each, once, in `handoff/probes/selftest/`, and writes an import record with the
+   cloud's own time and where the block was read. The final `prereg_v7.json` is
    written from these records (`code/write_prereg_v7.py final --records handoff/probes`). The reference files
    themselves (model files, a few MB each) stay on the laptop: the final pins their SHA-256 from the records; the
    runner (before anything starts) and the short self-test check every record and reference file against those pins,
    and the wrapper checks the reference file of a re-made entry it reads (C7 'Probe records').
 2. **HANDOFF.json** also records the draft `prereg_v7.json` it goes with (`write_prereg_v7.py final` refuses another
-   draft: a new draft needs a new handoff), the full self-test it rests on (its import record's SHA-256, verdict and
-   P3 result, also copied into the final `prereg_v7.json` and shown on the approval screen), the cloud's time of the
-   first self-test import, the check that no `run_stage2.py` and no `explore_policy.sh` process was left, and the
-   cloud's process-hours read from the snapshot's own logs (C2's report of hours used). The stop rule's choice time
-   must be written exactly as `YYYY-MM-DDTHH:MM:SSZ` (or "default") and must come before both the first probe record
-   (the laptop's clock) and the first import (the cloud's clock).
+   draft, and, because HANDOFF.json is written once, `write_prereg_v7.py draft` then refuses to write any other
+   draft; if a v7 file had to change after the handoff, the only route is the way back, `WITHDRAWN.json`), every
+   self-test pasted to the cloud, the full self-test it rests on (the most recent full self-test pasted, which must be
+   READY with P3 passed and have run under that draft; a pasted full self-test whose P3 found different results ends
+   v7, while one whose P3 run did not finish is only run again; its import
+   record's SHA-256, verdict and P3 result are also copied into the final `prereg_v7.json` and shown on the approval
+   screen, with whether it ran under the draft), the cloud's time of the first self-test paste, the laptop's measured
+   clock offsets, the check that no `run_stage2.py` and no `explore_policy.sh` process was left, and the cloud's
+   process-hours read from the snapshot's own logs (C2's report of hours used). The stop rule's choice time must be
+   written exactly as `YYYY-MM-DDTHH:MM:SSZ` (or "default") and must come before both the first probe record (the
+   laptop's clock, which the full self-test checks to within 2 minutes; that much is allowed) and the first paste
+   (the cloud's clock). `make_handoff.py ready` checks the self-test side before the cloud stops anything.
 3. **The restore before the handoff** leaves out the files of every phase that is not finished in the snapshot
    `901c877`, found with the phase table on the snapshot's own bytes, as C6 step 4 does after the handoff. After the
    handoff, the list it computes must equal HANDOFF.json's. The restore accepts the pinned commit when it is the
@@ -1126,11 +1150,12 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
 5. **A retry request's attempt.** The runner writes `R7/retry/<phase>/<n>.attempt_<m>.json` naming the attempt that a
    request allowed, and that attempt's ledger record names the request.
 6. **--reviewed** must be typed at a terminal (like `--retry`) and writes `R7/reviewed/<phase>.json` once (the time,
-   the errors reviewed, the command line). The error a no-stall lock copies from its stalling lock
+   the errors reviewed, the command line). Typed in a second window while the runner runs, it is picked up within the
+   runner's retry poll (no restart); typed again, it only says the review exists. The error a no-stall lock copies from its stalling lock
    (`S2C/policy.py:549`) is lifted by the review of the stalling phase; an error of the no-stall arm's own needs the
    no-stall phase's review.
 7. **When only blocked policy training is left**, the runner ends with `WAITING FOR REVIEW` instead of waiting forever;
-   restart it with `--reviewed <phase>`.
+   restart it inside tmux with `--reviewed <phase>`.
 8. **A phase whose last attempt failed** (an exit that is not an interruption) is started again on the next start, as
    `GPU/` does; its files are not moved (only an interrupted phase's files are). Files under `OUT/` of a phase that is
    not inherited and that no laptop attempt wrote halt the run and are never moved: for a phase not yet done, any of
@@ -1143,11 +1168,15 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
 10. **Q7's status** is recorded in the draft: open, with the default "stop" applying, until your answer is recorded.
     It is recorded only with your words quoted and the UTC time of your message (`write_prereg_v7.py draft
     --q7-answered --q7-quote ... --q7-utc ...`); "proceed" is refused without them, and nothing infers an answer.
-    Both are in the re-make block, so the probe records bind to them. The approval screen shows the answer, its
-    status and the forecast's verdict line, with a plain warning when a gap above 1e-5 was accepted under Q7.
+    Both are in the re-make block, so the probe records bind to them: once any record exists, on the laptop or
+    imported by the cloud, the draft writer refuses to change them (or the probe script), and the self-test reports a
+    record bound to another draft as NOT READY, naming the draft to put back. The approval screen shows the answer,
+    its status and the forecast's verdict line, with a plain warning when a gap above 1e-5 was accepted under Q7.
 11. **The return check** writes `return_check.json` whether it passes or not, with each check's result. It requires
     the constants facts of every attempt that computed anything (a phase attempt that reached the hand-over or is
-    done, a probe attempt that wrote its record); an attempt interrupted before the constants step needs none.
+    done, a probe attempt that wrote its record); an attempt interrupted before the constants step needs none. A new
+    file under `OUT/` must be named by an attempt whose wrapper verified this v7 import record (an order, not a time:
+    the laptop's clock is never compared with the cloud's there).
 12. **Interrupted attempts are classified on their own output.** Every attempt of a phase appends to one log, so an
     attempt's memory error is read only from its own lines (from the start line that names its write log to the next
     one), and an exit 97 is a v7 refusal whatever an earlier attempt printed.
@@ -1160,7 +1189,9 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
 14. **R1** (information only) runs automatically once every phase is done (`run_v7.sh` starts it before gathering the
     results); it routes nothing, and a failure of it is reported without stopping the results.
 15. **ST9** reports P3's measured training time (and WSL's memory, with a warning below 40 GiB), for information; no
-    lane-hour estimate is computed from it.
+    lane-hour estimate is computed from it. It also compares the laptop's clock with the `Date` of an HTTPS reply
+    from github.com: in the full self-test, more than 2 minutes off is NOT READY before any probe runs (the records'
+    times enter the handoff); elsewhere it is a warning, as is a clock that could not be checked.
 16. **Results before the end** (for example while a phase waits for `--retry`) are gathered only on request, with
     `sh .../laptop/run_v7.sh results`; they are marked PARTIAL and name every unfinished phase.
 17. **The way back** (`WITHDRAWN.json`) records your own confirmation, quoted with its time, that no v7 phase has
@@ -1169,3 +1200,14 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
 18. **The test seams** (`--v7-test`, used only by `code/test_v7.py` and `code/test_v7_laptop.py`) never fall back to a
     production path: every path must be given and lie inside a marked fixture folder outside the repository, and a
     fixture holding version 6's pinned `run_stage2.py` or `stage2_common.py` is refused.
+19. **The short self-test's waiting verdict** `READY (waiting for handoff/approval)` comes with a `WAIT` line naming
+    what is missing: the handoff (the draft is still here) or the approval chain, with its own reason (for example
+    no import record yet) and the step to take (`git pull`, or steps 10-11). `run_v7.sh` shows the self-test's `WAIT`,
+    `HALT` and `refused:` lines, and the last lines when it ends without a verdict.
+20. **ST8** does not count changes under `results/`, which the results step rewrites (a committed interim copy no
+    longer stops a restart), and names the tracked files that changed.
+21. **A damaged probe record** is put back by `selftest_v7.sh --remake <probe>` from the cloud's byte copy in
+    `handoff/probes/selftest/`, only when its SHA-256 equals the final pin; the damaged file is moved to
+    `R7/interrupted/records/` (C7, 'A damaged reference').
+22. **Lanes and --cpus**: the processors the self-test checks are pick_cpus(16) on the machine (a test fixture's own
+    list); lanes are the first N of them, and a `--cpus` outside them is refused, in test mode too.

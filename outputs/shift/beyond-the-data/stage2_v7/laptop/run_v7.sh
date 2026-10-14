@@ -5,7 +5,8 @@
 #       (Windows, WSL, a closed window), open Ubuntu as root again and run the same command: it continues.
 #       One Ctrl-C stops safely: no new phase starts and the running ones finish (this can take over an hour).
 #   sh .../run_v7.sh --retry <phase>     after 'UNFINISHED: <phase>' (one more attempt, run alone; type it yourself)
-#   sh .../run_v7.sh --lanes 12 --reviewed <phase>   after 'REVIEW: stand-in error', once the cloud has looked
+#   sh .../run_v7.sh --lanes 12 --reviewed <phase>   after 'REVIEW: stand-in error', once the cloud has looked (type
+#       it yourself; while a runner runs, from a second window: the runner picks it up; typing it again is harmless)
 #   sh .../run_v7.sh --plan-only         the plan and the state of every phase; runs nothing
 #   sh .../run_v7.sh status              what is running, finished and waiting
 #   sh .../run_v7.sh results             gather the results now (for example while a phase waits for --retry)
@@ -30,12 +31,13 @@ esac
 require_no_identity
 LANES=12
 RETRY=""
+REVIEWED=""
 ARGS=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --lanes) LANES=${2:-}; shift 2;;
         --retry) RETRY=${2:-}; shift 2;;
-        --reviewed) ARGS="$ARGS --reviewed ${2:-}"; shift 2;;
+        --reviewed) REVIEWED="$REVIEWED ${2:-}"; shift 2;;
         --plan-only) ARGS="$ARGS --plan-only"; shift;;
         *) echo "refused: unknown argument '$1' (see the first lines of this file)"; exit 1;;
     esac
@@ -57,6 +59,16 @@ if [ -n "$RETRY" ]; then
     [ "$CODE" = 10 ] && exit 0
     [ "$CODE" = 0 ] || exit "$CODE"
 fi
+if [ -n "$REVIEWED" ]; then
+    # --reviewed must be typed at a terminal: standard input is passed on. With a runner running, it picks it up.
+    RUNNING=0
+    for PH in $REVIEWED; do
+        $CLEAN_ENV "$PY" -I "$LIBPY" review "$PH" --argv "run_v7.sh --reviewed $PH"
+        CODE=$?
+        if [ "$CODE" = 10 ]; then RUNNING=1; elif [ "$CODE" != 0 ]; then exit "$CODE"; fi
+    done
+    [ "$RUNNING" = 1 ] && exit 0
+fi
 case " $ARGS " in
     *" --plan-only "*)
         # shellcheck disable=SC2086
@@ -65,11 +77,16 @@ esac
 echo "== Stage 2 v7 run, $(date -u +%FT%TZ), commit $(git -C "$REPO" rev-parse --short HEAD), lanes $LANES"
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$R7/selftest"
-$CLEAN_ENV "$PY" -I "$PKG/lib/selftest_v7.py" short 2>&1 | tee "$R7/selftest/report_short_$STAMP.txt" | \
-    grep -E '^(FAIL|READY|NOT READY)'
-if ! grep -q '^READY$' "$R7/selftest/report_short_$STAMP.txt"; then
-    echo "refused: the short self-test is not READY (lines above; full report $R7/selftest/report_short_$STAMP.txt)."
-    echo "Nothing was started. If it says 'waiting for handoff/approval', do README steps 9-11 first."
+REPORT="$R7/selftest/report_short_$STAMP.txt"
+$CLEAN_ENV "$PY" -I "$PKG/lib/selftest_v7.py" short 2>&1 | tee "$REPORT" | \
+    grep -E '^(FAIL|WARN|WAIT|HALT|READY|NOT READY|refused)'
+if ! grep -q '^READY$' "$REPORT"; then
+    if ! grep -qE '^(READY|NOT READY|refused)' "$REPORT"; then
+        echo "-- the short self-test ended without a verdict; its last lines:"
+        tail -n 15 "$REPORT"
+    fi
+    echo "refused: the short self-test is not READY (lines above; full report $REPORT)."
+    echo "Nothing was started. If a WAIT line is above, it says what is missing (README, 'If something stops')."
     exit 1
 fi
 # Ctrl-C reaches the runner (same terminal); this shell waits for it and then reports.
@@ -89,8 +106,8 @@ case "$CODE" in
             exit 1
         fi;;
     3) echo "Stopped before the end (nothing failed). Run the same command again to continue.";;
-    4) echo "WAITING FOR RETRY (lines above): run_v7.sh --retry <phase> continues it.";;
-    5) echo "WAITING FOR REVIEW (lines above): restart with --reviewed <phase> once the cloud has looked.";;
+    4) echo "WAITING FOR RETRY (lines above): type sh $PKG/run_v7.sh --retry <phase> to continue it.";;
+    5) echo "WAITING FOR REVIEW (lines above): once the cloud has looked, type inside tmux: sh $PKG/run_v7.sh --lanes $LANES --reviewed <phase>";;
     *) echo "Stopped: a check or a phase failed (lines above). Nothing was deleted. Paste the output into the cloud session.";;
 esac
 exit "$CODE"

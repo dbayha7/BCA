@@ -19,8 +19,10 @@ first), from the cloud's own copy of OUT/ when it still exists, and from the led
   4. the inherited files are unchanged: BUNDLE.json's SHA-256 of every inherited file, as found on the laptop at the
      end, against the final snapshot's RUNFILES_SHA256SUMS;
   5. no phase has both an inherited and a new output (no attempt of an inherited phase; no write to an inherited file);
-  6. every new file under OUT/ on the orphan branch is named, with its SHA-256, by a ledger attempt that started after
-     the v7 import;
+  6. every new file under OUT/ on the orphan branch is named, with its SHA-256, by a ledger attempt whose wrapper
+     verified this v7 import record before the phase ran (its checks name the import record's SHA-256: a fact of
+     order that needs no clock; the laptop's clock and the cloud's are never compared here; a test fixture, whose
+     wrapper does not check the chain, compares the attempt's start with the import time instead);
   7. the cloud's own copy of OUT/ (outside logs/), if it still exists, still matches the final snapshot;
   8. every commit touching results/ and every commit of the orphan branch is the approver's (author and committer),
      never the cloud session's;
@@ -159,6 +161,8 @@ def check_return(cfg, main_ref, orphan_ref, cloud_out=None, out=print):
     ck.ok(imp is not None and imp.get("prereg_sha256") == psha and imp.get("kind") == K.IMPORT_KIND,
           "the import record of this fingerprint is on the branch")
     imported_at = (imp or {}).get("imported_at") or "9999"
+    imp_raw = main.blob(f"{v7_rel}/{K.IMPORT_NAME.format(prefix=K.prefix_of(psha))}")
+    imp_sha = None if imp_raw is None else K.sha256_bytes(imp_raw)
     handoff = main.json(f"{v7_rel}/handoff/HANDOFF.json") or {}
     ck.ok(handoff and K.sha256_bytes(main.blob(f"{v7_rel}/handoff/HANDOFF.json")) == h.get("handoff_sha256"),
           "HANDOFF.json on the branch is the pinned one")
@@ -228,19 +232,25 @@ def check_return(cfg, main_ref, orphan_ref, cloud_out=None, out=print):
     ck.ok(not both and not touched, "no inherited phase ran on the laptop and no inherited file was written",
           f"phases {both[:3]}, files {touched[:3]}")
 
-    # ---- 6. new OUT files named by the ledger, after the import
+    # ---- 6. new OUT files named by the ledger, by an attempt that verified the v7 import (an order, not a clock)
+    def after_import(start, verified):
+        if imp_sha is not None and verified == imp_sha:
+            return True
+        return bool(cfg.test) and start > imported_at
+
     named = {}
     for w, r in writes:
         if w.get("sha256") and w.get("path", "").startswith(root + "/"):
-            named.setdefault(rel(w["path"]), []).append((w["sha256"], r.get("start_utc") or ""))
+            verified = (((r.get("checks") or {}).get("v7_chain")) or {}).get("import_sha256")
+            named.setdefault(rel(w["path"]), []).append((w["sha256"], r.get("start_utc") or "", verified))
     orphan_files = orphan.files()
     osums_raw = orphan.blob(ST.SUMS_NAME)
     osums = ST.parse_sums(osums_raw) if osums_raw is not None else {}
     new_out = [p for p in orphan_files if p.startswith(out_rel + "/") and p not in want]
-    unnamed = [p for p in new_out if not any(sha == osums.get(p) and start > imported_at
-                                             for sha, start in named.get(p, []))]
-    ck.ok(not unnamed, "every new file under OUT/ is named, with its SHA-256, by an attempt after the v7 import",
-          unnamed[:5])
+    unnamed = [p for p in new_out if not any(sha == osums.get(p) and after_import(start, verified)
+                                             for sha, start, verified in named.get(p, []))]
+    ck.ok(not unnamed, "every new file under OUT/ is named, with its SHA-256, by an attempt whose wrapper verified the "
+                       "v7 import record", unnamed[:5])
     outside = [p for p in orphan_files if p != ST.SUMS_NAME and not p.startswith(r7_rel + "/") and p not in new_out]
     ck.ok(not outside, "the orphan branch holds nothing outside R7/ and the new OUT/ files", outside[:5])
 
@@ -268,7 +278,7 @@ def check_return(cfg, main_ref, orphan_ref, cloud_out=None, out=print):
     tsums = {p: s for p, s in MH.tree_sums(cfg, orphan_ref).items() if p != ST.SUMS_NAME}
     ck.ok(osums and tsums == osums, "the orphan branch's RUNFILES_SHA256SUMS matches its committed bytes",
           sorted(set(tsums) ^ set(osums))[:3])
-    lbad = [p for p in new_out if p in named and osums.get(p) not in {s for s, _ in named[p]}]
+    lbad = [p for p in new_out if p in named and osums.get(p) not in {s for s, _, _ in named[p]}]
     ck.ok(not lbad, "the orphan branch's OUT/ files match the ledger's SHA-256", lbad[:3])
     mbad = []
     for p in new_out:

@@ -8,8 +8,9 @@ lanes (16 at most), re-made reference copies when the laptop does not reproduce 
 until the handoff, and pushing the laptop's run files. **Question 7 is still open**: if the self-test forecasts that
 check (b) would stop seeds for a reason that lies in the laptop's arithmetic (words below), should version 7 stop
 before anything starts, or go ahead anyway? The default is "stop". If you want "proceed", say so in the cloud session
-before the draft is pushed; the cloud records your words and the time of your message. Also wanted before step 8:
-whether running cloud phases stop at once or finish at the handoff (default: stop at once).
+before you start step 8; the cloud records your words and the time of your message. Once the full self-test of step 8
+has written its first probe record, the answer can no longer change. Also wanted before step 8: whether running cloud
+phases stop at once or finish at the handoff (default: stop at once).
 
 ## What this is
 
@@ -192,8 +193,8 @@ did not finish), checks every file's fingerprint, puts the version 6 code where 
 ## Step 8. The full self-test (25-40 minutes)
 
 **First**: if you want the cloud's running phases to finish at the handoff rather than stop at once, say so in the
-cloud session **now**. It cannot be changed after the self-test has written its first probe record. With no message,
-"stop at once" holds.
+cloud session **now**, and give your answer to Question 7 now if you have one. Neither can be changed after the
+self-test has written its first probe record. With no message, "stop at once" and "stop" hold.
 
 Then:
 
@@ -201,21 +202,24 @@ Then:
 sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/selftest_v7.sh
 ```
 
-Expected: `READY (waiting for handoff/approval)`, then the probe results and the forecast gaps, then a block of lines
-between `BEGIN V7 SELF-TEST BLOCK` and `END V7 SELF-TEST BLOCK`. **The cloud needs the whole output, every line of
-the block included.** Copying it from the window is error-prone; instead copy the saved copy to the Windows
-clipboard with:
+Expected: a `WAIT handoff: ...` line, `READY (waiting for handoff/approval)`, then the probe results and the forecast
+gaps, then a block of lines between `BEGIN V7 SELF-TEST BLOCK` and `END V7 SELF-TEST BLOCK`. (Before any probe runs,
+the self-test checks that the laptop's clock is right to within 2 minutes; if it is not, it says
+`NOT READY (clock: ...)`: see the table at the end.) **The cloud needs the whole output, every line of the block
+included.** Copying it from the window is error-prone; instead copy the saved copy to the Windows clipboard with:
 
 ```bash
 clip.exe < "$(ls -t /home/user/bca/runs/shift_explore/stage2_v7/selftest/report_full_*.txt | head -1)"
 ```
 
-and paste it (Ctrl-V) into the cloud session.
+and paste it (Ctrl-V) into the cloud session. The cloud reads it from its own copy of your message, so nothing is
+retyped.
 
 Before step 12, also test once that tmux keeps running when the window closes: `tmux new -s test`, then `sleep 600`,
-then close the Ubuntu window, open it again (step 2) and run `tmux ls`. If `test` is listed, it works (type
-`tmux kill-session -t test` to end it). If `test` is not listed, never close the Ubuntu window while the run is
-going, and say so in the cloud session.
+then close the Ubuntu window. **Wait at least two minutes** (WSL stops Ubuntu only some seconds after its last window
+closes, so opening it again at once proves nothing). Then open it again (step 2) and run `tmux ls`. If `test` is
+listed, it works (type `tmux kill-session -t test` to end it). If `test` is not listed, never close the Ubuntu window
+while the run is going, and say so in the cloud session.
 
 ## Step 9. The handoff (cloud: 10-20 minutes)
 
@@ -228,7 +232,8 @@ sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/restore_v7.sh
 sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/selftest_v7.sh --short
 ```
 
-Expected: `READY (waiting for handoff/approval)` (it says plain `READY` only after step 11).
+Expected: a `WAIT approval: ...` line and `READY (waiting for handoff/approval)` (it says plain `READY` only after
+step 11).
 
 ## Step 10. Your approval (5 minutes)
 
@@ -282,7 +287,9 @@ Then, **inside tmux**, type:
 sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/run_v7.sh --lanes 12
 ```
 
-To leave tmux running: press Ctrl-b, then d. To come back: `tmux attach -t stage2`. Keep the Ubuntu window open.
+To leave tmux running: press Ctrl-b, then d. To come back: `tmux attach -t stage2`. Keep the Ubuntu window open
+(minimised is fine) for the whole run. If the tmux test of step 8 failed, this is required: closing the last Ubuntu
+window then stops every running phase, and each reruns from its start.
 
 - **To stop safely**: press Ctrl-C once. No new phase starts and the running ones finish, which can take over an hour.
   A second Ctrl-C stops them at once; they rerun from the start next time.
@@ -335,19 +342,24 @@ written out in full.
 | Message | Meaning | What to do |
 |---|---|---|
 | `NOT READY (versions ...)`, `(installed files)`, `(dependency folder)` | the Python setup differs | fixable: redo steps 5-6 in one window, then step 8 |
-| `NOT READY (git ...)` | not a full clone, a git identity in root, or a changed tracked file | fixable: as the message says (step 4), then step 8 |
+| `NOT READY (git ...)` | not a full clone, a git identity in root, or a changed tracked file (the message names it; changes under `stage2_v7/results/` are not counted) | fixable: as the message says (step 4); for a changed file, paste the message. Then type the same command again (step 8 only if it was the full self-test) |
+| `NOT READY (clock: the laptop's clock is off)` | WSL's clock differs from the internet's time by more than 2 minutes (it can fall behind after Windows sleeps); no probe was started | in PowerShell type `wsl --shutdown`, open Ubuntu again (step 2), then type the same command again |
+| `WARN ST9 clock ...` | the clock could not be checked, or (outside step 8) it is off | nothing to do in step 8 if it could not be checked; otherwise as for `NOT READY (clock ...)` |
 | `NOT READY (restore: the run files could not be downloaded ...)`, or git says `could not read Username ... terminal prompts disabled` or `Authentication failed` | the network, or git could not sign in | check the token of step 4 (it must not have expired), then rerun step 7; if it persists, paste the output |
 | `NOT READY (restore: ... run files differ from the pinned sums ...)` | a run file on the laptop differs from the pinned fingerprints | rerun step 7; if it persists, paste the output |
 | `NOT READY (constants ...)`, `(gate ...)`, `(load_seed ...)` | the world's numbers are beyond tolerance, or the earlier test's exact checks refuse even with the cloud's numbers | ends v7; paste the output; you decide with the cloud |
-| `NOT READY (P3 ...)` | results depend on which lane or how much load | ends v7; paste the output; any other route is a new version |
-| `NOT READY (P1b: check (b) forecast ...)` | on this laptop, two programs that must agree within 0.00001 do not, so check (b) would likely stop seeds for a machine reason | ends v7 as specified (unless you answered Question 7 "proceed"); the cloud keeps running version 6; paste the output; you decide with the cloud |
+| `NOT READY (P3: results depend on lane or load)` | the same training gave different results on different lanes or under load | ends v7; paste the output; any other route is a new version |
+| `NOT READY (P3: a run did not finish)` | a repeatability run stopped (it shows nothing about repeatability) | run step 8 again; if it repeats, paste the output |
+| `NOT READY (P1b: check (b) forecast ...)` | on this laptop, two programs that must agree within 0.00001 do not, so check (b) would likely stop seeds for a machine reason | ends v7 as specified (unless you answered Question 7 "proceed" before step 8; the answer can no longer change now); the cloud keeps running version 6; paste the output; any other route is a new version, which you decide with the cloud |
+| `NOT READY (P1/P2: records bind to another draft)` | the draft `prereg_v7.json` changed after your self-test wrote its probe records (which are never rerun) | paste the output; the cloud must put the earlier draft back, then step 8 again |
 | `NOT READY (P1 p1_seed... did not finish)`, `(P2 p2_seed... did not finish)` or `(P1/P2: records missing)` | a probe did not finish (for example the window closed) | run step 8 again (a probe whose record is written is never rerun); if it repeats, paste the output |
 | `NOT READY (one processor ...)` | WSL shows more than one processor to a lane | paste the output |
-| `refused: another self-test is running` | a self-test is still running in another window | wait for it to end |
+| `refused: another self-test is running` (also above `refused: the short self-test is not READY`) | a self-test, R1 or the results step is still running in another window | wait for it to end, then type the same command again |
 | `re-made: seed s world w` in the probe results | the laptop did not reproduce that saved reference bit for bit | not a failure: that seed and world will use the laptop's own copy; nothing to do |
 | `gate's file kept (P1b): seed s world w` | one program differed on the laptop, but the closer model of check (b) reproduced the saved controller | not a failure: that seed and world reads the saved file; nothing to do |
-| `refused: the short self-test is not READY ...` with `READY (waiting for handoff/approval)` above it | steps 9-11 are not complete | do steps 9-11 |
-| `refused: the short self-test is not READY ...` with `NOT READY (...)` above it | a check failed | see that `NOT READY` row |
+| `refused: the short self-test is not READY ...` with `WAIT handoff: ...` or `WAIT approval: ...` and `READY (waiting for handoff/approval)` above it | the WAIT line says what is missing | if you have done steps 9-11, type `git -C /home/user/bca pull --ff-only` (the cloud may have pushed the import record since) and the same command again; otherwise do steps 9-11. If the WAIT line repeats, paste it |
+| `refused: the short self-test is not READY ...` with `NOT READY (...)` or `refused: ...` above it | a check failed, or something refused | see that row |
+| `the short self-test ended without a verdict; its last lines:` | the self-test stopped early (for example a Python error) | paste the lines it shows |
 | `refused: another runner is running on this machine` | the run is still going (perhaps in a tmux window you left) | type `tmux attach -t stage2`, or `sh .../stage2_v7/laptop/run_v7.sh status` to see it; do not start a second one |
 | `refused: phases from an earlier run are still running` | the runner stopped, but some of its phases still run | wait; check with `sh .../stage2_v7/laptop/run_v7.sh status`; then type the same `run_v7.sh` command again |
 | `interrupted: <phase> (machine-wide ...)` | a restart, WSL shutdown or closed terminal stopped a phase; its files were moved aside and it reruns | nothing to do |
@@ -355,12 +367,12 @@ written out in full.
 | `waiting to run alone: <phase>` | a third phase-specific interruption; the phase runs alone once nothing else is runnable | nothing to do |
 | `UNFINISHED: <phase>` | it was interrupted again when run alone; it waits; every other phase continues | paste the output of the `tail -n 30 ...` command the message gives. It must be retried until done: free memory or restart WSL if the cloud suggests it, change nothing else, then type `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/run_v7.sh --retry <phase>`. While the run continues, a second Ubuntu window is fine; if the run has stopped, type it **inside tmux** (it starts the run again) |
 | `WAITING FOR RETRY: <phases>` | nothing else can run until an unfinished phase is done | as for `UNFINISHED`; the cloud may ask for the results so far (step 13, last paragraph) |
-| `REVIEW: stand-in error in <lock>` | a policy lock records a failure of the rival method; no new policy training starts; every other phase continues | paste it; once the cloud has looked, restart inside tmux with the command the message gives: `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/run_v7.sh --lanes 12 --reviewed <phase>` |
-| `WAITING FOR REVIEW: only policy training is left` | as for `REVIEW` | as for `REVIEW` |
+| `REVIEW: stand-in error in <lock>` | a policy lock records a failure of the rival method; no new policy training starts; every other phase continues | paste it; once the cloud has looked, type the command the message gives, `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/run_v7.sh --lanes 12 --reviewed <phase>`, in a second Ubuntu window while the run continues (the runner picks it up within a minute), or inside tmux if the run has stopped. Typing it twice is harmless |
+| `WAITING FOR REVIEW: only policy training is left` | the run has stopped and waits for the review | as for `REVIEW`, inside tmux |
 | `FAILED: <phase> exit N` | an unexplained exit; no new phase starts | paste the output of the `tail -n 30 ...` command the message gives; do not restart until the cloud has looked |
 | `REFUSED (v7, exit 97)` | a v7 safety check stopped a phase | ends the run; paste the output and the `tail -n 30 ...` output |
 | `HALT: <phase> has files ... that no attempt on this laptop wrote` or `HALT: <phase> is done on file, but ...` | files appeared under `runs/` that the laptop's own phases did not write | paste the output; do not restart until the cloud has looked; delete nothing |
-| `HALT: reference ... differs from its pin` or `HALT: probe record ...` | a reference file or probe record no longer matches its fingerprint (the disk was damaged) | paste the output; the cloud will guide `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/selftest_v7.sh --remake <probe>` |
+| `HALT: reference ... differs from its pin` or `HALT: probe record ...` | a reference file or probe record no longer matches its fingerprint (the disk was damaged) | paste the output; the cloud will guide `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/selftest_v7.sh --remake <probe>`, which puts a damaged probe record back from the cloud's copy and remakes a damaged reference file (each only when the fingerprint matches); before the handoff a damaged probe record cannot be repaired |
 | `HALT: reference: the lock of <phase> does not record the re-made actors` | a phase did not use the laptop's own copy as it must | paste the output; do not restart until the cloud has looked |
 | `waiting: memory` or `waiting: slot` | the memory rule or the lane limit | nothing to do |
 | `Stopped before the end (nothing failed)` | you pressed Ctrl-C | type the same `run_v7.sh` command again (inside tmux) to continue |

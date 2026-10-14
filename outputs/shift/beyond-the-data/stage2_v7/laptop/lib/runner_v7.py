@@ -29,8 +29,9 @@ of the running phases plus its own are at most MemTotal minus 8 GiB, and (ii) Me
 reservation plus 8 GiB. A phase kind not yet measured on the laptop reserves 7 GiB; a measured kind 1.25 times its
 largest VmHWM (from the ledger); policy_train and policy_no_stall_train the larger of 7 GiB and twice their peak. At most
 2 policy_train run at once until one has been measured. When a new policy lock records standin.error or
-standin.no_stall_error, no new policy_train or policy_no_stall_train starts until the runner is restarted with
---reviewed <phase>; every other phase continues.
+standin.no_stall_error, no new policy_train or policy_no_stall_train starts until the user's review is recorded
+('run_v7.sh --reviewed <phase>': from a second window while the runner runs, which picks it up within its retry poll,
+or as a restart); every other phase continues. Typing the same review again only says it exists.
 
 Interruptions (C5). Each attempt's ledger record (v7_ledger.finish_attempt) classifies how it ended. Machine-wide
 interruptions (a changed boot id, a signal the runner sent, SIGHUP/SIGINT/SIGTERM, no exit status) rerun without
@@ -47,11 +48,13 @@ Ctrl-C once: no new phase starts and the running ones finish. A second Ctrl-C st
 first written to the attempt's ledger, so the interruption is machine-wide and the phase reruns on the next start).
 
 Files: R7/runner.lock (one runner per machine), R7/status.json, R7/runner.log, R7/retry/<phase>/<n>.json (requests,
-written by 'retry') and <n>.attempt_<m>.json (which attempt used a request), R7/reviewed/<phase>.json (--reviewed).
+written by 'retry') and <n>.attempt_<m>.json (which attempt used a request), R7/reviewed/<phase>.json ('review' or
+run --reviewed).
 
 Command line (run_v7.sh passes these):
   runner_v7.py run [--lanes N] [--cpus A,B,...] [--reviewed PHASE ...] [--plan-only]   (--reviewed: typed at a terminal)
   runner_v7.py retry PHASE        (standard input must be a terminal; the phase must be unfinished)
+  runner_v7.py review PHASE       (standard input must be a terminal; records R7/reviewed/PHASE.json once)
   runner_v7.py status
 '--v7-test <fixture>' before the command is for test_v7_laptop.py only (a synthetic fixture outside /home/user/bca).
 """
@@ -133,7 +136,8 @@ class Cfg:
     # Test mode: every one of these must be given and must resolve inside the fixture (nothing falls back to a
     # production path); the optional path settings, when given, too.
     FIXTURE_PATHS = ("root", "r7", "out", "s_folder", "v7_root", "prereg")
-    FIXTURE_OPTIONAL_PATHS = ("meminfo", "probe_script", "fallback_target", "gate_variant_dir", "cloud_out")
+    FIXTURE_OPTIONAL_PATHS = ("meminfo", "probe_script", "fallback_target", "gate_variant_dir", "cloud_out",
+                              "proc_root")
 
     @classmethod
     def from_fixture(cls, fixture):
@@ -230,25 +234,47 @@ def runner_running(r7):
         os.close(fd)
 
 
-def lane_cpus(n):
+def lane_cpus(n, sysfs="/sys/devices/system/cpu", affinity=None):
     """The processors of n lanes: always the first n of pick_cpus(16), the 16 processors the self-test checks with the
     gate on every start (ST4, ST7), so that no lane runs on a processor the self-test did not check."""
-    return pick_cpus(MAX_LANES)[:n]
+    return pick_cpus(MAX_LANES, sysfs, affinity)[:n]
 
 
-def pick_cpus(n):
-    """n processors on different physical cores when the topology says so, else the first n (as GPU/lib/runner.py)."""
+def pick_cpus(n, sysfs="/sys/devices/system/cpu", affinity=None):
+    """n processors on different physical cores when the topology says so, else the first n (as GPU/lib/runner.py).
+    sysfs and affinity (a set of processor numbers) are for the tests; by default the machine's own."""
+    allowed = set(os.sched_getaffinity(0) if affinity is None else affinity)
     groups, seen = [], set()
-    for d in sorted(Path("/sys/devices/system/cpu").glob("cpu[0-9]*"), key=lambda p: int(p.name[3:])):
+    for d in sorted(Path(sysfs).glob("cpu[0-9]*"), key=lambda p: int(p.name[3:])):
         cpu = int(d.name[3:])
-        if cpu not in os.sched_getaffinity(0):
+        if cpu not in allowed:
             continue
         sib = d / "topology" / "thread_siblings_list"
         key = sib.read_text().strip() if sib.exists() else str(cpu)
         if key not in seen:
             seen.add(key)
             groups.append(cpu)
-    return groups[:n] if len(groups) >= n else sorted(os.sched_getaffinity(0))[:n]
+    return groups[:n] if len(groups) >= n else sorted(allowed)[:n]
+
+
+def checked_cpus(cfg):
+    """The processors the self-test checks (ST4, ST7) and lanes may use: pick_cpus(16) on the machine; a test
+    fixture's own list (runner.json 'cpus')."""
+    return list(cfg.cpus) if cfg.cpus else pick_cpus(MAX_LANES)
+
+
+def lanes_for(cfg, lanes, given=None):
+    """(processors, refusal): the first 'lanes' of checked_cpus(cfg), or the given ones (--cpus), which must all be
+    among them (C2: no lane on a processor the self-test did not check)."""
+    allowed = checked_cpus(cfg)
+    cpus = [int(c) for c in given] if given else allowed[:lanes]
+    if len(cpus) < lanes or len(set(cpus)) != len(cpus):
+        return None, f"give {lanes} different processor numbers"
+    outside = sorted(set(cpus[:lanes]) - set(allowed))
+    if outside:
+        return None, (f"processors {outside} are not among the {len(allowed)} the self-test checks ({allowed}); "
+                      f"lanes use only those")
+    return cpus[:lanes], None
 
 
 def meminfo(path="/proc/meminfo"):
@@ -717,12 +743,20 @@ def standin_errors(cfg, phases_state):
 
 
 def write_review(cfg, pid, rows, argv, tty):
+    """R7/reviewed/<phase>.json, once. Typing the same --reviewed again is not an error: the record that exists is
+    returned with 'already' set (the lock is write-once, so the errors it reviewed cannot have changed)."""
     mine = [r for r in rows if r["reviewed_by"] == pid]
     if not mine:
         raise K.V7Refusal(f"--reviewed {pid}: no policy lock written on this laptop records a stand-in error for it")
+    path = cfg.r7 / "reviewed" / f"{pid}.json"
+    if path.exists() or Path(str(path) + ".sha256").exists():
+        state, body = K.read_record(path)
+        if state != "ok":
+            raise K.V7Refusal(f"{path} is damaged ({body}); paste this to the cloud")
+        return dict(body, already=True)
     body = dict(kind="stage2-v7-standin-review", phase_id=pid, utc=utc(), errors=mine, command_line=list(argv), tty=tty,
                 rule="new policy training starts again; the lock stays as written (write-once); C2")
-    K.write_json_once(cfg.r7 / "reviewed" / f"{pid}.json", body)
+    K.write_json_once(path, body)
     return body
 
 
@@ -866,8 +900,9 @@ class Runner:
                 self.once(f"review {r['lock']} {r['field']}",
                           f"REVIEW: stand-in error in {r['lock']} ({r['field']}: {r['error'][:200]}); no new policy "
                           f"training starts; every other phase continues. Paste this to the cloud; once it has looked, "
-                          f"restart (inside tmux) with: {RUN_V7} --lanes {len(self.cpus)} --reviewed "
-                          f"{r['reviewed_by']}")
+                          f"type: {RUN_V7} --lanes {len(self.cpus)} --reviewed {r['reviewed_by']} (a second Ubuntu "
+                          f"window is fine while this runner runs: it picks the review up within a minute; if the run "
+                          f"has stopped, type it inside tmux)")
 
     def blocked(self):
         return any(not r["reviewed"] for r in self.block)
@@ -1014,6 +1049,12 @@ class Runner:
         if not force and time.time() - self.last_retry_check < self.cfg.retry_poll:
             return
         self.last_retry_check = time.time()
+        if self.block:                                     # a review written by 'run_v7.sh --reviewed' meanwhile
+            before = self.blocked()
+            self.refresh_block()
+            if before and not self.blocked():
+                self.review_wait = False
+                self.say("reviewed: every stand-in error has its review now; new policy training may start again")
         for t in self.tasks:
             if t.state == "unfinished":
                 mode, n, _ = need(self.cfg, t.pid)
@@ -1133,7 +1174,7 @@ class Runner:
                     self.review_wait = True
                     self.say(f"WAITING FOR REVIEW: only policy training is left ({', '.join(t.pid for t in ready)}) "
                              f"and it waits for the stand-in review. Paste the REVIEW lines to the cloud; once it has "
-                             f"looked, restart (inside tmux) with: {RUN_V7} --lanes {len(self.cpus)} --reviewed "
+                             f"looked, type inside tmux: {RUN_V7} --lanes {len(self.cpus)} --reviewed "
                              f"<the phase the REVIEW line names>")
                     break
             time.sleep(self.cfg.poll)
@@ -1185,7 +1226,10 @@ def check_probe_pins(cfg, prereg):
             if not f.is_file() or K.file_sha256(f) != sha:
                 bad.append(f"HALT: reference {rel} differs from its pin in the final prereg_v7.json")
     if bad:
-        raise K.V7Refusal("; ".join(bad[:4]) + ". Paste this to the cloud; it will guide 'selftest_v7.sh --remake'")
+        raise K.V7Refusal("; ".join(bad[:4]) + f". Paste this to the cloud; it will guide 'sh {LAPTOP}/selftest_v7.sh "
+                          f"--remake <probe>', which puts back a damaged probe record from the cloud's copy in "
+                          f"V7/handoff/probes/ (only when its SHA-256 equals the pin) and remakes a damaged reference "
+                          f"file (only when the same call reproduces the pin)")
     return n
 
 
@@ -1257,15 +1301,10 @@ def _run_locked(cfg, a, out):
     if not 1 <= lanes <= MAX_LANES:
         out(f"refused: --lanes must be 1-{MAX_LANES}")
         return 1
-    cpus = [int(c) for c in a.cpus.split(",")] if a.cpus else (list(cfg.cpus) if cfg.cpus else lane_cpus(lanes))
-    if len(cpus) < lanes or len(set(cpus)) != len(cpus):
-        out(f"refused: give {lanes} different processor numbers")
+    cpus, why = lanes_for(cfg, lanes, a.cpus.split(",") if a.cpus else None)
+    if why:
+        out(f"refused: {why}")
         return 1
-    if not cfg.test and not set(cpus[:lanes]) <= set(pick_cpus(MAX_LANES)):
-        out(f"refused: processors {sorted(set(cpus[:lanes]) - set(pick_cpus(MAX_LANES)))} are not among the 16 the "
-            f"self-test checks ({pick_cpus(MAX_LANES)})")
-        return 1
-    cpus = cpus[:lanes]
     runner = Runner(cfg, tasks, cpus, version, training, phases_state, out=out, until_waiting=a.until_waiting,
                     entries=entries)
     if a.plan_only:
@@ -1282,8 +1321,10 @@ def _run_locked(cfg, a, out):
         return 1
     for pid in a.reviewed or []:
         try:
-            write_review(cfg, pid, standin_errors(cfg, phases_state), sys.argv, _tty())
-            runner.say(f"reviewed: {pid} (R7/reviewed/{pid}.json); new policy training may start again")
+            body = write_review(cfg, pid, standin_errors(cfg, phases_state), sys.argv, _tty())
+            runner.say(f"reviewed: {pid} (R7/reviewed/{pid}.json" + (f", already written {body.get('utc')}"
+                                                                      if body.get("already") else "") +
+                       "); new policy training may start again")
         except K.V7Refusal as error:
             out(f"refused: {error}")
             return 1
@@ -1359,6 +1400,37 @@ def cmd_retry(cfg, a, out=say_line, isatty=None):
     return 0
 
 
+def cmd_review(cfg, a, out=say_line, isatty=None):
+    """'run_v7.sh --reviewed <phase>' (C2): records the user's review of a stand-in error, typed at a terminal, once
+    (typing it again only says so). Exit 10 when a runner is running (it picks the review up within a minute), 0 when
+    none runs (run_v7.sh then starts one), 1 on a refusal."""
+    isatty = sys.stdin.isatty() if isatty is None else isatty
+    if not isatty:
+        out("refused: --reviewed must be typed at a terminal (standard input is not one)")
+        return 1
+    try:
+        _, handoff = preflight(cfg) if not cfg.test else (None, read_handoff(cfg) or {})
+    except K.V7Refusal as error:
+        text = str(error)
+        out(text if text.startswith(("refused", "HALT")) else f"refused: {text}")
+        return 1
+    argv = sys.argv if a.argv is None else (a.argv.split() if isinstance(a.argv, str) else list(a.argv))
+    try:
+        body = write_review(cfg, a.phase, standin_errors(cfg, dict(handoff.get("phases") or {})), argv, _tty())
+    except K.V7Refusal as error:
+        out(f"refused: {error}")
+        return 1
+    if body.get("already"):
+        out(f"reviewed: {a.phase} was already recorded ({body.get('utc')}, R7/reviewed/{a.phase}.json); nothing new to "
+            f"record")
+    else:
+        out(f"reviewed: {a.phase} recorded (R7/reviewed/{a.phase}.json); new policy training may start again")
+    if runner_running(cfg.r7):
+        out("the running runner picks the review up within a minute; nothing else to type")
+        return 10
+    return 0
+
+
 def cmd_status(cfg, out=say_line):
     alive = runner_running(cfg.r7)
     p = cfg.r7 / "status.json"
@@ -1400,6 +1472,9 @@ def main(argv=None, out=say_line):
     t = sub.add_parser("retry")
     t.add_argument("phase")
     t.add_argument("--argv", help=argparse.SUPPRESS)          # the user's command line, as one string
+    v = sub.add_parser("review")
+    v.add_argument("phase")
+    v.add_argument("--argv", help=argparse.SUPPRESS)
     sub.add_parser("status")
     a = ap.parse_args(argv)
     try:
@@ -1411,6 +1486,8 @@ def main(argv=None, out=say_line):
         return cmd_run(cfg, a, out)
     if a.cmd == "retry":
         return cmd_retry(cfg, a, out)
+    if a.cmd == "review":
+        return cmd_review(cfg, a, out)
     return cmd_status(cfg, out)
 
 

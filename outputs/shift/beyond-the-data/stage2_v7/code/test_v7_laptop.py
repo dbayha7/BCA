@@ -11,8 +11,10 @@ What is tested:
   [C8]  the plan: dependencies, seeds 0-4 limited to the policy test, deployment and host, inherited phases skipped,
         failed-on-record seeds skipped, longest chains first, the plan from a synthetic HANDOFF.json;
   [C2]  memory admission (7 GiB unmeasured, 1.25 x peak, max(7 GiB, 2 x peak) for the policy kinds, MemTotal - 8 GiB,
-        MemAvailable), at most 2 policy_train until one is measured, the lane cap; a stand-in error blocks only new
-        policy training until --reviewed;
+        MemAvailable), at most 2 policy_train until one is measured, the lane cap; lanes are the first N of the 16
+        processors the self-test checks (a synthetic sysfs topology), and --cpus outside them refuses (in test mode
+        too); a stand-in error blocks only new policy training until --reviewed; typing --reviewed again is harmless,
+        and a review typed in a second window is picked up by the running runner;
   [C5]  interruptions: machine-wide (SIGTERM) reruns uncounted, phase-specific (SIGKILL, a memory error) counted, files
         moved never deleted (a torn sidecar included), the alone attempt after the third, UNFINISHED after the
         fourth, independent phases continue, WAITING FOR RETRY; --retry refuses from a non-terminal or for a phase that
@@ -24,18 +26,25 @@ What is tested:
   [C6]  restore: the pinned commit and sums, partial files and logs left out, nothing overwritten, verification,
         placement, the main checkout untouched; refusals (wrong sums, commit not on the branch, a changed file, a
         partial list that differs from HANDOFF.json); the runner refuses without HANDOFF.json and with WITHDRAWN.json;
-        make_handoff: the paste block (refused unless from a READY full self-test with P3 passed), the snapshot
-        commit, HANDOFF.json (the stop rule's time in exact form and before the records and the cloud's import), the
-        final prereg_v7.json from records alone; the way back needs the user's quoted words and refuses a ledger
-        listing that names a phase;
+        make_handoff: the paste block (refused unless from a READY full self-test with P3 passed; the refusal is
+        recorded), read byte for byte from a synthetic session transcript, the process check on a synthetic /proc
+        (the driver alone refuses), 'ready' (the most recent full self-test pasted must be an accepted one run under
+        the committed draft; any pasted P3 failure ends v7), Q7 fixed in the cloud once records are imported, the
+        snapshot commit, HANDOFF.json (the stop rule's time in exact form and before the records, within the checked
+        clock tolerance, and the cloud's first paste), the final prereg_v7.json from records alone; the way back needs
+        the user's quoted words and refuses a ledger listing that names a phase;
   [C10] push_runfiles_v7.sh: refuses anything outside R7/ and the new OUT/ files, a file no ledger names, a changed
         inherited file, a non-terminal; retries a push the remote refused once (POSIX sh); pushes as the approver and
         rebuilds the same commits; check_return_v7 (an attempt interrupted before the constants step passes) on a
         synthetic return (passes; fails on a changed result, an agent commit, an unnamed OUT file, a changed cloud copy,
-        a wrong constants fact);
-  [C11] the self-test's verdicts with stub probes: READY (waiting), NOT READY tags, the forecast, the short form's
-        record check, ST9's speed line; an interrupted probe attempt settled at the next self-test, one self-test at a
-        time; the paste block round trip.
+        a wrong constants fact; orders OUT files by the import record the wrapper verified, not by the clock);
+        process-hours count a killed attempt up to its write log's last line;
+  [C11] the self-test's verdicts with stub probes: READY (waiting) with the WAIT line naming what is missing (the
+        handoff, or the approval chain's reason), NOT READY tags, the forecast, records bound to another draft, the
+        short form's record check, ST9's speed line (the stub prints run_p3's own field list) and clock (no probe
+        starts when it is off), ST8 leaving V7/results/ out; an interrupted probe attempt settled at the next
+        self-test, one self-test at a time; --remake putting back a damaged probe record from the cloud's copy; the
+        paste block round trip; run_v7.sh's filter keeps refusals and WAIT lines, and its commands are typeable.
 
 Run (one processor, low priority; the v6 run keeps processors 2 and 3, another agent uses 0):
   cd /home/user/bca && env -i PATH=/usr/bin:/bin HOME=/root PYTHONPATH=/home/user/bca PYTHONDONTWRITEBYTECODE=1 \\
@@ -47,6 +56,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -120,7 +130,11 @@ def hx(text):
 
 # ============================================================================================ synthetic probe records
 
-def p1_rec(seed, world, differs=False, reproduces=False, f_ref=0.0, f_fresh=0.0, block="b", ref_sha="0" * 64,
+# The re-make block of the synthetic prereg_v7.json of final_prereg() and the self-test fixtures: records bind to it.
+DRAFT_BLOCK = K.block_sha256(dict(q7_if_forecast_above_tolerance="stop"))
+
+
+def p1_rec(seed, world, differs=False, reproduces=False, f_ref=0.0, f_fresh=0.0, block=DRAFT_BLOCK, ref_sha="0" * 64,
            written="2026-10-14T10:00:00Z", inputs=None):
     keys = [n for n, _ in PR.P1A_ARMS[world]]
     actors = {k: dict(laptop_sha256=hx(("L" if differs else "G") + k + str(seed)), gate_sha256=hx("G" + k + str(seed)),
@@ -135,7 +149,7 @@ def p1_rec(seed, world, differs=False, reproduces=False, f_ref=0.0, f_fresh=0.0,
                 p1b=p1b, forecast=PR.forecast_of(actors, p1b, None, world), written_utc=written)
 
 
-def p2_rec(seed, differs=False, block="b", ref_sha="1" * 64, written="2026-10-14T10:00:00Z", inputs=None):
+def p2_rec(seed, differs=False, block=DRAFT_BLOCK, ref_sha="1" * 64, written="2026-10-14T10:00:00Z", inputs=None):
     actor = dict(laptop_sha256=hx(("LA" if differs else "GA") + str(seed)), gate_sha256=hx("GA" + str(seed)),
                  max_abs_diff=0.1 if differs else 0.0, differs=differs, laptop_failed=False, gate_failed=False)
     snaps = {n: dict(path=f"refs/seed{seed}/host_plain/{n}", sha256=ref_sha) for n in ("snapshot_050.msgpack",
@@ -145,7 +159,7 @@ def p2_rec(seed, differs=False, block="b", ref_sha="1" * 64, written="2026-10-14
                 reference_file=snaps["snapshot_100.msgpack"], snapshots=snaps, written_utc=written)
 
 
-def write_probe_records(r7, block="b", inputs=None, differs=(), written="2026-10-14T10:00:00Z", over=None):
+def write_probe_records(r7, block=DRAFT_BLOCK, inputs=None, differs=(), written="2026-10-14T10:00:00Z", over=None):
     """Nine records with real reference files under r7 (each record's file SHA-256 matches)."""
     r7 = Path(r7)
     for s in PR.PROBE_SEEDS:
@@ -220,7 +234,8 @@ b = seq[n - 1] if n - 1 < len(seq) else beh.get("*", "ok")
 parts = b.split(":")
 kind, opts = parts[0], dict(p.split("=") for p in parts[1:])
 L = LG.Ledger(ledger)
-L.event("checks", result=dict(stub=True), fingerprints=dict(stub=True))
+checks = json.loads((F / "checks.json").read_text()) if (F / "checks.json").exists() else dict(stub=True)
+L.event("checks", result=checks, fingerprints=dict(stub=True))
 L.event("constants", facts=dict(sha256=K.CONSTANTS_SHA256, differences=dict(
     max_abs_dA=float(opts.get("dA", 0.0)), max_abs_dK=float(opts.get("dK", 0.0)), B_bit_identical=True,
     A_bit_identical=True, K_bit_identical=True), tripwire=dict(installed=["x"], calls={})))
@@ -502,6 +517,64 @@ class MemoryUnitTests(unittest.TestCase):
         self.assertTrue(RN.admit("policy_eval", 7 * GIB, run2, 400 * GIB, 400 * GIB, {})[0])
 
 
+class LaneTests(Tmp):
+    def fake_sysfs(self, name, n, group):
+        root = self.tmp / name
+        for i in range(n):
+            d = root / f"cpu{i}" / "topology"
+            d.mkdir(parents=True)
+            (d / "thread_siblings_list").write_text(group(i) + "\n")
+        return root
+
+    def test_lanes_are_the_first_n_of_the_sixteen_checked(self):
+        """Fourth review: lanes are pick_cpus(16)[:n] (the processors ST4 and ST7 check), never pick_cpus(n)."""
+        aff = set(range(24))
+        ht = self.fake_sysfs("ht", 24, lambda i: f"{2 * (i // 2)}-{2 * (i // 2) + 1}")   # 12 cores, 2 threads each
+        self.assertEqual(RN.pick_cpus(4, ht, aff), [0, 2, 4, 6])                          # one per core
+        self.assertEqual(RN.pick_cpus(16, ht, aff), list(range(16)))                      # 12 cores < 16
+        for n in range(1, 17):
+            self.assertEqual(RN.lane_cpus(n, ht, aff), RN.pick_cpus(16, ht, aff)[:n])
+        self.assertEqual(RN.lane_cpus(4, ht, aff), [0, 1, 2, 3])
+        flat = self.fake_sysfs("flat", 24, str)                                          # 24 cores, no siblings
+        self.assertEqual(RN.lane_cpus(12, flat, aff), list(range(12)))
+        self.assertEqual(RN.pick_cpus(16, flat, {1, 2, 3}), [1, 2, 3])                    # only the allowed ones
+
+    def test_cpus_outside_the_checked_ones_are_refused(self):
+        """The --cpus refusal runs in test mode too (the fixture's own 16 processors are the checked ones)."""
+        fx = Fixture(self.tmp / "fx", phases={})
+        code, lines = fx.run("--plan-only", "--cpus", "1,2", until_waiting=False, lanes=2)
+        self.assertEqual(code, 1, lines)
+        self.assertIn("are not among the 16 the self-test checks", lines[-1])
+        code, lines = fx.run("--plan-only", "--cpus", "101,103", until_waiting=False, lanes=2)
+        self.assertEqual(code, 0, lines)
+        self.assertIn("on processors [101, 103]", lines[0])
+        code, lines = fx.run("--plan-only", until_waiting=False, lanes=3)
+        self.assertIn("on processors [101, 102, 103]", lines[0])
+        self.assertEqual(RN.checked_cpus(fx.cfg()), list(range(101, 117)))
+
+
+class ProcessHoursTests(unittest.TestCase):
+    def test_killed_attempts_count_to_their_write_logs_last_line(self):
+        """Fourth review: an attempt without an end time (its launch shell died) counts up to its write log's last line,
+        as killed_or_interrupted and in estimated_end_attempts, not in unknown_attempts."""
+        def rec(kind, start, end=None, est=None):
+            return dict(classification=dict(kind=kind), start_utc=start, end_utc=end, end_utc_estimated=est)
+        rows = {"host_train_seed6_stall": [
+                    dict(attempt=1, record=rec("done", "2026-10-14T10:00:00Z", "2026-10-14T12:00:00Z")),
+                    dict(attempt=2, record=rec("machine-wide", "2026-10-14T13:00:00Z", None, "2026-10-14T13:30:00Z")),
+                    dict(attempt=3, record=None)],
+                "deploy_seed6_stall": [dict(attempt=1, record=rec("failed", "2026-10-14T10:00:00Z",
+                                                                  "2026-10-14T10:15:00Z"))],
+                "probe_p1_seed2_stall": [dict(attempt=1, record=rec("done", "2026-10-14T09:00:00Z", None,
+                                                                    "2026-10-14T09:06:00Z"))]}
+        h = MR.process_hours(None, rows)
+        self.assertEqual((h["phases_done"], h["killed_or_interrupted"], h["failed_or_refused"], h["probes"]),
+                         (2.0, 0.5, 0.25, 0.1))
+        self.assertEqual((h["estimated_end_attempts"], h["unknown_attempts"]), (2, 1))
+        self.assertEqual(h["total"], 2.85)
+        self.assertEqual(MR._hours(rec("phase-specific", "2026-10-14T10:00:00Z")), (None, False))
+
+
 class RunnerTests(Tmp):
     def test_runs_the_plan_skipping_inherited_within_lanes(self):
         fx = Fixture(self.tmp / "fx", phases={"policy_train_seed2": "inherited", "policy_eval_seed2": "inherited"})
@@ -546,6 +619,7 @@ class RunnerTests(Tmp):
         text = "\n".join(lines)
         self.assertEqual(code, 5, text)
         self.assertIn("REVIEW: stand-in error in policy/seed2/lock.json", text)
+        self.assertIn("run_v7.sh --lanes 1 --reviewed policy_train_seed2 (a second Ubuntu window is fine", text)
         self.assertTrue(fx.attempts("policy_eval_seed2"))                 # other phases continue
         self.assertFalse((fx.r7 / "ledger" / "policy_train_seed3").exists())
         self.assertFalse((fx.r7 / "ledger" / "policy_no_stall_train_seed2").exists())
@@ -554,11 +628,51 @@ class RunnerTests(Tmp):
         code, lines = fx.run("--reviewed", "policy_train_seed2", lanes=2)
         self.assertEqual(code, 0, "\n".join(lines))
         self.assertTrue((fx.r7 / "reviewed" / "policy_train_seed2.json").exists())
+        code, lines = fx.run("--reviewed", "policy_train_seed2", lanes=2)      # typed again (shell history): harmless
+        self.assertEqual(code, 0, "\n".join(lines))
+        self.assertTrue(any("already written" in ln for ln in lines), lines)
+        a = type("A", (), dict(phase="policy_train_seed2", argv="run_v7.sh --reviewed policy_train_seed2"))()
+        say = []
+        self.assertEqual(RN.cmd_review(fx.cfg(), a, say.append, isatty=False), 1)
+        self.assertIn("terminal", say[-1])
+        self.assertEqual(RN.cmd_review(fx.cfg(), a, say.append, isatty=True), 0)
+        self.assertIn("was already recorded", say[-1])
         rows = RN.standin_errors(fx.cfg(), {})
         self.assertTrue(rows and rows[0]["memory"] and rows[0]["reviewed"])
         prov = json.loads(MR.write_provenance(fx.cfg(), "exploratory").read_text())
         labels = prov["seeds"]["seed2"]["policy stall"]["labels"]
         self.assertEqual(labels[0]["label"], "machine-caused: memory")
+
+
+    def test_review_from_a_second_window_is_picked_up_by_the_running_runner(self):
+        """Fourth review: 'run_v7.sh --reviewed <phase>' while the runner runs records the review (exit 10), and the
+        running runner lifts the block within its retry poll; no restart, so no 'another runner is running'."""
+        fx = Fixture(self.tmp / "fx", phases={}, seeds=(2, 3))
+        fx.behaviour(policy_train_seed2=["standin_error"], policy_train_seed3=["ok:sleep=4"], **{"*": "ok:sleep=0.2"})
+        proc = subprocess.Popen([PY, str(LIB / "runner_v7.py"), "--v7-test", str(fx.root), "run", "--lanes", "3"],
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=dict(RN.BASE_ENV))
+        seen = []
+
+        def reader():
+            for line in proc.stdout:
+                seen.append(line)
+        th = threading.Thread(target=reader, daemon=True)
+        th.start()
+        t0 = time.time()
+        while not any("REVIEW: stand-in error" in x for x in seen) and time.time() - t0 < 60:
+            time.sleep(0.05)
+        a = type("A", (), dict(phase="policy_train_seed2", argv="run_v7.sh --reviewed policy_train_seed2"))()
+        say = []
+        self.assertEqual(RN.cmd_review(fx.cfg(), a, say.append, isatty=True), 10, say + seen)
+        self.assertIn("picks the review up", say[-1])
+        self.assertEqual(proc.wait(timeout=300), 0, "".join(seen))
+        th.join(timeout=5)
+        proc.stdout.close()
+        text = "".join(seen)
+        self.assertIn("reviewed: every stand-in error has its review now", text)
+        self.assertNotIn("WAITING FOR REVIEW", text)
+        self.assertTrue(fx.attempts("policy_no_stall_train_seed2"))           # policy training started again
+        self.assertEqual(json.loads((fx.r7 / "status.json").read_text())["counts"]["done"], 20)
 
 
 class FixtureConfigTests(Tmp):
@@ -978,8 +1092,10 @@ if cmd in ("p1", "p2"):
 elif cmd == "r1":
     K.write_json_once(r7 / "info" / f"r1_seed{opt['--seed']}_{opt['--world']}.json", dict(kind="stage2-v7-r1"))
 elif cmd == "p3":
-    print(json.dumps(dict(seed=2, steps=1000, tree_sha256="t", bytes_sha256=src.get("p3_by_cpu", {}).get(opt["--cpu"], "b"),
-                          failed=False, cpu=[int(opt["--cpu"])], seconds=1.5)))   # the real run_p3's fields
+    import v7_probes as PR                             # the real run_p3's fields, from the list run_p3 itself checks
+    vals = dict(seed=2, steps=1000, tree_sha256="t", bytes_sha256=src.get("p3_by_cpu", {}).get(opt["--cpu"], "b"),
+                failed=False, cpu=[int(opt["--cpu"])], seconds=1.5)
+    print(json.dumps({k: vals[k] for k in PR.P3_FIELDS}))
 L.event("py-exit", code=0)
 '''
 
@@ -1028,6 +1144,9 @@ class SelfTestTests(Tmp):
         verdict, report = ST.self_test(cfg, full=False, out=lines.append)
         text = "\n".join(lines)
         self.assertEqual(verdict, "READY (waiting for handoff/approval)", text)
+        self.assertIn("WAIT handoff: prereg_v7.json here is still the draft", text)        # the reason, above it
+        self.assertLess(text.index("WAIT handoff"), text.index("READY (waiting"))
+        self.assertIn("WARN ST9 clock: the laptop's clock could not be compared", text)
         self.assertIn("p1_seed2_stall: bit-identical", text)
         summary, recs = ST.decode_block(text)
         self.assertEqual(sorted(recs), sorted(PR.all_probe_ids()))
@@ -1053,6 +1172,18 @@ class SelfTestTests(Tmp):
         write_json_sidecar(PR.record_path(fx.r7, "p1_seed4_no_stall"), rec)
         verdict, _ = ST.self_test(fx.cfg(), full=False, out=lambda *a: None)
         self.assertEqual(verdict, "NOT READY (P1b: check (b) forecast above 1e-5)")
+        # a record written under another draft (Q7 or the probe script changed afterwards): NOT READY, with the way back
+        p = PR.record_path(fx.r7, "p2_seed2")
+        rec = json.loads(p.read_text())
+        rec["inputs"].update(remake_block_sha256="the block of an earlier draft", prereg_v7_sha256_at_run="9" * 64)
+        p.unlink()
+        Path(str(p) + ".sha256").unlink()
+        write_json_sidecar(p, rec)
+        lines = []
+        verdict, _ = ST.self_test(fx.cfg(), full=False, out=lines.append)
+        self.assertEqual(verdict, "NOT READY (P1/P2: records bind to another draft)")
+        self.assertIn("write the draft again exactly as the one the records were made under (prereg_v7 9999",
+                      "\n".join(lines))
         shutil.rmtree(fx.r7 / "selftest")
         verdict, _ = ST.self_test(fx.cfg(), full=False, out=lambda *a: None)
         self.assertTrue(verdict.startswith("NOT READY (P1/P2: records missing"), verdict)
@@ -1071,6 +1202,7 @@ class SelfTestTests(Tmp):
         self.assertTrue(report["data"]["p3"]["ok"])
         self.assertEqual(len(report["data"]["p3"]["runs"]), 6)
         self.assertIn("INFO ST9 speed: one 1,000-step actor-only training run took 1.5-1.5 s", text)
+        self.assertTrue(all(set(PR.P3_FIELDS) <= set(x) for x in report["data"]["p3"]["runs"]))
         self.assertEqual(PR.record_path(fx.r7, "p2_seed4").read_bytes(), PR.record_path(src_r7, "p2_seed4").read_bytes())
         rec = RN.attempt_record(RN.attempt_files(fx.r7, "probe_p1_seed2_stall")[0][1])
         self.assertEqual(rec["classification"]["kind"], "done")                  # the probe is ledgered like a phase
@@ -1082,6 +1214,16 @@ class SelfTestTests(Tmp):
         verdict, _ = ST.self_test(fx.cfg(), full=True, out=lambda *a: None)
         self.assertEqual(len(RN.attempt_files(fx.r7, "probe_p1_seed2_stall")), n)   # a written record is never rerun
         self.assertEqual(verdict, "NOT READY (P3: results depend on lane or load)")
+        (self.tmp / "probe_src.json").write_text(json.dumps(dict(recs, p3_by_cpu={"2": "crash"})))
+        script = Path(fx.settings["probe_script"])                          # a P3 run that does not finish
+        script.write_text(script.read_text().replace('elif cmd == "p3":\n',
+                                                     'elif cmd == "p3":\n    if src.get("p3_by_cpu", {}).get(opt["--cpu"]) '
+                                                     '== "crash":\n        sys.exit(9)\n'))
+        verdict, report = ST.self_test(fx.cfg(), full=True, out=lambda *a: None)
+        self.assertEqual(verdict, "NOT READY (P3: a run did not finish)")
+        self.assertEqual((report["p3"]["differ"], report["p3"]["errors"]), (False, 3))
+        self.assertFalse(MH.p3_differs(report["p3"]))
+        self.assertTrue(MH.p3_differs(dict(ok=False, distinct=2)))             # an older summary: any failure counts
 
     def test_an_interrupted_probe_attempt_is_settled_at_the_next_self_test(self):
         fx = self.setup_fx(self.records())
@@ -1101,6 +1243,104 @@ class SelfTestTests(Tmp):
         with ST.SelfTestLock(fx.cfg()):                                            # one self-test at a time
             self.assertEqual(ST.main(["--v7-test", str(fx.root), "short"], out=lines.append), 1)
         self.assertIn("another self-test is running", lines[-1])
+
+    def test_wait_line_names_what_is_missing(self):
+        """Fourth review (major): after steps 10-11 the reason the chain does not verify reaches a WAIT line."""
+        fx = self.setup_fx(self.records())
+        write_probe_records(fx.r7)
+        final_prereg(fx.v7, "f" * 64, dict(probe_records=probe_pins(fx.r7)))      # final, but no HANDOFF.json here
+        lines = []
+        verdict, report = ST.self_test(fx.cfg(), full=False, out=lines.append)
+        self.assertEqual(verdict, "READY (waiting for handoff/approval)", lines)
+        wait = [ln for ln in lines if ln.startswith("WAIT ")]
+        self.assertEqual(len(wait), 1, lines)
+        self.assertIn("handoff missing", wait[0])
+        self.assertIn("git -C /home/user/bca pull --ff-only", wait[0])
+        self.assertEqual("WAIT " + report["waiting_for"], wait[0])
+        from unittest import mock
+        cfg = fx.cfg()
+        cfg.check_chain = True
+        prereg = VF.load_prereg_v7(cfg.prereg)
+        with mock.patch.object(VF, "check_handoff", lambda *a, **k: {}), \
+                mock.patch.object(VF, "verify_v7_chain", side_effect=VF.ChainProblem("no import record at X")):
+            ok, why = ST.ready_after_handoff(cfg, prereg)
+        self.assertFalse(ok)
+        self.assertTrue(why.startswith("approval: no import record at X. If you have done steps 10 and 11"), why)
+        self.assertIn("pull --ff-only", why)
+
+    def test_clock_off_by_more_than_the_tolerance_runs_no_probe(self):
+        """Fourth review: the probe records' laptop times enter the handoff; a clock more than 2 minutes off stops the
+        full self-test before any probe runs (the short form only warns)."""
+        fx = self.setup_fx({})
+        fx.settings["clock_offset"] = 900.0
+        fx.save()
+        lines = []
+        verdict, report = ST.self_test(fx.cfg(), full=True, out=lines.append)
+        self.assertTrue(verdict.startswith("NOT READY (clock: the laptop's clock is off"), verdict)
+        self.assertIn("wsl --shutdown", "\n".join(lines))
+        self.assertFalse((fx.r7 / "ledger" / "probe_p1_seed2_stall").exists())        # no probe was started
+        self.assertFalse(any(PR.record_path(fx.r7, pid).exists() for pid in PR.all_probe_ids()))
+        self.assertEqual(report["clock"]["offset_seconds"], 900.0)
+        self.assertNotIn("records missing", verdict)
+        write_probe_records(fx.r7)
+        verdict, _ = ST.self_test(fx.cfg(), full=False, out=lines.append)              # the short form: a warning
+        self.assertEqual(verdict, "READY (waiting for handoff/approval)")
+        self.assertTrue(any(ln.startswith("WARN ST9 clock: the laptop's clock is +900 s off") for ln in lines))
+        fx.settings["clock_offset"] = -30.0
+        fx.save()
+        lines = []
+        ST.self_test(fx.cfg(), full=False, out=lines.append)
+        self.assertTrue(any(ln.startswith("INFO ST9 clock: the laptop's clock agrees") for ln in lines), lines)
+
+    def test_damaged_probe_record_is_put_back_from_the_clouds_copy(self):
+        """Fourth review: --remake also repairs a damaged probe record, from V7/handoff/probes/ when it equals the
+        final pin (the damaged file is moved aside, never deleted); otherwise it says it cannot be repaired."""
+        fx = self.setup_fx(self.records())
+        write_probe_records(fx.r7)
+        final_prereg(fx.v7, "f" * 64, dict(probe_records=probe_pins(fx.r7)))
+        cloud = fx.v7 / "handoff" / "probes" / "selftest"
+        cloud.mkdir(parents=True)
+        for pid in PR.all_probe_ids():
+            shutil.copyfile(PR.record_path(fx.r7, pid), cloud / f"{pid}.json")
+        rec = PR.record_path(fx.r7, "p1_seed3_stall")
+        good = rec.read_bytes()
+        rec.write_bytes(good[:-5])                                                   # torn on the laptop's disk
+        with self.assertRaisesRegex(K.V7Refusal, "puts back a damaged probe record"):
+            RN.check_probe_pins(fx.cfg(), VF.load_prereg_v7(fx.v7 / "prereg_v7.json"))
+        lines = []
+        code = ST.main(["--v7-test", str(fx.root), "remake", "--probe", "p1_seed3_stall"], out=lines.append)
+        self.assertEqual(code, 0, lines)
+        self.assertEqual(rec.read_bytes(), good)
+        self.assertEqual(K.sidecar_digest(rec), K.sha256_bytes(good))
+        moved = list((fx.r7 / "interrupted" / "records").rglob("p1_seed3_stall.json"))
+        self.assertEqual([m.read_bytes() for m in moved], [good[:-5]])
+        self.assertTrue(any("was put back" in ln for ln in lines), lines)
+        self.assertIn("nothing to remake", lines[-1])
+        RN.check_probe_pins(fx.cfg(), VF.load_prereg_v7(fx.v7 / "prereg_v7.json"))   # passes again
+        rec.write_bytes(b"{}")
+        (cloud / "p1_seed3_stall.json").write_bytes(b"{}")
+        code = ST.main(["--v7-test", str(fx.root), "remake", "--probe", "p1_seed3_stall"], out=lines.append)
+        self.assertEqual(code, 1)
+        self.assertIn("cannot be repaired under v7", lines[-1])
+        self.assertEqual(rec.read_bytes(), b"{}")                                    # nothing moved
+
+    def test_st8_leaves_results_out_and_names_changed_files(self):
+        """Fourth review: committed interim results rewritten by 'run_v7.sh results' do not stop a restart."""
+        fx = self.setup_fx({})
+        res = fx.v7 / "results" / "BUNDLE.json"
+        res.parent.mkdir(parents=True, exist_ok=True)
+        res.write_text("interim\n")
+        git(fx.repo, "add", "-f", "v7/results/BUNDLE.json")
+        git(fx.repo, "commit", "-q", "-m", "user: interim results", ident=APPROVER)
+        res.write_text("gathered again\n")
+        r = ST.Report(out=lambda *a: None)
+        ST.git_checks(fx.cfg(), r)
+        self.assertEqual(r.failed, [], r.lines)
+        (fx.repo / "README").write_text("changed\n")
+        r = ST.Report(out=lambda *a: None)
+        ST.git_checks(fx.cfg(), r)
+        self.assertEqual(len(r.failed), 1, r.lines)
+        self.assertIn("tracked files are changed in this clone (README;", r.lines[0])
 
     def test_r1_information_only_once(self):
         fx = self.setup_fx({})
@@ -1152,19 +1392,37 @@ class HandoffTests(Tmp):
         cfg = fx.cfg()
         say = []
         ready = dict(verdict="READY (waiting for handoff/approval)", form="full", probe_lines=[], utc=utc_in(hours=2),
-                     p3=dict(ok=True, distinct=1))
+                     p3=dict(ok=True, distinct=1), prereg_v7_sha256=dsha, clock=dict(offset_seconds=3.0))
         for name, summ in (("short form", dict(ready, form="short")), ("NOT READY", dict(ready, verdict="NOT READY (x)")),
-                           ("P3 failed", dict(ready, p3=dict(ok=False, distinct=2))), ("no P3", dict(ready, p3=None))):
+                           ("no P3", dict(ready, p3=None))):
             with self.subTest(case=name):
                 bad = self.tmp / "notready.txt"
                 bad.write_text("\n".join(ST.encode_block(summ, records)))
                 with self.assertRaisesRegex(K.V7Refusal, "not from a READY full self-test"):
                     MH.import_selftest(cfg, bad, say.append)
                 self.assertFalse((v7 / "handoff/probes/selftest").exists())          # nothing stored
+        self.assertEqual(len(list((v7 / "handoff/probes").glob("selftest_refused_*.json"))), 3)   # but recorded
+        # the accepted block, read byte for byte from the session's transcript (nothing retyped)
+        block = "\n".join(ST.encode_block(ready, records))
+        transcript = self.tmp / "session.jsonl"
+        rows = [dict(type="user", message=dict(role="user", content="please take it from here"), uuid="u1"),
+                dict(type="user", uuid="u2", timestamp="2026-10-14T12:00:00.000Z",
+                     message=dict(role="user", content=[dict(type="text", text="$ sh selftest_v7.sh\n...\n" + block)])),
+                dict(type="user", uuid="u3", message=dict(role="user", content=[dict(
+                    type="tool_result", content="\n".join(ST.encode_block(dict(ready, verdict="NOT READY (y)"),
+                                                                          records)))])),
+                dict(type="assistant", uuid="u4", message=dict(role="assistant", content=[dict(type="text",
+                                                                                         text="not this " + block)]))]
+        transcript.write_text("\n".join(json.dumps(x) for x in rows) + "\n")
+        text, source = MH.transcript_block(transcript)
+        self.assertEqual((source["message_uuid"], source["message_timestamp"]), ("u2", "2026-10-14T12:00:00.000Z"))
+        self.assertEqual(MH.main(["--v7-test", str(fx.root), "import-selftest", "--from-transcript", str(transcript)],
+                                 out=say.append), 0, say[-4:])
+        self.assertIn("probe records: 9 new", "\n".join(say[-3:]))
+        imp = sorted((v7 / "handoff/probes").glob("selftest_import_*.json"))[-1]
+        self.assertEqual(json.loads(imp.read_text())["source"]["message_uuid"], "u2")
         paste = self.tmp / "paste.txt"
-        paste.write_text("$ sh selftest_v7.sh\n...\n" + "\n".join(ST.encode_block(ready, records)))
-        summary, new, same = MH.import_selftest(cfg, paste, say.append)
-        self.assertEqual(len(new), 9)
+        paste.write_text("$ sh selftest_v7.sh\n...\n" + block)
         self.assertEqual(MH.import_selftest(cfg, paste, say.append)[2], sorted(PR.all_probe_ids()))  # identical: ok
         stored = v7 / "handoff/probes/selftest/p1_seed2_stall.json"
         self.assertEqual(stored.read_bytes(), records["p1_seed2_stall"])
@@ -1172,8 +1430,31 @@ class HandoffTests(Tmp):
         other = dict(json.loads(records["p2_seed4"]), inputs=dict(inputs, remake_block_sha256="x"))
         bad = self.tmp / "bad.txt"
         bad.write_text("\n".join(ST.encode_block(ready, {"p2_seed4": K.canonical(other).encode()})))
-        with self.assertRaisesRegex(K.V7Refusal, "does not bind"):
+        with self.assertRaisesRegex(K.V7Refusal, "does not bind") as cm:
             MH.import_selftest(cfg, bad, say.append)
+        self.assertIn("write the draft again exactly as", str(cm.exception))
+        # Q7 can no longer change in the cloud, which has only the imported records (its R7/ is empty)
+        cloud_r7 = self.tmp / "cloud_r7"
+        with self.assertRaisesRegex(K.V7Refusal, "can no longer change"):
+            WP.write_draft(v7, cloud_r7, q7="proceed", q7_answered=True, q7_quote="proceed anyway",
+                           q7_utc="2026-10-14T09:00:00Z", log=lambda *a: None)
+        self.assertEqual(K.file_sha256(v7 / "prereg_v7.json"), dsha)
+        # the handoff rests on the most recent full self-test pasted, run under the committed draft
+        self.assertIn("ready: the most recent full self-test", MH.ready(cfg, say.append) and say[-1])
+        late = self.tmp / "late.txt"
+        late.write_text("\n".join(ST.encode_block(dict(ready, verdict="NOT READY (git: x)"), records)))
+        with self.assertRaises(K.V7Refusal):
+            MH.import_selftest(cfg, late, say.append)
+        with self.assertRaisesRegex(K.V7Refusal, "most recent full self-test pasted .* was refused"):
+            MH.ready(cfg, say.append)
+        other = self.tmp / "other.txt"
+        other.write_text("\n".join(ST.encode_block(dict(ready, prereg_v7_sha256="e" * 64), records)))
+        MH.import_selftest(cfg, other, say.append)
+        self.assertTrue(any("ran under prereg_v7 eeeeeeeeeeeeeeee" in x for x in say))
+        with self.assertRaisesRegex(K.V7Refusal, "ran under prereg_v7 eeee"):
+            MH.ready(cfg, say.append)
+        MH.import_selftest(cfg, paste, say.append)                           # step 8 again, under the draft
+        MH.ready(cfg, say.append)
         # the part 4 snapshot on the fake run-files branch
         (fx.out / "policy/seed2").mkdir(parents=True, exist_ok=True)
         ST.restore(cfg, fetch=False, out=lambda *a: None)
@@ -1184,6 +1465,17 @@ class HandoffTests(Tmp):
                 p.write_bytes(data)
         write_json_sidecar(fx.out / "policy/seed2/lock.json", dict(kind="stub-lock"))      # seed 2 finished since
         (fx.out / "logs/explore_policy.log").write_bytes(b"2026-10-14T01:00:00Z start: x\nlast line\nstopped\n")
+        procs = fx.root / "proc"                                       # a synthetic /proc: the driver still runs
+        for num, cmd in (("233", b"sh\0/tmp/x/ood/stage2_run/explore_policy.sh\0"),
+                         ("400", b"python3\0/x/make_handoff.py\0snapshot\0")):
+            (procs / num).mkdir(parents=True)
+            (procs / num / "cmdline").write_bytes(cmd)
+        fx.settings["proc_root"] = str(procs)
+        fx.save()
+        cfg = fx.cfg()
+        with self.assertRaisesRegex(K.V7Refusal, "the driver explore_policy.sh"):
+            MH.snapshot(cfg, push=True, out=say.append)
+        shutil.rmtree(procs / "233")
         snap = MH.snapshot(cfg, push=True, trailer="Co-Authored-By: test", out=say.append)
         tip = git(fx.repo, "ls-remote", str(fx.origin), "refs/heads/runfiles").stdout.split()[0]
         self.assertEqual(tip, snap["commit"])
@@ -1214,6 +1506,12 @@ class HandoffTests(Tmp):
         self.assertTrue(hand["selftest"]["p3"]["ok"])
         self.assertEqual(hand["draft_prereg_v7_sha256"], dsha)
         self.assertEqual(sorted(hand["process_check"]), ["checked_utc", "explore_policy_sh", "note", "run_stage2_py"])
+        self.assertEqual((hand["process_check"]["note"], hand["process_check"]["explore_policy_sh"]),
+                         ("test fixture: synthetic processes", []))
+        self.assertEqual(hand["selftest"]["prereg_v7_sha256_at_selftest"], dsha)
+        self.assertEqual([r["kind"] for r in hand["pasted_selftests"]],
+                         ["refused"] * 3 + ["accepted", "accepted", "refused", "accepted", "accepted"])
+        self.assertEqual(hand["laptop_clock"]["tolerance_seconds"], ST.CLOCK_TOLERANCE_S)
         self.assertEqual(hand["phases"]["policy_train_seed2"], "inherited")
         self.assertEqual(hand["phases"]["policy_train_seed0"], "inherited")
         self.assertEqual(hand["partial_files"], [])
@@ -1221,6 +1519,10 @@ class HandoffTests(Tmp):
         self.assertEqual(hand["last_log_lines"][-1], "stopped")
         with self.assertRaisesRegex(K.V7Refusal, "written once"):
             MH.write_handoff(cfg, args, say.append)
+        with self.assertRaisesRegex(K.V7Refusal, "can no longer change"):     # after the handoff, still fixed
+            WP.write_draft(v7, cloud_r7, q7="proceed", q7_answered=True, q7_quote="proceed anyway",
+                           q7_utc="2026-10-14T09:00:00Z", log=lambda *a: None)
+        self.assertEqual(WP.write_draft(v7, cloud_r7, log=lambda *a: None)[1], dsha)   # its own draft: allowed
         final, fsha = WP.write_final(v7 / "handoff/HANDOFF.json", v7, v7 / "handoff/probes", log=lambda *a: None,
                                      require_files=False)
         self.assertTrue(final["approvable"])
@@ -1258,11 +1560,101 @@ class HandoffTests(Tmp):
         self.assertIn("probe_p3_seed2", w["ledger_listing"])
 
 
+class HandoffUnitTests(Tmp):
+    def test_process_check_sees_the_driver_and_the_phases(self):
+        """Fourth review: the driver check of 'snapshot' and 'write' (C6 step 1), on a synthetic /proc."""
+        procs = self.tmp / "proc"
+        rows = {"233": b"sh\0/tmp/x/scratchpad/ood/stage2_run/explore_policy.sh\0",
+                "26518": b"/tmp/claude-0/bcavenv/bin/python\0/x/run_stage2.py\0--phase\0host_train\0",
+                "400": b"python3\0/x/make_handoff.py\0write\0", "12": b"bash\0", "self": b"ignored"}
+        for num, cmd in rows.items():
+            (procs / num).mkdir(parents=True)
+            (procs / num / "cmdline").write_bytes(cmd)
+        got = MH.cloud_processes(procs)
+        self.assertEqual([r["pid"] for r in got["explore_policy_sh"]], [233])
+        self.assertEqual([r["pid"] for r in got["run_stage2_py"]], [26518])
+        with self.assertRaisesRegex(K.V7Refusal, "the driver explore_policy.sh"):
+            MH.stopped_check(got)
+        shutil.rmtree(procs / "26518")
+        with self.assertRaisesRegex(K.V7Refusal, "explore_policy.sh: \\[\\{'pid': 233"):
+            MH.stopped_check(MH.cloud_processes(procs))                     # the driver alone still refuses
+        shutil.rmtree(procs / "233")
+        ok = MH.stopped_check(MH.cloud_processes(procs))                    # only make_handoff and a shell left
+        self.assertEqual((ok["run_stage2_py"], ok["explore_policy_sh"]), ([], []))
+
+    def test_stop_rule_time_allows_the_checked_clock_tolerance_only(self):
+        from datetime import datetime, timedelta
+        rec, paste = datetime(2026, 10, 14, 10, 0, 0), datetime(2026, 10, 14, 11, 0, 0)
+        self.assertTrue(MH.chosen_in_time(rec - timedelta(seconds=1), rec, paste))
+        self.assertTrue(MH.chosen_in_time(rec + timedelta(seconds=60), rec, paste))     # within 120 s: the laptop's
+        self.assertFalse(MH.chosen_in_time(rec + timedelta(seconds=300), rec, paste))   # clock may be that far behind
+        self.assertFalse(MH.chosen_in_time(rec + timedelta(seconds=60), rec, rec + timedelta(seconds=30)))
+
+    def test_a_p3_failure_in_any_pasted_full_selftest_ends_v7(self):
+        """Fourth review: an earlier READY import cannot carry a handoff once a full self-test with P3 failed was
+        pasted (the refusal is recorded); pasting the earlier block again does not help."""
+        fx = GitFixture(self.tmp / "fx")
+        v7 = fx.v7
+        shutil.rmtree(v7)
+        complete_v7_tree(v7)
+        man = WM.main([], v7_root=v7, log=lambda *a: None)
+        body, dsha = WP.write_draft(v7, fx.r7, log=lambda *a: None)
+        inputs = dict(constants_sha256=K.CONSTANTS_SHA256, gate_prereg_sha256=K.GATE_PREREG_SHA256,
+                      v6_code_manifest_sha256=K.V6["code_manifest_sha256"],
+                      probe_script_sha256=man["files"]["code/v7_probes.py"])
+        laptop = self.tmp / "laptop_r7"
+        write_probe_records(laptop, block=K.block_sha256(body["remake"]), inputs=inputs)
+        records = {pid: PR.record_path(laptop, pid).read_bytes() for pid in PR.all_probe_ids()}
+        cfg, say = fx.cfg(), []
+        ready = dict(verdict="READY (waiting for handoff/approval)", form="full", probe_lines=[], utc=utc_in(),
+                     p3=dict(ok=True, distinct=1), prereg_v7_sha256=dsha)
+        paste = self.tmp / "ready.txt"
+        paste.write_text("\n".join(ST.encode_block(ready, records)))
+        MH.import_selftest(cfg, paste, say.append)
+        MH.ready(cfg, say.append)
+        failed = self.tmp / "p3.txt"
+        failed.write_text("\n".join(ST.encode_block(dict(ready, verdict="NOT READY (P3: results depend on lane or "
+                                                                         "load)", p3=dict(ok=False, distinct=2)),
+                                                  records)))
+        with self.assertRaisesRegex(K.V7Refusal, "not from a READY full self-test"):
+            MH.import_selftest(cfg, failed, say.append)
+        MH.import_selftest(cfg, paste, say.append)                           # the earlier READY block again
+        with self.assertRaisesRegex(K.V7Refusal, "failed the repeatability test P3: v7 ends"):
+            MH.ready(cfg, say.append)
+        args = type("A", (), dict(snapshot="0" * 40, stop_rule="stop at once", stop_rule_chosen="default",
+                                  go_ahead="2026-10-14T13:00:00Z", stop="2026-10-14T13:05:00Z",
+                                  routines=str(self.tmp / "none.json"), processes=str(self.tmp / "none.json")))()
+        with self.assertRaisesRegex(K.V7Refusal, "failed the repeatability test P3"):
+            MH.write_handoff(cfg, args, say.append)
+        self.assertFalse((v7 / "handoff" / "HANDOFF.json").exists())
+
+
+class ShellScriptTests(unittest.TestCase):
+    def test_scripts_parse_and_run_v7_shows_refusals_and_typeable_commands(self):
+        """Fourth review: run_v7.sh keeps the self-test's 'refused:', WAIT and HALT lines (a lock refusal, the reason
+        it waits) and prints commands in full."""
+        for f in sorted((V7 / "laptop").glob("*.sh")) + [LIB / "common_v7.sh"]:
+            self.assertEqual(sh(["sh", "-n", f], check=False).returncode, 0, f)
+        text = (V7 / "laptop" / "run_v7.sh").read_text()
+        pattern = re.search(r"grep -E '(\^\([^']*)'", text).group(1)
+        sample = ("INFO ST9 clock: fine\nrefused: another self-test is running (R7/selftest/selftest.lock); wait\n"
+                  "WAIT approval: no import record at x\nV7DATA _summary 0 H4sI\nREADY (waiting for handoff/approval)\n")
+        kept = sh(["grep", "-E", pattern], input=sample, check=False).stdout.splitlines()
+        self.assertEqual(kept, ["refused: another self-test is running (R7/selftest/selftest.lock); wait",
+                                "WAIT approval: no import record at x", "READY (waiting for handoff/approval)"])
+        self.assertNotIn("run_v7.sh --retry <phase> continues", text)
+        self.assertIn("type sh $PKG/run_v7.sh --retry <phase>", text)
+        self.assertIn("sh $PKG/run_v7.sh --lanes $LANES --reviewed <phase>", text)
+        self.assertIn('review "$PH"', text)                              # --reviewed is recorded before any restart
+
+
 # ============================================================================================ C10: run files, return
 
 class ReturnTests(Tmp):
-    def build(self):
-        """A whole synthetic return: restore, a laptop run of seed 2 (stub phases), results, the user's commits."""
+    def build(self, import_first=False, verified=True):
+        """A whole synthetic return: restore, a laptop run of seed 2 (stub phases), results, the user's commits.
+        import_first: the import record exists before the run, with a time after every attempt (a skewed clock);
+        verified: the stub wrapper's checks name it (as the real wrapper's verify_v7_chain does)."""
         fx = GitFixture(self.tmp / "fx")
         cfg = fx.cfg()
         tasks = RN.build_plan("weighted", True, seeds=(2,), pooled=False)
@@ -1273,16 +1665,23 @@ class ReturnTests(Tmp):
         pins = probe_pins(fx.r7)
         fx.handoff(states, partial=partial, snapshot=dict(commit=fx.commit, sums_sha256=fx.sums_sha),
                    extra=dict(probe_records=pins))
+        prefix = K.prefix_of(K.file_sha256(fx.v7 / "prereg_v7.json"))
+        if import_first:
+            isha = write_json_sidecar(fx.v7 / f"import_v7_{prefix}.json",
+                                      dict(kind=K.IMPORT_KIND, prereg_sha256=K.file_sha256(fx.v7 / "prereg_v7.json"),
+                                           imported_at="2999-01-01T00:00:00Z"))
+            if verified:
+                (fx.root / "checks.json").write_text(json.dumps(dict(stub=True, v7_chain=dict(import_sha256=isha))))
         ST.restore(fx.cfg(), fetch=False, out=lambda *a: None)
         fx.behaviour(**{"*": "ok"})
         code, lines = fx.run(lanes=3)
         self.assertEqual(code, 0, "\n".join(lines))
         self.assertTrue(all(t.pid in states for t in tasks))
         MR.make_results(fx.cfg(), out=lambda *a: None)
-        prefix = K.prefix_of(K.file_sha256(fx.v7 / "prereg_v7.json"))
-        write_json_sidecar(fx.v7 / f"import_v7_{prefix}.json",
-                           dict(kind=K.IMPORT_KIND, prereg_sha256=K.file_sha256(fx.v7 / "prereg_v7.json"),
-                                imported_at="2000-01-01T00:00:00Z"))
+        if not import_first:
+            write_json_sidecar(fx.v7 / f"import_v7_{prefix}.json",
+                               dict(kind=K.IMPORT_KIND, prereg_sha256=K.file_sha256(fx.v7 / "prereg_v7.json"),
+                                    imported_at="2000-01-01T00:00:00Z"))
         git(fx.repo, "add", "-f", "v7/prereg_v7.json", "v7/prereg_v7.json.sha256", "v7/handoff",
             f"v7/import_v7_{prefix}.json", f"v7/import_v7_{prefix}.json.sha256", "v7/code_manifest_v7.json",
             "v7/code_manifest_v7.json.sha256", "v7/code")
@@ -1348,6 +1747,23 @@ class ReturnTests(Tmp):
         shutil.rmtree(fx.cloud_out / "policy/seed9")
         code, text = self.check(fx)
         self.assertEqual(code, 0, text)
+
+    def test_return_check_orders_by_the_verified_import_not_the_clock(self):
+        """Fourth review: the laptop's clock may lag the cloud's; an attempt whose wrapper verified the import record
+        passes whatever the times say, and one that did not (a test fixture compares times) fails."""
+        fx = self.build(import_first=True)
+        self.assertEqual(self.push(fx).returncode, 0)
+        git(fx.repo, "fetch", "-q", "origin", "+refs/heads/stage2-v7-run-files:refs/remotes/origin/stage2-v7-run-files")
+        code, text = self.check(fx)
+        self.assertEqual(code, 0, text)
+        self.assertIn("by an attempt whose wrapper verified the v7 import record", text)
+        shutil.rmtree(self.tmp / "fx")
+        fx = self.build(import_first=True, verified=False)
+        self.assertEqual(self.push(fx).returncode, 0)
+        git(fx.repo, "fetch", "-q", "origin", "+refs/heads/stage2-v7-run-files:refs/remotes/origin/stage2-v7-run-files")
+        code, text = self.check(fx)
+        self.assertEqual(code, 1)
+        self.assertIn("FAIL every new file under OUT/ is named", text)
 
     def test_bundle_and_provenance_name_an_unfinished_phase(self):
         fx = GitFixture(self.tmp / "fx")

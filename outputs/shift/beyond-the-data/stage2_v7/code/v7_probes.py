@@ -68,6 +68,12 @@ ENTRY_KEYS = {"stall": ("gapped", "full"), "no_stall": ("no_stall_gapped",)}    
 P1C_ARMS = {"stall": (("none", "gap"), ("full_none", "none")), "no_stall": (("none_no_stall", "gap"),)}
 HOST_NAME = "TD3+BC plain (stall, gap log)"                                               # GATE/acceptance.py:1072
 P3_STEPS = 1000
+# The fields run_p3 returns (and the self-test's P3 rows hold): 'seconds' feeds ST9's speed line (C11).
+P3_FIELDS = ("seed", "steps", "tree_sha256", "bytes_sha256", "failed", "cpu", "seconds")
+# The fingerprints a probe record binds to (C7 'Probe records'). Of these, only the draft can change the first two
+# (its re-make and forecast block, Q7's answer included, and the probe script's pin in its code manifest).
+BOUND_BY_DRAFT = ("remake_block_sha256", "probe_script_sha256")
+BOUND = BOUND_BY_DRAFT + ("constants_sha256", "gate_prereg_sha256", "v6_code_manifest_sha256")
 
 
 def probe_id(kind, seed, world=None):
@@ -315,9 +321,11 @@ def run_p3(H, seed=2, steps=P3_STEPS, log=None):
     p = ao.arm_params(stacked, 0)
     seconds = time.perf_counter() - t0
     from flax import serialization
-    return dict(seed=int(seed), steps=int(steps), tree_sha256=L.tree_sha256(p),
-                bytes_sha256=K.sha256_bytes(serialization.to_bytes(p)), failed=bool(info["failed"][0]),
-                cpu=sorted(os.sched_getaffinity(0)), seconds=round(seconds, 3))
+    out = dict(seed=int(seed), steps=int(steps), tree_sha256=L.tree_sha256(p),
+               bytes_sha256=K.sha256_bytes(serialization.to_bytes(p)), failed=bool(info["failed"][0]),
+               cpu=sorted(os.sched_getaffinity(0)), seconds=round(seconds, 3))
+    assert tuple(sorted(out)) == tuple(sorted(P3_FIELDS)), "run_p3's fields must be P3_FIELDS"
+    return out
 
 
 def p3_compare(results):
@@ -423,6 +431,31 @@ def remake_table(records, record_sha256, inherited):
             labels[f"seed{s} deploy {w}"] = ("inherited (cloud, v6)" if f"deploy_seed{s}_{w}" in inherited
                                              else "laptop, gate's reference (v6 as written)")
     return entries, labels
+
+
+def binding_want(payload, keys=BOUND):
+    """The fingerprints a probe record must carry to bind to this prereg_v7.json payload (draft or final)."""
+    want = dict(remake_block_sha256=K.block_sha256(payload.get("remake")),
+                probe_script_sha256=((payload.get("code") or {}).get("files") or {}).get("code/v7_probes.py"),
+                constants_sha256=(payload.get("constants") or {}).get("sha256"),
+                gate_prereg_sha256=K.GATE_PREREG_SHA256, v6_code_manifest_sha256=K.V6["code_manifest_sha256"])
+    return {k: want[k] for k in keys}
+
+
+def binding_problems(payload, rec, keys=BOUND):
+    """The sorted fingerprints in which a probe record does not bind to this payload ([] when it binds)."""
+    inp = (rec or {}).get("inputs") or {}
+    return sorted(k for k, v in binding_want(payload, keys).items() if inp.get(k) != v)
+
+
+def binding_advice(recs):
+    """What to do when written probe records no longer bind to the draft (they are never rerun): the drafts they were
+    written under, from their own 'prereg_v7_sha256_at_run'."""
+    drafts = sorted({str(((r or {}).get("inputs") or {}).get("prereg_v7_sha256_at_run"))[:16] for r in recs})
+    return ("the draft's re-make and Q7 block or the probe script changed after the probes ran, and a written probe "
+            "record is never rerun: write the draft again exactly as the one the records were made under (prereg_v7 "
+            f"{', '.join(drafts)}...; prereg_v7_history/ and git history hold it: the same Q7 arguments and the same "
+            "code/v7_probes.py), or end v7 (make_handoff.py withdraw)")
 
 
 def read_probe_records(r7, pins=None):

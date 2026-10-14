@@ -25,12 +25,15 @@ What is tested (spec section in brackets):
         refuses through the original loader; real multi-actor files; a host entry calls the original get_host path;
         world keys; every exit 97 case; gate files unchanged; through launch_v7.sh a stub phase's lock records the
         re-made actors; the probes' calls carry the gate's arguments and never reach a training or writing branch;
-        step 2's rule and the forecast; --remake.
+        run_p3 itself returns exactly P3_FIELDS, 'seconds' included (ST9); step 2's rule and the forecast; --remake.
   [C10] the ledger's audit hook; the approval route (approve_local_v7 refuses a non-terminal; import; the agent-identity
         cases copied verbatim from S2C/test_stage2.py:864-870; the new approver check; the import record on origin's
         branch); the writers (draft, final, refusal once approved; Q7 recorded only with the user's words and time;
-        the final refuses a HANDOFF.json of another draft or one without a READY full self-test with P3 passed); the
-        approval screen shows the self-test, P3, Q7 and the forecast's verdict with a warning above 1e-5.
+        the final refuses a HANDOFF.json of another draft or one without a READY full self-test with P3 passed, or
+        whose self-test ran under another draft); the draft writer refuses a change of Q7's answer or the probe script
+        once any probe record exists, the cloud's imported copies included (the cloud has no R7/), and, once
+        HANDOFF.json exists, any other draft (the refusals name the way back, never 'a new handoff'); the approval
+        screen shows the self-test, P3, the draft it ran under, Q7 and the forecast's verdict with a warning above 1e-5.
 
 Run (two processors, low priority; the v6 run keeps processors 2 and 3):
   cd /home/user/bca && env -i PATH=/usr/bin:/bin HOME=/root PYTHONPATH=/home/user/bca PYTHONDONTWRITEBYTECODE=1 \\
@@ -1579,6 +1582,24 @@ class ProbeTests(Tmp):
         moved = list((self.tmp / "interrupted" / "probe_p1_seed2_stall").rglob("check2_stall.msgpack"))
         self.assertEqual(moved[0].read_bytes(), b"partial from a killed probe")
 
+    def test_p3_returns_exactly_its_fields_with_the_time(self):
+        """Fourth review: ST9's speed line needs run_p3's 'seconds'; run_p3 itself is called here (stub harness)."""
+        H = stub_harness(BASE_VALUES, GATE_SAME)
+        made = H.L.ActorOnly
+
+        def plain_actor_only(*a, **kw):                       # flax serializes plain dicts only
+            ao = made(*a, **kw)
+            return type("AO", (), dict(run=lambda self, *x, **y: ao.run(*x, **y),
+                                       arm_params=lambda self, stacked, i: dict(stacked[i])))()
+        H.L.ActorOnly = plain_actor_only
+        res = PR.run_p3(H, 2)
+        self.assertEqual(sorted(res), sorted(PR.P3_FIELDS))
+        self.assertIn("seconds", res)
+        self.assertIsInstance(res["seconds"], float)
+        self.assertEqual(res["steps"], PR.P3_STEPS)
+        call = [c for c in H.L.calls if c[0] == "ActorOnly"][0]
+        self.assertEqual(call[5], dict(alpha=5.0, steps=1000, chunk=1000))
+
     def test_never_reaches_a_training_or_writing_branch(self):
         H = stub_harness(BASE_VALUES, GATE_SAME)
         for name in ("get_clone", "h2_seed", "stage_harm_return", "write_prereg"):
@@ -1789,11 +1810,12 @@ class WriterTests(Tmp):
                            q7_utc="2026-10-14T09:00:00Z", log=lambda *a: None)
         _, digest = WP.write_draft(self.v7, self.r7, log=lambda *a: None)       # the same block: allowed
         hand = self.v7 / "handoff" / "HANDOFF.json"
+        selftest = dict(READY_SELFTEST, prereg_v7_sha256_at_selftest=digest)
         write_json_sidecar(hand, dict(kind="stage2-v7-handoff", snapshot=dict(commit="c" * 40),
                                       phases={"policy_train_seed4": "inherited"}, stop_rule="stop at once",
-                                      draft_prereg_v7_sha256=digest, selftest=READY_SELFTEST))
+                                      draft_prereg_v7_sha256=digest, selftest=selftest))
         final, fdigest = WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
-        self.assertEqual(final["handoff"]["selftest"], READY_SELFTEST)
+        self.assertEqual(final["handoff"]["selftest"], selftest)
         self.assertTrue(final["approvable"])
         self.assertEqual(WP.non_handoff(final), WP.non_handoff(body))
         kinds = sorted((e["phase"], e["seed"]) for e in final["handoff"]["remake_table"])
@@ -1829,11 +1851,59 @@ class WriterTests(Tmp):
         self.assertEqual(body["remake"]["q7_user_message"], dict(quote="keep the default: stop",
                                                                  utc="2026-10-14T09:00:00Z"))
 
+    def test_draft_refuses_a_change_once_records_were_imported(self):
+        """Fourth review (major): the cloud has no R7/; the records it imported (V7/handoff/probes/selftest/) bind the
+        draft too. Q7's answer and the probe script cannot change once any record exists anywhere."""
+        body, digest = WP.write_draft(self.v7, self.r7, log=lambda *a: None)
+        imported = self.v7 / "handoff" / "probes"
+        synthetic_records(imported, K.block_sha256(body["remake"]), self.man["files"]["code/v7_probes.py"])
+        cloud_r7 = self.tmp / "cloud_has_no_r7"                                  # as K.R7 in the cloud
+        with self.assertRaisesRegex(K.V7Refusal, "can no longer change") as cm:
+            WP.write_draft(self.v7, cloud_r7, q7="proceed", q7_answered=True, q7_quote="go on",
+                           q7_utc="2026-10-14T09:00:00Z", log=lambda *a: None)
+        self.assertIn("write the draft again exactly as the one the records were made under", str(cm.exception))
+        self.assertEqual(K.file_sha256(self.v7 / "prereg_v7.json"), digest)     # nothing was written
+        probe = self.v7 / "code" / "v7_probes.py"
+        original = probe.read_bytes()
+        probe.write_bytes(original + b"\n# changed\n")
+        WM.main([], v7_root=self.v7, log=lambda *a: None)
+        with self.assertRaisesRegex(K.V7Refusal, "probe_script_sha256"):
+            WP.write_draft(self.v7, cloud_r7, log=lambda *a: None)
+        probe.write_bytes(original)
+        WM.main([], v7_root=self.v7, log=lambda *a: None)
+        _, again = WP.write_draft(self.v7, cloud_r7, log=lambda *a: None)       # the same draft: allowed
+        self.assertEqual(again, digest)
+        rec = PR.record_path(imported, "p2_seed3")                               # a damaged imported record counts too
+        rec.write_bytes(rec.read_bytes() + b" ")
+        with self.assertRaisesRegex(K.V7Refusal, "unreadable"):
+            WP.write_draft(self.v7, cloud_r7, log=lambda *a: None)
+
+    def test_no_other_draft_once_handoff_exists(self):
+        """Fourth review: HANDOFF.json is written once; after it only its own draft can be written, and the final's
+        refusals no longer advise 'a new handoff'."""
+        _, digest = WP.write_draft(self.v7, self.r7, log=lambda *a: None)
+        hand = self.v7 / "handoff" / "HANDOFF.json"
+        write_json_sidecar(hand, dict(kind="stage2-v7-handoff", phases={}, draft_prereg_v7_sha256=digest,
+                                      selftest=dict(READY_SELFTEST, prereg_v7_sha256_at_selftest=digest)))
+        self.assertEqual(WP.write_draft(self.v7, self.r7, log=lambda *a: None)[1], digest)   # the same draft: allowed
+        readme = self.v7 / "README.md"
+        readme.write_text(readme.read_text() + "a late fix\n")
+        WM.main([], v7_root=self.v7, log=lambda *a: None)
+        with self.assertRaisesRegex(K.V7Refusal, "HANDOFF.json exists and was written for the draft"):
+            WP.write_draft(self.v7, self.r7, log=lambda *a: None)
+        self.assertEqual(K.file_sha256(self.v7 / "prereg_v7.json"), digest)
+        with self.assertRaisesRegex(K.V7Refusal, "only that draft can carry it") as cm:
+            WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
+        self.assertNotIn("new handoff", str(cm.exception))
+        (self.v7 / "handoff" / "WITHDRAWN.json").write_text("{}")               # after the way back: no handoff ties it
+        WP.write_draft(self.v7, self.r7, log=lambda *a: None)
+
     def test_final_refusals(self):
         body, dsha = WP.write_draft(self.v7, self.r7, log=lambda *a: None)
         hand = self.v7 / "handoff" / "HANDOFF.json"
+        ready = dict(READY_SELFTEST, prereg_v7_sha256_at_selftest=dsha)
         write_json_sidecar(hand, dict(kind="stage2-v7-handoff", phases={}, draft_prereg_v7_sha256=dsha,
-                                      selftest=READY_SELFTEST))
+                                      selftest=ready))
         with self.assertRaises(K.V7Refusal):                                     # no probe records
             WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
         synthetic_records(self.r7, "another block", self.man["files"]["code/v7_probes.py"])
@@ -1856,17 +1926,18 @@ class WriterTests(Tmp):
             WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
         self.assertIn("HALT: reference", str(cm.exception))
         (self.r7 / "refs/seed2/check2_stall.msgpack").write_bytes(b"p1_seed2_stall")
-        for name, over, msg in (("another draft", dict(draft_prereg_v7_sha256="e" * 64), "new handoff"),
+        for name, over, msg in (("another draft", dict(draft_prereg_v7_sha256="e" * 64), "no other draft can carry it"),
                                 ("no self-test", dict(selftest=None), "P3 passed"),
-                                ("P3 failed", dict(selftest=dict(READY_SELFTEST, p3=dict(ok=False))), "P3 passed"),
-                                ("NOT READY", dict(selftest=dict(READY_SELFTEST, verdict="NOT READY (gate)")),
-                                 "P3 passed")):
+                                ("P3 failed", dict(selftest=dict(ready, p3=dict(ok=False))), "P3 passed"),
+                                ("NOT READY", dict(selftest=dict(ready, verdict="NOT READY (gate)")), "P3 passed"),
+                                ("self-test under another draft",
+                                 dict(selftest=dict(ready, prereg_v7_sha256_at_selftest="e" * 64)), "ran under")):
             with self.subTest(case=name):
                 for q in (hand, Path(str(hand) + ".sha256")):
                     if q.exists():
                         q.unlink()
                 write_json_sidecar(hand, dict(dict(kind="stage2-v7-handoff", phases={}, draft_prereg_v7_sha256=dsha,
-                                                   selftest=READY_SELFTEST), **over))
+                                                   selftest=ready), **over))
                 with self.assertRaisesRegex(K.V7Refusal, msg):
                     WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
 
@@ -1884,7 +1955,10 @@ class ApprovalScreenTests(unittest.TestCase):
                                      "1e-5 accepted under Q7: p1_seed2_stall)"),
                        probe_records={}, remake_table=[], labels={})
         payload = dict(label="l", changes=[], failures_v7_can_cause=[], remake=remake, handoff=handoff)
+        handoff.update(draft_sha256="d" * 64)
+        handoff["selftest"]["prereg_v7_sha256_at_selftest"] = "d" * 64
         text = AL7.summary(dict(prereg=payload, n_files=1, sha256="a" * 64, v6_sha256="b" * 64))
+        self.assertIn("ran under the draft this final is built on: yes", text)
         for want in ("repeatability test P3", "passed", "READY (waiting", "'proceed' (answered by the user)",
                      '"go on anyway" (2026-10-14T09:00:00Z)', "accepted under Q7", "WARNING", "ABOVE 1e-05"):
             self.assertIn(want, text)
