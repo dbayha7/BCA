@@ -598,3 +598,6 @@ Last updated: 2026-10-14.
   cannot see which episodes contain random commands. The user then asked for learning curves for every setup;
   every curve reruns the original training with checkpoints and checks it against the saved final actor.
   Version 5's runs reproduce only when pinned to one CPU, as they were trained.
+  The ThrusterChain page, version 15 (merged onto another session's version 14, which answered the owner's critic-viewer
+  and Setting 1 comments): the weighting test gains findings D-F (where the band is read, weighting for it, return),
+  and its outcome, header line, timeline and navigation now report the return gain (`docs/thrusterchain/`).
