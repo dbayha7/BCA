@@ -4,7 +4,7 @@ This file records every experiment in one place. Each entry says why the experim
 what happened, what it means, and what comes next. Update it whenever an experiment starts, finishes or changes
 plan. Details live in the linked write-ups; this file stays short.
 
-Last updated: 2026-10-13.
+Last updated: 2026-10-14.
 
 ## The big picture
 
@@ -41,7 +41,7 @@ Last updated: 2026-10-13.
 | 14 | Toy-world audit and the Gapped LQ world | Done: rejected twice (original gate, then Amendment A1 on fresh seeds) | The critic is wrong everywhere, so the loss is not where data are thin |
 | 15 | D4RL rollout truth (option C) and the action-gap protocol | Built; real runs need data + checkpoints | Tested on synthetic data only |
 | 16 | ThrusterChain: a Gymnasium environment with a controlled distribution shift | Done: stopped before BCA (no room); Stage 1 done (exploratory) | The shift costs 99 points in strong current; BCA's kind of caution cannot reach it, but a penalty on the value of the actor's own command can (93.9 of 98.9 points, exact oracle) |
-| 17 | ThrusterChain known-shift weighting test (spec version 5, five dataset qualities) | Done: claims 1–2 (coverage) hold; no quality qualified for BCA training; exploratory BCA arms run | Weighting fixes coverage under the known shift (83–87% → 91–95%); it did not raise return |
+| 17 | ThrusterChain known-shift weighting test (spec version 5, five dataset qualities) | Done: claims 1–2 (coverage) hold; no quality qualified for BCA training; exploratory BCA arms run | Weighting fixes coverage under the known shift (83–87% → 91–95%). Weighting the band for the actor's own commands, with "no value credit" where the data lack the command, raises return under the strong shift by 2.0 points (medium-expert) and 5.8 (expert), every seed, with no cost without the shift |
 
 ## Experiments
 
@@ -401,6 +401,78 @@ Last updated: 2026-10-13.
     width that is missing at commands the data never contain, which is where return is lost.
   - Next, if the user wants return gains: a band whose width grows at unsupported commands (for example read relative
     to the recorded command, as Stage 1's oracle was), then a new pre-registered test.
+- **The user's request (2026-10-14):** "i wanr return gain as well. its good that the coverage aspect is working
+  accordingly, but we need to identify the right channel for the penalty to actually impact policy performance".
+- **Channel check (2026-10-14, exploratory, post hoc, no training;** expectations written first:
+  `outputs/shift_iw/explore/channel/`).
+  - **Which channel:** the room checks with exact information already answer it.
+    - The lower edge (a penalty on the value at the actor's own command) gains +5.8 points (medium-expert) and
+      +8.4 (expert) under the strong shift.
+    - The capped pull gains at most 0.2 points even when placed perfectly.
+    - On the three lower qualities neither channel has room: the perfect lower edge loses 0.8–1.1 points.
+  - **Why BCA's lower edge did not move return:** the band is honest where it was calibrated, not where the lower
+    edge reads it.
+    - At the no-caution actor's own commands within 80%, it covers 95–96% at the top two qualities.
+    - The actor pushes past 80% on 53–62% of hard-water rows. There the critic overrates its command by 3.4
+      (medium-expert) and 1.7 (expert) per step, and the band covers 48% and 25% (strong law). It would have to be
+      3.4× and 8.1× wider, but it widens only 15–25% past 80%.
+    - On the three lower qualities the band is 10–18× wider than on expert data, and the actors rarely go past
+      80%, so it covers 81–93% at their commands.
+    - Expectations: E1 met; E2 and E3 partly met (they hold at the top two qualities only, and the weighting helped
+      coverage more than predicted: +6 to +10 points).
+  - **Why weighting by the current law cannot raise return:** it multiplies every row's band by a nearly constant
+    factor (1.45× expert, 1.75× medium-expert). In the room checks, scaling caution by 1.5 moves return by
+    0.0–0.1 points for the perfectly informed lower edge and 0.4–0.7 for the even pull. Weighting has to change where the band is wide, not only how wide it is.
+  - **Consequence:** for weighting to reach return, the weights must describe where the band is read, which is the
+    actor's commands under the test law. Both parts are known exactly in this world: the current law, and the
+    recording controller's command density in closed form. Proposed to the user (decision 10).
+- **Command-weighted band, check without training (2026-10-14; the user's go: "Yes, build and check it
+  (Recommended)").** Pass marks were written first (`outputs/shift_iw/explore/channel/`).
+  - **The band:** BCA's frozen band with one change, the weights. A (row, command) gets the exact ratio
+    w(c) × π_h(a | s) × Z(s) / β(a | s):
+    - π_h is the actor's command with BCA's own target-noise spread (0.2, clipped at 0.5);
+    - β is the recording controller's command density, exact for each episode's random share;
+    - Z is the share outside the removed ball.
+  - **C1, met on all five qualities:** at draws from that test distribution, 94–100% of commands are covered or
+    refused, by seed.
+  - **C2, met at the top two qualities:** at the actor's own commands, 98–100% are covered or refused. Every
+    past-80% command is refused, where version 5's band covered 25% and 48%.
+  - **C3, missed:** within 80% the band also refuses 25% (expert) and 48% (medium-expert) of the actor's commands.
+    15 and 9 points of that are commands inside the removed hold; the rest come from the small effective bank
+    (3–16%). On the three lower qualities it refuses 68–98%, a blanket refusal.
+  - **C4, missed:** version 5's refusal rule (the largest finite threshold, only 1.7–3.0× R_u) leaves the penalty
+    too small and flat from 80% to 81%. Check (e) passes on 0 and 1 of 5 seeds.
+  - **Post hoc, not a pass mark:** if a refused command gets no value credit over the recorded command, check (e)
+    passes on 5 of 5 seeds at both qualities. The share of hard-water rows whose best throttle is past 80% falls
+    from 80% to 1.8% (expert) and from 85% to 16.5% (medium-expert); the exact oracle reaches 34% and 52%.
+- **Return test (2026-10-14; the user's approval: "Approve as drafted (Recommended)").** The pass marks were frozen
+  first (`outputs/shift_iw/explore/channel/PASSMARKS_training_test.md`, SHA-256 `204f53ff…`). Setup: actor-only
+  lower edge, version 5's protocol, medium-expert and expert, seeds 0–4, 30 runs on CPU (about 150 s each).
+  - **Checks before training:** all passed. With the weights switched off the step equals version 5's bit for bit,
+    and the in-graph density and refusals match the numpy check.
+  - **Expert: T1–T3 met.** A beats version 5's unweighted lower edge under the strong shift by 78.6 return units
+    (lower bound 72.8; 6.2 points; every seed +70 to +85), which is 73% of the exact oracle's gain. An untargeted
+    control with the same amount of "no credit" gains 1.1. Without the shift A gains 16.3.
+  - **Medium-expert: T1–T3 missed.** A loses 124.8 under the strong shift (9.8 points) and 35.6 without it.
+    - Post hoc: refusals pile up in the strongest third of currents (62–68%) and on random-command episodes.
+      59–65% of refused rows have a random recorded command, and "no credit" makes the actor copy them.
+  - **Knowing the test current law adds nothing to return:** A minus B (training law) is +1.0 on expert (lower
+    bound −0.3) and −15.1 on medium-expert. The gain comes from weighting for the actor's commands.
+  - Write-up: `outputs/shift_iw/explore/channel/RESULTS_training_test.md`.
+- **Rerun with the refusal fallback fixed (2026-10-14; the user's go: "Fix the fallback, then rerun
+  (Recommended)").** The pass marks were frozen first (`PASSMARKS_fallback_rerun.md`, SHA-256 `8b8f7a27…`).
+  - **The change:** "no value credit" applies only where the exact ratio is infinite (the data never contain the
+    command at that state and episode, or it is in the removed hold). A refusal because the bank is too small
+    gets version 5's capped threshold. Checks before training passed (bit-equal step; refusal types match).
+  - **U1–U4 met on both qualities.** Against version 5's unweighted lower edge under the strong shift:
+    - medium-expert +25.0 return units (lower bound 22.6; 2.0 points; every seed +22.8 to +28.8);
+    - expert +74.2 (lower bound 68.3; 5.8 points); that is 34% and 69% of the exact oracle's gain.
+    An untargeted control of the same amount gains about 1. Without the shift return also rises (+4.5 and
+    +15.6). Medium-expert's loss is gone (+149.8 over the first test).
+  - **The current-law part of the weight adds nothing to return** (A2 minus B2: −0.2 and +0.5). The gain comes
+    from weighting for the actor's commands, which here acts as a calibrated support check: it refuses where
+    the recorded commands never go and certifies elsewhere, with no knee or threshold given to it.
+  - Write-up: `outputs/shift_iw/explore/channel/RESULTS_fallback_rerun.md`.
 
 ## Decisions waiting on the user
 1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
@@ -415,8 +487,8 @@ Last updated: 2026-10-13.
 9. ThrusterChain (entry 16): the user did not accept the stop. Stage 1 of the plan (no BCA) runs first. Still to
    decide: the claim wanted ("flags reliance on unsupported commands" is testable now; "identifies the harm" needs a
    test bed whose data carry a trace of it). Stage 2 (BCA) needs typed approval.
-10. Known-shift weighting (entry 17): whether to build a band that widens at unsupported commands and pre-register a
-   new return test.
+10. Known-shift weighting (entry 17): the return gain is shown (rerun, U1–U4 met on medium-expert and expert).
+   Open: estimated instead of exact weights; whether to fold the result into the ThrusterChain page; commits.
 
 ## Deliverables
 - **Notebooks:**
@@ -488,3 +560,19 @@ Last updated: 2026-10-13.
     page comments: one validated colour system, a five-step offline-RL pipeline strip tying every setting to its
     step, aligned symbol legends, two interactive charts, and the weighting test's plain TD3+BC coverage and
     exploratory BCA results. Page and sources: `docs/thrusterchain/`.
+- **2026-10-14:** the user asked for a return gain from weighting and for the right channel. An exploratory check
+  (no training) found that the lower edge is the channel with room, but BCA's band covers only 25–48% at the
+  actor's past-80% commands at the top two qualities. The current-law weighting rescales the band nearly
+  uniformly (1.45–1.75×), and in the room checks a rescale of that size moves return by at most 0.7 points,
+  even for perfectly informed caution. Next: weights for the actor's commands under the test law (decision 10).
+  With the user's go, that band was built and checked without training: it is honest where the lower edge reads
+  it and refuses every past-80% command, but version 5's refusal rule makes the penalty too weak. A post hoc
+  "no credit" rule removes most of the past-80% preference. The return test (approved, pass marks frozen first)
+  met T1–T3 on expert data: +78.6 return units (6.2 points) under the strong shift, 73% of the exact oracle's
+  gain, and nothing for an untargeted control of the same size. It missed them on medium-expert (−124.8), where
+  refusals in strong currents make the actor copy random recorded commands. Knowing the test current law added
+  nothing to return; the gain comes from weighting for the actor's commands.
+  The user chose to fix the fallback: "no value credit" only where the data lack the command (infinite exact
+  ratio), version 5's capped threshold where the bank is merely too small. The rerun met U1–U4 on both
+  qualities: +25.0 return units (medium-expert) and +74.2 (expert) under the strong shift, with every seed
+  positive, no gain for an untargeted control of the same size, and no cost without the shift.
