@@ -1,19 +1,27 @@
 """Stage 2, version 7: write V7/prereg_v7.json (+ .sha256) (V7_SPEC.md section 4 and C10).
 
-  write_prereg_v7.py draft [--q7 stop|proceed]
+  write_prereg_v7.py draft [--q7 stop|proceed --q7-answered --q7-quote TEXT --q7-utc YYYY-MM-DDTHH:MM:SSZ]
       The draft: every v7 rule (sections 1, 3, 5, 7 of the spec as data), the predecessor pins (checked against the
       files), the constants pin, the phase table, the re-make and forecast block with the answer to Q7 (default
-      'stop'), approvable: false and missing: ['handoff'] (plus any required file the code manifest lists as missing).
+      'stop', marked open), approvable: false and missing: ['handoff'] (plus any required file the code manifest
+      lists as missing). Q7 is marked 'answered by the user' only with --q7-answered, which needs the user's message
+      quoted (--q7-quote) and its UTC time (--q7-utc); both are stored in the re-make block, so the probe records bind
+      to them. 'proceed' is refused unless it is such a recorded answer; nothing infers an answer.
       It pins code_manifest_v7.json, so write_manifest_v7.py runs first. Once any probe record exists, the re-make and
       forecast block can no longer change (each record binds to its SHA-256, C7 'Probe records').
-  write_prereg_v7.py final --handoff V7/handoff/HANDOFF.json
+  write_prereg_v7.py final --handoff V7/handoff/HANDOFF.json [--records DIR]
       The final: the draft with ONLY the handoff fields filled in (approvable, missing, status, handoff), which this
       script enforces against the draft it builds on (kept in prereg_v7_history/). It needs HANDOFF.json (+ sidecar)
-      and all nine probe records (R7/selftest/p1_seed{2,3,4}_{stall,no_stall}.json, p2_seed{2,3,4}.json) with their
-      reference files; every record must bind to the draft's re-make block, the constants file, the gate's
+      and all nine probe records (<DIR>/selftest/p1_seed{2,3,4}_{stall,no_stall}.json, p2_seed{2,3,4}.json; DIR is R7/
+      by default, and V7/handoff/probes/ in the cloud, where cloud/make_handoff.py import-selftest put the records the
+      laptop's self-test printed). The reference files are checked against their records where they exist (on the
+      laptop); with --records the cloud, which has no reference files, pins them from the records alone (the laptop's
+      short self-test, the runner and the wrapper check them against these pins). Every record must bind to the
+      draft's re-make block, the constants file, the gate's
       pre-registration and v6's code manifest. It computes C7 step 2's table of re-made references from those pinned
       inputs and HANDOFF.json's inherited phases, the labels, and the check (b) forecast; with a forecast gap above
-      1e-5 and Q7 'stop' it refuses (NOT READY).
+      1e-5 and Q7 'stop' it refuses (NOT READY). It refuses a HANDOFF.json written for another draft (its
+      draft_prereg_v7_sha256), and copies into the handoff block the full self-test the handoff rests on.
 Both refuse once an approval or import record of the current prereg_v7.json's fingerprint exists. A replaced version
 is copied to prereg_v7_history/prereg_v7_<first 16>.json (+ .sha256) first. Nothing here writes an approval.
 """
@@ -87,9 +95,33 @@ def check_predecessor(root=None):
     return dict(K.V6)
 
 
-def draft_payload(manifest_sha256, manifest, q7="stop"):
+Q7_OPEN = ("open: the user's answer is wanted before the draft is pushed; until it is recorded, the default 'stop' "
+           "applies (NOT READY when a check (b) forecast gap is above 1e-5)")
+Q7_ANSWERED = "answered by the user"
+
+
+def q7_message(quote, utc):
+    """The user's answer to Q7 as recorded: their words, quoted, and the UTC time of their message."""
+    if not (quote or "").strip() or not utc:
+        raise K.V7Refusal("--q7-answered needs the user's message quoted (--q7-quote) and its UTC time (--q7-utc)")
+    from datetime import datetime
+    try:
+        datetime.strptime(utc, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        raise K.V7Refusal(f"--q7-utc must be a UTC time in exactly the form 2026-10-14T09:00:00Z (got {utc!r})") from None
+    return dict(quote=quote.strip(), utc=utc)
+
+
+def draft_payload(manifest_sha256, manifest, q7="stop", q7_answered=False, q7_user_message=None):
     if q7 not in Q7_CHOICES:
         raise K.V7Refusal(f"Q7's answer must be one of {Q7_CHOICES}")
+    if q7_answered:
+        q7_user_message = q7_message((q7_user_message or {}).get("quote"), (q7_user_message or {}).get("utc"))
+    elif q7 == "proceed":
+        raise K.V7Refusal("Q7 'proceed' can only be the user's recorded answer: give --q7-answered with --q7-quote "
+                          "(their words) and --q7-utc (the time of their message)")
+    else:
+        q7_user_message = None
     missing_files = list(manifest.get("missing_required") or [])
     return dict(
         kind=K.PREREG_KIND, version=7, label=K.LABEL,
@@ -147,7 +179,8 @@ def draft_payload(manifest_sha256, manifest, q7="stop"):
                                     "started, the cloud never resumes Stage 2")),
         remake=dict(
             seeds=list(K.REMAKE_SEEDS), forecast_tolerance=K.W0_TOL,
-            q7_if_forecast_above_tolerance=q7, q7_default="stop",
+            q7_if_forecast_above_tolerance=q7, q7_default="stop", q7_status=Q7_ANSWERED if q7_answered else Q7_OPEN,
+            q7_user_message=q7_user_message,
             kinds=[dict(phase=p, world=w, method=v["method"], lock=v["lock"], lock_names=v["lock_names"],
                         reference_file="refs/seed{s}/" + v["file"]) for (p, w), v in sorted(RF.KINDS.items())],
             p1a_names={w: [n for n, _ in PR.P1A_ARMS[w]] for w in PR.WORLDS},
@@ -225,13 +258,23 @@ def _records_bound(r7):
     return out
 
 
-def write_draft(v7_root=None, r7=None, q7="stop", log=print):
+def q7_answered_in(payload):
+    return (payload.get("remake") or {}).get("q7_status") == Q7_ANSWERED
+
+
+def q7_args(payload):
+    """The Q7 arguments a draft was written with (so the final can rebuild it and compare)."""
+    r = payload.get("remake") or {}
+    return r.get("q7_if_forecast_above_tolerance"), q7_answered_in(payload), r.get("q7_user_message")
+
+
+def write_draft(v7_root=None, r7=None, q7="stop", log=print, q7_answered=False, q7_quote=None, q7_utc=None):
     v7_root, r7 = Path(v7_root or K.V7), Path(r7 or K.R7)
     old = _existing(v7_root)
     if old is not None and frozen(v7_root, old):
         raise K.V7Refusal("an approval or import record of the current prereg_v7.json exists; it is frozen")
     msha, man = _manifest(v7_root)
-    body = draft_payload(msha, man, q7)
+    body = draft_payload(msha, man, q7, q7_answered, dict(quote=q7_quote, utc=q7_utc) if q7_answered else None)
     block = K.block_sha256(body["remake"])
     bound = {pid: b for pid, b in _records_bound(r7).items() if b != block}
     if bound:
@@ -245,11 +288,21 @@ def write_draft(v7_root=None, r7=None, q7="stop", log=print):
     return body, digest
 
 
-def build_final(draft, draft_sha256, handoff_path, r7):
-    """The final payload from a draft, HANDOFF.json and the nine probe records (C7 step 2, step 2b)."""
+def build_final(draft, draft_sha256, handoff_path, r7, require_files=True):
+    """The final payload from a draft, HANDOFF.json and the nine probe records (C7 step 2, step 2b). With
+    require_files=False (the cloud), a reference file that is absent is pinned from its record alone; one that is
+    present must still match."""
     handoff = K.read_json_verified(handoff_path, "HANDOFF.json")
     if handoff.get("kind") != "stage2-v7-handoff":
         raise K.V7Refusal("HANDOFF.json is not a v7 handoff record")
+    if handoff.get("draft_prereg_v7_sha256") != draft_sha256:
+        raise K.V7Refusal(f"HANDOFF.json was written for the draft {str(handoff.get('draft_prereg_v7_sha256'))[:16]}..., "
+                          f"not this draft {draft_sha256[:16]}...; a new draft needs a new handoff (or WITHDRAWN.json)")
+    st = handoff.get("selftest") or {}
+    if not (st.get("form") == "full" and str(st.get("verdict") or "").startswith("READY") and
+            (st.get("p3") or {}).get("ok") is True):
+        raise K.V7Refusal("HANDOFF.json does not rest on a READY full self-test whose repeatability test P3 passed "
+                          "(C3, C11)")
     records, shas = PR.read_probe_records(r7)
     block = K.block_sha256(draft["remake"])
     for pid, rec in records.items():
@@ -269,7 +322,7 @@ def build_final(draft, draft_sha256, handoff_path, r7):
             if f.get("sha256") is None:
                 continue
             p = Path(r7) / f["path"]
-            if not p.is_file() or K.file_sha256(p) != f["sha256"]:
+            if (require_files or p.exists()) and (not p.is_file() or K.file_sha256(p) != f["sha256"]):
                 raise K.V7Refusal(f"HALT: reference {f['path']} differs from probe record {pid}")
             pins[pid][f["path"]] = f["sha256"]
     inherited = {pid for pid, state in (handoff.get("phases") or {}).items() if state == "inherited"}
@@ -293,7 +346,11 @@ def build_final(draft, draft_sha256, handoff_path, r7):
         probe_rows[pid] = row
     summary = [f"snapshot {(handoff.get('snapshot') or {}).get('commit')}",
                f"stop rule: {handoff.get('stop_rule')} (chosen {handoff.get('stop_rule_chosen_utc')})",
-               f"inherited phases: {len(inherited)}"]
+               f"inherited phases: {len(inherited)}",
+               f"full self-test: {st.get('verdict')}; repeatability test P3 passed",
+               f"Q7 (proceed although the check (b) forecast is above 1e-5?): "
+               f"'{draft['remake'].get('q7_if_forecast_above_tolerance')}', {draft['remake'].get('q7_status')}",
+               f"check (b) forecast: {fc['line']}"]
     payload = dict(draft)
     payload.update(
         approvable=True, missing=[],
@@ -301,13 +358,13 @@ def build_final(draft, draft_sha256, handoff_path, r7):
         handoff=dict(handoff_file=K.V7_REL + "/handoff/HANDOFF.json", handoff_sha256=K.file_sha256(handoff_path),
                      draft_sha256=draft_sha256, snapshot=handoff.get("snapshot"), stop_rule=handoff.get("stop_rule"),
                      inherited=sorted(inherited), summary=summary, probe_records=probe_rows, forecast=fc,
-                     remake_table=entries, labels=labels))
+                     remake_table=entries, labels=labels, selftest=handoff.get("selftest")))
     if non_handoff(payload) != non_handoff(draft):
         raise K.V7Refusal("the final differs from its draft outside the handoff fields")
     return payload
 
 
-def write_final(handoff_path, v7_root=None, r7=None, log=print):
+def write_final(handoff_path, v7_root=None, r7=None, log=print, require_files=True):
     v7_root, r7 = Path(v7_root or K.V7), Path(r7 or K.R7)
     old = _existing(v7_root)
     if old is None:
@@ -325,10 +382,10 @@ def write_final(handoff_path, v7_root=None, r7=None, log=print):
     msha, man = _manifest(v7_root)
     if man.get("missing_required"):
         raise K.V7Refusal(f"required v7 files are missing: {man['missing_required']}")
-    fresh = draft_payload(msha, man, base["remake"]["q7_if_forecast_above_tolerance"])
+    fresh = draft_payload(msha, man, *q7_args(base))
     if non_handoff(fresh) != non_handoff(dict(base, missing=None)):
         raise K.V7Refusal("the files changed since the draft (its code manifest or rules); write a new draft first")
-    payload = build_final(base, base_sha, handoff_path, r7)
+    payload = build_final(base, base_sha, handoff_path, r7, require_files)
     _archive(v7_root, old)
     digest = _write(v7_root, payload)
     log(f"wrote {v7_root / 'prereg_v7.json'} (FINAL) SHA-256 {digest}\n  first 16 characters: {digest[:16]}\n"
@@ -341,14 +398,18 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="mode", required=True)
     d = sub.add_parser("draft")
     d.add_argument("--q7", choices=Q7_CHOICES, default="stop")
+    d.add_argument("--q7-answered", action="store_true", help="the user has answered Q7 (recorded in the draft)")
+    d.add_argument("--q7-quote", help="the user's answer to Q7, quoted from their message")
+    d.add_argument("--q7-utc", help="the UTC time of that message, e.g. 2026-10-14T09:00:00Z")
     f = sub.add_parser("final")
     f.add_argument("--handoff", required=True)
+    f.add_argument("--records", help="folder holding selftest/<probe>.json (the cloud: V7/handoff/probes)")
     a = ap.parse_args(argv)
     try:
         if a.mode == "draft":
-            write_draft(q7=a.q7)
+            write_draft(q7=a.q7, q7_answered=a.q7_answered, q7_quote=a.q7_quote, q7_utc=a.q7_utc)
         else:
-            write_final(Path(a.handoff))
+            write_final(Path(a.handoff), r7=a.records, require_files=a.records is None)
     except K.V7Refusal as error:
         print(f"refused: {error}", file=sys.stderr)
         return 2

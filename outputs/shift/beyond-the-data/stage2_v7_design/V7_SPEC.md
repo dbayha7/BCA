@@ -249,9 +249,16 @@ report: with the constants substituted, the unchanged gate accepted all 64 ancho
 10 base gate logs under every family (default SkylakeX, Haswell, Sandybridge, Nehalem, Katmai; about 90-95 s each);
 the replacements were asked only for the two tuples, the originals were never reached, and the tripwire counted 0
 calls. Without the constants, the four emulated families leave 42-58 anchors differing and 0 of 10 logs matching.
-Every family is within the tolerances of step 2. Still to do before `prereg_v7.json` pins the file: rerun
-`xla_repro.py` (C7) and save its output in `V7/evidence/`. The earlier glibc 2.40 run was not repeated; on the laptop
-the self-test decides (ST4, ST6).
+Every family is within the tolerances of step 2. The rerun of `xla_repro.py` (C7) is saved in `V7/evidence/xla/`
+(`summary.json` and its sidecar, `SHA256SUMS`, the scripts, logs and records; information only, run on the cloud's
+Xeon outside the v7 wrapper, one processor at a time): with the constants substituted, check 2's actors of seeds 0, 2,
+3 and 4 were reproduced bit for bit both on the cloud's processor as it is and with an AVX2-only processor emulated
+(`XLA_FLAGS=--xla_cpu_max_isa=AVX2`, Haswell OpenBLAS kernels, numpy's AVX-512 paths off); for seed 2, P1a, P1b, P1c
+and P2 run the probes' calls under the emulation were bit-identical to the gate's actors, so both forecast gaps F_ref
+and F_fresh were exactly 0; and the training program's compiled code, although it holds no AVX-512 instruction under
+the emulation, gave the same bits after one chunk. An emulation cannot show what the laptop's own processor does (XLA
+still tunes for the Xeon's model); the laptop's self-test decides. The earlier glibc 2.40 run was not repeated; on the
+laptop the self-test decides (ST4, ST6).
 
 **Why it is a declared departure.** At run time it changes what two gate functions return, although they return the
 gate's own recorded-machine values. No pinned file is edited. The user accepted it (Q1).
@@ -316,14 +323,15 @@ runner starts no new `policy_train` or `policy_no_stall_train` phase (the only p
 `S2C/policy.py:410-420`, `:549-559`) and prints the error; every other phase continues. The lock stays (write-once).
 If the error names memory (`MemoryError`, `RESOURCE_EXHAUSTED` or "out of memory"), the provenance file labels that
 seed's stand-in comparison "machine-caused: memory". New policy training starts again only when the user restarts the
-runner with `--reviewed <phase>`.
+runner with `--reviewed <phase>`, typed at a terminal.
 
 **Compute budget (declared now; Q3).** v6's 72-92 process-hours stays an estimate that stops nothing. The provenance
 file reports the process-hours used: the cloud's from its logs, the laptop's from the ledger, killed attempts, reruns
 and probes included, each listed separately (laptop hours are at the laptop's speed).
 
 **Enforced by:**
-- `V7/laptop/lib/runner_v7.py`: `--lanes` 1-16, default 12; a machine-wide `flock` (as `GPU/lib/runner.py:333-337`);
+- `V7/laptop/lib/runner_v7.py`: `--lanes` 1-16, default 12, the lanes being the first N of the 16 processors the
+  self-test checks with the gate (ST4, ST7); a machine-wide `flock` (as `GPU/lib/runner.py:333-337`);
   the memory admission rule; the stand-in error block on new policy training.
 - `V7/code/launch_v7.sh`: one of 16 slot locks (`flock -n R7/slots/slot_<i>.lock`), refusing when none is free, so
   the cap holds even outside the runner; and a per-phase lock (`flock -n R7/locks/<phase>.lock`), because the v6
@@ -352,7 +360,10 @@ unknown.
 **Tested by:** `test_v7.py` (a list, a range or two processors refuses), and **P3, a repeatability test under load**:
 a fixed 1,000-step `learners.ActorOnly` run, three times with the machine idle and three times with the other lanes
 busy, on two different lane processors. All runs must give identical bytes. Otherwise NOT READY, which ends v7 as
-specified (section 6, failure table). P3 shows only that results do not depend on lane or load.
+specified (section 6, failure table). The cloud enforces it: `cloud/make_handoff.py import-selftest` refuses a
+self-test that is not a READY full one with P3 passed, `HANDOFF.json` pins the self-test it rests on (its import
+record's SHA-256, verdict and P3 result), and `write_prereg_v7.py final` refuses without it. P3 shows only that
+results do not depend on lane or load.
 
 ### C4. Paths, operating system and environment
 
@@ -435,8 +446,10 @@ the phase is running, and it ended in one of two ways:
   SIGHUP, SIGINT or SIGTERM, or with no exit status recorded, on the same boot (a closed terminal or tmux session);
 - *phase-specific*: on the same boot, it was killed by SIGKILL, SIGSEGV, SIGBUS or SIGABRT that the runner did not
   send (the out-of-memory killer sends SIGKILL; `launch_v7.sh` records the real exit status, which v6's `launch.sh`
-  turns into 1, `S2C/launch.sh:19-20`), or its log ends in a memory error (`MemoryError`, `RESOURCE_EXHAUSTED` or
-  "out of memory").
+  turns into 1, `S2C/launch.sh:19-20`), or its own lines of the log end in a memory error (`MemoryError`,
+  `RESOURCE_EXHAUSTED` or "out of memory"). Every attempt of a phase appends to one log, so an attempt is classified
+  only on the lines from the start line that names its write log to the next start line; an exit 97 is a v7
+  refusal whatever those lines say.
 
 For an interrupted phase, the runner moves **every existing file in that phase's row of the table** (including a JSON
 whose sidecar is missing or wrong), never deleting it, to `R7/interrupted/<phase>/<UTC time>/` at the same relative
@@ -465,7 +478,13 @@ name it in `BUNDLE.json`, in the provenance file and in the runner's last line, 
 Exit 97 (a v7 refusal, C1, C7) halts the run. Any other non-zero exit, or exit 0 without the phase being done, halts
 new phases and names the log, as `GPU/` does. Recorded failures and inherited files are never moved. The runner never
 exits on a damaged record: it reads records through a wrapper that turns a sidecar refusal into "partial" and reports
-it. Files are found only through the table, never by folder differences or times.
+it. Files are found only through the table, never by folder differences or times. A phase that is done on file and
+not inherited must have been made by a ledgered laptop attempt classified done that wrote each file that makes it
+done, with its current SHA-256 (and, with a re-make entry, its lock must record the re-made actors); otherwise the run
+halts, at start-up and whenever such a phase is found or ends. Every attempt left without a record (its launch shell,
+or the self-test, did not survive) has its record written once no process of it runs: by the runner at start-up,
+done phases included, by the self-test (under its lock) for probe attempts, and before results or run files are
+gathered.
 
 **Why.** Sleep, Windows Update, `wsl --shutdown`, power loss and the out-of-memory killer are likely over a run of
 several hours. Every random stream is seeded, so a rerun on the same machine with one processor gives the same numbers.
@@ -513,8 +532,12 @@ while its session is active.
 3. **`V7/handoff/HANDOFF.json`** (+ sidecar), written once by the cloud. It holds: the snapshot commit and the SHA-256
    of its sums file; the stop time; the stop rule used ("stop at once" or "let them finish"), the UTC time it was
    chosen (or "default") and the write times of the nine P1/P2 records, so anyone can see the choice came first; the
-   go-ahead's time; each Routine's id and final state; the processes stopped and the last log lines; for every seed
-   and phase, whether it is inherited, partial or not started; the list of partial files.
+   go-ahead's time; each Routine's id and final state; the processes stopped, the check that no `run_stage2.py` and
+   no `explore_policy.sh` process is left, and the last log lines; for every seed and phase, whether it is inherited,
+   partial or not started; the list of partial files; the cloud's own time of the first self-test import (the stop
+   rule must be chosen before it too, and its time is given as `YYYY-MM-DDTHH:MM:SSZ` or "default"); the full
+   self-test it rests on (READY, with P3 passed); and the draft `prereg_v7.json` it goes with (the final refuses
+   another draft).
 4. **Accepted v6 outputs (a rule, not a choice).** A phase is **inherited** when its final record or failed-on-record
    file is in the final snapshot with a matching sidecar; all its table files are then inherited as is. Files under
    `OUT/` that belong to no phase (`prereg.json`, `code_manifest.json`, `approval.json`, `code/`, the history folders,
@@ -529,9 +552,12 @@ while its session is active.
    cloud writes `V7/handoff/WITHDRAWN.json` (a new record; `HANDOFF.json` is never edited) and may resume v6 with
    `explore_policy.sh`, at most 2 processes, with a new watchdog only if the user asks. The v7 runner refuses once
    `WITHDRAWN.json` exists. Once any v7 phase has started on the laptop (its first ledger file exists), the cloud never
-   resumes Stage 2; any further route is the user's decision, as a new version.
+   resumes Stage 2; any further route is the user's decision, as a new version. `WITHDRAWN.json` records the user's
+   own confirmation that no v7 phase has started, quoted with the time of their message, and, when the user pastes
+   it, the listing of `R7/ledger/`; a listing that names any folder other than a probe's is refused.
 
-**Restore.** `restore_v7.sh` fetches only the run-files branch, checks that its commit equals the pinned one, and
+**Restore.** `restore_v7.sh` fetches only the run-files branch (in the shell, where git can ask for the user's
+sign-in), checks that the pinned commit is on it (its tip, or an ancestor of the tip once the branch has moved on), and
 extracts with `git archive <commit> runs | tar -x --skip-old-files`, leaving out `OUT/logs/` and the partial files.
 It never touches the main branch's index or tracked files (`runs/` is ignored, `.gitignore:6`). It then checks every
 extracted file against `RUNFILES_SHA256SUMS`, minus `OUT/logs/`. Before the handoff it restores `901c877` (which holds
@@ -788,9 +814,10 @@ never replaced, and no later self-test reruns it. Each record holds the fingerpr
 handoff can change: the constants file, the probe script, the gate's pre-registration (`68d9e877...`), the pinned v6
 code manifest, and the re-make and forecast block of the committed draft `prereg_v7.json` (this rule and the answer to
 Q7). The self-test prints each record's SHA-256, its `differs` flags and the forecast gaps; the cloud writes them, with
-the table of step 2, into the final `prereg_v7.json`, which cannot be written without all nine records. The runner and
-the wrapper check the records and reference files against those pins; a mismatch halts the run, because it means `R7/`
-was damaged.
+the table of step 2, into the final `prereg_v7.json`, which cannot be written without all nine records. The short
+self-test and the runner (before anything starts) check every record and reference file against those pins, and the
+wrapper checks the reference file of a re-made entry it reads; a mismatch halts the run, because it means `R7/` was
+damaged.
 
 **A damaged reference (declared now).** It can be replaced only by the same call reproducing the pinned SHA-256.
 `selftest_v7.sh --remake <probe>` moves the damaged file (never deleting it) to `R7/interrupted/refs/<UTC time>/` at its
@@ -931,7 +958,9 @@ under their own name (step 13). Then, as the user decided (Q6), the laptop's new
 `R7/refs/` included, go to a new orphan branch (step 14).
 
 **The return check.** In the cloud, `V7/cloud/check_return_v7.py` checks: every fingerprint; the ledger's
-completeness; the constants facts in every phase (in place of `gate_accepts True`, `GPU/cloud/check_return.py:150-151`);
+completeness; the constants facts in every phase and probe attempt that computed anything (one that reached the
+hand-over or is done; an attempt interrupted before the constants step needs none) (in place of `gate_accepts True`,
+`GPU/cloud/check_return.py:150-151`);
 that inherited files are unchanged (BUNDLE.json against the final snapshot's sums); that no phase has both an inherited
 and a new output; that every new file under `OUT/` is named by a ledger entry written after the v7 import; that the
 cloud's own copy of `OUT/` (outside `logs/`), if it still exists, still matches the final snapshot; that every commit
@@ -963,7 +992,7 @@ match the final `prereg_v7.json`.
 | P3. Repeatability under load (C3) | required; full form only |
 | ST7. One processor visible per lane (as `GPU/lib/selftest_checks.py:158-159`) | required |
 | ST8. Git: full clone, `7dab7d5` present, origin branch present, no git identity equal to the approver's or Anthropic's, no changed tracked file (as `GPU/lib/selftest_checks.py:203-231`) | required |
-| ST9. WSL memory, free disk (at least 20 GB), one training step's time (lane-hour estimate), GPU timing | information |
+| ST9. WSL memory (a warning below 40 GiB), free disk (at least 20 GB), P3's training run time (no lane-hour estimate), GPU timing | information |
 
 The last line reads `READY`, `READY (waiting for handoff/approval)` or `NOT READY (<what failed>)`, followed by the
 probe results (for each seed and world: "bit-identical", "gate's file kept (P1b reproduced it)" or "reference will be
@@ -1083,20 +1112,20 @@ Steps 0-1 are in Windows (PowerShell). The rest are inside Ubuntu as root. The t
 
 | # | Step | About |
 |---|---|---|
-| 0 | Create `%UserProfile%\.wslconfig` with `[wsl2]`, `memory=48GB` and `swap=16GB`. Settings: never sleep when plugged in; pause Windows Update for a week; keep the laptop plugged in | 5 min |
-| 1 | `wsl --install -d Ubuntu-24.04`, `wsl --update`, `wsl -l -v` (VERSION 2). An existing Ubuntu-22.04 can stay; it is not used | 15-30 min, with a restart |
-| 2 | `wsl -d Ubuntu-24.04 -u root`, then `cd /root` | 1 min |
+| 0 | Create `%UserProfile%\.wslconfig` with `[wsl2]`, `memory=48GB` and `swap=16GB`. Settings: never sleep when plugged in; closing the lid does nothing when plugged in; pause Windows Update for a week; keep the laptop plugged in | 5 min |
+| 1 | One line at a time: `wsl --install -d Ubuntu-24.04` (after its first-run user name and password, `exit` back to PowerShell), `wsl --update`, `wsl -l -v` (VERSION 2), `wsl --shutdown` (so that the memory setting takes effect). An existing Ubuntu-22.04 can stay; it is not used | 15-30 min, with a restart |
+| 2 | `wsl -d Ubuntu-24.04 -u root`, then `cd /root` and `free -g` (total about 47; otherwise `wsl --shutdown` and open again) | 1 min |
 | 3 | `apt-get update && apt-get install -y git curl tmux ca-certificates` | 5 min |
-| 4 | `mkdir -p /home/user && git clone --single-branch --branch claude/main-bca-connection-x4o46s https://github.com/dbayha7/bca.git /home/user/bca`. Sign in as `GPU/README.md:102-107` says. No `--depth`; no git name or email in root | 5 min (about 80 MB) |
+| 4 | `mkdir -p /home/user && git clone --single-branch --branch claude/main-bca-connection-x4o46s https://github.com/dbayha7/bca.git /home/user/bca`. First `git config --global credential.helper store`; sign in with a personal access token that allows pushing (classic `repo` scope, or fine-grained Contents read and write). No `--depth`; no git name or email in root | 5 min (about 80 MB) |
 | 5 | Python and libraries, exactly `GPU/README.md:109-121` (its lock file, `GPU/requirements-lock.txt`, is on the branch now; v7's copy is the same bytes) | 10-15 min |
 | 6 | Dependency folder, exactly `GPU/README.md:123-128`, in the same window | 1-2 min |
-| 7 | After the draft is pushed: `git -C /home/user/bca pull --ff-only`, then `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/restore_v7.sh`. It fetches the run-files branch only, checks the pinned commit and sums, extracts `runs/` (no overwrite, no logs), places the v6 code and `fallback.py`, and links the Python environment | 10-25 min (about 0.8 GB download) |
-| 8 | Before starting: if running cloud phases should finish at the handoff rather than stop at once, say so in the cloud session now (C6; it cannot be changed later). Then `sh .../stage2_v7/laptop/selftest_v7.sh`, and paste the whole output into the cloud session. Expected: `READY (waiting for handoff/approval)` plus the P1 and P2 results and the forecast gaps | 25-40 min |
+| 7 | After the draft is pushed: `git -C /home/user/bca pull --ff-only`, then `sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/restore_v7.sh`. It fetches the run-files branch only (in the shell, where git can ask for the sign-in and shows its progress), checks the pinned commit and sums, extracts `runs/` (no overwrite, no logs), places the v6 code and `fallback.py`, and links the Python environment | 10-25 min (about 0.8 GB download) |
+| 8 | Before starting: if running cloud phases should finish at the handoff rather than stop at once, say so in the cloud session now (C6; it cannot be changed later). Then `sh .../stage2_v7/laptop/selftest_v7.sh`, and paste the whole output into the cloud session (copied from the saved report with `clip.exe`). Expected: `READY (waiting for handoff/approval)` plus the P1 and P2 results and the forecast gaps | 25-40 min |
 | 9 | At the first convenient time, give the cloud the go-ahead to stop and hand off (C6). Until you approve, this can be undone (C6 step 6). Then `git -C /home/user/bca pull --ff-only`, rerun step 7, and run the short self-test (`selftest_v7.sh --short`) | cloud: 10-20 min |
-| 10 | `python3 /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/approve_local_v7.py`, type the prefix, `git add` the approval file and sidecar, `git -c user.name="David Bayha" -c user.email=35092758+dbayha7@users.noreply.github.com commit -m "Stage 2: approve v7 <prefix>"`, and `git push origin claude/main-bca-connection-x4o46s` | 5 min |
+| 10 | `python3 /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/approve_local_v7.py`, type the prefix, `git add` the approval file and sidecar, `git -c user.name="David Bayha" -c user.email=35092758+dbayha7@users.noreply.github.com commit -m "Stage 2: approve v7 <prefix>"`, and `git push origin claude/main-bca-connection-x4o46s`; if the push is rejected, `git -c user.name=... -c user.email=... pull --rebase origin claude/main-bca-connection-x4o46s` and push again (never `git config` the identity) | 5 min |
 | 11 | The cloud imports and pushes the import record. Then `git pull --ff-only` | 10 min |
-| 12 | `tmux new -s stage2`, then `sh .../stage2_v7/laptop/run_v7.sh --lanes 12`. Leave tmux with Ctrl-b then d, and keep the Ubuntu window open. One Ctrl-C stops safely: no new phase starts and running phases finish, which can take over an hour (host_train). After any restart, repeat step 2 and the same command; it continues | at least about 4.5-5 h at cloud speed; real time unknown |
-| 13 | When it prints a line starting `Finished`: `git add outputs/shift/beyond-the-data/stage2_v7/results`, commit with the same `-c` identity, push, and tell the cloud | 10 min |
+| 12 | `tmux new -s stage2`, then, inside tmux, `sh .../stage2_v7/laptop/run_v7.sh --lanes 12`. Leave tmux with Ctrl-b then d, and keep the Ubuntu window open. One Ctrl-C stops safely: no new phase starts and running phases finish, which can take over an hour (host_train). After a closed window, repeat step 2 and first try `tmux attach -t stage2`; if there is no session, or after a restart, `tmux new -s stage2` and the same command; it continues | at least about 4.5-5 h at cloud speed; real time unknown |
+| 13 | When it prints a line starting `Finished`: `git add outputs/shift/beyond-the-data/stage2_v7/results`, commit with the same `-c` identity, push (if rejected, as in step 10), and tell the cloud | 10 min |
 | 14 | `sh .../stage2_v7/laptop/push_runfiles_v7.sh` (Q6). It commits the laptop's new run files, `R7/refs/` included (C10), to a new orphan branch `stage2-v7-run-files` with a temporary git index, under the same `-c` identity, and pushes it. Then tell the cloud, which runs the return check | roughly 0.35-0.45 GB (an estimate from seeds 0-1's file sizes plus the references); upload time unknown |
 
 Before step 12, test once that a `sleep 600` started in tmux survives closing the last Ubuntu window. Whether WSL keeps
@@ -1129,6 +1158,10 @@ the instance alive is unknown on this laptop.
 | `waiting: memory` or `waiting: slot` | the memory rule or the lane cap | nothing to do |
 | `Finished.` | the end | steps 13 and 14 |
 
+`README.md`'s failure table is the maintained version of this table: it writes every command out in full and adds
+rows for a failed download or sign-in, probes that did not finish, a second runner or self-test, phases still running
+from an earlier run, `WAITING FOR REVIEW`, the HALT messages by cause, a stop by Ctrl-C, and a failed push.
+
 ---
 
 ## 7. Decisions
@@ -1145,7 +1178,7 @@ default.
 | 4 | What if P1 or P2 shows the laptop does not reproduce the gate's training bit for bit for seed 2, 3 or 4? | The user rejected holding those phases: "figure out how to fix them and then proceed. dont hold up progress" | C7's re-make rule (designed by the agent, declared before any laptop outcome); C5 follows the same aim (machine-wide restarts never counted; an unfinished phase is retried until done) |
 | 5 | When should the cloud stop? | Option (c), "Keep going until handoff": the cloud keeps running v6 until the handoff; phases it finishes are inherited | C6 (until the handoff; step 1); section 2 |
 | 6 | Also push the laptop's new run files, model files included, to a new orphan branch? | Yes | C10, step 14 |
-| 7 | (New, from the second review.) If the self-test's check (b) forecast shows a gap above 1e-5 between two of the laptop's own programs, should v7 stop before anything starts (the cloud keeps running v6, and the user decides with the cloud on a new version), or proceed anyway, accepting that check (b) may then stop seeds 2-9 for a machine reason that no re-made reference can fix? | **Open. Default: stop (NOT READY).** The designer recommends the default: proceeding would likely spend the one-shot confirmatory seeds 5-9 on a machine artefact. The answer must be in the draft `prereg_v7.json` before any P1 record exists | C7 step 2b, C11, section 5 |
+| 7 | (New, from the second review.) If the self-test's check (b) forecast shows a gap above 1e-5 between two of the laptop's own programs, should v7 stop before anything starts (the cloud keeps running v6, and the user decides with the cloud on a new version), or proceed anyway, accepting that check (b) may then stop seeds 2-9 for a machine reason that no re-made reference can fix? | **Open. Default: stop (NOT READY).** The designer recommends the default: proceeding would likely spend the one-shot confirmatory seeds 5-9 on a machine artefact. The answer must be in the draft `prereg_v7.json` before any P1 record exists, with the user's words quoted and the time of their message (an answer is never inferred). The answer that governs is the one recorded in `prereg_v7.json` (`remake`: `q7_if_forecast_above_tolerance`, `q7_status`, `q7_user_message`), which the approval screen shows | C7 step 2b, C11, section 5 |
 
 One choice is left open by Q5 and has a default: at the handoff, running cloud phases stop at once; the user may
 instead say "let them finish". The choice must be made **before the full self-test (step 8)**, because which phases
@@ -1201,3 +1234,47 @@ differs from the finding's text:
   "no_stall_gapped", and the stalling pair (gapped, full) stays the gate's together.
 - Feasibility, `--remake` (minor): chose the first option (move the damaged file to `R7/interrupted/refs/`, remake into
   a temporary folder, rename into the original path only on a matching SHA-256).
+
+### Third review (the implementation, 28 findings, 14 Oct)
+
+The implementer checked each finding against the code; the result is in the implementer's report. Where the code
+now departs from, or adds to, the letter of this specification, the text above was edited and each change is listed
+here (the declaration, `PREREGISTRATION_V7.md`, carries the same text and lists them under "Details the code fixes"):
+
+- C1 evidence status: the `xla_repro.py` rerun and the seed 2 forecast under an emulated AVX2-only processor are saved
+  in `V7/evidence/xla/` (information only); the "still to do" sentence was replaced by what they show.
+- C2: `--reviewed` must be typed at a terminal, like `--retry`; lanes are always the first N of the 16 processors the
+  self-test checks (ST4, ST7), and the runner refuses any other processor.
+- C3 and C11: P3 is now enforced in the cloud: `make_handoff.py import-selftest` refuses a self-test that is not a
+  READY full one with P3 passed; HANDOFF.json pins the self-test it rests on; `write_prereg_v7.py final` refuses
+  without it; the approval screen shows its verdict and P3's result.
+- C5: an attempt is classified on its own lines of the shared per-phase log, and exit 97 is tested before the memory
+  patterns (an earlier attempt's MemoryError no longer turns a later refusal into an interruption).
+- C5 and C10: every attempt left without a record (launch shell or self-test killed) gets its record once no process
+  of it runs (runner start-up, done phases included; the self-test, under a new lock, for probes; results and run
+  files); a torn record is moved to `R7/interrupted/ledger_records/` and written again.
+- C5: a phase done on file and not inherited needs a ledgered laptop attempt, classified done, that wrote its final
+  record with its current SHA-256, and, with a re-make entry, a lock recording the re-made actors; otherwise the run
+  halts (start-up, when found, when it ends). Provenance takes each phase's source from this evidence.
+- C6 step 3: HANDOFF.json also holds the full self-test it rests on, the cloud's time of the first self-test import,
+  the process check (no `run_stage2.py` and no `explore_policy.sh` left; the driver is now checked too) and the draft it
+  goes with; the stop rule's choice time must be `YYYY-MM-DDTHH:MM:SSZ` and come before the first probe record and the
+  first import; the final refuses a HANDOFF.json written for another draft.
+- C6 step 6: WITHDRAWN.json records the user's quoted confirmation with its time, and an optional pasted ledger
+  listing, refused when it names a phase folder.
+- C6 Restore: the pinned commit may be the branch's tip or an ancestor of it (the branch moves on at the handoff); the
+  download runs in the shell, where git can ask for the user's sign-in (the Python fetch, with prompts off, could not).
+- C7 'Probe records': the runner now checks every record and reference file against the final pins before anything
+  starts (the text claimed it; the code did not); the wrapper checks only the reference file of an entry it reads.
+- C10 return check: constants facts are required only of attempts that computed anything (reached the hand-over or
+  done; probes that wrote their record); an attempt interrupted before the constants step needs none.
+- C10 process-hours: an attempt whose launch shell died counts up to its write log's last line, marked estimated.
+- C11 ST9: P3's measured training time (the real probe now records it) and a warning below 40 GiB of WSL memory; no
+  lane-hour estimate is computed.
+- R1 runs automatically after the run (`run_v7.sh`); results before the end need `run_v7.sh results`.
+- Section 7, Q7: an answer is recorded only with the user's words quoted and the time of their message
+  (`--q7-answered --q7-quote --q7-utc`); "proceed" is never inferred.
+- Section 6: README steps 0, 1, 2, 4, 7, 8, 10, 12 and 13 were made exact (lid, one line at a time, `wsl --shutdown`
+  and `free -g`, the credential helper and token scope, `clip.exe`, a rejected push, `tmux attach` first), and its
+  failure table became the maintained one.
+- Test seams (no spec text): `--v7-test` never falls back to a production path and refuses v6's pinned entry point.

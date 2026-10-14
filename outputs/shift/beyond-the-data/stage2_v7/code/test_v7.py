@@ -15,7 +15,11 @@ What is tested (spec section in brackets):
   [C4]  through the real launch_v7.sh: stray variables in the caller's environment never reach the phase, which sees
         exactly the eight; the wrapper started directly with a stray variable refuses (exit 97).
   [C5]  the phase table (done, failed on record, partial records that never raise), the classification of
-        interruptions, a SIGKILLed phase through launch_v7.sh (phase-specific; its writes listed), moving a row aside.
+        interruptions (exit 97 before the memory patterns; each attempt of a shared per-phase log classified on its own
+        lines only: a memory error, then an exit-97 refusal, then an unrelated failure), a torn attempt record moved
+        aside and written again (with an estimated end), a SIGKILLed phase through launch_v7.sh (phase-specific; its
+        writes listed), moving a row aside; the test seam refuses a fixture config missing any path, a path outside
+        the fixture (a symbolic link to the real folder), v6's pinned run_stage2.py, and a fixture around production.
   [C6]  a missing or changed HANDOFF.json, WITHDRAWN.json and an inherited phase refuse.
   [C7]  the redirect: no entry imports nothing; a policy entry replaces exactly its keys; a changed gate file still
         refuses through the original loader; real multi-actor files; a host entry calls the original get_host path;
@@ -24,7 +28,9 @@ What is tested (spec section in brackets):
         step 2's rule and the forecast; --remake.
   [C10] the ledger's audit hook; the approval route (approve_local_v7 refuses a non-terminal; import; the agent-identity
         cases copied verbatim from S2C/test_stage2.py:864-870; the new approver check; the import record on origin's
-        branch); the writers (draft, final, refusal once approved).
+        branch); the writers (draft, final, refusal once approved; Q7 recorded only with the user's words and time;
+        the final refuses a HANDOFF.json of another draft or one without a READY full self-test with P3 passed); the
+        approval screen shows the self-test, P3, Q7 and the forecast's verdict with a warning above 1e-5.
 
 Run (two processors, low priority; the v6 run keeps processors 2 and 3):
   cd /home/user/bca && env -i PATH=/usr/bin:/bin HOME=/root PYTHONPATH=/home/user/bca PYTHONDONTWRITEBYTECODE=1 \\
@@ -346,6 +352,8 @@ class LedgerTests(Tmp):
         self.assertEqual(c(False, 1, "b", "b", log_tail="jaxlib.xla_extension.XlaRuntimeError: RESOURCE_EXHAUSTED: x")[0],
                          "phase-specific")
         self.assertEqual(c(False, 97, "b", "b")[0], "v7-refusal")
+        self.assertEqual(c(False, 97, "b", "b", log_tail="MemoryError\nREFUSED (v7, exit 97): tripwire")[0],
+                         "v7-refusal")                                         # exit 97 before the memory patterns
         self.assertEqual(c(False, 1, "b", "b", log_tail="ValueError: x")[0], "failed")
         self.assertEqual(c(False, 0, "b", "b")[0], "failed")
 
@@ -463,6 +471,51 @@ class LedgerTests(Tmp):
         self.assertEqual((rec["vmhwm_kb"], rec["cpu_seconds"]), (123, 4.5))
         self.assertTrue(path.with_name("1.json").exists())
         self.assertEqual(LG.finish_attempt(path, out_root=out, r7=r7)["attempt"], 1)     # written once
+
+    def test_shared_log_classifies_each_attempt_on_its_own_lines(self):
+        """C5: every attempt of a phase appends to one log; each attempt is classified on its own lines only."""
+        out, r7 = self.tmp / "out", self.tmp / "r7"
+        key = dict(phase="host_train", seed=6, world="stall")
+        log = r7 / "logs" / "phase_host_train_seed_6.log"
+        log.parent.mkdir(parents=True)
+        recs = []
+        for status, lines in ((1, "Traceback (most recent call last):\nMemoryError: out of memory"),
+                              (97, "REFUSED (v7, exit 97): tripwire: transition_matrix was called"),
+                              (1, "ValueError: something unrelated")):
+            n, path = LG.allocate_attempt(r7, "host_train_seed6_stall")
+            LG.append_event(path, "launch-start", key=key, argv=["--phase", "host_train", "--seed", "6"], boot_id="b",
+                            r7=str(r7), out_root=str(out))
+            with open(log, "a") as h:
+                h.write(f"2026-10-14T10:0{n}:00Z start: --phase host_train --seed 6 (cpu 3, slot 1, ledger {path})\n"
+                        f"{lines}\n2026-10-14T10:0{n}:30Z FAILED (exit status {status}): --phase host_train --seed 6\n")
+            LG.append_event(path, "launch-end", status=status, boot_id="b")
+            recs.append(LG.finish_attempt(path, out_root=out, log_path=log, r7=r7))
+            with open(log, "a") as h:
+                h.write(f"host_train_seed6_stall attempt {n}: {recs[-1]['classification']['kind']}\n")
+        self.assertEqual([r["classification"]["kind"] for r in recs], ["phase-specific", "v7-refusal", "failed"])
+        self.assertTrue(all(r["log_segment_found"] for r in recs))
+        # a log with no start line naming the attempt: no memory error is read from another attempt's lines
+        n, path = LG.allocate_attempt(r7, "host_train_seed6_stall")
+        LG.append_event(path, "launch-start", key=key, boot_id="b", r7=str(r7), out_root=str(out))
+        LG.append_event(path, "launch-end", status=1, boot_id="b")
+        rec = LG.finish_attempt(path, out_root=out, log_path=log, r7=r7)
+        self.assertEqual((rec["classification"]["kind"], rec["log_segment_found"]), ("failed", False))
+
+    def test_torn_record_is_moved_aside_and_written_again(self):
+        out, r7 = self.tmp / "out", self.tmp / "r7"
+        _, path = LG.allocate_attempt(r7, "host_train_seed6_stall")
+        LG.append_event(path, "launch-start", key=dict(phase="host_train", seed=6, world="stall"), boot_id="b",
+                        r7=str(r7), out_root=str(out))
+        LG.append_event(path, "open-w", path=str(out / "x"), mode="wb")
+        path.with_name("1.json").write_text('{"torn": tr')                        # killed between JSON and sidecar
+        rec = LG.finish_attempt(path, out_root=out, r7=r7, now_boot="b")
+        self.assertEqual(K.read_record(path.with_name("1.json"))[0], "ok")
+        self.assertEqual(rec["kind"], "stage2-v7-ledger-attempt")
+        moved = list((r7 / "interrupted" / "ledger_records" / "host_train_seed6_stall").rglob("1.json"))
+        self.assertEqual([m.read_text() for m in moved], ['{"torn": tr'])
+        self.assertIsNone(rec["end_utc"])
+        self.assertIsNotNone(rec["end_utc_estimated"])                           # the write log's last line
+        self.assertFalse(rec["handover"])
 
     def test_finish_without_end_is_machine_wide(self):
         out, r7 = self.tmp / "out", self.tmp / "r7"
@@ -1232,6 +1285,39 @@ class LaunchTests(unittest.TestCase):
                 self.assertEqual([e["ev"] for e in events if e["ev"] in ("v7-exit", "handover")], ["v7-exit"])
         self.assertFalse((self.root / "out" / "host" / "no_stall" / "seed3").exists())
 
+    def test_test_mode_needs_every_path_inside_the_fixture(self):
+        """The test seam never falls back to a production path and never runs v6's pinned code (C1, C6)."""
+        fx = Path(tempfile.mkdtemp(dir=TEST_ROOT))
+        try:
+            (fx / W.TEST_MARKER).write_text(W.TEST_MARKER_TEXT)
+            s = fx / "s"
+            s.mkdir()
+            (s / "run_stage2.py").write_text("# stub\n")
+            full = dict(r7=str(fx / "r7"), s_folder=str(s), v7_root=str(fx / "v7"), prereg_v7=str(fx / "v7/p.json"),
+                        check_chain=False, check_v6=False)
+            cfgp = fx / "config.json"
+            for k in ("r7", "s_folder", "v7_root", "prereg_v7"):
+                with self.subTest(missing=k):
+                    cfgp.write_text(json.dumps({x: v for x, v in full.items() if x != k}))
+                    with self.assertRaisesRegex(K.V7Refusal, "explicitly"):
+                        W.Config.from_test_file(cfgp)
+            cfgp.write_text(json.dumps(full))
+            cfg = W.Config.from_test_file(cfgp)
+            self.assertEqual((cfg.r7, cfg.s_folder), (fx / "r7", s))
+            (fx / "real").symlink_to(K.S_FOLDER)
+            cfgp.write_text(json.dumps(dict(full, s_folder=str(fx / "real"))))
+            with self.assertRaisesRegex(K.V7Refusal, "inside the fixture"):
+                W.Config.from_test_file(cfgp)
+            shutil.copyfile(K.S2C / "run_stage2.py", s / "run_stage2.py")      # v6's pinned entry point
+            cfgp.write_text(json.dumps(full))
+            with self.assertRaisesRegex(K.V7Refusal, "pinned run_stage2.py"):
+                W.Config.from_test_file(cfgp)
+            for place in (K.SCRATCH, K.ROOT / "outputs"):
+                with self.subTest(place=place), self.assertRaisesRegex(K.V7Refusal, "inside or around"):
+                    W.check_fixture_location(place)
+        finally:
+            shutil.rmtree(fx, ignore_errors=True)
+
     def test_inherited_phase_refused(self):
         proc = self.launch("0", "--phase", "host_eval", "--seed", "3")
         self.assertEqual(proc.returncode, 97)
@@ -1698,13 +1784,16 @@ class WriterTests(Tmp):
         block = K.block_sha256(body["remake"])
         synthetic_records(self.r7, block, self.man["files"]["code/v7_probes.py"],
                           differs={"p1_seed2_stall", "p2_seed3"})
-        with self.assertRaises(K.V7Refusal):                                     # Q7 cannot change any more
-            WP.write_draft(self.v7, self.r7, q7="proceed", log=lambda *a: None)
-        WP.write_draft(self.v7, self.r7, log=lambda *a: None)                    # the same block: allowed
+        with self.assertRaisesRegex(K.V7Refusal, "can no longer change"):        # Q7 cannot change any more
+            WP.write_draft(self.v7, self.r7, q7="proceed", q7_answered=True, q7_quote="proceed",
+                           q7_utc="2026-10-14T09:00:00Z", log=lambda *a: None)
+        _, digest = WP.write_draft(self.v7, self.r7, log=lambda *a: None)       # the same block: allowed
         hand = self.v7 / "handoff" / "HANDOFF.json"
         write_json_sidecar(hand, dict(kind="stage2-v7-handoff", snapshot=dict(commit="c" * 40),
-                                      phases={"policy_train_seed4": "inherited"}, stop_rule="stop at once"))
+                                      phases={"policy_train_seed4": "inherited"}, stop_rule="stop at once",
+                                      draft_prereg_v7_sha256=digest, selftest=READY_SELFTEST))
         final, fdigest = WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
+        self.assertEqual(final["handoff"]["selftest"], READY_SELFTEST)
         self.assertTrue(final["approvable"])
         self.assertEqual(WP.non_handoff(final), WP.non_handoff(body))
         kinds = sorted((e["phase"], e["seed"]) for e in final["handoff"]["remake_table"])
@@ -1724,10 +1813,27 @@ class WriterTests(Tmp):
         with self.assertRaises(SystemExit):
             WM.main([], v7_root=self.v7, log=lambda *a: None)
 
-    def test_final_refusals(self):
+    def test_q7_answer_needs_the_users_words(self):
+        with self.assertRaisesRegex(K.V7Refusal, "recorded answer"):              # 'proceed' is never inferred
+            WP.write_draft(self.v7, self.r7, q7="proceed", log=lambda *a: None)
+        for quote, utc in ((None, "2026-10-14T09:00:00Z"), ("proceed", None), ("proceed", "2026-10-14 09:00")):
+            with self.subTest(quote=quote, utc=utc), self.assertRaises(K.V7Refusal):
+                WP.write_draft(self.v7, self.r7, q7="proceed", q7_answered=True, q7_quote=quote, q7_utc=utc,
+                               log=lambda *a: None)
         body, _ = WP.write_draft(self.v7, self.r7, log=lambda *a: None)
+        self.assertTrue(body["remake"]["q7_status"].startswith("open"))
+        self.assertIsNone(body["remake"]["q7_user_message"])
+        body, _ = WP.write_draft(self.v7, self.r7, q7="stop", q7_answered=True, q7_quote="keep the default: stop",
+                                 q7_utc="2026-10-14T09:00:00Z", log=lambda *a: None)
+        self.assertEqual(body["remake"]["q7_status"], WP.Q7_ANSWERED)
+        self.assertEqual(body["remake"]["q7_user_message"], dict(quote="keep the default: stop",
+                                                                 utc="2026-10-14T09:00:00Z"))
+
+    def test_final_refusals(self):
+        body, dsha = WP.write_draft(self.v7, self.r7, log=lambda *a: None)
         hand = self.v7 / "handoff" / "HANDOFF.json"
-        write_json_sidecar(hand, dict(kind="stage2-v7-handoff", phases={}))
+        write_json_sidecar(hand, dict(kind="stage2-v7-handoff", phases={}, draft_prereg_v7_sha256=dsha,
+                                      selftest=READY_SELFTEST))
         with self.assertRaises(K.V7Refusal):                                     # no probe records
             WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
         synthetic_records(self.r7, "another block", self.man["files"]["code/v7_probes.py"])
@@ -1749,6 +1855,46 @@ class WriterTests(Tmp):
         with self.assertRaises(K.V7Refusal) as cm:
             WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
         self.assertIn("HALT: reference", str(cm.exception))
+        (self.r7 / "refs/seed2/check2_stall.msgpack").write_bytes(b"p1_seed2_stall")
+        for name, over, msg in (("another draft", dict(draft_prereg_v7_sha256="e" * 64), "new handoff"),
+                                ("no self-test", dict(selftest=None), "P3 passed"),
+                                ("P3 failed", dict(selftest=dict(READY_SELFTEST, p3=dict(ok=False))), "P3 passed"),
+                                ("NOT READY", dict(selftest=dict(READY_SELFTEST, verdict="NOT READY (gate)")),
+                                 "P3 passed")):
+            with self.subTest(case=name):
+                for q in (hand, Path(str(hand) + ".sha256")):
+                    if q.exists():
+                        q.unlink()
+                write_json_sidecar(hand, dict(dict(kind="stage2-v7-handoff", phases={}, draft_prereg_v7_sha256=dsha,
+                                                   selftest=READY_SELFTEST), **over))
+                with self.assertRaisesRegex(K.V7Refusal, msg):
+                    WP.write_final(hand, self.v7, self.r7, log=lambda *a: None)
+
+
+READY_SELFTEST = dict(form="full", verdict="READY (waiting for handoff/approval)", p3=dict(ok=True, distinct=1),
+                      import_record="handoff/probes/selftest_import_x.json", import_record_sha256="a" * 64)
+
+
+class ApprovalScreenTests(unittest.TestCase):
+    def test_summary_shows_selftest_q7_and_forecast(self):
+        remake = dict(forecast_tolerance=1e-5, q7_if_forecast_above_tolerance="proceed", q7_status=WP.Q7_ANSWERED,
+                      q7_user_message=dict(quote="go on anyway", utc="2026-10-14T09:00:00Z"))
+        handoff = dict(summary=[], selftest=dict(READY_SELFTEST, selftest_utc="t1", imported_utc="t2"),
+                       forecast=dict(above=["p1_seed2_stall"], line="READY as to the check (b) forecast (gaps above "
+                                     "1e-5 accepted under Q7: p1_seed2_stall)"),
+                       probe_records={}, remake_table=[], labels={})
+        payload = dict(label="l", changes=[], failures_v7_can_cause=[], remake=remake, handoff=handoff)
+        text = AL7.summary(dict(prereg=payload, n_files=1, sha256="a" * 64, v6_sha256="b" * 64))
+        for want in ("repeatability test P3", "passed", "READY (waiting", "'proceed' (answered by the user)",
+                     '"go on anyway" (2026-10-14T09:00:00Z)', "accepted under Q7", "WARNING", "ABOVE 1e-05"):
+            self.assertIn(want, text)
+        handoff.update(forecast=dict(above=[], line="READY as to the check (b) forecast"),
+                       selftest=dict(READY_SELFTEST, p3=dict(ok=False)))
+        remake.update(q7_if_forecast_above_tolerance="stop", q7_status=WP.Q7_OPEN, q7_user_message=None)
+        text = AL7.summary(dict(prereg=payload, n_files=1, sha256="a" * 64, v6_sha256="b" * 64))
+        self.assertNotIn("WARNING", text)
+        self.assertIn("NOT PASSED", text)
+        self.assertIn("Every forecast gap is at most 1e-05", text)
 
 
 if __name__ == "__main__":

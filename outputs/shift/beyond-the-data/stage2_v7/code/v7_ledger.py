@@ -12,15 +12,19 @@ object per line, created once by 'begin' (launch_v7.sh) or by allocate_attempt()
                  still leaves its list
   checks, constants, reference, facts, handover   what the wrapper verified and installed (C1, C3, C4, C7, C10)
   runner-signal  the runner, before it sends a signal (so that the interruption is classed machine-wide, C5)
+  retry-request  the runner, when this attempt is the one a user's --retry request allows (C5)
   v7-exit        a v7 refusal or tripwire, written immediately before os._exit(97)
   py-exit        the Python process's own end (its exit code, VmHWM and CPU time)
   launch-end     launch_v7.sh, after the process ended: its real exit status (128 + N for signal N) and the boot id
 The attempt record R7/ledger/<phase id>/<n>.json (+ sidecar) is written once, after the attempt, by finish_attempt()
 (launch_v7.sh calls it through 'end'; the runner calls 'finish' for an attempt whose launch shell did not survive). It
-records the arguments and processor, start and end times, exit status and its classification (done, machine-wide or
-phase-specific interruption, v7 refusal, failed), the boot id at start and end, every file written with its SHA-256,
-the writes outside the phase's table row and outside R7/ (flagged), VmHWM and CPU time, the machine facts, the
-constants facts, the reference used (C7) with the lock check, any retry request, and the v7 and v6 fingerprints.
+records the arguments and processor, start and end times (when the launch shell did not survive, the time of the
+write log's last line as an estimated end), exit status and its classification (done, machine-wide or phase-specific
+interruption, v7 refusal, failed; read from THIS attempt's own lines of the per-phase log only, attempt_log_text),
+the boot id at start and end, whether the wrapper reached the hand-over, every file written with its SHA-256, the
+writes outside the phase's table row and outside R7/ (flagged), VmHWM and CPU time, the machine facts, the constants
+facts, the reference used (C7) with the lock check, any retry request, and the v7 and v6 fingerprints. A record torn
+between its JSON and its sidecar is moved aside (never deleted) to R7/interrupted/ledger_records/ and written again.
 C5 finds files through the phase table, never through the ledger; the ledger is a cross-check.
 
 The phase table (C5; pinned in prereg_v7.json by write_prereg_v7.py): each phase's files under OUT/, in the order
@@ -451,8 +455,11 @@ def classify_attempt(done, status, boot_start, boot_end, runner_signals=(), log_
                         was recorded (a closed terminal or tmux session) -- never counted, rerun without limit;
       'phase-specific'  on the same boot: SIGKILL, SIGSEGV, SIGBUS or SIGABRT the runner did not send, or a log that
                         ends in a memory error (MemoryError, RESOURCE_EXHAUSTED, 'out of memory') -- counted;
-      'v7-refusal'      exit 97: halts the run;
-      'failed'          any other non-zero exit, or exit 0 without the phase being done: halts new phases."""
+      'v7-refusal'      exit 97: halts the run (tested before the memory patterns: a refusal is never counted as an
+                        interruption, whatever an earlier attempt printed);
+      'failed'          any other non-zero exit, or exit 0 without the phase being done: halts new phases.
+    log_tail must be THIS attempt's own output (attempt_log_text), never the whole per-phase log, which every attempt
+    of the phase appends to."""
     if done:
         return "done", "its final record or failed-on-record file is present and verified"
     if boot_start and boot_end and boot_start != boot_end:
@@ -466,10 +473,10 @@ def classify_attempt(done, status, boot_start, boot_end, runner_signals=(), log_
         return "machine-wide", f"ended by {MACHINE_SIGNALS[sig]}"
     if sig in PHASE_SIGNALS:
         return "phase-specific", f"killed by {PHASE_SIGNALS[sig]} on the same boot, not sent by the runner"
+    if int(status) == K.EXIT_V7:                    # before the memory test: a refusal is never an interruption
+        return "v7-refusal", "exit 97 (a v7 refusal)"
     if log_ends_in_memory_error(log_tail):
         return "phase-specific", "its log ends in a memory error"
-    if int(status) == K.EXIT_V7:
-        return "v7-refusal", "exit 97 (a v7 refusal)"
     if sig is not None:
         return "failed", f"ended by signal {sig}"
     return "failed", f"exit {status} without the phase being done"
@@ -477,15 +484,30 @@ def classify_attempt(done, status, boot_start, boot_end, runner_signals=(), log_
 
 # --------------------------------------------------------------------------------------------- the attempt record
 
-def _tail(path, limit=20000):
+# The line launch_v7.sh (and the self-test, for a probe) appends to the per-phase log before it starts an attempt:
+#   '<UTC> start: <arguments> (cpu N, slot M, ledger <R7>/ledger/<phase id>/<n>.writes)'
+START_RE = re.compile(r"\bstart: .*\bledger (\S+\.writes)\)\s*$")
+
+
+def attempt_log_text(log_path, writes_path):
+    """(text, found): THIS attempt's own lines of the per-phase log, which every attempt of the phase appends to (C5:
+    an attempt is classified on its own output only). They run from the start line naming this attempt's write log up
+    to the next start line. found is False when no start line names it; the text is then empty, so no memory error is
+    read from another attempt's output."""
     try:
-        with open(path, "rb") as handle:
-            handle.seek(0, os.SEEK_END)
-            size = handle.tell()
-            handle.seek(max(0, size - limit))
-            return handle.read().decode("utf8", "replace")
+        text = Path(log_path).read_bytes().decode("utf8", "replace")
     except OSError:
-        return ""
+        return "", False
+    writes_path = Path(writes_path)
+    me = f"/ledger/{writes_path.parent.name}/{writes_path.name}"
+    lines = text.splitlines()
+    starts = [(i, m.group(1)) for i, m in ((i, START_RE.search(ln)) for i, ln in enumerate(lines)) if m]
+    mine = [i for i, path in starts if path == str(writes_path) or path.endswith(me)]
+    if not mine:
+        return "", False
+    first = mine[-1]
+    later = [i for i, _ in starts if i > first]
+    return "\n".join(lines[first + 1:later[0] if later else len(lines)]), True
 
 
 def _first(events, ev):
@@ -509,6 +531,12 @@ def finish_attempt(writes_path, out_root=None, log_path=None, r7=None, now_boot=
     start = _first(events, "launch-start") or _first(events, "wrapper-start") or {}
     end = _last(events, "launch-end")
     r7 = Path(r7 or start.get("r7") or writes_path.parent.parent.parent)
+    if state == "partial":                  # a record torn between its JSON and its sidecar: moved aside, never deleted
+        stamp = K.utc_stamp()
+        d = r7 / "interrupted" / "ledger_records" / writes_path.parent.name
+        names = [n for n in (rec_path.name, rec_path.name + ".sha256") if (rec_path.parent / n).exists()]
+        move_files_aside(names, rec_path.parent, d / stamp, d / f"{stamp}.json", phase_id=writes_path.parent.name,
+                         interruption="attempt record torn", why=str(existing))
     out_root = Path(out_root or start.get("out_root") or K.OUT)
     status = None if end is None else end.get("status")
     boot_start = start.get("boot_id")
@@ -522,7 +550,8 @@ def finish_attempt(writes_path, out_root=None, log_path=None, r7=None, now_boot=
         done = K.read_record(probe_record)[0] == "ok"
         how = "probe record" if done else None
     runner_signals = [e.get("signal") for e in events if e.get("ev") == "runner-signal"]
-    kind, why = classify_attempt(done, status, boot_start, boot_end, runner_signals, _tail(log_path) if log_path else "")
+    own_log, log_found = attempt_log_text(log_path, writes_path) if log_path else ("", False)
+    kind, why = classify_attempt(done, status, boot_start, boot_end, runner_signals, own_log[-20000:])
     writes = {}
     for e in events:
         if e.get("ev") in ("open-w", "rename", "remove", "rmdir", "rmtree", "link", "symlink", "truncate"):
@@ -547,10 +576,13 @@ def finish_attempt(writes_path, out_root=None, log_path=None, r7=None, now_boot=
     if reference and reference.get("entry") and key:
         ref_check = check_lock_records_reference(reference["entry"], out_root)
     m = re.match(r"(\d+)\.writes$", writes_path.name)
+    last_event = events[-1] if events else {}
     record = dict(
         kind="stage2-v7-ledger-attempt", phase_id=writes_path.parent.name, attempt=int(m.group(1)) if m else None,
         key=key, probe=probe, argv=start.get("argv"), cpu=start.get("cpu"), slot=start.get("slot"),
         test_mode=bool(start.get("test")), start_utc=start.get("utc"), end_utc=(end or {}).get("utc"),
+        end_utc_estimated=None if end is not None else last_event.get("utc"),
+        handover=_last(events, "handover") is not None, log_segment_found=log_found if log_path else None,
         exit_status=status, signal=signal_of(status), boot_id_start=boot_start, boot_id_end=boot_end,
         classification=dict(kind=kind, why=why), done=done, done_how=how,
         writes=sorted(writes.values(), key=lambda w: w["path"]),
@@ -559,7 +591,10 @@ def finish_attempt(writes_path, out_root=None, log_path=None, r7=None, now_boot=
         py_exit=py_exit or None, v7_exit=v7_exit or None, runner_signals=runner_signals,
         checks=(_last(events, "checks") or {}).get("result"), constants=(_last(events, "constants") or {}).get("facts"),
         facts=(_last(events, "facts") or {}).get("facts"), reference=reference, reference_lock_check=ref_check,
-        retry_request=retry_request, fingerprints=(_last(events, "checks") or {}).get("fingerprints"),
+        retry_request=retry_request if retry_request is not None else (
+            {k: v for k, v in (_last(events, "retry-request") or {}).items() if k not in ("ev", "utc", "t", "pid")}
+            or None),
+        fingerprints=(_last(events, "checks") or {}).get("fingerprints"),
         torn_lines=torn, write_log=str(writes_path), log=str(log_path) if log_path else None)
     try:
         K.write_json_once(rec_path, record)

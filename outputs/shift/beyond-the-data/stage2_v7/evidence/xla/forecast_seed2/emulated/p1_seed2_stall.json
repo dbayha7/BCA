@@ -1,0 +1,100 @@
+{
+ "forecast": {
+  "F_fresh": 0.0,
+  "F_ref": 0.0,
+  "F_ref_against": "the gate's saved actor",
+  "above_tolerance": [],
+  "entry_if_not_inherited": false,
+  "p1a_differs": false,
+  "p1b_reproduces_gate": true,
+  "remake_failed": false,
+  "tolerance": 1e-05
+ },
+ "gate": {
+  "actors_sha256": "40d89f2b231f9d63942571e8395a309606fe4c48aebfed301826eef8aa48ec9e",
+  "check2_dir": "/home/user/bca/runs/shift/68d9e8779e148b7b/harm_return/base/alpha5/seed2"
+ },
+ "inputs": {
+  "constants_sha256": "6602f9d17e977a3e1f6eb017eb1f0b9ec80b018041d62146f507983f36a5e379",
+  "gate_prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "note": "information only: run by evidence/xla/forecast_seed2.py on the cloud's Xeon, mode emulated, outside the v7 wrapper; no prereg_v7.json existed",
+  "prereg_v7_sha256_at_run": null,
+  "prereg_v7_was_final": false,
+  "probe_script_sha256": "c65219733aba74e015d36812445babcf570dbb5a8f3703b9701291f94a53611c",
+  "remake_block_sha256": null,
+  "v6_code_manifest_sha256": "4b34af991a56066c41fbb55cb02db4074ae0b7e85b1e50802a53983edda2a753"
+ },
+ "kind": "stage2-v7-probe-p1",
+ "moved_aside": null,
+ "p1a": {
+  "actors": {
+   "full": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "cc2b83d6c0a5486b8e046081019b87d02791e189bd8e80242662d6448949352c",
+    "laptop_failed": false,
+    "laptop_sha256": "cc2b83d6c0a5486b8e046081019b87d02791e189bd8e80242662d6448949352c",
+    "max_abs_diff": 0.0
+   },
+   "gapped": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "66bbe2e0a533a1b31e30e0af6f3c717a3c6cd81708a5ac2c31620cba73ffe998",
+    "laptop_failed": false,
+    "laptop_sha256": "66bbe2e0a533a1b31e30e0af6f3c717a3c6cd81708a5ac2c31620cba73ffe998",
+    "max_abs_diff": 0.0
+   },
+   "random": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "62945eb2621f59e5175442e7913f46f61332fbc6607b658f07a5d25b98322bf7",
+    "laptop_failed": false,
+    "laptop_sha256": "62945eb2621f59e5175442e7913f46f61332fbc6607b658f07a5d25b98322bf7",
+    "max_abs_diff": 0.0
+   }
+  },
+  "call": "L.ActorOnly(prepared(world), clone(world), learn, seed, alpha=5.0).run([L.Arm(name, critic=i) ...], [critics], weighted=False); ao.arm_params(stacked, i) (GATE/acceptance.py:1459-1484)",
+  "names_written": [
+   "full",
+   "gapped",
+   "random"
+  ],
+  "reference_file": {
+   "path": "refs/seed2/check2_stall.msgpack",
+   "sha256": "c265f0943b3eda17ad33273a0e5beadb56082f8168d22617913c2099c753e89e"
+  },
+  "rows_sha256": "725eb30d5333decf713ee555571e19ae1429596df09385a39b70139d2927046b",
+  "start_sha256": "6455ef78ea2611c3060ee54542ebab3da9a271d9d2e3bc02e77672128b925b39"
+ },
+ "p1b": {
+  "actor_sha256": "66bbe2e0a533a1b31e30e0af6f3c717a3c6cd81708a5ac2c31620cba73ffe998",
+  "arms": [
+   "w0_check"
+  ],
+  "finite": true,
+  "max_abs_diff_vs_gate": 0.0,
+  "max_abs_diff_vs_p1a": 0.0,
+  "max_abs_diff_vs_p1c": 0.0,
+  "reproduces_gate": true
+ },
+ "p1c": {
+  "actor_sha256": "66bbe2e0a533a1b31e30e0af6f3c717a3c6cd81708a5ac2c31620cba73ffe998",
+  "arms": [
+   "none",
+   "full_none"
+  ],
+  "failed": false,
+  "max_abs_diff_vs_gate": 0.0,
+  "max_abs_diff_vs_p1a": 0.0,
+  "max_abs_diff_vs_p1b": 0.0
+ },
+ "probe": "p1_seed2_stall",
+ "seconds": {
+  "p1a": 214.8914490289999,
+  "p1b": 61.3657551590004,
+  "p1c": 125.3175945919993
+ },
+ "seed": 2,
+ "world": "stall",
+ "written_utc": "2026-10-14T04:33:52Z"
+}

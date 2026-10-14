@@ -36,7 +36,7 @@ EXCLUDE_DIRS = {"handoff", "results", "prereg_v7_history", "__pycache__"}
 EXCLUDE_NAMES = ("approval_v7_*", "import_v7_*", "*.pyc", "*.pyo", "*.npz", "*.msgpack", "*.log")
 CODE_REQUIRED = ("v7_common.py", "v7_constants.py", "v7_refs.py", "v7_verify.py", "v7_ledger.py", "v7_probes.py",
                  "run_stage2_v7.py", "launch_v7.sh", "approve_v7.py", "approve_local_v7.py", "write_prereg_v7.py",
-                 "write_manifest_v7.py", "make_world_constants.py", "test_v7.py")
+                 "write_manifest_v7.py", "make_world_constants.py", "test_v7.py", "test_v7_laptop.py")
 REQUIRED = tuple("code/" + n for n in CODE_REQUIRED) + (
     "approve_local_v7.py", "diff_from_v6/launch.sh.diff", "world_constants.json", "world_constants.json.sha256",
     "README.md", "PREREGISTRATION_V7.md",

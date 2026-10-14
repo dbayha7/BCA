@@ -18,9 +18,13 @@ in the exact eight-variable environment, on one processor. In order, before any 
      runpy.run_path(..., run_name="__main__"). Its exit status is v6's (a recorded stop exits 2).
 Any v7 check that fails writes one ledger line and exits 97 (a v7 refusal; launch_v7.sh and the runner halt the run).
 
-Test mode (test_v7.py only): '--v7-test-config <fixture>/config.json' may point the R7 folder, the scratchpad folder,
+Test mode (test_v7.py only): '--v7-test-config <fixture>/config.json' points the R7 folder, the scratchpad folder,
 the v7 folder and prereg_v7.json at a synthetic fixture OUTSIDE /home/user/bca that holds the marker file
-V7_TEST_FIXTURE, and may skip the git chains and v6's pins. The ledger records test_mode; the runner never passes it.
+V7_TEST_FIXTURE, and may skip the git chains and v6's pins. All four paths must be given explicitly and must resolve
+(symbolic links followed) inside the fixture; nothing falls back to a production path. Test mode also refuses outright
+when the fixture lies inside or around a production folder, or when its scratchpad folder holds v6's pinned
+run_stage2.py or stage2_common.py (whose output folder is the real OUT/): a test never runs the pinned v6 code. The
+ledger records test_mode; the runner never passes it.
 """
 
 import json
@@ -54,6 +58,8 @@ class Config:
         self.check_chain = bool(check_chain)
         self.check_v6 = bool(check_v6)
 
+    PATH_KEYS = ("r7", "s_folder", "v7_root", "prereg_v7")
+
     @classmethod
     def from_test_file(cls, path):
         path = Path(path).resolve()
@@ -61,17 +67,41 @@ class Config:
         marker = fixture / TEST_MARKER
         if not marker.is_file() or marker.read_text(encoding="utf8") != TEST_MARKER_TEXT:
             raise K.V7Refusal(f"{fixture} is not a v7 test fixture (no {TEST_MARKER} marker)")
-        for protected in (K.ROOT, K.R7, K.OUT, K.S_FOLDER):
-            if K.inside(fixture, protected):
-                raise K.V7Refusal(f"a test fixture may not lie inside {protected}")
+        check_fixture_location(fixture)
         body = json.loads(path.read_text(encoding="utf8"))
-        allowed = {"r7", "s_folder", "v7_root", "prereg_v7", "check_chain", "check_v6"}
+        allowed = set(cls.PATH_KEYS) | {"check_chain", "check_v6"}
         if set(body) - allowed:
             raise K.V7Refusal(f"unknown test settings {sorted(set(body) - allowed)}")
-        for k in ("r7", "s_folder", "v7_root", "prereg_v7"):
-            if k in body and not K.inside(body[k], fixture):
+        missing = [k for k in cls.PATH_KEYS if not body.get(k)]
+        if missing:
+            raise K.V7Refusal(f"test mode needs every path setting given explicitly; missing {missing}")
+        for k in cls.PATH_KEYS:
+            if not K.inside(os.path.realpath(body[k]), fixture):
                 raise K.V7Refusal(f"test setting {k} must lie inside the fixture {fixture}")
+        refuse_pinned_v6_code(body["s_folder"])
         return cls(test=True, **body)
+
+
+def check_fixture_location(fixture):
+    """A test fixture lies neither inside nor around a production folder (symbolic links followed)."""
+    fixture = Path(os.path.realpath(fixture))
+    for protected in (K.ROOT, K.R7, K.OUT, K.S_FOLDER, K.SCRATCH / "ood"):
+        prot = Path(os.path.realpath(protected))
+        if K.inside(fixture, prot) or K.inside(prot, fixture):
+            raise K.V7Refusal(f"a test fixture may not lie inside or around {protected}")
+    return fixture
+
+
+def refuse_pinned_v6_code(s_folder):
+    """Test mode never runs v6's pinned entry point or common module: their output folder is the real OUT/."""
+    pinned = K.v6_manifest()["files"]
+    s_folder = Path(os.path.realpath(s_folder))
+    if s_folder == Path(os.path.realpath(K.S_FOLDER)):
+        raise K.V7Refusal("test mode may not use the real scratchpad folder of the v6 code")
+    for name in ("run_stage2.py", "stage2_common.py"):
+        p = s_folder / name
+        if p.is_file() and K.file_sha256(p) == pinned.get(name):
+            raise K.V7Refusal(f"test mode refuses: {p} is v6's pinned {name}, whose output folder is the real OUT/")
 
 
 def split_args(argv):

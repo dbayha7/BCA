@@ -15,8 +15,10 @@ What it does, in order. If any step fails, it stops and writes nothing.
   2. Refuses if an approval of this fingerprint is already there (it never overwrites one).
   3. Refuses unless standard input is a terminal: you type the answer yourself; nothing may be piped in.
   4. Shows v7's fingerprint, v6's fingerprint, the changes v7 makes, the failures v7 can cause, the handoff summary,
-     the probe results, the check (b) forecast gaps and the table of references re-made on the laptop with the lock
-     names they become.
+     the full self-test's verdict and its repeatability result (P3), the answer to Question 7 with its status, the
+     check (b) forecast's verdict line (with a plain warning when a gap above 1e-5 was accepted under Question 7),
+     the probe results, the forecast gaps and the table of references re-made on the laptop with the lock names they
+     become.
   5. Asks you to type the fingerprint's first 16 characters.
   6. Writes approval_v7_<first 16 characters>.json and its .sha256 file in that folder, once, then prints the git
      commands to commit and push them under your own name. Nothing runs until the cloud session has imported it and
@@ -171,8 +173,32 @@ def summary(info):
              "Failures running on the laptop can cause, which the cloud would not have had:",
              bullets(p.get("failures_v7_can_cause")), "",
              "The handoff:", bullets(h.get("summary")), ""]
-    parts.append("Probe results and check (b) forecast gaps (largest parameter differences; tolerance {}):"
-                 .format((p.get("remake") or {}).get("forecast_tolerance")))
+    st = h.get("selftest") or {}
+    p3 = st.get("p3") or {}
+    parts += ["The laptop's full self-test this handoff rests on:",
+              bullets(["verdict: {}".format(st.get("verdict")),
+                       "repeatability test P3 (the same training run, idle and under load, on two processors, must "
+                       "give identical bytes): {}".format("passed" if p3.get("ok") is True else "NOT PASSED"),
+                       "run at {} (laptop clock); imported by the cloud at {}".format(st.get("selftest_utc"),
+                                                                                     st.get("imported_utc"))]), ""]
+    remake = p.get("remake") or {}
+    fc = h.get("forecast") or {}
+    tol = remake.get("forecast_tolerance")
+    msg = remake.get("q7_user_message") or {}
+    parts += ["Question 7 (if the check (b) forecast shows a gap above {} between two of the laptop's own programs, "
+              "stop, or proceed anyway?):".format(tol),
+              bullets(["answer recorded: '{}' ({})".format(remake.get("q7_if_forecast_above_tolerance"),
+                                                          remake.get("q7_status"))] +
+                      (["your words, as recorded: \"{}\" ({})".format(msg.get("quote"), msg.get("utc"))] if msg else [])),
+              "", "Check (b) forecast: " + str(fc.get("line"))]
+    if fc.get("above"):
+        parts.append(wrap("WARNING: the forecast gap is ABOVE {} for {}. Version 7 goes ahead only because Question 7 "
+                          "was answered 'proceed': check (b) may then stop seeds 2-9 for a reason that lies in the "
+                          "laptop's arithmetic, not in BCA, and such a stop is permanent.".format(
+                              tol, ", ".join(fc.get("above") or [])), "  ", "  "))
+    else:
+        parts.append("  Every forecast gap is at most {} (no gap above check (b)'s tolerance).".format(tol))
+    parts += ["", "Probe results and check (b) forecast gaps (largest parameter differences; tolerance {}):".format(tol)]
     rows = []
     for name, r in sorted((h.get("probe_records") or {}).items()):
         rows.append("{}: {}; differs {}; F_ref {}; F_fresh {}".format(

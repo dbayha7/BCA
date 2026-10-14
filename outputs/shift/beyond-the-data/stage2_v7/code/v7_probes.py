@@ -303,18 +303,21 @@ def run_p2(H, seed, r7, inputs, log=None):
 # --------------------------------------------------------------------------------------------- P3
 
 def run_p3(H, seed=2, steps=P3_STEPS, log=None):
-    """A fixed actor-only run (no record). Returns its parameters' SHA-256 (tree and serialized bytes)."""
+    """A fixed actor-only run (no record). Returns its parameters' SHA-256 (tree and serialized bytes), and the
+    training run's wall time in seconds (C11 ST9's speed line; information only, never compared)."""
     L = H.L
     ctx = H.SeedContext(int(seed), worlds=("stall",))
     prep = ctx.prepared("stall")
     critic = ctx.critic("stall", "gap")[0]
     ao = L.ActorOnly(prep, ctx.clone("stall")[0], ctx.learn, int(seed), alpha=ALPHA, steps=steps, chunk=steps)
+    t0 = time.perf_counter()
     stacked, info = ao.run([L.Arm("none", critic=0)], [critic], weighted=False, log=log)
     p = ao.arm_params(stacked, 0)
+    seconds = time.perf_counter() - t0
     from flax import serialization
     return dict(seed=int(seed), steps=int(steps), tree_sha256=L.tree_sha256(p),
                 bytes_sha256=K.sha256_bytes(serialization.to_bytes(p)), failed=bool(info["failed"][0]),
-                cpu=sorted(os.sched_getaffinity(0)))
+                cpu=sorted(os.sched_getaffinity(0)), seconds=round(seconds, 3))
 
 
 def p3_compare(results):

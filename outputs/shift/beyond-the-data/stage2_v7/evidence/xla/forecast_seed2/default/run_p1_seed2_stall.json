@@ -1,0 +1,191 @@
+{
+ "argv": [
+  "p1",
+  "--world",
+  "stall",
+  "--mode",
+  "default",
+  "--r7",
+  "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/v7_build2/r7_default",
+  "--outdir",
+  "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/evidence/xla/forecast_seed2/default"
+ ],
+ "calls": "v7_probes.run_p1 (p1a_call, p1b_call, p1c_call, forecast_of)",
+ "common_sha256": "7742e05b62614c0bb70f9cf1ff73474e772a2e6b725f0c47ecec2daa24b16168",
+ "constants": {
+  "caches_at_import": {
+   "columns": 0,
+   "gain": 0,
+   "matrices": 0
+  },
+  "differences": {
+   "A_bit_identical": true,
+   "B_bit_identical": true,
+   "K_bit_identical": true,
+   "max_abs_dA": 0.0,
+   "max_abs_dK": 0.0
+  },
+  "file": "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/world_constants.json",
+  "per_tuple": {
+   "A (0.3, 0.27)": {
+    "bit_identical": true,
+    "differing": 0,
+    "max_abs": 0.0
+   },
+   "B (0.3, 0.27)": {
+    "bit_identical": true,
+    "differing": 0,
+    "max_abs": 0.0
+   },
+   "K (0.3, 0.27, 0.3, 0.98)": {
+    "bit_identical": true,
+    "differing": 0,
+    "max_abs": 0.0
+   }
+  },
+  "sha256": "6602f9d17e977a3e1f6eb017eb1f0b9ec80b018041d62146f507983f36a5e379",
+  "substitute_calls": {
+   "gain": 25,
+   "matrices": 1
+  },
+  "tolerances": {
+   "A": 1e-14,
+   "B": "bit-identical",
+   "K": 1e-12
+  },
+  "tripwire": {
+   "calls": {
+    "experiments.signal.gapped_lq.transition_matrix": 0,
+    "scipy.linalg.solve_discrete_are": 0
+   },
+   "installed": [
+    "experiments.signal.gapped_lq.transition_matrix",
+    "scipy.linalg.solve_discrete_are"
+   ]
+  },
+  "tuples": {
+   "gain": [
+    [
+     0.3,
+     0.27,
+     0.3,
+     0.98
+    ]
+   ],
+   "matrices": [
+    [
+     0.3,
+     0.27
+    ]
+   ]
+  }
+ },
+ "environment": {
+  "affinity": [
+   0
+  ],
+  "avx512_flags": [
+   "avx512_bf16",
+   "avx512_bitalg",
+   "avx512_fp16",
+   "avx512_vbmi2",
+   "avx512_vnni",
+   "avx512_vpopcntdq",
+   "avx512bw",
+   "avx512cd",
+   "avx512dq",
+   "avx512f",
+   "avx512ifma",
+   "avx512vbmi",
+   "avx512vl"
+  ],
+  "avx512f": true,
+  "boot_id": "d8b4c7ba-c83b-455e-9192-c5e364769e09",
+  "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "cwd": "/home/user/bca",
+  "executable": "/tmp/claude-0/bcavenv/bin/python",
+  "glibc": "2.39",
+  "hostname": "vm",
+  "jax": "0.6.2",
+  "jaxlib": "0.6.2",
+  "kernel_release": "6.18.44-fc-v114",
+  "logical_processors": 4,
+  "mode": "default",
+  "mode_confirmed": true,
+  "mode_meaning": "the cloud's Xeon as it is (no emulation)",
+  "numpy": "2.2.6",
+  "numpy_avx512_dispatch_active": [
+   "AVX512F",
+   "AVX512CD",
+   "AVX512_SKX",
+   "AVX512_CLX",
+   "AVX512_CNL",
+   "AVX512_ICL"
+  ],
+  "numpy_dispatch_active": [
+   "SSSE3",
+   "SSE41",
+   "POPCNT",
+   "SSE42",
+   "AVX",
+   "F16C",
+   "FMA3",
+   "AVX2",
+   "AVX512F",
+   "AVX512CD",
+   "AVX512_SKX",
+   "AVX512_CLX",
+   "AVX512_CNL",
+   "AVX512_ICL"
+  ],
+  "openblas": {
+   "numpy": "SkylakeX",
+   "scipy": "SkylakeX"
+  },
+  "python": "3.10.20",
+  "scipy": "1.15.3",
+  "variables": {
+   "HOME": "/root",
+   "JAX_PLATFORMS": "cpu",
+   "LANG": "C.UTF-8",
+   "LC_ALL": "C.UTF-8",
+   "OMP_NUM_THREADS": "1",
+   "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "PYTHONPATH": "/home/user/bca",
+   "TF_CPP_MIN_LOG_LEVEL": "1",
+   "TPU_SKIP_MDS_QUERY": "1"
+  }
+ },
+ "forecast": {
+  "F_fresh": 0.0,
+  "F_ref": 0.0,
+  "F_ref_against": "the gate's saved actor",
+  "above_tolerance": [],
+  "entry_if_not_inherited": false,
+  "p1a_differs": false,
+  "p1b_reproduces_gate": true,
+  "remake_failed": false,
+  "tolerance": 1e-05
+ },
+ "gate_software_check": {
+  "state": "unchanged (acceptance.check_software as written; XLA_FLAGS unset)"
+ },
+ "information_only": "Information only: run on the cloud's Xeon outside the v7 wrapper, before anything is pinned; not a v7 result. The laptop's own self-test replaces it.",
+ "kind": "stage2-v7-evidence-forecast-run",
+ "mode": "default",
+ "probe": "p1_seed2_stall",
+ "r7": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/v7_build2/r7_default",
+ "record": {
+  "file": "p1_seed2_stall.json",
+  "result_line": "bit-identical",
+  "sha256": "dbbe688dbc9840515dfc85643070fe6d2d55e838e665ce5677f314feba02583b"
+ },
+ "script_sha256": "952127b94e536da155864350608fee63d010ebbd85dca1ec936f7375fbf71ba6",
+ "seconds": {
+  "probe": 419.5368339209999,
+  "process": 420.7554995289993
+ },
+ "seed": 2,
+ "world": "stall"
+}
