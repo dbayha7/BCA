@@ -1,13 +1,15 @@
 # ThrusterChain page
 
-`thrusterchain.html` is the ThrusterChain documentation page, version 15, published as a private claude.ai artifact
+`thrusterchain.html` is the ThrusterChain documentation page, version 16, published as a private claude.ai artifact
 (https://claude.ai/artifact/8VbJdfNyQr1qDmr7JN1Ha7). It is an HTML fragment; publishing adds the doctype, head and body.
 
 Version 14 was another session's: the critic viewer's "What this episode is" box, a faster Play, and a reformatted
 Setting 1 table. Version 15 merges onto it the weighting test's return work of 14 October 2026: findings D (where the
 band is read), E (weighting for where it is read) and F (return), with the updated outcome, header line, timeline and
-navigation (`scripts/p5_return_apply.py`, `scripts/p5_fix1.py`). Finding G, the learning curves, is added by
-`scripts/p5_curves_apply.py` once the reruns with checkpoints have finished.
+navigation (`scripts/p5_return_apply.py`, `scripts/p5_fix1.py`). Version 16 adds finding G, learning curves for every
+setup (5 data qualities x 3 tests), with an overview, two interactive charts and a table, from the reruns with
+checkpoints (`scripts/p5_curves_apply.py PAGE DATA OBSERVATIONS`; data and code in
+`outputs/shift_iw/explore/curves/`).
 
 The page describes the environment and its controlled distribution shift, the main test (stopped before BCA, entry 16
 in `EXPERIMENTS.md`), Stage 1, and the known-shift weighting test (entry 17).

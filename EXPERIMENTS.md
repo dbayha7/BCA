@@ -488,6 +488,22 @@ Last updated: 2026-10-14.
   - **Meaning:** the estimated band stays valid (coverage held on both). The return gain depends on estimating
     where the data lack a command, which is easy on clean expert data and hard on mixed data.
   - Write-up: `outputs/shift_iw/explore/channel/RESULTS_estimated_weights.md`.
+- **Learning curves for every setup (2026-10-14; the user's request "im going to need to see learning curves as well
+  comprehensively for all possible env setups" and go "Full set, ~3 h CPU").**
+  - **Method:** every run of this test was retrained with checkpoints (actor-only every 1,000 of 20,000 steps; full
+    TD3+BC every 5,000 of 100,000 updates), and every checkpoint was scored on the three start banks.
+  - **Reproduction:** all 330 reruns with an earlier run end at its saved actor bit for bit. Version 5's runs
+    reproduce only when pinned to one CPU, as they were trained.
+  - **New runs:** the command-weighted arms (A2, B2, C2, A3, C3) on the three lower qualities, with expectations
+    written first. Mostly met: within ±10 units except estimated weights on medium (−11.4); 3 of 6 controls beyond
+    ±5.
+  - **Shown:**
+    - On expert, actor-only training against the critic lowers return (the cloned actor's 95.2 points on the strong
+      test falls to 90.7). The command-weighted band prevents it and rises to 96.5.
+    - The first test's medium-expert collapse comes after a peak at 3,000 steps.
+    - Full TD3+BC on the lower qualities peaks at 5,000–15,000 updates and loses 4–17 points by 100,000; the
+      capped pull loses 9–23.
+  - Page: finding G (`docs/thrusterchain/`); code and data: `outputs/shift_iw/explore/curves/`.
 
 ## Decisions waiting on the user
 1. Step 4 has its decisions (amendments P, Q, R). Next comes reading the main-run verdicts.
@@ -503,9 +519,8 @@ Last updated: 2026-10-14.
    decide: the claim wanted ("flags reliance on unsupported commands" is testable now; "identifies the harm" needs a
    test bed whose data carry a trace of it). Stage 2 (BCA) needs typed approval.
 10. Known-shift weighting (entry 17): the return gain is shown (rerun, U1–U4 met on medium-expert and expert).
-   With estimated weights the gain holds on expert (+2.3 points) and vanishes on medium-expert. In progress:
-   learning curves for all five qualities × three test conditions (the user's request), and the ThrusterChain
-   page.
+   With estimated weights the gain holds on expert (+2.3 points) and vanishes on medium-expert. Learning curves
+   for every setup are on the ThrusterChain page (finding G). Open: pushing; estimating support on mixed data.
 
 ## Deliverables
 - **Notebooks:**
@@ -601,3 +616,6 @@ Last updated: 2026-10-14.
   The ThrusterChain page, version 15 (merged onto another session's version 14, which answered the owner's critic-viewer
   and Setting 1 comments): the weighting test gains findings D-F (where the band is read, weighting for it, return),
   and its outcome, header line, timeline and navigation now report the return gain (`docs/thrusterchain/`).
+  Learning curves for all 5 qualities × 3 tests: every run retrained with checkpoints (330 of 330 reproduce their
+  saved actor bit for bit) and the command-weighted arms run on the three lower qualities. The ThrusterChain page,
+  version 16, adds them as finding G.

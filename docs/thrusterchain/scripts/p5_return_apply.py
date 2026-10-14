@@ -360,5 +360,6 @@ NEW_SRC = json.dumps(COLS, ensure_ascii=False, separators=(",", ":"))
 assert s.count(COLS_SRC) == 1
 s = s.replace(COLS_SRC, NEW_SRC, 1)
 
-PAGE.write_text(s, encoding="utf-8")
+PAGE.write_text(s, encoding="utf-8", newline="
+")
 print("version 14 written:", len(s), "characters")

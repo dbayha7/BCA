@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copy the ThrusterChain page (version 15), the scripts that build and check it, the key design notes and the
+# Copy the ThrusterChain page (version 16), the scripts that build and check it, the key design notes and the
 # "critic in action" section's sources into /root/bca-shift/docs/thrusterchain. Screenshots, scratch folders, old
 # page copies and node_modules stay in the work folder.
 set -euo pipefail

@@ -170,7 +170,8 @@ SECTION = f"""<!-- lc:begin -->
     const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
     const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step, t = [];
     for (let v = a; v <= b + step / 2; v += step) t.push(+v.toFixed(6));
-    return {{ a, b, t, dec: step >= 1 ? 0 : step >= 0.1 ? 1 : 2 }};
+    let dec = 0; while (dec < 3 && Math.abs(step * Math.pow(10, dec) - Math.round(step * Math.pow(10, dec))) > 1e-9) dec++;
+    return {{ a, b, t, dec }};
   }}
   function chart(svg, box, group, arms, W, H, opts) {{
     svg.innerHTML = ""; svg.setAttribute("viewBox", `0 0 ${{W}} ${{H}}`);
@@ -310,7 +311,7 @@ SECTION = f"""<!-- lc:begin -->
     $("lc-h1").textContent = `Actor only, ${{st.q}} data, ${{TL[st.t]}}`;
     $("lc-h2").textContent = `Full TD3+BC, ${{st.q}} data, ${{TL[st.t]}}`;
     const s1 = $("lc-svg1"), s2 = $("lc-svg2"), W1 = widthOf(s1), W2 = widthOf(s2), narrow = W1 < 520;
-    const m = {{ l: narrow ? 40 : 48, r: 12, t: 26, b: 36 }};
+    const m = {{ l: narrow ? 40 : 48, r: 20, t: 26, b: 36 }};
     chart(s1, $("lc-c1"), "actor", A1, W1, narrow ? 250 : 300, {{ m }});
     chart(s2, $("lc-c2"), "cotrain", A2, W2, narrow ? 230 : 260, {{ m }});
     table(); grid();
@@ -344,5 +345,6 @@ else:
         "Change during training": "The last checkpoint minus the first.",
         "Ends at the saved actor": "Whether the rerun with checkpoints ends at the very actor the original run saved, bit for bit, on how many seeds. New run: there was no earlier run."}})
     s = s.replace(src, json.dumps(cols, ensure_ascii=False, separators=(",", ":")), 1)
-page.write_text(s, encoding="utf-8")
+page.write_text(s, encoding="utf-8", newline="
+")
 print(f"finding G written ({len(missing)} runs missing); page {len(s)} characters")
