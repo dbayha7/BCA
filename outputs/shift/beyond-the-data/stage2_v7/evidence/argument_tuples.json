@@ -1,0 +1,769 @@
+{
+ "conclusion": "Outside test files, no Physics construction sets gain, wave_turn, throttle_cost or gamma (fields set: (definition), stall, stall_slope); the dataset rebuilds physics from its recorded dict (experiments/shift/dataset.py:128), and every recorded dict holds the defaults (world_constants.json argument_sources). So _matrices is reached only with (0.3, 0.27) and _gain only with (0.3, 0.27, 0.3, 0.98).",
+ "groups": {
+  "Stage 2 v6 code (outputs/shift/beyond-the-data/stage2/code)": {
+   "files": [
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/approve.py",
+     "sha256": "0de1735d6d3b4f81c752679127c71dbe2a486223dcba587fa0647a15053b3104"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/approve_local.py",
+     "sha256": "5bfac05530edf05facf70f2dd2307c78b93c2adc411330f82122cd10e13fa47c"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/band.py",
+     "sha256": "89553406b6cc7bd682a50153e4b74c51f49b5eff022641c614400eb972b232bd"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/deploy_check.py",
+     "sha256": "b6572b11c17c73fa67d6a11ba784f2823cc3c0fea6a35ffde87acb3e8a382fae"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/detect_contract.py",
+     "sha256": "1a47e39b76d5e48017eea38e2e69102b6ef327044cdcaf31eed1a688bce8a4e1"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/fresh.py",
+     "sha256": "002a06d81229a6b5684933ec590f2975c36fb52d3b39aa4c63480f904e7b0fec"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/host.py",
+     "sha256": "f0a97d348fda429ac5ccd4629465b3e1c5a34cf559733870b80663bf05c2c791"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/policy.py",
+     "sha256": "671e2b8f8bf197b18582edb78677b45277c6335e427e06a644a60f5166d7a96d"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/prereg_payload.py",
+     "sha256": "a17b2ee6eeea1e4c6c342a02d31e1bc3de1e42ab378cd81bb398187730f7b99a"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/run_stage2.py",
+     "sha256": "168b72d3057b220987dae871d5d478df2a0a1b4fba4d8d55aa0d964138836f28"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/stage2_common.py",
+     "sha256": "dead5e3eb206aa8aa94694a2f1a8a4b552f3d151771e852674e1b4873f8a2bdc"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/test_stage2.py",
+     "sha256": "60e9c63c921c6638e6cdd54c200e913e15f44f051d090e29a6db590c84551a88"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/weights.py",
+     "sha256": "5ca35cf2ff79d923635e344dd7b7bc1f1cd07e8d0cd12ad8b6c975bbae1a831a"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/write_manifest.py",
+     "sha256": "66322173cd96ba3141ff9d209cd99b88b71fc2e91222e920b0be92806cd8723d"
+    },
+    {
+     "file": "outputs/shift/beyond-the-data/stage2/code/write_prereg.py",
+     "sha256": "d2f0f443d1cf81bc4781ec544b88bdfed0dfcf9612e7397931ddb6bc6883d813"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [
+     {
+      "at": "outputs/shift/beyond-the-data/stage2/code/fresh.py:110",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(world, slope)"
+     }
+    ],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "Stage 2 v6 code as run (scratchpad/ood/stage2)": {
+   "files": [
+    {
+     "file": "scratchpad/ood/stage2/approve.py",
+     "sha256": "0de1735d6d3b4f81c752679127c71dbe2a486223dcba587fa0647a15053b3104"
+    },
+    {
+     "file": "scratchpad/ood/stage2/approve_local.py",
+     "sha256": "5bfac05530edf05facf70f2dd2307c78b93c2adc411330f82122cd10e13fa47c"
+    },
+    {
+     "file": "scratchpad/ood/stage2/band.py",
+     "sha256": "89553406b6cc7bd682a50153e4b74c51f49b5eff022641c614400eb972b232bd"
+    },
+    {
+     "file": "scratchpad/ood/stage2/deploy_check.py",
+     "sha256": "b6572b11c17c73fa67d6a11ba784f2823cc3c0fea6a35ffde87acb3e8a382fae"
+    },
+    {
+     "file": "scratchpad/ood/stage2/detect_contract.py",
+     "sha256": "1a47e39b76d5e48017eea38e2e69102b6ef327044cdcaf31eed1a688bce8a4e1"
+    },
+    {
+     "file": "scratchpad/ood/stage2/fresh.py",
+     "sha256": "002a06d81229a6b5684933ec590f2975c36fb52d3b39aa4c63480f904e7b0fec"
+    },
+    {
+     "file": "scratchpad/ood/stage2/host.py",
+     "sha256": "f0a97d348fda429ac5ccd4629465b3e1c5a34cf559733870b80663bf05c2c791"
+    },
+    {
+     "file": "scratchpad/ood/stage2/policy.py",
+     "sha256": "671e2b8f8bf197b18582edb78677b45277c6335e427e06a644a60f5166d7a96d"
+    },
+    {
+     "file": "scratchpad/ood/stage2/prereg_payload.py",
+     "sha256": "a17b2ee6eeea1e4c6c342a02d31e1bc3de1e42ab378cd81bb398187730f7b99a"
+    },
+    {
+     "file": "scratchpad/ood/stage2/run_stage2.py",
+     "sha256": "168b72d3057b220987dae871d5d478df2a0a1b4fba4d8d55aa0d964138836f28"
+    },
+    {
+     "file": "scratchpad/ood/stage2/stage2_common.py",
+     "sha256": "dead5e3eb206aa8aa94694a2f1a8a4b552f3d151771e852674e1b4873f8a2bdc"
+    },
+    {
+     "file": "scratchpad/ood/stage2/test_stage2.py",
+     "sha256": "60e9c63c921c6638e6cdd54c200e913e15f44f051d090e29a6db590c84551a88"
+    },
+    {
+     "file": "scratchpad/ood/stage2/weights.py",
+     "sha256": "5ca35cf2ff79d923635e344dd7b7bc1f1cd07e8d0cd12ad8b6c975bbae1a831a"
+    },
+    {
+     "file": "scratchpad/ood/stage2/write_manifest.py",
+     "sha256": "66322173cd96ba3141ff9d209cd99b88b71fc2e91222e920b0be92806cd8723d"
+    },
+    {
+     "file": "scratchpad/ood/stage2/write_prereg.py",
+     "sha256": "d2f0f443d1cf81bc4781ec544b88bdfed0dfcf9612e7397931ddb6bc6883d813"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [
+     {
+      "at": "scratchpad/ood/stage2/fresh.py:110",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(world, slope)"
+     }
+    ],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "deployment test (runs/shift_explore/deploy/code)": {
+   "files": [
+    {
+     "file": "runs/shift_explore/deploy/code/common.py",
+     "sha256": "afd87d1d8c719ace32c4150baa6c62a2bad2972e1fa09363ea66e9c9938a6633"
+    },
+    {
+     "file": "runs/shift_explore/deploy/code/run_job.py",
+     "sha256": "1e0de5975d75151e4251c325b13e84b4aa3ce51c1fbbdb7d3e539ab23798e8c3"
+    },
+    {
+     "file": "runs/shift_explore/deploy/code/signals.py",
+     "sha256": "0e0533e4bf9a82b8144eef199a242333f6e2f974f6e8df6c190d38cd0de948a1"
+    },
+    {
+     "file": "runs/shift_explore/deploy/code/summarise.py",
+     "sha256": "40ac63abe0381862d40c39bb145a773e2e7be1b3082b856330864a2d29aa7eb2"
+    },
+    {
+     "file": "runs/shift_explore/deploy/code/write_manifest.py",
+     "sha256": "1301a412b96c29f795b95e52024a2d4f7658832c70f1a13468d4a12733710240"
+    },
+    {
+     "file": "runs/shift_explore/deploy/code/write_spec.py",
+     "sha256": "4588566306d93c0a6b9271078adc6b5c3e6043caa0ae08849b5bf9e2b513de4e"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "detection (runs/shift_explore/detect/code)": {
+   "files": [
+    {
+     "file": "runs/shift_explore/detect/code/checks_seed0.py",
+     "sha256": "e387928dc96b38015bdc1fce64fa55d1de81e02ed0e2413274bc657b362a29fa"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/common.py",
+     "sha256": "ffc0cc072563a23a58f2e19053c52f35bab241fb6aa6c43e76b1cd933aeb65a8"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/detect.py",
+     "sha256": "572697c6a676c64a9452ee662813b94190f70df3767feea6cb52bd3c52c41886"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/labels.py",
+     "sha256": "e2717c065112fd1bba986103c3badb489df69470d12e2e1dbefb6fe9ec40eae0"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/measures.py",
+     "sha256": "64cbbedac436ed872cef18447f9b75a6898854b96ca3e479a3bb8551ec243081"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/pairs.py",
+     "sha256": "e63f6362acd47fa0fa4f8d2f5feab21c9ee8afbfdc538fc27408c7c844bab0d1"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/run_detect.py",
+     "sha256": "a3b9c7f15f2ae277f2f061e50679db464d9d430a09e6157aa679ae729eb14d0b"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/signals.py",
+     "sha256": "d8defd910149f60ebce1a69c08ededdc67b1b40504a701dffc645b047c1a42b1"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/test_detect.py",
+     "sha256": "07f55d92215215a2182c65b53a51185141def169afce4ef6f6077bb2ce387c02"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/write_manifest.py",
+     "sha256": "532b6f72624fb142ab9a7fd604344702515797d24088212c15a178f3f8d0aae7"
+    },
+    {
+     "file": "runs/shift_explore/detect/code/write_spec.py",
+     "sha256": "80254ddeb5d3a8065dc997d08398a002122a00e54f9694891d03c33e01df1288"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "fallback (scratchpad/ood/fallback/fallback.py)": {
+   "files": [
+    {
+     "file": "scratchpad/ood/fallback/fallback.py",
+     "sha256": "fa09489fa0a8ec77b42d1a6753ddeb9aa6a807cf84bdc42868c7a1701e4129b3"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "gate (experiments/shift, hashed by the gate's pre-registration)": {
+   "files": [
+    {
+     "file": "experiments/shift/__init__.py",
+     "sha256": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8"
+    },
+    {
+     "file": "experiments/shift/acceptance.py",
+     "sha256": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69"
+    },
+    {
+     "file": "experiments/shift/dataset.py",
+     "sha256": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f"
+    },
+    {
+     "file": "experiments/shift/detection.py",
+     "sha256": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9"
+    },
+    {
+     "file": "experiments/shift/learners.py",
+     "sha256": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a"
+    },
+    {
+     "file": "experiments/shift/recorder.py",
+     "sha256": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d"
+    },
+    {
+     "file": "experiments/shift/shift.py",
+     "sha256": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c"
+    },
+    {
+     "file": "experiments/shift/stage0.py",
+     "sha256": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0"
+    },
+    {
+     "file": "experiments/shift/test_acceptance.py",
+     "sha256": "9f76b50c684e4904313c21956c0ea22974993397cf530fb00ee9965a2077d157"
+    },
+    {
+     "file": "experiments/shift/test_dataset.py",
+     "sha256": "212d0c1ed7aaf500525e6f1b55ebe0d2f303bd0b0aad18aaa19c3da2777c2ea7"
+    },
+    {
+     "file": "experiments/shift/test_learners.py",
+     "sha256": "fec65fa8752977789feab1f7f90b8fb8bc27d7cf1068dadb711dff2f53879471"
+    },
+    {
+     "file": "experiments/shift/test_shift.py",
+     "sha256": "d62f664aa84d517585ccb7f4a974a943c2c4d3b317c7f2d7c804697158722e8e"
+    },
+    {
+     "file": "experiments/shift/test_thruster_chain.py",
+     "sha256": "546ea721ed28a999a26b123578c541f325c5d16bf31d606827814042fa789d52"
+    },
+    {
+     "file": "experiments/shift/test_truth.py",
+     "sha256": "8691af40a33770649e6682c33d544109cd8e8f4cb6e92f32dd1716e260d55c7f"
+    },
+    {
+     "file": "experiments/shift/thruster_chain.py",
+     "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1"
+    },
+    {
+     "file": "experiments/shift/truth.py",
+     "sha256": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c"
+    }
+   ],
+   "hits": {
+    "direct": [
+     {
+      "at": "experiments/shift/recorder.py:76",
+      "test_file": false,
+      "text": "def _gain(gain, wave_turn, throttle_cost, gamma):"
+     },
+     {
+      "at": "experiments/shift/recorder.py:77",
+      "test_file": false,
+      "text": "A, B = TC._matrices(gain, wave_turn)"
+     },
+     {
+      "at": "experiments/shift/recorder.py:89",
+      "test_file": false,
+      "text": "return _gain(float(physics.gain), float(physics.wave_turn), float(physics.throttle_cost), float(physics.gamma))"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:162",
+      "test_file": false,
+      "text": "def _matrices(gain, wave_turn):"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:181",
+      "test_file": false,
+      "text": "return _matrices(float(physics.gain), float(physics.wave_turn))"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:186",
+      "test_file": false,
+      "text": "A, B = _matrices(gain, wave_turn)"
+     }
+    ],
+    "lapack": [
+     {
+      "at": "experiments/shift/recorder.py:81",
+      "test_file": false,
+      "text": "P = linalg.solve_discrete_are(math.sqrt(g) * A, math.sqrt(g) * B, Qc, throttle_cost * np.eye(TC.DA))"
+     },
+     {
+      "at": "experiments/shift/test_thruster_chain.py:42",
+      "test_file": true,
+      "text": "A10, _ = GLQ.transition_matrix(GLQ.STAGE0_SPEC)"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:8",
+      "test_file": false,
+      "text": "oscillator plant imported read-only: gapped_lq.transition_matrix(STAGE0_SPEC) (radii 0.98-0.96,"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:163",
+      "test_file": false,
+      "text": "A10, _ = GLQ.transition_matrix(GLQ.STAGE0_SPEC)"
+     }
+    ],
+    "physics": [
+     {
+      "at": "experiments/shift/acceptance.py:598",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(world, slope)"
+     },
+     {
+      "at": "experiments/shift/acceptance.py:761",
+      "fields_set": [],
+      "test_file": false,
+      "text": "return dict(recorder=spec.as_dict(), stall_physics=TC.world_physics(\"stall\", cfg.slope(variant)).as_dict(),"
+     },
+     {
+      "at": "experiments/shift/acceptance.py:762",
+      "fields_set": [],
+      "test_file": false,
+      "text": "no_stall_physics=TC.world_physics(\"no_stall\", cfg.slope(variant)).as_dict())"
+     },
+     {
+      "at": "experiments/shift/acceptance.py:775",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(world, cfg.slope(variant))"
+     },
+     {
+      "at": "experiments/shift/dataset.py:128",
+      "fields_set": [],
+      "test_file": false,
+      "text": "return TC.Physics(**self.meta[\"physics\"])"
+     },
+     {
+      "at": "experiments/shift/dataset.py:178",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(world, stall_slope)"
+     },
+     {
+      "at": "experiments/shift/stage0.py:107",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(\"stall\", stall_slope)"
+     },
+     {
+      "at": "experiments/shift/stage0.py:338",
+      "fields_set": [],
+      "test_file": false,
+      "text": "physics = TC.world_physics(\"stall\", stall_slope)"
+     },
+     {
+      "at": "experiments/shift/test_shift.py:225",
+      "fields_set": [
+       "stall_slope"
+      ],
+      "test_file": true,
+      "text": "self.assertEqual(S0.bisect_trigger(physics=TC.Physics(stall_slope=3.0))[0], RC.TRIGGER)"
+     },
+     {
+      "at": "experiments/shift/test_thruster_chain.py:173",
+      "fields_set": [
+       "atol",
+       "stall_slope"
+      ],
+      "test_file": true,
+      "text": "np.testing.assert_allclose(TC.thrust(np.array([1.0]), TC.Physics(stall_slope=3.0)), [0.2], atol=1e-7)"
+     },
+     {
+      "at": "experiments/shift/test_thruster_chain.py:183",
+      "fields_set": [
+       "stall_slope"
+      ],
+      "test_file": true,
+      "text": "for physics in (TC.STALL, TC.NO_STALL, TC.Physics(stall_slope=3.0)):"
+     },
+     {
+      "at": "experiments/shift/test_thruster_chain.py:277",
+      "fields_set": [
+       "stall_slope"
+      ],
+      "test_file": true,
+      "text": "for physics in (TC.STALL, TC.NO_STALL, TC.Physics(stall_slope=3.0)):"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:137",
+      "fields_set": [],
+      "test_file": false,
+      "text": "STALL = Physics()"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:138",
+      "fields_set": [
+       "stall"
+      ],
+      "test_file": false,
+      "text": "NO_STALL = Physics(stall=False)"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:143",
+      "fields_set": [
+       "(definition)"
+      ],
+      "test_file": false,
+      "text": "def world_physics(world, stall_slope=1.5):"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:146",
+      "fields_set": [
+       "stall",
+       "stall_slope"
+      ],
+      "test_file": false,
+      "text": "return Physics(stall=True, stall_slope=float(stall_slope))"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:148",
+      "fields_set": [
+       "stall",
+       "stall_slope"
+      ],
+      "test_file": false,
+      "text": "return Physics(stall=False, stall_slope=float(stall_slope))"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:403",
+      "fields_set": [
+       "stall",
+       "stall_slope"
+      ],
+      "test_file": false,
+      "text": "self.physics = Physics(stall=bool(stall), stall_slope=float(stall_slope))"
+     }
+    ],
+    "replace": [],
+    "wrappers": [
+     {
+      "at": "experiments/shift/acceptance.py:2720",
+      "test_file": false,
+      "text": "K = RC.textbook_gain(TC.NO_STALL)"
+     },
+     {
+      "at": "experiments/shift/learners.py:591",
+      "test_file": false,
+      "text": "self.K = np.asarray(RC.textbook_gain(physics), np.float32)"
+     },
+     {
+      "at": "experiments/shift/recorder.py:87",
+      "test_file": false,
+      "text": "def textbook_gain(physics=TC.STALL):"
+     },
+     {
+      "at": "experiments/shift/recorder.py:202",
+      "test_file": false,
+      "text": "self.K = textbook_gain(physics)"
+     },
+     {
+      "at": "experiments/shift/recorder.py:258",
+      "test_file": false,
+      "text": "return LinearController(textbook_gain(physics), 0.8, \"stall-aware controller (textbook gain, capped at 80%)\")"
+     },
+     {
+      "at": "experiments/shift/recorder.py:263",
+      "test_file": false,
+      "text": "return LinearController(textbook_gain(physics), 1.0, \"rising-thrust controller (textbook gain, full range)\")"
+     },
+     {
+      "at": "experiments/shift/recorder.py:267",
+      "test_file": false,
+      "text": "return HandOnly(textbook_gain(physics), spec)"
+     },
+     {
+      "at": "experiments/shift/stage0.py:399",
+      "test_file": false,
+      "text": "_, B = TC.matrices(TC.NO_STALL)"
+     },
+     {
+      "at": "experiments/shift/stage0.py:438",
+      "test_file": false,
+      "text": "A, B = TC.matrices(TC.NO_STALL)"
+     },
+     {
+      "at": "experiments/shift/test_dataset.py:182",
+      "test_file": true,
+      "text": "K = RC.textbook_gain()"
+     },
+     {
+      "at": "experiments/shift/test_dataset.py:186",
+      "test_file": true,
+      "text": "self.assertTrue(np.array_equal(RC.textbook_gain(TC.NO_STALL), K))"
+     },
+     {
+      "at": "experiments/shift/test_truth.py:75",
+      "test_file": true,
+      "text": "K = RC.textbook_gain()"
+     },
+     {
+      "at": "experiments/shift/test_truth.py:158",
+      "test_file": true,
+      "text": "K = RC.textbook_gain()"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:179",
+      "test_file": false,
+      "text": "def matrices(physics=STALL):"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:185",
+      "test_file": false,
+      "text": "def _columns(gain, wave_turn):"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:209",
+      "test_file": false,
+      "text": "acols, bcols = _columns(float(physics.gain), float(physics.wave_turn))"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:238",
+      "test_file": false,
+      "text": "acols, bcols = _columns(float(physics.gain), float(physics.wave_turn))"
+     },
+     {
+      "at": "experiments/shift/thruster_chain.py:352",
+      "test_file": false,
+      "text": "A, B = matrices(STALL)"
+     },
+     {
+      "at": "experiments/shift/truth.py:391",
+      "test_file": false,
+      "text": "A, B = TC.matrices(physics)"
+     },
+     {
+      "at": "experiments/shift/truth.py:413",
+      "test_file": false,
+      "text": "_, B = TC.matrices(physics)"
+     },
+     {
+      "at": "experiments/shift/truth.py:433",
+      "test_file": false,
+      "text": "K = RC.textbook_gain(TC.NO_STALL)"
+     }
+    ]
+   }
+  },
+  "gate dependency (experiments/signal/gapped_lq.py)": {
+   "files": [
+    {
+     "file": "experiments/signal/gapped_lq.py",
+     "sha256": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [
+     {
+      "at": "experiments/signal/gapped_lq.py:233",
+      "test_file": false,
+      "text": "def transition_matrix(spec, attempts=1000):"
+     },
+     {
+      "at": "experiments/signal/gapped_lq.py:336",
+      "test_file": false,
+      "text": "self.A, self.coupling_attempt = transition_matrix(spec)"
+     }
+    ],
+    "physics": [],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "room test (runs/shift_explore/room/code)": {
+   "files": [
+    {
+     "file": "runs/shift_explore/room/code/checks_seed0.py",
+     "sha256": "d065a5568dbb437226a24f27bc5947265f1715564e9d18110d6c4186d91a2325"
+    },
+    {
+     "file": "runs/shift_explore/room/code/dryrun.py",
+     "sha256": "68a05ac5bcfcd3ad49239cfd9a7e52f2152ef577c8a9e20f42bbe53ceaa09a67"
+    },
+    {
+     "file": "runs/shift_explore/room/code/harness.py",
+     "sha256": "97f547b14d55c3afa392cbdf99508e45c1b862d8a285030808c5783a067ef2cf"
+    },
+    {
+     "file": "runs/shift_explore/room/code/run_seed.py",
+     "sha256": "18794f4fe71fb6d1c6dbf76fadfedba1890ee91a7a63778a4def30685e8c8927"
+    },
+    {
+     "file": "runs/shift_explore/room/code/summarise_checks.py",
+     "sha256": "66d8c5ebfb35c343e5bb91b53776d2c4f1f439dad6cabd8072bfd1e8cf53f8c8"
+    },
+    {
+     "file": "runs/shift_explore/room/code/write_manifest.py",
+     "sha256": "9ed85e72cb7d88e09091d74de69d726c3d572d1fce98de40a8c35dc6d4ce6ae5"
+    },
+    {
+     "file": "runs/shift_explore/room/code/write_spec.py",
+     "sha256": "8e42d4cb33d28a4e7fb378ad90e1786cc2be8851b1f5d20a8b5065e85e04dbfa"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [],
+    "replace": [],
+    "wrappers": []
+   }
+  },
+  "stand-ins (runs/shift_explore/standins/code)": {
+   "files": [
+    {
+     "file": "runs/shift_explore/standins/code/approve.py",
+     "sha256": "2127ba8d835613875728113dc68d3fa44d0f0f01e92379ea0e27c75dd7e937a3"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/checks_seed0.py",
+     "sha256": "ed77e915e2383be176149b811023a776e4ac61048902cac3e003c734c9375cfe"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/dryrun.py",
+     "sha256": "c34b391665151cd2e8e35908762474dda8b270aa293336f4605fd001c79a8d09"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/run_standins.py",
+     "sha256": "608e5c819aa97aa7721bf20c43ae87a0c2cbb335ec7165ba76a8ba5b854fc1a9"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/standins.py",
+     "sha256": "ef6b6ea270c2d94ff5905d358e51109ab9a3004849a0b78d2c433c7032d0de8b"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/test_marks.py",
+     "sha256": "14e4d404476355c95a9d48e98bfeb2e41efbe5dd93c9a6ac4d53feab4bb60812"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/write_manifest.py",
+     "sha256": "b35fdbf345540190860899418f4dd09728f12fabbedbacec140bcf91251595ca"
+    },
+    {
+     "file": "runs/shift_explore/standins/code/write_spec.py",
+     "sha256": "66101f77a3009dbd17d44b0688e4808a425d7f2965a664d3c0dc8394484597a5"
+    }
+   ],
+   "hits": {
+    "direct": [],
+    "lapack": [],
+    "physics": [],
+    "replace": [],
+    "wrappers": []
+   }
+  }
+ },
+ "kind": "stage2-v7-evidence-argument-tuples",
+ "physics_fields_set_outside_tests": [
+  "(definition)",
+  "stall",
+  "stall_slope"
+ ],
+ "stage2_copies_identical": {
+  "approve.py": true,
+  "approve_local.py": true,
+  "band.py": true,
+  "deploy_check.py": true,
+  "detect_contract.py": true,
+  "fresh.py": true,
+  "host.py": true,
+  "policy.py": true,
+  "prereg_payload.py": true,
+  "run_stage2.py": true,
+  "stage2_common.py": true,
+  "test_stage2.py": true,
+  "weights.py": true,
+  "write_manifest.py": true,
+  "write_prereg.py": true
+ },
+ "tuples_in_world_constants": {
+  "experiments.shift.recorder._gain": [
+   "gain=0x1.3333333333333p-2,wave_turn=0x1.147ae147ae148p-2,throttle_cost=0x1.3333333333333p-2,gamma=0x1.f5c28f5c28f5cp-1"
+  ],
+  "experiments.shift.thruster_chain._matrices": [
+   "gain=0x1.3333333333333p-2,wave_turn=0x1.147ae147ae148p-2"
+  ]
+ }
+}
