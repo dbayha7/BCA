@@ -494,7 +494,7 @@ def run_check_probe(cfg, name, cpu, seed=None, timeout=1800):
     stubs = cfg.extra.get("stub_probes") if cfg.test else None
     if stubs is not None:
         res = stubs.get(name if seed is None else f"{name}:{seed}", stubs.get(name))
-        return dict(ok=True, **res) if isinstance(res, dict) and "error" not in res else dict(ok=False, **(res or {}))
+        return {"ok": True, **res} if isinstance(res, dict) and "error" not in res else {**(res or {}), "ok": False}
     cmd = ["env", "-i"] + [f"{k}={v}" for k, v in K.PHASE_ENV.items()] + \
         ["nice", "-n", "5", "taskset", "-c", str(cpu), K.PYTHON, str(Path(__file__)), "--probe", name]
     if seed is not None:
@@ -507,7 +507,9 @@ def run_check_probe(cfg, name, cpu, seed=None, timeout=1800):
     if done.returncode != 0 or not lines:
         tail = (done.stderr or done.stdout).strip().splitlines()[-3:]
         return dict(ok=False, error=" | ".join(tail)[:600] or f"exit {done.returncode}")
-    return dict(ok=True, **json.loads(lines[-1]))
+    # a probe that reports its own verdict (the constants probe returns ok and why) keeps it; ok=True only says the
+    # process ran (found on the Framework Desktop's first full self-test, 15 Oct 2026: dict(ok=True, **res) raised)
+    return {"ok": True, **json.loads(lines[-1])}
 
 
 def run_parallel(cfg, jobs):
