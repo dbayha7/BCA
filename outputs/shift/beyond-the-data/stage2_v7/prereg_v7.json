@@ -27,13 +27,14 @@
   "Check (b) forecast: before anything is approved, the self-test measures whether the laptop's own programs agree as check (b) requires; a gap above 1e-5 makes it NOT READY unless the user chose to proceed (Q7).",
   "Environment: Ubuntu 24.04 in WSL 2, the OpenBLAS kernel left to its default, an exact eight-variable environment per phase, one processor per phase checked in code (C3, C4).",
   "Compute budget: version 6's 'about 72-92 process-hours' stays an estimate that stops nothing; the process-hours actually used are counted and reported (C2).",
-  "Records: a ledger of every attempt, provenance files and the probe records (C7, C10, C11)."
+  "Records: a ledger of every attempt, provenance files and the probe records (C7, C10, C11).",
+  "Machine: the user's Framework Desktop (AMD Ryzen AI MAX+ 395, which has AVX-512) instead of the Lenovo laptop; 'the laptop' in v7's text, file names and code now means this machine. WSL is given 24 GB instead of 48 GB, so fewer phases run at once and the run takes longer. Only where v7 runs changes; every rule stays as written, and the self-test, the probes and the gate's exact checks decide on this machine (C12)."
  ],
  "code": {
-  "code_manifest_v7_sha256": "8a4ed43dcf124fff3212d3ec50608cde866fe059d3663958619a998b820cda62",
+  "code_manifest_v7_sha256": "d894ea5f0f03da2b069dca07adbcb708e29196b33e408de56fcc351a0a76923c",
   "files": {
-   "PREREGISTRATION_V7.md": "1424c19fbd8197a491c5820a24b8da1436cca9806185dff32212454fc199f1a6",
-   "README.md": "c28ff96f951cdfe59944e258e6ee48cbd3604a672d257024d7bc1aa428cbd355",
+   "PREREGISTRATION_V7.md": "40875857f84e2e3094861282d4da1d1bb3bf4f2703d5a0883e1fcb6eb54063b8",
+   "README.md": "6b66e97b6d84885091e5e44604a1d6d15385767b5aa3c9e9bac179bce633f809",
    "approve_local_v7.py": "ee571e06d47f0fb952a2768382e8e60fa29134667445f9fd1f058fc9f8a62513",
    "cloud/check_return_v7.py": "57c67e067a242e8a0b817a4d185d683d05afe4642a622630bcae03ac3478f8c1",
    "cloud/make_handoff.py": "ad013421e4e38fc6333b92bc51e45ccd7e7d5d055fdfbf8af85d1f0e22f0f66b",
@@ -51,7 +52,7 @@
    "code/v7_refs.py": "e16f846dc91ca5645d7643fc7e445f111dc4743477ea58010dcb7ac67fed85e2",
    "code/v7_verify.py": "f2b4c7f014b4eb861b2414f26882039b2fca259114164395f05cd57d7d98e37b",
    "code/write_manifest_v7.py": "9d949674cd88e48574908c82d091ee4f277098d20e914f311ce6308190041f8c",
-   "code/write_prereg_v7.py": "c8ed7ab8b53ba6923dca1a1a506391ad312553c776aacd8271f849dd500b8d0e",
+   "code/write_prereg_v7.py": "b24e1af6133f09a025a30ddb56bfc9b375191b37ec9db7eedf8f75e6fe8157bf",
    "diff_from_v6/launch.sh.diff": "cb76a8c358bd3e2a0750c19c0a8dc6acfa863f351e8fb2acf551ac6a5c026691",
    "evidence/argument_tuples.json": "12b3f9d6b4d38ddb33b6738dfab6d2cc75e1e5ee6921f02f29b551304287efeb",
    "evidence/crosscheck_constants.json": "15da1110384e6db9f66f94537144f0be8594602f475e62f85f61be5480ef341e",
@@ -203,7 +204,7 @@
    "laptop/lib/gpu_probe.py": "7f84688b8f309948b1c479742d393fb3c151696b8c241a3ad4dd090a882b219e",
    "laptop/lib/make_results_v7.py": "883b6296f3bc04ebcb18851d46c2f14eb2bd8e8bd80d06887db90496d255de8a",
    "laptop/lib/runner_v7.py": "0f5e2ee31e10eb3b7b7d3d895c1f736c1cbdf1152de998e291f829f3b093b2f3",
-   "laptop/lib/selftest_v7.py": "8cce07985cf59aa0ad5b27dc24498c2f8b2c902e90fdef48eb0a98d969279e22",
+   "laptop/lib/selftest_v7.py": "8677d4a19efd3e1812dd43db34eda8788b40eeca6b0c7323dff0ae85eb966f4a",
    "laptop/push_runfiles_v7.sh": "2b78d14b11021d533f21aa33be6d0f8cdfd25bbc482e7fa39c13e0142996f684",
    "laptop/requirements-lock.txt": "17c33e7f709153ab4bd5eed39fc1bcbe13887dadadeaec5164d040138ad168ba",
    "laptop/restore_v7.sh": "9b5e373653cd84c2f3886528f83b445dcaacd592ca73fff04c7046f41937a0db",
@@ -290,10 +291,43 @@
  "lanes": {
   "cloud_after_handoff": 0,
   "default": 12,
-  "machine": "the user's laptop only",
+  "machine": "the user's laptop only (since C12: the Framework Desktop)",
   "max": 16,
   "rule": "the lane count may be changed (1-16) on any restart; it changes no number",
-  "wsl_memory_gb": 48
+  "wsl_memory_gb": 24
+ },
+ "machine": {
+  "change": "C12",
+  "consequences": {
+   "C1": "kept unchanged: on this AVX-512 processor the local A, B and K are expected to equal the file's bit for bit, so the substitution is expected to change no number; it keeps one code path, and the self-test still checks the tolerances (ST3) and the gate's exact checks (ST4, ST6)",
+   "C11": "ST9's memory warning is given below 20 GiB instead of 40 GiB (information only)",
+   "C2": "unchanged: lanes default 12, at most 16; pick_cpus(16) gives one logical processor on each of the 16 cores; the memory rule is unchanged and, with MemTotal 23.5 GiB (limit MemTotal minus 8 GiB), admits about 2 phases at once until peaks are measured, so the run takes longer than the laptop's estimate, which stays a lower bound that stops nothing",
+   "C4": "satisfied: Ubuntu 24.04 (24.04.5), glibc 2.39, root, HOME=/root, env -i; OPENBLAS_CORETYPE stays unset",
+   "C7": "unchanged: the probes and the check (b) forecast run and decide on this machine; the cloud finished every phase of seeds 0-4 (09:21 UTC, 14 Oct), so they are expected to be inherited at the handoff and no reference is expected to be re-made; the cloud pushes seeds 2-4's run files in the part-4 snapshot at the handoff (C6 unchanged)",
+   "other": "C3, C5, C6, C8, C9, C10 unchanged"
+  },
+  "declared_date": "2026-10-14",
+  "earlier": "Lenovo laptop: Intel Core Ultra 9 275HX, 24 logical processors, no AVX-512; WSL given 48 GB (Q3)",
+  "evidence": [
+   "version 6's own off-cloud self-test (stage2_gpu/selftest.sh) on this machine printed 'PASS anchors (first check): the gate accepts its pre-registration on this processor (AMD RYZEN AI MAX+ 395 w/ Radeon 8060S; matrix kernels SkylakeX/SkylakeX; anchors equal)' and 'RESULT: READY, WAITING FOR THE CLOUD'S LATE FILES' (runs/shift_explore/stage2_offcloud/selftest_20261014T232916Z.txt, not in git)",
+   "README steps 0-7 were done on this machine; the restore printed 'PASS restore: 2370 run files of 901c87766ab0 (pre-handoff snapshot) match the pinned sums'",
+   "no v7 probe record existed when this was declared (R7/selftest/ did not exist)"
+  ],
+  "measured": {
+   "avx512": "yes (avx512f, avx512bw, avx512vl, avx512dq, avx512_bf16 among others)",
+   "date": "2026-10-14",
+   "disk": "about 1 TB free inside WSL (952 GiB)",
+   "gpu": "NVIDIA RTX 5070 Ti 16 GB, not used (C9 unchanged)",
+   "memory": "64 GB installed, 32 GB of it reserved for the built-in Radeon graphics, so Windows sees 31.8 GB; .wslconfig memory=24GB swap=16GB; WSL MemTotal 23.5 GiB",
+   "openblas_kernels": "SkylakeX for numpy and for scipy (the same family as the cloud's Xeon)",
+   "processor": "AMD Ryzen AI MAX+ 395 (Zen 5): 16 cores, 32 logical processors (two per core)",
+   "wsl": "WSL 2 (2.6.3), distribution Ubuntu-24.04 (Ubuntu 24.04.5, glibc 2.39)"
+  },
+  "naming": "'the laptop' in v7's text, file names and code means the user's local machine, the Framework Desktop; the names laptop/ and *_v7 are kept unchanged",
+  "rule": "every v7 step on the user's side (restore, self-test, every phase, results, run files) runs on the user's Framework Desktop instead of the Lenovo laptop v7 was first written for",
+  "why_not_method": "only where v7 runs changes: no setting, mark, tolerance, seed, rule or analysis changes, and every check that depends on the machine runs on this machine before anything is approved",
+  "wsl_memory_gb": 24,
+  "wsl_memory_gb_if_graphics_reservation_lowered": 48
  },
  "memory": {
   "headroom_gib": 8,
@@ -643,8 +677,11 @@
   },
   "q7_default": "stop",
   "q7_if_forecast_above_tolerance": "stop",
-  "q7_status": "open: the user's answer is wanted before the draft is pushed; until it is recorded, the default 'stop' applies (NOT READY when a check (b) forecast gap is above 1e-5)",
-  "q7_user_message": null,
+  "q7_status": "answered by the user",
+  "q7_user_message": {
+   "quote": "3) stop",
+   "utc": "2026-10-14T23:27:10Z"
+  },
   "rule": "An entry (phase, seed, world) is made only for a seed 2-4 phase that is not inherited: (policy_train, s, stall) when P1a differs for 'gapped' or 'full' and P1b does not reproduce the gate's 'gapped' bit for bit; (policy_no_stall_train, s, no_stall) likewise for 'no_stall_gapped'; (host_train, s, stall) when P2's final actor differs. When P1b reproduces the gate's actor, the gate's file is kept. A laptop run that failed where the gate's did not makes no entry ('re-make failed'). No other entry is allowed.",
   "seeds": [
    2,

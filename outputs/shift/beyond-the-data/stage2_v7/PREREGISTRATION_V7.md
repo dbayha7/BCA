@@ -20,6 +20,10 @@ specification. The last part, "Details the code fixes", lists where the code set
 left open. File references give `file:line` in the files as they are now; `S2C/`, `GATE/` and the other shorthands
 are defined just below.
 
+**Added on 14 Oct 2026, after the specification.** The run moved from the user's Lenovo laptop to the user's
+Framework Desktop. Change C12 declares it; the places it touches elsewhere say "C12". The same day the user answered
+Question 7 ("stop"; section 7).
+
 A *test* named `test_v7.py` below is in `code/test_v7.py` or, for the laptop package and the cloud scripts, in
 `code/test_v7_laptop.py`.
 
@@ -39,11 +43,15 @@ A *test* named `test_v7.py` below is in `code/test_v7.py` or, for the laptop pac
 
 **Terms**
 
+- *The laptop*: the user's local machine, where v7 runs. v7 was first written for the user's Lenovo laptop; since
+  C12 "the laptop", in this text, in the README, in file and folder names (`laptop/`) and in the code, means the
+  user's Framework Desktop.
 - *Phase*: one step of the pre-registered work, run as one Python process (for example "train the policy test on seed 6").
 - *Lane*: a slot in which one phase runs. "Processes at once" means lanes in use.
 - *Processor*: one logical processor as Linux sees it. Inside WSL (Windows Subsystem for Linux) each is a virtual
   processor that Windows places on a real core of its choosing.
-- *AVX-512*: a set of wide arithmetic instructions. The cloud's Xeon has it. The laptop's Core Ultra 9 275HX does not.
+- *AVX-512*: a set of wide arithmetic instructions. The cloud's Xeon has it. The Lenovo laptop's Core Ultra 9 275HX,
+  for which v7 was first written, does not. The Framework Desktop's Ryzen AI MAX+ 395, where v7 now runs, has it (C12).
 - *OpenBLAS kernel*: the family of matrix routines that numpy and scipy choose for a processor. Different kernels can
   give different last bits.
 - *ULP* ("unit in the last place"): the gap between a float64 number and its nearest neighbour.
@@ -87,7 +95,9 @@ A *test* named `test_v7.py` below is in `code/test_v7.py` or, for the laptop pac
 ## 1. What v7 is for, what it changes, and what it does not change
 
 **Purpose.** v7 lets the remaining Stage 2 work run on the user's laptop. Under v6 that is impossible: the laptop's
-processor has no AVX-512, so the gate's exact checks refuse every phase. v7 supplies the gate's three world constants
+processor has no AVX-512, so the gate's exact checks refuse every phase. (That was written for the Lenovo laptop. The
+Framework Desktop, where v7 now runs, has AVX-512, and the gate already accepts its pre-registration there; v7 is
+still needed for everything else it changes, C12.) v7 supplies the gate's three world constants
 (A, B, K) from a file made on the cloud's processor, so every unchanged gate and v6 check still runs in full. It also
 allows more processes at once on the laptop, and fixes in advance how seeds 0-4 continue across the two machines.
 Once v7 has started, nothing is held back: every remaining phase runs. Before it starts, the laptop's self-test can
@@ -115,6 +125,9 @@ both v6's approval and v7's.
 7. *Compute budget*: v6's "about 72-92 process-hours" stays an estimate that stops nothing, as in v6 (no v6 code
    enforces it). v7 counts the process-hours actually used and reports them (C2).
 8. *Records*: a ledger, provenance files and the probes (C7, C10, C11).
+9. *Machine*: the user's Framework Desktop instead of the Lenovo laptop, with WSL given 24 GB instead of 48 GB. Only
+   where v7 runs changes, not how: every rule stays as written, and the self-test, the probes and the gate's exact
+   checks decide on this machine (C12).
 
 Running on another machine can itself cause recorded failures that the cloud would not have had. Section 5 lists them.
 
@@ -262,7 +275,7 @@ lanes to 1 or 2 (`GPU/lib/runner.py:322-323`).
 
 **v7 rule (the user's decision, Q3).** At most **16** Stage 2 phase processes at once, **all on the laptop**; default
 **12**. **None** run in the cloud from the handoff on (C6). The lane count may be lowered or raised (1-16) on any
-restart; it changes no number. WSL is given 48 GB.
+restart; it changes no number. WSL is given 48 GB (on the Framework Desktop 24 GB, C12).
 
 **Why 12, with 16 as the cap.**
 - Work left, at the cloud's per-core speed: about 48-58 process-hours, less what the cloud finishes before the
@@ -275,7 +288,8 @@ restart; it changes no number. WSL is given 48 GB.
 - So 12 lanes give at least max(48-58 / 12, about 4.3) = **about 4.5-5 hours at cloud per-core speed. This is a lower
   bound, not a forecast**: lanes wait on dependencies, and the laptop's per-core speed under load is unknown.
   16 lanes would save little.
-- Cores: 24 logical processors; 12 lanes leave half for Windows, WSL and thermal headroom.
+- Cores: 24 logical processors; 12 lanes leave half for Windows, WSL and thermal headroom. (The Lenovo laptop. The
+  Framework Desktop has 16 cores and 32 logical processors; C12.)
 - The count changes no number: every random stream comes from fixed seeds; time and process ids appear only in logs.
   Two cloud lanes in parallel gave check (b) exactly 0.0 (`S2C/policy.py:6`, `:23`; `S2C/band.py:244-248`).
 
@@ -660,8 +674,8 @@ most 1e-5 are reported and stop nothing. Why: such a gap is between two laptop p
 close it; a check (b) stop is permanent, and on seeds 5-9 it would fail the whole confirmatory group
 (`S2C/policy.py:576-577`, `:661`, `:668-670`) for a reason that has nothing to do with BCA. The user may instead choose
 to proceed whatever P1b shows; that choice must be in the draft `prereg_v7.json` before any P1 record exists (section
-7, Q7). *What the forecast does not prove:* check (b) runs the policy test's own BCA program (`S2C/policy.py:96`,
-`:120-125`; BCA's penalty at coefficient 0 and, for the weighted version, a band refit before every chunk, `:136-144`),
+7, Q7). The user answered "stop" (section 7), so a gap above 1e-5 ends v7 as written here. *What the forecast does
+not prove:* check (b) runs the policy test's own BCA program (`S2C/policy.py:96`, `:120-125`; BCA's penalty at coefficient 0 and, for the weighted version, a band refit before every chunk, `:136-144`),
 which v7 does not run before approval. A forecast within 1e-5 makes a check (b) stop on the laptop unlikely, not
 impossible.
 
@@ -978,12 +992,78 @@ match the final `prereg_v7.json`.
 | P3. Repeatability under load (C3) | required; full form only |
 | ST7. One processor visible per lane (as `GPU/lib/selftest_checks.py:158-159`) | required |
 | ST8. Git: full clone, `7dab7d5` present, origin branch present, no git identity equal to the approver's or Anthropic's, no changed tracked file outside `V7/results/` (which the results step rewrites; as `GPU/lib/selftest_checks.py:203-231`) | required |
-| ST9. WSL memory (a warning below 40 GiB), free disk (at least 20 GB), P3's training run time (no lane-hour estimate), GPU timing; the laptop's clock against the `Date` of an HTTPS reply from github.com | information, except the clock in the full form: more than 2 minutes off is NOT READY before any probe runs (the records' times enter the handoff, C6) |
+| ST9. WSL memory (a warning below 20 GiB; 40 GiB before C12), free disk (at least 20 GB), P3's training run time (no lane-hour estimate), GPU timing; the laptop's clock against the `Date` of an HTTPS reply from github.com | information, except the clock in the full form: more than 2 minutes off is NOT READY before any probe runs (the records' times enter the handoff, C6) |
 
 The last line reads `READY`, `READY (waiting for handoff/approval)` (after a `WAIT` line naming what is still missing:
 the handoff, or the approval chain with its reason) or `NOT READY (<what failed>)`, followed by the
 probe results (for each seed and world: "bit-identical", "gate's file kept (P1b reproduced it)" or "reference will be
 re-made if not inherited", and the two forecast gaps F_ref and F_fresh) and a block to paste into the cloud session.
+
+### C12. The machine: the Framework Desktop instead of the Lenovo laptop
+
+**Earlier rule.** C1-C11 and the README were written for the user's Lenovo laptop: an Intel Core Ultra 9 275HX with
+24 logical processors and no AVX-512, with WSL given 48 GB (Q3).
+
+**v7 rule (declared 14 Oct 2026).** Every v7 step on the user's side (the restore, the self-test, every phase, the
+results and the run files) runs on the user's Framework Desktop instead. "The laptop" in v7's text, in the README, in
+file and folder names and in the code now means this machine. The names (`laptop/`, `*_v7`) stay as they are, so
+that no file changes only for a name.
+
+**The machine (measured on 14 Oct 2026).**
+
+| Part | Value |
+|---|---|
+| Processor | AMD Ryzen AI MAX+ 395 (Zen 5): 16 cores, 32 logical processors (two per core) |
+| AVX-512 | yes (avx512f, avx512bw, avx512vl, avx512dq and avx512_bf16, among others) |
+| OpenBLAS kernels | SkylakeX for numpy and for scipy: the same family as the cloud's Xeon |
+| Memory | 64 GB installed, of which 32 GB is reserved for the built-in Radeon graphics, so Windows sees 31.8 GB. WSL is given 24 GB (`.wslconfig`: `memory=24GB`, `swap=16GB`); Linux shows `MemTotal` 23.5 GiB |
+| WSL | WSL 2 (version 2.6.3), distribution `Ubuntu-24.04` (Ubuntu 24.04.5, glibc 2.39) |
+| Disk | about 1 TB free inside WSL |
+| GPU | NVIDIA RTX 5070 Ti, 16 GB: not used (C9 unchanged) |
+
+If the user later lowers the graphics reservation, WSL may be given 48 GB, as Q3 first said. Nothing else changes.
+
+**Evidence already on this machine.** Version 6's own off-cloud self-test (`GPU/selftest.sh`) printed
+`PASS anchors (first check): the gate accepts its pre-registration on this processor (AMD RYZEN AI MAX+ 395 w/
+Radeon 8060S; matrix kernels SkylakeX/SkylakeX; anchors equal)` and `RESULT: READY, WAITING FOR THE CLOUD'S LATE
+FILES` (its report is `runs/shift_explore/stage2_offcloud/selftest_20261014T232916Z.txt`, not in git). README steps
+0-7 were done on this machine by Claude, the user's local agent; the restore printed `PASS restore: 2370 run files of
+901c87766ab0 (pre-handoff snapshot) match the pinned sums`. No v7 probe record existed when this change was declared
+(`R7/selftest/` did not exist), and the change depends on no Stage 2 result.
+
+**What follows for each change.**
+- *C1 (pinned world constants): kept unchanged.* On this AVX-512 processor, with SkylakeX kernels, the local A, B and K
+  are expected to equal the cloud's file bit for bit, so the substitution is expected to change no number. Keeping it
+  keeps one code path. The self-test still checks the tolerances (ST3) and the gate's exact checks (ST4, ST6). C1's
+  fallback is unchanged.
+- *C2 (processes at once and memory): unchanged.* Lanes: default 12, at most 16. The processors lanes may use are
+  `pick_cpus(16)`: one logical processor on each of the 16 cores (processors 0, 2, 4, ..., 30); lanes are the first N
+  of them. The memory rule (7 GiB for a phase kind not yet measured, then 1.25 times its measured peak, VmHWM, or for
+  the two policy kinds the larger of 7 GiB and twice it; reservations together at most `MemTotal` minus 8 GiB) is
+  unchanged. With 23.5 GiB it allows about 15.5 GiB of reservations, so about 2 phases run at once until their peaks are
+  measured, and more after. The run therefore takes longer than the estimate written for the laptop; C2's "about
+  4.5-5 hours at cloud per-core speed" stays a lower bound and stops nothing.
+- *C3 (one processor per phase): unchanged.* P3 decides on this machine.
+- *C4 (operating system and environment): satisfied.* Ubuntu 24.04 (24.04.5) with glibc 2.39, the same as the cloud;
+  root, `HOME=/root`, the exact environment through `env -i`. `OPENBLAS_CORETYPE` stays unset (OpenBLAS picks SkylakeX
+  by itself).
+- *C7 (seeds 0-4) and the check (b) forecast: unchanged.* The probes P1 and P2 and the forecast run on this machine and
+  decide here. The cloud finished every phase of seeds 0-4 (09:21 UTC, 14 Oct), so at the handoff those phases are
+  expected to be inherited, and C7's rule then makes no entry: no reference is expected to be re-made. The rule still
+  decides at the handoff, from the final snapshot. The cloud pushes seeds 2-4's run files in the "part 4" snapshot at
+  the handoff; the handoff design (C6) is unchanged. The probes still run for all of seeds 2-4 (the final cannot be
+  written without the nine records), and P1c's forecast still serves seeds 5-9.
+- *C11 (self-test):* ST9's memory warning is given below 20 GiB instead of 40 GiB, so that the 24 GB of README step 0
+  does not print a warning to fix a 48 GB setting. It is information only.
+- *C5, C6, C8, C9 and C10: unchanged.* Q1, Q2, Q4, Q5 and Q6 apply as decided; Q3 applies except that WSL is given
+  24 GB; Q7 is answered (section 7).
+
+**Why this is not a change of method.** Only where v7 runs changes. No setting, mark, tolerance, seed, rule or
+analysis changes, and every check that depends on the machine (ST1-ST9, P1-P3, the gate's exact anchor and log
+checks) runs on this machine before anything is approved.
+
+**Enforced by:** the self-test (C11) on this machine; `prereg_v7.json` records this change (`machine`, and the
+`lanes` block's `wsl_memory_gb`). **Tested by:** the existing tests (no rule changed) and the self-test.
 
 ---
 
@@ -1026,7 +1106,7 @@ results and forecast beside it in the provenance file.
 
 | Risk | Likelihood | Guard |
 |---|---|---|
-| Arrow Lake's real XLA code does not reproduce the cloud's training | unknown (emulation reproduced seed 0; output not kept) | P1 and P2 detect it; the reference is re-made on the laptop for that seed and world (C7) |
+| The local processor's real XLA code (Zen 5 on the Framework Desktop, C12; first written for the Lenovo laptop's Arrow Lake) does not reproduce the cloud's training | unknown (emulation reproduced seed 0; output not kept) | P1 and P2 detect it; the reference is re-made on the laptop for that seed and world (C7) |
 | The laptop's BCA program at 0 and its actor-only program disagree beyond 1e-5 (check (b) stops on seeds 2-9) | unknown (exactly 0.0 in the cloud) | forecast by P1b against P1a or the gate's file and against P1c; NOT READY above 1e-5 (C7, step 2b); residual risk stated above |
 | The policy test's "none" and the deployment check's "none" differ for a re-made world; the host test's "plain" and the deployment check's "td3bc" differ for a re-made host | certain where a re-make happens | declared (C7); the probe records give the size; provenance labels both pairs |
 | Core type or load changes results | unknown (same instruction set) | P3 (repeatability only) |
@@ -1035,6 +1115,7 @@ results and forecast beside it in the provenance file.
 | The cloud finishes little before the handoff (its container restarts cut seeds 2-3's policy_train twice; see the appendix) | possible | the laptop runs every phase not inherited; nothing waits on the cloud |
 | Both machines write the same phase | prevented on the laptop by code; in the cloud only by procedure | C6 steps 1 and 5; HANDOFF.json records it; the return check compares the cloud's copy |
 | Laptop speed per core, and throttling | unknown | the self-test's speed line; results unaffected |
+| With WSL given 24 GB, fewer phases run at once, so the run takes longer (C12) | certain until the peaks are measured | C2's memory rule admits phases safely; the time estimate is a lower bound that stops nothing |
 | A code path recomputes A or K outside the two replaced functions | none found (grep; the saved probes counted 0 calls, C1) | tripwire exits at the first call |
 | Exploratory results mix machines | certain, by design | ledger and provenance files; seeds 0-4 carry no claim |
 
@@ -1043,22 +1124,25 @@ results and forecast beside it in the provenance file.
 ## 7. Decisions
 
 The user answered all six questions of version 1 in the session on 13-14 Oct 2026. The designer (an agent) applied them as
-follows; the user approves the result with v7 (C10). The second review raised one new question (Q7), which has a
-default.
+follows; the user approves the result with v7 (C10). The second review raised one new question (Q7), which had a
+default; the user answered it on 14 Oct 2026: stop.
 
 | Q | Question | Decision (the user) | Where applied |
 |---|---|---|---|
 | 1 | Accept the constants file as a declared operational departure? | Yes | C1 |
 | 2 | Ubuntu 24.04 in WSL instead of 22.04? | Yes; an installed 22.04 can stay | C4, steps 1-2 |
-| 3 | 12 lanes by default, at most 16, laptop only, WSL given 48 GB, the compute budget an estimate that stops nothing (actual hours reported)? | Yes | C2, step 0 |
+| 3 | 12 lanes by default, at most 16, laptop only, WSL given 48 GB, the compute budget an estimate that stops nothing (actual hours reported)? | Yes (on the Framework Desktop WSL is given 24 GB, because 32 GB is reserved for its graphics; C12) | C2, step 0 |
 | 4 | What if P1 or P2 shows the laptop does not reproduce the gate's training bit for bit for seed 2, 3 or 4? | The user rejected holding those phases: "figure out how to fix them and then proceed. dont hold up progress" | C7's re-make rule (designed by the agent, declared before any laptop outcome); C5 follows the same aim (machine-wide restarts never counted; an unfinished phase is retried until done) |
 | 5 | When should the cloud stop? | Option (c), "Keep going until handoff": the cloud keeps running v6 until the handoff; phases it finishes are inherited | C6 (until the handoff; step 1); the appendix |
 | 6 | Also push the laptop's new run files, model files included, to a new orphan branch? | Yes | C10, step 14 |
-| 7 | (New, from the second review.) If the self-test's check (b) forecast shows a gap above 1e-5 between two of the laptop's own programs, should v7 stop before anything starts (the cloud keeps running v6, and the user decides with the cloud on a new version), or proceed anyway, accepting that check (b) may then stop seeds 2-9 for a machine reason that no re-made reference can fix? | **Open. Default: stop (NOT READY).** The designer recommends the default: proceeding would likely spend the one-shot confirmatory seeds 5-9 on a machine artefact. The answer must be in the draft `prereg_v7.json` before any P1 record exists, with the user's words quoted and the time of their message (an answer is never inferred); the draft writer refuses a later change, the probe records the cloud imported included, so the cloud asks whether step 8 has started before it records an answer. The answer that governs is the one recorded in `prereg_v7.json` (`remake`: `q7_if_forecast_above_tolerance`, `q7_status`, `q7_user_message`), which the approval screen shows | C7 step 2b, C11, section 5 |
+| 7 | (New, from the second review.) If the self-test's check (b) forecast shows a gap above 1e-5 between two of the laptop's own programs, should v7 stop before anything starts (the cloud keeps running v6, and the user decides with the cloud on a new version), or proceed anyway, accepting that check (b) may then stop seeds 2-9 for a machine reason that no re-made reference can fix? | **Stop (NOT READY)**, answered by the user on 14 Oct 2026. Asked "Question 7: if the self-test predicts check (b) would stop seeds, should version 7 stop or go ahead? It defaults to stop", the user wrote "1)can you go in and change that yourself? ... 2) ok i did 3) stop" (23:27:10 UTC, in the user's local Claude Code session `b28b19ef-ba5a-4c06-a991-c30ce1f38aac`, before any probe record existed). The draft records "3) stop" with that time (`--q7 stop --q7-answered`). The designer had recommended the default: proceeding would likely spend the one-shot confirmatory seeds 5-9 on a machine artefact. The answer must be in the draft `prereg_v7.json` before any P1 record exists, with the user's words quoted and the time of their message (an answer is never inferred); the draft writer refuses a later change, the probe records the cloud imported included, so the cloud asks whether step 8 has started before it records an answer. The answer that governs is the one recorded in `prereg_v7.json` (`remake`: `q7_if_forecast_above_tolerance`, `q7_status`, `q7_user_message`), which the approval screen shows | C7 step 2b, C11, section 5 |
 
 One choice is left open by Q5 and has a default: at the handoff, running cloud phases stop at once; the user may
 instead say "let them finish". The choice must be made **before the full self-test (step 8)**, because which phases
 are inherited decides which can use a re-made reference (C6).
+
+On 14 Oct 2026 the user moved the run from the Lenovo laptop to their Framework Desktop. C12 declares it; the
+decisions above apply to it unchanged, except that WSL is given 24 GB instead of Q3's 48 GB.
 
 ---
 
@@ -1166,6 +1250,7 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
 9. **ST4 and ST7** run on the 16 processors that lanes can use, so every `--lanes` from 1 to 16 is covered: the runner
    always uses the first N of those 16 processors and refuses any other. The probes' logs are in `R7/selftest/logs/`.
 10. **Q7's status** is recorded in the draft: open, with the default "stop" applying, until your answer is recorded.
+    Your answer, "stop", is recorded (your message of 2026-10-14T23:27:10Z, quoted "3) stop"; section 7).
     It is recorded only with your words quoted and the UTC time of your message (`write_prereg_v7.py draft
     --q7-answered --q7-quote ... --q7-utc ...`); "proceed" is refused without them, and nothing infers an answer.
     Both are in the re-make block, so the probe records bind to them: once any record exists, on the laptop or
@@ -1188,7 +1273,7 @@ as follows. None of them changes a pass mark, a claim, the analysis or a method 
     counts toward the process-hours up to the last line of its write log (marked as an estimate).
 14. **R1** (information only) runs automatically once every phase is done (`run_v7.sh` starts it before gathering the
     results); it routes nothing, and a failure of it is reported without stopping the results.
-15. **ST9** reports P3's measured training time (and WSL's memory, with a warning below 40 GiB), for information; no
+15. **ST9** reports P3's measured training time (and WSL's memory, with a warning below 20 GiB, C12), for information; no
     lane-hour estimate is computed from it. It also compares the laptop's clock with the `Date` of an HTTPS reply
     from github.com: in the full self-test, more than 2 minutes off is NOT READY before any probe runs (the records'
     times enter the handoff); elsewhere it is a warning, as is a clock that could not be checked.

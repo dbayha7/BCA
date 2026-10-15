@@ -1,16 +1,21 @@
 # Stage 2, version 7: finishing the run on your laptop
 
-**Steps 0-6 can start now.** They need nothing from the cloud or from version 7: only Windows, WSL and files already
-on the branch (`outputs/shift/beyond-the-data/stage2_gpu/README.md` and its `requirements-lock.txt`).
+**"The laptop" now means your Framework Desktop.** Version 7 was first written for your Lenovo laptop. The run has
+moved to your Framework Desktop (`PREREGISTRATION_V7.md`, change C12). The names are kept: wherever this package says
+"the laptop" (also in the folder name `laptop/` and in the code), it means the Framework Desktop.
 
-Six of the seven questions of the plan are answered: the world's numbers from the cloud's file, Ubuntu 24.04, 12
-lanes (16 at most), re-made reference copies when the laptop does not reproduce the saved ones, the cloud running
-until the handoff, and pushing the laptop's run files. **Question 7 is still open**: if the self-test forecasts that
-check (b) would stop seeds for a reason that lies in the laptop's arithmetic (words below), should version 7 stop
-before anything starts, or go ahead anyway? The default is "stop". If you want "proceed", say so in the cloud session
-before you start step 8; the cloud records your words and the time of your message. Once the full self-test of step 8
-has written its first probe record, the answer can no longer change. Also wanted before step 8: whether running cloud
-phases stop at once or finish at the handoff (default: stop at once).
+**Steps 0-7 are done.** Claude (the Claude Code session on your desktop) did them on the Framework Desktop on 14 Oct
+2026: WSL has 24 GB (step 0), `Ubuntu-24.04` is installed (step 1), and the restore (step 7) printed `PASS restore:
+2370 run files of 901c87766ab0 (pre-handoff snapshot) match the pinned sums`. Step 8 comes next, once this amended
+draft is committed and pushed (the self-test's records bind to the committed draft).
+
+All seven questions of the plan are answered: the world's numbers from the cloud's file, Ubuntu 24.04, 12 lanes (16
+at most), re-made reference copies when the laptop does not reproduce the saved ones, the cloud running until the
+handoff, pushing the laptop's run files, and **Question 7: stop**. That is: if the self-test forecasts that check (b)
+would stop seeds for a reason that lies in the laptop's arithmetic (words below), version 7 stops before anything
+starts. You answered "stop" on 14 Oct at 23:27 UTC; the draft records your words and the time. Once the full
+self-test of step 8 has written its first probe record, the answer can no longer change. Still wanted before step 8:
+whether running cloud phases stop at once or finish at the handoff (default: stop at once).
 
 ## What this is
 
@@ -21,6 +26,7 @@ where the remaining work runs: on your laptop instead of the cloud. Its declarat
 
 Words used below:
 
+- **The laptop**: your local machine, where version 7 runs: now your Framework Desktop (see the top of this page).
 - **Phase**: one step of the pre-registered work, run as one Python process (for example "train the policy test on
   seed 6").
 - **Lane**: a slot in which one phase runs, on its own processor. 12 lanes means 12 phases at once.
@@ -37,7 +43,8 @@ Words used below:
 - **Check (b)**: the policy test's stop rule. BCA with all its settings at 0 must give the same controller as the
   saved "none" controller (no caution), to within 0.00001 in every number; otherwise that seed stops for good.
 - **Check (b) forecast**: the self-test's measurement, before anything is approved, of how far apart the laptop's own
-  programs come in check (b)'s comparison. Above 0.00001 it says `NOT READY` (unless Question 7 is answered "proceed").
+  programs come in check (b)'s comparison. Above 0.00001 it says `NOT READY` and version 7 ends (your answer to
+  Question 7 was "stop").
 - **Anchors**: 64 numbers recorded by the earlier ThrusterChain test that define 0 and 100 points on the score scale.
   Every phase recomputes them and requires them to match exactly.
 - **Rival method** (also "stand-in"): the strongest of the other methods BCA is compared with in the policy test
@@ -53,14 +60,20 @@ Words used below:
 - **Personal access token**: a password-like key that GitHub makes for you, used instead of your password (step 4).
 
 Why v7 is needed: every phase starts with the earlier ThrusterChain test's own exact checks. On a processor without
-AVX-512 (a set of wide arithmetic instructions; your Core Ultra 9 275HX has none) three numbers of the simulated world
-come out different in their last digits, and version 6 refuses to run. Version 7 supplies those numbers from a file
-made in the cloud, so every check still runs exactly (`PREREGISTRATION_V7.md`, change C1).
+AVX-512 (a set of wide arithmetic instructions; your Lenovo laptop's Core Ultra 9 275HX has none) three numbers of
+the simulated world come out different in their last digits, and version 6 refuses to run. Version 7 supplies those
+numbers from a file made in the cloud, so every check still runs exactly (`PREREGISTRATION_V7.md`, change C1).
+
+Your Framework Desktop's processor (AMD Ryzen AI MAX+ 395) does have AVX-512, and version 6's own self-test already
+passed this check on it (`PASS anchors`). There the file is expected to change nothing; it is kept so that everything
+runs one way (change C12). Version 7 is still needed for the rest: up to 16 phases at once instead of 2, the rules for
+interrupted phases, the handoff, and the checks for continuing seeds 0-4 on a second machine.
 
 ## The whole sequence
 
-1. Now, in parallel: you do steps 0-6; the cloud finishes and pushes the v7 draft and keeps running version 6.
-2. After the cloud says the draft is pushed: steps 7 and 8 (restore and the full self-test).
+1. Done: steps 0-7 (Windows settings, Ubuntu, the tools, the repository, Python, the restore), on the Framework
+   Desktop. The cloud has finished every phase of seeds 0-4 (14 Oct, 09:21 UTC).
+2. Next: this amended draft is committed and pushed (and the cloud pulls it); then step 8 (the full self-test).
 3. The handoff (step 9). From then on the cloud runs no Stage 2 phase, unless v7 is withdrawn.
 4. Your approval and its import (steps 10-11).
 5. The run (step 12).
@@ -71,22 +84,28 @@ Type the commands **one line at a time**. Times are rough.
 
 ## Step 0. Windows settings (5 minutes)
 
+(Done on 14 Oct: your `.wslconfig` holds `memory=24GB` and `swap=16GB`.) Your Framework Desktop has 64 GB, but 32 GB
+of it is reserved for the built-in graphics, so Windows sees 31.8 GB and WSL gets 24 GB. If you later lower that
+reservation, you may write `memory=48GB` instead; nothing else changes.
+
 Open PowerShell (not as administrator is fine) and paste:
 
 ```powershell
 @"
 [wsl2]
-memory=48GB
+memory=24GB
 swap=16GB
 "@ | Set-Content -Encoding ascii "$env:USERPROFILE\.wslconfig"
 Get-Content "$env:USERPROFILE\.wslconfig"
 ```
 
-Then, in Windows Settings: System, Power: never sleep when plugged in. In Control Panel, Power Options, "Choose what
-closing the lid does": set "When I close the lid" to **Do nothing** for "Plugged in" (otherwise closing the lid puts
-the laptop to sleep). Windows Update: pause updates for a week. Keep the laptop plugged in for the whole run.
+Then, in Windows Settings: System, Power: never sleep when plugged in. (On a laptop, also set, in Control Panel, Power
+Options, "Choose what closing the lid does", "When I close the lid" to **Do nothing** for "Plugged in"; the Framework
+Desktop has no lid.) Windows Update: pause updates for a week. Keep the machine plugged in for the whole run.
 
 ## Step 1. Install Ubuntu 24.04 in WSL (15-30 minutes, with a restart)
+
+(Done on 14 Oct: the new distribution `Ubuntu-24.04` is installed, Ubuntu 24.04.5 with glibc 2.39, on WSL 2.6.3.)
 
 In PowerShell **as administrator**, type these one at a time. First:
 
@@ -104,7 +123,7 @@ wsl --shutdown
 ```
 
 `wsl -l -v` must show `Ubuntu-24.04` with VERSION `2`. An Ubuntu-22.04 you already have can stay; it is not used.
-`wsl --shutdown` stops WSL so that the 48 GB memory setting of step 0 takes effect the next time Ubuntu opens.
+`wsl --shutdown` stops WSL so that the 24 GB memory setting of step 0 takes effect the next time Ubuntu opens.
 
 ## Step 2. Open Ubuntu as root (1 minute)
 
@@ -121,9 +140,9 @@ cd /root
 free -g
 ```
 
-In the `free -g` output, the `total` on the `Mem:` line must be about 47. If it is about 31, the setting of step 0
-is not in effect: type `exit`, run `wsl --shutdown` in PowerShell, and open Ubuntu again with the line above.
-Every later step runs in this window (or another one opened the same way).
+In the `free -g` output, the `total` on the `Mem:` line must be about 23 (about 47 if you wrote `memory=48GB`). If it
+is about 15, the setting of step 0 is not in effect: type `exit`, run `wsl --shutdown` in PowerShell, and open Ubuntu
+again with the line above. Every later step runs in this window (or another one opened the same way).
 
 ## Step 3. Tools (5 minutes)
 
@@ -179,6 +198,9 @@ It must end with `ok: gymnasium 1.0.0 ...`.
 
 ## Step 7. Restore (after the draft is pushed; 10-25 minutes, about 0.8 GB download)
 
+(Done on 14 Oct; it printed `PASS restore: 2370 run files of 901c87766ab0 (pre-handoff snapshot) match the pinned
+sums`.)
+
 ```bash
 git -C /home/user/bca pull --ff-only
 sh /home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/restore_v7.sh
@@ -193,8 +215,9 @@ did not finish), checks every file's fingerprint, puts the version 6 code where 
 ## Step 8. The full self-test (25-40 minutes)
 
 **First**: if you want the cloud's running phases to finish at the handoff rather than stop at once, say so in the
-cloud session **now**, and give your answer to Question 7 now if you have one. Neither can be changed after the
-self-test has written its first probe record. With no message, "stop at once" and "stop" hold.
+cloud session **now**. It cannot be changed after the self-test has written its first probe record; with no message,
+"stop at once" holds. Your answer to Question 7 ("stop") is already in the draft, and it too cannot change after the
+first probe record.
 
 Then:
 
@@ -275,6 +298,10 @@ git -C /home/user/bca pull --ff-only
 
 ## Step 12. The run (at least about 4.5-5 hours at the cloud's speed; the real time on the laptop is unknown)
 
+On the Framework Desktop it takes longer than that: with 24 GB for WSL, the memory rule lets only about 2 phases run
+at once until their memory use has been measured, and more after. This changes no result; the time is only an
+estimate and stops nothing.
+
 First start tmux:
 
 ```bash
@@ -350,7 +377,7 @@ written out in full.
 | `NOT READY (constants ...)`, `(gate ...)`, `(load_seed ...)` | the world's numbers are beyond tolerance, or the earlier test's exact checks refuse even with the cloud's numbers | ends v7; paste the output; you decide with the cloud |
 | `NOT READY (P3: results depend on lane or load)` | the same training gave different results on different lanes or under load | ends v7; paste the output; any other route is a new version |
 | `NOT READY (P3: a run did not finish)` | a repeatability run stopped (it shows nothing about repeatability) | run step 8 again; if it repeats, paste the output |
-| `NOT READY (P1b: check (b) forecast ...)` | on this laptop, two programs that must agree within 0.00001 do not, so check (b) would likely stop seeds for a machine reason | ends v7 as specified (unless you answered Question 7 "proceed" before step 8; the answer can no longer change now); the cloud keeps running version 6; paste the output; any other route is a new version, which you decide with the cloud |
+| `NOT READY (P1b: check (b) forecast ...)` | on this laptop, two programs that must agree within 0.00001 do not, so check (b) would likely stop seeds for a machine reason | ends v7 as specified (you answered Question 7 "stop"; the answer can no longer change now); the cloud keeps running version 6; paste the output; any other route is a new version, which you decide with the cloud |
 | `NOT READY (P1/P2: records bind to another draft)` | the draft `prereg_v7.json` changed after your self-test wrote its probe records (which are never rerun) | paste the output; the cloud must put the earlier draft back, then step 8 again |
 | `NOT READY (P1 p1_seed... did not finish)`, `(P2 p2_seed... did not finish)` or `(P1/P2: records missing)` | a probe did not finish (for example the window closed) | run step 8 again (a probe whose record is written is never rerun); if it repeats, paste the output |
 | `NOT READY (one processor ...)` | WSL shows more than one processor to a lane | paste the output |
@@ -406,5 +433,6 @@ handles this with the probes and, where needed, references re-made on the laptop
 | `results/` | written by the run (step 13) |
 
 What runs on the laptop: every remaining phase. For seeds 0-4: the policy test, the deployment check and the full
-host where the cloud did not finish them, then the exploratory pooled look. For seeds 5-9: everything, from new data to
-the confirmatory pooled look. Nothing runs in the cloud after the handoff.
+host where the cloud did not finish them (the cloud finished all of them on 14 Oct, so none is expected to be left),
+then the exploratory pooled look. For seeds 5-9: everything, from new data to the confirmatory pooled look. Nothing
+runs in the cloud after the handoff.

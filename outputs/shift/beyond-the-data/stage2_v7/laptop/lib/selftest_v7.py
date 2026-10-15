@@ -75,7 +75,7 @@ GPU_ENV_RECORD_REL = "outputs/shift/beyond-the-data/stage2_gpu/env_record.json"
 GPU_PY = "/root/bcagpu/bin/python"
 APPROVAL_COMMIT = K.V6["approval_commit"]
 MIN_FREE_DISK_GB = 20
-MIN_WSL_MEMORY_GIB = 40                 # README step 0 gives WSL 48 GB (it shows as about 47 GiB); below this, a warning
+MIN_WSL_MEMORY_GIB = 20                 # README step 0 gives WSL 24 GB (about 23.5 GiB; C12); below this, a warning
 LANE_CANDIDATES = 16
 # ST9 clock (C6 step 3, C11): the laptop's clock against the Date of an HTTPS reply. The full self-test runs no probe when
 # they differ by more than this (the probe records' times are compared with the cloud's in the handoff); the short
@@ -1123,7 +1123,7 @@ def resources(cfg, r, full, cpu):
     low_mem = total / RN.GIB < MIN_WSL_MEMORY_GIB
     r.add("INFO" if free >= MIN_FREE_DISK_GB and not low_mem else "WARN", "ST9 resources",
           f"WSL memory {total / RN.GIB:.1f} GiB (available {avail / RN.GIB:.1f})"
-          + (f": the 48 GB setting of README step 0 is not in effect (run 'wsl --shutdown' in PowerShell, then open "
+          + (f": the 24 GB setting of README step 0 is not in effect (run 'wsl --shutdown' in PowerShell, then open "
              f"Ubuntu again); fewer phases will run at once" if low_mem else "")
           + f"; free disk {free:.1f} GB (at least {MIN_FREE_DISK_GB} GB wanted)")
     p3 = r.data.get("p3") or {}
