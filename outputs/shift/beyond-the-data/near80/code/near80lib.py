@@ -1,8 +1,8 @@
-"""Near-80 version (DRAFT, not approved): the data change, its control, the leak check and the no-training checks.
+"""Near-80 version (version 8): the data change, its control, the leak check and the no-training checks.
 
-DRAFT. Nothing here trains a learner, fits a BCA band or reads an outcome of a learner. Everything is a pure NumPy
-function on a log (or on facts computed from one), tested on synthetic logs in test_near80.py. See
-../PREREGISTRATION.md (sections 3, 4 and 8) and ../prereg_draft.json.
+FINAL, awaiting the owner's approval. Nothing here trains a learner, fits a BCA band or reads an outcome of a
+learner. Everything is a pure NumPy function on a log (or on facts computed from one), tested on synthetic logs in
+test_near80.py. See ../PREREGISTRATION.md (sections 3, 4 and 8) and ../prereg.json.
 
 The band (the new removal), exactly:
   A recorded row is IN THE BAND when, for at least one thruster k (scope "any"; scope "thruster1" reads k = 1 only),
@@ -48,7 +48,7 @@ from experiments.shift import shift as SH  # noqa: E402
 from experiments.shift import stage0 as S0  # noqa: E402
 from experiments.shift import thruster_chain as TC  # noqa: E402
 
-STATUS = "DRAFT for the owner's approval. Nothing has been trained."
+STATUS = "FINAL, awaiting the owner's approval. Nothing has been trained."
 
 # ------------------------------------------------------------------------------------------------ fixed settings
 
@@ -66,7 +66,7 @@ TRAIN_TAG_BASE = 2                   # training draw of stratum s: [DATA_SEED, r
 BANK_TAG_BASE = 4                    # bank draw of stratum s:     [DATA_SEED, rep, 99, 80, 4 + s]
 
 EXPLORATORY_SEEDS = (0, 1, 2, 3, 4)  # seen; every result on them is exploratory
-CONFIRMATORY_SEEDS = (10, 11, 12, 13, 14)  # fresh; refused by this draft code (nothing is approved)
+CONFIRMATORY_SEEDS = (10, 11, 12, 13, 14)  # fresh; the facts script refuses them; the runner admits them after approval
 RESERVED_SEEDS = (5, 6, 7, 8, 9)     # version 6/7's confirmatory seeds; always refused
 
 STEP1_DIR = ROOT / "outputs" / "shift" / "beyond-the-data" / "restructure" / "step1"
@@ -100,14 +100,14 @@ class LeakError(AssertionError):
 # ------------------------------------------------------------------------------------------------ seeds and paths
 
 def check_seeds(seeds):
-    """This draft reads seeds 0-4 only. Seeds 5-9 belong to version 6/7; seeds 10-14 are this version's fresh
-    confirmatory seeds and stay untouched until the owner's approval is imported (no code for that exists yet)."""
+    """The facts script reads seeds 0-4 only. Seeds 5-9 belong to version 6/7; seeds 10-14 are this version's fresh
+    confirmatory seeds: the runner (phases.py) admits seeds 10-14 only after the owner's approval is imported."""
     seeds = [int(s) for s in seeds]
     for s in seeds:
         if s in RESERVED_SEEDS:
             raise Refused(f"refused: seed {s} belongs to version 6/7's confirmation (5-9)")
         if s in CONFIRMATORY_SEEDS:
-            raise Refused(f"refused: seed {s} is a fresh confirmatory seed of this version (10-14); this draft code "
+            raise Refused(f"refused: seed {s} is a fresh confirmatory seed of this version (10-14); the facts script "
                           "never generates, loads or reads it")
         if s not in EXPLORATORY_SEEDS:
             raise Refused(f"refused: seed {s} is not one of the seen seeds 0-4")

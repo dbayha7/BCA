@@ -1,6 +1,6 @@
-"""Near-80 version (DRAFT): the no-training facts and the no-training checks (PREREGISTRATION.md section 8.1).
+"""Near-80 version (version 8): the no-training facts and the no-training checks (PREREGISTRATION.md section 8.1).
 
-DRAFT. No learner is trained, no BCA band is fitted, no outcome of any learner is read. Seeds 0-4 only: this script
+No learner is trained, no BCA band is fitted, no outcome of any learner is read. Seeds 0-4 only: this script
 refuses seeds 5-9 and 10-14. It reads the gate's verified logs through acceptance.load_seed (which regenerates each
 log and checks it, its ball and both gate removals against runs/shift/pre/data/base/<world>/seed<k>/record.json,
 read only), builds the near-80 removal and its random-rows control (near80lib), runs the leak checks, counts rows,
@@ -202,7 +202,7 @@ def main(argv=None):
     fixed = fixed_bank_facts(anchors["stall"], a.lo, a.hi) if "stall" in anchors else None
     variant = (a.lo, a.hi, a.scope) != (N.BAND_LO, N.BAND_HI, N.SCOPE)
     payload = dict(status=N.STATUS, label=("EXPLORATORY no-training facts, seeds 0-4" +
-                                           (" (a VARIANT band, not the draft's)" if variant else "")),
+                                           (" (a VARIANT band, not the pre-registered one)" if variant else "")),
                    band=dict(lo=a.lo, hi=a.hi, scope=a.scope), seeds=seeds, worlds=a.worlds, results=results,
                    fixed_banks=fixed, anchors={w: v for w, v in anchors.items()},
                    no_training_checks=N.no_training_checks(results, fixed), seconds=time.perf_counter() - t0)
