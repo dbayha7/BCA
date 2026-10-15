@@ -14,7 +14,7 @@ REPO=/home/user/bca
 N80=$REPO/outputs/shift/beyond-the-data/near80
 PY=/tmp/claude-0/bcavenv/bin/python
 CLEAN_ENV="env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/root LANG=C.UTF-8 LC_ALL=C.UTF-8"
-RUN_ENV="$CLEAN_ENV PYTHONPATH=$REPO PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1"
+RUN_ENV="$CLEAN_ENV PYTHONPATH=$REPO PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/nonexistent/near80_no_pycache JAX_PLATFORMS=cpu OMP_NUM_THREADS=1"
 if [ "$(id -u)" != 0 ] || [ "${HOME:-}" != /root ]; then
     echo "refused: run this as root with HOME=/root"
     exit 97

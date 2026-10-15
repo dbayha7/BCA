@@ -42,7 +42,7 @@ import phase_main as PM  # noqa: E402
 import near80_runner as R  # noqa: E402
 
 PY = sys.executable
-TEST_ENV = dict(K.PHASE_ENV)
+TEST_ENV = {k: v for k, v in K.PHASE_ENV.items() if k != "PYTHONPYCACHEPREFIX"}   # as stub phases (Cfg.phase_env)
 STUB_PATH = os.environ.get("NEAR80_STUB_PYTHONPATH")
 APPROVAL = dict(prereg_sha256="a" * 64, prefix="a" * 16, fixture=True)
 BIG_MEM = "MemTotal:       67108864 kB\nMemAvailable:   62914560 kB\n"
@@ -1244,6 +1244,31 @@ class TestRestatedCode(unittest.TestCase):
         self.assertEqual(acts["stall"][K.PRIMARY], "o")
         self.assertIsNone(acts["no_stall"])
         self.assertEqual(detail["no_stall"]["stopped"], PH.STOP_REASONS["height0"])
+
+    def test_reproduction_lets_input_stops_through(self):
+        """A saved input whose fingerprint does not match, or a training file that fails its check, inside the
+        reproduction is not a reproduction difference (section 8.2): it is raised again, so the reproduction process
+        exits without a verdict and the plumbing records a retryable failure. A learner or check stop stays a
+        difference."""
+        import policy_phase as PP
+        import evaluate_phase as EP
+        run = PH.Run(PH.make_key("evaluate", "main", "stall", 0), tmpdir(self), mode="scratch")
+        for kind in ("fingerprint", "training_file", "learner", "check"):
+            def fake_train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None, kind=kind):
+                raise PH.PhaseStop(PH.STOP_REASONS[kind], dict(what="x"))
+            with unittest.mock.patch.object(PP, "train_world", fake_train_world), \
+                    unittest.mock.patch.object(PP, "arm_row_from", lambda st, s, w, per, S: dict(setting=st)):
+                if kind in EP.REPRO_RETRYABLE_STOPS:
+                    with self.assertRaises(PH.PhaseStop) as cm:
+                        EP.reproduce_policy(run, "ctx", None, None, {w: {} for w in K.WORLDS})
+                    self.assertEqual(cm.exception.reason, PH.STOP_REASONS[kind])
+                else:
+                    acts, detail = EP.reproduce_policy(run, "ctx", None, None, {w: {} for w in K.WORLDS})
+                    self.assertEqual(acts, {w: None for w in K.WORLDS}, kind)
+                    self.assertEqual(detail["stall"]["stopped"], PH.STOP_REASONS[kind])
+        # the raised stop ends the reproduction process with no verdict; the plumbing then writes the retryable
+        # failed_<utc>.json, never reproduction_differs.json (TestPlumbing's unfinished-reproduction case)
+        self.assertEqual(set(EP.REPRO_RETRYABLE_STOPS), {"fingerprint", "training_file"})
 
     def test_reproduction_items(self):
         import evaluate_phase as EP

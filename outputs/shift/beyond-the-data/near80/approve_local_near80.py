@@ -7,8 +7,11 @@ Run it yourself, on the Framework Desktop, inside Ubuntu as root (wsl -d Ubuntu-
 
     cd /home/user/bca
     git pull --ff-only
-    python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
-    python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py
+    python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
+    python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py
+
+Keep the -I (isolated mode): Python then loads nothing from this script's own folder (nor from PYTHON* settings), so
+no stray file there (a json.py, say) can run before the checks below.
 
 What it does, in order. If any step fails, it prints "Refused." with the reason, writes nothing and exits with 2.
   1. Checks the committed files in outputs/shift/beyond-the-data/near80/:
@@ -19,7 +22,10 @@ What it does, in order. If any step fails, it prints "Refused." with the reason,
          (this script included) has the fingerprint it records; every repository file it pins is unchanged;
        - the frozen code's no-training checks on seeds 0-4 (pre_approval/no_training_checks_seeds0_4.json) are the
          ones prereg.json pins, and they passed;
-       - the draft the final version was built from (prereg_history/prereg_draft_<first 16>.json) is the one pinned.
+       - the draft the final version was built from (prereg_history/prereg_draft_<first 16>.json) is the one pinned;
+       - the folder and its code/ hold no other file: only the files the manifest lists, prereg.json,
+         code_manifest.json (each with its .sha256) and this fingerprint's own approval and import records; no
+         __pycache__ and no other folder holding Python files.
   2. Refuses if an approval of this fingerprint is already there (it never overwrites one).
   3. Refuses unless standard input is a terminal: you type the answer yourself; nothing may be piped in.
   4. Shows a summary: the fingerprint, your answer accepting the defaults, the defaults taken, the seeds, the three
@@ -65,6 +71,7 @@ APPROVER_NAME = "David Bayha"
 BRANCH = "claude/main-bca-connection-x4o46s"
 SCRIPT_NAME = "approve_local_near80.py"
 FROZEN_NAME = "pre_approval/no_training_checks_seeds0_4.json"
+FROZEN_TOP = (PREREG_NAME, PREREG_NAME + ".sha256", MANIFEST_NAME, MANIFEST_NAME + ".sha256")
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
              "Approving it accepts every default of its section 16 and allows the runs it names, under its rules.")
 WIDTH = 100
@@ -102,6 +109,38 @@ def load_json(data, name):
         return json.loads(data.decode("utf8"))
     except (UnicodeDecodeError, ValueError):
         raise Refused("{} is not readable JSON.".format(name))
+
+
+def unlisted_files(folder, files, prefix):
+    """Step 1's last check: every entry of the folder and of its code/ that is neither a file the manifest lists, one
+    of the four frozen files at the top (prereg.json, code_manifest.json, each with its .sha256), nor this
+    fingerprint's own approval or import record (with .sha256); any __pycache__; any other folder holding a .py file.
+    Returns the problems (empty when none)."""
+    allowed = set(f for f in files if "/" not in f) | set(FROZEN_TOP)
+    for name in (APPROVAL_NAME.format(prefix), IMPORT_NAME.format(prefix)):
+        allowed.update((name, name + ".sha256"))
+    out = []
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name)
+        if name == "__pycache__":
+            out.append("{} exists (compiled Python bytecode); remove it".format(name))
+        elif os.path.isdir(path) and not os.path.islink(path):
+            if name == "code":
+                continue
+            for root, dirs, names in os.walk(path):
+                if any(n.endswith(".py") or n.endswith(".pyc") for n in names) or "__pycache__" in dirs:
+                    out.append("{}/ holds Python files (only code/ may)".format(name))
+                    break
+        elif name not in allowed:
+            out.append("{} is not a file of this pre-registration (the code manifest does not list it)".format(name))
+    code = os.path.join(folder, "code")
+    if os.path.isdir(code):
+        for name in sorted(os.listdir(code)):
+            if name == "__pycache__":
+                out.append("code/__pycache__ exists (compiled Python bytecode); remove it")
+            elif "code/" + name not in files or not os.path.isfile(os.path.join(code, name)):
+                out.append("code/{} is not in the code manifest".format(name))
+    return out
 
 
 def check_folder(folder=None, script_path=None, repo=REPO):
@@ -190,6 +229,7 @@ def check_folder(folder=None, script_path=None, repo=REPO):
         dpath = os.path.join(folder, *drel.split("/"))
         if not os.path.isfile(dpath) or file_sha256(dpath) != dsha:
             bad.append("{} is missing or differs".format(drel))
+    bad.extend(unlisted_files(folder, files, digest[:PREFIX_LEN]))
     if bad:
         hint = ("\n  (runs/ is not in git: run this on the machine where version 7's restore placed runs/, or restore "
                 "it first.)" if missing_runs else "")

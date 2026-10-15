@@ -303,6 +303,31 @@ class TestApproveLocal(Isolated):
     def test_refuses_standard_input_that_is_not_a_terminal(self):
         self.refused("not a terminal", stdin=NotTty())
 
+    def test_refuses_files_the_manifest_does_not_list(self):
+        """A stray module next to the script or in code/, a package folder, a __pycache__, or another fingerprint's
+        approval file is refused, even by --check (the documented command also runs Python with -I). This
+        fingerprint's own approval and import records are allowed."""
+        cases = (("json.py", "json.py is not a file of this pre-registration"),
+                 ("code/evil.py", "code/evil.py is not in the code manifest"),
+                 ("approval_near80_0000000000000000.json",
+                  "approval_near80_0000000000000000.json is not a file of this pre-registration"),
+                 ("hashlib/__init__.py", "hashlib/ holds Python files"),
+                 ("__pycache__/x.pyc", "__pycache__ exists"),
+                 ("code/__pycache__/x.pyc", "code/__pycache__ exists"))
+        for rel, why in cases:
+            p = self.n80 / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("x = 1\n")
+            self.refused(why, args=["--check"], stdin=NotTty())
+            top = self.n80 / rel.split("/")[0] if "/" in rel and not rel.startswith("code/") else p
+            if rel.startswith("code/__pycache__"):
+                top = self.n80 / "code" / "__pycache__"
+            shutil.rmtree(top) if top.is_dir() else top.unlink()
+        for name in (AC.import_name(self.prereg.prefix), AC.import_name(self.prereg.prefix) + ".sha256"):
+            (self.n80 / name).write_text("{}")
+        code, text = self.run_al(args=["--check"], stdin=NotTty())
+        self.assertEqual(code, 0, text)
+
     def test_refuses_wrong_or_empty_input(self):
         self.refused("do not match", typed="0" * 16)
         self.refused("do not match", typed=self.prereg.prefix[:15])
@@ -1135,7 +1160,9 @@ class TestConstants(unittest.TestCase):
         p = s2["protocol"]
         self.assertEqual((p["alpha"], p["actor_steps"], p["chunk"]), (K.ALPHA, K.ACTOR_STEPS, K.CHUNK))
         v7 = load_path("near80_test_v7_common", K.V7_DIR / "code" / "v7_common.py")
-        self.assertEqual(v7.PHASE_ENV, K.PHASE_ENV)
+        self.assertEqual(v7.PHASE_ENV, {k: v for k, v in K.PHASE_ENV.items() if k != "PYTHONPYCACHEPREFIX"})
+        self.assertEqual(K.PHASE_ENV["PYTHONPYCACHEPREFIX"], K.PYCACHE_PREFIX)
+        self.assertFalse(Path(K.PYCACHE_PREFIX).exists())
         self.assertEqual(v7.PYTHON, K.PYTHON)
         self.assertEqual(v7.APPROVER_EMAIL, K.APPROVER_EMAIL)
         self.assertEqual(v7.BRANCH, K.BRANCH)

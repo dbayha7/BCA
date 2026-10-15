@@ -31,11 +31,16 @@ Failed seeds. A seed that failed its data (data_main: every claim; data_band che
 stop (near-80, random rows: claims 1-3; main: claim 4; the main data and the full-log critic: every claim) fails every
 mark that needs it: its evaluation numbers are set to null for those settings before any mark is computed, so the
 pooled numbers of the marks are "not available", and the seed's own clause ("seed [s] failed [check] ...") tells it.
-The validity conditions (section 9.1) are computed over the group's seeds that did not fail: a failed seed never makes
-claim 1 "invalid" (a number missing on a seed that did not fail fails the condition that needs it). Check 10's count M
-leaves out a failed seed that has no check-10 record. The exploratory stop rules (section 8.3) need every seed 0-4: when
-a number one of them needs is missing on any seed, the near-80 and random-rows settings stop before the fresh seeds
-with section 14.5's sentence "A stop rule cannot be read".
+A seed with no failure or stop record whose evaluation lacks a number that the validity conditions or claims 2 and 3
+read from an actor that is always trained (EVALUATION_NEEDS; its learner failed, section 10) fails for claims 1-3 in
+the same way, with [check] "its evaluation (numbers missing)". The validity conditions (section 9.1) are computed over
+the group's seeds that did not fail: a failed seed never makes claim 1 "invalid". When a seed failed, claims 2 and 3
+are written with their "If a seed failed" sentences (section 14.6), never with pooled numbers that the failed seed made
+"not available". Check 10's count M leaves out a failed seed that has no check-10 record. The exploratory stop rules
+(section 8.3) need every seed 0-4: when a number the harm or the rival rule needs is missing on any seed, the near-80
+and random-rows settings stop before the fresh seeds with section 14.5's sentence "A stop rule cannot be read"; when a
+number the noise floor needs is missing, the noise floor cannot be read and claim 3 is dropped with the "not measured"
+form of its dropped sentence.
 
 Outputs (write-once): looks/<group>.md (the sentences first, then the tables) and looks/<group>.json (+ .sha256);
 the runner reads its kind, prereg_sha256, group and, for the exploratory look, fresh_near80_allowed.
@@ -79,6 +84,15 @@ HALT_KIND = "near80-halt-report"
 GO_RULE = dict(g1_margin=K.MARKS["net_lead_margin"], g2_floor=K.MARKS["keeps_floor"],
                g3_margin=K.MARKS["even_pull_margin"])
 FIRST_HARM_FORM = "lost only [H]"               # where the harm stop's first form starts (section 14.5)
+SEEDS_WORDS = "seed [seeds]"                    # written "seed 2", "seeds 2 and 3", "seeds 1, 2 and 3" (section 14.6)
+EVALUATION_MISSING_CHECK = "its evaluation (numbers missing)"
+# The numbers the validity conditions (harm, past-80 share, the range limit's band cost) and claims 2 and 3 (BCA's
+# gain, overshoot and band cost) read from the four actors that are always trained: (measure, setting, arm), stalling
+# world, strong current. "band" is the band cost's reference setting: random rows, or main without that control.
+EVALUATION_NEEDS = (("points", "near80", "full_none"), ("points", "near80", "none"), ("past80_share", "near80", "none"),
+                    ("points", "near80", "range_hinge"), ("points", "band", "range_hinge"),
+                    ("points", "near80", "obca_k1"), ("points", "band", "obca_k1"),
+                    ("unseen_gain", "near80", "obca_k1"), ("overshoot_loss", "near80", "obca_k1"))
 REPRO_ORDER = ("removal", "critic", "clone", "none", "w0_check", "obca_k1", "range_hinge")
 REPRO_PLAIN = {"removal": "the main test's removal", "critic": "the main test's critic",
                "clone": "the main test's cloned actor", "none": "the main test's no-caution actor",
@@ -696,8 +710,33 @@ def load_results(out_root, group, mode="official", prereg_sha256=None, seeds=Non
                 if a.get("kind") == "near80-attempt":
                     R.attempts.append(a)
     R.inputs = dict(rd.inputs)
+    for s, gone in evaluation_gaps(R).items():
+        R.fail(s, "claims_1_3", "numbers missing from its evaluation, with no failure or stop record: "
+                                + ", ".join(gone), EVALUATION_MISSING_CHECK)
     R.apply_failures()
     return R
+
+
+def evaluation_gaps(R):
+    """{seed: [what is missing]} for the group's seeds that have no failure record for claims 1-3 yet lack a number of
+    EVALUATION_NEEDS (section 14.6): such a seed's learner failed, so it fails every mark of claims 1-3 (section 10).
+    Empty when the near-80 setting did not run on the group's seeds."""
+    if not R.ran["near80"]:
+        return {}
+    band = "random_rows" if R.defaults.get("random_rows_control", True) else "main"
+    out = {}
+    for s in R.seeds:
+        if s in R.failed_seeds_claims_1_3:
+            continue
+        gone = []
+        for measure, setting, arm in EVALUATION_NEEDS:
+            st = band if setting == "band" else setting
+            row = R.raw[measure][st]["stall"][s].get(arm)
+            if row is None or row.get(SCORED) is None:
+                gone.append(f"{arm} {measure} ({st})")
+        if gone:
+            out[s] = gone
+    return out
 
 
 # --------------------------------------------------------------------------------------------- the numbers
@@ -824,22 +863,26 @@ def check10_counts(R):
 def noise_floor(R):
     """Section 8.3's noise floor on the group's seeds (raw numbers): |pooled random rows - main| for the hand-set
     range limit and BCA's switched ramp, both at most 5; V the larger and its arm (ties: the first); no caution's
-    difference reported only. Not run without the random-rows control."""
+    difference reported only. Not run without the random-rows control. When a number it needs is missing on a seed,
+    it cannot be read: unmeasured is true, passed is None, V is None and missing_seeds lists those seeds (claim 3 is
+    then dropped with the "not measured" sentence, section 14.6)."""
     control = bool(R.defaults.get("random_rows_control", True))
     diffs = {a: setting_diff(R.raw["points"], "random_rows", "main", "stall", a, R.seeds)
              for a in NOISE_ARMS + ("none",)}
     if not control:
-        return dict(run=False, passed=None, V=None, arm=None, differences=diffs,
+        return dict(run=False, passed=None, V=None, arm=None, differences=diffs, unmeasured=False, missing_seeds=[],
                     max_allowed=K.MARKS["noise_floor_max"])
     sizes = [(None if diffs[a]["mean"] is None else abs(diffs[a]["mean"]), a) for a in NOISE_ARMS]
     missing = [a for v, a in sizes if v is None]
+    gone = sorted({s for a in NOISE_ARMS for s, x in zip(R.seeds, diffs[a]["per_seed"]) if x is None})
     if missing:
-        v, arm_id, passed = None, missing[0], False
+        v, arm_id, passed = None, missing[0], None
     else:
         v = max(x for x, _ in sizes)
         arm_id = next(a for x, a in sizes if x == v)
-        passed = all(x <= K.MARKS["noise_floor_max"] for x, _ in sizes)
-    return dict(run=True, passed=bool(passed), V=v, arm_id=arm_id, arm=K.ARM_PLAIN[arm_id], differences=diffs,
+        passed = bool(all(x <= K.MARKS["noise_floor_max"] for x, _ in sizes))
+    return dict(run=True, passed=passed, V=v, arm_id=arm_id, arm=K.ARM_PLAIN[arm_id], differences=diffs,
+                unmeasured=bool(missing), missing_seeds=gone if missing else [],
                 max_allowed=K.MARKS["noise_floor_max"])
 
 
@@ -918,7 +961,7 @@ def stop_rules(results):
     nf = noise_floor(R)
     allowed = bool(unmeasured is None and harm["passed"] and rival["passed"])
     return dict(harm=harm, rival_unaffected=rival, unmeasured=unmeasured, noise_floor=nf,
-                fresh_near80_allowed=allowed, claim3_dropped=bool(nf["run"] and not nf["passed"]),
+                fresh_near80_allowed=allowed, claim3_dropped=bool(nf["run"] and nf["passed"] is not True),
                 note="BCA's own result on seeds 0-4 never stops the fresh seeds (choice 9)")
 
 
@@ -972,6 +1015,7 @@ def outcomes(look):
     """{claim: status, ...} and why claim 3 is not written ('outcome_reasons')."""
     ran, val, mk, group = look["ran"], look["validity"], look["marks"], look["group"]
     dropped = bool(look.get("claim3_dropped"))
+    failed = bool((look.get("failed_checks") or {}).get("claims_1_3"))
     out, why = {}, {}
     if not ran["near80"]:
         out.update(claim1="not run", claim2="not run", claim3="not run")
@@ -982,6 +1026,8 @@ def outcomes(look):
         out["claim1"] = "invalid" if not valid else ("pass" if mk["claim1"]["passed"] else "fail")
         if not valid or not c10:
             out["claim2"] = "invalid"
+        elif failed:
+            out["claim2"] = "fail_failed_seed"
         else:
             out["claim2"] = "pass" if (mk["claim2"]["gain"]["passed"] and mk["claim2"]["overshoot"]["passed"]) \
                 else "fail"
@@ -995,6 +1041,8 @@ def outcomes(look):
             out["claim3"], why["claim3"] = "dropped", "the noise floor on seeds 0-4"
         elif not val["claim3"]["passed"]:
             out["claim3"], why["claim3"] = "invalid", "the hand-set range limit's band cost"
+        elif failed:
+            out["claim3"] = "fail_failed_seed"
         else:
             out["claim3"] = "pass" if mk["claim3"]["passed"] else "fail"
     out["claim4"] = "not run" if not ran["main"] else ("pass" if mk["claim4"]["passed"] else "fail")
@@ -1108,11 +1156,35 @@ def _stop_after_look(stops):
     return None
 
 
+def seeds_words(seeds):
+    """"seed [seeds]" as section 14.6 writes it: "seed 2", "seeds 2 and 3", "seeds 1, 2 and 3"."""
+    items = [CT.fmt(int(s), "count") for s in sorted(int(x) for x in seeds)]
+    return ("seed " if len(items) == 1 else "seeds ") + CT.join_items(items)
+
+
+def fill_seeds(template, seeds, values=None):
+    """A template whose "seed [seeds]" lists `seeds` (singular or plural by count); other brackets from `values`."""
+    items = [CT.fmt(int(s), "count") for s in sorted(int(x) for x in seeds)]
+    return CT.fill(template, dict(values or {}, seeds=CT.join_items(items)),
+                   specials={SEEDS_WORDS: seeds_words(seeds)})
+
+
 def unmeasured_sentence(template, unmeasured):
     """Section 14.5's "A stop rule cannot be read": [what] lists what could not be measured ("the harm", "the band's
-    cost to the hand-set range limit", or both joined by " and "), [seeds] the seeds where a number is missing."""
-    return CT.fill(template, dict(what=CT.join_items(unmeasured["what"]),
-                                  seeds=CT.join_items([CT.fmt(int(s), "count") for s in unmeasured["seeds"]])))
+    cost to the hand-set range limit", or both joined by " and "), "seed [seeds]" the seeds where a number is
+    missing."""
+    return fill_seeds(template, unmeasured["seeds"], dict(what=CT.join_items(unmeasured["what"])))
+
+
+def failed_seeds_of(look):
+    """The seeds that failed for claims 1-3, in order (claim 1's sentence tells why each failed)."""
+    return sorted(int(s) for s in (look.get("failed_checks") or {}).get("claims_1_3") or {})
+
+
+def noise_floor_of(look, group):
+    """The noise floor record of the exploratory stop rules (this look's, or the confirmatory look's copy)."""
+    st = look.get("stops") if group == "exploratory" else (look.get("exploratory_stops") or {}).get("stops")
+    return (st or {}).get("noise_floor") or {}
 
 
 def look_stop_rows(t, stops, choice6=True):
@@ -1171,6 +1243,8 @@ def sentences(look, templates, group):
     if c1 in ("pass", "fail"):
         if not val["claims_2_3"]["passed"]:
             add("claim2.check10", CT.fill(t("claim2.check10"), dict(M=CT.fmt(br["M"], "count"))))
+        elif out_c["claim2"] == "fail_failed_seed":
+            add("claim2.failed_seed", fill_seeds(t("claim2.failed_seed"), failed_seeds_of(look)))
         else:
             c2 = look["marks"]["claim2"]
             sid = "claim2.{}_{}".format("pass" if c2["gain"]["passed"] else "fail",
@@ -1180,8 +1254,13 @@ def sentences(look, templates, group):
         add("claim2.scale", CT.fill(t("claim2.scale"), dict(G0=br["G0"], O0=br["O0"], GZ=br["GZ"], OZ=br["OZ"],
                                                            GV=br["GV"], OV=br["OV"], Q=br["Q"])))
     c3 = out_c["claim3"]
-    if c3 == "dropped":
+    nf = noise_floor_of(look, group)
+    if c3 == "dropped" and nf.get("unmeasured"):
+        add("claim3.dropped_unmeasured", fill_seeds(t("claim3.dropped_unmeasured"), nf.get("missing_seeds") or []))
+    elif c3 == "dropped":
         add("claim3.dropped", CT.fill(t("claim3.dropped"), dict(arm=br["arm"] or CT.NOT_AVAILABLE, V=br["V"])))
+    elif c3 == "fail_failed_seed":
+        add("claim3.failed_seed", fill_seeds(t("claim3.failed_seed"), failed_seeds_of(look)))
     elif c3 == "invalid" and why.get("claim3") == "the hand-set range limit's band cost":
         add("claim3.invalid", CT.fill(t("claim3.invalid"), dict(B=val["claim3"]["rival_band_cost"]["value"])))
     elif c3 in ("pass", "fail"):
@@ -1594,6 +1673,9 @@ def look_md(look, digest):
               f"- The band changes the rival's problem: {_f(st['rival_unaffected']['B'])} (at least 5): "
               f"{'passed' if st['rival_unaffected']['passed'] else 'failed'}",
               "- The noise floor: " + ("not run" if not st["noise_floor"]["run"] else
+                                       "could not be measured (a number is missing on "
+                                       + seeds_words(st["noise_floor"].get("missing_seeds") or []) + ")"
+                                       if st["noise_floor"].get("unmeasured") else
                                        f"largest difference {_f(st['noise_floor']['V'])} ({st['noise_floor']['arm']}), "
                                        f"at most 5: {'passed' if st['noise_floor']['passed'] else 'failed'}"),
               f"- The near-80 settings on seeds 10-14: {'allowed' if look['fresh_near80_allowed'] else 'stopped'}; "

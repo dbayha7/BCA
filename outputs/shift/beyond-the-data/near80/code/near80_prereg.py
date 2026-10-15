@@ -107,7 +107,9 @@ def amend(content):
     kr = content.setdefault("kill_rules", {})
     kr["plumbing_retry"] = ("only a reproduction difference is final (plumbing/reproduction_differs.json); any other "
                             "plumbing failure (a unit test, a smoke phase, a reproduction check that does not finish, "
-                            "a missing input, a Ctrl-C) is recorded (plumbing/failed_<utc>.json) and may be retried "
+                            "a missing or damaged input, also a saved file whose fingerprint does not match or a "
+                            "training file that fails its check inside the reproduction check, a Ctrl-C) is recorded "
+                            "(plumbing/failed_<utc>.json) and may be retried "
                             "once its cause is fixed; the reproduction check runs the official policy function and "
                             "only after the unit tests and the smoke passed")
     stops = kr.setdefault("exploratory_stops", {})
@@ -116,11 +118,19 @@ def amend(content):
                 "seed (a phase stopped, or an actor's numbers are missing), the rule cannot be read",
         "on_fail": "stop the near-80 and random-rows settings before seeds 10-14 with section 14.5's sentence "
                    "'A stop rule cannot be read'; claim 4 is not stopped"}
-    done.append("kill_rules: plumbing retries; a stop rule that cannot be read")
+    nf = stops.get("noise_floor")
+    if isinstance(nf, dict):
+        nf["cannot_be_read"] = ("if a number it needs is missing on any of seeds 0-4, it cannot be read: claim 3 is "
+                                "dropped as if it had failed, with section 14.3's 'not measured' sentence")
+    done.append("kill_rules: plumbing retries; a stop rule that cannot be read; a noise floor that cannot be read")
     v = content.setdefault("validity_on_seeds_10_14", {})
     v["failed_seeds"] = ("the validity conditions are computed over the fresh seeds that did not fail; a failed seed "
                          "fails every mark of claims 1-3 and claim 1's sentence names it; it never makes claim 1's "
-                         "validity fail; check 10's count leaves out a failed seed whose band data were never built")
+                         "validity fail; claims 2 and 3 then write their 'If a seed failed' sentences (section 14.6); "
+                         "a seed with no failure or stop record whose evaluation lacks a number the validity "
+                         "conditions or claims 2 and 3 read from an actor that is always trained fails in the same "
+                         "way ('its evaluation (numbers missing)'); check 10's count leaves out a failed seed whose "
+                         "band data were never built")
     done.append("validity_on_seeds_10_14: failed seeds")
     return done
 

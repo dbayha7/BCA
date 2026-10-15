@@ -479,7 +479,7 @@ def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, 
         "Next: commit and push prereg.json, code_manifest.json (each with its .sha256), prereg_history/, "
         "pre_approval/, the code and the documents. Then tell the owner the fingerprint and the command of "
         "section 11:\n"
-        f"  python3 {K.N80_REL}/approve_local_near80.py\n"
+        f"  python3 -I {K.N80_REL}/approve_local_near80.py --check\n  python3 -I {K.N80_REL}/approve_local_near80.py\n"
         f"Nothing trains before {K.IMPORT_NAME.format(prefix=prefix)} is pushed.")
     return body
 

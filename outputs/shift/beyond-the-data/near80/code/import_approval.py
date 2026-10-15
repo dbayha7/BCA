@@ -64,9 +64,9 @@ def show(cfg=None, log=print):
     root = Path(cfg.n80_root)
     log(f"Near-80 pre-registration: {prereg.path}\nVersion: {prereg.payload.get('version')}\n"
         f"SHA-256: {prereg.sha256}\nFirst 16 characters: {prereg.prefix}\n"
-        f"Route: the owner runs python3 {K.N80_REL}/approve_local_near80.py at their own terminal, commits and pushes "
-        f"{AC.approval_rel(prereg.prefix)} (+ .sha256) under their own name; then import_approval.py import; then "
-        f"commit and push {AC.import_rel(prereg.prefix)} (+ .sha256)\n"
+        f"Route: the owner runs python3 -I {K.N80_REL}/approve_local_near80.py at their own terminal, commits and "
+        f"pushes {AC.approval_rel(prereg.prefix)} (+ .sha256) under their own name; then import_approval.py import; "
+        f"then commit and push {AC.import_rel(prereg.prefix)} (+ .sha256)\n"
         f"Approvable now: {'yes' if ok else 'NO'} ({why})\n"
         f"Owner's approval of this fingerprint present: {(root / AC.approval_name(prereg.prefix)).exists()}\n"
         f"Import record present: {(root / AC.import_name(prereg.prefix)).exists()}")

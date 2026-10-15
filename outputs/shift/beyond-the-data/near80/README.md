@@ -53,12 +53,13 @@ under `runs/` that only version 7's restore put there, so it refuses from a fres
    ```bash
    cd /home/user/bca
    git pull --ff-only
-   python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
-   python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py
+   python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
+   python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py
    ```
 
    The first run only checks every file against its fingerprint and shows the summary; it writes nothing. The second
-   shows the same summary and asks you to type the first 16 characters of the fingerprint.
+   shows the same summary and asks you to type the first 16 characters of the fingerprint. Keep the `-I`: it stops
+   Python from loading anything from the script's own folder before the checks run.
 2. It writes `outputs/shift/beyond-the-data/near80/approval_near80_<first 16 characters>.json` and its `.sha256` file,
    and prints the exact commands to commit and push them under your own name. They are:
 
@@ -170,7 +171,7 @@ Paste what the table says into the session. **Never delete or edit anything unde
 | `refused: the plumbing has not passed yet ...` | `run` was typed before the plumbing passed | do step 4 of "How to run" |
 | `plumbing PASSED: ...` | the plumbing passed | step 5 |
 | `plumbing FAILED: the reproduction check differed ...` | with the band empty, the new code did not reproduce a saved file | the end of this version (section 8.2); paste the lines and type `.../run_near80.sh report` |
-| `plumbing FAILED: <cause>. Recorded in ...` | a test, the smoke or the reproduction check did not finish (not a difference) | paste the lines; once the cause is fixed, type the same `plumbing` command again inside tmux |
+| `plumbing FAILED: <cause>. Recorded in ...` | a test, the smoke or the reproduction check did not finish (not a difference; also a saved file or training file that fails its fingerprint check inside the reproduction check) | paste the lines; once the cause is fixed, type the same `plumbing` command again inside tmux |
 | `refused: ... reproduction_differs.json exists ...` | the reproduction check differed earlier | nothing official can start in this version; paste it |
 | `refused: another near-80 runner is running on this machine` | the run is still going (perhaps in a tmux window you left) | type `tmux attach -t near80`, or `.../run_near80.sh status`; do not start a second one |
 | `refused: phases from an earlier run are still running` | the runner stopped, but some of its phases still run | wait; check with `.../run_near80.sh status`; then the same `run` command again |

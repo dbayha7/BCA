@@ -558,7 +558,8 @@ the failed check is one of the gate's own (section 9.5).
 - The first peak-memory measurements of each phase kind.
 - **Which plumbing failures can be retried.** Only a reproduction difference is final. Any other failure can be
   retried once its cause is fixed: a unit test that fails, a smoke phase that does not finish, a reproduction check
-  that does not finish (a crash, or memory), a missing input, or a Ctrl-C. Each attempt is recorded and kept. The
+  that does not finish (a crash, or memory), a missing or damaged input (also a saved file whose fingerprint does not
+  match, or a training file that fails its check, inside the reproduction check), or a Ctrl-C. Each attempt is recorded and kept. The
   reproduction check runs only after the unit tests and the smoke have passed.
 
 ### 8.3 The exploratory stage: seeds 0-4
@@ -590,6 +591,8 @@ Then, **stop rules** (fixed now):
   - If either differs by more, claim 3 is dropped and only reported: its 5-point margin would sit inside the noise of
     changing 3% of the rows. Nothing else changes.
   - The no-caution actor's difference is reported, not used: it is the noisiest arm, and claim 3 does not use it.
+  - If a number it needs is missing on any of seeds 0-4, it cannot be read, and claim 3 is dropped in the same way
+    (section 14.3, "Dropped on seeds 0-4, not measured").
   - If choice 7 (the random-rows control) is set to no, the noise floor is not run.
 - **Plumbing stops, per phase:** the height-0 check, a non-finite network, a saved input whose fingerprint does not
   match, or a training file that fails its check. A stopped phase is written once and never rerun. Every mark that
@@ -630,7 +633,10 @@ unless stated. Every seed is needed. A failed or stopped seed fails every mark t
 - **Claim 4** has no validity condition from the near-80 setting (section 9.5).
 - **Failed seeds:** the conditions above are computed over the fresh seeds that did not fail. A failed seed fails
   every mark of claims 1-3 by the pre-set rule (section 10), and claim 1's sentence names it. It never makes the
-  validity conditions fail. Check 10's count leaves out a failed seed whose band data were never built.
+  validity conditions fail. A seed whose evaluation lacks a number these conditions or claims 2 and 3 need from an
+  actor that is always trained, with no failure or stop record, fails in the same way (its learner failed; section
+  14.6). Claims 2 and 3 then say that they fail because of the failed seed, rather than report pooled numbers that
+  cannot be computed. Check 10's count leaves out a failed seed whose band data were never built.
 
 ### 9.2 Claim 1: BCA's result holds with the band hidden
 
@@ -672,7 +678,8 @@ This answers your question directly. Two marks choose which of four fixed senten
 - **What it means:** where full throttle stalls and BCA's switch is on, BCA's ramp and the always-on ramp are the same
   actor. So this compares two shapes of caution that cannot switch off: a ramp from the data's edge (at BCA's height)
   and a hard limit at it. It does not credit reading outcomes.
-- It can be dropped by the noise floor on seeds 0-4 (section 8.3).
+- It can be dropped by the noise floor on seeds 0-4 (section 8.3), also when the noise floor cannot be measured
+  there.
 
 ### 9.5 Claim 4: step 2 confirmed in the main setting (if choice 6 keeps its default)
 
@@ -728,13 +735,16 @@ versions 6 and 7:
 2. Read `PREREGISTRATION.md` in `outputs/shift/beyond-the-data/near80/`.
 3. At that terminal, type:
 
-       python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
-       python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py
+       python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
+       python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py
 
    It checks the files against their fingerprints (the code manifest, every file it lists, the repository files the
-   code uses, and the frozen code's no-training checks on seeds 0-4), refuses a draft, refuses if an approval already
-   exists, and refuses unless you are typing at a terminal. It shows a summary and asks you to type the first 16
-   characters of the fingerprint.
+   code uses, and the frozen code's no-training checks on seeds 0-4), refuses any file in the folder or in `code/`
+   that the manifest does not list (other than the frozen files and this fingerprint's own approval and import
+   records), refuses a draft, refuses if an approval already exists, and refuses unless you are typing at a terminal.
+   It shows a summary and asks you to type the first 16 characters of the fingerprint. The `-I` (isolated mode) keeps
+   Python from loading anything from the script's own folder or from Python's environment settings, so no stray file
+   there can run before the checks.
 4. It writes `outputs/shift/beyond-the-data/near80/approval_near80_<first 16 characters>.json` and its `.sha256`
    file.
 5. You commit and push those two files under your own GitHub identity, with the exact commands it prints (as in
@@ -902,7 +912,8 @@ needed)".
 
 ### 14.2 Claim 2: the sentence about unseen commands
 
-G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current. Exactly one is written:
+G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current. Exactly one is written, unless
+check 10 failed or a seed failed (both below):
 
 | gain mark | overshoot mark | sentence |
 |---|---|---|
@@ -921,6 +932,10 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 > "On fresh seeds 10-14, hiding the band moved the edge of the recorded data too little in [M] of 5 seeds. By the
 > pre-set rule, this version makes no claim about the band. Its numbers are reported as description."
 
+**If a seed failed:**
+> "By the pre-set rule, claim 2 fails because seed [seeds] failed (claim 1 says why); the numbers of the other seeds
+> are reported as description only."
+
 ### 14.3 Claim 3: the band's cost
 
 **Holds:**
@@ -935,6 +950,10 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 > band cost BCA's switched ramp [A] points and the hand-set range limit [B] points in strong current. The pre-set
 > advantage of 5 points in at least 4 of 5 seeds was not shown (difference [C], in [K] of 5 seeds)."
 
+**If a seed failed:**
+> "By the pre-set rule, claim 3 fails because seed [seeds] failed (claim 1 says why); the numbers of the other seeds
+> are reported as description only."
+
 **Not valid on seeds 10-14:**
 > "On fresh seeds 10-14, hiding the band cost the hand-set range limit only [B] points against random rows (at least
 > 5 needed). By the pre-set rule, this version makes no claim about the band's cost. Its numbers are reported as
@@ -943,6 +962,11 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 **Dropped on seeds 0-4:**
 > "The comparison of the band's costs was dropped before the fresh seeds, because removing the same number of rows at
 > random moved [arm]'s points by [V] on seeds 0-4 (at most 5 allowed). Its numbers are reported as description."
+
+**Dropped on seeds 0-4, not measured:**
+> "The comparison of the band's costs was dropped before the fresh seeds, because on seeds 0-4 the noise floor (how
+> far removing the same number of rows at random moves the points) could not be measured: a number it needs is
+> missing on seed [seeds]. Its numbers are reported as description."
 
 ### 14.4 Claim 4: the main setting (only if it runs)
 
@@ -1000,20 +1024,32 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
   beating the even pull; then one clause per failed seed, in seed order. [clauses as in claim 1] is the same for the
   main setting. When a seed failed, a missed mark whose number is not available because of that seed is told by the
   seed's own clause only.
-- [check] is the name of the first check that failed, in the order of section 8.1, or "its [phase] phase" for a
-  stopped phase. [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
+- [check] is the name of the first check that failed, in the order of section 8.1; "its [phase] phase" for a
+  stopped phase; or "its evaluation (numbers missing)" for a seed whose evaluation lacks a number (the validity
+  bullet below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
 - [reason] in claim 1's validity sentence is the harm reason when the harm is below 30 points, the past-80 reason
   when the share is below 25%, and both, joined by "; ", when both fail.
 - In the harm stop, "[or: ...]" is left out when only the harm fails; the second form replaces the first when only
   the share fails; when both fail, the two forms are joined by " and ".
 - In the reproduction stop, the bracket lists every item that differed, written "A", "A and B" or "A, B and C".
 - Claims 2 and 3 are written only when claim 1's validity holds, except that in the exploratory look the dropped
-  sentence of claim 3 is written whenever the noise floor fails. When check 10 fails in more than one fresh seed, the
-  check-10 sentence is written once, for both claims, in place of claim 2's sentence and claim 3's. The "for scale"
-  sentence is written whenever the near-80 setting ran on the group's seeds.
+  sentence of claim 3 is written whenever the noise floor fails. When a number the noise floor needs is missing on
+  any of seeds 0-4, the noise floor cannot be read: claim 3 is dropped as if it had failed, and the "not measured"
+  form of the dropped sentence is written instead, with [seeds] listing the seeds where a number is missing. When
+  check 10 fails in more than one fresh seed, the check-10 sentence is written once, for both claims, in place of
+  claim 2's sentence and claim 3's. The "for scale" sentence is written whenever the near-80 setting ran on the
+  group's seeds.
+- When a seed failed for claims 1-3, claim 2's sentence and claim 3's "Holds" or "Fails" sentence are replaced by
+  their "If a seed failed" sentences, with [seeds] listing the failed seeds; claim 1's sentence says why each one
+  failed. The check-10 sentence, claim 3's "Not valid" sentence and its dropped sentences keep their precedence. So a
+  pooled number that is "not available" only because a seed failed is never written as a finding.
 - The validity conditions of section 9.1 are computed over the seeds that did not fail. A failed seed fails every mark
   of claims 1-3 and is told by its own clause in claim 1's sentence ("seed [s] failed [check] ..."); it never makes
-  claim 1's validity fail. [M] leaves out a failed seed that has no check-10 record.
+  claim 1's validity fail. A seed with no failure or stop record that lacks a number the validity conditions or
+  claims 2 and 3 read from the four actors that are always trained (no caution, the full-log actor, BCA's switched
+  ramp and the hand-set range limit; stalling world, strong current) fails in the same way, with [check] "its
+  evaluation (numbers missing)": its learner failed (section 10). [M] leaves out a failed seed that has no check-10
+  record.
 - Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5
   that was missed.
 - On seeds 0-4, the "Always attached" sentence is not written; every claim sentence (sections 14.1-14.4) starts with
@@ -1021,7 +1057,8 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
   sentences of section 14.5 are written as they stand.
 - In the stop "A stop rule cannot be read", [what] is "the harm" (the harm or the past-80 share is missing), "the
   band's cost to the hand-set range limit", or both joined by " and "; [seeds] lists the seeds where a number is
-  missing, written "2", "2 and 3" or "1, 2 and 3".
+  missing, written "2", "2 and 3" or "1, 2 and 3". Wherever a sentence says "seed [seeds]", it reads "seed 2" for one
+  seed, and "seeds 2 and 3" or "seeds 1, 2 and 3" for more.
 - Exactly one stop sentence is written, the first that applies in this order: a no-training check, reproduction, a
   stop rule that cannot be read, too little harm, the rival unaffected. The claim-4 note follows any of the last three.
   Each stopped phase adds its own sentence.

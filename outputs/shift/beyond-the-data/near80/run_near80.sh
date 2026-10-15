@@ -36,7 +36,7 @@ LINK=/tmp/claude-0/bcavenv
 PY=$LINK/bin/python
 APPROVER_EMAIL=35092758+dbayha7@users.noreply.github.com
 CLEAN_ENV="env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/root LANG=C.UTF-8 LC_ALL=C.UTF-8"
-RUN_ENV="$CLEAN_ENV PYTHONPATH=$REPO PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1"
+RUN_ENV="$CLEAN_ENV PYTHONPATH=$REPO PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/nonexistent/near80_no_pycache JAX_PLATFORMS=cpu OMP_NUM_THREADS=1"
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 refuse() { echo "refused: $*"; exit 97; }

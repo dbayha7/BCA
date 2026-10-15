@@ -374,10 +374,19 @@ class ReproContext(SD.SettingContext):
         return self._built[world]["none"]
 
 
+# Stops inside the reproduction that are not a reproduction difference: a saved input whose fingerprint does not
+# match, or a training file that fails its check, is a missing or damaged input (section 8.2: it can be retried once
+# fixed). reproduce_policy lets them through, so the reproduction process exits without a verdict and the plumbing
+# writes the retryable plumbing/failed_<utc>.json, never the final reproduction_differs.json.
+REPRO_RETRYABLE_STOPS = ("fingerprint", "training_file")
+
+
 def reproduce_policy(run, ctx, S, MC, table, seed=0):
     """policy_phase.train_world on the main setting of seed 0 in both worlds (the stalling world first, its payload
     then serving as the no-stall world's lock, as in the official phases). Returns ({world: actors or None},
-    {world: detail}); a recorded stop inside train_world leaves that world's actors None (its items then differ)."""
+    {world: detail}); a recorded stop inside train_world (the height-0 check, a learner, a built-in check) leaves that
+    world's actors None (its items then differ). A stop for a saved input or a training file (REPRO_RETRYABLE_STOPS)
+    is raised again: it is not a reproduction difference."""
     import policy_phase as PP
     got, detail, stall_payload = {}, {}, None
     for world in K.WORLDS:
@@ -387,6 +396,8 @@ def reproduce_policy(run, ctx, S, MC, table, seed=0):
         try:
             payload, actors = PP.train_world(prun, ctx, S, MC, row, stall_lock=stall_payload)
         except PH.PhaseStop as stop:
+            if stop.reason in tuple(PH.STOP_REASONS[k] for k in REPRO_RETRYABLE_STOPS):
+                raise
             got[world] = None
             detail[world] = dict(stopped=stop.reason, detail=stop.detail)
             continue

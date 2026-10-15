@@ -275,6 +275,10 @@ class Cfg:
 
     def phase_env(self):
         env = dict(K.PHASE_ENV)
+        if self.mode == "stub":
+            # synthetic fixtures only: keep Python's usual bytecode cache (the prefix makes every phase compile JAX and
+            # the gate's code from source, about 3 s each); official and scratch phases keep the prefix
+            env.pop("PYTHONPYCACHEPREFIX", None)
         if self.mode == "stub" and self.extra_pythonpath:
             extra = [p for p in str(self.extra_pythonpath).split(":") if p]
             if any(LG.inside(p, K.ROOT) for p in extra):

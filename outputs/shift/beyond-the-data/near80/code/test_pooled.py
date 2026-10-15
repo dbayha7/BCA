@@ -353,7 +353,7 @@ class TestExtraction(Base):
         bullets = [" ".join(x.split()) for x in re.split(r"\n- ", "\n" + sec.split("\n", 2)[2].strip())
                    if x.strip()]
         self.assertEqual(BLOCK["fill_rules"], bullets)
-        self.assertEqual(len(BLOCK["fill_rules"]), 15)
+        self.assertEqual(len(BLOCK["fill_rules"]), 16)
 
     def test_refuses_a_missing_or_doubled_sentence_and_an_undefined_bracket(self):
         with self.assertRaises(ValueError):
@@ -455,8 +455,15 @@ class TestClaim1(Base):
         self.assertEqual(lk["sentences"][-1], dict(id="stop.phase", text=expect(
             "stop.phase", s="12", world="stalling world", phase="the actor training (random-rows setting)",
             reason="a learner that fails (a non-finite network)")))
-        self.assertIn(dict(id="claim2.fail_fail", text=expect("claim2.fail_fail", G="not available",
-                                                              O="not available")), lk["sentences"])
+        # claims 2 and 3 say they fail because seed 12 failed; no pooled "not available" number is written as a
+        # finding (section 14.6)
+        self.assertIn(dict(id="claim2.failed_seed", text=expect("claim2.failed_seed", seeds="12")), lk["sentences"])
+        self.assertIn(dict(id="claim3.failed_seed", text=expect("claim3.failed_seed", seeds="12")), lk["sentences"])
+        for sid in ("claim2.pass_pass", "claim2.fail_pass", "claim2.pass_fail", "claim2.fail_fail", "claim3.holds",
+                    "claim3.fails"):
+            self.assertNotIn(sid, self.ids(lk))
+        self.assertEqual((lk["claims"]["claim2"]["status"], lk["claims"]["claim3"]["status"]),
+                         ("fail_failed_seed", "fail_failed_seed"))
 
     def test_several_clauses_in_order(self):
         pts = override(default_points, [("near80", "no_stall", "obca_k1", SC, None, 69.0),
@@ -605,6 +612,14 @@ class TestClaim4(Base):
             "[one clause per missed mark]", clause).replace("[last sentence]", LAST_PASSED)))
         self.assertEqual(lk["validity"]["claims_1_3"]["seeds"], [10, 11, 12, 14])
         self.assertEqual(lk["validity"]["claims_1_3"]["harm"]["value"], 50.0)
+        self.assertEqual(lk["sentences"][2], dict(id="claim2.failed_seed", text=expect("claim2.failed_seed",
+                                                                                         seeds="13")))
+        self.assertTrue(lk["sentences"][2]["text"].startswith("By the pre-set rule, claim 2 fails because seed 13 "
+                                                              "failed (claim 1 says why);"))
+        self.assertIn(dict(id="claim3.failed_seed", text=expect("claim3.failed_seed", seeds="13")), lk["sentences"])
+        self.assertNotIn("not available", " ".join(r["text"] for r in lk["sentences"]
+                                                   if r["id"].split(".")[0] in ("claim2", "claim3")
+                                                   and r["id"] != "claim2.scale"))
         spec = dict(data_main_fail={13: ("the gate's data checks failed on this seed", "marks")},
                     missing_values=[(st, w, 13) for st in K.SETTINGS for w in K.WORLDS])
         lk = self.look(spec, sub="main")
@@ -630,6 +645,10 @@ class TestClaim4(Base):
                 "[one clause per missed mark]", clause).replace("[last sentence]", LAST_PASSED)), world)
             self.assertEqual(lk["claims"]["claim4"]["status"], "pass")
             self.assertNotIn("claim1.invalid", self.ids(lk))
+            self.assertEqual(lk["sentences"][2], dict(id="claim2.failed_seed", text=expect("claim2.failed_seed",
+                                                                                             seeds="12")), world)
+            self.assertIn(dict(id="claim3.failed_seed", text=expect("claim3.failed_seed", seeds="12")),
+                          lk["sentences"])
 
     def test_two_gate_failed_seeds_are_not_check10_failures(self):
         """Seeds whose main data failed have no near-80 data and no check-10 record: M leaves them out, so the
@@ -653,6 +672,12 @@ class TestClaim4(Base):
         self.assertEqual(lk["sentences"][1], dict(id="claim1.fail", text=T["claim1.fail"].replace(
             "[one clause per missed mark]", "; ".join(clauses)).replace("[last sentence]",
                                                                          T["claim1.last.claim4_failed"])))
+        plural = T["claim2.failed_seed"].replace("seed [seeds]", "seeds 11 and 13")
+        self.assertEqual(lk["sentences"][2], dict(id="claim2.failed_seed", text=plural))
+        self.assertTrue(plural.startswith("By the pre-set rule, claim 2 fails because seeds 11 and 13 failed"))
+        self.assertIn(dict(id="claim3.failed_seed", text=T["claim3.failed_seed"].replace("seed [seeds]",
+                                                                                          "seeds 11 and 13")),
+                      lk["sentences"])
         # one real check-10 failure and one gate-failed seed: M is 1, the condition holds
         spec = dict(spec, check10_fail=[12])
         root = self.tree(spec, sub="b")
@@ -682,6 +707,35 @@ class TestClaim4(Base):
                                                                              "size") for s in K.CONFIRMATORY}))
         self.assertEqual(lk["claims"]["claim1"]["status"], "fail")
         self.assertEqual(lk["sentences"][1]["text"].count("by the pre-set rule, counts as failing every mark"), 5)
+        self.assertIn(dict(id="claim2.failed_seed", text=T["claim2.failed_seed"].replace(
+            "seed [seeds]", "seeds 10, 11, 12, 13 and 14")), lk["sentences"])
+
+    def test_missing_numbers_with_no_stop_fail_the_seed_not_the_validity(self):
+        """A seed whose evaluation lacks a number the validity conditions or claims 2 and 3 need (here the full-log
+        actor's points; or the range limit's random-rows points), with no stop or failure record, fails for claims
+        1-3 with [check] "its evaluation (numbers missing)": the validity sentence never says "lost only not
+        available points" (section 14.6)."""
+        cases = (("harm", [("near80", "stall", "full_none", SC, 11, None)]),
+                 ("rival", [("random_rows", "stall", "range_hinge", SC, 11, None)]),
+                 ("gain", []))
+        for sub, rules in cases:
+            spec = dict(points=override(default_points, rules))
+            if sub == "gain":
+                spec = dict(missing_arms={("near80", "stall", 11): ["obca_k1"]})
+            lk = self.look(spec, sub=sub)
+            self.assertEqual(lk["claims"]["claim1"]["status"], "fail", sub)
+            self.assertEqual(lk["failed_checks"]["claims_1_3"], {"11": "its evaluation (numbers missing)"}, sub)
+            clause = expect("claim1.clause.failed_seed", s="11", check="its evaluation (numbers missing)")
+            self.assertEqual(lk["sentences"][1], dict(id="claim1.fail", text=T["claim1.fail"].replace(
+                "[one clause per missed mark]", clause).replace("[last sentence]", LAST_PASSED)), sub)
+            self.assertNotIn("claim1.invalid", self.ids(lk))
+            self.assertNotIn("claim3.invalid", self.ids(lk))
+            self.assertIn(dict(id="claim2.failed_seed", text=expect("claim2.failed_seed", seeds="11")),
+                          lk["sentences"])
+            self.assertEqual(lk["validity"]["claims_1_3"]["seeds"], [10, 12, 13, 14])
+        # a missing number of an arm that can be null (a matched control) does not fail the seed
+        lk = self.look(dict(missing_arms={("near80", "stall", 11): ["even_pull"]}), sub="even")
+        self.assertEqual(lk["failed_checks"]["claims_1_3"], {})
 
 
 # --------------------------------------------------------------------------------------------- stops
@@ -765,6 +819,41 @@ class TestStops(Base):
         pts = override(default_points, [("near80", "stall", "full_none", SC, 2, None)])
         lk = self.look(dict(group="exploratory", points=pts), sub="h")
         self.assertEqual(lk["sentences"][-2]["text"], expect("stop.unmeasured", what="the harm", seeds="2"))
+        # two seeds: "seeds 2 and 3" (section 14.6), never "seed 2 and 3"
+        pts = override(default_points, [("near80", "stall", "full_none", SC, s, None) for s in (2, 3)])
+        lk = self.look(dict(group="exploratory", points=pts), sub="h23")
+        text = T["stop.unmeasured"].replace("[what]", "the harm").replace("seed [seeds]", "seeds 2 and 3")
+        self.assertEqual(lk["sentences"][-2], dict(id="stop.unmeasured", text=text))
+        self.assertIn("could not be measured on seeds 2 and 3, because", text)
+
+    def test_a_noise_floor_that_cannot_be_read_drops_claim3_without_a_number(self):
+        """BCA's random-rows points missing on seed 1 (no stop record): the harm and the rival can be read, the noise
+        floor cannot. Claim 3 is dropped with the "not measured" sentence, never "moved ... by not available"; the
+        confirmatory look writes the same sentence (section 14.6)."""
+        pts = override(default_points, [("random_rows", "stall", "obca_k1", SC, 1, None)])
+        lk = self.look(dict(group="exploratory", points=pts))
+        nf = lk["stops"]["noise_floor"]
+        self.assertEqual((nf["unmeasured"], nf["passed"], nf["V"], nf["missing_seeds"]), (True, None, None, [1]))
+        self.assertTrue(lk["claim3_dropped"])
+        self.assertTrue(lk["fresh_near80_allowed"])
+        text = expect("claim3.dropped_unmeasured", seeds="1")
+        self.assertIn(dict(id="claim3.dropped_unmeasured", text=explo(text)), lk["sentences"])
+        self.assertNotIn("claim3.dropped", self.ids(lk))
+        self.assertTrue(text.endswith("could not be measured: a number it needs is missing on seed 1. Its numbers "
+                                      "are reported as description."))
+        self.assertEqual(lk["claims"]["claim3"]["exploratory_outcome"], "dropped")
+        root = self.tree(dict(group="exploratory", points=pts), sub="explo")
+        P.run_look("exploratory", root, "scratch", dict(constants=P.canonical_constants()))
+        md = (root / K.LAYOUT["look_md"].format(group="exploratory")).read_text()
+        self.assertIn("- The noise floor: could not be measured (a number is missing on seed 1)", md)
+        # the confirmatory look, after that exploratory look
+        ex = json.loads((root / K.LAYOUT["look"].format(group="exploratory")).read_text())
+        croot = self.tree(dict(exploratory=None), sub="conf")
+        put(croot / K.LAYOUT["look"].format(group="exploratory"), ex)
+        R = P.load_results(croot, "confirmatory", "scratch")
+        clk = P.confirmatory_look(R, R.exploratory, BLOCK)
+        self.assertEqual(clk["claims"]["claim3"]["status"], "dropped")
+        self.assertIn(dict(id="claim3.dropped_unmeasured", text=text), clk["sentences"])
 
     def test_rival_unaffected(self):
         pts = override(default_points, [("random_rows", "stall", "range_hinge", SC, None, 53.0)])

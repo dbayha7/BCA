@@ -181,9 +181,13 @@ POLICY_KINDS = ("policy",)
 POLICY_CAP_UNMEASURED = 2
 EXIT_REFUSED, EXIT_STOP = 97, 2
 EXIT_PAUSED = 5                            # the runner: the budget guard paused the run (budget-continue lifts it)
+# PYTHONPYCACHEPREFIX: Python reads and writes compiled bytecode only under this (absent) folder, so a __pycache__ next
+# to a pinned source file is never loaded in place of the verified source (with PYTHONDONTWRITEBYTECODE=1, nothing is
+# written there either). Stub runs, on synthetic fixtures only, leave it out (near80_runner.Cfg.phase_env).
+PYCACHE_PREFIX = "/nonexistent/near80_no_pycache"
 PHASE_ENV = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME": "/root",
              "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PYTHONPATH": str(ROOT), "PYTHONDONTWRITEBYTECODE": "1",
-             "JAX_PLATFORMS": "cpu", "OMP_NUM_THREADS": "1"}
+             "PYTHONPYCACHEPREFIX": PYCACHE_PREFIX, "JAX_PLATFORMS": "cpu", "OMP_NUM_THREADS": "1"}
 FORECAST_CPU_HOURS = {"plumbing": 2.5, "exploratory": 16.0, "confirmatory_band": 16.0, "confirmatory_main": 8.5}
 BUDGET_STAGES = ("exploratory", "confirmatory_band", "confirmatory_main")   # the stages that can pause (plumbing has
 #                                                                            no phase of the official plan)
