@@ -1,0 +1,674 @@
+{
+ "label": "EXPLORATORY, designed after seeing seeds 0-4 and after step 1; written and frozen before any step-2 actor is trained. Restructured BCA, step 2 (the policy pilot). Outside the gate; changes no pre-registered rule and no file of version 6, version 7 or step 1.",
+ "version": 1,
+ "approval": "The user approved step 2 training (relayed to this session by the orchestrating session, 14 Oct 2026), with the design below fixed by the user: protocol, penalty family, the six outcome-ramp arms, rivals and controls, matching target, lock before returns, evaluation, pooled measures, go/no-go G1-G3 and attribution A1-A3. The user required these rules to be written, frozen and committed before any official training. Nothing else is approved: no seeds other than 0-4, no retuning on these seeds.",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "reserved_seeds": {
+  "5-9": "version 7's confirmatory run; refused",
+  "10-14": "the planned version 8 confirmation; refused"
+ },
+ "worlds": [
+  "stall",
+  "no_stall"
+ ],
+ "inputs": {
+  "step1_results": {
+   "path": "outputs/shift/beyond-the-data/restructure/step1/results/results.json",
+   "sha256": "e513fd196b49fd1f6c1e76b6d24d2b3e45d1aef93071540d38cf7a69dde4fd55",
+   "prespec_sha256": "669e836cb9dfc92def9282393eb3e2015cfdd901bd2e722f6c44c7f3154ac06e",
+   "mode": "official",
+   "verdict": "GO",
+   "note": "the committed copy of runs/shift_explore/restructure/step1/results.json (results.json.source.sha256 beside it holds the same SHA-256); read-only; no refit of anything step 1 computed"
+  },
+  "gate": {
+   "prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+   "variant": "base"
+  },
+  "v6_code": {
+   "dir": "outputs/shift/beyond-the-data/stage2/code",
+   "sha256": {
+    "stage2_common.py": "dead5e3eb206aa8aa94694a2f1a8a4b552f3d151771e852674e1b4873f8a2bdc",
+    "band.py": "89553406b6cc7bd682a50153e4b74c51f49b5eff022641c614400eb972b232bd",
+    "fresh.py": "002a06d81229a6b5684933ec590f2975c36fb52d3b39aa4c63480f904e7b0fec",
+    "policy.py": "671e2b8f8bf197b18582edb78677b45277c6335e427e06a644a60f5166d7a96d"
+   },
+   "v6_code_manifest_sha256": "4b34af991a56066c41fbb55cb02db4074ae0b7e85b1e50802a53983edda2a753",
+   "note": "byte-identical to the copies version 6's code manifest (runs/shift_explore/stage2/code_manifest.json) pins; executed from these verified bytes, without version 6's approval checks; none of version 6's phase functions or writers is called"
+  },
+  "v6_prereg_sha256": "9b38c7c48a303cfd67e5db6f137e3a162997bb533d86b3f7647e0467b91ca3b1",
+  "best_standin": "range_hinge",
+  "room": {
+   "harness_sha256": "97f547b14d55c3afa392cbdf99508e45c1b862d8a285030808c5783a067ef2cf",
+   "manifest_sha256": "469ada26b9af7eff33be17b8241867e83e44c45a30d2d137dffe7deca3f32391"
+  },
+  "standins": {
+   "manifest_sha256": "88e5fd388911a991652853d04fce154ef4730facb51ef60c44496fd6061298c6",
+   "standins_py_sha256": "ef6b6ea270c2d94ff5905d358e51109ab9a3004849a0b78d2c433c7032d0de8b",
+   "note": "checked by version 6's policy.standins_module against version 6's pre-registration pins"
+  },
+  "step1lib": {
+   "path": "outputs/shift/beyond-the-data/restructure/step1/step1lib.py",
+   "sha256": "727aba0f40838a384ffc4427c81212092103086413e61db30be9a4b04acd4ba5",
+   "use": "the gap rule (gap_rule, throttle), re-run on each world's gapped training commands; it must give the arm table's t_lo and t_up exactly"
+  }
+ },
+ "protocol": {
+  "what": "version 6's actor-only policy-test protocol (the room harness's), unchanged",
+  "critic": "the gate's frozen fixed-controller gapped critic of that world (stall_aware_gap, read with acceptance.get_critic(train=False)); its scored policy is the stall-aware controller",
+  "start_actor": "the gate's saved cloned actor of that world",
+  "alpha": 5.0,
+  "actor_steps": 20000,
+  "chunk": 4000,
+  "batch_size": 256,
+  "optimiser": "Adam, learning rate 3e-4",
+  "batch_rows": "check 2's stream default_rng([20261015, seed, 35]).integers(n_rows, size=(20000, 256)), the same rows for every arm",
+  "side_by_side": "the arms of one penalty kind run vmapped in one program",
+  "environment": {
+   "OMP_NUM_THREADS": "1",
+   "JAX_PLATFORMS": "cpu",
+   "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "pinning": "every phase runs pinned to one CPU (taskset); the numbers depend on the thread count"
+ },
+ "penalty": {
+  "family": "outcome ramp",
+  "actor_loss": "-lambda * mean_i[ Q1(s_i, pi(s_i)) - k * [U(pi(s_i)) - U(a_i)]_+ ] + mean_ij (pi(s_i)_j - a_ij)^2, lambda = alpha / stopgrad(mean_i |Q1(s_i, pi(s_i))|): version 6's paired form (actor_step_bca), with U in place of BCA's width",
+  "U": "U(a) = h * ramp(t(a)), t(a) = max_j |a_j|, ramp(t) = clip((t - t_lo) / (t_up - t_lo), 0, 1)",
+  "t_lo_t_up": "that seed-world's ends of step 1's gap rule (step 1's results.json per_seed_world t_lo, t_up)",
+  "a_i": "the training row's recorded command",
+  "gradient": "only the actor's parameters are differentiated; U reaches the actor through its command only",
+  "precision": "float32 in the training program (h, k, t_lo, t_up rounded to float32)",
+  "h_zero": "with h = 0 the penalty and its gradient are exactly 0: the program is then version 6's check-(b) program"
+ },
+ "arms": {
+  "rule": {
+   "fixed_height": 1.0,
+   "conformal_margin": 0.1,
+   "rank_p": 0.05
+  },
+  "definitions": {
+   "obca_k1": "PRIMARY. switch = step 1's BCA certificate (certificate.on); h = step 1's BCA height (certificate.height = R_tail - R_rest) when on, else 0; k = 1",
+   "obca_k2": "as obca_k1 with k = 2",
+   "obca_forced": "world-blind (a support rule with BCA's dose): always on; h = this seed's STALLING-world BCA height, in both worlds; k = 1",
+   "fixed_gated": "the switch with a fixed, uncalibrated dose: switch = BCA certificate; h = 1.0 value unit (declared default) when on, else 0; k = 1",
+   "conformal_k1": "plain split conformal instead of Bayesian: switch = groups.q90_full_throttle - groups.q90_rest > 0.10; h = that difference when on, else 0; k = 1",
+   "meangap_k1": "a learned error scale without calibration: switch = step 1's one-sided Mann-Whitney p < 0.05; h = max(groups.mean_full_throttle - groups.mean_rest, 0) when on, else 0; k = 1"
+  },
+  "no_refit": "every switch and height is read from step 1's results.json; nothing is refitted",
+  "infinite_height": "if an arm's switch is on and its height is not finite, the code refuses (should not occur). Seen: no_stall/seed3 has an infinite BCA height, but its certificate is off, so h = 0 there",
+  "same_by_construction": "in the stalling world the certificate is on in all five seeds, so obca_forced has obca_k1's (switch, h, k) there; both are trained as separate arms in the same program",
+  "stall_world_others": [
+   "w0_check (the ramp program with h = 0, k = 0; check (b), not scored)",
+   "perfect_band (the room's main oracle, k = 1; reference)",
+   "range_hinge (the room's, k = 1; reported)",
+   "even_pull, push_less (reported), random_1, random_2: the room's ladders, matched blind to obca_k1's strength",
+   "the best data-only stand-in (range hinge) with the stand-ins' own 4-rung ladder and matcher, matched blind to obca_k1's strength",
+   "none (check 2's saved gapped-critic actor), clone (the gate's cloned actor), full_none (check 2's full-log critic's actor; reference)"
+  ],
+  "no_stall_world": [
+   "none, clone",
+   "the six outcome-ramp arms with their no-stall (switch, h); w0_check",
+   "even_pull_locked at the stalling world's matched nu",
+   "random_1_locked, random_2_locked and push_less_locked at the stalling world's matched coefficient (the same penalty in both worlds)",
+   "standin_locked at the stalling world's matched coefficient",
+   "range_hinge (k = 1)",
+   "perfect_band (k = 1, stall-aware next command)"
+  ]
+ },
+ "arm_table_expected": {
+  "stall": {
+   "0": {
+    "t_lo": 0.7860120534896851,
+    "t_up": 0.9953150153160095,
+    "arms": {
+     "obca_k1": {
+      "switch": true,
+      "h": 6.019341344833375,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": true,
+      "h": 6.019341344833375,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 6.019341344833375,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": true,
+      "h": 1.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": true,
+      "h": 1.7326122057437914,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": true,
+      "h": 0.6570648918262051,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": true,
+     "bca_height": 6.019341344833375,
+     "stall_bca_height": 6.019341344833375,
+     "conformal_gap": 1.7326122057437914,
+     "plain_gap_information_only": 1.7326122057437914,
+     "rank_p": 2.2720961275568272e-07,
+     "mean_gap": 0.6570648918262051
+    }
+   },
+   "1": {
+    "t_lo": 0.7868145704269409,
+    "t_up": 0.9874332547187805,
+    "arms": {
+     "obca_k1": {
+      "switch": true,
+      "h": 2.420176846981054,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": true,
+      "h": 2.420176846981054,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 2.420176846981054,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": true,
+      "h": 1.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": true,
+      "h": 1.4460970532894173,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": true,
+      "h": 0.6806634810373153,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": true,
+     "bca_height": 2.420176846981054,
+     "stall_bca_height": 2.420176846981054,
+     "conformal_gap": 1.4460970532894173,
+     "plain_gap_information_only": 1.4460970532894173,
+     "rank_p": 3.0450925419617046e-26,
+     "mean_gap": 0.6806634810373153
+    }
+   },
+   "2": {
+    "t_lo": 0.791365921497345,
+    "t_up": 0.9765923619270325,
+    "arms": {
+     "obca_k1": {
+      "switch": true,
+      "h": 2.0646745610237147,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": true,
+      "h": 2.0646745610237147,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 2.0646745610237147,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": true,
+      "h": 1.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": true,
+      "h": 1.096457507610321,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": true,
+      "h": 0.5332229091158873,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": true,
+     "bca_height": 2.0646745610237147,
+     "stall_bca_height": 2.0646745610237147,
+     "conformal_gap": 1.096457507610321,
+     "plain_gap_information_only": 1.096457507610321,
+     "rank_p": 2.0100646764502324e-22,
+     "mean_gap": 0.5332229091158873
+    }
+   },
+   "3": {
+    "t_lo": 0.790999710559845,
+    "t_up": 0.987615704536438,
+    "arms": {
+     "obca_k1": {
+      "switch": true,
+      "h": 1.6053499102592461,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": true,
+      "h": 1.6053499102592461,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 1.6053499102592461,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": true,
+      "h": 1.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": true,
+      "h": 1.1993138694763203,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": true,
+      "h": 0.492347442280137,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": true,
+     "bca_height": 1.6053499102592461,
+     "stall_bca_height": 1.6053499102592461,
+     "conformal_gap": 1.1993138694763203,
+     "plain_gap_information_only": 1.1993138694763203,
+     "rank_p": 1.3700619979776442e-17,
+     "mean_gap": 0.492347442280137
+    }
+   },
+   "4": {
+    "t_lo": 0.7870776057243347,
+    "t_up": 0.989324688911438,
+    "arms": {
+     "obca_k1": {
+      "switch": true,
+      "h": 1.796276783943176,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": true,
+      "h": 1.796276783943176,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 1.796276783943176,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": true,
+      "h": 1.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": true,
+      "h": 1.1695423650741592,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": true,
+      "h": 0.5394754749612912,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": true,
+     "bca_height": 1.796276783943176,
+     "stall_bca_height": 1.796276783943176,
+     "conformal_gap": 1.1695423650741592,
+     "plain_gap_information_only": 1.1695423650741592,
+     "rank_p": 7.053645051864124e-21,
+     "mean_gap": 0.5394754749612912
+    }
+   }
+  },
+  "no_stall": {
+   "0": {
+    "t_lo": 0.786250650882721,
+    "t_up": 0.9953150153160095,
+    "arms": {
+     "obca_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": false,
+      "h": 0.0,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 6.019341344833375,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": false,
+     "bca_height": 0.08312661886215089,
+     "stall_bca_height": 6.019341344833375,
+     "conformal_gap": 0.049366331100461736,
+     "plain_gap_information_only": 0.049366331100461736,
+     "rank_p": 0.21384708780883194,
+     "mean_gap": -0.02870165897368321
+    }
+   },
+   "1": {
+    "t_lo": 0.7842978239059448,
+    "t_up": 0.9874332547187805,
+    "arms": {
+     "obca_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": false,
+      "h": 0.0,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 2.420176846981054,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": false,
+     "bca_height": 0.15075258731841856,
+     "stall_bca_height": 2.420176846981054,
+     "conformal_gap": 0.029496169090272417,
+     "plain_gap_information_only": 0.029496169090272417,
+     "rank_p": 0.23671461196782362,
+     "mean_gap": -0.0010681472230261446
+    }
+   },
+   "2": {
+    "t_lo": 0.7829492688179016,
+    "t_up": 0.9765923619270325,
+    "arms": {
+     "obca_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": false,
+      "h": 0.0,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 2.0646745610237147,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": true,
+      "h": 0.048363943840793275,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": false,
+     "bca_height": 0.1996879410743695,
+     "stall_bca_height": 2.0646745610237147,
+     "conformal_gap": 0.04095146179199283,
+     "plain_gap_information_only": 0.04095146179199283,
+     "rank_p": 0.032204718644357734,
+     "mean_gap": 0.048363943840793275
+    }
+   },
+   "3": {
+    "t_lo": 0.7839611172676086,
+    "t_up": 0.987615704536438,
+    "arms": {
+     "obca_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": false,
+      "h": 0.0,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 1.6053499102592461,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": false,
+     "bca_height": "inf",
+     "stall_bca_height": 1.6053499102592461,
+     "conformal_gap": 0.06535371541976787,
+     "plain_gap_information_only": 0.06535371541976787,
+     "rank_p": 0.18240955666476116,
+     "mean_gap": 0.012294872517761485
+    }
+   },
+   "4": {
+    "t_lo": 0.7853926420211792,
+    "t_up": 0.9934806227684021,
+    "arms": {
+     "obca_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "obca_k2": {
+      "switch": false,
+      "h": 0.0,
+      "k": 2.0
+     },
+     "obca_forced": {
+      "switch": true,
+      "h": 1.796276783943176,
+      "k": 1.0
+     },
+     "fixed_gated": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "conformal_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     },
+     "meangap_k1": {
+      "switch": false,
+      "h": 0.0,
+      "k": 1.0
+     }
+    },
+    "sources": {
+     "bca_on": false,
+     "bca_height": 0.037865314483640944,
+     "stall_bca_height": 1.796276783943176,
+     "conformal_gap": -0.03163195133209129,
+     "plain_gap_information_only": -0.03163195133209129,
+     "rank_p": 0.4202797588898947,
+     "mean_gap": -0.0198304329881836
+    }
+   }
+  }
+ },
+ "checks": {
+  "w0_tolerance": 1e-05,
+  "gap_rule": "step 1's gap rule on the world's gapped training commands gives the table's t_lo and t_up exactly; else the phase stops",
+  "b_w0": "version 6's check (b): the ramp program with h = 0, k = 0 (stalling world: alone, first; no-stall world: side by side with the six ramp arms) reproduces check 2's saved 'none' actor within 1e-5 on every parameter; else the phase stops",
+  "h0_reproduces_none": "every outcome-ramp arm whose h is 0 in that seed-world reproduces 'none' within 1e-5 (a plumbing test of the switch); else the phase stops",
+  "stop": "a stopped phase writes stop.json (write-once); a stopped seed-world fails every condition that needs it, so the verdict is then NO-GO; it is never rerun or replaced",
+  "scratch_reference": "in a shortened scratch run (fewer than 20,000 steps), the reference actor is the room's W = 0 program at the same step count, not 'none'"
+ },
+ "matching": {
+  "target": "L.strength(obca_k1, none, prepared.eval_obs) in the stalling world (root-mean-square command change from 'none' on the 5,000 evaluation-split recorded states), as version 6 did for bca_k1",
+  "controls": "version 6's policy.match_controls, unchanged: families even_pull, push_less (reported), random_1, random_2; the room's ladders (even pull nu 0.1-2; others slope-normalised knobs 0.1-10), its blind extension (x2 / x sqrt(10), at most 3 rungs), then experiments/signal/glq_match.match_parallel (tol 0.01, at most 5 rounds); strengths only, before any return",
+  "standin": "the stand-ins' own build_shared, classifier_fit_for, slope_scales, StandinRunner, 4-rung ladder (0.3, 1, 3, 10) and match_standins, the calls of version 6's policy.standin_matched; family range_hinge (version 6's best_standin.json)",
+  "unmatched": "if obca_k1's strength is not positive (or obca_k1 is not finite), every control and the stand-in are recorded unmatched; a missing control fails every condition that needs it",
+  "standin_failure": "an error inside the stand-in rival is recorded and counts against BCA (its measures are missing), as in version 6"
+ },
+ "lock": "after every arm is trained and every control matched: actors.msgpack and lock.json (+ .sha256), write-once, with every actor's parameter SHA-256, the arm table row, the checks, strengths, matches, timings and peak memory (VmHWM). No return is computed before it exists. The no-stall phase starts only after the stalling world's lock of the same seed and reads its locked knobs and coefficients.",
+ "evaluation": {
+  "when": "only after EVERY seed-world (seeds 0-4, both worlds) has a lock.json or a stop.json; each evaluation verifies its lock first",
+  "returns": "acceptance._evaluate, as version 6's evaluate: exact 100-step returns on the full 1,000-start banks of all four situations (recorded conditions, strong current, big waves, big kicks), points against the gate's anchors (0 = recording controller, 100 = the top controller), the same actor capped at 80%, the share of steps past 80%",
+  "where_the_actor_goes": "from one more exact rollout per situation: the share of visited steps past 80% per thruster (version 6's thruster_shares) and the share of visited steps whose throttle index max_j |a_j| lies above that seed-world's t_lo",
+  "not_computed": "version 6's shift cards (not requested)",
+  "output": "values.json (+ .sha256) per seed-world, write-once"
+ },
+ "measures": {
+  "pooled": "strong current, mean over seeds 0-4 of per-seed differences; every seed is needed (a missing, stopped, failed or unmatched value gives no value)",
+  "NET": "NET(x) = mean over seeds of { [pts_stall(x) - pts_stall(none)] - [pts_nostall(none) - pts_nostall(x)] }",
+  "same_arm_in_both_worlds": "ramp arms, perfect_band, range_hinge, clone: the same name; even_pull, push_less, random_1, random_2: matched in the stalling world, locked in the no-stall world; standin: matched / locked",
+  "world_blind_rivals_W": [
+   "standin",
+   "even_pull",
+   "random_1",
+   "random_2",
+   "obca_forced"
+  ]
+ },
+ "go_no_go": {
+  "rule": {
+   "g1_margin": 10.0,
+   "g2_floor": -3.0,
+   "g3_margin": 15.0,
+   "attribution_margin": 5.0,
+   "m1_margin": 15.0,
+   "m1_positive_min": 4,
+   "m2_margin": 15.0,
+   "m3_floor": -3.0,
+   "m3_clone_margin": 25.0,
+   "m4_floor": -5.0
+  },
+  "conditions": [
+   "G1: NET(obca_k1) >= max over W of NET + 10",
+   "G2: stalling world, obca_k1 - none >= -3 in recorded conditions, in big waves and in big kicks (pooled means)",
+   "G3: stalling world, strong current, obca_k1 - matched even pull >= 15 (version 6's M1 margin)"
+  ],
+  "go": "G1, G2 and G3 all hold",
+  "meaning_go": "GO: outcome-reading BCA carries over into trained policies across worlds on seeds 0-4. This is still exploratory (designed after seeing seeds 0-4 and step 1); it licenses drafting version 8 (fresh seeds 10-14), not a claim.",
+  "meaning_no_go": "NO-GO (kill rule): outcome-reading BCA does not carry over into trained policies across worlds. It is shelved as a training penalty and kept only as the deployment check. There is no retuning on these seeds."
+ },
+ "attribution": {
+  "role": "reported; decides only the wording of the claim",
+  "A1": "NET(conformal_k1) >= NET(obca_k1) - 5: the Bayesian part adds nothing measurable",
+  "A2": "NET(fixed_gated) >= NET(obca_k1) - 5: the calibrated dose adds nothing beyond the switch",
+  "A3": "NET(meangap_k1) >= NET(obca_k1) - 5: calibration adds nothing beyond raw average residuals"
+ },
+ "reported": [
+  "every arm's NET (clone prominently, as a baseline)",
+  "NET in recorded conditions (information only)",
+  "version 6's marks restated for obca_k1: M1 (matched even pull >= 15 and positive in 4 of 5 seeds), M2 (each random surface >= 15), M3 (recorded vs none >= -3 and vs clone >= 25; big waves and big kicks vs none >= -3), M4 (obca_k1 - matched stand-in >= -5)",
+  "points of every arm in every world and situation",
+  "the share of visited steps past t_lo per arm and situation",
+  "the built-in checks, the strengths and matches, the ramp shape (best grid throttle past 80% for Q1 - k [U(a) - U(a_i)]_+ on the room's 2,000 full-throttle-region states)",
+  "time and peak memory (VmHWM) of every phase"
+ ],
+ "outputs": {
+  "official": "runs/shift_explore/restructure/step2/: policy/seed<k>/<world>/{actors.msgpack, lock.json, values.json or stop.json} (+ .sha256), results.json (+ .sha256), results.md; logs/; write-once",
+  "scratch": "any folder outside the repository (STEP2_SCRATCH); labelled scratch; never counts"
+ },
+ "runner": "run_step2.sh: unit tests; then training, each seed's stalling world then (after its lock) its no-stall world, every process pinned to one CPU with taskset, 4 parallel lanes by default (STEP2_LANES), a lane starting a phase only when enough memory is free (STEP2_MIN_FREE_MB); then the 10 evaluations; then the pooled look. Launched detached; progress in runs/shift_explore/restructure/step2/logs/run.log.",
+ "departures": [
+  "Random surfaces and push less in the no-stall world run at the stalling world's matched COEFFICIENT (knob x the stalling world's slope scale): the same penalty in both worlds, as version 6 did for the stand-in. Recorded beside it: the knob.",
+  "push_less_locked is added to the no-stall arms (reported only) so that every matched control has a NET; it is not in W and decides nothing.",
+  "Every evaluation waits until all 10 seed-worlds are locked or stopped (version 6 required only its own lock).",
+  "An outcome-ramp arm with h = 0 that does not reproduce 'none' within 1e-5 stops its phase, like version 6's check (b).",
+  "The stand-in calls of version 6's policy.standin_matched are restated (same calls, same order) only to pass the step count in scratch runs.",
+  "The no-stall phase loads only the no-stall world's data (version 6 also loaded the stalling world's, unused there).",
+  "Version 6's shift cards are not computed; the per-thruster past-80% shares come from the same extra rollout as the past-t_lo shares.",
+  "Version 6's code is executed from its verified bytes without its approval checks, and none of its phase functions or writers is called (they all require version 6's approval or write under runs/shift_explore/stage2).",
+  "Machine: this runs on the user's AMD Ryzen AI MAX+ 395 laptop (WSL, Ubuntu 24.04), not the cloud Xeon. The gate's exact checks pass here unchanged (data, anchors), the step-1 rollouts reproduce to the last digit, and the room's W = 0 program reproduces check 2's saved 'none' actors bit for bit, so version 7's constants wrapper is not used."
+ ],
+ "budget": "measured on this laptop while other sessions' jobs were loading it (smoke run of 40 steps plus a per-kind timing probe of 400 steps, scratch): stalling-world phase about 35-50 CPU-minutes, no-stall phase about 13-17, each evaluation about 2; peak memory (VmHWM) about 1.2 GB per training phase and 0.4 GB per evaluation. In all about 5-5.5 CPU-hours; with 4 lanes about 2 hours of wall time (5 seeds over 4 lanes), with 5 lanes about 1 hour 10 minutes",
+ "verification_before_freeze": [
+  "reproduction check (scratch, train_policy.py --w0-repro, seed 0, full 20,000 steps): the ramp program with every height 0 reproduced check 2's saved 'none' actor bit for bit (largest parameter difference 0.0, equal SHA-256) in the stalling world (1 arm) and in the no-stall world (7 arms side by side)",
+  "earlier, with the room's own W = 0 program (kind plain): the same bit-for-bit reproduction, seed 0, both worlds",
+  "the gate's loaders and anchors pass on this machine, and none's rollouts reproduce step 1's design values exactly"
+ ]
+}
