@@ -68,6 +68,10 @@ CHANGES = [
     "Compute budget: version 6's 'about 72-92 process-hours' stays an estimate that stops nothing; the process-hours "
     "actually used are counted and reported (C2).",
     "Records: a ledger of every attempt, provenance files and the probe records (C7, C10, C11).",
+    "Machine: the user's Framework Desktop (AMD Ryzen AI MAX+ 395, which has AVX-512) instead of the Lenovo laptop; "
+    "'the laptop' in v7's text, file names and code now means this machine. WSL is given 24 GB instead of 48 GB, so "
+    "fewer phases run at once and the run takes longer. Only where v7 runs changes; every rule stays as written, and "
+    "the self-test, the probes and the gate's exact checks decide on this machine (C12).",
 ]
 UNCHANGED = [
     "the method: BCA's band, the uniform and weighted versions, k, every ladder and coefficient, the frozen choices "
@@ -93,6 +97,47 @@ FAILURES = [
     "Other numerical failures on seeds 5-9 (a learner, a band fit or a fresh data check) are recorded as version 6 says; "
     "whether another machine would have failed the same way cannot be told.",
 ]
+MACHINE = dict(
+    change="C12", declared_date="2026-10-14",
+    rule=("every v7 step on the user's side (restore, self-test, every phase, results, run files) runs on the user's "
+          "Framework Desktop instead of the Lenovo laptop v7 was first written for"),
+    naming=("'the laptop' in v7's text, file names and code means the user's local machine, the Framework Desktop; the "
+            "names laptop/ and *_v7 are kept unchanged"),
+    earlier=("Lenovo laptop: Intel Core Ultra 9 275HX, 24 logical processors, no AVX-512; WSL given 48 GB (Q3)"),
+    measured=dict(
+        date="2026-10-14",
+        processor="AMD Ryzen AI MAX+ 395 (Zen 5): 16 cores, 32 logical processors (two per core)",
+        avx512="yes (avx512f, avx512bw, avx512vl, avx512dq, avx512_bf16 among others)",
+        openblas_kernels="SkylakeX for numpy and for scipy (the same family as the cloud's Xeon)",
+        memory=("64 GB installed, 32 GB of it reserved for the built-in Radeon graphics, so Windows sees 31.8 GB; "
+                ".wslconfig memory=24GB swap=16GB; WSL MemTotal 23.5 GiB"),
+        wsl="WSL 2 (2.6.3), distribution Ubuntu-24.04 (Ubuntu 24.04.5, glibc 2.39)",
+        disk="about 1 TB free inside WSL (952 GiB)", gpu="NVIDIA RTX 5070 Ti 16 GB, not used (C9 unchanged)"),
+    wsl_memory_gb=24, wsl_memory_gb_if_graphics_reservation_lowered=48,
+    evidence=["version 6's own off-cloud self-test (stage2_gpu/selftest.sh) on this machine printed 'PASS anchors "
+              "(first check): the gate accepts its pre-registration on this processor (AMD RYZEN AI MAX+ 395 w/ "
+              "Radeon 8060S; matrix kernels SkylakeX/SkylakeX; anchors equal)' and 'RESULT: READY, WAITING FOR THE "
+              "CLOUD'S LATE FILES' (runs/shift_explore/stage2_offcloud/selftest_20261014T232916Z.txt, not in git)",
+              "README steps 0-7 were done on this machine; the restore printed 'PASS restore: 2370 run files of "
+              "901c87766ab0 (pre-handoff snapshot) match the pinned sums'",
+              "no v7 probe record existed when this was declared (R7/selftest/ did not exist)"],
+    consequences=dict(
+        C1=("kept unchanged: on this AVX-512 processor the local A, B and K are expected to equal the file's bit for "
+            "bit, so the substitution is expected to change no number; it keeps one code path, and the self-test "
+            "still checks the tolerances (ST3) and the gate's exact checks (ST4, ST6)"),
+        C2=("unchanged: lanes default 12, at most 16; pick_cpus(16) gives one logical processor on each of the 16 "
+            "cores; the memory rule is unchanged and, with MemTotal 23.5 GiB (limit MemTotal minus 8 GiB), admits "
+            "about 2 phases at once until peaks are measured, so the run takes longer than the laptop's estimate, "
+            "which stays a lower bound that stops nothing"),
+        C4="satisfied: Ubuntu 24.04 (24.04.5), glibc 2.39, root, HOME=/root, env -i; OPENBLAS_CORETYPE stays unset",
+        C7=("unchanged: the probes and the check (b) forecast run and decide on this machine; the cloud finished every "
+            "phase of seeds 0-4 (09:21 UTC, 14 Oct), so they are expected to be inherited at the handoff and no "
+            "reference is expected to be re-made; the cloud pushes seeds 2-4's run files in the part-4 snapshot at "
+            "the handoff (C6 unchanged)"),
+        C11="ST9's memory warning is given below 20 GiB instead of 40 GiB (information only)",
+        other="C3, C5, C6, C8, C9, C10 unchanged"),
+    why_not_method=("only where v7 runs changes: no setting, mark, tolerance, seed, rule or analysis changes, and every "
+                    "check that depends on the machine runs on this machine before anything is approved"))
 
 
 def check_predecessor(root=None):
@@ -146,8 +191,10 @@ def draft_payload(manifest_sha256, manifest, q7="stop", q7_answered=False, q7_us
                                    "pass exactly (load_prereg and guard accept all 64 anchors to the last bit; for seeds "
                                    "0-4 load_seed matches every log). v7 adds no tolerance to any gate check."),
                        departure="declared operational departure, accepted by the user (Q1)"),
-        lanes=dict(default=12, max=16, machine="the user's laptop only", cloud_after_handoff=0, wsl_memory_gb=48,
+        lanes=dict(default=12, max=16, machine="the user's laptop only (since C12: the Framework Desktop)",
+                   cloud_after_handoff=0, wsl_memory_gb=24,
                    rule="the lane count may be changed (1-16) on any restart; it changes no number"),
+        machine=MACHINE,
         memory=dict(unmeasured_kind_reservation_gib=7, measured_factor=1.25,
                     policy_kinds=["policy_train", "policy_no_stall_train"],
                     policy_kinds_reservation="the larger of 7 GiB and twice the largest VmHWM measured on the laptop",

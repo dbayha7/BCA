@@ -75,7 +75,7 @@ GPU_ENV_RECORD_REL = "outputs/shift/beyond-the-data/stage2_gpu/env_record.json"
 GPU_PY = "/root/bcagpu/bin/python"
 APPROVAL_COMMIT = K.V6["approval_commit"]
 MIN_FREE_DISK_GB = 20
-MIN_WSL_MEMORY_GIB = 40                 # README step 0 gives WSL 48 GB (it shows as about 47 GiB); below this, a warning
+MIN_WSL_MEMORY_GIB = 20                 # README step 0 gives WSL 24 GB (about 23.5 GiB; C12); below this, a warning
 LANE_CANDIDATES = 16
 # ST9 clock (C6 step 3, C11): the laptop's clock against the Date of an HTTPS reply. The full self-test runs no probe when
 # they differ by more than this (the probe records' times are compared with the cloud's in the handoff); the short
@@ -494,7 +494,7 @@ def run_check_probe(cfg, name, cpu, seed=None, timeout=1800):
     stubs = cfg.extra.get("stub_probes") if cfg.test else None
     if stubs is not None:
         res = stubs.get(name if seed is None else f"{name}:{seed}", stubs.get(name))
-        return dict(ok=True, **res) if isinstance(res, dict) and "error" not in res else dict(ok=False, **(res or {}))
+        return {"ok": True, **res} if isinstance(res, dict) and "error" not in res else {**(res or {}), "ok": False}
     cmd = ["env", "-i"] + [f"{k}={v}" for k, v in K.PHASE_ENV.items()] + \
         ["nice", "-n", "5", "taskset", "-c", str(cpu), K.PYTHON, str(Path(__file__)), "--probe", name]
     if seed is not None:
@@ -507,7 +507,9 @@ def run_check_probe(cfg, name, cpu, seed=None, timeout=1800):
     if done.returncode != 0 or not lines:
         tail = (done.stderr or done.stdout).strip().splitlines()[-3:]
         return dict(ok=False, error=" | ".join(tail)[:600] or f"exit {done.returncode}")
-    return dict(ok=True, **json.loads(lines[-1]))
+    # a probe that reports its own verdict (the constants probe returns ok and why) keeps it; ok=True only says the
+    # process ran (found on the Framework Desktop's first full self-test, 15 Oct 2026: dict(ok=True, **res) raised)
+    return {"ok": True, **json.loads(lines[-1])}
 
 
 def run_parallel(cfg, jobs):
@@ -1123,7 +1125,7 @@ def resources(cfg, r, full, cpu):
     low_mem = total / RN.GIB < MIN_WSL_MEMORY_GIB
     r.add("INFO" if free >= MIN_FREE_DISK_GB and not low_mem else "WARN", "ST9 resources",
           f"WSL memory {total / RN.GIB:.1f} GiB (available {avail / RN.GIB:.1f})"
-          + (f": the 48 GB setting of README step 0 is not in effect (run 'wsl --shutdown' in PowerShell, then open "
+          + (f": the 24 GB setting of README step 0 is not in effect (run 'wsl --shutdown' in PowerShell, then open "
              f"Ubuntu again); fewer phases will run at once" if low_mem else "")
           + f"; free disk {free:.1f} GB (at least {MIN_FREE_DISK_GB} GB wanted)")
     p3 = r.data.get("p3") or {}

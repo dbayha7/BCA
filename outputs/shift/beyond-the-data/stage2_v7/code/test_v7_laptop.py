@@ -1853,5 +1853,37 @@ class ReturnTests(Tmp):
         self.assertIn("FAIL the constants facts hold", text)
 
 
+class CheckProbeResultTests(unittest.TestCase):
+    """run_check_probe with a probe that reports its own 'ok' (the constants probe returns ok and why). The first full
+    self-test on the Framework Desktop (15 Oct 2026) raised 'dict() got multiple values for keyword argument ok'."""
+
+    def run_with_stdout(self, payload):
+        from types import SimpleNamespace
+        done = subprocess.CompletedProcess(args=[], returncode=0, stdout="noise\n" + json.dumps(payload) + "\n",
+                                           stderr="")
+        real = ST.subprocess.run
+        ST.subprocess.run = lambda *a, **k: done
+        try:
+            return ST.run_check_probe(SimpleNamespace(test=False, extra={}), "constants", 0)
+        finally:
+            ST.subprocess.run = real
+
+    def test_probe_verdict_is_kept(self):
+        bad = self.run_with_stdout(dict(ok=False, why="A beyond tolerance", summary={"max_abs_dA": 1.0}))
+        self.assertIs(bad["ok"], False)
+        self.assertEqual(bad["why"], "A beyond tolerance")
+        good = self.run_with_stdout(dict(ok=True, why=None, summary={"max_abs_dA": 0.0}))
+        self.assertIs(good["ok"], True)
+        plain = self.run_with_stdout(dict(gate_accepts=True, cpus=1))
+        self.assertIs(plain["ok"], True)
+
+    def test_stub_with_own_ok(self):
+        from types import SimpleNamespace
+        cfg = SimpleNamespace(test=True, extra=dict(stub_probes=dict(constants=dict(ok=False, why="beyond"),
+                                                                     gate=dict(error="refused", ok=True))))
+        self.assertIs(ST.run_check_probe(cfg, "constants", 0)["ok"], False)
+        self.assertIs(ST.run_check_probe(cfg, "gate", 0)["ok"], False)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
