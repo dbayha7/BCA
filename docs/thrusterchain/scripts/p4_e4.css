@@ -1,0 +1,42 @@
+/* ===================================================================================================================
+   Page pass 4, edit 4: Results (the difficulty levels, the nine world checks rebuilt) and the weighting test's
+   exploratory results. Colours come only from the theme tokens; a colour always goes with its label. Red marks the
+   stall and nothing else, so a failed mark or a stopped test is marked in ink, by its words.
+   =================================================================================================================== */
+/* the four situations as difficulty levels: each row carries its situation's colour edge (tr[data-sit]) */
+table.p4-ladder { min-width: 900px; }
+table.p4-ladder td:first-child { font-weight: 600; min-width: 10.5em; }
+table.p4-ladder td:nth-child(2) { min-width: 7.5em; }
+table.p4-ladder td:nth-child(3) { min-width: 11em; }
+table.p4-ladder th.n { min-width: 7.2em; }
+/* the nine world checks: every value carries its own words, so every cell is left-aligned body text near its label,
+   and the question never breaks inside a word */
+table.p4-world { min-width: 900px; }
+table.p4-world th:nth-child(1) { width: 25%; }
+table.p4-world th:nth-child(2) { width: 30%; }
+table.p4-world th:nth-child(3), table.p4-world th:nth-child(4) { width: 17.5%; }
+table.p4-world th:nth-child(5) { width: 10%; }
+table.p4-world td { text-align: left; }
+table.p4-world td:first-child { font-weight: 600; -webkit-hyphens: manual; hyphens: manual; overflow-wrap: normal;
+  word-break: normal; }
+table.p4-world td:last-child .tag { margin-right: 2px; }
+/* the weighting test's two exploratory tables */
+table.p4-iwcov { min-width: 800px; }
+table.p4-iwret { min-width: 800px; }
+table.p4-iwcov td:first-child, table.p4-iwret td:first-child { font-weight: 600; min-width: 8.6em; }
+/* a chip or a tag inside justified running text keeps its own words left-aligned (no stretched gaps inside it) */
+.iw-chip, .tag { text-align: left; -webkit-hyphens: manual; hyphens: manual; }
+/* the test-setting table: each row wears the colour its test wears in the density chart (training green, mild
+   neutral, strong orange), beside its name */
+tr[data-iw="mild"] > td:first-child { box-shadow: inset 4px 0 0 var(--iw-mild); padding-left: 14px; }
+/* a failed mark's dot: a neutral ring, not the stall's red (the word "fail" says it) */
+.iw-chip.fail::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink-2); }
+/* the weighting test's removal is the 80% hold, drawn neutral (the main test's removal is the full-throttle gold) */
+.stepchip[data-step="remove"][data-k="hold"] { --bar: var(--hatch), var(--surface-2); }
+.finding > .stepnote { margin: 2px 0 2px; }
+@media (max-width: 560px) {
+  table.stack.p4-ladder td:first-child, table.stack.p4-ladder td:nth-child(2), table.stack.p4-ladder td:nth-child(3),
+  table.stack.p4-iwcov td:first-child, table.stack.p4-iwret td:first-child { min-width: 0; }
+  table.stack.p4-world td:first-child { font-size: 15.5px; }
+}
+@media (forced-colors: active) { .iw-chip.fail::before { forced-color-adjust: none; } }

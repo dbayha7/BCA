@@ -1,0 +1,4989 @@
+{
+ "about": "Facts and chart data for ThrusterChain page pass 4. Read with notes/p4_facts.md. Every number here was computed by scripts/p4_facts_compute.py, p4_facts_extra.py and p4_facts_build.py (read only) or read from the named source file. Rounded for display; recompute from the scripts for full precision.",
+ "made": "2026-10-13",
+ "conventions": {
+  "thruster_sign": "Commands run from -1 to 1. Negative pushes upstream, against the water. Thruster 1's full throttle is -1. 'Past 80%' means |a| > 0.800000011920929 (the float32 knee); a command of exactly 80% does not stall.",
+  "histogram_bins": "50 bins. Signed: edges linspace(-1, 1, 51) with the edges at -0.8 and +0.8 set to -/+0.800000011920929; negative bins are [lo, hi), positive bins (lo, hi], 0 goes to bin 25 [0, 0.04]. Magnitude |a|: edges linspace(0, 1, 51) with the 0.8 edge set to the knee; bins (lo, hi], 0 goes to bin 0. So bins 0-4 (signed) and 45-49 (signed) and 40-49 (magnitude) hold exactly the commands past 80%.",
+  "situations": {
+   "recorded": "recorded conditions",
+   "strong_current": "strong current",
+   "big_waves": "big waves",
+   "big_kicks": "big starting pushes"
+  }
+ },
+ "verified_claims": [
+  {
+   "claim": "Only 60 of the 42,500 kept training rows go past 80% (main test, densest-15% removal)",
+   "verdict": "verified",
+   "value": {
+    "kept_rows": 42500,
+    "past80_any_thruster": 60,
+    "share": 0.001412
+   },
+   "detail": "All 60 are thruster 1 pushing upstream past 80% (none of thrusters 2-4 ever goes past 80% in the data), and all 60 are the recording controller's full-throttle commands that lie outside the removed ball (0.89% of the 6,712 full-throttle commands survive).",
+   "source": "design seed 900, regenerated with experiments/shift/dataset.generate(900) + shift.define_gap; page #shift"
+  },
+  {
+   "claim": "93.7% of strong-current states are in the full-throttle region",
+   "verdict": "verified",
+   "value": 0.93696,
+   "detail": "Share of the 100,000 visited states (1,000 bank starts x 100 steps) with c + w1 > 0.565. The push does not depend on the controller, so it is the same for every controller. Recorded conditions 27.86%, big waves 39.61%, big starting pushes 27.86% (same current and waves as recorded).",
+   "source": "truth.bank_rollout on thruster_chain.bank_starts; page #shift table column 3"
+  },
+  {
+   "claim": "The rising-thrust controller scores -54.1 points in strong current",
+   "verdict": "verified",
+   "value": {
+    "mean_return": -335.2213,
+    "points": -54.13
+   },
+   "detail": "Stalling world. It goes past 80% on 84.0% of the states it visits there.",
+   "source": "recomputed by bank rollout; page #reference-scores"
+  },
+  {
+   "claim": "Anchors -79.80 and -26.36",
+   "verdict": "verified",
+   "value": {
+    "recording": -79.7996,
+    "stall_aware": -26.36
+   },
+   "detail": "Average 100-step return over the 1,000 recorded-conditions bank starts, stalling world: the recording controller (0 points) and the stall-aware controller (100 points). Recomputed: -79.7996 and -26.3600.",
+   "source": "/root/bca-shift/runs/shift/pre/stage0_base.json record.anchors; recomputed"
+  },
+  {
+   "claim": "Push 0.65 at 90%, 0.5 at full throttle",
+   "verdict": "verified",
+   "value": {
+    "at_90": 0.6500000298023223,
+    "at_100": 0.5000000298023224
+   },
+   "detail": "thrust(a) = sign(a)(0.8 - 1.5(|a| - 0.8)) past the knee; because the knee is the float32 of 0.8, the exact values are 3e-8 above the round numbers (0.65000003, 0.50000003).",
+   "source": "experiments/shift/thruster_chain.py thrust()"
+  },
+  {
+   "claim": "The water's push points upstream on 20.3% of big-wave states",
+   "verdict": "verified",
+   "value": 0.20343,
+   "detail": "Push c + w1 < 0. Range over visited states -0.595 to 1.389 (page: -0.6 to 1.4). Recorded conditions: 6.13% upstream, range -0.295 to 1.089; strong current: never upstream, range 0.304 to 1.492.",
+   "source": "bank rollout"
+  },
+  {
+   "claim": "Stage 1: a penalty placed by the exact one-step error won back 93.9 of the 98.9 points lost in strong current",
+   "verdict": "98.9 verified; 93.9 taken from the page (raw Stage 1 outputs are not on this machine)",
+   "value": {
+    "harm": 98.93,
+    "recovered": 93.9
+   },
+   "detail": "The 98.9 is the return-cost check's harm in strong current at critic weight 5 (seeds 95.2-102.8). The 93.9 (seeds 83.4 to 103.9) is in the page's Stage 1 table (#beyond-the-data); its run outputs (runs/shift_explore/room/) were made in a cloud session and are not in WSL or the work folder. Precise wording: the penalty, at training states and at the actor's own command, was [delta*(s, actor's command) - delta*(s, recorded command)]+, how much more the critic's exact one-step error at the actor's command exceeds that at the recorded command, counted only when positive (outputs/shift/beyond-the-data/stage1/README.md).",
+   "source": "outputs/shift/stop-report/check2_return/alpha5/pooled.json; page #beyond-the-data"
+  },
+  {
+   "claim": "Harm by situation 5.8, 11.8, 16.6, 98.9 points",
+   "verdict": "verified",
+   "value": {
+    "recorded": 5.81,
+    "strong_current": 98.93,
+    "big_waves": 16.58,
+    "big_kicks": 11.79
+   },
+   "detail": "recorded conditions 5.8, big starting pushes 11.8, big waves 16.6, strong current 98.9: the actor of the full-log critic minus the actor of the critic trained after the densest-15% removal, critic weight 5, mean of seeds 0-4.",
+   "source": "outputs/shift/stop-report/check2_return/alpha5/pooled.json situations.*.harm"
+  },
+  {
+   "claim": "BCA's own lower-edge penalty is 1/30 to 1/160 of the perfect one and barely tracks it",
+   "verdict": "verified (wording: penalty, not band)",
+   "value": {
+    "random": {
+     "ratio": 0.03022,
+     "one_over": 33.1,
+     "correlation": -0.167
+    },
+    "medium-replay": {
+     "ratio": 0.03049,
+     "one_over": 32.8,
+     "correlation": -0.125
+    },
+    "medium": {
+     "ratio": 0.032,
+     "one_over": 31.2,
+     "correlation": -0.033
+    },
+    "medium-expert": {
+     "ratio": 0.01721,
+     "one_over": 58.1,
+     "correlation": 0.212
+    },
+    "expert": {
+     "ratio": 0.00615,
+     "one_over": 162.5,
+     "correlation": 0.289
+    }
+   },
+   "detail": "Measured at the actor's commands on training rows: BCA's width there minus its width at the recorded command, against the same penalty built from the critic's exact one-step error. 1/31-1/33 on the three lower qualities, 1/58 on medium-expert, 1/163 on expert; row-by-row correlation -0.17 to 0.29 (quality means).",
+   "source": "runs/shift_iw_v5/<quality>/report/report.json marks.L2.proxy_check"
+  },
+  {
+   "claim": "Version-5 data: no thruster-1 commands past 80% in the expert data; 3.6-9.9% in the other qualities, all random",
+   "verdict": "partly verified: the 'none' and 'all random' parts hold; the 3.6-9.9% range does not reproduce exactly (see value)",
+   "value": {
+    "random": {
+     "all_up": {
+      "min": 0.0998,
+      "max": 0.10106,
+      "mean": 0.100292
+     },
+     "all_down": {
+      "min": 0.09934,
+      "max": 0.1004,
+      "mean": 0.09975599999999998
+     },
+     "kept_up": {
+      "min": 0.0999419058875378,
+      "max": 0.10121611604191293,
+      "mean": 0.1004310703456009
+     },
+     "kept_down": {
+      "min": 0.09949122666453009,
+      "max": 0.10057500050087152,
+      "mean": 0.09991028329689347
+     },
+     "kept_any_dir": {
+      "min": 0.1994631840397404,
+      "max": 0.20179111654278445,
+      "mean": 0.20034135364249436
+     },
+     "all_any_dir": {
+      "min": 0.19916,
+      "max": 0.20146,
+      "mean": 0.200048
+     },
+     "random_among_up": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "random_among_down": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "kept_share_of_train": {
+      "min": 0.99826,
+      "max": 0.99876,
+      "mean": 0.998456
+     },
+     "seed0_all_up": 0.0998,
+     "seed0_kept_up": 0.0999419058875378
+    },
+    "medium-replay": {
+     "all_up": {
+      "min": 0.08212,
+      "max": 0.08426,
+      "mean": 0.08340399999999999
+     },
+     "all_down": {
+      "min": 0.08136,
+      "max": 0.08358,
+      "mean": 0.0824
+     },
+     "kept_up": {
+      "min": 0.08435195266758427,
+      "max": 0.08643191332184191,
+      "mean": 0.08561089880556513
+     },
+     "kept_down": {
+      "min": 0.08357129650553649,
+      "max": 0.0857547402117705,
+      "mean": 0.08459277977513195
+     },
+     "kept_any_dir": {
+      "min": 0.16792324917312076,
+      "max": 0.1721866535336124,
+      "mean": 0.1702036785806971
+     },
+     "all_any_dir": {
+      "min": 0.16348,
+      "max": 0.16784,
+      "mean": 0.165804
+     },
+     "random_among_up": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "random_among_down": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "kept_share_of_train": {
+      "min": 0.97254,
+      "max": 0.97572,
+      "mean": 0.9740800000000001
+     },
+     "seed0_all_up": 0.08362,
+     "seed0_kept_up": 0.08583514723397265
+    },
+    "medium": {
+     "all_up": {
+      "min": 0.06452,
+      "max": 0.06586,
+      "mean": 0.065232
+     },
+     "all_down": {
+      "min": 0.0643,
+      "max": 0.06536,
+      "mean": 0.06482000000000002
+     },
+     "kept_up": {
+      "min": 0.06797589447511485,
+      "max": 0.06939438015135227,
+      "mean": 0.06867820543473377
+     },
+     "kept_down": {
+      "min": 0.06774411058198829,
+      "max": 0.0687971032798619,
+      "mean": 0.06825258692846407
+     },
+     "kept_any_dir": {
+      "min": 0.13572000505710313,
+      "max": 0.13773449987381173,
+      "mean": 0.13693079236319786
+     },
+     "all_any_dir": {
+      "min": 0.12882,
+      "max": 0.13098,
+      "mean": 0.130052
+     },
+     "random_among_up": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "random_among_down": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "kept_share_of_train": {
+      "min": 0.94878,
+      "max": 0.95096,
+      "mean": 0.9497039999999999
+     },
+     "seed0_all_up": 0.06586,
+     "seed0_kept_up": 0.06939438015135227
+    },
+    "medium-expert": {
+     "all_up": {
+      "min": 0.03246,
+      "max": 0.0353,
+      "mean": 0.033707999999999995
+     },
+     "all_down": {
+      "min": 0.03254,
+      "max": 0.03416,
+      "mean": 0.033271999999999996
+     },
+     "kept_up": {
+      "min": 0.03614538327914124,
+      "max": 0.03896161232643871,
+      "mean": 0.03736423331029796
+     },
+     "kept_down": {
+      "min": 0.036217527769739334,
+      "max": 0.037951338740139985,
+      "mean": 0.036885745126981256
+     },
+     "kept_any_dir": {
+      "min": 0.07244666161863614,
+      "max": 0.07643595156093767,
+      "mean": 0.07424997843727921
+     },
+     "all_any_dir": {
+      "min": 0.06506,
+      "max": 0.0691,
+      "mean": 0.06698
+     },
+     "random_among_up": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "random_among_down": {
+      "min": 1.0,
+      "max": 1.0,
+      "mean": 1.0
+     },
+     "kept_share_of_train": {
+      "min": 0.89804,
+      "max": 0.90744,
+      "mean": 0.902012
+     },
+     "seed0_all_up": 0.0353,
+     "seed0_kept_up": 0.03896161232643871
+    },
+    "expert": {
+     "all_up": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0
+     },
+     "all_down": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0
+     },
+     "kept_up": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0
+     },
+     "kept_down": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0
+     },
+     "kept_any_dir": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0
+     },
+     "all_any_dir": {
+      "min": 0.0,
+      "max": 0.0,
+      "mean": 0.0
+     },
+     "random_among_up": null,
+     "random_among_down": null,
+     "kept_share_of_train": {
+      "min": 0.85,
+      "max": 0.85,
+      "mean": 0.85
+     },
+     "seed0_all_up": 0.0,
+     "seed0_kept_up": 0.0
+    }
+   },
+   "detail": "Expert: zero training rows past 80% on any thruster, in every seed. Other qualities, training split, thruster 1 past 80% upstream (a1 < -0.8, the direction of the hold): random 9.98-10.11%, medium-replay 8.21-8.43%, medium 6.45-6.59%, medium-expert 3.25-3.53% of rows (all rows before the removal); on the rows kept after the hold removal 3.61-3.90% (medium-expert) to 9.99-10.12% (random). About as many go past 80% downstream (a1 > +0.8). Every one of these rows is a uniform random command (infos/random = True on 100% of them). Suggested wording: 'none in the expert data; in the other qualities about 3% to 10% of training steps push thruster 1 upstream past 80%, and every one of them is a uniform random command'.",
+   "source": "runs/shift_iw_v5/<quality>/data/seed<k>/train_law.hdf5"
+  }
+ ],
+ "thrust_and_cost": {
+  "formula": {
+   "push_stall": "f(a) = a for |a| <= 0.8; sign(a)(0.8 - 1.5(|a| - 0.8)) past 0.8",
+   "push_no_stall": "f(a) = a",
+   "throttle_cost": "0.3 a^2 per thruster, on the clipped command, in both worlds, even while stalling",
+   "knee": 0.800000011920929,
+   "best_push_stalling_world": "0.8, at 80% throttle"
+  },
+  "table": [
+   {
+    "throttle": 0.0,
+    "push_stall": 0.0,
+    "push_no_stall": 0.0,
+    "throttle_cost": 0.0,
+    "push_minus_cost_stall": 0.0,
+    "stalls": false
+   },
+   {
+    "throttle": 0.05,
+    "push_stall": 0.05,
+    "push_no_stall": 0.05,
+    "throttle_cost": 0.00075,
+    "push_minus_cost_stall": 0.04925,
+    "stalls": false
+   },
+   {
+    "throttle": 0.1,
+    "push_stall": 0.1,
+    "push_no_stall": 0.1,
+    "throttle_cost": 0.003,
+    "push_minus_cost_stall": 0.097,
+    "stalls": false
+   },
+   {
+    "throttle": 0.15,
+    "push_stall": 0.15,
+    "push_no_stall": 0.15,
+    "throttle_cost": 0.00675,
+    "push_minus_cost_stall": 0.14325,
+    "stalls": false
+   },
+   {
+    "throttle": 0.2,
+    "push_stall": 0.2,
+    "push_no_stall": 0.2,
+    "throttle_cost": 0.012,
+    "push_minus_cost_stall": 0.188,
+    "stalls": false
+   },
+   {
+    "throttle": 0.25,
+    "push_stall": 0.25,
+    "push_no_stall": 0.25,
+    "throttle_cost": 0.01875,
+    "push_minus_cost_stall": 0.23125,
+    "stalls": false
+   },
+   {
+    "throttle": 0.3,
+    "push_stall": 0.3,
+    "push_no_stall": 0.3,
+    "throttle_cost": 0.027,
+    "push_minus_cost_stall": 0.273,
+    "stalls": false
+   },
+   {
+    "throttle": 0.35,
+    "push_stall": 0.35,
+    "push_no_stall": 0.35,
+    "throttle_cost": 0.03675,
+    "push_minus_cost_stall": 0.31325,
+    "stalls": false
+   },
+   {
+    "throttle": 0.4,
+    "push_stall": 0.4,
+    "push_no_stall": 0.4,
+    "throttle_cost": 0.048,
+    "push_minus_cost_stall": 0.352,
+    "stalls": false
+   },
+   {
+    "throttle": 0.45,
+    "push_stall": 0.45,
+    "push_no_stall": 0.45,
+    "throttle_cost": 0.06075,
+    "push_minus_cost_stall": 0.38925,
+    "stalls": false
+   },
+   {
+    "throttle": 0.5,
+    "push_stall": 0.5,
+    "push_no_stall": 0.5,
+    "throttle_cost": 0.075,
+    "push_minus_cost_stall": 0.425,
+    "stalls": false
+   },
+   {
+    "throttle": 0.55,
+    "push_stall": 0.55,
+    "push_no_stall": 0.55,
+    "throttle_cost": 0.09075,
+    "push_minus_cost_stall": 0.45925,
+    "stalls": false
+   },
+   {
+    "throttle": 0.6,
+    "push_stall": 0.6,
+    "push_no_stall": 0.6,
+    "throttle_cost": 0.108,
+    "push_minus_cost_stall": 0.492,
+    "stalls": false
+   },
+   {
+    "throttle": 0.65,
+    "push_stall": 0.65,
+    "push_no_stall": 0.65,
+    "throttle_cost": 0.12675,
+    "push_minus_cost_stall": 0.52325,
+    "stalls": false
+   },
+   {
+    "throttle": 0.7,
+    "push_stall": 0.7,
+    "push_no_stall": 0.7,
+    "throttle_cost": 0.147,
+    "push_minus_cost_stall": 0.553,
+    "stalls": false
+   },
+   {
+    "throttle": 0.75,
+    "push_stall": 0.75,
+    "push_no_stall": 0.75,
+    "throttle_cost": 0.16875,
+    "push_minus_cost_stall": 0.58125,
+    "stalls": false
+   },
+   {
+    "throttle": 0.8,
+    "push_stall": 0.8,
+    "push_no_stall": 0.8,
+    "throttle_cost": 0.192,
+    "push_minus_cost_stall": 0.608,
+    "stalls": false
+   },
+   {
+    "throttle": 0.85,
+    "push_stall": 0.72500003,
+    "push_no_stall": 0.85,
+    "throttle_cost": 0.21675,
+    "push_minus_cost_stall": 0.50825,
+    "stalls": true
+   },
+   {
+    "throttle": 0.9,
+    "push_stall": 0.65000003,
+    "push_no_stall": 0.9,
+    "throttle_cost": 0.243,
+    "push_minus_cost_stall": 0.407,
+    "stalls": true
+   },
+   {
+    "throttle": 0.95,
+    "push_stall": 0.57500003,
+    "push_no_stall": 0.95,
+    "throttle_cost": 0.27075,
+    "push_minus_cost_stall": 0.30425,
+    "stalls": true
+   },
+   {
+    "throttle": 1.0,
+    "push_stall": 0.50000003,
+    "push_no_stall": 1.0,
+    "throttle_cost": 0.3,
+    "push_minus_cost_stall": 0.2,
+    "stalls": true
+   }
+  ],
+  "note": "push minus cost is shown only as a convenience for a slider readout; push and cost are in different units of the problem (push moves the floats; the cost is subtracted from the reward), so the page should not call it a net value without saying so."
+ },
+ "stall_chart": {
+  "signed_edges": [
+   -1.0,
+   -0.96,
+   -0.92,
+   -0.88,
+   -0.84,
+   -0.800000011920929,
+   -0.76,
+   -0.72,
+   -0.6799999999999999,
+   -0.64,
+   -0.6,
+   -0.56,
+   -0.52,
+   -0.48,
+   -0.43999999999999995,
+   -0.4,
+   -0.36,
+   -0.31999999999999995,
+   -0.28,
+   -0.24,
+   -0.19999999999999996,
+   -0.16000000000000003,
+   -0.12,
+   -0.07999999999999996,
+   -0.040000000000000036,
+   0.0,
+   0.040000000000000036,
+   0.08000000000000007,
+   0.1200000000000001,
+   0.15999999999999992,
+   0.19999999999999996,
+   0.24,
+   0.28,
+   0.32000000000000006,
+   0.3600000000000001,
+   0.40000000000000013,
+   0.43999999999999995,
+   0.48,
+   0.52,
+   0.56,
+   0.6000000000000001,
+   0.6400000000000001,
+   0.6799999999999999,
+   0.72,
+   0.76,
+   0.800000011920929,
+   0.8400000000000001,
+   0.8800000000000001,
+   0.9199999999999999,
+   0.96,
+   1.0
+  ],
+  "magnitude_edges": [
+   0.0,
+   0.02,
+   0.04,
+   0.06,
+   0.08,
+   0.1,
+   0.12,
+   0.14,
+   0.16,
+   0.18,
+   0.2,
+   0.22,
+   0.24,
+   0.26,
+   0.28,
+   0.3,
+   0.32,
+   0.34,
+   0.36,
+   0.38,
+   0.4,
+   0.42,
+   0.44,
+   0.46,
+   0.48,
+   0.5,
+   0.52,
+   0.54,
+   0.56,
+   0.58,
+   0.6,
+   0.62,
+   0.64,
+   0.66,
+   0.68,
+   0.7000000000000001,
+   0.72,
+   0.74,
+   0.76,
+   0.78,
+   0.800000011920929,
+   0.8200000000000001,
+   0.84,
+   0.86,
+   0.88,
+   0.9,
+   0.92,
+   0.9400000000000001,
+   0.96,
+   0.98,
+   1.0
+  ],
+  "main_test_seed900_thruster1": {
+   "source": "design seed 900 training split (50,000 rows); kept = after the densest-15% removal (42,500 rows); removed = the 7,500 deleted rows",
+   "totals": {
+    "full": 50000,
+    "kept": 42500,
+    "removed": 7500
+   },
+   "signed": {
+    "full": [
+     6080,
+     600,
+     31,
+     1,
+     0,
+     113,
+     669,
+     1319,
+     1800,
+     2014,
+     2398,
+     2517,
+     2546,
+     2399,
+     2410,
+     2284,
+     2181,
+     2108,
+     1951,
+     1853,
+     1789,
+     1583,
+     1463,
+     1324,
+     1283,
+     1032,
+     990,
+     891,
+     776,
+     676,
+     599,
+     528,
+     426,
+     381,
+     277,
+     241,
+     190,
+     111,
+     72,
+     58,
+     23,
+     10,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "kept": [
+     60,
+     0,
+     0,
+     0,
+     0,
+     84,
+     567,
+     1131,
+     1618,
+     1849,
+     2297,
+     2440,
+     2542,
+     2399,
+     2410,
+     2284,
+     2181,
+     2108,
+     1951,
+     1853,
+     1789,
+     1583,
+     1463,
+     1324,
+     1283,
+     1032,
+     990,
+     891,
+     776,
+     676,
+     599,
+     528,
+     426,
+     381,
+     277,
+     241,
+     190,
+     111,
+     72,
+     58,
+     23,
+     10,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "removed": [
+     6020,
+     600,
+     31,
+     1,
+     0,
+     29,
+     102,
+     188,
+     182,
+     165,
+     101,
+     77,
+     4,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "magnitude": {
+    "full": [
+     1179,
+     1136,
+     1133,
+     1181,
+     1184,
+     1170,
+     1181,
+     1178,
+     1270,
+     1195,
+     1200,
+     1252,
+     1212,
+     1267,
+     1292,
+     1242,
+     1287,
+     1275,
+     1277,
+     1284,
+     1339,
+     1312,
+     1259,
+     1330,
+     1352,
+     1305,
+     1319,
+     1270,
+     1241,
+     1215,
+     1034,
+     1003,
+     938,
+     872,
+     736,
+     585,
+     420,
+     250,
+     100,
+     13,
+     0,
+     0,
+     0,
+     1,
+     4,
+     27,
+     122,
+     478,
+     1119,
+     4961
+    ],
+    "kept": [
+     1179,
+     1136,
+     1133,
+     1181,
+     1184,
+     1170,
+     1181,
+     1178,
+     1270,
+     1195,
+     1200,
+     1252,
+     1212,
+     1267,
+     1292,
+     1242,
+     1287,
+     1275,
+     1277,
+     1284,
+     1339,
+     1312,
+     1259,
+     1330,
+     1352,
+     1301,
+     1296,
+     1216,
+     1200,
+     1155,
+     962,
+     910,
+     856,
+     772,
+     647,
+     486,
+     363,
+     205,
+     72,
+     12,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     59
+    ],
+    "removed": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     4,
+     23,
+     54,
+     41,
+     60,
+     72,
+     93,
+     82,
+     100,
+     89,
+     99,
+     57,
+     45,
+     28,
+     1,
+     0,
+     0,
+     0,
+     1,
+     4,
+     27,
+     122,
+     478,
+     1118,
+     4902
+    ]
+   },
+   "past80": {
+    "full": 6712,
+    "kept": 60
+   },
+   "exactly_full_throttle_minus1": {
+    "full": 3326,
+    "kept": 49
+   },
+   "upstream_share_full": 0.8543,
+   "positive_max": 0.7315,
+   "note": "Every past-80% command is upstream (negative). The removal deletes 6,652 of the 6,712 past-80% rows; the 60 that stay sit at |a1| 0.96-1.0."
+  },
+  "weighting_test_expert_seed0_thruster1": {
+   "source": "runs/shift_iw_v5/expert/data/seed0/train_law.hdf5, training split; hold removed = rows outside truth/in_ball",
+   "totals": {
+    "all": 50000,
+    "hold_removed": 42500,
+    "removed": 7500,
+    "hold_rows": 4950
+   },
+   "signed": {
+    "all": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     5378,
+     1303,
+     1681,
+     1928,
+     2212,
+     2345,
+     2400,
+     2354,
+     2317,
+     2281,
+     2185,
+     2126,
+     2040,
+     1977,
+     1796,
+     1789,
+     1612,
+     1573,
+     1405,
+     1291,
+     1133,
+     1098,
+     970,
+     865,
+     710,
+     667,
+     552,
+     473,
+     393,
+     323,
+     283,
+     194,
+     137,
+     96,
+     63,
+     29,
+     17,
+     3,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "hold_removed": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     414,
+     1159,
+     1454,
+     1607,
+     1874,
+     1981,
+     2063,
+     2066,
+     2072,
+     2132,
+     2087,
+     2101,
+     2040,
+     1977,
+     1796,
+     1789,
+     1612,
+     1573,
+     1405,
+     1291,
+     1133,
+     1098,
+     970,
+     865,
+     710,
+     667,
+     552,
+     473,
+     393,
+     323,
+     283,
+     194,
+     137,
+     96,
+     63,
+     29,
+     17,
+     3,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "removed": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     4964,
+     144,
+     227,
+     321,
+     338,
+     364,
+     337,
+     288,
+     245,
+     149,
+     98,
+     25,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "magnitude": {
+    "all": [
+     1194,
+     1230,
+     1275,
+     1228,
+     1275,
+     1268,
+     1222,
+     1255,
+     1242,
+     1257,
+     1201,
+     1262,
+     1257,
+     1272,
+     1213,
+     1300,
+     1237,
+     1282,
+     1218,
+     1290,
+     1294,
+     1270,
+     1257,
+     1254,
+     1293,
+     1198,
+     1244,
+     1252,
+     1221,
+     1187,
+     1139,
+     1102,
+     992,
+     953,
+     881,
+     803,
+     740,
+     564,
+     358,
+     5020,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "hold_removed": [
+     1194,
+     1230,
+     1275,
+     1228,
+     1275,
+     1268,
+     1222,
+     1255,
+     1242,
+     1257,
+     1201,
+     1262,
+     1257,
+     1272,
+     1213,
+     1300,
+     1229,
+     1265,
+     1178,
+     1232,
+     1216,
+     1199,
+     1150,
+     1116,
+     1158,
+     1045,
+     1091,
+     1068,
+     1039,
+     1005,
+     958,
+     945,
+     842,
+     782,
+     758,
+     699,
+     650,
+     510,
+     334,
+     80,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "removed": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     8,
+     17,
+     40,
+     58,
+     78,
+     71,
+     107,
+     138,
+     135,
+     153,
+     153,
+     184,
+     182,
+     182,
+     181,
+     157,
+     150,
+     171,
+     123,
+     104,
+     90,
+     54,
+     24,
+     4940,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "hold_value": -0.800000011920929,
+   "past80": {
+    "all": 0,
+    "hold_removed": 0
+   },
+   "note": "The 80% hold is thruster 1 at exactly -0.800000011920929 (the knee): at 80%, not past it. The expert data hold no command past 80% at all."
+  }
+ },
+ "four_throttle_widget": {
+  "push_and_cost": "see thrust_and_cost; the same function for every thruster",
+  "thrusters": {
+   "1": "pushes the speeds of floats 1 and 2 (observation items 1 and 3); the only thruster on float 1",
+   "2": "floats 2 and 3 (items 3 and 5)",
+   "3": "floats 3 and 4 (items 5 and 7)",
+   "4": "floats 4 and 5 (items 7 and 9); the only thruster on float 5"
+  },
+  "one_step_push_into_speeds": {
+   "B_columns_first10": [
+    [
+     0.0,
+     0.3,
+     0.0,
+     0.3,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.3,
+     0.0,
+     0.3,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.3,
+     0.0,
+     0.3,
+     0.0,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.3,
+     0.0,
+     0.3
+    ]
+   ],
+   "water_push_column_first10": [
+    0.0,
+    0.3,
+    0.0,
+    0.3,
+    0.0,
+    0.3,
+    0.0,
+    0.3,
+    0.0,
+    0.3
+   ],
+   "note": "next state = A x + B thrust + water push: each thruster adds 0.3 x its push to the speed numbers of its two floats; the water adds 0.3 (c + w1) to every float's speed number"
+  },
+  "main_test_seed900": {
+   "percentiles_full": {
+    "thruster1": {
+     "p1": -1.0,
+     "p5": -1.0,
+     "p10": -0.979,
+     "p25": -0.602,
+     "p50": -0.398,
+     "p75": -0.15,
+     "p90": 0.091,
+     "p95": 0.227,
+     "p99": 0.434
+    },
+    "thruster2": {
+     "p1": -0.596,
+     "p5": -0.47,
+     "p10": -0.384,
+     "p25": -0.208,
+     "p50": -0.088,
+     "p75": 0.141,
+     "p90": 0.326,
+     "p95": 0.423,
+     "p99": 0.56
+    },
+    "thruster3": {
+     "p1": -0.676,
+     "p5": -0.618,
+     "p10": -0.592,
+     "p25": -0.501,
+     "p50": -0.26,
+     "p75": -0.01,
+     "p90": 0.204,
+     "p95": 0.319,
+     "p99": 0.489
+    },
+    "thruster4": {
+     "p1": -0.632,
+     "p5": -0.529,
+     "p10": -0.459,
+     "p25": -0.388,
+     "p50": -0.181,
+     "p75": 0.055,
+     "p90": 0.251,
+     "p95": 0.353,
+     "p99": 0.514
+    }
+   },
+   "percentiles_kept": {
+    "thruster1": {
+     "p1": -0.735,
+     "p5": -0.672,
+     "p10": -0.622,
+     "p25": -0.511,
+     "p50": -0.331,
+     "p75": -0.1,
+     "p90": 0.126,
+     "p95": 0.255,
+     "p99": 0.449
+    },
+    "thruster2": {
+     "p1": -0.606,
+     "p5": -0.488,
+     "p10": -0.406,
+     "p25": -0.243,
+     "p50": -0.03,
+     "p75": 0.182,
+     "p90": 0.351,
+     "p95": 0.441,
+     "p99": 0.57
+    },
+    "thruster3": {
+     "p1": -0.68,
+     "p5": -0.595,
+     "p10": -0.53,
+     "p25": -0.387,
+     "p50": -0.192,
+     "p75": 0.035,
+     "p90": 0.234,
+     "p95": 0.34,
+     "p99": 0.501
+    },
+    "thruster4": {
+     "p1": -0.639,
+     "p5": -0.541,
+     "p10": -0.467,
+     "p25": -0.317,
+     "p50": -0.115,
+     "p75": 0.097,
+     "p90": 0.279,
+     "p95": 0.374,
+     "p99": 0.524
+    }
+   },
+   "percentiles_removed": {
+    "thruster1": {
+     "p1": -1.0,
+     "p5": -1.0,
+     "p10": -1.0,
+     "p25": -1.0,
+     "p50": -0.994,
+     "p75": -0.969,
+     "p90": -0.73,
+     "p95": -0.647,
+     "p99": -0.559
+    },
+    "thruster2": {
+     "p1": -0.291,
+     "p5": -0.2,
+     "p10": -0.182,
+     "p25": -0.159,
+     "p50": -0.137,
+     "p75": -0.114,
+     "p90": -0.091,
+     "p95": -0.073,
+     "p99": 0.022
+    },
+    "thruster3": {
+     "p1": -0.659,
+     "p5": -0.634,
+     "p10": -0.623,
+     "p25": -0.603,
+     "p50": -0.582,
+     "p75": -0.559,
+     "p90": -0.532,
+     "p95": -0.49,
+     "p99": -0.377
+    },
+    "thruster4": {
+     "p1": -0.518,
+     "p5": -0.462,
+     "p10": -0.447,
+     "p25": -0.426,
+     "p50": -0.405,
+     "p75": -0.382,
+     "p90": -0.356,
+     "p95": -0.327,
+     "p99": -0.221
+    }
+   },
+   "min_max_full": {
+    "thruster1": [
+     -1.0,
+     0.7315
+    ],
+    "thruster2": [
+     -0.7662,
+     0.7211
+    ],
+    "thruster3": [
+     -0.7788,
+     0.7439
+    ],
+    "thruster4": [
+     -0.7591,
+     0.7412
+    ]
+   },
+   "share_past80_full": {
+    "thruster1": 0.13424,
+    "thruster2": 0.0,
+    "thruster3": 0.0,
+    "thruster4": 0.0
+   },
+   "share_past80_kept": {
+    "thruster1": 0.001412,
+    "thruster2": 0.0,
+    "thruster3": 0.0,
+    "thruster4": 0.0
+   },
+   "signed_hist_full": {
+    "thruster1": [
+     6080,
+     600,
+     31,
+     1,
+     0,
+     113,
+     669,
+     1319,
+     1800,
+     2014,
+     2398,
+     2517,
+     2546,
+     2399,
+     2410,
+     2284,
+     2181,
+     2108,
+     1951,
+     1853,
+     1789,
+     1583,
+     1463,
+     1324,
+     1283,
+     1032,
+     990,
+     891,
+     776,
+     676,
+     599,
+     528,
+     426,
+     381,
+     277,
+     241,
+     190,
+     111,
+     72,
+     58,
+     23,
+     10,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster2": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     5,
+     54,
+     140,
+     277,
+     409,
+     581,
+     826,
+     934,
+     1208,
+     1385,
+     1580,
+     1674,
+     1880,
+     1987,
+     3390,
+     5355,
+     3930,
+     2391,
+     2211,
+     2136,
+     2086,
+     1988,
+     1963,
+     1812,
+     1688,
+     1550,
+     1378,
+     1183,
+     1009,
+     838,
+     736,
+     529,
+     384,
+     273,
+     140,
+     70,
+     17,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster3": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     9,
+     109,
+     336,
+     851,
+     2817,
+     4580,
+     2878,
+     1895,
+     1905,
+     1984,
+     2131,
+     2223,
+     2153,
+     2228,
+     2203,
+     2102,
+     2073,
+     1847,
+     1832,
+     1765,
+     1667,
+     1495,
+     1405,
+     1267,
+     1147,
+     999,
+     897,
+     728,
+     658,
+     520,
+     434,
+     303,
+     229,
+     149,
+     103,
+     50,
+     21,
+     5,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster4": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     31,
+     99,
+     282,
+     517,
+     773,
+     1028,
+     1275,
+     2306,
+     4765,
+     4207,
+     2360,
+     2004,
+     2110,
+     2253,
+     2187,
+     2276,
+     2134,
+     2142,
+     2019,
+     2014,
+     1863,
+     1689,
+     1643,
+     1420,
+     1248,
+     1140,
+     987,
+     832,
+     695,
+     473,
+     439,
+     333,
+     200,
+     141,
+     73,
+     31,
+     10,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "signed_hist_kept": {
+    "thruster1": [
+     60,
+     0,
+     0,
+     0,
+     0,
+     84,
+     567,
+     1131,
+     1618,
+     1849,
+     2297,
+     2440,
+     2542,
+     2399,
+     2410,
+     2284,
+     2181,
+     2108,
+     1951,
+     1853,
+     1789,
+     1583,
+     1463,
+     1324,
+     1283,
+     1032,
+     990,
+     891,
+     776,
+     676,
+     599,
+     528,
+     426,
+     381,
+     277,
+     241,
+     190,
+     111,
+     72,
+     58,
+     23,
+     10,
+     2,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster2": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     5,
+     54,
+     140,
+     277,
+     409,
+     581,
+     826,
+     934,
+     1208,
+     1381,
+     1548,
+     1609,
+     1805,
+     1792,
+     1919,
+     2014,
+     2089,
+     2096,
+     2140,
+     2069,
+     2049,
+     1982,
+     1963,
+     1812,
+     1688,
+     1550,
+     1378,
+     1183,
+     1009,
+     838,
+     736,
+     529,
+     384,
+     273,
+     140,
+     70,
+     17,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster3": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     9,
+     103,
+     311,
+     629,
+     945,
+     1156,
+     1493,
+     1674,
+     1790,
+     1874,
+     2064,
+     2179,
+     2144,
+     2228,
+     2203,
+     2102,
+     2073,
+     1847,
+     1832,
+     1765,
+     1667,
+     1495,
+     1405,
+     1267,
+     1147,
+     999,
+     897,
+     728,
+     658,
+     520,
+     434,
+     303,
+     229,
+     149,
+     103,
+     50,
+     21,
+     5,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster4": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     31,
+     99,
+     282,
+     514,
+     753,
+     977,
+     1181,
+     1421,
+     1623,
+     1752,
+     1846,
+     1870,
+     2018,
+     2189,
+     2151,
+     2266,
+     2134,
+     2142,
+     2019,
+     2014,
+     1863,
+     1689,
+     1643,
+     1420,
+     1248,
+     1140,
+     987,
+     832,
+     695,
+     473,
+     439,
+     333,
+     200,
+     141,
+     73,
+     31,
+     10,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "removed_ball": {
+    "centre": [
+     -0.7655,
+     -0.1343,
+     -0.5337,
+     -0.3767
+    ],
+    "radius": 0.2691,
+    "projection_per_thruster": [
+     [
+      -1.0347,
+      -0.4964
+     ],
+     [
+      -0.4034,
+      0.1348
+     ],
+     [
+      -0.8029,
+      -0.2646
+     ],
+     [
+      -0.6458,
+      -0.1076
+     ]
+    ],
+    "note": "The ball is a 4-D region: a command is removed only if its distance to the centre, over all four throttles together, is at most the radius. The per-thruster intervals are its shadows, not the removal rule."
+   },
+   "full_throttle_pattern": [
+    -1.0,
+    -0.137,
+    -0.5849,
+    -0.4062
+   ],
+   "full_throttle_pattern_distance": 0.2418,
+   "capped_pattern": [
+    -0.8,
+    -0.137,
+    -0.5849,
+    -0.4062
+   ],
+   "capped_pattern_distance": 0.0685,
+   "normal_driving_t1_range": [
+    -0.7877,
+    0.7315
+   ],
+   "normal_driving_t1_percentiles": {
+    "p1": -0.736,
+    "p5": -0.678,
+    "p10": -0.632,
+    "p25": -0.52,
+    "p50": -0.339,
+    "p75": -0.106,
+    "p90": 0.122,
+    "p95": 0.252,
+    "p99": 0.447
+   },
+   "full_throttle_t1_percentiles": {
+    "p1": -1.0,
+    "p5": -1.0,
+    "p10": -1.0,
+    "p25": -1.0,
+    "p50": -1.0,
+    "p75": -0.979,
+    "p90": -0.961,
+    "p95": -0.95,
+    "p99": -0.929
+   }
+  },
+  "commands_on_evaluation_banks": {
+   "source": "bank rollouts (stalling world, 1,000 starts x 100 steps): 5th/50th/95th percentile of each thruster's command; share of states past 80% on any thruster; share with thruster 1 at its -80% limit (stall-aware); share of commands inside the main test's removed ball",
+   "by_situation": {
+    "recorded": {
+     "recording": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.612,
+        "p50": -0.404,
+        "p75": -0.157,
+        "p95": 0.222
+       },
+       "thruster2": {
+        "p5": -0.472,
+        "p25": -0.21,
+        "p50": -0.093,
+        "p75": 0.14,
+        "p95": 0.42
+       },
+       "thruster3": {
+        "p5": -0.619,
+        "p25": -0.507,
+        "p50": -0.269,
+        "p75": -0.019,
+        "p95": 0.319
+       },
+       "thruster4": {
+        "p5": -0.527,
+        "p25": -0.39,
+        "p50": -0.188,
+        "p75": 0.052,
+        "p95": 0.357
+       }
+      },
+      "past80_any": 0.1388,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.1553
+     },
+     "stall_aware": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -0.786,
+        "p25": -0.555,
+        "p50": -0.389,
+        "p75": -0.227,
+        "p95": 0.005
+       },
+       "thruster2": {
+        "p5": -0.178,
+        "p25": -0.095,
+        "p50": -0.051,
+        "p75": -0.005,
+        "p95": 0.088
+       },
+       "thruster3": {
+        "p5": -0.57,
+        "p25": -0.386,
+        "p50": -0.256,
+        "p75": -0.127,
+        "p95": 0.067
+       },
+       "thruster4": {
+        "p5": -0.314,
+        "p25": -0.212,
+        "p50": -0.143,
+        "p75": -0.074,
+        "p95": 0.04
+       }
+      },
+      "past80_any": 0.0,
+      "t1_at_minus80": 0.0447,
+      "any_at_80_limit": 0.0612,
+      "in_removed_ball": 0.1722
+     },
+     "rising_thrust": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.566,
+        "p50": -0.389,
+        "p75": -0.225,
+        "p95": 0.006
+       },
+       "thruster2": {
+        "p5": -0.196,
+        "p25": -0.096,
+        "p50": -0.05,
+        "p75": -0.0,
+        "p95": 0.15
+       },
+       "thruster3": {
+        "p5": -0.585,
+        "p25": -0.396,
+        "p50": -0.262,
+        "p75": -0.128,
+        "p95": 0.07
+       },
+       "thruster4": {
+        "p5": -0.32,
+        "p25": -0.21,
+        "p50": -0.139,
+        "p75": -0.068,
+        "p95": 0.049
+       }
+      },
+      "past80_any": 0.097,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.1497
+     }
+    },
+    "strong_current": {
+     "recording": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.997,
+        "p50": -0.776,
+        "p75": -0.675,
+        "p95": -0.429
+       },
+       "thruster2": {
+        "p5": -0.461,
+        "p25": -0.176,
+        "p50": -0.132,
+        "p75": -0.054,
+        "p95": 0.343
+       },
+       "thruster3": {
+        "p5": -0.681,
+        "p25": -0.604,
+        "p50": -0.568,
+        "p75": -0.451,
+        "p95": -0.069
+       },
+       "thruster4": {
+        "p5": -0.576,
+        "p25": -0.431,
+        "p50": -0.392,
+        "p75": -0.267,
+        "p95": 0.12
+       }
+      },
+      "past80_any": 0.4693,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.5501
+     },
+     "stall_aware": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -0.8,
+        "p25": -0.8,
+        "p50": -0.8,
+        "p75": -0.768,
+        "p95": -0.514
+       },
+       "thruster2": {
+        "p5": -0.279,
+        "p25": -0.163,
+        "p50": -0.081,
+        "p75": 0.015,
+        "p95": 0.192
+       },
+       "thruster3": {
+        "p5": -0.8,
+        "p25": -0.729,
+        "p50": -0.623,
+        "p75": -0.507,
+        "p95": -0.321
+       },
+       "thruster4": {
+        "p5": -0.476,
+        "p25": -0.367,
+        "p50": -0.291,
+        "p75": -0.213,
+        "p95": -0.092
+       }
+      },
+      "past80_any": 0.0,
+      "t1_at_minus80": 0.7189,
+      "any_at_80_limit": 0.7317,
+      "in_removed_ball": 0.5704
+     },
+     "rising_thrust": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -1.0,
+        "p50": -1.0,
+        "p75": -1.0,
+        "p95": -0.528
+       },
+       "thruster2": {
+        "p5": -0.326,
+        "p25": -0.157,
+        "p50": -0.031,
+        "p75": 0.124,
+        "p95": 0.35
+       },
+       "thruster3": {
+        "p5": -1.0,
+        "p25": -1.0,
+        "p50": -0.689,
+        "p75": -0.544,
+        "p95": -0.346
+       },
+       "thruster4": {
+        "p5": -0.454,
+        "p25": -0.318,
+        "p50": -0.228,
+        "p75": -0.129,
+        "p95": 0.056
+       }
+      },
+      "past80_any": 0.8399,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.1504
+     }
+    },
+    "big_waves": {
+     "recording": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.701,
+        "p50": -0.428,
+        "p75": -0.097,
+        "p95": 0.345
+       },
+       "thruster2": {
+        "p5": -0.484,
+        "p25": -0.191,
+        "p50": -0.099,
+        "p75": 0.164,
+        "p95": 0.463
+       },
+       "thruster3": {
+        "p5": -0.633,
+        "p25": -0.556,
+        "p50": -0.283,
+        "p75": 0.033,
+        "p95": 0.405
+       },
+       "thruster4": {
+        "p5": -0.531,
+        "p25": -0.4,
+        "p50": -0.208,
+        "p75": 0.068,
+        "p95": 0.392
+       }
+      },
+      "past80_any": 0.1979,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.2226
+     },
+     "stall_aware": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -0.8,
+        "p25": -0.7,
+        "p50": -0.394,
+        "p75": -0.102,
+        "p95": 0.198
+       },
+       "thruster2": {
+        "p5": -0.258,
+        "p25": -0.147,
+        "p50": -0.044,
+        "p75": 0.057,
+        "p95": 0.162
+       },
+       "thruster3": {
+        "p5": -0.735,
+        "p25": -0.509,
+        "p50": -0.27,
+        "p75": -0.021,
+        "p95": 0.241
+       },
+       "thruster4": {
+        "p5": -0.404,
+        "p25": -0.268,
+        "p50": -0.138,
+        "p75": -0.007,
+        "p95": 0.123
+       }
+      },
+      "past80_any": 0.0,
+      "t1_at_minus80": 0.187,
+      "any_at_80_limit": 0.2037,
+      "in_removed_ball": 0.2804
+     },
+     "rising_thrust": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.786,
+        "p50": -0.446,
+        "p75": -0.105,
+        "p95": 0.203
+       },
+       "thruster2": {
+        "p5": -0.305,
+        "p25": -0.154,
+        "p50": -0.041,
+        "p75": 0.076,
+        "p95": 0.296
+       },
+       "thruster3": {
+        "p5": -0.723,
+        "p25": -0.513,
+        "p50": -0.305,
+        "p75": -0.052,
+        "p95": 0.242
+       },
+       "thruster4": {
+        "p5": -0.424,
+        "p25": -0.269,
+        "p50": -0.129,
+        "p75": 0.017,
+        "p95": 0.15
+       }
+      },
+      "past80_any": 0.2623,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.2031
+     }
+    },
+    "big_kicks": {
+     "recording": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.624,
+        "p50": -0.406,
+        "p75": -0.146,
+        "p95": 0.258
+       },
+       "thruster2": {
+        "p5": -0.503,
+        "p25": -0.222,
+        "p50": -0.096,
+        "p75": 0.153,
+        "p95": 0.457
+       },
+       "thruster3": {
+        "p5": -0.627,
+        "p25": -0.522,
+        "p50": -0.272,
+        "p75": -0.009,
+        "p95": 0.353
+       },
+       "thruster4": {
+        "p5": -0.549,
+        "p25": -0.394,
+        "p50": -0.191,
+        "p75": 0.062,
+        "p95": 0.388
+       }
+      },
+      "past80_any": 0.1388,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.1542
+     },
+     "stall_aware": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -0.8,
+        "p25": -0.569,
+        "p50": -0.382,
+        "p75": -0.203,
+        "p95": 0.083
+       },
+       "thruster2": {
+        "p5": -0.458,
+        "p25": -0.105,
+        "p50": -0.053,
+        "p75": 0.001,
+        "p95": 0.417
+       },
+       "thruster3": {
+        "p5": -0.8,
+        "p25": -0.399,
+        "p50": -0.253,
+        "p75": -0.109,
+        "p95": 0.201
+       },
+       "thruster4": {
+        "p5": -0.478,
+        "p25": -0.221,
+        "p50": -0.142,
+        "p75": -0.063,
+        "p95": 0.278
+       }
+      },
+      "past80_any": 0.0,
+      "t1_at_minus80": 0.0862,
+      "any_at_80_limit": 0.1548,
+      "in_removed_ball": 0.1435
+     },
+     "rising_thrust": {
+      "percentiles": {
+       "thruster1": {
+        "p5": -1.0,
+        "p25": -0.589,
+        "p50": -0.379,
+        "p75": -0.193,
+        "p95": 0.098
+       },
+       "thruster2": {
+        "p5": -0.558,
+        "p25": -0.112,
+        "p50": -0.054,
+        "p75": 0.008,
+        "p95": 0.567
+       },
+       "thruster3": {
+        "p5": -1.0,
+        "p25": -0.414,
+        "p50": -0.258,
+        "p75": -0.104,
+        "p95": 0.271
+       },
+       "thruster4": {
+        "p5": -0.575,
+        "p25": -0.223,
+        "p50": -0.138,
+        "p75": -0.052,
+        "p95": 0.436
+       }
+      },
+      "past80_any": 0.2082,
+      "t1_at_minus80": 0.0,
+      "any_at_80_limit": 0.0,
+      "in_removed_ball": 0.117
+     }
+    }
+   }
+  },
+  "weighting_test_expert_seed0": {
+   "percentiles_all": {
+    "thruster1": {
+     "p1": -0.8,
+     "p5": -0.8,
+     "p10": -0.783,
+     "p25": -0.6,
+     "p50": -0.386,
+     "p75": -0.126,
+     "p90": 0.111,
+     "p95": 0.244,
+     "p99": 0.448
+    },
+    "thruster2": {
+     "p1": -0.6,
+     "p5": -0.481,
+     "p10": -0.397,
+     "p25": -0.227,
+     "p50": -0.076,
+     "p75": 0.145,
+     "p90": 0.329,
+     "p95": 0.419,
+     "p99": 0.555
+    },
+    "thruster3": {
+     "p1": -0.695,
+     "p5": -0.61,
+     "p10": -0.54,
+     "p25": -0.453,
+     "p50": -0.252,
+     "p75": -0.0,
+     "p90": 0.218,
+     "p95": 0.33,
+     "p99": 0.499
+    },
+    "thruster4": {
+     "p1": -0.64,
+     "p5": -0.539,
+     "p10": -0.466,
+     "p25": -0.339,
+     "p50": -0.176,
+     "p75": 0.061,
+     "p90": 0.255,
+     "p95": 0.358,
+     "p99": 0.512
+    }
+   },
+   "percentiles_hold_removed": {
+    "thruster1": {
+     "p1": -0.759,
+     "p5": -0.704,
+     "p10": -0.649,
+     "p25": -0.518,
+     "p50": -0.315,
+     "p75": -0.078,
+     "p90": 0.145,
+     "p95": 0.272,
+     "p99": 0.462
+    },
+    "thruster2": {
+     "p1": -0.608,
+     "p5": -0.496,
+     "p10": -0.42,
+     "p25": -0.257,
+     "p50": -0.029,
+     "p75": 0.185,
+     "p90": 0.353,
+     "p95": 0.437,
+     "p99": 0.564
+    },
+    "thruster3": {
+     "p1": -0.7,
+     "p5": -0.62,
+     "p10": -0.551,
+     "p25": -0.396,
+     "p50": -0.183,
+     "p75": 0.046,
+     "p90": 0.25,
+     "p95": 0.355,
+     "p99": 0.511
+    },
+    "thruster4": {
+     "p1": -0.649,
+     "p5": -0.552,
+     "p10": -0.484,
+     "p25": -0.327,
+     "p50": -0.112,
+     "p75": 0.101,
+     "p90": 0.282,
+     "p95": 0.377,
+     "p99": 0.524
+    }
+   },
+   "signed_hist_all": {
+    "thruster1": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     5378,
+     1303,
+     1681,
+     1928,
+     2212,
+     2345,
+     2400,
+     2354,
+     2317,
+     2281,
+     2185,
+     2126,
+     2040,
+     1977,
+     1796,
+     1789,
+     1612,
+     1573,
+     1405,
+     1291,
+     1133,
+     1098,
+     970,
+     865,
+     710,
+     667,
+     552,
+     473,
+     393,
+     323,
+     283,
+     194,
+     137,
+     96,
+     63,
+     29,
+     17,
+     3,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster2": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     5,
+     54,
+     172,
+     265,
+     432,
+     695,
+     898,
+     1086,
+     1292,
+     1495,
+     1701,
+     1790,
+     1958,
+     2163,
+     2308,
+     3730,
+     4518,
+     3014,
+     2335,
+     2123,
+     2185,
+     2095,
+     1869,
+     1903,
+     1707,
+     1517,
+     1380,
+     1256,
+     1097,
+     901,
+     676,
+     546,
+     378,
+     238,
+     128,
+     67,
+     19,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster3": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     22,
+     182,
+     528,
+     904,
+     1166,
+     1428,
+     1835,
+     3305,
+     4384,
+     2973,
+     2264,
+     2238,
+     2250,
+     2195,
+     2207,
+     2080,
+     2057,
+     1923,
+     1765,
+     1804,
+     1631,
+     1501,
+     1419,
+     1315,
+     1139,
+     988,
+     987,
+     841,
+     623,
+     584,
+     477,
+     332,
+     274,
+     164,
+     116,
+     49,
+     36,
+     12,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster4": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     32,
+     152,
+     312,
+     586,
+     836,
+     1182,
+     1379,
+     1533,
+     1801,
+     2577,
+     4287,
+     4001,
+     2565,
+     2369,
+     2269,
+     2259,
+     2204,
+     2216,
+     2079,
+     1933,
+     1858,
+     1731,
+     1606,
+     1446,
+     1344,
+     1139,
+     1020,
+     829,
+     700,
+     529,
+     452,
+     325,
+     230,
+     126,
+     57,
+     28,
+     6,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "signed_hist_hold_removed": {
+    "thruster1": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     414,
+     1159,
+     1454,
+     1607,
+     1874,
+     1981,
+     2063,
+     2066,
+     2072,
+     2132,
+     2087,
+     2101,
+     2040,
+     1977,
+     1796,
+     1789,
+     1612,
+     1573,
+     1405,
+     1291,
+     1133,
+     1098,
+     970,
+     865,
+     710,
+     667,
+     552,
+     473,
+     393,
+     323,
+     283,
+     194,
+     137,
+     96,
+     63,
+     29,
+     17,
+     3,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster2": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     5,
+     54,
+     172,
+     265,
+     432,
+     695,
+     898,
+     1086,
+     1292,
+     1471,
+     1605,
+     1651,
+     1716,
+     1885,
+     1809,
+     1841,
+     1879,
+     1972,
+     2049,
+     1949,
+     2059,
+     2032,
+     1866,
+     1903,
+     1707,
+     1517,
+     1380,
+     1256,
+     1097,
+     901,
+     676,
+     546,
+     378,
+     238,
+     128,
+     67,
+     19,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster3": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     22,
+     182,
+     527,
+     890,
+     1081,
+     1253,
+     1380,
+     1564,
+     1688,
+     1857,
+     1866,
+     1935,
+     2027,
+     2032,
+     2100,
+     2057,
+     2057,
+     1923,
+     1765,
+     1804,
+     1631,
+     1501,
+     1419,
+     1315,
+     1139,
+     988,
+     987,
+     841,
+     623,
+     584,
+     477,
+     332,
+     274,
+     164,
+     116,
+     49,
+     36,
+     12,
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "thruster4": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     32,
+     152,
+     312,
+     586,
+     836,
+     1177,
+     1319,
+     1408,
+     1580,
+     1712,
+     1821,
+     1866,
+     1934,
+     2059,
+     2003,
+     2076,
+     2044,
+     2150,
+     2072,
+     1933,
+     1858,
+     1731,
+     1606,
+     1446,
+     1344,
+     1139,
+     1020,
+     829,
+     700,
+     529,
+     452,
+     325,
+     230,
+     126,
+     57,
+     28,
+     6,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  }
+ },
+ "observation_space": {
+  "source": "5th, 50th and 95th percentiles over the 100,000 states at which a command is given (1,000 evaluation bank starts x steps 0-99) in each situation, stalling world, for the recording controller (with its fixed bank noise streams, as for the 0-point anchor) and for the stall-aware controller (the 100-point anchor). The column seed900_training_data is the main test's training split (50,000 rows), which matches the recording controller in the recorded conditions.",
+  "names_from_env_docstring": "s (10): the positions and speeds of the five floats (coordinates 2j and 2j + 1); c (1): the strength of the current, never changes during an episode; (w1, w2): the wave, a point turning 0.27 rad per step (a 23.3-step cycle), like the hands of a clock",
+  "components": [
+   {
+    "index": 0,
+    "symbol": "s[0]",
+    "name": "position number of float 1",
+    "item": "observation 0",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.627,
+       "p50": -0.215,
+       "p95": 0.162
+      },
+      "stall_aware_controller": {
+       "p5": -0.253,
+       "p50": -0.064,
+       "p95": 0.121
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -1.7,
+       "p50": -0.876,
+       "p95": -0.058
+      },
+      "stall_aware_controller": {
+       "p5": -1.023,
+       "p50": -0.377,
+       "p95": -0.004
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.763,
+       "p50": -0.264,
+       "p95": 0.178
+      },
+      "stall_aware_controller": {
+       "p5": -0.373,
+       "p50": -0.083,
+       "p95": 0.119
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -1.15,
+       "p50": -0.215,
+       "p95": 0.555
+      },
+      "stall_aware_controller": {
+       "p5": -0.879,
+       "p50": -0.073,
+       "p95": 0.41
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.613,
+     "p50": -0.208,
+     "p95": 0.159
+    }
+   },
+   {
+    "index": 1,
+    "symbol": "s[1]",
+    "name": "speed number of float 1",
+    "item": "observation 1",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.307,
+       "p50": 0.059,
+       "p95": 0.517
+      },
+      "stall_aware_controller": {
+       "p5": -0.127,
+       "p50": 0.013,
+       "p95": 0.203
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.316,
+       "p50": 0.261,
+       "p95": 1.162
+      },
+      "stall_aware_controller": {
+       "p5": -0.253,
+       "p50": 0.071,
+       "p95": 0.763
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.432,
+       "p50": 0.074,
+       "p95": 0.698
+      },
+      "stall_aware_controller": {
+       "p5": -0.217,
+       "p50": 0.013,
+       "p95": 0.385
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.76,
+       "p50": 0.05,
+       "p95": 1.063
+      },
+      "stall_aware_controller": {
+       "p5": -0.481,
+       "p50": 0.004,
+       "p95": 0.698
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.314,
+     "p50": 0.06,
+     "p95": 0.505
+    }
+   },
+   {
+    "index": 2,
+    "symbol": "s[2]",
+    "name": "position number of float 2",
+    "item": "observation 2",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.409,
+       "p50": -0.052,
+       "p95": 0.296
+      },
+      "stall_aware_controller": {
+       "p5": -0.062,
+       "p50": 0.037,
+       "p95": 0.104
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.911,
+       "p50": -0.327,
+       "p95": 0.2
+      },
+      "stall_aware_controller": {
+       "p5": -0.569,
+       "p50": -0.071,
+       "p95": 0.072
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.601,
+       "p50": -0.08,
+       "p95": 0.336
+      },
+      "stall_aware_controller": {
+       "p5": -0.171,
+       "p50": 0.023,
+       "p95": 0.093
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.714,
+       "p50": -0.054,
+       "p95": 0.578
+      },
+      "stall_aware_controller": {
+       "p5": -0.487,
+       "p50": 0.032,
+       "p95": 0.304
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.408,
+     "p50": -0.052,
+     "p95": 0.295
+    }
+   },
+   {
+    "index": 3,
+    "symbol": "s[3]",
+    "name": "speed number of float 2",
+    "item": "observation 3",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.392,
+       "p50": 0.005,
+       "p95": 0.409
+      },
+      "stall_aware_controller": {
+       "p5": -0.105,
+       "p50": -0.013,
+       "p95": 0.066
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.536,
+       "p50": 0.061,
+       "p95": 0.695
+      },
+      "stall_aware_controller": {
+       "p5": -0.238,
+       "p50": -0.013,
+       "p95": 0.34
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.52,
+       "p50": 0.009,
+       "p95": 0.589
+      },
+      "stall_aware_controller": {
+       "p5": -0.159,
+       "p50": -0.007,
+       "p95": 0.159
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.66,
+       "p50": 0.003,
+       "p95": 0.699
+      },
+      "stall_aware_controller": {
+       "p5": -0.36,
+       "p50": -0.014,
+       "p95": 0.384
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.394,
+     "p50": 0.009,
+     "p95": 0.412
+    }
+   },
+   {
+    "index": 4,
+    "symbol": "s[4]",
+    "name": "position number of float 3",
+    "item": "observation 4",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.455,
+       "p50": -0.107,
+       "p95": 0.245
+      },
+      "stall_aware_controller": {
+       "p5": -0.174,
+       "p50": -0.088,
+       "p95": 0.002
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.728,
+       "p50": -0.262,
+       "p95": 0.184
+      },
+      "stall_aware_controller": {
+       "p5": -0.376,
+       "p50": -0.184,
+       "p95": -0.122
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.524,
+       "p50": -0.121,
+       "p95": 0.272
+      },
+      "stall_aware_controller": {
+       "p5": -0.19,
+       "p50": -0.091,
+       "p95": 0.023
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.692,
+       "p50": -0.108,
+       "p95": 0.458
+      },
+      "stall_aware_controller": {
+       "p5": -0.519,
+       "p50": -0.088,
+       "p95": 0.143
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.46,
+     "p50": -0.108,
+     "p95": 0.248
+    }
+   },
+   {
+    "index": 5,
+    "symbol": "s[5]",
+    "name": "speed number of float 3",
+    "item": "observation 5",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.335,
+       "p50": 0.03,
+       "p95": 0.407
+      },
+      "stall_aware_controller": {
+       "p5": -0.023,
+       "p50": 0.024,
+       "p95": 0.084
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.353,
+       "p50": 0.074,
+       "p95": 0.526
+      },
+      "stall_aware_controller": {
+       "p5": -0.019,
+       "p50": 0.05,
+       "p95": 0.178
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.358,
+       "p50": 0.036,
+       "p95": 0.434
+      },
+      "stall_aware_controller": {
+       "p5": -0.04,
+       "p50": 0.025,
+       "p95": 0.096
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.545,
+       "p50": 0.03,
+       "p95": 0.628
+      },
+      "stall_aware_controller": {
+       "p5": -0.232,
+       "p50": 0.024,
+       "p95": 0.323
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.34,
+     "p50": 0.029,
+     "p95": 0.417
+    }
+   },
+   {
+    "index": 6,
+    "symbol": "s[6]",
+    "name": "position number of float 4",
+    "item": "observation 6",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.373,
+       "p50": -0.011,
+       "p95": 0.36
+      },
+      "stall_aware_controller": {
+       "p5": -0.061,
+       "p50": -0.005,
+       "p95": 0.05
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.415,
+       "p50": -0.034,
+       "p95": 0.355
+      },
+      "stall_aware_controller": {
+       "p5": -0.115,
+       "p50": -0.002,
+       "p95": 0.074
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.382,
+       "p50": -0.011,
+       "p95": 0.355
+      },
+      "stall_aware_controller": {
+       "p5": -0.069,
+       "p50": -0.002,
+       "p95": 0.052
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.582,
+       "p50": -0.012,
+       "p95": 0.559
+      },
+      "stall_aware_controller": {
+       "p5": -0.341,
+       "p50": -0.006,
+       "p95": 0.199
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.375,
+     "p50": -0.012,
+     "p95": 0.362
+    }
+   },
+   {
+    "index": 7,
+    "symbol": "s[7]",
+    "name": "speed number of float 4",
+    "item": "observation 7",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.377,
+       "p50": 0.004,
+       "p95": 0.386
+      },
+      "stall_aware_controller": {
+       "p5": -0.038,
+       "p50": 0.001,
+       "p95": 0.041
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.364,
+       "p50": 0.015,
+       "p95": 0.401
+      },
+      "stall_aware_controller": {
+       "p5": -0.067,
+       "p50": -0.0,
+       "p95": 0.08
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.376,
+       "p50": 0.005,
+       "p95": 0.387
+      },
+      "stall_aware_controller": {
+       "p5": -0.044,
+       "p50": 0.001,
+       "p95": 0.047
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.563,
+       "p50": 0.005,
+       "p95": 0.578
+      },
+      "stall_aware_controller": {
+       "p5": -0.216,
+       "p50": 0.001,
+       "p95": 0.254
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.38,
+     "p50": 0.004,
+     "p95": 0.387
+    }
+   },
+   {
+    "index": 8,
+    "symbol": "s[8]",
+    "name": "position number of float 5",
+    "item": "observation 8",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.379,
+       "p50": -0.089,
+       "p95": 0.199
+      },
+      "stall_aware_controller": {
+       "p5": -0.217,
+       "p50": -0.093,
+       "p95": 0.037
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.497,
+       "p50": -0.203,
+       "p95": 0.091
+      },
+      "stall_aware_controller": {
+       "p5": -0.329,
+       "p50": -0.218,
+       "p95": -0.099
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.417,
+       "p50": -0.088,
+       "p95": 0.238
+      },
+      "stall_aware_controller": {
+       "p5": -0.278,
+       "p50": -0.096,
+       "p95": 0.101
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.622,
+       "p50": -0.089,
+       "p95": 0.436
+      },
+      "stall_aware_controller": {
+       "p5": -0.397,
+       "p50": -0.093,
+       "p95": 0.174
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.368,
+     "p50": -0.089,
+     "p95": 0.2
+    }
+   },
+   {
+    "index": 9,
+    "symbol": "s[9]",
+    "name": "speed number of float 5",
+    "item": "observation 9",
+    "at_rest": 0.0,
+    "at_rest_note": "0 at rest",
+    "bounds": [
+     -300.0,
+     300.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.244,
+       "p50": 0.043,
+       "p95": 0.337
+      },
+      "stall_aware_controller": {
+       "p5": -0.028,
+       "p50": 0.046,
+       "p95": 0.117
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.181,
+       "p50": 0.097,
+       "p95": 0.397
+      },
+      "stall_aware_controller": {
+       "p5": 0.039,
+       "p50": 0.106,
+       "p95": 0.18
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.256,
+       "p50": 0.043,
+       "p95": 0.35
+      },
+      "stall_aware_controller": {
+       "p5": -0.066,
+       "p50": 0.047,
+       "p95": 0.153
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.468,
+       "p50": 0.043,
+       "p95": 0.569
+      },
+      "stall_aware_controller": {
+       "p5": -0.164,
+       "p50": 0.045,
+       "p95": 0.275
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.241,
+     "p50": 0.043,
+     "p95": 0.33
+    }
+   },
+   {
+    "index": 10,
+    "symbol": "c",
+    "name": "strength of the current; never changes during an episode",
+    "item": "observation 10",
+    "at_rest": null,
+    "at_rest_note": "no rest value: drawn at the start; c stays fixed",
+    "bounds": [
+     0.0,
+     1.5
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": 0.128,
+       "p50": 0.419,
+       "p95": 0.667
+      },
+      "stall_aware_controller": {
+       "p5": 0.128,
+       "p50": 0.419,
+       "p95": 0.667
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": 0.718,
+       "p50": 0.912,
+       "p95": 1.078
+      },
+      "stall_aware_controller": {
+       "p5": 0.718,
+       "p50": 0.912,
+       "p95": 1.078
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": 0.128,
+       "p50": 0.419,
+       "p95": 0.667
+      },
+      "stall_aware_controller": {
+       "p5": 0.128,
+       "p50": 0.419,
+       "p95": 0.667
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": 0.128,
+       "p50": 0.419,
+       "p95": 0.667
+      },
+      "stall_aware_controller": {
+       "p5": 0.128,
+       "p50": 0.419,
+       "p95": 0.667
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": 0.134,
+     "p50": 0.4,
+     "p95": 0.666
+    }
+   },
+   {
+    "index": 11,
+    "symbol": "w1",
+    "name": "wave, first number: amplitude x cos(phase), the push the wave adds now",
+    "item": "observation 11",
+    "at_rest": null,
+    "at_rest_note": "no rest value: drawn at the start, then turns 0.27 rad per step (amplitude fixed)",
+    "bounds": [
+     -1.0,
+     1.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.303,
+       "p50": -0.0,
+       "p95": 0.303
+      },
+      "stall_aware_controller": {
+       "p5": -0.303,
+       "p50": -0.0,
+       "p95": 0.303
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.303,
+       "p50": -0.0,
+       "p95": 0.303
+      },
+      "stall_aware_controller": {
+       "p5": -0.303,
+       "p50": -0.0,
+       "p95": 0.303
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.581,
+       "p50": -0.001,
+       "p95": 0.581
+      },
+      "stall_aware_controller": {
+       "p5": -0.581,
+       "p50": -0.001,
+       "p95": 0.581
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.303,
+       "p50": -0.0,
+       "p95": 0.303
+      },
+      "stall_aware_controller": {
+       "p5": -0.303,
+       "p50": -0.0,
+       "p95": 0.303
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.299,
+     "p50": -0.001,
+     "p95": 0.3
+    }
+   },
+   {
+    "index": 12,
+    "symbol": "w2",
+    "name": "wave, second number: amplitude x sin(phase), the push it added a quarter cycle (5.8 steps) earlier",
+    "item": "observation 12",
+    "at_rest": null,
+    "at_rest_note": "no rest value: drawn at the start, then turns 0.27 rad per step (amplitude fixed)",
+    "bounds": [
+     -1.0,
+     1.0
+    ],
+    "ranges": {
+     "recorded": {
+      "recording_controller": {
+       "p5": -0.303,
+       "p50": 0.0,
+       "p95": 0.303
+      },
+      "stall_aware_controller": {
+       "p5": -0.303,
+       "p50": 0.0,
+       "p95": 0.303
+      }
+     },
+     "strong_current": {
+      "recording_controller": {
+       "p5": -0.303,
+       "p50": 0.0,
+       "p95": 0.303
+      },
+      "stall_aware_controller": {
+       "p5": -0.303,
+       "p50": 0.0,
+       "p95": 0.303
+      }
+     },
+     "big_waves": {
+      "recording_controller": {
+       "p5": -0.581,
+       "p50": 0.0,
+       "p95": 0.581
+      },
+      "stall_aware_controller": {
+       "p5": -0.581,
+       "p50": 0.0,
+       "p95": 0.581
+      }
+     },
+     "big_kicks": {
+      "recording_controller": {
+       "p5": -0.303,
+       "p50": 0.0,
+       "p95": 0.303
+      },
+      "stall_aware_controller": {
+       "p5": -0.303,
+       "p50": 0.0,
+       "p95": 0.303
+      }
+     }
+    },
+    "seed900_training_data": {
+     "p5": -0.3,
+     "p50": 0.0,
+     "p95": 0.3
+    }
+   }
+  ],
+  "settled_under_steady_current_no_wave": {
+   "c0.4_stall_aware": {
+    "floats": [
+     -0.0608,
+     0.0125,
+     0.0374,
+     -0.0126,
+     -0.0851,
+     0.0237,
+     -0.005,
+     0.0006,
+     -0.0906,
+     0.0446
+    ],
+    "command": [
+     -0.379,
+     -0.05,
+     -0.2474,
+     -0.1407
+    ],
+    "float_cost": 0.0234
+   },
+   "c0.4_no_throttle": {
+    "floats": [
+     -1.1395,
+     0.2633,
+     -0.5972,
+     0.1033,
+     -0.3478,
+     0.0865,
+     -0.1984,
+     0.0765,
+     -0.1409,
+     0.0643
+    ],
+    "command": [
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "float_cost": 1.9328
+   },
+   "c0.9_stall_aware": {
+    "floats": [
+     -0.286,
+     0.0657,
+     -0.0179,
+     -0.0081,
+     -0.1874,
+     0.0514,
+     -0.002,
+     -0.0006,
+     -0.2083,
+     0.1018
+    ],
+    "command": [
+     -0.8,
+     -0.0946,
+     -0.5826,
+     -0.3058
+    ],
+    "float_cost": 0.178
+   },
+   "c0.9_no_throttle": {
+    "floats": [
+     -2.5639,
+     0.5923,
+     -1.3438,
+     0.2325,
+     -0.7826,
+     0.1946,
+     -0.4465,
+     0.1722,
+     -0.3171,
+     0.1447
+    ],
+    "command": [
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "float_cost": 9.785
+   }
+  },
+  "situation_start_laws": {
+   "recorded": {
+    "current": [
+     0.1,
+     0.7
+    ],
+    "wave": [
+     0.1,
+     0.4
+    ],
+    "kick": 0.5
+   },
+   "strong_current": {
+    "current": [
+     0.7,
+     1.1
+    ],
+    "wave": [
+     0.1,
+     0.4
+    ],
+    "kick": 0.5
+   },
+   "big_waves": {
+    "current": [
+     0.1,
+     0.7
+    ],
+    "wave": [
+     0.4,
+     0.7
+    ],
+    "kick": 0.5
+   },
+   "big_kicks": {
+    "current": [
+     0.1,
+     0.7
+    ],
+    "wave": [
+     0.1,
+     0.4
+    ],
+    "kick": 1.5
+   }
+  },
+  "notes": "c and the wave do not depend on the controller, so their ranges are the same for both controllers. The wave's range in big waves is wider (amplitude 0.4-0.7). Floats range widest in big starting pushes (start SD 1.5) and are shifted downstream (negative position numbers) in strong current."
+ },
+ "rewards_example": {
+  "note": "One state, thruster 1 set to -0.8, -0.9, -1.0 (80%, 90%, 100% upstream); thrusters 2-4 at the stall-aware controller's command. The reward of this step depends only on the state and the throttle, so it is the same in both worlds; the stall shows up in the next state's float cost and in the exact value. Exact value = discounted (0.98) sum of rewards over 1,000 steps with the stall-aware controller continuing after the first step (the page's 'true value').",
+  "states": {
+   "rest_c0.9": {
+    "label": "floats at rest, current 0.9 (strong current), no wave",
+    "state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.9,
+     0.0,
+     0.0
+    ],
+    "water_push": 0.9,
+    "stall_aware_command": [
+     -0.8,
+     -0.1123,
+     -0.4791,
+     -0.3328
+    ],
+    "rows": [
+     {
+      "world": "stall",
+      "throttle_pct": 80,
+      "push": -0.8,
+      "throttle_cost_t1": 0.192,
+      "reward_this_step": -0.2979,
+      "float_cost_next_state": 0.0391,
+      "next_speed_float1": 0.03,
+      "exact_value": -26.8357,
+      "change_vs_80_reward_this_step": 0.0,
+      "change_vs_80_float_cost_next": 0.0,
+      "change_vs_80_exact_value": 0.0
+     },
+     {
+      "world": "stall",
+      "throttle_pct": 90,
+      "push": -0.65,
+      "throttle_cost_t1": 0.243,
+      "reward_this_step": -0.3489,
+      "float_cost_next_state": 0.0456,
+      "next_speed_float1": 0.075,
+      "exact_value": -27.1234,
+      "change_vs_80_reward_this_step": -0.051,
+      "change_vs_80_float_cost_next": 0.0065,
+      "change_vs_80_exact_value": -0.2877
+     },
+     {
+      "world": "stall",
+      "throttle_pct": 100,
+      "push": -0.5,
+      "throttle_cost_t1": 0.3,
+      "reward_this_step": -0.4059,
+      "float_cost_next_state": 0.0601,
+      "next_speed_float1": 0.12,
+      "exact_value": -27.5262,
+      "change_vs_80_reward_this_step": -0.108,
+      "change_vs_80_float_cost_next": 0.021,
+      "change_vs_80_exact_value": -0.6905
+     },
+     {
+      "world": "no_stall",
+      "throttle_pct": 80,
+      "push": -0.8,
+      "throttle_cost_t1": 0.192,
+      "reward_this_step": -0.2979,
+      "float_cost_next_state": 0.0391,
+      "next_speed_float1": 0.03,
+      "exact_value": -26.8357,
+      "change_vs_80_reward_this_step": 0.0,
+      "change_vs_80_float_cost_next": 0.0,
+      "change_vs_80_exact_value": 0.0
+     },
+     {
+      "world": "no_stall",
+      "throttle_pct": 90,
+      "push": -0.9,
+      "throttle_cost_t1": 0.243,
+      "reward_this_step": -0.3489,
+      "float_cost_next_state": 0.0394,
+      "next_speed_float1": 0.0,
+      "exact_value": -26.8239,
+      "change_vs_80_reward_this_step": -0.051,
+      "change_vs_80_float_cost_next": 0.0003,
+      "change_vs_80_exact_value": 0.0118
+     },
+     {
+      "world": "no_stall",
+      "throttle_pct": 100,
+      "push": -1.0,
+      "throttle_cost_t1": 0.3,
+      "reward_this_step": -0.4059,
+      "float_cost_next_state": 0.0432,
+      "next_speed_float1": -0.03,
+      "exact_value": -26.8682,
+      "change_vs_80_reward_this_step": -0.108,
+      "change_vs_80_float_cost_next": 0.0041,
+      "change_vs_80_exact_value": -0.0325
+     }
+    ]
+   },
+   "rest_c0.6_w0.3": {
+    "label": "floats at rest, current 0.6, wave w1 = 0.3, w2 = 0 (inside the recorded conditions, in the full-throttle region: push 0.9)",
+    "state": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.6,
+     0.3,
+     0.0
+    ],
+    "water_push": 0.9,
+    "stall_aware_command": [
+     -0.7926,
+     -0.1348,
+     -0.5189,
+     -0.3209
+    ],
+    "rows": [
+     {
+      "world": "stall",
+      "throttle_pct": 80,
+      "push": -0.8,
+      "throttle_cost_t1": 0.192,
+      "reward_this_step": -0.3091,
+      "float_cost_next_state": 0.037,
+      "next_speed_float1": 0.03,
+      "exact_value": -12.0395,
+      "change_vs_80_reward_this_step": 0.0,
+      "change_vs_80_float_cost_next": 0.0,
+      "change_vs_80_exact_value": 0.0
+     },
+     {
+      "world": "stall",
+      "throttle_pct": 90,
+      "push": -0.65,
+      "throttle_cost_t1": 0.243,
+      "reward_this_step": -0.3601,
+      "float_cost_next_state": 0.0428,
+      "next_speed_float1": 0.075,
+      "exact_value": -12.1706,
+      "change_vs_80_reward_this_step": -0.051,
+      "change_vs_80_float_cost_next": 0.0058,
+      "change_vs_80_exact_value": -0.1311
+     },
+     {
+      "world": "stall",
+      "throttle_pct": 100,
+      "push": -0.5,
+      "throttle_cost_t1": 0.3,
+      "reward_this_step": -0.4171,
+      "float_cost_next_state": 0.0567,
+      "next_speed_float1": 0.12,
+      "exact_value": -12.3368,
+      "change_vs_80_reward_this_step": -0.108,
+      "change_vs_80_float_cost_next": 0.0197,
+      "change_vs_80_exact_value": -0.2973
+     },
+     {
+      "world": "no_stall",
+      "throttle_pct": 80,
+      "push": -0.8,
+      "throttle_cost_t1": 0.192,
+      "reward_this_step": -0.3091,
+      "float_cost_next_state": 0.037,
+      "next_speed_float1": 0.03,
+      "exact_value": -12.0395,
+      "change_vs_80_reward_this_step": 0.0,
+      "change_vs_80_float_cost_next": 0.0,
+      "change_vs_80_exact_value": 0.0
+     },
+     {
+      "world": "no_stall",
+      "throttle_pct": 90,
+      "push": -0.9,
+      "throttle_cost_t1": 0.243,
+      "reward_this_step": -0.3601,
+      "float_cost_next_state": 0.0376,
+      "next_speed_float1": 0.0,
+      "exact_value": -12.0472,
+      "change_vs_80_reward_this_step": -0.051,
+      "change_vs_80_float_cost_next": 0.0006,
+      "change_vs_80_exact_value": -0.0077
+     },
+     {
+      "world": "no_stall",
+      "throttle_pct": 100,
+      "push": -1.0,
+      "throttle_cost_t1": 0.3,
+      "reward_this_step": -0.4171,
+      "float_cost_next_state": 0.0418,
+      "next_speed_float1": -0.03,
+      "exact_value": -12.0684,
+      "change_vs_80_reward_this_step": -0.108,
+      "change_vs_80_float_cost_next": 0.0048,
+      "change_vs_80_exact_value": -0.0289
+     }
+    ]
+   }
+  },
+  "recommended": "rest_c0.6_w0.3 (inside the recorded conditions, in the full-throttle region)"
+ },
+ "points": {
+  "formula": "points = 100 (J - J_rec) / (J_top - J_rec), per situation, on the same 1,000 bank starts",
+  "anchors": {
+   "recorded": {
+    "recording": -79.8,
+    "stall_aware": -26.36,
+    "return_units_per_point": 0.5344,
+    "stall_aware_minus_recording": 53.44
+   },
+   "strong_current": {
+    "recording": -253.94,
+    "stall_aware": -103.79,
+    "return_units_per_point": 1.5015,
+    "stall_aware_minus_recording": 150.15
+   },
+   "big_waves": {
+    "recording": -106.81,
+    "stall_aware": -36.19,
+    "return_units_per_point": 0.7062,
+    "stall_aware_minus_recording": 70.62
+   },
+   "big_kicks": {
+    "recording": -263.24,
+    "stall_aware": -163.5,
+    "return_units_per_point": 0.9974,
+    "stall_aware_minus_recording": 99.74
+   }
+  },
+  "source": "/root/bca-shift/runs/shift/pre/stage0_base.json record.anchors (recomputed, identical)"
+ },
+ "difficulty": {
+  "order_by_harm": [
+   "recorded",
+   "big_kicks",
+   "big_waves",
+   "strong_current"
+  ],
+  "order_by_raw_return_reference_controllers": [
+   "recorded",
+   "big_waves",
+   "strong_current",
+   "big_kicks"
+  ],
+  "by_situation": {
+   "recorded": {
+    "label": "recorded conditions",
+    "standard_term": "in-distribution",
+    "harm_points": 5.81,
+    "harm_interval": [
+     4.76,
+     6.85
+    ],
+    "harm_return_units": 3.1,
+    "reference_raw_returns": {
+     "recording": -79.8,
+     "stall_aware": -26.36,
+     "rising_thrust": -35.12,
+     "normal_driving_only": -37.88
+    },
+    "learned_actor_points": {
+     "cloned": 56.3,
+     "full_log_critic_actor": 91.3,
+     "removal_critic_actor": 85.5,
+     "plain_td3bc": 86.1
+    },
+    "learned_actor_raw_returns_derived": {
+     "cloned": -49.7,
+     "full_log_critic_actor": -31.0,
+     "removal_critic_actor": -34.1,
+     "plain_td3bc": -33.8
+    },
+    "past80_share_removal_critic_actor": 0.047,
+    "outside_recorded_conditions": "about 1% (by the float test's 99% mark)",
+    "plain_td3bc_minus_cloning": 29.8
+   },
+   "strong_current": {
+    "label": "strong current",
+    "standard_term": "dynamics extrapolation",
+    "harm_points": 98.93,
+    "harm_interval": [
+     96.15,
+     101.72
+    ],
+    "harm_return_units": 148.5,
+    "reference_raw_returns": {
+     "recording": -253.94,
+     "stall_aware": -103.79,
+     "rising_thrust": -335.22,
+     "normal_driving_only": -146.88
+    },
+    "learned_actor_points": {
+     "cloned": 54.4,
+     "full_log_critic_actor": 84.6,
+     "removal_critic_actor": -14.3,
+     "plain_td3bc": -16.8
+    },
+    "learned_actor_raw_returns_derived": {
+     "cloned": -172.3,
+     "full_log_critic_actor": -126.9,
+     "removal_critic_actor": -275.4,
+     "plain_td3bc": -279.2
+    },
+    "past80_share_removal_critic_actor": 0.732,
+    "outside_recorded_conditions": "100%",
+    "plain_td3bc_minus_cloning": -71.1
+   },
+   "big_waves": {
+    "label": "big waves",
+    "standard_term": "disturbance shift",
+    "harm_points": 16.58,
+    "harm_interval": [
+     14.5,
+     18.66
+    ],
+    "harm_return_units": 11.7,
+    "reference_raw_returns": {
+     "recording": -106.81,
+     "stall_aware": -36.19,
+     "rising_thrust": -61.76,
+     "normal_driving_only": -55.59
+    },
+    "learned_actor_points": {
+     "cloned": 43.6,
+     "full_log_critic_actor": 86.6,
+     "removal_critic_actor": 70.0,
+     "plain_td3bc": 70.9
+    },
+    "learned_actor_raw_returns_derived": {
+     "cloned": -76.0,
+     "full_log_critic_actor": -45.7,
+     "removal_critic_actor": -57.4,
+     "plain_td3bc": -56.7
+    },
+    "past80_share_removal_critic_actor": 0.165,
+    "outside_recorded_conditions": "100%",
+    "plain_td3bc_minus_cloning": 27.3
+   },
+   "big_kicks": {
+    "label": "big starting pushes",
+    "standard_term": "initial-state shift",
+    "harm_points": 11.79,
+    "harm_interval": [
+     10.15,
+     13.43
+    ],
+    "harm_return_units": 11.8,
+    "reference_raw_returns": {
+     "recording": -263.24,
+     "stall_aware": -163.5,
+     "rising_thrust": -219.2,
+     "normal_driving_only": -205.39
+    },
+    "learned_actor_points": {
+     "cloned": 2.0,
+     "full_log_critic_actor": 64.3,
+     "removal_critic_actor": 52.5,
+     "plain_td3bc": 48.7
+    },
+    "learned_actor_raw_returns_derived": {
+     "cloned": -261.2,
+     "full_log_critic_actor": -199.1,
+     "removal_critic_actor": -210.9,
+     "plain_td3bc": -214.7
+    },
+    "past80_share_removal_critic_actor": 0.158,
+    "outside_recorded_conditions": "10.9% (stall-aware) to 17.3% (recording controller) of visited states",
+    "plain_td3bc_minus_cloning": 46.7
+   }
+  },
+  "harm_source": "outputs/shift/stop-report/check2_return/alpha5/pooled.json (harm = actor of the full-log critic minus actor of the critic trained after the densest-15% removal, critic weight 5, seeds 0-4)",
+  "arms_source": "outputs/shift/stop-report/README.md check 2 table; plain TD3+BC from outputs/shift/beyond-the-data/anatomy.md section 6",
+  "note": "Raw returns of the learned actors are derived from their mean points and the anchors (exact up to the 0.1-point rounding of the points). By raw return, big starting pushes is hardest for both reference controllers and for the cloned and full-log-critic actors; for the actor of the critic trained after the removal (and plain TD3+BC), strong current is lowest (-275 against -211)."
+ },
+ "weighting_test_data": {
+  "past80_by_quality": {
+   "random": {
+    "all_up": {
+     "min": 0.0998,
+     "max": 0.10106,
+     "mean": 0.100292
+    },
+    "all_down": {
+     "min": 0.09934,
+     "max": 0.1004,
+     "mean": 0.09975599999999998
+    },
+    "kept_up": {
+     "min": 0.0999419058875378,
+     "max": 0.10121611604191293,
+     "mean": 0.1004310703456009
+    },
+    "kept_down": {
+     "min": 0.09949122666453009,
+     "max": 0.10057500050087152,
+     "mean": 0.09991028329689347
+    },
+    "kept_any_dir": {
+     "min": 0.1994631840397404,
+     "max": 0.20179111654278445,
+     "mean": 0.20034135364249436
+    },
+    "all_any_dir": {
+     "min": 0.19916,
+     "max": 0.20146,
+     "mean": 0.200048
+    },
+    "random_among_up": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "random_among_down": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "kept_share_of_train": {
+     "min": 0.99826,
+     "max": 0.99876,
+     "mean": 0.998456
+    },
+    "seed0_all_up": 0.0998,
+    "seed0_kept_up": 0.0999419058875378
+   },
+   "medium-replay": {
+    "all_up": {
+     "min": 0.08212,
+     "max": 0.08426,
+     "mean": 0.08340399999999999
+    },
+    "all_down": {
+     "min": 0.08136,
+     "max": 0.08358,
+     "mean": 0.0824
+    },
+    "kept_up": {
+     "min": 0.08435195266758427,
+     "max": 0.08643191332184191,
+     "mean": 0.08561089880556513
+    },
+    "kept_down": {
+     "min": 0.08357129650553649,
+     "max": 0.0857547402117705,
+     "mean": 0.08459277977513195
+    },
+    "kept_any_dir": {
+     "min": 0.16792324917312076,
+     "max": 0.1721866535336124,
+     "mean": 0.1702036785806971
+    },
+    "all_any_dir": {
+     "min": 0.16348,
+     "max": 0.16784,
+     "mean": 0.165804
+    },
+    "random_among_up": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "random_among_down": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "kept_share_of_train": {
+     "min": 0.97254,
+     "max": 0.97572,
+     "mean": 0.9740800000000001
+    },
+    "seed0_all_up": 0.08362,
+    "seed0_kept_up": 0.08583514723397265
+   },
+   "medium": {
+    "all_up": {
+     "min": 0.06452,
+     "max": 0.06586,
+     "mean": 0.065232
+    },
+    "all_down": {
+     "min": 0.0643,
+     "max": 0.06536,
+     "mean": 0.06482000000000002
+    },
+    "kept_up": {
+     "min": 0.06797589447511485,
+     "max": 0.06939438015135227,
+     "mean": 0.06867820543473377
+    },
+    "kept_down": {
+     "min": 0.06774411058198829,
+     "max": 0.0687971032798619,
+     "mean": 0.06825258692846407
+    },
+    "kept_any_dir": {
+     "min": 0.13572000505710313,
+     "max": 0.13773449987381173,
+     "mean": 0.13693079236319786
+    },
+    "all_any_dir": {
+     "min": 0.12882,
+     "max": 0.13098,
+     "mean": 0.130052
+    },
+    "random_among_up": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "random_among_down": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "kept_share_of_train": {
+     "min": 0.94878,
+     "max": 0.95096,
+     "mean": 0.9497039999999999
+    },
+    "seed0_all_up": 0.06586,
+    "seed0_kept_up": 0.06939438015135227
+   },
+   "medium-expert": {
+    "all_up": {
+     "min": 0.03246,
+     "max": 0.0353,
+     "mean": 0.033707999999999995
+    },
+    "all_down": {
+     "min": 0.03254,
+     "max": 0.03416,
+     "mean": 0.033271999999999996
+    },
+    "kept_up": {
+     "min": 0.03614538327914124,
+     "max": 0.03896161232643871,
+     "mean": 0.03736423331029796
+    },
+    "kept_down": {
+     "min": 0.036217527769739334,
+     "max": 0.037951338740139985,
+     "mean": 0.036885745126981256
+    },
+    "kept_any_dir": {
+     "min": 0.07244666161863614,
+     "max": 0.07643595156093767,
+     "mean": 0.07424997843727921
+    },
+    "all_any_dir": {
+     "min": 0.06506,
+     "max": 0.0691,
+     "mean": 0.06698
+    },
+    "random_among_up": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "random_among_down": {
+     "min": 1.0,
+     "max": 1.0,
+     "mean": 1.0
+    },
+    "kept_share_of_train": {
+     "min": 0.89804,
+     "max": 0.90744,
+     "mean": 0.902012
+    },
+    "seed0_all_up": 0.0353,
+    "seed0_kept_up": 0.03896161232643871
+   },
+   "expert": {
+    "all_up": {
+     "min": 0.0,
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "all_down": {
+     "min": 0.0,
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "kept_up": {
+     "min": 0.0,
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "kept_down": {
+     "min": 0.0,
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "kept_any_dir": {
+     "min": 0.0,
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "all_any_dir": {
+     "min": 0.0,
+     "max": 0.0,
+     "mean": 0.0
+    },
+    "random_among_up": null,
+    "random_among_down": null,
+    "kept_share_of_train": {
+     "min": 0.85,
+     "max": 0.85,
+     "mean": 0.85
+    },
+    "seed0_all_up": 0.0,
+    "seed0_kept_up": 0.0
+   }
+  },
+  "removed_rows_per_quality_seed0": {
+   "random": 81,
+   "medium-replay": 1302,
+   "medium": 2561,
+   "medium-expert": 4699,
+   "expert": 7500
+  },
+  "hold_share_train": {
+   "random": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "medium-replay": [
+    0.0173,
+    0.0162,
+    0.0166,
+    0.0201,
+    0.0175
+   ],
+   "medium": [
+    0.0346,
+    0.0349,
+    0.0325,
+    0.0363,
+    0.0326
+   ],
+   "medium-expert": [
+    0.0618,
+    0.0602,
+    0.064,
+    0.0707,
+    0.0631
+   ],
+   "expert": [
+    0.099,
+    0.0984,
+    0.0947,
+    0.1041,
+    0.0907
+   ]
+  },
+  "hold_removed_share": {
+   "random": [
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "medium-replay": [
+    0.9988,
+    0.9988,
+    0.9964,
+    0.997,
+    0.9943
+   ],
+   "medium": [
+    0.9965,
+    0.9989,
+    0.9963,
+    0.9967,
+    0.9957
+   ],
+   "medium-expert": [
+    0.9971,
+    0.9987,
+    0.9966,
+    0.9966,
+    0.9943
+   ],
+   "expert": [
+    0.9976,
+    0.9988,
+    0.9966,
+    0.9969,
+    0.9954
+   ]
+  },
+  "source": "runs/shift_iw_v5/<quality>/data/seed<k>/train_law.hdf5"
+ },
+ "lower_edge_size": {
+  "source": "runs/shift_iw_v5/<quality>/report/report.json, marks.L2.proxy_check (band_over_oracle, pearson) and marks.L1.oracle_minus_none",
+  "by_quality": {
+   "random": {
+    "band_over_oracle_mean": 0.030215674122535764,
+    "band_over_oracle_per_seed": [
+     0.02703467780358916,
+     0.025874845053518947,
+     0.031818043898143175,
+     0.04015579803373232,
+     0.02619500582369522
+    ],
+    "one_over_ratio": 33.09540591232978,
+    "pearson_mean": -0.16650573959035625,
+    "pearson_per_seed": [
+     -0.16145271753254353,
+     -0.15661963440984283,
+     -0.17076751816871655,
+     -0.1862239974659541,
+     -0.15746483037472428
+    ],
+    "band_check_e_passed": [
+     true,
+     true,
+     false,
+     true,
+     true
+    ],
+    "oracle_minus_none_return": -12.112858221760224,
+    "oracle_minus_none_lower": -23.95962374514585
+   },
+   "medium-replay": {
+    "band_over_oracle_mean": 0.03048622448951715,
+    "band_over_oracle_per_seed": [
+     0.0266200441387771,
+     0.03061138736386529,
+     0.042143357186995994,
+     0.029334182059411653,
+     0.023722151698535733
+    ],
+    "one_over_ratio": 32.801700333337614,
+    "pearson_mean": -0.12540900356244022,
+    "pearson_per_seed": [
+     -0.13291107028653376,
+     -0.16239686674340742,
+     -0.06789051580251082,
+     -0.12418831743053863,
+     -0.13965824754921052
+    ],
+    "band_check_e_passed": [
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "oracle_minus_none_return": -13.70927590523753,
+    "oracle_minus_none_lower": -22.40444920627553
+   },
+   "medium": {
+    "band_over_oracle_mean": 0.03200148952387688,
+    "band_over_oracle_per_seed": [
+     0.0249545263242239,
+     0.03931790880419364,
+     0.03481274680725577,
+     0.03071657874865953,
+     0.03020568693505155
+    ],
+    "one_over_ratio": 31.248545454544615,
+    "pearson_mean": -0.03330697672308837,
+    "pearson_per_seed": [
+     -0.12931903817587054,
+     -0.07617250027441401,
+     0.026282189024865777,
+     0.03709617100648738,
+     -0.024421705196510452
+    ],
+    "band_check_e_passed": [
+     true,
+     true,
+     true,
+     true,
+     false
+    ],
+    "oracle_minus_none_return": -10.15236897689906,
+    "oracle_minus_none_lower": -22.96518902226606
+   },
+   "medium-expert": {
+    "band_over_oracle_mean": 0.017213052940817472,
+    "band_over_oracle_per_seed": [
+     0.011384036525015672,
+     0.017355116290683228,
+     0.018651549269035977,
+     0.02520951561941079,
+     0.013465046999941695
+    ],
+    "one_over_ratio": 58.09544671931443,
+    "pearson_mean": 0.2124029968356551,
+    "pearson_per_seed": [
+     0.07114848926173832,
+     0.19833150736410307,
+     0.26781121327152463,
+     0.27567490993865384,
+     0.24904886434225565
+    ],
+    "band_check_e_passed": [
+     false,
+     true,
+     true,
+     true,
+     true
+    ],
+    "oracle_minus_none_return": 73.52195686051414,
+    "oracle_minus_none_lower": 69.07221397336188
+   },
+   "expert": {
+    "band_over_oracle_mean": 0.006152481871330777,
+    "band_over_oracle_per_seed": [
+     0.00613301842405119,
+     0.0044861760043862185,
+     0.007757985898947931,
+     0.005669730497865342,
+     0.006715498531403199
+    ],
+    "one_over_ratio": 162.53603357366754,
+    "pearson_mean": 0.28871651155620076,
+    "pearson_per_seed": [
+     0.4097404446059392,
+     0.03425230864388901,
+     0.30835853678944586,
+     0.31837551962772637,
+     0.372855748114003
+    ],
+    "band_check_e_passed": [
+     true,
+     false,
+     true,
+     false,
+     true
+    ],
+    "oracle_minus_none_return": 107.63223591195188,
+    "oracle_minus_none_lower": 100.07208430215628
+   }
+  }
+ },
+ "weighting_test_ball": {
+  "source": "runs/shift_iw_v5/expert/data/seed<k>/world.json (gap, hold_command, removal, D1)",
+  "by_seed": {
+   "0": {
+    "centre": [
+     -0.5834,
+     -0.1319,
+     -0.4247,
+     -0.28
+    ],
+    "radius": 0.2676,
+    "hold_command": [
+     -0.8,
+     -0.1096,
+     -0.4679,
+     -0.325
+    ],
+    "hold_distance_to_centre": 0.2265,
+    "removed_rows_that_are_holds": 0.6584,
+    "holds_removed_training_rows": 0.9976,
+    "holds_removed_design_check_quadrature": 0.9969,
+    "hold_share_training": 0.099
+   },
+   "1": {
+    "centre": [
+     -0.5767,
+     -0.0992,
+     -0.4368,
+     -0.2951
+    ],
+    "radius": 0.2642,
+    "hold_command": [
+     -0.8,
+     -0.1096,
+     -0.4679,
+     -0.325
+    ],
+    "hold_distance_to_centre": 0.2277,
+    "removed_rows_that_are_holds": 0.6552,
+    "holds_removed_training_rows": 0.9988,
+    "holds_removed_design_check_quadrature": 0.9979,
+    "hold_share_training": 0.0984
+   },
+   "2": {
+    "centre": [
+     -0.5708,
+     -0.1245,
+     -0.4343,
+     -0.2917
+    ],
+    "radius": 0.2682,
+    "hold_command": [
+     -0.8,
+     -0.1096,
+     -0.4679,
+     -0.325
+    ],
+    "hold_distance_to_centre": 0.2345,
+    "removed_rows_that_are_holds": 0.6291,
+    "holds_removed_training_rows": 0.9966,
+    "holds_removed_design_check_quadrature": 0.9959,
+    "hold_share_training": 0.0947
+   },
+   "3": {
+    "centre": [
+     -0.5884,
+     -0.1063,
+     -0.4231,
+     -0.3215
+    ],
+    "radius": 0.2516,
+    "hold_command": [
+     -0.8,
+     -0.1096,
+     -0.4679,
+     -0.325
+    ],
+    "hold_distance_to_centre": 0.2164,
+    "removed_rows_that_are_holds": 0.6917,
+    "holds_removed_training_rows": 0.9969,
+    "holds_removed_design_check_quadrature": 0.9963,
+    "hold_share_training": 0.1041
+   },
+   "4": {
+    "centre": [
+     -0.5775,
+     -0.1333,
+     -0.4097,
+     -0.2891
+    ],
+    "radius": 0.2738,
+    "hold_command": [
+     -0.8,
+     -0.1096,
+     -0.4679,
+     -0.325
+    ],
+    "hold_distance_to_centre": 0.234,
+    "removed_rows_that_are_holds": 0.602,
+    "holds_removed_training_rows": 0.9954,
+    "holds_removed_design_check_quadrature": 0.9957,
+    "hold_share_training": 0.0907
+   }
+  },
+  "note": "The weighting test also uses the densest-15% rule, on the expert's commands; the ball lands on the 80% hold (thruster 1 at -0.8 with the other three at 0.8 x the full-throttle pattern). About two thirds of the removed rows are holds; the rest are normal-driving commands near the ball's centre. The page's '99.57-99.79% of holds removed' is the design check's quadrature value; counting the training rows gives the holds_removed_training_rows values."
+ }
+}

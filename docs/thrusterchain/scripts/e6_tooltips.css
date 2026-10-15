@@ -1,0 +1,39 @@
+/* legends beside every formula and drawing: each symbol or mark, and what it means */
+.symkey { border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); padding: 10px 14px 12px;
+  max-width: 86ch; min-width: 0; }
+.symkey-h { font-size: 12.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+  margin: 0 0 6px; max-width: none; line-height: 1.4; }
+.symkey dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr));
+  gap: 5px 24px; font-size: 14.5px; line-height: 1.45; }
+.symkey dl > div { display: grid; grid-template-columns: minmax(2.2em, max-content) minmax(0, 1fr); gap: 0 10px;
+  align-items: baseline; min-width: 0; }
+.symkey dt { color: var(--ink); font-weight: 600; white-space: nowrap; }
+.symkey dd { margin: 0; color: var(--ink-2); min-width: 0; overflow-wrap: anywhere; }
+.symkey sub, .symkey sup { line-height: 0; }
+@media (max-width: 560px) {
+  .symkey dl > div { grid-template-columns: minmax(0, 1fr); }
+  .symkey dt { white-space: normal; }
+}
+/* the live panel: all the controllers, how each sets the throttles, whether it stays within 80%, its score */
+.ctrl-guide > .inner { gap: 10px; }
+.cg-h { font-family: var(--display); font-weight: 700; font-size: 15.5px; color: var(--accent-ink); line-height: 1.3;
+  margin-top: 4px; }
+.cg { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 14px 24px; }
+.cg > div { min-width: 0; }
+.cg dt { font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; line-height: 1.35; }
+.cg dd { margin: 4px 0 0; color: var(--ink-2); font-size: 15px; line-height: 1.5; display: flex; flex-direction: column;
+  gap: 3px; }
+.cg dd p { max-width: none; }
+.cg dd b { color: var(--ink); font-weight: 600; }
+p.worked { max-width: 86ch; }
+/* formatted tooltips (the controllers) */
+.tt-rich p { margin: 0 0 4px; max-width: none; }
+.tt-rich p:last-child { margin-bottom: 0; }
+.tt-rich b { color: var(--ink); font-weight: 600; }
+/* what has a tooltip: symbols in running text, readouts, drawings */
+html:not(.tt-off) .sym { border-bottom: 1px dotted var(--muted); cursor: help; }
+html:not(.tt-off) .ro[data-tip] > .k:first-child { text-decoration: underline dotted; text-decoration-color: var(--muted);
+  text-decoration-thickness: 1px; text-underline-offset: 3px; cursor: help; }
+html:not(.tt-off) canvas[data-tip], html:not(.tt-off) svg [data-tip] { cursor: help; }
+canvas[data-tip]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ro[data-tip]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }

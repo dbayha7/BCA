@@ -1,0 +1,335 @@
+  <section id="critic-in-action" class="qv">
+    <h2>The critic in action</h2>
+    <p class="status"><span class="tag acc">weighting test data</span> This section uses the data and trained runs of the <a href="#weighting-test">weighting test</a>, not the recorded data described in the sections above, and three things differ. Its recording controller never pushes past 80%: it drives normally with every throttle below 80%, and in hard water, the states where holding the floats against the water would ask thruster 1 for more than 65% of full throttle, a coin flip in each state chooses the 80% hold, thruster 1 at exactly 80% upstream. (The controller of the section <a href="#recording-controller">The recording controller</a> gives full throttle when the water pushes hard.) This section's removed ball therefore takes in the 80% hold; it is not the ball of the section <a href="#shift">The distribution shift</a>. And its points run from uniformly random commands (0 points) to the stall-aware controller (100 points), while elsewhere on this page 0 points is the recording controller.</p>
+    <p>The learner of the weighting test is <span class="term" data-tip-title="TD3+BC" data-tip="TD3+BC stands for twin delayed deep deterministic policy gradient plus behaviour cloning, a standard learner for recorded data. It trains an actor, which picks the commands, and a critic, which scores them, and pulls the actor toward the recorded commands.">TD3+BC</span>, short for twin delayed deep deterministic policy gradient plus behaviour cloning. It learns from the recorded data only and ends with two networks. The <b>actor</b> picks the four throttles in each state. The <b>critic</b> scores commands: the actor climbs the critic's score while it learns, and BCA (Bayesian Conformal Aggregation) puts its band around that same score. This section shows the critic at work: it replays one real episode of a trained actor and, at every state, asks the critic how good each throttle of thruster 1 would be, next to the exact answer from simulation.</p>
+    <div class="qv-keys">
+      <div class="qv-key">
+        <p class="qv-k">The critic's value, Q(<i>s</i>, <i>a</i>)</p>
+        <p>The critic's estimate of the return if the actor gives command <i>a</i> in state <i>s</i> and then keeps driving as it does. The return is the sum of all the rewards that follow, each step discounted by a factor of 0.98. The critic is two networks, and Q(<i>s</i>, <i>a</i>) is the smaller of their two estimates, min(Q<sub>1</sub>, Q<sub>2</sub>), the value BCA and this section use; TD3+BC takes the same kind of minimum when it sets the critic's training targets. Every reward is a cost, so every value is negative; higher is better.</p>
+      </div>
+      <div class="qv-key">
+        <p class="qv-k">The true value, Q<sup>π</sup>(<i>s</i>, <i>a</i>)</p>
+        <p>The same quantity, computed exactly. The physics has no randomness, so the simulator gives command <i>a</i> in state <i>s</i> once, lets the actor π drive from there, and adds up the discounted rewards. It stops after 600 steps; running 1,000 steps instead changes no value by more than <span data-qv-num="meta.horizon_600_vs_1000_max_relative" data-qv-fmt="ppm"></span> of itself.</p>
+      </div>
+      <div class="qv-key">
+        <p class="qv-k">Why the 80% limit matters</p>
+        <p>Past 80% throttle a propeller stalls: more throttle gives less push (0.8 at 80%, 0.5 at 100%) and costs more. These data barely show this. The weighting test's recording controller never pushes past 80%, so the only recorded commands past 80% are random ones, and the expert data have none. The critic trained with "the 80% hold removed" has also almost never seen the 80% hold, the best move when the water pushes hard. Where a critic rates a stalled throttle highly, the actor, which climbs the critic, is pulled toward the stall.</p>
+      </div>
+    </div>
+    <p class="note">How to use it: pick a dataset quality, the critic's data and the situation, then press Play or step through the episode's 100 states. The upper chart is one state: the critic's value and the true value of the throttles thruster 1 could take there, from 60% to 100% upstream at first (choose 0% to 100% to see them all), with the other three thrusters kept where the actor put them. The lower chart is the whole episode: both values at the command the actor actually gave.</p>
+
+    <figure class="panel qv-panel" id="qv-panel" aria-label="The critic's values and the true values along one episode">
+      <div class="qv-ctrls">
+        <div class="qv-ctrl" role="group" aria-labelledby="qv-lg-q">
+          <span class="qv-cl" id="qv-lg-q">Dataset quality</span>
+          <div class="qv-seg">
+            <button type="button" data-qv-q="random" aria-pressed="false" data-tip-title="Random data" data-tip="Every recorded command is uniformly random: each throttle anywhere from 100% upstream to 100% downstream.">random</button>
+            <button type="button" data-qv-q="medium-replay" aria-pressed="false" data-tip-title="Medium-replay data" data-tip="Each recorded episode has its own share of steps whose command is replaced by a random one, spread evenly from 65% to 100% across the episodes, like the record of a learner that improves.">medium-replay</button>
+            <button type="button" data-qv-q="medium" aria-pressed="false" data-tip-title="Medium data" data-tip="The weighting test's recording controller drives, but in 65% of the steps a random command replaces its command.">medium</button>
+            <button type="button" data-qv-q="medium-expert" aria-pressed="false" data-tip-title="Medium-expert data" data-tip="Each recorded episode is medium (65% random commands) or expert (the recording controller alone), with equal chance.">medium-expert</button>
+            <button type="button" data-qv-q="expert" aria-pressed="true" data-tip-title="Expert data" data-tip="The weighting test's recording controller alone, with no random commands. When the water pushes hard, so that holding the floats would ask thruster 1 for more than 65% of full throttle, a coin flip in each state chooses to hold thruster 1 at exactly 80%. It never goes past 80%.">expert</button>
+          </div>
+        </div>
+        <div class="qv-ctrl" role="group" aria-labelledby="qv-lg-c">
+          <span class="qv-cl" id="qv-lg-c">The critic's data</span>
+          <div class="qv-seg">
+            <button type="button" data-qv-c="full" aria-pressed="false" data-tip-title="All the data" data-tip="The critic and actor trained on every recorded training step.">All the data</button>
+            <button type="button" data-qv-c="gap" aria-pressed="true" data-tip-title="The 80% hold removed" data-tip="The critic and actor trained after the densest-15% removal: every recorded step whose command lies in this section's removed ball, which takes in the 80% hold, is deleted. So this critic has almost never seen thruster 1 held at 80%.">The 80% hold removed</button>
+          </div>
+        </div>
+        <div class="qv-ctrl" role="group" aria-labelledby="qv-lg-s">
+          <span class="qv-cl" id="qv-lg-s">Situation</span>
+          <div class="qv-seg">
+            <button type="button" data-qv-s="training" aria-pressed="false" data-tip-title="Training mix of currents" data-tip="The episode starts from one fixed start of the training mix's bank of 1,000 fixed starting states, where weak currents are common and strong ones rare, as in the recorded data.">Training mix of currents</button>
+            <button type="button" data-qv-s="strong" aria-pressed="true" data-tip-title="Strong test mix" data-tip="The episode starts from the same start, with the current that start has in the strong test mix's bank of 1,000 fixed starting states, where strong currents are common. Only the current differs: the floats and the wave start the same.">Strong test mix</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="transport qv-transport">
+        <button class="btn" id="qv-play" type="button" data-tip-title="Play" data-tip="Play the episode state by state from the state on screen, to state 99. Press again to pause.">Play</button>
+        <button class="btn ghost" id="qv-back" type="button" aria-label="Back one state" data-tip-title="Back one state" data-tip="Show the previous state, and pause.">&#8592; Step</button>
+        <button class="btn ghost" id="qv-fwd" type="button" aria-label="Forward one state" data-tip-title="Forward one state" data-tip="Show the next state, and pause.">Step &#8594;</button>
+        <input type="range" id="qv-t" min="0" max="99" value="0" step="1" aria-label="State" data-tip-title="State" data-tip="Drag to any of the episode's 100 states, 0 to 99.">
+        <span class="tlabel" id="qv-tl">state 0</span>
+      </div>
+
+      <div class="qv-stripbox">
+        <svg id="qv-strip" class="qv-strip" role="img" aria-label="The channel in the state on screen"></svg>
+      </div>
+      <div class="readouts" aria-live="off">
+        <div class="ro" data-tip-title="Current c" data-tip="This is the strength of the steady current, fixed for the whole episode. The two situations differ only in this number."><span class="k">current <i>c</i></span><span class="v" id="qv-ro-c"></span></div>
+        <div class="ro" data-tip-title="The water's push c + w₁" data-tip="It is the current c plus the push w₁ that the wave adds in this state, the same on every float. Positive pushes downstream."><span class="k">water's push <i>c</i> + w₁</span><span class="v" id="qv-ro-push"></span></div>
+        <div class="ro" data-tip-title="Thruster 1's throttle" data-tip="This is the throttle the actor gives thruster 1 in this state. Upstream pushes against the water; past 80% the propeller stalls."><span class="k">thruster 1's throttle (actor)</span><span class="v" id="qv-ro-a1"></span></div>
+        <div class="ro" data-tip-title="Reward" data-tip="The reward is minus the sum of the squares of the floats' ten numbers (five positions and five speeds), minus 0.3 times the squared throttles. 0 is the best a state can score."><span class="k">reward</span><span class="v" id="qv-ro-r"></span></div>
+      </div>
+      <p class="qv-now" id="qv-now"></p>
+
+      <div class="qv-chart" id="qv-c1">
+        <div class="qv-chead">
+          <h3 class="qv-h" id="qv-h1">At this state: the value of each throttle of thruster 1</h3>
+          <div class="qv-seg qv-seg-sm" role="group" aria-label="Which throttles are shown">
+            <button type="button" data-qv-r="hi" aria-pressed="true" data-tip-title="Near the stall" data-tip="The chart shows only the throttles from 60% to 100% upstream. The vertical axis fits these values alone, so small rises and falls around the 80% limit become visible.">60% to 100%</button>
+            <button type="button" data-qv-r="all" aria-pressed="false" data-tip-title="The whole sweep" data-tip="The chart shows all 41 throttles of thruster 1, from 0% to 100% upstream.">0% to 100%</button>
+          </div>
+          <div class="qv-seg qv-seg-sm" role="group" aria-label="How the values are shown">
+            <button type="button" data-qv-v="rel" aria-pressed="true" data-tip-title="Change from the actor's command" data-tip="Each curve is shown minus its own value at the command the actor gave, so both pass through 0 there. The critic's level is often far from the true level; this way the two shapes, and where each peaks, can be compared.">Change from the actor's command</button>
+            <button type="button" data-qv-v="abs" aria-pressed="false" data-tip-title="Values as computed" data-tip="The critic's value and the true value are shown as they are, on one axis. The gap between the two curves is the critic's error.">Values as computed</button>
+          </div>
+        </div>
+        <p class="note" id="qv-y1"></p>
+        <div class="legend qv-legend" aria-hidden="true">
+          <span data-tip-title="The critic's value" data-tip="The line shows the critic's value Q(s, a) at each throttle of thruster 1, with the other three thrusters as the actor set them." data-tip-focus="no"><i class="sw qv-sw-q"></i><span class="qv-lt">critic, Q(<i>s</i>, <i>a</i>)</span></span>
+          <span data-tip-title="The true value" data-tip="The line shows the true value of the same commands, computed exactly by simulation, with the actor driving after the first step." data-tip-focus="no"><i class="sw qv-sw-p"></i><span class="qv-lt">true value, Q<sup>π</sup>(<i>s</i>, <i>a</i>)</span></span>
+          <span data-tip-title="â, the critic's highest-rated throttle" data-tip="The dot marks the swept throttle of thruster 1 that the critic rates highest in this state." data-tip-focus="no"><i class="qv-mk qv-mk-hat"></i><span class="qv-lt">â, rated highest by the critic</span></span>
+          <span data-tip-title="The true best swept throttle" data-tip="The diamond marks the swept throttle of thruster 1 with the highest true value in this state, with the other three thrusters as the actor set them." data-tip-focus="no"><i class="qv-mk qv-mk-best"></i><span class="qv-lt">true best of the sweep</span></span>
+          <span data-tip-title="The actor's throttle" data-tip="The vertical line marks the throttle the actor actually gave thruster 1 in this state." data-tip-focus="no"><i class="qv-lk qv-lk-act"></i><span class="qv-lt">actor's throttle, π(<i>s</i>)</span></span>
+          <span data-tip-title="The stall" data-tip="Past 80% the propeller stalls: its push falls from 0.8 at 80% to 0.5 at 100% while the throttle cost keeps rising." data-tip-focus="no"><i class="qv-bx qv-bx-stall"></i><span class="qv-lt">stall, past 80%</span></span>
+          <span id="qv-lg-ball" data-tip-title="Removed from this critic's data" data-tip="The shading marks the throttles for which the command, with the other three thrusters as the actor set them, lies inside this section's removed ball. This critic never saw a recorded command there." data-tip-focus="no"><i class="qv-bx qv-bx-ball"></i><span class="qv-lt">removed from this critic's data</span></span>
+        </div>
+        <svg id="qv-svg1" class="chart qv-svg" tabindex="0" role="img" aria-label="The critic's value and the true value of each throttle of thruster 1 in the state on screen. Focus the chart and use the left and right arrow keys to read the values throttle by throttle."></svg>
+        <div class="qv-tip" id="qv-tip1" hidden></div>
+      </div>
+      <div class="readouts" aria-live="off">
+        <div class="ro" data-tip-title="â, the critic's highest-rated throttle" data-tip="The critic rates this one highest among the 41 swept throttles of thruster 1 (0% to 100% upstream, 2.5% apart) in this state."><span class="k">â, rated highest by the critic</span><span class="v" id="qv-ro-hat"></span></div>
+        <div class="ro" data-tip-title="The true best swept throttle" data-tip="This one has the highest true value among the same 41 throttles in this state."><span class="k">true best of the sweep</span><span class="v" id="qv-ro-best"></span></div>
+        <div class="ro" data-tip-title="The critic's error at the actor's command" data-tip="This is the critic's value minus the true value, both at the command the actor actually gave. Positive means the critic thinks the command better than it is."><span class="k">critic's error at the actor's command</span><span class="v" id="qv-ro-err"></span></div>
+        <div class="ro" data-tip-title="True value lost by taking â" data-tip="This is the true value of the true best swept throttle minus the true value of â: what following the critic's top rating would cost in this state, in the units of the return. It reads under 0.001 when â differs from the true best but costs less than 0.001."><span class="k">true value lost by taking â</span><span class="v" id="qv-ro-cost"></span></div>
+      </div>
+
+      <div class="qv-chart" id="qv-c2">
+        <h3 class="qv-h">Over the whole episode: the critic's value at the actor's command, against the true value</h3>
+        <p class="note">The value of the command the actor actually gave, state by state. Click or tap a state to show it in the chart above.</p>
+        <div class="legend qv-legend" aria-hidden="true">
+          <span data-tip-title="The critic's value" data-tip="The line shows the critic's value Q(s, π(s)) of the command the actor gave in each state." data-tip-focus="no"><i class="sw qv-sw-q"></i><span class="qv-lt">critic, Q(<i>s</i>, π(<i>s</i>))</span></span>
+          <span data-tip-title="The true value" data-tip="The line shows the true value of the same command, computed exactly by simulation." data-tip-focus="no"><i class="sw qv-sw-p"></i><span class="qv-lt">true value, Q<sup>π</sup>(<i>s</i>, π(<i>s</i>))</span></span>
+          <span data-tip-title="State on screen" data-tip="The dotted line marks the state shown in the chart above." data-tip-focus="no"><i class="qv-lk qv-lk-cur"></i><span class="qv-lt">state on screen</span></span>
+          <span data-tip-title="Flagged states" data-tip="The ticks mark the states where the critic rates 100% throttle above 80% while the true value of 100% is below that of 80%: there the critic prefers the stalled throttle that the true value shows is worse." data-tip-focus="no"><i class="qv-lk qv-lk-flag"></i><span class="qv-lt">critic prefers 100% over 80%, the true value the reverse</span></span>
+        </div>
+        <svg id="qv-svg2" class="chart qv-svg" tabindex="0" role="img" aria-label="The critic's value and the true value at the actor's command over the episode's 100 states. Focus the chart and use the left and right arrow keys to move through the states."></svg>
+        <div class="qv-tip" id="qv-tip2" hidden></div>
+      </div>
+      <div class="readouts" aria-live="off">
+        <div class="ro" data-tip-title="Return, 100 steps" data-tip="This is the sum of the rewards of this episode's 100 states, without discount. Closer to 0 is better."><span class="k">return of this episode</span><span class="v" id="qv-ro-ret"></span></div>
+        <div class="ro" data-tip-title="Points" data-tip="This places the return on this section's scale: 0 is the average return of uniformly random commands over the mix's 1,000 starts, and 100 the stall-aware controller's average. Because the scale uses averages over 1,000 starts, a single start can score above 100 even when the stall-aware controller does better from that same start."><span class="k">points</span><span class="v" id="qv-ro-pts"></span></div>
+        <div class="ro" data-tip-title="Stall-aware controller from this start" data-tip="This is the return of the stall-aware controller (the textbook command, capped at 80%) from the same start, for comparison."><span class="k">stall-aware controller, same start</span><span class="v" id="qv-ro-sa"></span></div>
+        <div class="ro" data-tip-title="Random commands from this start" data-tip="This is the return of uniformly random commands from the same start, for comparison."><span class="k">random commands, same start</span><span class="v" id="qv-ro-rnd"></span></div>
+      </div>
+
+      <div class="explain qv-ep" id="qv-ep">
+        <div class="ex-head" id="qv-ep-h">This episode in numbers</div>
+        <ul class="qv-eplist" id="qv-ep-list"></ul>
+      </div>
+
+      <div class="symkey">
+        <p class="symkey-h">Reading the charts</p>
+        <dl>
+          <div><dt><i>s</i></dt><dd>The state on screen: the five floats' positions and speeds, the current <i>c</i> and the wave numbers w₁ and w₂.</dd></div>
+          <div><dt><i>a</i></dt><dd>A command: the four throttles. In the upper chart thruster 1's throttle takes 41 values from 0% to 100% upstream, 2.5% apart, and thrusters 2 to 4 stay where the actor put them.</dd></div>
+          <div><dt>π(<i>s</i>)</dt><dd>The command the actor gives in state <i>s</i>; π is the trained actor.</dd></div>
+          <div><dt>Q(<i>s</i>, <i>a</i>)</dt><dd>The critic's value: its estimate of the return from giving <i>a</i> in <i>s</i> and letting the actor drive after that. The smaller of the critic's two estimates, min(Q<sub>1</sub>, Q<sub>2</sub>).</dd></div>
+          <div><dt>Q<sup>π</sup>(<i>s</i>, <i>a</i>)</dt><dd>The true value of the same thing, by exact simulation: 600 steps, discount 0.98.</dd></div>
+          <div><dt>â</dt><dd>The swept throttle the critic rates highest in this state.</dd></div>
+          <div><dt>True best of the sweep</dt><dd>The swept throttle with the highest true value in this state. It is the best of the 41 throttles with the other three thrusters fixed, not the best possible command.</dd></div>
+          <div><dt>80%</dt><dd>The stall limit. Past it the push falls (0.8 at 80%, 0.5 at 100%) and the throttle cost, 0.3 × throttle², keeps rising.</dd></div>
+          <div><dt>Removed region</dt><dd>Throttles whose command lies inside this section's removed ball, which was taken out of the training data of the critic with "the 80% hold removed": every command within <span data-qv-num="ball.rho" data-qv-fmt="f3"></span> (the distance across all four throttles, each from −1 to 1) of a centre command that has thruster 1 at <span data-qv-num="ball.u0" data-qv-fmt="pct1"></span> upstream. The ball takes in the 80% hold. It is shaded only for that critic, and only in states where the throttle sweep passes through the ball.</dd></div>
+          <div><dt>Points</dt><dd>This section's own scale: 100 × (return − <i>J</i><sub>random</sub>) / (<i>J</i><sub>stall-aware</sub> − <i>J</i><sub>random</sub>), where <i>J</i><sub>random</sub> and <i>J</i><sub>stall-aware</sub> are the average returns of uniformly random commands and of the stall-aware controller over the mix's 1,000 starts: <span data-qv-num="sit.training.anchor_random" data-qv-fmt="s4"></span> and <span data-qv-num="sit.training.anchor_top" data-qv-fmt="s4"></span> in the training mix, <span data-qv-num="sit.strong.anchor_random" data-qv-fmt="s4"></span> and <span data-qv-num="sit.strong.anchor_top" data-qv-fmt="s4"></span> in the strong test mix. Elsewhere on this page 0 points is the recording controller.</dd></div>
+        </dl>
+      </div>
+
+      <details class="qv-tables" id="qv-tables">
+        <summary>The numbers in tables: this state's 41 throttles, and every state of the episode</summary>
+        <div class="inner">
+          <p class="note qv-cap" id="qv-cap-sweep">Thruster 1's swept throttles in the state on screen</p>
+          <div class="tbl qv-tbl"><table id="qv-tbl-sweep">
+            <thead><tr><th class="n" data-label="Thruster 1, upstream"><span data-tip-title="Thruster 1, upstream" data-tip="Each row is one of the 41 swept throttles of thruster 1, from 0% to 100% upstream, 2.5% apart, with thrusters 2 to 4 kept where the actor put them. The highlighted row is the actor's own command." data-tip-focus="no">Thruster 1, upstream</span></th><th class="n" data-label="Critic, Q(s, a)"><span data-tip-title="The critic's value" data-tip="This is the critic's value of the row's command: the smaller of its two estimates." data-tip-focus="no">Critic, Q(<i>s</i>, <i>a</i>)</span></th><th class="n" data-label="True value"><span data-tip-title="The true value" data-tip="This is the true value of the row's command, computed exactly by simulation, with the actor driving after the first step." data-tip-focus="no">True value, Q<sup>π</sup>(<i>s</i>, <i>a</i>)</span></th><th class="n" data-label="Critic minus true value"><span data-tip-title="Critic minus true value" data-tip="This is the critic's value minus the true value. Positive means the critic thinks the command better than it is." data-tip-focus="no">Critic minus true value</span></th><th data-label="Note"><span data-tip-title="Note" data-tip="This marks â (the throttle the critic rates highest), the true best of the sweep, the 80% stall limit, and the throttles inside this section's removed ball." data-tip-focus="no">Note</span></th></tr></thead>
+            <tbody>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="qv-note">–</td></tr>
+            </tbody>
+          </table></div>
+          <p class="note qv-cap" id="qv-cap-ep">Every state of the episode, at the actor's command</p>
+          <div class="tbl qv-tbl"><table id="qv-tbl-ep">
+            <thead><tr><th class="n" data-label="State"><span data-tip-title="State" data-tip="Each row is one state of the episode, 0 to 99. The highlighted row is the state on screen." data-tip-focus="no">State</span></th><th class="n" data-label="Water's push c + w₁"><span data-tip-title="Water's push" data-tip="This is the water's push in the state: the current c plus the push w₁ that the wave adds now. Positive pushes downstream." data-tip-focus="no">Water's push</span></th><th class="n" data-label="Thruster 1 (actor), upstream"><span data-tip-title="Thruster 1 (actor)" data-tip="This is the throttle the actor gives thruster 1, upstream unless marked down." data-tip-focus="no">Thruster 1 (actor), upstream</span></th><th class="n" data-label="Reward"><span data-tip-title="Reward" data-tip="This is the state's reward: minus the sum of the squares of the floats' ten numbers, minus 0.3 times the squared throttles." data-tip-focus="no">Reward</span></th><th class="n" data-label="Critic, Q(s, π(s))"><span data-tip-title="The critic's value" data-tip="This is the critic's value of the command the actor gave." data-tip-focus="no">Critic, Q(<i>s</i>, π(<i>s</i>))</span></th><th class="n" data-label="True value"><span data-tip-title="The true value" data-tip="This is the true value of the command the actor gave, computed exactly by simulation." data-tip-focus="no">True value, Q<sup>π</sup>(<i>s</i>, π(<i>s</i>))</span></th><th class="n" data-label="Critic minus true value"><span data-tip-title="Critic minus true value" data-tip="This is the critic's value minus the true value at the actor's command. Positive means the critic thinks the command better than it is." data-tip-focus="no">Critic minus true value</span></th><th class="n" data-label="â"><span data-tip-title="â" data-tip="This is the swept throttle of thruster 1 that the critic rates highest in the state." data-tip-focus="no">â</span></th><th class="n" data-label="True best of the sweep"><span data-tip-title="True best of the sweep" data-tip="This is the swept throttle of thruster 1 with the highest true value in the state." data-tip-focus="no">True best of the sweep</span></th></tr></thead>
+            <tbody>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+              <tr><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td><td class="n">–</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+
+      <details class="qv-tables" id="qv-qual">
+        <summary>What the five dataset qualities are, and what each critic's training data contain</summary>
+        <div class="inner">
+          <p class="note">Each quality is a recording of 500 training episodes (50,000 steps) from the training mix. The recording controller is the weighting test's: it drives normally with every throttle below 80% and, when the water pushes hard, holds thruster 1 at exactly 80% in half of the states, chosen by a coin flip. The lower qualities replace part of its commands with uniformly random ones. Past 80% means thruster 1 more than 80% upstream.</p>
+          <div class="tbl qv-tbl qv-free"><table class="stack" id="qv-tbl-qual">
+            <thead><tr><th data-label="Dataset quality"><span data-tip-title="Dataset quality" data-tip="Each row is one of the five dataset qualities." data-tip-focus="no">Dataset quality</span></th><th data-label="How it was recorded"><span data-tip-title="How it was recorded" data-tip="This says how the quality's commands were recorded, and what share of its training steps have a random command." data-tip-focus="no">How it was recorded</span></th><th class="n" data-label="Training steps kept, all data / hold removed"><span data-tip-title="Training steps kept" data-tip="This is the number of recorded training steps each critic trained on: all of them, and those left after the densest-15% removal." data-tip-focus="no">Training steps kept, all data / hold removed</span></th><th class="n" data-label="Thruster 1 held at exactly 80%, all data / hold removed"><span data-tip-title="Thruster 1 held at exactly 80%" data-tip="This is the share of those training steps in which thruster 1 is held at exactly 80% upstream, in each critic's data." data-tip-focus="no">Thruster 1 held at exactly 80%, all data / hold removed</span></th><th class="n" data-label="Thruster 1 past 80%, all data / hold removed"><span data-tip-title="Thruster 1 past 80%" data-tip="This is the share of those training steps in which thruster 1 is more than 80% upstream, in each critic's data. Only random commands go there." data-tip-focus="no">Thruster 1 past 80%, all data / hold removed</span></th></tr></thead>
+            <tbody>
+              <tr><td data-label="Dataset quality">–</td><td data-label="How it was recorded">–</td><td class="n" data-label="Training steps kept, all data / hold removed">–</td><td class="n" data-label="Thruster 1 held at exactly 80%, all data / hold removed">–</td><td class="n" data-label="Thruster 1 past 80%, all data / hold removed">–</td></tr>
+              <tr><td data-label="Dataset quality">–</td><td data-label="How it was recorded">–</td><td class="n" data-label="Training steps kept, all data / hold removed">–</td><td class="n" data-label="Thruster 1 held at exactly 80%, all data / hold removed">–</td><td class="n" data-label="Thruster 1 past 80%, all data / hold removed">–</td></tr>
+              <tr><td data-label="Dataset quality">–</td><td data-label="How it was recorded">–</td><td class="n" data-label="Training steps kept, all data / hold removed">–</td><td class="n" data-label="Thruster 1 held at exactly 80%, all data / hold removed">–</td><td class="n" data-label="Thruster 1 past 80%, all data / hold removed">–</td></tr>
+              <tr><td data-label="Dataset quality">–</td><td data-label="How it was recorded">–</td><td class="n" data-label="Training steps kept, all data / hold removed">–</td><td class="n" data-label="Thruster 1 held at exactly 80%, all data / hold removed">–</td><td class="n" data-label="Thruster 1 past 80%, all data / hold removed">–</td></tr>
+              <tr><td data-label="Dataset quality">–</td><td data-label="How it was recorded">–</td><td class="n" data-label="Training steps kept, all data / hold removed">–</td><td class="n" data-label="Thruster 1 held at exactly 80%, all data / hold removed">–</td><td class="n" data-label="Thruster 1 past 80%, all data / hold removed">–</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </details>
+      <figcaption>Each episode is the trained actor of one TD3+BC run (the run on the dataset recorded with seed 0, at the end of its training) driving 100 steps from start <span data-qv-num="meta.start_index" data-qv-fmt="i"></span> of each mix's bank of 1,000 fixed starting states. That start was chosen by a rule fixed before any result from these starts was looked at: the first start whose current lies in the middle half of its own mix (current <span data-qv-num="sit.training.current" data-qv-fmt="f3"></span> in the training mix and <span data-qv-num="sit.strong.current" data-qv-fmt="f3"></span> in the strong test mix, both at the <span data-qv-num="sit.strong.quantile" data-qv-fmt="ord"></span> percentile). The critic's values come from the run's own trained networks, checked against the hashes saved with them (a hash is a short fingerprint of a file that changes if any character of the file changes). Each true value is an exact simulation of the deterministic physics; the true value at the actor's own command equals the episode's discounted rewards plus the simulated rest of the run to within <span data-qv-num="meta.tail_sum_max_relative" data-qv-fmt="sci"></span> of itself.</figcaption>
+    </figure>
+
+    <h3 id="qv-findings">What the episodes show</h3>
+    <ul class="leads qv-findings" id="qv-find"></ul>
+    <p class="note qv-cap" id="qv-cap-ctx"></p>
+    <div class="tbl qv-tbl qv-free"><table class="grouped stack" id="qv-tbl-ctx">
+      <thead>
+        <tr class="grp"><th class="g0"></th><th colspan="2"><span data-tip-title="Critic rates 100% above 80%" data-tip="This is the share of the states at which the critic rates thruster 1 at 100% upstream above 80%, with the other three thrusters as the actor set them." data-tip-focus="no">Critic rates 100% above 80%</span></th><th colspan="2"><span data-tip-title="Critic rates 100% higher, true value lower" data-tip="This is the share of the states at which the critic rates 100% above 80% while the true value of 100% is below that of 80%." data-tip-focus="no">Critic rates 100% higher, true value lower</span></th><th colspan="2"><span data-tip-title="Actor gives thruster 1 more than 80%" data-tip="This is the share of the states at which the actor itself gives thruster 1 more than 80% upstream." data-tip-focus="no">Actor gives thruster 1 more than 80%</span></th></tr>
+        <tr><th data-label="Dataset quality"><span data-tip-title="Dataset quality" data-tip="Each row is one dataset quality. The highlighted row is the quality chosen above." data-tip-focus="no">Dataset quality</span></th><th class="n" data-label="Critic rates 100% above 80%, all the data">All the data</th><th class="n" data-label="Critic rates 100% above 80%, 80% hold removed">80% hold removed</th><th class="n" data-label="Critic rates 100% higher, true value lower, all the data">All the data</th><th class="n" data-label="Critic rates 100% higher, true value lower, 80% hold removed">80% hold removed</th><th class="n" data-label="Actor gives thruster 1 more than 80%, all the data">All the data</th><th class="n" data-label="Actor gives thruster 1 more than 80%, 80% hold removed">80% hold removed</th></tr>
+      </thead>
+      <tbody>
+        <tr><td data-label="Dataset quality">–</td><td class="n" data-label="Critic rates 100% above 80%, all the data">–</td><td class="n" data-label="Critic rates 100% above 80%, 80% hold removed">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, all the data">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, 80% hold removed">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, all the data">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, 80% hold removed">–</td></tr>
+        <tr><td data-label="Dataset quality">–</td><td class="n" data-label="Critic rates 100% above 80%, all the data">–</td><td class="n" data-label="Critic rates 100% above 80%, 80% hold removed">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, all the data">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, 80% hold removed">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, all the data">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, 80% hold removed">–</td></tr>
+        <tr><td data-label="Dataset quality">–</td><td class="n" data-label="Critic rates 100% above 80%, all the data">–</td><td class="n" data-label="Critic rates 100% above 80%, 80% hold removed">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, all the data">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, 80% hold removed">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, all the data">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, 80% hold removed">–</td></tr>
+        <tr><td data-label="Dataset quality">–</td><td class="n" data-label="Critic rates 100% above 80%, all the data">–</td><td class="n" data-label="Critic rates 100% above 80%, 80% hold removed">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, all the data">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, 80% hold removed">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, all the data">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, 80% hold removed">–</td></tr>
+        <tr><td data-label="Dataset quality">–</td><td class="n" data-label="Critic rates 100% above 80%, all the data">–</td><td class="n" data-label="Critic rates 100% above 80%, 80% hold removed">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, all the data">–</td><td class="n" data-label="Critic rates 100% higher, true value lower, 80% hold removed">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, all the data">–</td><td class="n" data-label="Actor gives thruster 1 more than 80%, 80% hold removed">–</td></tr>
+      </tbody>
+    </table></div>
+  </section>
