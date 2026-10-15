@@ -4,11 +4,13 @@ PRESPEC.md.
 Read-only imports, each executed from bytes whose SHA-256 prespec.json pins, WITHOUT version 6's approval checks.
 Step 2 lies outside the gate and outside version 6: it calls none of version 6's phase functions (they all require
 version 6's approval) and none of its writers (they write only under runs/shift_explore/stage2). It uses:
-  - version 6's Stage 2 code (stage2_common.py, band.py, fresh.py, policy.py) from
+  - version 6's Stage 2 code (stage2_common.py, weights.py, band.py, fresh.py, policy.py) from
     outputs/shift/beyond-the-data/stage2/code (byte-identical to the copies version 6's code manifest pins):
     fresh.context (the gate's verified loaders through the room harness's SeedContext), policy.room_scales,
     policy.match_controls, policy.strengths_of, policy.arms_record, policy.standins_module, policy.MATCHED,
-    policy.W0_TOL;
+    policy.W0_TOL. weights.py is loaded only because band.py imports it (`import weights as Wt`, which then binds to
+    the verified module); step 2 calls none of its functions. check_imports() refuses if any module from that folder
+    or step 1's was loaded without its hash checked (at import, before every lock and before every values file);
   - through it, the room test's harness (stage2_common.load_room_harness checks its manifest and bytes): RoomRunner,
     RoomArm, ProgramConfig, build_shared, family_arm, random_surface_params, max_param_diff, shape_rows, the ladders;
   - the stand-ins module (policy.standins_module checks version 6's pre-registration pins, the stand-ins manifest and
@@ -24,7 +26,6 @@ import sys
 sys.dont_write_bytecode = True
 
 import time  # noqa: E402
-import types  # noqa: E402
 from functools import partial  # noqa: E402
 from pathlib import Path  # noqa: E402
 
@@ -37,32 +38,34 @@ SPEC, SPEC_SHA = S.load_prespec()
 _IN = SPEC["inputs"]
 
 
-def _exec_verified(name, path, sha256):
-    """Execute a pinned file from its verified bytes as module `name` (no bytecode is written anywhere)."""
-    path = Path(path)
-    data = path.read_bytes()
-    if S.sha256_bytes(data) != sha256:
-        raise SystemExit(f"refused: {path} differs from the SHA-256 prespec.json pins")
-    if name in sys.modules:
-        mod = sys.modules[name]
-        if getattr(mod, "__step2_sha256__", None) != sha256:
-            raise SystemExit(f"refused: a module named {name!r} is already loaded from elsewhere")
-        return mod
-    mod = types.ModuleType(name)
-    mod.__file__ = str(path)
-    mod.__step2_sha256__ = sha256
-    sys.modules[name] = mod
-    exec(compile(data, str(path), "exec"), mod.__dict__)
-    return mod
-
+_exec_verified = S.exec_verified
 
 V6_DIR = S.ROOT / _IN["v6_code"]["dir"]
-C = _exec_verified("stage2_common", V6_DIR / "stage2_common.py", _IN["v6_code"]["sha256"]["stage2_common.py"])
-B = _exec_verified("band", V6_DIR / "band.py", _IN["v6_code"]["sha256"]["band.py"])
-F = _exec_verified("fresh", V6_DIR / "fresh.py", _IN["v6_code"]["sha256"]["fresh.py"])
-P = _exec_verified("policy", V6_DIR / "policy.py", _IN["v6_code"]["sha256"]["policy.py"])
+_V6 = _IN["v6_code"]["sha256"]
+C = _exec_verified("stage2_common", V6_DIR / "stage2_common.py", _V6["stage2_common.py"])
+Wt = _exec_verified("weights", V6_DIR / "weights.py", _V6["weights.py"])     # before band.py, which imports it
+B = _exec_verified("band", V6_DIR / "band.py", _V6["band.py"])
+F = _exec_verified("fresh", V6_DIR / "fresh.py", _V6["fresh.py"])
+P = _exec_verified("policy", V6_DIR / "policy.py", _V6["policy.py"])
 S1 = _exec_verified("step1lib", S.ROOT / _IN["step1lib"]["path"], _IN["step1lib"]["sha256"])
 H, A, L, TC, TR, M = P.H, P.A, P.L, P.TC, P.TR, P.M
+VERIFIED_FOLDERS = (V6_DIR, (S.ROOT / _IN["step1lib"]["path"]).parent)
+
+
+def check_imports():
+    """Refuses if any module from version 6's code folder or step 1's folder was loaded through the normal import
+    system (no hash check), or if band.py's `weights` is not the verified module. Returns {module: SHA-256} of the
+    modules loaded from verified bytes (recorded in every lock and values file)."""
+    bad = S.unverified_modules(VERIFIED_FOLDERS)
+    if bad:
+        raise SystemExit(f"refused: modules loaded from a pinned folder without a hash check: {bad}")
+    if B.Wt is not Wt:
+        raise SystemExit("refused: band.py's weights module is not the verified weights.py")
+    return {n: m.__step2_sha256__ for n, m in sorted(sys.modules.items())
+            if getattr(m, "__step2_sha256__", None) is not None}
+
+
+check_imports()
 if C.ROOM_PINNED["harness_sha256"] != _IN["room"]["harness_sha256"] or \
         C.ROOM_PINNED["manifest_sha256"] != _IN["room"]["manifest_sha256"]:
     raise SystemExit("refused: version 6's room-harness pins differ from prespec.json's")
@@ -288,11 +291,12 @@ def visit_shares(params, prepared, t_lo):
 def save_and_lock(d, actors, payload, official):
     """actors.msgpack, then lock.json (both write-once): every actor's parameter SHA-256, written before any return,
     points or score of any trained arm is computed."""
+    verified = check_imports()
     names = sorted(actors)
     blob = serialization.to_bytes({k: actors[k] for k in names})
     file_sha = S.write_bytes_once(Path(d) / "actors.msgpack", blob, official)
     payload = dict(payload, names=names, actor_sha256={k: L.tree_sha256(actors[k]) for k in names},
-                   actors_file="actors.msgpack", actors_file_sha256=file_sha,
+                   actors_file="actors.msgpack", actors_file_sha256=file_sha, verified_imports=verified,
                    written=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                    about=("the lock: every actor trained and every control matched in strength, written before any "
                           "return, points or score of any trained arm is computed"))

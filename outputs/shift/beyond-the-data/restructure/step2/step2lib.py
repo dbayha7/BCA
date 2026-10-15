@@ -2,7 +2,8 @@
 
 EXPLORATORY, designed after seeing seeds 0-4 and after step 1; written before any step-2 actor is trained. See
 PRESPEC.md and prespec.json beside this file. Everything here is a pure NumPy function (the penalty also runs on
-jax.numpy, passed in as `xp`), a small path / hash / JSON helper, or the go/no-go arithmetic. It is tested in
+jax.numpy, passed in as `xp`), a small path / hash / JSON / verified-import helper, or the go/no-go and reporting
+arithmetic. It is tested in
 test_step2.py on synthetic data. The heavy loaders (the gate, the room harness, version 6's policy code, JAX) live in
 machinery.py.
 
@@ -14,10 +15,12 @@ import sys
 
 sys.dont_write_bytecode = True
 
+import ast  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
 import math  # noqa: E402
 import os  # noqa: E402
+import types  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 import numpy as np  # noqa: E402
@@ -82,6 +85,51 @@ def guard_out(path, official):
     elif inside(p, ROOT):
         raise SystemExit(f"refused: scratch outputs must lie outside {ROOT} (got {p})")
     return p
+
+
+def exec_verified(name, path, sha256):
+    """Execute a pinned file from its verified bytes as module `name` (no bytecode is written anywhere). Refuses when
+    the bytes differ from `sha256`, or when a module of that name is already loaded and is not this verified one.
+    Once loaded, a plain `import <name>` anywhere binds to this verified module."""
+    path = Path(path)
+    data = path.read_bytes()
+    if sha256_bytes(data) != sha256:
+        raise SystemExit(f"refused: {path} differs from the SHA-256 prespec.json pins")
+    if name in sys.modules:
+        mod = sys.modules[name]
+        if getattr(mod, "__step2_sha256__", None) != sha256:
+            raise SystemExit(f"refused: a module named {name!r} is already loaded from elsewhere")
+        return mod
+    mod = types.ModuleType(name)
+    mod.__file__ = str(path)
+    mod.__step2_sha256__ = sha256
+    sys.modules[name] = mod
+    exec(compile(data, str(path), "exec"), mod.__dict__)
+    return mod
+
+
+def local_imports(path, folder):
+    """The modules a Python file imports anywhere in it (also inside functions) whose file <name>.py lies in
+    `folder`: the sibling files it would load through the normal import system."""
+    tree = ast.parse(Path(path).read_text(encoding="utf8"))
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(a.name.split(".")[0] for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.add(node.module.split(".")[0])
+    return sorted(n for n in names if (Path(folder) / f"{n}.py").is_file())
+
+
+def unverified_modules(folders):
+    """Loaded modules whose file lies inside one of `folders` but which exec_verified did not load (no
+    __step2_sha256__): files that ran through the normal import system with no hash check. Empty when all is well."""
+    out = []
+    for name, mod in list(sys.modules.items()):
+        f = getattr(mod, "__file__", None)
+        if f and getattr(mod, "__step2_sha256__", None) is None and any(inside(f, d) for d in folders):
+            out.append(f"{name} ({f})")
+    return sorted(out)
 
 
 def jsonable(x):
@@ -408,18 +456,119 @@ def go_no_go(pts, seeds, rule):
                 G3_detail=dict(ev, margin=float(rule["g3_margin"])))
 
 
-def attribution(pts, seeds, rule):
-    """Reported; decides only the claim's wording. A<i> holds when NET(rival) >= NET(obca_k1) - margin (5): then that
-    part of BCA adds nothing measurable here."""
-    n_p = net(pts, PRIMARY, seeds)["net"]
+# The attribution's fixed wordings (review of 15 Oct 2026, before any official training; prespec.json
+# attribution.wording holds the same text, and test_step2.py checks that the two agree). On seeds 0-4 the three
+# rivals have (almost) obca_k1's switch and a smaller stalling-world height in every seed (attribution_facts), so
+# each A compares one penalty shape at two doses: a failed A is worded as dose, never as credit to a part of BCA.
+ATTRIBUTION = (
+    ("A1", "conformal_k1",
+     "the Bayesian part adds nothing measurable (plain split conformal does as well)",
+     "a larger dose did better: conformal_k1's smaller height did worse. Nothing is attributed to the Bayesian "
+     "part: the switch is the same as obca_k1's in every seed-world, so the comparison differs only in the "
+     "stalling-world height, and whether BCA's height did better because it is Bayesian or only because it is "
+     "larger cannot be told here"),
+    ("A2", "fixed_gated",
+     "the calibrated height adds nothing beyond the switch",
+     "a larger dose did better: the fixed height 1.0 did worse. Nothing is attributed to calibration: the switch is "
+     "the same as obca_k1's in every seed-world, so the comparison differs only in the stalling-world height"),
+    ("A3", "meangap_k1",
+     "calibration adds nothing beyond raw average residuals",
+     "a larger dose did better: meangap_k1's smaller height did worse. Nothing is attributed to calibration: the "
+     "switch is the same as obca_k1's except in no_stall/seed2 (h = 0.048 there), so the comparison differs almost "
+     "only in the stalling-world height"))
+DOSE_ARMS = ("meangap_k1", "fixed_gated", "conformal_k1", "obca_k1", "obca_k2")
+DOSE_READING = dict(
+    rising="obca_k2 (twice BCA's dose) did better by more than 5: BCA's height lies on the rising part of the dose "
+           "curve, so it is not an optimum; more of this penalty helps here",
+    plateau="obca_k2 (twice BCA's dose) is within 5 of obca_k1: BCA's height reaches the plateau of the dose curve; "
+            "this says it is large enough, not that it is calibrated",
+    falling="obca_k2 (twice BCA's dose) did worse by more than 5: the best dose of this penalty lies below twice "
+            "BCA's height; this says where BCA's height lies on the dose curve, not that it is calibrated",
+    undefined="undefined: a value is missing")
+CALIBRATION_CREDIT = (
+    "none on these seeds: in the stalling world the height of every rival (fixed_gated, conformal_k1, meangap_k1) "
+    "is below BCA's in every seed, and their switches are (almost) BCA's, so no comparison separates a calibrated "
+    "height from a larger one. A failed A is worded as dose (a larger dose did better), never as credit to the "
+    "Bayesian part or to calibration; obca_k2 against obca_k1 says only where BCA's height lies on the dose curve")
+
+
+def _row(table, world, seed):
+    """One seed-world row of an arm table (step2lib.arm_table: int seed keys; prespec.json: string seed keys)."""
+    t = table[world]
+    return t[seed] if seed in t else t[str(seed)]
+
+
+def attribution_facts(table, seeds):
+    """What the A comparisons can tell apart, from the arm table alone (no outcome): per A, the seed-worlds where the
+    rival's switch differs from obca_k1's, and whether its stalling-world dose k*h is below obca_k1's in every seed
+    (with the per-seed ratio of obca_k1's dose to the rival's)."""
+    per = {}
+    for tag, arm, _, _ in ATTRIBUTION:
+        differs = [f"{w}/seed{s}" for w in WORLDS for s in seeds
+                   if bool(_row(table, w, s)["arms"][arm]["switch"]) !=
+                   bool(_row(table, w, s)["arms"][PRIMARY]["switch"])]
+        dose = {s: float(_row(table, "stall", s)["arms"][arm]["k"]) * float(_row(table, "stall", s)["arms"][arm]["h"])
+                for s in seeds}
+        dose_p = {s: float(_row(table, "stall", s)["arms"][PRIMARY]["k"]) *
+                  float(_row(table, "stall", s)["arms"][PRIMARY]["h"]) for s in seeds}
+        per[tag] = dict(arm=arm, switch_differs_in=differs,
+                        stall_dose_below_primary_in_every_seed=bool(all(dose[s] < dose_p[s] for s in seeds)),
+                        stall_dose_ratio_primary_over_arm={s: (dose_p[s] / dose[s] if dose[s] > 0 else math.inf)
+                                                           for s in seeds})
+    return dict(per_comparison=per, no_rival_height_reaches_bca=bool(
+        all(v["stall_dose_below_primary_in_every_seed"] for v in per.values())))
+
+
+def dose_readout(pts, seeds, rule):
+    """Reported: obca_k2 (k = 2) against obca_k1, which says where BCA's height lies on the dose curve."""
+    a, b = net(pts, "obca_k2", seeds), net(pts, PRIMARY, seeds)
+    m = float(rule["attribution_margin"])
+    d = diff(a["net"], b["net"])
+    reading = "undefined" if d is None else ("rising" if d > m else ("falling" if d < -m else "plateau"))
+    return dict(net_obca_k2=a["net"], net_obca_k1=b["net"], difference=d, reading=reading,
+                wording=DOSE_READING[reading], per_seed_difference=[diff(x, y) for x, y in
+                                                                    zip(a["per_seed"], b["per_seed"])])
+
+
+def dose_table(pts, seeds, table, situation="strong_current"):
+    """Reported: per seed, for the arms of one penalty shape at different doses (DOSE_ARMS), the dose k*h in each
+    world, the stalling-world gain over none, the no-stall loss against none and that seed's NET term."""
     out = {}
-    for tag, arm, meaning in (("A1", "conformal_k1", "the Bayesian part adds nothing measurable (plain split "
-                                                     "conformal does as well)"),
-                              ("A2", "fixed_gated", "the calibrated height adds nothing beyond the switch"),
-                              ("A3", "meangap_k1", "calibration adds nothing beyond raw average residuals")):
-        n_x = net(pts, arm, seeds)["net"]
-        holds = None if n_p is None or n_x is None else bool(n_x >= n_p - float(rule["attribution_margin"]))
-        out[tag] = dict(arm=arm, net_arm=n_x, net_primary=n_p, holds=holds, meaning_if_holds=meaning)
+    for s in seeds:
+        out[s] = {}
+        for arm in DOSE_ARMS:
+            st, ns = _row(table, "stall", s)["arms"][arm], _row(table, "no_stall", s)["arms"][arm]
+            gain = diff(pts_of(pts, "stall", s, arm, situation), pts_of(pts, "stall", s, "none", situation))
+            loss = diff(pts_of(pts, "no_stall", s, "none", situation), pts_of(pts, "no_stall", s, arm, situation))
+            out[s][arm] = dict(dose_stall=float(st["k"]) * float(st["h"]),
+                               dose_no_stall=float(ns["k"]) * float(ns["h"]),
+                               gain_stall=gain, loss_no_stall=loss, net=diff(gain, loss))
+    return out
+
+
+def attribution(pts, seeds, rule, table=None):
+    """Reported; decides only the claim's wording. A<i> holds when NET(rival) >= NET(obca_k1) - margin (5): then that
+    part of BCA adds nothing measurable here. When it fails, the fixed wording says only that a larger dose did
+    better (ATTRIBUTION). Also: the per-seed differences, the dose readout (obca_k2 against obca_k1), the fixed
+    statement that nothing is credited to calibration on these seeds and, given the arm table, the facts behind it."""
+    rp = net(pts, PRIMARY, seeds)
+    n_p = rp["net"]
+    margin = float(rule["attribution_margin"])
+    out = {}
+    for tag, arm, if_holds, if_fails in ATTRIBUTION:
+        rx = net(pts, arm, seeds)
+        n_x = rx["net"]
+        holds = None if n_p is None or n_x is None else bool(n_x >= n_p - margin)
+        per = [diff(x, y) for x, y in zip(rx["per_seed"], rp["per_seed"])]
+        out[tag] = dict(arm=arm, net_arm=n_x, net_primary=n_p, holds=holds, meaning_if_holds=if_holds,
+                        meaning_if_fails=if_fails,
+                        wording=if_holds if holds else (if_fails if holds is False else DOSE_READING["undefined"]),
+                        per_seed_difference=per,
+                        holds_in_seeds=sum(1 for v in per if v is not None and v >= -margin),
+                        seeds_defined=sum(1 for v in per if v is not None))
+    out["dose"] = dose_readout(pts, seeds, rule)
+    out["calibration_credit"] = dict(credited=False, statement=CALIBRATION_CREDIT,
+                                     facts=None if table is None else attribution_facts(table, seeds))
     return out
 
 

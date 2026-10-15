@@ -1,6 +1,6 @@
 {
  "label": "EXPLORATORY, designed after seeing seeds 0-4 and after step 1; written and frozen before any step-2 actor is trained. Restructured BCA, step 2 (the policy pilot). Outside the gate; changes no pre-registered rule and no file of version 6, version 7 or step 1.",
- "version": 1,
+ "version": 2,
  "approval": "The user approved step 2 training (relayed to this session by the orchestrating session, 14 Oct 2026), with the design below fixed by the user: protocol, penalty family, the six outcome-ramp arms, rivals and controls, matching target, lock before returns, evaluation, pooled measures, go/no-go G1-G3 and attribution A1-A3. The user required these rules to be written, frozen and committed before any official training. Nothing else is approved: no seeds other than 0-4, no retuning on these seeds.",
  "seeds": [
   0,
@@ -36,10 +36,11 @@
     "stage2_common.py": "dead5e3eb206aa8aa94694a2f1a8a4b552f3d151771e852674e1b4873f8a2bdc",
     "band.py": "89553406b6cc7bd682a50153e4b74c51f49b5eff022641c614400eb972b232bd",
     "fresh.py": "002a06d81229a6b5684933ec590f2975c36fb52d3b39aa4c63480f904e7b0fec",
-    "policy.py": "671e2b8f8bf197b18582edb78677b45277c6335e427e06a644a60f5166d7a96d"
+    "policy.py": "671e2b8f8bf197b18582edb78677b45277c6335e427e06a644a60f5166d7a96d",
+    "weights.py": "5ca35cf2ff79d923635e344dd7b7bc1f1cd07e8d0cd12ad8b6c975bbae1a831a"
    },
    "v6_code_manifest_sha256": "4b34af991a56066c41fbb55cb02db4074ae0b7e85b1e50802a53983edda2a753",
-   "note": "byte-identical to the copies version 6's code manifest (runs/shift_explore/stage2/code_manifest.json) pins; executed from these verified bytes, without version 6's approval checks; none of version 6's phase functions or writers is called"
+   "note": "byte-identical to the copies version 6's code manifest (runs/shift_explore/stage2/code_manifest.json) pins; executed from these verified bytes, without version 6's approval checks; none of version 6's phase functions or writers is called. weights.py (added by the review of 15 Oct 2026) is loaded before band.py, whose `import weights` then binds to the verified module; step 2 calls none of its functions. machinery.check_imports refuses, at import, before every lock and before every values file, if any module from this folder or step 1's was loaded without its hash checked"
   },
   "v6_prereg_sha256": "9b38c7c48a303cfd67e5db6f137e3a162997bb533d86b3f7647e0467b91ca3b1",
   "best_standin": "range_hinge",
@@ -115,7 +116,7 @@
    "none, clone",
    "the six outcome-ramp arms with their no-stall (switch, h); w0_check",
    "even_pull_locked at the stalling world's matched nu",
-   "random_1_locked, random_2_locked and push_less_locked at the stalling world's matched coefficient (the same penalty in both worlds)",
+   "random_1_locked, random_2_locked and push_less_locked at the stalling world's matched coefficient (the same penalty function and coefficient in both worlds, applied to that world's own rows)",
    "standin_locked at the stalling world's matched coefficient",
    "range_hinge (k = 1)",
    "perfect_band (k = 1, stall-aware next command)"
@@ -610,7 +611,8 @@
    "random_1",
    "random_2",
    "obca_forced"
-  ]
+  ],
+  "world_blind_meaning": "a rival that never reads an outcome: its knobs and coefficients (obca_forced: h and k) are carried over from the stalling world, and what it reads from data are each world's own recorded commands and states (t_lo and t_up, the range, the pull target, the stand-in's data side). The two worlds' logs are recorded separately by a closed-loop controller, so their commands differ slightly (93-99% of the gapped training rows differ, by up to 1.33-1.51; step 1's gap rule gives a different t_lo in every seed and a different t_up in seed 4): a world-blind rival does nearly, not exactly, the same in both worlds"
  },
  "go_no_go": {
   "rule": {
@@ -638,10 +640,36 @@
   "role": "reported; decides only the wording of the claim",
   "A1": "NET(conformal_k1) >= NET(obca_k1) - 5: the Bayesian part adds nothing measurable",
   "A2": "NET(fixed_gated) >= NET(obca_k1) - 5: the calibrated dose adds nothing beyond the switch",
-  "A3": "NET(meangap_k1) >= NET(obca_k1) - 5: calibration adds nothing beyond raw average residuals"
+  "A3": "NET(meangap_k1) >= NET(obca_k1) - 5: calibration adds nothing beyond raw average residuals",
+  "wording": {
+   "A1": {
+    "holds": "the Bayesian part adds nothing measurable (plain split conformal does as well)",
+    "fails": "a larger dose did better: conformal_k1's smaller height did worse. Nothing is attributed to the Bayesian part: the switch is the same as obca_k1's in every seed-world, so the comparison differs only in the stalling-world height, and whether BCA's height did better because it is Bayesian or only because it is larger cannot be told here"
+   },
+   "A2": {
+    "holds": "the calibrated height adds nothing beyond the switch",
+    "fails": "a larger dose did better: the fixed height 1.0 did worse. Nothing is attributed to calibration: the switch is the same as obca_k1's in every seed-world, so the comparison differs only in the stalling-world height"
+   },
+   "A3": {
+    "holds": "calibration adds nothing beyond raw average residuals",
+    "fails": "a larger dose did better: meangap_k1's smaller height did worse. Nothing is attributed to calibration: the switch is the same as obca_k1's except in no_stall/seed2 (h = 0.048 there), so the comparison differs almost only in the stalling-world height"
+   }
+  },
+  "dose_readout": {
+   "rule": "NET(obca_k2) - NET(obca_k1): above +5 'rising', below -5 'falling', else 'plateau' (reported; decides nothing)",
+   "rising": "obca_k2 (twice BCA's dose) did better by more than 5: BCA's height lies on the rising part of the dose curve, so it is not an optimum; more of this penalty helps here",
+   "plateau": "obca_k2 (twice BCA's dose) is within 5 of obca_k1: BCA's height reaches the plateau of the dose curve; this says it is large enough, not that it is calibrated",
+   "falling": "obca_k2 (twice BCA's dose) did worse by more than 5: the best dose of this penalty lies below twice BCA's height; this says where BCA's height lies on the dose curve, not that it is calibrated",
+   "undefined": "undefined: a value is missing"
+  },
+  "calibration_credit": "none on these seeds: in the stalling world the height of every rival (fixed_gated, conformal_k1, meangap_k1) is below BCA's in every seed, and their switches are (almost) BCA's, so no comparison separates a calibrated height from a larger one. A failed A is worded as dose (a larger dose did better), never as credit to the Bayesian part or to calibration; obca_k2 against obca_k1 says only where BCA's height lies on the dose curve",
+  "facts": "computed from arm_table_expected (step2lib.attribution_facts) and recorded in results.json: per A, the seed-worlds where the rival's switch differs from obca_k1's (A1, A2: none; A3: no_stall/seed2) and whether its stalling-world dose k*h is below obca_k1's in every seed (all three: yes; obca_k1 / rival dose ratio, A1: 1.34-3.47, seed 0 the largest)",
+  "per_seed": "reported beside the means: per seed, NET(rival) - NET(obca_k1) and the number of seeds where it is at least -5; and the dose table (per seed, for meangap_k1, fixed_gated, conformal_k1, obca_k1 and obca_k2: the dose k*h in each world, the stalling gain over none, the no-stall loss and the NET term)",
+  "added_by": "the independent review of 15 Oct 2026, before any official training: the failure wordings, the dose readout, the calibration-credit statement and the per-seed reports; the A1-A3 rules, margin and holding wordings are unchanged"
  },
  "reported": [
   "every arm's NET (clone prominently, as a baseline)",
+  "the attribution's per-seed differences, the dose readout (obca_k2 against obca_k1) and the per-seed dose table (attribution.per_seed)",
   "NET in recorded conditions (information only)",
   "version 6's marks restated for obca_k1: M1 (matched even pull >= 15 and positive in 4 of 5 seeds), M2 (each random surface >= 15), M3 (recorded vs none >= -3 and vs clone >= 25; big waves and big kicks vs none >= -3), M4 (obca_k1 - matched stand-in >= -5)",
   "points of every arm in every world and situation",
@@ -655,7 +683,7 @@
  },
  "runner": "run_step2.sh: unit tests; then training, each seed's stalling world then (after its lock) its no-stall world, every process pinned to one CPU with taskset, 4 parallel lanes by default (STEP2_LANES), a lane starting a phase only when enough memory is free (STEP2_MIN_FREE_MB); then the 10 evaluations; then the pooled look. Launched detached; progress in runs/shift_explore/restructure/step2/logs/run.log.",
  "departures": [
-  "Random surfaces and push less in the no-stall world run at the stalling world's matched COEFFICIENT (knob x the stalling world's slope scale): the same penalty in both worlds, as version 6 did for the stand-in. Recorded beside it: the knob.",
+  "Random surfaces and push less in the no-stall world run at the stalling world's matched COEFFICIENT (knob x the stalling world's slope scale): the same penalty function and coefficient in both worlds, applied to that world's own rows, as version 6 did for the stand-in. Recorded beside it: the knob.",
   "push_less_locked is added to the no-stall arms (reported only) so that every matched control has a NET; it is not in W and decides nothing.",
   "Every evaluation waits until all 10 seed-worlds are locked or stopped (version 6 required only its own lock).",
   "An outcome-ramp arm with h = 0 that does not reproduce 'none' within 1e-5 stops its phase, like version 6's check (b).",
@@ -663,8 +691,11 @@
   "The no-stall phase loads only the no-stall world's data (version 6 also loaded the stalling world's, unused there).",
   "Version 6's shift cards are not computed; the per-thruster past-80% shares come from the same extra rollout as the past-t_lo shares.",
   "Version 6's code is executed from its verified bytes without its approval checks, and none of its phase functions or writers is called (they all require version 6's approval or write under runs/shift_explore/stage2).",
-  "Machine: this runs on the user's AMD Ryzen AI MAX+ 395 laptop (WSL, Ubuntu 24.04), not the cloud Xeon. The gate's exact checks pass here unchanged (data, anchors), the step-1 rollouts reproduce to the last digit, and the room's W = 0 program reproduces check 2's saved 'none' actors bit for bit, so version 7's constants wrapper is not used."
+  "Machine: this runs on the user's AMD Ryzen AI MAX+ 395 laptop (WSL, Ubuntu 24.04), not the cloud Xeon. The gate's exact checks pass here unchanged (data, anchors), the step-1 rollouts reproduce to the last digit, and the room's W = 0 program reproduces check 2's saved 'none' actors bit for bit, so version 7's constants wrapper is not used.",
+  "Review of 15 Oct 2026 (before any official training): the attribution gets fixed wordings for a failed A, a dose readout (obca_k2 against obca_k1), a fixed statement that nothing is credited to calibration on these seeds, and per-seed reports (attribution.wording, dose_readout, calibration_credit, per_seed). Reported only; G1-G3 and the A1-A3 rules are unchanged.",
+  "Review of 15 Oct 2026: version 6's weights.py (imported by band.py) is pinned and executed from verified bytes like the other four files, and step 2 refuses if any module of version 6's code folder or step 1's folder was loaded without its hash checked."
  ],
+ "review": "independent review of 15 Oct 2026, before any official training (PRESPEC.md, Review notes): weights.py pinned and every import from the pinned folders checked; the attribution's failure wordings, dose readout, calibration-credit statement and per-seed reports added; the wording about the two worlds' recorded commands corrected (measures.world_blind_meaning). No computation, threshold, arm, rival or verdict rule changed.",
  "budget": "measured on this laptop while other sessions' jobs were loading it (smoke run of 40 steps plus a per-kind timing probe of 400 steps, scratch): stalling-world phase about 35-50 CPU-minutes, no-stall phase about 13-17, each evaluation about 2; peak memory (VmHWM) about 1.2 GB per training phase and 0.4 GB per evaluation. In all about 5-5.5 CPU-hours; with 4 lanes about 2 hours of wall time (5 seeds over 4 lanes), with 5 lanes about 1 hour 10 minutes",
  "verification_before_freeze": [
   "reproduction check (scratch, train_policy.py --w0-repro, seed 0, full 20,000 steps): the ramp program with every height 0 reproduced check 2's saved 'none' actor bit for bit (largest parameter difference 0.0, equal SHA-256) in the stalling world (1 arm) and in the no-stall world (7 arms side by side)",

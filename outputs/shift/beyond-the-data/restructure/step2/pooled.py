@@ -4,8 +4,9 @@ PRESPEC.md.
 Reads every seed-world's values.json (or stop.json), each checked against its sidecar, its lock (SHA-256 and record
 checks) and the frozen prespec.json and code manifest. Builds the points of every logical arm (the same arm in both
 worlds: e.g. the even pull matched in the stalling world and locked in the no-stall world), then computes NET for
-every arm, the go/no-go G1-G3, the attribution A1-A3 and version 6's marks restated for obca_k1 (reported), exactly
-as step2lib defines them. A stopped seed-world, a failed arm or an unmatched control leaves its values missing, and a
+every arm, the go/no-go G1-G3, the attribution A1-A3 (with its fixed wordings, per-seed differences, the dose
+readout obca_k2 against obca_k1 and the per-seed dose table) and version 6's marks restated for obca_k1 (reported),
+exactly as step2lib defines them. A stopped seed-world, a failed arm or an unmatched control leaves its values missing, and a
 missing value fails every condition that needs it.
 
 Scratch mode (--out-root, outside the repository; --seeds a subset): the same code on a smoke run; labelled SCRATCH.
@@ -120,14 +121,16 @@ def main(argv=None):
     pts, status, values, locks = gather(root, seeds, spec, spec_sha, man_sha, official)
     rule = spec["go_no_go"]["rule"]
     verdict = S.go_no_go(pts, seeds, rule)
-    attr = S.attribution(pts, seeds, rule)
+    attr = S.attribution(pts, seeds, rule, spec["arm_table_expected"])
+    dose = S.dose_table(pts, seeds, spec["arm_table_expected"])
     marks = S.analogues(pts, seeds, rule)
     nets = {arm: S.net(pts, arm, seeds) for arm in ALL_IDS}
     nets_recorded = {arm: S.net(pts, arm, seeds, "recorded") for arm in ALL_IDS}
     results = dict(label=S.LABEL, mode="official" if official else "SCRATCH (does not count)", seeds=seeds,
                    prespec_sha256=spec_sha, code_manifest_sha256=man_sha,
                    step1_results_sha256=spec["inputs"]["step1_results"]["sha256"], status=status, go_no_go=verdict,
-                   attribution=attr, v6_marks_restated=marks, net_strong_current=nets,
+                   attribution=attr, dose_table_strong_current=dose, v6_marks_restated=marks,
+                   net_strong_current=nets,
                    net_recorded_conditions_information_only=nets_recorded, **tables(pts, values, locks, seeds),
                    seconds=time.perf_counter() - t_start, written=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
     digest = S.write_json_once(out, results, official)
@@ -174,10 +177,25 @@ def results_md(r, spec, digest):
         n = nets[arm]
         L_.append(f"| {arm}{' (baseline)' if arm == 'clone' else ''} | {f(n['net'])} | {f(n['gain_stall'])} | "
                   f"{f(n['loss_no_stall'])} |")
+    att = r["attribution"]
     L_ += ["", "## Attribution (reported; decides only the wording of the claim)", ""]
-    for tag, x in r["attribution"].items():
+    for tag, *_ in S.ATTRIBUTION:
+        x = att[tag]
         L_.append(f"- {tag} NET({x['arm']}) {f(x['net_arm'])} >= NET(obca_k1) {f(x['net_primary'])} - 5: "
-                  f"{f(x['holds'])}" + (f" ({x['meaning_if_holds']})" if x["holds"] else ""))
+                  f"{f(x['holds'])} (holds in {x['holds_in_seeds']} of {x['seeds_defined']} seeds; per seed "
+                  f"{', '.join(f(v) for v in x['per_seed_difference'])}). Wording: {x['wording']}.")
+    dz = att["dose"]
+    L_ += [f"- Dose: NET(obca_k2) {f(dz['net_obca_k2'])} - NET(obca_k1) {f(dz['net_obca_k1'])} = "
+           f"{f(dz['difference'])} ({dz['reading']}): {dz['wording']}.",
+           f"- Credit to calibration: {att['calibration_credit']['statement']}.", "",
+           "Dose table, strong current, per seed (dose k*h in the stalling world / stalling gain over none / that "
+           "seed's NET term; in the no-stall world these arms have dose 0 except meangap_k1 in seed 2):", "",
+           "| seed | " + " | ".join(S.DOSE_ARMS) + " |", "|---" * (len(S.DOSE_ARMS) + 1) + "|"]
+    for s in r["seeds"]:
+        row = r["dose_table_strong_current"][str(s)] if str(s) in r["dose_table_strong_current"] \
+            else r["dose_table_strong_current"][s]
+        L_.append(f"| {s} | " + " | ".join(f"{row[a]['dose_stall']:.2f} / {f(row[a]['gain_stall'])} / "
+                                          f"{f(row[a]['net'])}" for a in S.DOSE_ARMS) + " |")
     m = r["v6_marks_restated"]
     L_ += ["", "## Version 6's marks restated for obca_k1 (reported)", "",
            f"- M1 analogue: obca_k1 - matched even pull {f(m['M1_even_pull']['mean'])} (positive in "

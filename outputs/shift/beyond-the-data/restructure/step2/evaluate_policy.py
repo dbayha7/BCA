@@ -81,7 +81,7 @@ def main(argv=None):
                arm_ids=lock["arm_ids"], t_lo=t_lo, evaluations=ev, situations=sits,
                seconds=dict(evaluation=time.perf_counter() - t0, total=time.perf_counter() - t_start),
                vmhwm_mb=S.vmhwm_mb(), about="exact returns of the locked actors, computed after every lock",
-               **MC.machine_record())
+               verified_imports=MC.check_imports(), **MC.machine_record())
     S.write_json_once(d / "values.json", rec, official)
     sc = sits["strong_current"]["points"]
     MC.log(f"{a.world}/seed {seed}: values written; strong current none {sc.get('none')}, obca_k1 "
