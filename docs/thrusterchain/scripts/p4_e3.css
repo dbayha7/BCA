@@ -1,0 +1,43 @@
+/* ===================================================================================================================
+   Page pass 4, edit 3: Methods and the harm checks. Worked examples, the step notes under each method, the methods
+   map, the TD3+BC settings table in groups, the critic-error check's rules table and the stop rule's table. Colours
+   come only from the theme tokens; a colour always goes with its label.
+   =================================================================================================================== */
+/* a worked example: the page's own numbers run through a formula or a rule */
+p.wex { background: var(--surface-2); border-left: 3px solid var(--rule-strong); border-radius: 0 6px 6px 0;
+  padding: 8px 14px; color: var(--ink); }
+.box p.wex { background: var(--bg); }
+/* the box on the two kinds of critic error */
+.p4-errbox > h4 { font-family: var(--display); font-size: 17px; line-height: 1.3; font-weight: 600; margin: 0; color: var(--ink); }
+/* a check's one line on the pipeline step it stands for */
+.check > .stepnote { margin-top: -2px; }
+/* the methods map: the method's name never squeezes */
+table.p4-map { min-width: 640px; }
+table.p4-map td:first-child { min-width: 14em; }
+table.p4-map td:nth-child(2) { min-width: 15em; }
+table.p4-map .stepchip { margin-right: 4px; }
+/* TD3+BC's settings, grouped: the group rows read as small headings */
+table.p4-set { min-width: 780px; }
+table.p4-set td:first-child { font-weight: 600; min-width: 9.5em; }
+table.p4-set td:nth-child(2) { min-width: 9em; }
+table.p4-set tr.sub td { font-family: var(--display); font-size: 15.5px; font-weight: 700; color: var(--ink);
+  padding-top: 9px; padding-bottom: 7px; }
+/* the critic-error check's rules and the stop rule */
+table.p4-rules { min-width: 760px; }
+table.p4-rules td:first-child { font-weight: 700; text-align: center; width: 3.2em; }
+table.p4-rules td:last-child { min-width: 13em; }
+table.p4-rules .tag, table.p4-rules .tag.ok { margin-right: 4px; }
+table.p4-stop { min-width: 720px; }
+table.p4-stop td:first-child { font-weight: 600; min-width: 13em; }
+/* the stop rule is a decision, not the stall: a neutral strong edge (red marks the stall and nothing else) */
+.box.stop { border-color: var(--rule-strong); box-shadow: inset 4px 0 0 var(--ink-2); padding-left: 20px; }
+.check > p.p4-how { font-size: 15px; line-height: 1.55; color: var(--ink); }
+@media (max-width: 560px) {
+  table.stack.p4-set tr.sub td:first-child { font-size: 16px; padding-top: 12px; margin-top: 2px;
+    border-top: 2px solid var(--rule-strong); }
+  table.stack.p4-set tr.sub { border-bottom: 0; padding-bottom: 0; }
+  table.stack.p4-rules td:first-child { text-align: left; width: auto; }
+  table.stack.p4-rules td:first-child::before { content: "Rule "; }
+  table.stack.p4-map td:first-child, table.stack.p4-set td:first-child, table.stack.p4-stop td:first-child { min-width: 0; }
+  .box.stop { padding-left: 16px; }
+}

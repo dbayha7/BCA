@@ -1,0 +1,383 @@
+#!/usr/bin/env python3
+"""Checks and screenshots for edit 2 of the tooltip pass (comments 6, 8, 9 and 10): counts of what was added, the
+controller tooltips and guide, the drawings' part-by-part tooltips, terms, symbols, legends, chart points, the
+worked example, keyboard focus, taps, the switch, the walkthrough, overflow and console errors, at 1200 px dark
+(mouse) and 390 px light (touch).
+
+  cd /mnt/c/Users/David/dev/bca-shift-work/page && /opt/shot-venv/bin/python scripts/e6_test.py [--page PATH]
+"""
+import argparse
+import os
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from shot import wrap, OVERFLOW_JS  # noqa: E402
+from playwright.sync_api import sync_playwright  # noqa: E402
+
+PAGE_DIR = "/mnt/c/Users/David/dev/bca-shift-work/page"
+SHOTS = os.path.join(PAGE_DIR, "shots")
+FAIL = []
+
+
+def check(ok, msg):
+    print(("  ok   " if ok else "  FAIL ") + msg)
+    if not ok:
+        FAIL.append(msg)
+
+
+TIP_JS = r"""
+() => { const t = document.getElementById('tt'); if (!t) return null;
+  const r = t.getBoundingClientRect();
+  return { hidden: t.hidden, text: t.textContent, parent: t.parentElement ? (t.parentElement.id || t.parentElement.tagName) : null,
+           l: r.left, t: r.top, r: r.right, b: r.bottom, vw: document.documentElement.clientWidth, vh: innerHeight }; }
+"""
+COUNTS_JS = r"""
+() => {
+  const q = s => document.querySelectorAll(s).length;
+  const tips = [...document.querySelectorAll('[data-tip], [data-tip-ref]')];
+  return {
+    legends: q('.symkey'), syms: q('.sym[data-tip]'), symFocus: q('.sym[data-tip]:not([data-tip-focus])'),
+    terms: q('span.term[data-tip]') + [...document.querySelectorAll('i[data-tip], b[data-tip]')].length,
+    opts: q('.opt[data-tip], .opt[data-tip-ref]'), ctrlRef: q('.opt[data-tip-ref]'), templates: q('template[id^="tip-ctrl-"]'),
+    readouts: q('.ro[data-tip]'), canvases: q('canvas[data-tip]'), svgText: q('svg text[data-tip]'),
+    points: q('#task-chart circle[data-tip]'), titlesLeft: q('#task-chart title'),
+    guide: q('details.ctrl-guide[open]'), guideItems: q('.ctrl-guide .cg > div'), worked: q('p.worked'),
+    noDesc: tips.filter(e => !e.getAttribute('aria-describedby')).map(e => e.outerHTML.slice(0, 80)).slice(0, 5),
+    all: tips.length,
+  };
+}
+"""
+
+
+def tip(page):
+    return page.evaluate(TIP_JS)
+
+
+def onscreen(t):
+    return t and t["l"] >= 0 and t["t"] >= 0 and t["r"] <= t["vw"] + 0.5 and t["b"] <= t["vh"] + 0.5
+
+
+def center(pg, sel, block="center"):
+    pg.evaluate(f"el => {{ const d = el.closest('details'); if (d) d.open = true; el.scrollIntoView({{block: '{block}'}}); }}",
+                pg.locator(sel).first.element_handle())
+    pg.wait_for_timeout(150)
+
+
+def channel_point(box, part, k, narrow):
+    """Page coordinates of a part of the channel drawing (mirrors its layout)."""
+    W = box["width"]
+    chan_top = 66 if narrow else 60
+    chan_h = 176 if narrow else 196
+    gauge_top = chan_top + chan_h + 30
+    if part == "meter":
+        return box["x"] + W * 0.5, box["y"] + 30
+    if part == "float":
+        return box["x"] + W * (k + 0.5) / 5, box["y"] + chan_top + chan_h * 0.75
+    if part == "gauge":
+        return box["x"] + W * (k + 1) / 5, box["y"] + gauge_top + 40
+    raise ValueError(part)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--page", default=os.path.join(PAGE_DIR, "thrusterchain.html"))
+    ap.add_argument("--prefix", default="e6")
+    a = ap.parse_args()
+    frag = open(a.page, encoding="utf-8").read()
+    d = tempfile.mkdtemp(prefix="e6-")
+    f = os.path.join(d, "page.html")
+    open(f, "w", encoding="utf-8").write(wrap(frag, "light"))
+    url = "file://" + f
+    P = a.prefix
+
+    with sync_playwright() as p:
+        b = p.chromium.launch()
+        errors = []
+
+        def new(width, scheme, touch=False):
+            ctx = b.new_context(viewport={"width": width, "height": 844 if width < 700 else 800}, color_scheme=scheme,
+                                has_touch=touch)
+            pg = ctx.new_page()
+            pg.on("console", lambda m: errors.append(f"[{width}] {m.type}: {m.text}") if m.type in ("error", "warning") else None)
+            pg.on("pageerror", lambda e: errors.append(f"[{width}] pageerror: {e}"))
+            pg.goto(url, wait_until="load")
+            pg.wait_for_timeout(900)
+            return ctx, pg
+
+        def shot(pg, name, full=False):
+            pg.screenshot(path=os.path.join(SHOTS, f"{P}-{name}.png"), full_page=full)
+
+        def shot_el(pg, name, sel):
+            pg.locator(sel).first.screenshot(path=os.path.join(SHOTS, f"{P}-{name}.png"))
+
+        # ======================= 1200 px, dark, mouse =======================
+        print("== 1200 px dark (mouse and keyboard)")
+        ctx, pg = new(1200, "dark")
+        ov = pg.evaluate(OVERFLOW_JS)
+        check(ov["overflow"] <= 0, f"no horizontal overflow at load ({ov['overflow']} px)")
+        c = pg.evaluate(COUNTS_JS)
+        print("       counts:", {k: v for k, v in c.items() if k != "noDesc"})
+        check(c["legends"] == 27, f"27 legends beside the formulas and drawings ({c['legends']})")
+        check(c["syms"] >= 240 and c["terms"] >= 44, f"symbols ({c['syms']}, {c['symFocus']} focusable) and terms ({c['terms']}) carry tooltips")
+        check(c["opts"] == 10 and c["ctrlRef"] == 4 and c["templates"] == 4, f"all 10 panel options have tooltips, 4 controllers formatted ({c['opts']}, {c['ctrlRef']})")
+        check(c["readouts"] == 12 and c["canvases"] == 2, f"12 readouts and both drawings have tooltips ({c['readouts']}, {c['canvases']})")
+        check(c["svgText"] == 16 and c["points"] == 33 and c["titlesLeft"] == 0, f"16 drawing labels and 33 chart points ({c['svgText']}, {c['points']}, titles left {c['titlesLeft']})")
+        check(c["guide"] == 1 and c["guideItems"] == 11 and c["worked"] == 1, f"controller guide open with 11 controllers, worked-example line ({c['guideItems']})")
+        check(not c["noDesc"], f"every tooltip element has its accessible description ({c['all']} elements; missing {c['noDesc']})")
+
+        # comment 9: a controller option's tooltip
+        center(pg, "#lg-ctrl", "start")
+        pg.hover("#opt-ctrl-stall_aware")
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and not t["hidden"] and "Stall-aware controller" in t["text"] and "Sets the throttles:" in t["text"]
+              and "The 80% limit:" in t["text"] and "Its score:" in t["text"] and onscreen(t),
+              f"controller option: how it sets the throttles, the 80% limit, its score: {t and t['text'][:90]!r}")
+        shot(pg, "ctrl-1200-dark")
+        pg.hover("#opt-ctrl-no_throttle")
+        pg.wait_for_timeout(250)
+        t = tip(pg)
+        check(t and "−403.92" in t["text"], "moving to the next option switches the tooltip at once")
+        pg.hover("#opt-world-no_stall")
+        pg.wait_for_timeout(250)
+        check("No-stall comparison world" in tip(pg)["text"], "world option tooltip")
+        pg.hover("#opt-sit-big_kicks")
+        pg.wait_for_timeout(250)
+        check("22.8" in tip(pg)["text"], "situation option tooltip")
+        pg.mouse.move(5, 5)
+        pg.wait_for_timeout(300)
+
+        # the lead-in bullet and the guide
+        center(pg, ".sim-keys", "start")
+        check(pg.evaluate("[...document.querySelectorAll('.sim-key li b')].some(b => b.textContent.startsWith('No throttle settles'))"),
+              "lead-in: the no-throttle sentence is in What to watch for")
+        shot_el(pg, "leadin-1200-dark", ".sim-keys")
+        shot_el(pg, "guide-1200-dark", "details.ctrl-guide")
+
+        # comment 8: the channel drawing, part by part
+        center(pg, "#channel")
+        box = pg.locator("#channel").bounding_box()
+        x, y = channel_point(box, "float", 0, box["width"] < 560)
+        pg.mouse.move(x, y)
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["text"].startswith("Float 1, state") and "62.8 steps" in t["text"] and onscreen(t),
+              f"channel: hovering float 1 shows its numbers: {t and t['text'][:80]!r}")
+        x2, y2 = channel_point(box, "gauge", 0, box["width"] < 560)
+        pg.mouse.move(x2, y2, steps=6)
+        pg.wait_for_timeout(300)
+        t2 = tip(pg)
+        check(t2 and not t2["hidden"] and t2["text"].startswith("Thruster 1, state") and abs(t2["t"] - t["t"]) > 20,
+              f"channel: moving to thruster 1's gauge updates the text and the tooltip follows: {t2 and t2['text'][:70]!r}")
+        shot(pg, "channel-1200-dark")
+        x3, y3 = channel_point(box, "meter", 0, False)
+        pg.mouse.move(x3, y3, steps=4)
+        pg.wait_for_timeout(300)
+        check(tip(pg)["text"].startswith("The water's push, state"), "channel: the push bar's tooltip")
+        pg.click("#fwd")
+        pg.mouse.move(x3 + 2, y3)
+        pg.wait_for_timeout(250)
+        st = pg.evaluate("document.getElementById('tLabel').textContent")
+        check(st.split()[-1] in tip(pg)["text"], f"channel: the tooltip follows the state on screen ({st})")
+        pg.mouse.move(5, 5)
+        pg.wait_for_timeout(700)
+        check(pg.evaluate("document.getElementById('channel').getAttribute('data-tip-title')") == "The channel",
+              "channel: back to its general text after the pointer leaves")
+        # the cost chart
+        center(pg, "#cost")
+        cb = pg.locator("#cost").bounding_box()
+        pg.mouse.move(cb["x"] + 46 + (cb["width"] - 46 - 170) * 0.5, cb["y"] + 100)
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["text"].startswith("Cost so far at state") and "No throttle:" in t["text"] and onscreen(t),
+              f"cost chart: the four costs at the state under the pointer: {t and t['text'][:70]!r}")
+        shot(pg, "cost-1200-dark")
+        # a readout and the transport
+        pg.hover("#roS")
+        pg.wait_for_timeout(450)
+        check("Float cost" in tip(pg)["text"], "readout tooltip")
+        pg.hover("#play")
+        pg.wait_for_timeout(250)
+        check(tip(pg)["text"].startswith("Play"), "transport tooltip")
+        shot(pg, "readout-1200-dark")
+        pg.mouse.move(5, 5)
+        pg.wait_for_timeout(300)
+
+        # comment 10: the task diagram's legend, the drawing's title, a symbol, a formula legend
+        center(pg, "#task-diagram .symkey")
+        shot_el(pg, "diagram-legend-1200-dark", "#task-diagram")
+        title = pg.locator("#task-diagram svg.dg-wide text[data-tip]").first
+        title.hover()
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and "current" in t["text"] and "wave adds" in t["text"], f"the drawing's title explains c + w₁: {t and t['text'][:70]!r}")
+        shot(pg, "diagram-title-1200-dark")
+        sym = pg.locator("#methods .sym").filter(has=pg.locator('mjx-container[aria-label="\\\\alpha"]')).first
+        center(pg, "#methods .sym >> nth=0")
+        sym.scroll_into_view_if_needed()
+        sym.hover()
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and "critic weight" in t["text"], f"a symbol in running text: {t and t['text'][:70]!r}")
+        shot(pg, "symbol-1200-dark")
+        pg.mouse.move(5, 5)
+        center(pg, "#dynamics .symkey")
+        shot_el(pg, "legend-dynamics-1200-dark", "#dynamics .symkey")
+        center(pg, "#methods .symkey")
+        shot(pg, "legend-methods-1200-dark")
+        # a chart point
+        center(pg, "#task-chart")
+        pt = pg.locator("#task-chart circle[data-tip]").nth(25)
+        pt.hover(force=True)
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and "water's push" in t["text"] and "states" in t["text"], f"a chart point shows its numbers: {t and t['text'][:70]!r}")
+        shot(pg, "chartpoint-1200-dark")
+        pg.mouse.move(5, 5)
+        # a term
+        center(pg, "#glance")
+        term = pg.locator("#glance i[data-tip]").first
+        term.hover()
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and t["text"].startswith("Actor"), f"a term in running text: {t and t['text'][:60]!r}")
+        shot(pg, "term-1200-dark")
+        # keyboard: Tab onto a term shows its tooltip
+        pg.mouse.move(5, 5)
+        pg.focus("#glance i[data-tip] >> nth=1")
+        pg.keyboard.press("Shift+Tab")
+        pg.keyboard.press("Tab")
+        pg.wait_for_timeout(250)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["text"].startswith("Critic"), f"keyboard focus on a term shows it: {t and t['text'][:40]!r}")
+        pg.keyboard.press("Escape")
+        pg.wait_for_timeout(150)
+        check(tip(pg)["hidden"], "Esc closes it")
+        # comment 6: the worked example
+        center(pg, "p.worked")
+        shot_el(pg, "worked-1200-dark", "#arguments")
+        # the switch turns everything off
+        pg.evaluate("window.scrollTo(0, 0)")
+        pg.click("#tt-switch")
+        pg.wait_for_timeout(200)
+        center(pg, "#channel")
+        box = pg.locator("#channel").bounding_box()
+        x, y = channel_point(box, "float", 2, False)
+        pg.mouse.move(x, y)
+        pg.wait_for_timeout(500)
+        check(tip(pg)["hidden"], "switch off: the drawings show nothing")
+        center(pg, "#glance")
+        pg.locator("#glance i[data-tip]").first.hover()
+        pg.wait_for_timeout(450)
+        check(tip(pg)["hidden"], "switch off: terms show nothing")
+        stops = pg.evaluate("document.querySelectorAll('.sym[tabindex=\"0\"], .term[tabindex=\"0\"], canvas[tabindex=\"0\"]').length")
+        check(stops == 0, f"switch off: terms, symbols and drawings leave the Tab order ({stops})")
+        pg.evaluate("window.scrollTo(0, 0)")
+        pg.click("#tt-switch")
+        # the walkthrough
+        pg.click("#wt-open")
+        pg.wait_for_timeout(500)
+        for _ in range(8):
+            if pg.evaluate("document.getElementById('wt-title').textContent.trim()") == "Rewards":
+                break
+            pg.click("#wt-next")
+            pg.wait_for_timeout(350)
+        check(pg.evaluate("document.getElementById('wt-title').textContent.trim()") == "Rewards", "walkthrough at Rewards")
+        sym = pg.locator("#wt-stage #rewards .sym").first
+        pg.evaluate("el => el.scrollIntoView({block: 'center'})", sym.element_handle())
+        pg.wait_for_timeout(200)
+        sym.hover()
+        pg.wait_for_timeout(450)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["parent"] == "wt" and onscreen(t), f"walkthrough: a symbol's tooltip inside the dialog ({t and t['parent']})")
+        check(pg.evaluate("document.querySelectorAll('#wt-stage .symkey').length") >= 3, "walkthrough: the section's legends come along")
+        shot(pg, "walkthrough-1200-dark")
+        pg.keyboard.press("Escape")
+        pg.keyboard.press("Escape")
+        pg.wait_for_timeout(300)
+        ov = pg.evaluate(OVERFLOW_JS)
+        check(ov["overflow"] <= 0, f"no horizontal overflow after the checks ({ov['overflow']} px)")
+        ctx.close()
+
+        # ======================= 390 px, light, touch =======================
+        print("== 390 px light (touch)")
+        ctx, pg = new(390, "light", touch=True)
+        ov = pg.evaluate(OVERFLOW_JS)
+        check(ov["overflow"] <= 0, f"no horizontal overflow at load ({ov['overflow']} px)")
+        wide = pg.evaluate("[...document.querySelectorAll('.symkey, .ctrl-guide, p.worked')].filter(e => e.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).length")
+        check(wide == 0, f"every legend, the guide and the worked line fit the screen ({wide} too wide)")
+        # tap a controller: its tooltip shows and the option is picked
+        center(pg, "#opt-ctrl-rising_thrust")
+        pg.locator("#opt-ctrl-rising_thrust").tap()
+        pg.wait_for_timeout(350)
+        t = tip(pg)
+        check(t and not t["hidden"] and "Rising-thrust controller" in t["text"] and onscreen(t)
+              and pg.evaluate("document.getElementById('opt-ctrl-rising_thrust').getAttribute('aria-pressed')") == "true",
+              "tap on a controller: tooltip and the controller is picked")
+        shot(pg, "ctrl-390-light")
+        # tap the channel: float, then a gauge
+        center(pg, "#channel")
+        box = pg.locator("#channel").bounding_box()
+        x, y = channel_point(box, "float", 1, True)
+        pg.touchscreen.tap(x, y)
+        pg.wait_for_timeout(350)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["text"].startswith("Float 2, state") and onscreen(t), f"tap on float 2: {t and t['text'][:50]!r}")
+        x2, y2 = channel_point(box, "gauge", 0, True)
+        pg.touchscreen.tap(x2, y2)
+        pg.wait_for_timeout(350)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["text"].startswith("Thruster 1, state") and onscreen(t), f"a tap elsewhere on the drawing moves the tooltip there: {t and t['text'][:50]!r}")
+        shot(pg, "channel-390-light")
+        pg.touchscreen.tap(x2, y2)
+        pg.wait_for_timeout(300)
+        check(tip(pg)["hidden"], "a second tap on the same spot closes it")
+        center(pg, "#cost")
+        cb = pg.locator("#cost").bounding_box()
+        pg.touchscreen.tap(cb["x"] + 46 + (cb["width"] - 46 - 70) * 0.3, cb["y"] + 110)
+        pg.wait_for_timeout(350)
+        t = tip(pg)
+        check(t and not t["hidden"] and t["text"].startswith("Cost so far at state") and onscreen(t), "tap on the cost chart")
+        shot(pg, "cost-390-light")
+        # the guide and lead-in at phone width
+        shot_el(pg, "guide-390-light", "details.ctrl-guide")
+        shot_el(pg, "leadin-390-light", ".sim-keys")
+        # the task diagram's legend, a formula legend with a symbol tapped
+        center(pg, "#task-diagram .symkey", "start")
+        shot_el(pg, "diagram-legend-390-light", "#task-diagram")
+        sym = pg.locator("#rewards .sym").first
+        center(pg, "#rewards .sym")
+        sym.tap()
+        pg.wait_for_timeout(350)
+        t = tip(pg)
+        check(t and not t["hidden"] and onscreen(t), f"tap on a symbol: {t and t['text'][:60]!r}")
+        shot(pg, "symbol-390-light")
+        center(pg, "#rewards .symkey")
+        shot_el(pg, "legend-rewards-390-light", "#rewards")
+        center(pg, "#dynamics .symkey")
+        shot_el(pg, "legend-dynamics-390-light", "#dynamics .symkey")
+        center(pg, "p.worked")
+        shot(pg, "worked-390-light")
+        # a term by tap
+        center(pg, "#task i[data-tip]")
+        pg.locator("#task i[data-tip]").first.tap()
+        pg.wait_for_timeout(350)
+        t = tip(pg)
+        check(t and not t["hidden"] and onscreen(t), f"tap on a term: {t and t['text'][:50]!r}")
+        shot(pg, "term-390-light")
+        ov = pg.evaluate(OVERFLOW_JS)
+        check(ov["overflow"] <= 0, f"no horizontal overflow at the end ({ov['overflow']} px)")
+        ctx.close()
+        b.close()
+
+    print(f"== console errors and warnings, page errors: {len(errors)}")
+    for e in errors:
+        print("   " + e[:300])
+    check(not errors, "zero console errors")
+    print(f"== {len(FAIL)} failures")
+    return 1 if FAIL else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

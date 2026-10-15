@@ -1,0 +1,99 @@
+{
+ "forecast": {
+  "F_fresh": 0.0,
+  "F_ref": 0.0,
+  "F_ref_against": "the gate's saved actor",
+  "above_tolerance": [],
+  "entry_if_not_inherited": false,
+  "p1a_differs": false,
+  "p1b_reproduces_gate": true,
+  "remake_failed": false,
+  "tolerance": 1e-05
+ },
+ "gate": {
+  "actors_sha256": "35532d105e2fc5bba2ae52fc25350e0ab825173eb20053a3240f31ebbe9e6d5d",
+  "check2_dir": "/home/user/bca/runs/shift/68d9e8779e148b7b/harm_return/base/alpha5/seed4"
+ },
+ "inputs": {
+  "constants_sha256": "6602f9d17e977a3e1f6eb017eb1f0b9ec80b018041d62146f507983f36a5e379",
+  "gate_prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "prereg_v7_sha256_at_run": "f3bc1dad956ddbe7d654ca17a08000f9c4e2a482bdd4404f9067a38790e558e7",
+  "prereg_v7_was_final": false,
+  "probe_script_sha256": "21a71839c795b0796b1f41d0eb848bc6da5457fe59481a84c48e9aab26f639ce",
+  "remake_block_sha256": "78e2dc26d4cd4db04d165cc02c95ffc6262fec8f09748d801140d937e6e844a7",
+  "v6_code_manifest_sha256": "4b34af991a56066c41fbb55cb02db4074ae0b7e85b1e50802a53983edda2a753"
+ },
+ "kind": "stage2-v7-probe-p1",
+ "moved_aside": null,
+ "p1a": {
+  "actors": {
+   "full": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "fdc948aa3749eb7ff7de6f14599c79a0b69b051e8fcb0ce290e8b392b108900f",
+    "laptop_failed": false,
+    "laptop_sha256": "fdc948aa3749eb7ff7de6f14599c79a0b69b051e8fcb0ce290e8b392b108900f",
+    "max_abs_diff": 0.0
+   },
+   "gapped": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "cd52bc1af830ec98d3d027ed1876f7a2166312f9f9263c0dea15f3ca391c1d3e",
+    "laptop_failed": false,
+    "laptop_sha256": "cd52bc1af830ec98d3d027ed1876f7a2166312f9f9263c0dea15f3ca391c1d3e",
+    "max_abs_diff": 0.0
+   },
+   "random": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "8ece7a3e0a809a6ce311d4c6607765fc5954ac5dd7ecd0d575f76a7496a55ccc",
+    "laptop_failed": false,
+    "laptop_sha256": "8ece7a3e0a809a6ce311d4c6607765fc5954ac5dd7ecd0d575f76a7496a55ccc",
+    "max_abs_diff": 0.0
+   }
+  },
+  "call": "L.ActorOnly(prepared(world), clone(world), learn, seed, alpha=5.0).run([L.Arm(name, critic=i) ...], [critics], weighted=False); ao.arm_params(stacked, i) (GATE/acceptance.py:1459-1484)",
+  "names_written": [
+   "full",
+   "gapped",
+   "random"
+  ],
+  "reference_file": {
+   "path": "refs/seed4/check2_stall.msgpack",
+   "sha256": "5c1b0f97af689ecbd7d1c10e15cb604d368d5e882135a8d31b26608288870185"
+  },
+  "rows_sha256": "1a3d9e50ff0455d1a40d1122bc0448dae2f94f500a4eb4697d694478d709d091",
+  "start_sha256": "fafce1b450133e020749410fd6e50b0e37bcc297e08a16dab72bcb5c844d1ce3"
+ },
+ "p1b": {
+  "actor_sha256": "cd52bc1af830ec98d3d027ed1876f7a2166312f9f9263c0dea15f3ca391c1d3e",
+  "arms": [
+   "w0_check"
+  ],
+  "finite": true,
+  "max_abs_diff_vs_gate": 0.0,
+  "max_abs_diff_vs_p1a": 0.0,
+  "max_abs_diff_vs_p1c": 0.0,
+  "reproduces_gate": true
+ },
+ "p1c": {
+  "actor_sha256": "cd52bc1af830ec98d3d027ed1876f7a2166312f9f9263c0dea15f3ca391c1d3e",
+  "arms": [
+   "none",
+   "full_none"
+  ],
+  "failed": false,
+  "max_abs_diff_vs_gate": 0.0,
+  "max_abs_diff_vs_p1a": 0.0,
+  "max_abs_diff_vs_p1b": 0.0
+ },
+ "probe": "p1_seed4_stall",
+ "seconds": {
+  "p1a": 228.53744000299957,
+  "p1b": 64.11109493300046,
+  "p1c": 124.60905160799939
+ },
+ "seed": 4,
+ "world": "stall",
+ "written_utc": "2026-10-15T00:37:10Z"
+}

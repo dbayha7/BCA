@@ -1,0 +1,2149 @@
+{
+ "signs": {
+  "how": "one exact step of thruster_chain.dynamics() from rest; K and P from recorder.py; panel rules read from template.html (drawing code of the channel and gauges)",
+  "water_one_step_from_rest_current_1": {
+   "speeds": [
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3
+   ],
+   "positions": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "water_two_steps_from_rest_current_1": {
+   "positions": [
+    -0.030597,
+    -0.057714,
+    -0.09906,
+    -0.150955,
+    -0.201614
+   ],
+   "speeds": [
+    0.594209,
+    0.589389,
+    0.57242,
+    0.547059,
+    0.499045
+   ]
+  },
+  "water_push_per_step_on_each_speed_number_per_unit_push": 0.3,
+  "thruster1_one_step_from_rest": {
+   "stall_full": {
+    "command": -1.0,
+    "speed_change_float1": -0.15,
+    "speed_change_float2": -0.15,
+    "other_floats_unchanged": true
+   },
+   "no_stall_full": {
+    "command": -1.0,
+    "speed_change_float1": -0.3,
+    "speed_change_float2": -0.3,
+    "other_floats_unchanged": true
+   },
+   "at_80": {
+    "command": -0.8,
+    "speed_change_float1": -0.24,
+    "speed_change_float2": -0.24,
+    "other_floats_unchanged": true
+   },
+   "stall_90": {
+    "command": -0.9,
+    "speed_change_float1": -0.195,
+    "speed_change_float2": -0.195,
+    "other_floats_unchanged": true
+   }
+  },
+  "textbook_hold_per_unit_current": [
+   -0.910188,
+   -0.124739,
+   -0.532387,
+   -0.369759
+  ],
+  "full_throttle_pattern_thruster1": -1.0,
+  "summary": "the water's push c + w1, when positive, raises every float's speed number (downstream) and the swing then turns it into a negative position number; a negative throttle lowers the speed numbers of the two floats a thruster sits between (upstream, against the water); the textbook hold -K_e e is negative for a positive current; the full-throttle command puts thruster 1 at -1",
+  "panel": {
+   "gauges": "each thruster's throttle, -1 (full throttle against the water) at the top; labels '↑ against the water' and '↓ with the water'",
+   "floats": "a float is drawn below the rest line when its position number is negative (downstream, where the water carries it); the small arrow beside it shows its speed number, pointing down for a positive speed number",
+   "thruster_arrows": "the arrow at each thruster shows the push it really gives; a negative push points up (upstream)",
+   "channel": "water flows down the channel ('downstream ↓'); the push meter shows c + w1 with the 0.565 mark",
+   "found_in_template": true
+  }
+ },
+ "who_pushes": {
+  "how": "linear algebra on thruster_chain.matrices(): B5 = which floats' speed numbers each thruster pushes; least squares min |B5 f + 1|; the textbook rule's closed-loop steady state s = (I - A + 0.3 B K_s)^-1 (0.3 v - 0.3 B K_c) c with the floats settled (no cap, no wave), checked by a 4,000-step simulation; the steady-state cost-optimal constant throttle minimises |s|^2 + 0.3 |a|^2 over settled floats",
+  "thruster_reaches_floats": {
+   "thruster_1": [
+    1,
+    2
+   ],
+   "thruster_2": [
+    2,
+    3
+   ],
+   "thruster_3": [
+    3,
+    4
+   ],
+   "thruster_4": [
+    4,
+    5
+   ]
+  },
+  "alternating_sum": {
+   "signs": [
+    1.0,
+    -1.0,
+    1.0,
+    -1.0,
+    1.0
+   ],
+   "thruster_contribution": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "statement": "push on float 1 - push on float 2 + float 3 - float 4 + float 5: each thruster adds the same push to two neighbouring floats, so it adds once with + and once with - and cancels; the water adds 1 - 1 + 1 - 1 + 1 = 1 times its push. So no throttles can cancel the water's push on all five floats: this alternating sum of the pushes left over is always the water's push itself"
+  },
+  "least_squares": {
+   "throttles_per_unit_push": [
+    -0.8,
+    -0.4,
+    -0.4,
+    -0.8
+   ],
+   "leftover_push_per_float": [
+    0.2,
+    -0.2,
+    0.2,
+    -0.2,
+    0.2
+   ],
+   "leftover_sum_of_squares": 0.2,
+   "no_throttle_sum_of_squares": 5.0,
+   "leftover_share_of_sum_of_squares": 0.04,
+   "note": "balancing the pushes alone (ignoring how far each push moves its float): thrusters 1 and 4 carry the most, 0.8 per unit push; every float keeps 0.2 of the push, floats 1, 3 and 5 downstream and floats 2 and 4 upstream"
+  },
+  "textbook_steady": {
+   "throttles_per_unit_current": [
+    -0.947388,
+    -0.12509,
+    -0.618466,
+    -0.351747
+   ],
+   "leftover_push_per_float": [
+    0.052612,
+    -0.072479,
+    0.256444,
+    0.029787,
+    0.648253
+   ],
+   "float_offsets_per_unit_current": [
+    {
+     "float": 1,
+     "position": -0.151915,
+     "speed": 0.031292,
+     "distance": 0.155104
+    },
+    {
+     "float": 2,
+     "position": 0.093441,
+     "speed": -0.031514,
+     "distance": 0.098612
+    },
+    {
+     "float": 3,
+     "position": -0.21266,
+     "speed": 0.059261,
+     "distance": 0.220763
+    },
+    {
+     "float": 4,
+     "position": -0.012613,
+     "speed": 0.001426,
+     "distance": 0.012694
+    },
+    {
+     "float": 5,
+     "position": -0.2264,
+     "speed": 0.111464,
+     "distance": 0.252351
+    }
+   ],
+   "float_cost_per_unit_current_squared": 0.14636,
+   "throttle_cost_per_unit_current_squared": 0.425825,
+   "thrusters_by_load": [
+    1,
+    3,
+    4,
+    2
+   ],
+   "current_where_thruster1_reaches_80pct": 0.844427,
+   "current_where_thruster1_reaches_full_throttle": 1.055533,
+   "note": "what K holds once the floats have settled in a steady current with no wave and no cap (the no-stall world, or the stalling world while every throttle stays within 80%). page_data's 0.879 and 1.099 are K's current column alone, with the floats at rest; with the floats settled the feedback adds to thruster 1, so 80% is reached already at this current"
+  },
+  "steady_optimal": {
+   "throttles_per_unit_current": [
+    -0.951311,
+    -0.121572,
+    -0.621633,
+    -0.351688
+   ],
+   "leftover_push_per_float": [
+    0.048689,
+    -0.072883,
+    0.256795,
+    0.02668,
+    0.648312
+   ],
+   "float_cost_per_unit_current_squared": 0.143072,
+   "throttle_cost_per_unit_current_squared": 0.428965,
+   "largest_difference_from_textbook_steady": 0.003922
+  }
+ },
+ "water_alone": {
+  "how": "no throttle: (I - A)^-1 0.3 v is where the floats settle per unit of steady current; (e^{0.27 i} I - A)^-1 0.3 v is their steady swing under a wave of amplitude 1 (largest distance from rest over a cycle); both checked by 4,000-step simulations. Costs: exact float64 rollouts on the four evaluation banks (1,000 starts x 100 steps each), averaged over every visited state",
+  "steady_offset_per_unit_current": [
+   {
+    "float": 1,
+    "position": -2.84878,
+    "speed": 0.658139,
+    "distance": 2.923815
+   },
+   {
+    "float": 2,
+    "position": -1.49307,
+    "speed": 0.258368,
+    "distance": 1.51526
+   },
+   {
+    "float": 3,
+    "position": -0.869554,
+    "speed": 0.216175,
+    "distance": 0.896022
+   },
+   {
+    "float": 4,
+    "position": -0.496083,
+    "speed": 0.1913,
+    "distance": 0.53169
+   },
+   {
+    "float": 5,
+    "position": -0.35231,
+    "speed": 0.160786,
+    "distance": 0.387266
+   }
+  ],
+  "steady_float_cost_per_unit_current_squared": 12.08023,
+  "steady_offset_at_mean_current": {
+   "recorded": {
+    "current": 0.4,
+    "float1_position": -1.139512,
+    "float1_distance": 1.169526,
+    "float_cost": 1.932837
+   },
+   "strong_current": {
+    "current": 0.9,
+    "float1_position": -2.563902,
+    "float1_distance": 2.631433,
+    "float_cost": 9.784986
+   },
+   "big_waves": {
+    "current": 0.4,
+    "float1_position": -1.139512,
+    "float1_distance": 1.169526,
+    "float_cost": 1.932837
+   },
+   "big_kicks": {
+    "current": 0.4,
+    "float1_position": -1.139512,
+    "float1_distance": 1.169526,
+    "float_cost": 1.932837
+   }
+  },
+  "all_positions_negative_all_speeds_positive": true,
+  "wave_swing_per_unit_amplitude": [
+   {
+    "float": 1,
+    "peak_distance": 1.329486,
+    "mean_squared_distance": 1.020876
+   },
+   {
+    "float": 2,
+    "peak_distance": 2.602581,
+    "mean_squared_distance": 5.227757
+   },
+   {
+    "float": 3,
+    "peak_distance": 1.903138,
+    "mean_squared_distance": 2.84163
+   },
+   {
+    "float": 4,
+    "peak_distance": 0.706759,
+    "mean_squared_distance": 0.301471
+   },
+   {
+    "float": 5,
+    "peak_distance": 0.413668,
+    "mean_squared_distance": 0.09308
+   }
+  ],
+  "wave_float_cost_per_unit_amplitude_squared": 9.484814,
+  "wave_swing_float2_at_amplitude": {
+   "0.1": 0.260258,
+   "0.25": 0.650645,
+   "0.4": 1.041032,
+   "0.55": 1.43142,
+   "0.7": 1.821807
+  },
+  "cost_split": {
+   "recorded": {
+    "no_throttle": {
+     "J": -403.916461,
+     "cost_per_state": 4.039165,
+     "float_cost_per_state": 4.039165,
+     "throttle_cost_per_state": 0.0,
+     "float_share_of_cost": 1.0
+    },
+    "recording": {
+     "J": -79.799646,
+     "cost_per_state": 0.797996,
+     "float_cost_per_state": 0.61771,
+     "throttle_cost_per_state": 0.180287,
+     "float_share_of_cost": 0.774075
+    },
+    "normal_driving_only": {
+     "J": -37.884667,
+     "cost_per_state": 0.378847,
+     "float_cost_per_state": 0.298918,
+     "throttle_cost_per_state": 0.079928,
+     "float_share_of_cost": 0.789022
+    },
+    "stall_aware": {
+     "J": -26.35998,
+     "cost_per_state": 0.2636,
+     "float_cost_per_state": 0.153179,
+     "throttle_cost_per_state": 0.110421,
+     "float_share_of_cost": 0.581104
+    },
+    "rising_thrust": {
+     "J": -35.12317,
+     "cost_per_state": 0.351232,
+     "float_cost_per_state": 0.225098,
+     "throttle_cost_per_state": 0.126133,
+     "float_share_of_cost": 0.640882
+    },
+    "no_throttle_over_stall_aware": 15.323094,
+    "stall_aware_float_cost_removed_share": 0.962077
+   },
+   "strong_current": {
+    "no_throttle": {
+     "J": -1334.066073,
+     "cost_per_state": 13.340661,
+     "float_cost_per_state": 13.340661,
+     "throttle_cost_per_state": 0.0,
+     "float_share_of_cost": 1.0
+    },
+    "recording": {
+     "J": -253.944259,
+     "cost_per_state": 2.539443,
+     "float_cost_per_state": 2.187367,
+     "throttle_cost_per_state": 0.352075,
+     "float_share_of_cost": 0.861357
+    },
+    "normal_driving_only": {
+     "J": -146.88058,
+     "cost_per_state": 1.468806,
+     "float_cost_per_state": 1.236303,
+     "throttle_cost_per_state": 0.232503,
+     "float_share_of_cost": 0.841706
+    },
+    "stall_aware": {
+     "J": -103.794792,
+     "cost_per_state": 1.037948,
+     "float_cost_per_state": 0.707985,
+     "throttle_cost_per_state": 0.329963,
+     "float_share_of_cost": 0.682101
+    },
+    "rising_thrust": {
+     "J": -335.221298,
+     "cost_per_state": 3.352213,
+     "float_cost_per_state": 2.880071,
+     "throttle_cost_per_state": 0.472142,
+     "float_share_of_cost": 0.859155
+    },
+    "no_throttle_over_stall_aware": 12.852919,
+    "stall_aware_float_cost_removed_share": 0.94693
+   },
+   "big_waves": {
+    "no_throttle": {
+     "J": -650.057626,
+     "cost_per_state": 6.500576,
+     "float_cost_per_state": 6.500576,
+     "throttle_cost_per_state": 0.0,
+     "float_share_of_cost": 1.0
+    },
+    "recording": {
+     "J": -106.805684,
+     "cost_per_state": 1.068057,
+     "float_cost_per_state": 0.858321,
+     "throttle_cost_per_state": 0.209735,
+     "float_share_of_cost": 0.803629
+    },
+    "normal_driving_only": {
+     "J": -55.594179,
+     "cost_per_state": 0.555942,
+     "float_cost_per_state": 0.448766,
+     "throttle_cost_per_state": 0.107176,
+     "float_share_of_cost": 0.807217
+    },
+    "stall_aware": {
+     "J": -36.189779,
+     "cost_per_state": 0.361898,
+     "float_cost_per_state": 0.212146,
+     "throttle_cost_per_state": 0.149751,
+     "float_share_of_cost": 0.586205
+    },
+    "rising_thrust": {
+     "J": -61.760684,
+     "cost_per_state": 0.617607,
+     "float_cost_per_state": 0.42672,
+     "throttle_cost_per_state": 0.190887,
+     "float_share_of_cost": 0.690925
+    },
+    "no_throttle_over_stall_aware": 17.962465,
+    "stall_aware_float_cost_removed_share": 0.967365
+   },
+   "big_kicks": {
+    "no_throttle": {
+     "J": -761.989392,
+     "cost_per_state": 7.619894,
+     "float_cost_per_state": 7.619894,
+     "throttle_cost_per_state": 0.0,
+     "float_share_of_cost": 1.0
+    },
+    "recording": {
+     "J": -263.242748,
+     "cost_per_state": 2.632427,
+     "float_cost_per_state": 2.442061,
+     "throttle_cost_per_state": 0.190366,
+     "float_share_of_cost": 0.927684
+    },
+    "normal_driving_only": {
+     "J": -205.386412,
+     "cost_per_state": 2.053864,
+     "float_cost_per_state": 1.960467,
+     "throttle_cost_per_state": 0.093397,
+     "float_share_of_cost": 0.954526
+    },
+    "stall_aware": {
+     "J": -163.504437,
+     "cost_per_state": 1.635044,
+     "float_cost_per_state": 1.484072,
+     "throttle_cost_per_state": 0.150972,
+     "float_share_of_cost": 0.907665
+    },
+    "rising_thrust": {
+     "J": -219.200724,
+     "cost_per_state": 2.192007,
+     "float_cost_per_state": 1.987791,
+     "throttle_cost_per_state": 0.204216,
+     "float_share_of_cost": 0.906836
+    },
+    "no_throttle_over_stall_aware": 4.660359,
+    "stall_aware_float_cost_removed_share": 0.805237
+   }
+  }
+ },
+ "waves": {
+  "how": "the water's push c + w1 at every visited state of the four banks (the same for every controller, since no thruster changes the water); start-law endpoints; stage0.bisect_trigger rerun",
+  "quarter_cycle_steps": 5.817764,
+  "cycles_per_episode": 4.297183,
+  "situations": {
+   "recorded": {
+    "plain": "recorded conditions",
+    "push_lowest_possible": -0.3,
+    "push_highest_possible": 1.1,
+    "push_lowest_seen": -0.295449,
+    "push_highest_seen": 1.089033,
+    "push_mean": 0.40779,
+    "negative_push_share_of_states": 0.06131,
+    "starts_whose_crest_passes_the_mark": 0.647,
+    "starts_always_past_the_mark": 0.003,
+    "starts_never_past_the_mark": 0.353,
+    "starts_wave_bigger_than_current": 0.238,
+    "mean_current": 0.408063,
+    "mean_amplitude": 0.247395
+   },
+   "strong_current": {
+    "plain": "strong current",
+    "push_lowest_possible": 0.3,
+    "push_highest_possible": 1.5,
+    "push_lowest_seen": 0.303594,
+    "push_highest_seen": 1.491649,
+    "push_mean": 0.905103,
+    "negative_push_share_of_states": 0.0,
+    "starts_whose_crest_passes_the_mark": 1.0,
+    "starts_always_past_the_mark": 0.736,
+    "starts_never_past_the_mark": 0.0,
+    "starts_wave_bigger_than_current": 0.0,
+    "mean_current": 0.905376,
+    "mean_amplitude": 0.247395
+   },
+   "big_waves": {
+    "plain": "big waves",
+    "push_lowest_possible": -0.6,
+    "push_highest_possible": 1.4,
+    "push_lowest_seen": -0.595271,
+    "push_highest_seen": 1.388902,
+    "push_mean": 0.407562,
+    "negative_push_share_of_states": 0.20343,
+    "starts_whose_crest_passes_the_mark": 0.99,
+    "starts_always_past_the_mark": 0.0,
+    "starts_never_past_the_mark": 0.01,
+    "starts_wave_bigger_than_current": 0.722,
+    "mean_current": 0.408063,
+    "mean_amplitude": 0.547395
+   },
+   "big_kicks": {
+    "plain": "big starting pushes",
+    "push_lowest_possible": -0.3,
+    "push_highest_possible": 1.1,
+    "push_lowest_seen": -0.295449,
+    "push_highest_seen": 1.089033,
+    "push_mean": 0.40779,
+    "negative_push_share_of_states": 0.06131,
+    "starts_whose_crest_passes_the_mark": 0.647,
+    "starts_always_past_the_mark": 0.003,
+    "starts_never_past_the_mark": 0.353,
+    "starts_wave_bigger_than_current": 0.238,
+    "mean_current": 0.408063,
+    "mean_amplitude": 0.247395
+   }
+  },
+  "trigger": {
+   "value": 0.565,
+   "share_target": 0.13,
+   "bisection_result": 0.565,
+   "bisection_last_share": 0.129989,
+   "bisection_last_midpoint": 0.565063,
+   "bisection_settings": {
+    "episodes": 300,
+    "lo": 0.0,
+    "hi": 1.2,
+    "iterations": 14,
+    "decimals": 4,
+    "seeds": [
+     900,
+     901,
+     902
+    ]
+   },
+   "textbook_hold_thruster1_when_current_alone_is_at_mark": 0.514256,
+   "textbook_steady_thruster1_when_current_alone_is_at_mark": 0.535274,
+   "why": "set by bisection (14 halvings of [0, 1.2] on design seeds 900-902, 300 episodes each) so that the recording controller gives the full-throttle command on 13% of steps; it is a calibration of how common that command is in the log, not the point where holding needs 80%: a push of 0.565 from the current alone asks thruster 1 for about half throttle"
+  }
+ },
+ "swings": {
+  "how": "eigenvalues of A (the 10 x 10 float dynamics) as on the page's Swing table, eigenvector weight per float, half-life ln 0.5 / ln(fade), steady responses from section water_alone",
+  "list": [
+   {
+    "swing": 1,
+    "float_with_most_weight": 1,
+    "weight_on_that_float": 0.997361,
+    "fade_per_step": 0.981659,
+    "turn_per_step": 0.100062,
+    "period_steps": 62.792826,
+    "half_life_steps": 37.444569,
+    "left_after_100_steps": 0.15706,
+    "turn_gap_to_wave": 0.169938,
+    "period_gap_to_wave": 39.521769,
+    "steady_offset_per_unit_current": 2.923815,
+    "wave_swing_per_unit_amplitude": 1.329486
+   },
+   {
+    "swing": 2,
+    "float_with_most_weight": 2,
+    "weight_on_that_float": 0.99883,
+    "fade_per_step": 0.972925,
+    "turn_per_step": 0.204076,
+    "period_steps": 30.788405,
+    "half_life_steps": 25.252515,
+    "left_after_100_steps": 0.064257,
+    "turn_gap_to_wave": 0.065924,
+    "period_gap_to_wave": 7.517348,
+    "steady_offset_per_unit_current": 1.51526,
+    "wave_swing_per_unit_amplitude": 2.602581
+   },
+   {
+    "swing": 3,
+    "float_with_most_weight": 3,
+    "weight_on_that_float": 0.996564,
+    "fade_per_step": 0.969422,
+    "turn_per_step": 0.353041,
+    "period_steps": 17.797336,
+    "half_life_steps": 22.32004,
+    "left_after_100_steps": 0.044802,
+    "turn_gap_to_wave": 0.083041,
+    "period_gap_to_wave": 5.473721,
+    "steady_offset_per_unit_current": 0.896022,
+    "wave_swing_per_unit_amplitude": 1.903138
+   },
+   {
+    "swing": 4,
+    "float_with_most_weight": 4,
+    "weight_on_that_float": 0.999298,
+    "fade_per_step": 0.965094,
+    "turn_per_step": 0.550919,
+    "period_steps": 11.404921,
+    "half_life_steps": 19.509092,
+    "left_after_100_steps": 0.02864,
+    "turn_gap_to_wave": 0.280919,
+    "period_gap_to_wave": 11.866136,
+    "steady_offset_per_unit_current": 0.53169,
+    "wave_swing_per_unit_amplitude": 0.706759
+   },
+   {
+    "swing": 5,
+    "float_with_most_weight": 5,
+    "weight_on_that_float": 0.999664,
+    "fade_per_step": 0.954881,
+    "turn_per_step": 0.800907,
+    "period_steps": 7.845087,
+    "half_life_steps": 15.013529,
+    "left_after_100_steps": 0.009884,
+    "turn_gap_to_wave": 0.530907,
+    "period_gap_to_wave": 15.42597,
+    "steady_offset_per_unit_current": 0.387266,
+    "wave_swing_per_unit_amplitude": 0.413668
+   }
+  ],
+  "closest_turn_to_wave": 2,
+  "strongest_wave_response": 2,
+  "strongest_current_response": 1,
+  "lowest_weight_on_own_float": 0.996564,
+  "wave_turn": 0.27,
+  "wave_period_steps": 23.271057
+ },
+ "controllers": {
+  "how": "the textbook rule's hold terms from K; its closed-loop steady response to a wave of amplitude 1 (complex steady state of the linear closed loop, no cap, checked by simulation); exact bank rollouts of the stall-aware and rising-thrust controllers (stalling world); crest = states with w1 >= 0.9 x amplitude, trough = w1 <= -0.9 x amplitude; steady states: 4,000 steps from rest in a steady current with no wave, averaged over the last 200 (settled = the floats no longer move; where they do not, a thruster keeps crossing into the stall and back, and the lowest and highest values of that repeating cycle are given)",
+  "textbook_rule": "K is the discounted (0.98) linear-quadratic regulator of the model in which push equals throttle: command = -(K_s s + K_e e), a fixed table that pushes against the water's current and wave (K_e e, using both wave numbers, so it times its push to the wave) and against the floats' distance from rest (K_s s)",
+  "crest_share_of_amplitude": 0.9,
+  "hold_terms": [
+   {
+    "thruster": 1,
+    "current_hold": 0.910188,
+    "wave_hold_size": 0.881937,
+    "wave_hold_lead_steps": 1.376588
+   },
+   {
+    "thruster": 2,
+    "current_hold": 0.124739,
+    "wave_hold_size": 0.356543,
+    "wave_hold_lead_steps": -3.612976
+   },
+   {
+    "thruster": 3,
+    "current_hold": 0.532387,
+    "wave_hold_size": 0.683799,
+    "wave_hold_lead_steps": 0.872403
+   },
+   {
+    "thruster": 4,
+    "current_hold": 0.369759,
+    "wave_hold_size": 0.359736,
+    "wave_hold_lead_steps": -1.512657
+   }
+  ],
+  "wave_response": {
+   "textbook_rule": {
+    "float_swing_per_unit_amplitude": [
+     0.290537,
+     0.055397,
+     0.094629,
+     0.037671,
+     0.287446
+    ],
+    "float_cost_per_unit_amplitude_squared": 0.102938,
+    "throttle_swing_per_unit_amplitude": [
+     0.778852,
+     0.245209,
+     0.703163,
+     0.342799
+    ],
+    "throttle_lead_steps_against_push": [
+     -0.070236,
+     0.224027,
+     -0.074228,
+     0.116729
+    ],
+    "throttle_cost_per_unit_amplitude_squared": 0.191803
+   },
+   "normal_driving": {
+    "float_swing_per_unit_amplitude": [
+     0.448572,
+     0.029747,
+     0.209355,
+     0.023728,
+     0.282491
+    ],
+    "float_cost_per_unit_amplitude_squared": 0.19252,
+    "throttle_swing_per_unit_amplitude": [
+     0.749964,
+     0.33551,
+     0.653488,
+     0.371607
+    ],
+    "throttle_lead_steps_against_push": [
+     1.039323,
+     -2.441979,
+     0.848182,
+     -1.144671
+    ],
+    "throttle_cost_per_unit_amplitude_squared": 0.186023
+   },
+   "no_throttle_float_swing_per_unit_amplitude": [
+    1.329486,
+    2.602581,
+    1.903138,
+    0.706759,
+    0.413668
+   ],
+   "no_throttle_float_cost_per_unit_amplitude_squared": 9.484814
+  },
+  "stall_aware": {
+   "recorded": {
+    "at_cap_any_thruster": 0.06121,
+    "at_cap_thruster1": 0.04558,
+    "at_cap_by_thruster": [
+     0.04558,
+     0.00573,
+     0.01466,
+     0.0079
+    ],
+    "thruster1_vs_push_correlation": -0.921319,
+    "thruster1_vs_push_slope": -0.847111,
+    "thruster1_vs_push_intercept": -0.040203,
+    "crest": {
+     "states": 14306,
+     "push": 0.646559,
+     "thruster1": -0.565553,
+     "at_cap_thruster1": 0.128757
+    },
+    "trough": {
+     "states": 14379,
+     "push": 0.168584,
+     "thruster1": -0.198811,
+     "at_cap_thruster1": 0.008346
+    },
+    "at_cap_share_inside_region": 0.156723,
+    "region_share_of_capped_states": 0.713282,
+    "mean_throttle_by_thruster": [
+     -0.385646,
+     -0.048305,
+     -0.254217,
+     -0.140272
+    ]
+   },
+   "strong_current": {
+    "at_cap_any_thruster": 0.7317,
+    "at_cap_thruster1": 0.71917,
+    "at_cap_by_thruster": [
+     0.71917,
+     0.00677,
+     0.14331,
+     0.01189
+    ],
+    "thruster1_vs_push_correlation": -0.567505,
+    "thruster1_vs_push_slope": -0.284274,
+    "thruster1_vs_push_intercept": -0.493008,
+    "crest": {
+     "states": 14306,
+     "push": 1.144059,
+     "thruster1": -0.796185,
+     "at_cap_thruster1": 0.961065
+    },
+    "trough": {
+     "states": 14379,
+     "push": 0.665918,
+     "thruster1": -0.674849,
+     "at_cap_thruster1": 0.495792
+    },
+    "at_cap_share_inside_region": 0.773373,
+    "region_share_of_capped_states": 0.990324,
+    "mean_throttle_by_thruster": [
+     -0.750305,
+     -0.070532,
+     -0.600626,
+     -0.285979
+    ]
+   },
+   "big_waves": {
+    "at_cap_any_thruster": 0.20374,
+    "at_cap_thruster1": 0.18823,
+    "at_cap_by_thruster": [
+     0.18823,
+     0.00654,
+     0.02854,
+     0.00884
+    ],
+    "thruster1_vs_push_correlation": -0.943426,
+    "thruster1_vs_push_slope": -0.747404,
+    "thruster1_vs_push_intercept": -0.06861,
+    "crest": {
+     "states": 14306,
+     "push": 0.936483,
+     "thruster1": -0.720365,
+     "at_cap_thruster1": 0.516846
+    },
+    "trough": {
+     "states": 14379,
+     "push": -0.121345,
+     "thruster1": 0.038243,
+     "at_cap_thruster1": 0.006398
+    },
+    "at_cap_share_inside_region": 0.45959,
+    "region_share_of_capped_states": 0.893443,
+    "mean_throttle_by_thruster": [
+     -0.373225,
+     -0.044021,
+     -0.258281,
+     -0.137073
+    ]
+   },
+   "big_kicks": {
+    "at_cap_any_thruster": 0.15477,
+    "at_cap_thruster1": 0.09473,
+    "at_cap_by_thruster": [
+     0.09473,
+     0.05731,
+     0.07368,
+     0.05833
+    ],
+    "thruster1_vs_push_correlation": -0.721284,
+    "thruster1_vs_push_slope": -0.807466,
+    "thruster1_vs_push_intercept": -0.041459,
+    "crest": {
+     "states": 14306,
+     "push": 0.646559,
+     "thruster1": -0.543018,
+     "at_cap_thruster1": 0.161611
+    },
+    "trough": {
+     "states": 14379,
+     "push": 0.168584,
+     "thruster1": -0.191942,
+     "at_cap_thruster1": 0.060922
+    },
+    "at_cap_share_inside_region": 0.231136,
+    "region_share_of_capped_states": 0.416037,
+    "mean_throttle_by_thruster": [
+     -0.370736,
+     -0.045508,
+     -0.239296,
+     -0.129827
+    ]
+   }
+  },
+  "rising_thrust": {
+   "recorded": {
+    "past_80_thruster1": 0.07924,
+    "past_80_by_thruster": [
+     0.07924,
+     0.00741,
+     0.01897,
+     0.00906
+    ],
+    "push_lost_per_stalled_thruster_state": 0.415385,
+    "push_lost_per_state": 0.047636,
+    "thruster1_throttle_when_past": 0.968549,
+    "thruster1_push_when_past": 0.547176,
+    "extra_cost_against_stall_aware": 8.76319
+   },
+   "strong_current": {
+    "past_80_thruster1": 0.82707,
+    "past_80_by_thruster": [
+     0.82707,
+     0.00959,
+     0.35759,
+     0.01386
+    ],
+    "push_lost_per_stalled_thruster_state": 0.463882,
+    "push_lost_per_state": 0.56042,
+    "thruster1_throttle_when_past": 0.993639,
+    "thruster1_push_when_past": 0.509542,
+    "extra_cost_against_stall_aware": 231.426506
+   },
+   "big_waves": {
+    "past_80_thruster1": 0.24401,
+    "past_80_by_thruster": [
+     0.24401,
+     0.00868,
+     0.03164,
+     0.0105
+    ],
+    "push_lost_per_stalled_thruster_state": 0.417179,
+    "push_lost_per_state": 0.122997,
+    "thruster1_throttle_when_past": 0.968981,
+    "thruster1_push_when_past": 0.546529,
+    "extra_cost_against_stall_aware": 25.570906
+   },
+   "big_kicks": {
+    "past_80_thruster1": 0.14121,
+    "past_80_by_thruster": [
+     0.14121,
+     0.07493,
+     0.09683,
+     0.07228
+    ],
+    "push_lost_per_stalled_thruster_state": 0.455176,
+    "push_lost_per_state": 0.175357,
+    "thruster1_throttle_when_past": 0.982169,
+    "thruster1_push_when_past": 0.526746,
+    "extra_cost_against_stall_aware": 55.696286
+   }
+  },
+  "thruster1_by_push": [
+   {
+    "push_from": -0.6,
+    "push_to": -0.4,
+    "states": 1696,
+    "stall_aware_thruster1": 0.33928,
+    "stall_aware_thruster1_at_cap": 0.002948,
+    "rising_thrust_thruster1": 0.341976,
+    "rising_thrust_thruster1_past_80": 0.003538,
+    "rising_thrust_thruster1_push": 0.340454
+   },
+   {
+    "push_from": -0.4,
+    "push_to": -0.2,
+    "states": 7444,
+    "stall_aware_thruster1": 0.184625,
+    "stall_aware_thruster1_at_cap": 0.006179,
+    "rising_thrust_thruster1": 0.187725,
+    "rising_thrust_thruster1_past_80": 0.008866,
+    "rising_thrust_thruster1_push": 0.186209
+   },
+   {
+    "push_from": -0.2,
+    "push_to": 0.0,
+    "states": 23465,
+    "stall_aware_thruster1": 0.026473,
+    "stall_aware_thruster1_at_cap": 0.011506,
+    "rising_thrust_thruster1": 0.010816,
+    "rising_thrust_thruster1_past_80": 0.026337,
+    "rising_thrust_thruster1_push": 0.016429
+   },
+   {
+    "push_from": 0.0,
+    "push_to": 0.2,
+    "states": 46334,
+    "stall_aware_thruster1": -0.13317,
+    "stall_aware_thruster1_at_cap": 0.018777,
+    "rising_thrust_thruster1": -0.173508,
+    "rising_thrust_thruster1_past_80": 0.067639,
+    "rising_thrust_thruster1_push": -0.150649
+   },
+   {
+    "push_from": 0.2,
+    "push_to": 0.4,
+    "states": 68370,
+    "stall_aware_thruster1": -0.302054,
+    "stall_aware_thruster1_at_cap": 0.031505,
+    "rising_thrust_thruster1": -0.346431,
+    "rising_thrust_thruster1_past_80": 0.108644,
+    "rising_thrust_thruster1_push": -0.301826
+   },
+   {
+    "push_from": 0.4,
+    "push_to": 0.6,
+    "states": 76869,
+    "stall_aware_thruster1": -0.470395,
+    "stall_aware_thruster1_at_cap": 0.064577,
+    "rising_thrust_thruster1": -0.526204,
+    "rising_thrust_thruster1_past_80": 0.184912,
+    "rising_thrust_thruster1_push": -0.441196
+   },
+   {
+    "push_from": 0.6,
+    "push_to": 0.8,
+    "states": 73776,
+    "stall_aware_thruster1": -0.649466,
+    "stall_aware_thruster1_at_cap": 0.220966,
+    "rising_thrust_thruster1": -0.720791,
+    "rising_thrust_thruster1_past_80": 0.35212,
+    "rising_thrust_thruster1_push": -0.552604
+   },
+   {
+    "push_from": 0.8,
+    "push_to": 1.0,
+    "states": 57888,
+    "stall_aware_thruster1": -0.768982,
+    "stall_aware_thruster1_at_cap": 0.638129,
+    "rising_thrust_thruster1": -0.871132,
+    "rising_thrust_thruster1_past_80": 0.63685,
+    "rising_thrust_thruster1_push": -0.583091
+   },
+   {
+    "push_from": 1.0,
+    "push_to": 1.2,
+    "states": 33242,
+    "stall_aware_thruster1": -0.795552,
+    "stall_aware_thruster1_at_cap": 0.974099,
+    "rising_thrust_thruster1": -0.956654,
+    "rising_thrust_thruster1_past_80": 0.909873,
+    "rising_thrust_thruster1_push": -0.538467
+   },
+   {
+    "push_from": 1.2,
+    "push_to": 1.4,
+    "states": 10399,
+    "stall_aware_thruster1": -0.797538,
+    "stall_aware_thruster1_at_cap": 0.992884,
+    "rising_thrust_thruster1": -0.984721,
+    "rising_thrust_thruster1_past_80": 0.97067,
+    "rising_thrust_thruster1_push": -0.513031
+   },
+   {
+    "push_from": 1.4,
+    "push_to": 1.6,
+    "states": 517,
+    "stall_aware_thruster1": -0.797789,
+    "stall_aware_thruster1_at_cap": 0.994197,
+    "rising_thrust_thruster1": -0.988382,
+    "rising_thrust_thruster1_past_80": 0.972921,
+    "rising_thrust_thruster1_push": -0.508872
+   }
+  ],
+  "steady_current": {
+   "currents": [
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    0.9,
+    1.0,
+    1.1,
+    1.2,
+    1.4
+   ],
+   "table": {
+    "no_throttle": [
+     {
+      "current": 0.2,
+      "float_cost": 0.483209,
+      "float_cost_lowest": 0.483209,
+      "float_cost_highest": 0.483209,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 0.4,
+      "float_cost": 1.932837,
+      "float_cost_lowest": 1.932837,
+      "float_cost_highest": 1.932837,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 0.6,
+      "float_cost": 4.348883,
+      "float_cost_lowest": 4.348883,
+      "float_cost_highest": 4.348883,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 0.8,
+      "float_cost": 7.731347,
+      "float_cost_lowest": 7.731347,
+      "float_cost_highest": 7.731347,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 0.9,
+      "float_cost": 9.784986,
+      "float_cost_lowest": 9.784986,
+      "float_cost_highest": 9.784986,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 1.0,
+      "float_cost": 12.08023,
+      "float_cost_lowest": 12.08023,
+      "float_cost_highest": 12.08023,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 1.1,
+      "float_cost": 14.617078,
+      "float_cost_lowest": 14.617078,
+      "float_cost_highest": 14.617078,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 1.2,
+      "float_cost": 17.395531,
+      "float_cost_lowest": 17.395531,
+      "float_cost_highest": 17.395531,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     },
+     {
+      "current": 1.4,
+      "float_cost": 23.677251,
+      "float_cost_lowest": 23.677251,
+      "float_cost_highest": 23.677251,
+      "thruster1": 0.0,
+      "throttle_lowest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "throttle_highest": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "thruster1_push": 0.0,
+      "throttle_cost": 0.0,
+      "settled": true
+     }
+    ],
+    "stall_aware": [
+     {
+      "current": 0.2,
+      "float_cost": 0.005854,
+      "float_cost_lowest": 0.005854,
+      "float_cost_highest": 0.005854,
+      "thruster1": -0.189478,
+      "throttle_lowest": [
+       -0.189478,
+       -0.025018,
+       -0.123693,
+       -0.070349
+      ],
+      "throttle_highest": [
+       -0.189478,
+       -0.025018,
+       -0.123693,
+       -0.070349
+      ],
+      "thruster1_push": -0.189478,
+      "throttle_cost": 0.017033,
+      "settled": true
+     },
+     {
+      "current": 0.4,
+      "float_cost": 0.023418,
+      "float_cost_lowest": 0.023418,
+      "float_cost_highest": 0.023418,
+      "thruster1": -0.378955,
+      "throttle_lowest": [
+       -0.378955,
+       -0.050036,
+       -0.247386,
+       -0.140699
+      ],
+      "throttle_highest": [
+       -0.378955,
+       -0.050036,
+       -0.247386,
+       -0.140699
+      ],
+      "thruster1_push": -0.378955,
+      "throttle_cost": 0.068132,
+      "settled": true
+     },
+     {
+      "current": 0.6,
+      "float_cost": 0.05269,
+      "float_cost_lowest": 0.05269,
+      "float_cost_highest": 0.05269,
+      "thruster1": -0.568433,
+      "throttle_lowest": [
+       -0.568433,
+       -0.075054,
+       -0.371079,
+       -0.211048
+      ],
+      "throttle_highest": [
+       -0.568433,
+       -0.075054,
+       -0.371079,
+       -0.211048
+      ],
+      "thruster1_push": -0.568433,
+      "throttle_cost": 0.153297,
+      "settled": true
+     },
+     {
+      "current": 0.8,
+      "float_cost": 0.09367,
+      "float_cost_lowest": 0.09367,
+      "float_cost_highest": 0.09367,
+      "thruster1": -0.757911,
+      "throttle_lowest": [
+       -0.757911,
+       -0.100072,
+       -0.494773,
+       -0.281398
+      ],
+      "throttle_highest": [
+       -0.757911,
+       -0.100072,
+       -0.494773,
+       -0.281398
+      ],
+      "thruster1_push": -0.757911,
+      "throttle_cost": 0.272528,
+      "settled": true
+     },
+     {
+      "current": 0.9,
+      "float_cost": 0.178039,
+      "float_cost_lowest": 0.178039,
+      "float_cost_highest": 0.178039,
+      "thruster1": -0.8,
+      "throttle_lowest": [
+       -0.8,
+       -0.09461,
+       -0.582621,
+       -0.305781
+      ],
+      "throttle_highest": [
+       -0.8,
+       -0.09461,
+       -0.582621,
+       -0.305781
+      ],
+      "thruster1_push": -0.8,
+      "throttle_cost": 0.32457,
+      "settled": true
+     },
+     {
+      "current": 1.0,
+      "float_cost": 0.495087,
+      "float_cost_lowest": 0.495087,
+      "float_cost_highest": 0.495087,
+      "thruster1": -0.8,
+      "throttle_lowest": [
+       -0.8,
+       -0.074781,
+       -0.691255,
+       -0.321539
+      ],
+      "throttle_highest": [
+       -0.8,
+       -0.074781,
+       -0.691255,
+       -0.321539
+      ],
+      "thruster1_push": -0.8,
+      "throttle_cost": 0.368044,
+      "settled": true
+     },
+     {
+      "current": 1.1,
+      "float_cost": 1.04929,
+      "float_cost_lowest": 1.04929,
+      "float_cost_highest": 1.04929,
+      "thruster1": -0.8,
+      "throttle_lowest": [
+       -0.8,
+       -0.054952,
+       -0.799889,
+       -0.337296
+      ],
+      "throttle_highest": [
+       -0.8,
+       -0.054952,
+       -0.799889,
+       -0.337296
+      ],
+      "thruster1_push": -0.8,
+      "throttle_cost": 0.418983,
+      "settled": true
+     },
+     {
+      "current": 1.2,
+      "float_cost": 1.8461,
+      "float_cost_lowest": 1.8461,
+      "float_cost_highest": 1.8461,
+      "thruster1": -0.8,
+      "throttle_lowest": [
+       -0.8,
+       -0.058673,
+       -0.8,
+       -0.34461
+      ],
+      "throttle_highest": [
+       -0.8,
+       -0.058673,
+       -0.8,
+       -0.34461
+      ],
+      "thruster1_push": -0.8,
+      "throttle_cost": 0.42066,
+      "settled": true
+     },
+     {
+      "current": 1.4,
+      "float_cost": 4.147382,
+      "float_cost_lowest": 4.147382,
+      "float_cost_highest": 4.147382,
+      "thruster1": -0.8,
+      "throttle_lowest": [
+       -0.8,
+       -0.066164,
+       -0.8,
+       -0.35922
+      ],
+      "throttle_highest": [
+       -0.8,
+       -0.066164,
+       -0.8,
+       -0.35922
+      ],
+      "thruster1_push": -0.8,
+      "throttle_cost": 0.424025,
+      "settled": true
+     }
+    ],
+    "rising_thrust": [
+     {
+      "current": 0.2,
+      "float_cost": 0.005854,
+      "float_cost_lowest": 0.005854,
+      "float_cost_highest": 0.005854,
+      "thruster1": -0.189478,
+      "throttle_lowest": [
+       -0.189478,
+       -0.025018,
+       -0.123693,
+       -0.070349
+      ],
+      "throttle_highest": [
+       -0.189478,
+       -0.025018,
+       -0.123693,
+       -0.070349
+      ],
+      "thruster1_push": -0.189478,
+      "throttle_cost": 0.017033,
+      "settled": true
+     },
+     {
+      "current": 0.4,
+      "float_cost": 0.023418,
+      "float_cost_lowest": 0.023418,
+      "float_cost_highest": 0.023418,
+      "thruster1": -0.378955,
+      "throttle_lowest": [
+       -0.378955,
+       -0.050036,
+       -0.247386,
+       -0.140699
+      ],
+      "throttle_highest": [
+       -0.378955,
+       -0.050036,
+       -0.247386,
+       -0.140699
+      ],
+      "thruster1_push": -0.378955,
+      "throttle_cost": 0.068132,
+      "settled": true
+     },
+     {
+      "current": 0.6,
+      "float_cost": 0.05269,
+      "float_cost_lowest": 0.05269,
+      "float_cost_highest": 0.05269,
+      "thruster1": -0.568433,
+      "throttle_lowest": [
+       -0.568433,
+       -0.075054,
+       -0.371079,
+       -0.211048
+      ],
+      "throttle_highest": [
+       -0.568433,
+       -0.075054,
+       -0.371079,
+       -0.211048
+      ],
+      "thruster1_push": -0.568433,
+      "throttle_cost": 0.153297,
+      "settled": true
+     },
+     {
+      "current": 0.8,
+      "float_cost": 0.09367,
+      "float_cost_lowest": 0.09367,
+      "float_cost_highest": 0.09367,
+      "thruster1": -0.757911,
+      "throttle_lowest": [
+       -0.757911,
+       -0.100072,
+       -0.494773,
+       -0.281398
+      ],
+      "throttle_highest": [
+       -0.757911,
+       -0.100072,
+       -0.494773,
+       -0.281398
+      ],
+      "thruster1_push": -0.757911,
+      "throttle_cost": 0.272528,
+      "settled": true
+     },
+     {
+      "current": 0.9,
+      "float_cost": 1.838866,
+      "float_cost_lowest": 1.838866,
+      "float_cost_highest": 1.838866,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       0.007791,
+       -0.730778,
+       -0.244294
+      ],
+      "throttle_highest": [
+       -1.0,
+       0.007791,
+       -0.730778,
+       -0.244294
+      ],
+      "thruster1_push": -0.5,
+      "throttle_cost": 0.478133,
+      "settled": true
+     },
+     {
+      "current": 1.0,
+      "float_cost": 2.923425,
+      "float_cost_lowest": 2.771428,
+      "float_cost_highest": 3.123066,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.090133,
+       -1.0,
+       -0.336335
+      ],
+      "throttle_highest": [
+       -1.0,
+       0.082201,
+       -0.614912,
+       -0.143687
+      ],
+      "thruster1_push": -0.5,
+      "throttle_cost": 0.530117,
+      "settled": false
+     },
+     {
+      "current": 1.1,
+      "float_cost": 4.211601,
+      "float_cost_lowest": 4.060071,
+      "float_cost_highest": 4.45905,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.134887,
+       -1.0,
+       -0.334914
+      ],
+      "throttle_highest": [
+       -1.0,
+       0.021082,
+       -0.689085,
+       -0.136278
+      ],
+      "thruster1_push": -0.5,
+      "throttle_cost": 0.586479,
+      "settled": false
+     },
+     {
+      "current": 1.2,
+      "float_cost": 5.682204,
+      "float_cost_lowest": 5.682204,
+      "float_cost_highest": 5.682204,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.053524,
+       -1.0,
+       -0.248254
+      ],
+      "throttle_highest": [
+       -1.0,
+       -0.053524,
+       -1.0,
+       -0.248254
+      ],
+      "thruster1_push": -0.5,
+      "throttle_cost": 0.619348,
+      "settled": true
+     },
+     {
+      "current": 1.4,
+      "float_cost": 9.420364,
+      "float_cost_lowest": 9.420364,
+      "float_cost_highest": 9.420364,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.061015,
+       -1.0,
+       -0.262864
+      ],
+      "throttle_highest": [
+       -1.0,
+       -0.061015,
+       -1.0,
+       -0.262864
+      ],
+      "thruster1_push": -0.5,
+      "throttle_cost": 0.621846,
+      "settled": true
+     }
+    ],
+    "rising_thrust_no_stall_world": [
+     {
+      "current": 0.2,
+      "float_cost": 0.005854,
+      "float_cost_lowest": 0.005854,
+      "float_cost_highest": 0.005854,
+      "thruster1": -0.189478,
+      "throttle_lowest": [
+       -0.189478,
+       -0.025018,
+       -0.123693,
+       -0.070349
+      ],
+      "throttle_highest": [
+       -0.189478,
+       -0.025018,
+       -0.123693,
+       -0.070349
+      ],
+      "thruster1_push": -0.189478,
+      "throttle_cost": 0.017033,
+      "settled": true
+     },
+     {
+      "current": 0.4,
+      "float_cost": 0.023418,
+      "float_cost_lowest": 0.023418,
+      "float_cost_highest": 0.023418,
+      "thruster1": -0.378955,
+      "throttle_lowest": [
+       -0.378955,
+       -0.050036,
+       -0.247386,
+       -0.140699
+      ],
+      "throttle_highest": [
+       -0.378955,
+       -0.050036,
+       -0.247386,
+       -0.140699
+      ],
+      "thruster1_push": -0.378955,
+      "throttle_cost": 0.068132,
+      "settled": true
+     },
+     {
+      "current": 0.6,
+      "float_cost": 0.05269,
+      "float_cost_lowest": 0.05269,
+      "float_cost_highest": 0.05269,
+      "thruster1": -0.568433,
+      "throttle_lowest": [
+       -0.568433,
+       -0.075054,
+       -0.371079,
+       -0.211048
+      ],
+      "throttle_highest": [
+       -0.568433,
+       -0.075054,
+       -0.371079,
+       -0.211048
+      ],
+      "thruster1_push": -0.568433,
+      "throttle_cost": 0.153297,
+      "settled": true
+     },
+     {
+      "current": 0.8,
+      "float_cost": 0.09367,
+      "float_cost_lowest": 0.09367,
+      "float_cost_highest": 0.09367,
+      "thruster1": -0.757911,
+      "throttle_lowest": [
+       -0.757911,
+       -0.100072,
+       -0.494773,
+       -0.281398
+      ],
+      "throttle_highest": [
+       -0.757911,
+       -0.100072,
+       -0.494773,
+       -0.281398
+      ],
+      "thruster1_push": -0.757911,
+      "throttle_cost": 0.272528,
+      "settled": true
+     },
+     {
+      "current": 0.9,
+      "float_cost": 0.118552,
+      "float_cost_lowest": 0.118552,
+      "float_cost_highest": 0.118552,
+      "thruster1": -0.85265,
+      "throttle_lowest": [
+       -0.85265,
+       -0.112581,
+       -0.556619,
+       -0.316572
+      ],
+      "throttle_highest": [
+       -0.85265,
+       -0.112581,
+       -0.556619,
+       -0.316572
+      ],
+      "thruster1_push": -0.85265,
+      "throttle_cost": 0.344919,
+      "settled": true
+     },
+     {
+      "current": 1.0,
+      "float_cost": 0.14636,
+      "float_cost_lowest": 0.14636,
+      "float_cost_highest": 0.14636,
+      "thruster1": -0.947388,
+      "throttle_lowest": [
+       -0.947388,
+       -0.12509,
+       -0.618466,
+       -0.351747
+      ],
+      "throttle_highest": [
+       -0.947388,
+       -0.12509,
+       -0.618466,
+       -0.351747
+      ],
+      "thruster1_push": -0.947388,
+      "throttle_cost": 0.425825,
+      "settled": true
+     },
+     {
+      "current": 1.1,
+      "float_cost": 0.223574,
+      "float_cost_lowest": 0.223574,
+      "float_cost_highest": 0.223574,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.12322,
+       -0.701117,
+       -0.378288
+      ],
+      "throttle_highest": [
+       -1.0,
+       -0.12322,
+       -0.701117,
+       -0.378288
+      ],
+      "thruster1_push": -1.0,
+      "throttle_cost": 0.494955,
+      "settled": true
+     },
+     {
+      "current": 1.2,
+      "float_cost": 0.530952,
+      "float_cost_lowest": 0.530952,
+      "float_cost_highest": 0.530952,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.103391,
+       -0.809751,
+       -0.394045
+      ],
+      "throttle_highest": [
+       -1.0,
+       -0.103391,
+       -0.809751,
+       -0.394045
+      ],
+      "thruster1_push": -1.0,
+      "throttle_cost": 0.546497,
+      "settled": true
+     },
+     {
+      "current": 1.4,
+      "float_cost": 1.859026,
+      "float_cost_lowest": 1.859026,
+      "float_cost_highest": 1.859026,
+      "thruster1": -1.0,
+      "throttle_lowest": [
+       -1.0,
+       -0.069596,
+       -1.0,
+       -0.423457
+      ],
+      "throttle_highest": [
+       -1.0,
+       -0.069596,
+       -1.0,
+       -0.423457
+      ],
+      "thruster1_push": -1.0,
+      "throttle_cost": 0.655248,
+      "settled": true
+     }
+    ]
+   }
+  }
+ },
+ "starts": {
+  "how": "the bank starts themselves (shared seed: start i of every bank uses the same random draws); half-lives ln 0.5 / ln |eigenvalue| of A (no throttle), of A - 0.3 B K_s (the textbook rule's float feedback, no cap) and of A - 0.3 B 0.25 K_s (normal driving); paired bank return differences",
+  "situations": {
+   "recorded": {
+    "float_start_sd": 0.5,
+    "mean_start_distance": 1.552985,
+    "mean_start_float_cost": 2.527798,
+    "largest_start_distance": 2.806189
+   },
+   "strong_current": {
+    "float_start_sd": 0.5,
+    "mean_start_distance": 1.552985,
+    "mean_start_float_cost": 2.527798,
+    "largest_start_distance": 2.806189
+   },
+   "big_waves": {
+    "float_start_sd": 0.5,
+    "mean_start_distance": 1.552985,
+    "mean_start_float_cost": 2.527798,
+    "largest_start_distance": 2.806189
+   },
+   "big_kicks": {
+    "float_start_sd": 1.5,
+    "mean_start_distance": 4.658956,
+    "mean_start_float_cost": 22.750183,
+    "largest_start_distance": 8.418567
+   }
+  },
+  "bank_relations": {
+   "big_kicks_floats_are_three_times_recorded": true,
+   "big_kicks_water_equals_recorded": true,
+   "strong_current_floats_and_wave_equal_recorded": true,
+   "strong_current_current_map_max_error": 0.0,
+   "big_waves_amplitude_minus_recorded": 0.3,
+   "big_waves_amplitude_map_max_error": 0.0,
+   "big_waves_floats_and_current_equal_recorded": true
+  },
+  "half_life": {
+   "no_throttle_by_swing": [
+    37.444569,
+    25.252515,
+    22.32004,
+    19.509092,
+    15.013529
+   ],
+   "no_throttle_slowest": 37.444569,
+   "textbook_feedback_slowest": 6.218852,
+   "textbook_feedback_modes": [
+    {
+     "fade_per_step": 0.894528,
+     "turn_per_step": 0.0,
+     "half_life_steps": 6.218852
+    },
+    {
+     "fade_per_step": 0.807712,
+     "turn_per_step": 0.158004,
+     "half_life_steps": 3.245829
+    },
+    {
+     "fade_per_step": 0.758041,
+     "turn_per_step": 0.718607,
+     "half_life_steps": 2.502178
+    },
+    {
+     "fade_per_step": 0.665123,
+     "turn_per_step": 0.246699,
+     "half_life_steps": 1.699795
+    },
+    {
+     "fade_per_step": 0.629276,
+     "turn_per_step": 0.51987,
+     "half_life_steps": 1.496477
+    },
+    {
+     "fade_per_step": 0.428265,
+     "turn_per_step": 0.0,
+     "half_life_steps": 0.817378
+    }
+   ],
+   "normal_driving_slowest": 11.274183,
+   "normal_driving_modes": [
+    {
+     "fade_per_step": 0.940371,
+     "turn_per_step": 0.111907,
+     "half_life_steps": 11.274183
+    },
+    {
+     "fade_per_step": 0.90989,
+     "turn_per_step": 0.219902,
+     "half_life_steps": 7.340209
+    },
+    {
+     "fade_per_step": 0.906708,
+     "turn_per_step": 0.813312,
+     "half_life_steps": 7.077676
+    },
+    {
+     "fade_per_step": 0.906276,
+     "turn_per_step": 0.372137,
+     "half_life_steps": 7.043383
+    },
+    {
+     "fade_per_step": 0.901023,
+     "turn_per_step": 0.566978,
+     "half_life_steps": 6.650506
+    }
+   ]
+  },
+  "extra_cost_of_big_starts": {
+   "no_throttle": 358.072932,
+   "recording": 183.443102,
+   "normal_driving_only": 167.501746,
+   "stall_aware": 137.144457,
+   "rising_thrust": 184.077554
+  },
+  "stall_aware_at_cap": {
+   "recorded": 0.06121,
+   "big_kicks": 0.15477
+  }
+ },
+ "recording": {
+  "how": "the recording controller with its fixed per-bank streams (default_rng([7, 1]): noise, then coin), exact rollouts on the four banks; the full-throttle command is given where c + w1 > 0.565 and the coin is below 0.5; 'wobble only' and 'full-throttle command only' switch one departure from normal driving off; 'neither' is normal driving only",
+  "normal_driving_share_train": 0.86576,
+  "situations": {
+   "recorded": {
+    "full_throttle_share": 0.13882,
+    "region_share": 0.27858,
+    "full_throttle_share_inside_region": 0.498313,
+    "J_both": -79.799646,
+    "J_wobble_only": -74.396503,
+    "J_full_throttle_only": -47.017025,
+    "J_neither": -37.884667,
+    "cost_of_wobble_alone": 36.511836,
+    "cost_of_full_throttle_alone": 9.132358,
+    "cost_of_both": 41.914979
+   },
+   "strong_current": {
+    "full_throttle_share": 0.46932,
+    "region_share": 0.93696,
+    "full_throttle_share_inside_region": 0.500897,
+    "J_both": -253.944259,
+    "J_wobble_only": -186.282673,
+    "J_full_throttle_only": -234.111788,
+    "J_neither": -146.88058,
+    "cost_of_wobble_alone": 39.402092,
+    "cost_of_full_throttle_alone": 87.231208,
+    "cost_of_both": 107.063678
+   },
+   "big_waves": {
+    "full_throttle_share": 0.19787,
+    "region_share": 0.39607,
+    "full_throttle_share_inside_region": 0.499583,
+    "J_both": -106.805684,
+    "J_wobble_only": -93.661444,
+    "J_full_throttle_only": -74.810538,
+    "J_neither": -55.594179,
+    "cost_of_wobble_alone": 38.067264,
+    "cost_of_full_throttle_alone": 19.216359,
+    "cost_of_both": 51.211504
+   },
+   "big_kicks": {
+    "full_throttle_share": 0.13882,
+    "region_share": 0.27858,
+    "full_throttle_share_inside_region": 0.498313,
+    "J_both": -263.242748,
+    "J_wobble_only": -245.407906,
+    "J_full_throttle_only": -227.056825,
+    "J_neither": -205.386412,
+    "cost_of_wobble_alone": 40.021494,
+    "cost_of_full_throttle_alone": 21.670413,
+    "cost_of_both": 57.856336
+   }
+  },
+  "wobble_sd": 0.3,
+  "jitter_sd": 0.03,
+  "full_throttle_probability": 0.5
+ },
+ "interface": {
+  "how": "inspect.signature(ThrusterChainEnv.__init__); one reset(seed=0) and one step through gymnasium.make; the gymnasium registry",
+  "constructor": [
+   {
+    "name": "stall",
+    "default": true
+   },
+   {
+    "name": "start",
+    "default": "recorded"
+   },
+   {
+    "name": "render_mode",
+    "default": null
+   },
+   {
+    "name": "stall_slope",
+    "default": 1.5
+   }
+  ],
+  "constructor_line": "ThrusterChainEnv(stall=True, start='recorded', render_mode=None, stall_slope=1.5)",
+  "reset_info_keys": [
+   "state",
+   "t"
+  ],
+  "step_info_keys": [
+   "state",
+   "t",
+   "push",
+   "thrust",
+   "stalled",
+   "command"
+  ],
+  "step_info_types": {
+   "state": "ndarray float64 [13]",
+   "t": "int  []",
+   "push": "float  []",
+   "thrust": "ndarray float64 [4]",
+   "stalled": "ndarray bool [4]",
+   "command": "ndarray float64 [4]"
+  },
+  "reset_options": [
+   "state",
+   "start"
+  ],
+  "unknown_option_refused": true,
+  "observation_dtype": "float32",
+  "observation_shape": [
+   13
+  ],
+  "action_dtype": "float32",
+  "step_returns": [
+   "observation",
+   "reward",
+   "terminated",
+   "truncated",
+   "info"
+  ],
+  "terminated_after_one_step": false,
+  "truncated_after_one_step": false,
+  "max_episode_steps": 100,
+  "entry_point": "experiments.shift.thruster_chain:ThrusterChainEnv",
+  "registered_ids": [
+   "BCAShift/ThrusterChain-v0",
+   "BCAShift/ThrusterChain-StrongCurrent-v0",
+   "BCAShift/ThrusterChain-BigWaves-v0",
+   "BCAShift/ThrusterChain-BigKicks-v0",
+   "BCAShift/ThrusterChainNoStall-v0",
+   "BCAShift/ThrusterChainNoStall-StrongCurrent-v0",
+   "BCAShift/ThrusterChainNoStall-BigWaves-v0",
+   "BCAShift/ThrusterChainNoStall-BigKicks-v0"
+  ],
+  "registered_count": 8,
+  "metadata": {
+   "render_modes": [
+    "ansi"
+   ],
+   "render_fps": 10
+  }
+ },
+ "meta": {
+  "script": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/thrustercard/make_overview_data.py",
+  "created": "2026-10-12 23:01:27",
+  "seconds": 7,
+  "python": "3.10.20",
+  "numpy": "2.2.6",
+  "gymnasium": "1.0.0",
+  "flags": {
+   "JAX_PLATFORMS": "cpu",
+   "OMP_NUM_THREADS": "1",
+   "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "nothing_trains": "no learner is imported or trained; every number is exact simulation of fixed controllers, linear algebra on the environment's own matrices, or the bank starts themselves",
+  "banks": {
+   "size": 1000,
+   "seed": [
+    20261012,
+    2,
+    9
+   ],
+   "recording_streams": [
+    7,
+    1
+   ]
+  },
+  "discount": 0.98,
+  "experiments_shift_sha256": {
+   "SHIFT_ENV.md": "18bbb253c8cf58da3478f4072d7cdecf69bb5a897b0cb415b906dbbcd54d36cf",
+   "__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+   "acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+   "dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+   "detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+   "install_deps.sh": "d5d747fc4ee4afd30f3400f2951df9c0ddd892c5aba730f5005d01e3a2a42620",
+   "learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+   "recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+   "requirements-shift.txt": "42a4af0538e9721c83512406f3c646602e35b77eda6f6fa2bc17816346d6a07e",
+   "shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+   "stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+   "test_acceptance.py": "9f76b50c684e4904313c21956c0ea22974993397cf530fb00ee9965a2077d157",
+   "test_dataset.py": "212d0c1ed7aaf500525e6f1b55ebe0d2f303bd0b0aad18aaa19c3da2777c2ea7",
+   "test_learners.py": "fec65fa8752977789feab1f7f90b8fb8bc27d7cf1068dadb711dff2f53879471",
+   "test_shift.py": "d62f664aa84d517585ccb7f4a974a943c2c4d3b317c7f2d7c804697158722e8e",
+   "test_thruster_chain.py": "546ea721ed28a999a26b123578c541f325c5d16bf31d606827814042fa789d52",
+   "test_truth.py": "8691af40a33770649e6682c33d544109cd8e8f4cb6e92f32dd1716e260d55c7f",
+   "thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+   "truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c"
+  },
+  "page_data_sha256": "6cca0f7ea033027f4cae38d3a88a1aa840721ce1c4a38876ca05b951bc419bf4"
+ }
+}

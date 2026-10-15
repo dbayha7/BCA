@@ -1,0 +1,33 @@
+      <dl class="kv kv1 pro">
+        <dt>Checked</dt><dd>All 330 reruns that have an earlier run end at its saved actor bit for bit. The other 75
+          are the new arms on the three lower qualities, with nothing to match. Version 5's runs reproduce only when
+          each is pinned to one processor core, as they were first trained, so they were rerun that way.</dd>
+        <dt>What the curves show</dt><dd><b>On expert data, training the actor against the critic costs return, and
+          the band weighted for the actor's commands prevents that.</b> The actor fitted to the recorded commands already
+          scores 95.2 points on the strong test. Trained with no extra caution it falls to 91.1 within 5,000 steps and
+          ends at 90.7, as the critic draws it past 80%. BCA's band as version 5 used it and the untargeted control
+          follow the same path. Weighted for the actor's own commands, the actor instead rises to 96.5; the perfect
+          lower edge reaches 99.1. Estimated weights stop part of the fall (93.0).</dd>
+        <dd><b>On medium-expert the first test's collapse is visible as it happens.</b> Every actor-only run climbs from
+          51.9 points within its first 1,000 to 3,000 steps. The first test, which gave no value credit at every
+          refusal, peaks at 92.8 after 3,000 steps and then falls to 82.3, as its refusals become copies of random
+          recorded commands. The fixed fallback stays near its peak: 94.8 after 3,000 steps, 94.1 at the end.</dd>
+        <dd><b>On the three lower qualities the actor-only curves nearly coincide.</b> They peak after 5,000 to 16,000
+          steps and end 1.5 to 3 points lower. The weighted arms stay within 1 point of the actor with no extra caution
+          throughout.</dd>
+        <dd><b>Full TD3+BC training peaks early on the lower qualities.</b> Plain TD3+BC, with or without the removal,
+          scores best after 5,000 to 15,000 updates and then loses 4 to 17 points by 100,000 updates; on random data,
+          after the removal, the strong test falls from 80.6 to 66.0. BCA's capped pull peaks after 10,000 updates and loses
+          more, 9 to 23 points. On medium-expert and expert the first checkpoint, 5,000 updates, is already about the
+          best, and later training costs 0.3 to 2.2 points. Every result of this test is read at the last checkpoint,
+          as offline training must be: the test return that could pick an earlier one is not available while
+          training.</dd>
+        <dt>Expected against what happened: the new arms on the three lower qualities</dt><dd>Written before these runs:
+          the weighted arms within ±10 units of return of version 5's unweighted lower edge on the strong test, the
+          untargeted controls within ±5, and every curve close to that of the actor with no extra caution. <b>Mostly
+          met.</b> Exact weights: +5.9 (random), −4.6 (medium-replay), −8.4 (medium). Estimated weights: +5.8 and
+          −8.2, and −11.4 on medium, just outside. Untargeted controls: −3.2 to −6.1, three of the six beyond 5. The
+          curves track that of the no-caution actor within 1 point. On these qualities every episode holds random
+          commands, so the weighting refuses the actor's commands only for want of calibration rows and gives them the
+          capped threshold: a mild caution that costs a few units, as the controls' do.</dd>
+      </dl>

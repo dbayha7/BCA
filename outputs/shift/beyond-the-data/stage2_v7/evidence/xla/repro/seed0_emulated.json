@@ -1,0 +1,198 @@
+{
+ "all_equal": true,
+ "argv": [
+  "--seed",
+  "0",
+  "--mode",
+  "emulated",
+  "--out",
+  "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/evidence/xla/repro/seed0_emulated.json"
+ ],
+ "arms": {
+  "full": {
+   "equal": true,
+   "failed": false,
+   "gate_sha256": "99afa574e119e5f76ada457d3808ee3e7003e5aef2a34174d8198b8373b1bcf0",
+   "max_abs_diff": 0.0,
+   "this_run_sha256": "99afa574e119e5f76ada457d3808ee3e7003e5aef2a34174d8198b8373b1bcf0"
+  },
+  "gapped": {
+   "equal": true,
+   "failed": false,
+   "gate_sha256": "bdd7e5812a269f0d396b36639d01d90f10b37e0dcd62327f067dd2760a4af6ad",
+   "max_abs_diff": 0.0,
+   "this_run_sha256": "bdd7e5812a269f0d396b36639d01d90f10b37e0dcd62327f067dd2760a4af6ad"
+  },
+  "random": {
+   "equal": true,
+   "failed": false,
+   "gate_sha256": "3a7cf6e52244535e4803ae33d2629f5c3c0caaa48bbd362fde120ce848d36e1d",
+   "max_abs_diff": 0.0,
+   "this_run_sha256": "3a7cf6e52244535e4803ae33d2629f5c3c0caaa48bbd362fde120ce848d36e1d"
+  }
+ },
+ "common_sha256": "7742e05b62614c0bb70f9cf1ff73474e772a2e6b725f0c47ecec2daa24b16168",
+ "constants": {
+  "caches_at_import": {
+   "columns": 0,
+   "gain": 0,
+   "matrices": 0
+  },
+  "differences": {
+   "A_bit_identical": false,
+   "B_bit_identical": true,
+   "K_bit_identical": false,
+   "max_abs_dA": 1.734723475976807e-18,
+   "max_abs_dK": 6.994405055138486e-15
+  },
+  "file": "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/world_constants.json",
+  "per_tuple": {
+   "A (0.3, 0.27)": {
+    "bit_identical": false,
+    "differing": 71,
+    "max_abs": 1.734723475976807e-18
+   },
+   "B (0.3, 0.27)": {
+    "bit_identical": true,
+    "differing": 0,
+    "max_abs": 0.0
+   },
+   "K (0.3, 0.27, 0.3, 0.98)": {
+    "bit_identical": false,
+    "differing": 52,
+    "max_abs": 6.994405055138486e-15
+   }
+  },
+  "sha256": "6602f9d17e977a3e1f6eb017eb1f0b9ec80b018041d62146f507983f36a5e379",
+  "substitute_calls": {
+   "gain": 22,
+   "matrices": 1
+  },
+  "tolerances": {
+   "A": 1e-14,
+   "B": "bit-identical",
+   "K": 1e-12
+  },
+  "tripwire": {
+   "calls": {
+    "experiments.signal.gapped_lq.transition_matrix": 0,
+    "scipy.linalg.solve_discrete_are": 0
+   },
+   "installed": [
+    "experiments.signal.gapped_lq.transition_matrix",
+    "scipy.linalg.solve_discrete_are"
+   ]
+  },
+  "tuples": {
+   "gain": [
+    [
+     0.3,
+     0.27,
+     0.3,
+     0.98
+    ]
+   ],
+   "matrices": [
+    [
+     0.3,
+     0.27
+    ]
+   ]
+  }
+ },
+ "derived_from": {
+  "path": "scratchpad/v7_hw_probe/xla_repro.py (byte copy: xla_repro_original.py)",
+  "sha256": "25d2d84ab6388f4908bdb7966e919011934ea8589936b757061274c7cb9d6dc8"
+ },
+ "environment": {
+  "affinity": [
+   0
+  ],
+  "avx512_flags": [
+   "avx512_bf16",
+   "avx512_bitalg",
+   "avx512_fp16",
+   "avx512_vbmi2",
+   "avx512_vnni",
+   "avx512_vpopcntdq",
+   "avx512bw",
+   "avx512cd",
+   "avx512dq",
+   "avx512f",
+   "avx512ifma",
+   "avx512vbmi",
+   "avx512vl"
+  ],
+  "avx512f": true,
+  "boot_id": "d8b4c7ba-c83b-455e-9192-c5e364769e09",
+  "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "cwd": "/home/user/bca",
+  "executable": "/tmp/claude-0/bcavenv/bin/python",
+  "glibc": "2.39",
+  "hostname": "vm",
+  "jax": "0.6.2",
+  "jaxlib": "0.6.2",
+  "kernel_release": "6.18.44-fc-v114",
+  "logical_processors": 4,
+  "mode": "emulated",
+  "mode_confirmed": true,
+  "mode_meaning": "AVX2-only processor emulated on the cloud's Xeon (XLA capped at AVX2, OpenBLAS Haswell kernels, numpy's AVX-512 paths off)",
+  "numpy": "2.2.6",
+  "numpy_avx512_dispatch_active": [],
+  "numpy_dispatch_active": [
+   "SSSE3",
+   "SSE41",
+   "POPCNT",
+   "SSE42",
+   "AVX",
+   "F16C",
+   "FMA3",
+   "AVX2"
+  ],
+  "openblas": {
+   "numpy": "Haswell",
+   "scipy": "Haswell"
+  },
+  "python": "3.10.20",
+  "scipy": "1.15.3",
+  "variables": {
+   "HOME": "/root",
+   "JAX_PLATFORMS": "cpu",
+   "LANG": "C.UTF-8",
+   "LC_ALL": "C.UTF-8",
+   "NPY_DISABLE_CPU_FEATURES": "AVX512F AVX512CD AVX512_SKX AVX512_CLX AVX512_CNL AVX512_ICL AVX512_SPR",
+   "OMP_NUM_THREADS": "1",
+   "OPENBLAS_CORETYPE": "Haswell",
+   "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+   "PYTHONDONTWRITEBYTECODE": "1",
+   "PYTHONPATH": "/home/user/bca",
+   "TF_CPP_MIN_LOG_LEVEL": "1",
+   "TPU_SKIP_MDS_QUERY": "1",
+   "XLA_FLAGS": "--xla_cpu_max_isa=AVX2"
+  }
+ },
+ "gate_check2": {
+  "actors_sha256": "b010ab61166588d17177daee47d16e20cb092dac93157608221b2bac3ddc098e",
+  "folder": "/home/user/bca/runs/shift/68d9e8779e148b7b/harm_return/base/alpha5/seed0"
+ },
+ "gate_software_check": {
+  "state": "XLA_FLAGS excused: acceptance.check_software runs with XLA_FLAGS reported as the gate's pre-registration recorded it (unset); every other item it checks is still checked. Unexcused, it refuses any XLA_FLAGS (experiments/shift/acceptance.py:115, :491-502).",
+  "xla_flags_seen_by_the_check": [
+   "--xla_cpu_max_isa=AVX2",
+   "--xla_cpu_max_isa=AVX2",
+   "--xla_cpu_max_isa=AVX2"
+  ]
+ },
+ "information_only": "Information only: run on the cloud's Xeon outside the v7 wrapper, before anything is pinned; not a v7 result. The laptop's own self-test replaces it.",
+ "kind": "stage2-v7-evidence-xla-repro",
+ "mode": "emulated",
+ "question": "check 2's stalling-world swap (gapped, full, random side by side) rerun with the gate's own unchanged ActorOnly program: is each arm bit-identical to the gate's saved actor?",
+ "script_sha256": "6caeaba165238d926629ae1a7aae5f99ce8df8883dc4fa5d643bfdf7f0555258",
+ "seconds": {
+  "load": 17.13729771100043,
+  "process": 214.1629859959994,
+  "total": 213.00257923900062,
+  "train": 195.85964217199944
+ },
+ "seed": 0
+}

@@ -1,0 +1,35 @@
+{
+ "copies_dir": "/home/user/bca/runs/shift_explore/deploy/code",
+ "files": {
+  "common.py": "afd87d1d8c719ace32c4150baa6c62a2bad2972e1fa09363ea66e9c9938a6633",
+  "launch.sh": "fbb363d2b7691128b087da9c7e92eff12407876f184d3727f90ccd6f87ec6870",
+  "run_job.py": "1e0de5975d75151e4251c325b13e84b4aa3ce51c1fbbdb7d3e539ab23798e8c3",
+  "signals.py": "0e0533e4bf9a82b8144eef199a242333f6e2f974f6e8df6c190d38cd0de948a1",
+  "summarise.py": "40ac63abe0381862d40c39bb145a773e2e7be1b3082b856330864a2d29aa7eb2",
+  "write_manifest.py": "1301a412b96c29f795b95e52024a2d4f7658832c70f1a13468d4a12733710240",
+  "write_spec.py": "4588566306d93c0a6b9271078adc6b5c3e6043caa0ae08849b5bf9e2b513de4e"
+ },
+ "history": [
+  {
+   "archived": "/home/user/bca/runs/shift_explore/deploy/superseded/v1",
+   "replaced_because": "spec v2 (changes C1-C5, before any run, after the deploy review): the Stage-2 bar reads strong current only (summarise.py); the --after-room-failure override also covers a stop at the room's futility look (run_job.py, common.py, launch.sh); the launch condition is checked across jobs and copied into the pooled outputs (summarise.py, run_job.py stop files); a reported shape readout per trigger (signals.py, summarise.py); manifest history and smoke logs after a spec rewrite (write_manifest.py, write_spec.py). No return was seen and none was used.",
+   "sha256": "a1dbc34d56245f3de118b27218bb8e382ff91e532d475531d83a85142f889fc9",
+   "spec_sha256": "a9ff3a26f0fbbd65c5d4774f1489e8c38062adaea2b39eeff63a53c34b7fd566",
+   "version": 1
+  }
+ ],
+ "kind": "deploy-code-manifest",
+ "label": "EXPLORATORY: Stage 1 deployment-check channel (plan section 4.3), computed outside the gate on saved gate actors; no training; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (stand-ins and oracles only)",
+ "pinned": {
+  "fallback_py_sha256": "fa09489fa0a8ec77b42d1a6753ddeb9aa6a807cf84bdc42868c7a1701e4129b3",
+  "room_harness_sha256": "97f547b14d55c3afa392cbdf99508e45c1b862d8a285030808c5783a067ef2cf",
+  "room_manifest_sha256": "469ada26b9af7eff33be17b8241867e83e44c45a30d2d137dffe7deca3f32391",
+  "room_spec_sha256": "56bbda24cdbaa10cc0de0261450de5d9034e08e188c88e9432be83d8cf136bf4"
+ },
+ "reason": "spec v2 (changes C1-C5, before any run, after the deploy review): the Stage-2 bar reads strong current only (summarise.py); the --after-room-failure override also covers a stop at the room's futility look (run_job.py, common.py, launch.sh); the launch condition is checked across jobs and copied into the pooled outputs (summarise.py, run_job.py stop files); a reported shape readout per trigger (signals.py, summarise.py); manifest history and smoke logs after a spec rewrite (write_manifest.py, write_spec.py). No return was seen and none was used.",
+ "rule": "every deploy job, smoke check and the summary refuse unless each file here and its copy in copies_dir have these SHA-256 and this manifest names the current spec; the pinned room harness and fallback.py are re-verified at every import; any later change needs a new manifest with a reason",
+ "source_dir": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/ood/deploy",
+ "spec_sha256": "2be5dbbfaabf34f9358923135735be7d328dc8f163e9ce13a6eb1723ca52c202",
+ "version": 2,
+ "written": "2026-10-13T06:15:27+0000"
+}

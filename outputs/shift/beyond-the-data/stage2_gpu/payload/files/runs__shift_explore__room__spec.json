@@ -1,0 +1,376 @@
+{
+ "actor_loss": {
+  "formula": "-lambda * mean_i[Q1(s_i, pi(s_i)) - k * W(s_i, pi(s_i))] + (1 + nu) * mean_ij (pi(s_i)_j - a_ij)^2",
+  "frozen": "W's own parameters (frozen critic, random network, simulator, constants such as delta*(s_i, a_i)) get no gradient: only the actor's parameters are differentiated, so W acts on the actor only through the command pi(s)",
+  "lam": "lambda = alpha / stopgrad(mean_i |Q1(s_i, pi(s_i))|), computed on Q1 alone (W never enters it)",
+  "w0": "with k W = 0 and nu = 0 the loss is learners.actor_step's unweighted expression term for term ((q - 0).mean(), and the cloning term times 1.0)"
+ },
+ "arms": [
+  {
+   "W": "0",
+   "how": "trained by the gate's own unchanged code path (learners.ActorOnly.run, unweighted, the three critics of check 2 side by side) and checked against check 2's saved 'gapped' actor by parameter hash; the locked 'none' actor is check 2's saved actor",
+   "k": 0,
+   "name": "none",
+   "nu": 0,
+   "role": "baseline (check 2's gapped critic's actor)"
+  },
+  {
+   "W": "0",
+   "how": "the new program with kW = 0, nu = 0; must match 'none' within 1e-5 on every parameter",
+   "k": 0,
+   "name": "w0_check",
+   "nu": 0,
+   "role": "check (b) only, not scored"
+  },
+  {
+   "W": "[delta*(s_i, a_i) - delta*(s_i, a)]_+",
+   "k": 1.0,
+   "name": "perfect_band",
+   "role": "main oracle (amended, change A1)"
+  },
+  {
+   "W": "[delta*(s_i, a_i) - delta*(s_i, a)]_+",
+   "k": 0.5,
+   "name": "perfect_band_half",
+   "role": "dose-response, reported"
+  },
+  {
+   "W": "|delta*(s, a) - delta*(s, a_i)|",
+   "k": 1.0,
+   "name": "perfect_band_centred",
+   "role": "the symmetric band measured from the recorded command; reported"
+  },
+  {
+   "W": "[delta*(s, a) - delta*(s, a_i)]_+",
+   "k": 1.0,
+   "name": "underrating_half",
+   "role": "the same information on the wrong side; reported"
+  },
+  {
+   "W": "|delta*(s, a)|",
+   "k": 1.0,
+   "name": "perfect_band_literal",
+   "role": "the plan's literal perfect band; reported"
+  },
+  {
+   "W": "max(0, -delta*(s, a))",
+   "k": 1.0,
+   "name": "overrating_half_literal",
+   "role": "the plan's literal overrating half; reported"
+  },
+  {
+   "W": "[delta*(s_sigma(i), a_sigma(i)) - delta*(s_sigma(i), a)]_+ at this row's command a = pi(s_i): the main oracle at another training state with that state's own recorded command; sigma = default_rng([20261015, seed, 61]).permutation(n_train_rows), fixed",
+   "k": 1.0,
+   "name": "state_shuffled_band",
+   "role": "does state placement add anything? reported"
+  },
+  {
+   "W": "[e(s, a) - e(s, a_i)]_+, e(s, a) = Q1(s, a) - Q^c_250(s, a), Q^c_250 the stall-aware controller's value by a differentiable 250-step rollout through dynamics_jax (float32 in the program); e(s_i, a_i) at the recorded command precomputed once with the same function",
+   "k": 1.0,
+   "name": "long_run_harm",
+   "role": "check 3's exact harm read as a value; reported"
+  },
+  {
+   "W": "none (cloning pull multiplied by 1 + nu)",
+   "ladder_nu": [
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.0
+   ],
+   "matched": true,
+   "name": "even_pull",
+   "role": "gating control: check 3's caution at matched strength"
+  },
+  {
+   "W": "mean_j pi_j^2",
+   "coefficient": "c = knob * g_band / g_push",
+   "ladder_knobs": [
+    0.1,
+    0.3,
+    1.0,
+    3.0,
+    10.0
+   ],
+   "matched": true,
+   "name": "push_less",
+   "role": "gating control"
+  },
+  {
+   "W": "random network of the scale network's shape (Dense 64 - ReLU - Dense 64 - ReLU - Dense 1, softplus + 0.01; flax default initialisation; inputs obs / 1.001 and the command), frozen",
+   "coefficient": "k = knob * g_band / g_random_1",
+   "init_seed": "default_rng([20261015, seed, 62, 1]).integers(2^31 - 1) as PRNGKey",
+   "ladder_knobs": [
+    0.1,
+    0.3,
+    1.0,
+    3.0,
+    10.0
+   ],
+   "matched": true,
+   "name": "random_1",
+   "role": "gating control: same kind of penalty, random placement"
+  },
+  {
+   "W": "as random_1",
+   "coefficient": "k = knob * g_band / g_random_2",
+   "init_seed": "default_rng([20261015, seed, 62, 2]).integers(2^31 - 1) as PRNGKey",
+   "ladder_knobs": [
+    0.1,
+    0.3,
+    1.0,
+    3.0,
+    10.0
+   ],
+   "matched": true,
+   "name": "random_2",
+   "role": "gating control (second random surface)"
+  },
+  {
+   "W": "100 * sum_j ([a_j - hi_j]_+^2 + [lo_j - a_j]_+^2)",
+   "k": 1.0,
+   "name": "range_hinge",
+   "range": "lo_j, hi_j: the 0.5% and 99.5% quantiles of the gapped training commands per thruster",
+   "role": "the data-only rival with no signal; reported"
+  }
+ ],
+ "changes_before_any_run": [
+  {
+   "change": "The main oracle ('perfect band', k = 1) is W(s_i, a) = [delta*(s_i, a_i) - delta*(s_i, a)]_+ instead of the plan's |delta*(s_i, a)|: the critic's extra overrating of the actor's command a over the row's own recorded command a_i, by its exact one-step error. The same change is made in every arm built on the oracle: the half-strength arm (k = 0.5), the state-shuffled arm (the same form at another training state, with that state's own recorded command), the two no-stall perfect bands and the replication's perfect band. The plan's overrating and underrating halves become the two sides of the re-referenced error: the overrating side is the main oracle itself; the underrating side [delta*(s, a) - delta*(s, a_i)]_+ is the reported arm underrating_half. Added, reported: the symmetric band measured from the recorded command |delta*(s, a) - delta*(s, a_i)| (perfect_band_centred), the plan's literal |delta*(s, a)| (perfect_band_literal) and the plan's literal overrating half max(0, -delta*(s, a)) (overrating_half_literal).",
+   "evidence": "scratchpad/review_oracle/v2_knee.py, v6_centered.py (reviewer); scratchpad/ood/room/verify/v_knee.py and knee_<seed>_<critic>.log (an independent float64 numpy step); check (e) below",
+   "finding": "review, oracle lens (blocker)",
+   "id": "A1 main oracle re-referenced to the recorded command",
+   "reason": "The literal |delta*| does not rise past the 80% knee; it rewards the first points of over-throttle. At full-throttle-region training states delta* is about +0.17 at 80% throttle and crosses zero only near 86%, so |delta*| first falls as the critic's false preference grows. On 2,000 region states (seed 0 / seed 1), with thruster 1 set along the no-caution actor's own push: |delta*| falls from 80% to 81% on 81.8% / 84.1% of them; the in-program penalty's mean slope along the push at 80.5% is -1.97 / -2.44; and the throttle that maximises Q1 - |delta*| lies past 80% on 71.3% / 75.0% of them, against 57.0% / 61.8% for Q1 alone. Part of the cause is an offset that comes from the oracle's definition, not from the harm: the critic was trained toward r + 0.98 min_h Q_h(s', clip(c(s') + smoothing noise)), the oracle reads the noiseless c(s'), and the minimum over heads sits below Q1; at recorded commands delta* averages +0.149 (seed 0). Measuring from the recorded command removes that offset (W = 0 at a = a_i) and keeps what changes with the command. The one-sided form is chosen for its meaning: a lower edge exists to remove overrating, and this form removes exactly the critic's excess overrating at the command and never rewards a command for being underrated. It is the one-step counterpart of the plan's own long-run harm arm [e(s, a) - e(s, a_i)]_+. On the same states it falls from 80% to 81% on 5.1% / 4.6% (on 45% / 49% it is zero at both points: caution starts a little further out), its slope at 80.5% is +1.54 / +1.46, it rises by 0.54 / 0.59 from 80% to full throttle, and the best throttle for Q1 - W lies past 80% on 25.8% / 33.0%. The two-sided centred form falls on 46.5% / 52.3% and is reported. On check 3's critic (the replication) the chosen form falls on 7.5% / 7.1%, the literal form on 80.1% / 82.1%. The choice was made before any room-test training, from the frozen critics' surfaces only: no return, points, score or strength of any arm was computed. What is lost: the main oracle is no longer literally the width of a perfectly sharp two-sided BCA band; it is the overrating part of that width, measured from the data.",
+   "status": "NEEDS THE USER'S APPROVAL before seeds 0 and 1 are launched: it changes the plan's main oracle. The plan's literal form still runs, as the reported arm perfect_band_literal."
+  },
+  {
+   "change": "New per-seed check (e), run before any arm is trained: the main oracle's penalty, not delta*, must not fall past the knee and must not move the static optimum past 80%. Rule in checks.e. A failure stops that seed (stop.json), like checks (a) and (b), in the stalling world and in the replication. In the no-stall world, where the missing commands help, the same measurement is reported only.",
+   "finding": "review, oracle lens (blocker)",
+   "id": "A2 check (e) on the penalty itself",
+   "reason": "check (c) measured the slope of delta*, not of the penalty the actor feels"
+  },
+  {
+   "change": "Check (c)'s readout match is reported for what it is: with the readout's Q1 form on the Q(s, a) side it reproduces the readout (-0.7298, 0.1066) on the readout's own 3,000 rows, which checks the simulator step, the critic's inputs and the row alignment (the plumbing). The trained form (min over the two heads on both sides, as BCA's own residual: algorithms/td3_bc_bca.fit_scale and refresh take q = min_h Q_h(s, a)) does not reproduce the plan's 7.3(b) reference numbers: -0.589 and 0.145 on those rows, an offset of +0.149 at recorded commands. That is reported as 'not met', not as a pass. The plan's 7.3(b) reference values apply only to the Q1 form. The min form is kept because it is BCA's own residual. The amended oracle's own readout is reported beside it. The float32-against-float64 bound stays the check on the trained form.",
+   "finding": "review, fidelity and oracle and rigour lenses (minor, three findings)",
+   "id": "A3 check (c) relabelled",
+   "reason": "the earlier check certified a form that no arm trains with"
+  },
+  {
+   "change": "g_band, which scales the push-less and random-surface ladders, is computed for the amended main oracle (was |delta*|)",
+   "id": "A4 slope normalisation on the main oracle",
+   "reason": "knob 1 is meant to have the main oracle's average command slope"
+  },
+  {
+   "change": "'Nothing from calibration/ is called' was false: the gate's data loader calls calibration/bank.stratified_bank (experiments/shift/dataset.py line 215, through acceptance.load_seed) to regenerate the log's calibration-bank split. It is a NumPy row sampler; no band, calibrator, threshold, dose or BCA update is called.",
+   "finding": "review, rigour lens (minor)",
+   "id": "A5 the no-BCA statement corrected",
+   "reason": "the claim as written was wrong; no BCA signal was touched"
+  },
+  {
+   "change": "runs/shift_explore/room/code_manifest.json (+ .sha256) holds the SHA-256 of every room-test script (harness.py, run_seed.py, launch.sh, write_spec.py, write_manifest.py, checks_seed0.py, summarise_checks.py, dryrun.py) and the spec's SHA-256; copies of the files are in runs/shift_explore/room/code/. Every phase, futility and pooled included, and the seed-0 checks refuse when a file or its copy differs from the manifest. Every lock, values file, stop file and check records the manifest's SHA-256. A later change needs a new manifest written by write_manifest.py with a stated reason; the old one is kept in code_manifest_history/.",
+   "finding": "review, rigour lens (major)",
+   "id": "A6 code pinned by a manifest",
+   "reason": "nothing pinned the code between the futility look and seeds 2-4"
+  },
+  {
+   "change": "The futility and pooled looks accept a seed's values.json only when it is labelled EXPLORATORY, its kind is room-values, its spec_sha256 is the current spec and its lock_sha256 is the SHA-256 of that seed's verified lock.json; a stop.json is accepted only when labelled and naming the current spec. Every eval phase refuses when its values.json already exists or the seed has stopped. Futility refuses until seeds 0 and 1 each have values.json or stop.json. Pooled refuses until futility.json says continue and every seed has values.json or stop.json. Both looks check the gate files and the code manifest. The futility and pooled launch lines run at nice 5, pinned.",
+   "finding": "review, rigour lens (minor)",
+   "id": "A7 values, eval and pooled refusals",
+   "reason": "synthetic values files were accepted; eval could overwrite values; pooled could run early"
+  },
+  {
+   "change": "A missing difference counts as less than 5 points in the futility look: the perfect band not finite, the even pull with no matched arm, or the seed stopped by a failed check (a), (b) or (e). futility.json names the reason for each seed.",
+   "finding": "review, rigour lens (minor)",
+   "id": "A8 futility with a missing difference",
+   "reason": "the plan did not say; a missing difference means the room mark cannot pass for that seed, and a control that cannot be matched already fails every mark that needs it"
+  },
+  {
+   "change": "the launch script logs to runs/shift_explore/room/logs/ (was the scratchpad)",
+   "id": "A9 logs",
+   "reason": "the logs should sit beside the outputs"
+  }
+ ],
+ "checks": {
+  "a": "the no-caution arm through the gate's unchanged code reproduces check 2's saved gapped-critic actor by parameter hash (every seed; stop on failure)",
+  "b": "the new program with W = 0 matches that actor within 1e-5 on every parameter (every seed; stop on failure)",
+  "c": "seed 0. Plumbing: on the earlier readout's own 3,000 training rows (readout_seed0.json) the readout's Q1 form (Q1 on the Q(s, a) side) reproduces its mean at the gapped critic's actor's past-80% commands (-0.7298) and its median size elsewhere (0.1066) within 0.01; this checks the simulator step, the critic's inputs and the row alignment. The trained form (min over heads, BCA's residual) against the same reference numbers: reported as met or not met, not a stop condition (change A3; the plan gives no stop rule for this check). The amended main oracle's readout on the same rows and on every row: reported. Precision: |float32 in-program - float64| <= 1e-3 for delta* at every training row, at the actor's and at the recorded commands. Gradients of delta* and of the main penalty along thruster-1 throttle finite on both sides of the 80% knee",
+  "d": "a 400-step run of every arm kind gives finite losses; timing per 1,000 steps per kind",
+  "e": "every seed, before any arm is trained (change A2); the frozen critic's surface only, no return. On 2,000 full-throttle-region training states (default_rng([20261015, seed, 65])) thruster 1 of the no-caution actor's command is set along the actor's own push to each throttle of the grid 0.7, 0.75, 0.78, 0.79, 0.8, 0.805, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.88, 0.9, 0.95, 1 (the other thrusters stay at the actor's command). The main oracle passes when (e1) W falls from 80% to 81% on at most 25% of the states, (e2) the mean of W rises from 80% to 81%, (e3) the in-program penalty's mean slope along the push at 80.5% is positive and every slope is finite, and (e4) the best grid throttle for Q1 - W lies past 80% on fewer states than for Q1 alone. The other band forms are measured the same way and reported. Stalling world and replication: stop that seed on failure. No-stall world: reported only"
+ },
+ "code": "runs/shift_explore/room/code_manifest.json (change A6): every phase and every seed-0 check refuses unless each listed script and its copy under code/ have the SHA-256 the manifest records and the manifest names this spec",
+ "deviations": [
+  "Precision of the in-program simulator step: the plan asks for float64. A float64 step inside the float32 training program needs the program traced under jax enable_x64, which changes the gate's float32 actor arithmetic (measured before any room-test training, on random networks and random data: the gate's own actor-only program traced under enable_x64 differs by 1 ulp after one update). The step therefore runs in float32 with the same dynamics_jax function, as the gate's own check-3 oracle did (learners.LearnSettings.oracle_x64 = False). Its inputs are exact in float32; check (c) bounds the difference from the float64 step at every training row (tolerance 1e-3 value units; stop if exceeded).",
+  "Long-run harm arm: the 250-step differentiable rollout is used as written; no fitted-surface fallback. Pre-spec timing on seed 0 (pre_spec_timing below; random start actor, results discarded): 58 s per 1,000 steps against 3 s for a plain arm, about 19 minutes for its 20,000 steps, which keeps one seed near 1.3-1.5 process-hours, inside the plan's 1.5. (Unrolling the rollout's scan was slower.) e uses Q1 as the plan says; both e terms use the same float32 250-step function.",
+  "No-stall world: check 2's no-stall critics are stall-aware-controller critics (the gate trained no rising-thrust critic in that world), so the critic's own one-step error uses the stall-aware controller. That version is the no-stall perfect band; the plan's literal 'rising-thrust controller' version is run beside it and reported.",
+  "Ladders for push less and the random surfaces are not given in the plan: they are slope-normalised knobs 0.1, 0.3, 1, 3, 10 (see slope_normalisation). All ladders get the declared blind extension rule.",
+  "Replication: 'the host's own actor' is taken as its target copy (the one its critic's Bellman target read).",
+  "The no-caution actor that is locked and scored is check 2's saved actor; check (a) shows the gate's code reproduces it bit for bit on every seed.",
+  "Room mark wording made exact: 'beats each gating control by at least 20 points' is the pooled mean of the paired strong-current difference; 'positive in at least 4 of 5 seeds' is applied to each such difference.",
+  "Plan step 7.3(b)'s reference values (about -0.73 at the actor's past-80% commands, about 0.107 elsewhere) were computed with Q1 on the Q(s, a) side. They apply only to that form. The trained residual takes the minimum over the two heads on both sides, as BCA's own residual does, and gives -0.589 and 0.145 on the readout's rows (seed 0), with a mean of +0.149 at the recorded commands (change A3). The amended main oracle measures from the recorded command, so that offset does not enter it (change A1); the literal arm keeps it.",
+  "The main oracle is the plan's residual measured from the recorded command and one-sided (change A1)."
+ ],
+ "evaluation": "acceptance._evaluate (learners.evaluate_actor): exact 100-step returns on the full 1,000-start banks of all four situations (recorded, strong current, big waves, big kicks), points against the gate's anchors (0 = recording controller, 100 = stall-aware controller), the same actor capped at 80%, the share of steps past 80%; plus, reported, the share past 80% per thruster from one more exact rollout per situation. Scored actors: none (check 2's saved actor), the cloned actor, every fixed arm except w0_check, and the matched arm of every gating control. An eval phase refuses when its values.json exists or its seed has stopped.",
+ "futility_seeds": [
+  0,
+  1
+ ],
+ "gate_files_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/advantage.py": "a33f1361850d37d1dfd37c464dcbd65e91a9c1f06ff0a853f103421ba0ef8507",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/iql_actors.py": "87d2244d228ce5193e827990a61d5b074f52c26c4df305c3eca25cfec21a44ac",
+  "calibration/iql_imports.py": "39d7d161de9d652558bed549c29c90dd04bd95b83d0de27ff5b8b5079c6a0739",
+  "calibration/iql_loss.py": "31d60fa3be54032770a7582d524d32ee782dfc6834155cf2729f4927ad781832",
+  "calibration/iql_network.py": "51f1e0cc446a4896fbe5d04dd0a525b9fb8ce57655d071727db80543311a5acc",
+  "calibration/iql_reference.py": "9faccbaf69852a2afd4d754363781c776b99e98050f2565c02934b4a8d9f9bf9",
+  "calibration/iql_scale.py": "559b6670efcef6499ad897ee6457d4e9463f9e04a0d48725cd8909b405e16dce",
+  "calibration/iql_state.py": "d2225821a1815ac4229e7e9dbdddb355771463b0f35e6717856f3784bd303d66",
+  "calibration/iql_targets.py": "6c94831746b80cfede10c23a084c04cac5fe5a3277817d318685a3fa88c1fc5e",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "configs/experiment.yaml": "9c71c68632445b98d4aa0698fdb78ec2e7b420d42b3ee111e7da7af429d97aad",
+  "configs/td3_bc.yaml": "4598b0ec6b80e9d146af7a0e938bbd112daaa7800a05dd0e46a7da42c974ba68",
+  "experiments/shift/SHIFT_ENV.md": "18bbb253c8cf58da3478f4072d7cdecf69bb5a897b0cb415b906dbbcd54d36cf",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/install_deps.sh": "d5d747fc4ee4afd30f3400f2951df9c0ddd892c5aba730f5005d01e3a2a42620",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/requirements-shift.txt": "42a4af0538e9721c83512406f3c646602e35b77eda6f6fa2bc17816346d6a07e",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/test_acceptance.py": "9f76b50c684e4904313c21956c0ea22974993397cf530fb00ee9965a2077d157",
+  "experiments/shift/test_dataset.py": "212d0c1ed7aaf500525e6f1b55ebe0d2f303bd0b0aad18aaa19c3da2777c2ea7",
+  "experiments/shift/test_learners.py": "fec65fa8752977789feab1f7f90b8fb8bc27d7cf1068dadb711dff2f53879471",
+  "experiments/shift/test_shift.py": "d62f664aa84d517585ccb7f4a974a943c2c4d3b317c7f2d7c804697158722e8e",
+  "experiments/shift/test_thruster_chain.py": "546ea721ed28a999a26b123578c541f325c5d16bf31d606827814042fa789d52",
+  "experiments/shift/test_truth.py": "8691af40a33770649e6682c33d544109cd8e8f4cb6e92f32dd1716e260d55c7f",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "outputs/shift/stop-report/cards/cards_outside_gate.py": "0359f60ac3c66d112e86b91b261fdd1fed9dbf5733a1a43517a4c8b6ae41fdc3",
+  "runs/shift/preregistration.json": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "runs/shift/preregistration.json.sha256": "9f0266070bc11e24a1f1c4e6c369445fa4abfc15c80691370602e300403a81f8",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "gate_prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+ "kind": "room-test-spec",
+ "label": "EXPLORATORY: Stage 1 room test of the lower-edge channel (plan sections 4.0, 4.1, 7), computed outside the gate on saved gate artifacts; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose or BCA update was used (stand-ins and oracles only)",
+ "lock": "after every arm is trained and matched, lock.json (+ .sha256) is written with every actor's parameter SHA-256 (learners.tree_sha256), the SHA-256 of actors.msgpack, the strengths, matches, coefficients, checks (a), (b) and (e), spec.json's SHA-256 and the code manifest's SHA-256. No return, points or score of any trained arm is computed before it exists; the evaluation phase verifies it first",
+ "marks": {
+  "futility": "seeds 0 and 1 run first; if the perfect band beats the matched even pull by less than 5 points in strong current on both seeds, stop and go to plan section 4.5 (seeds 2-4 are not run). A missing difference counts as less than 5 points: the perfect band not finite, the even pull with no matched arm, or the seed stopped by a failed check (a), (b) or (e); futility.json names the reason per seed (change A8). The look refuses until both seeds have a verified values.json or stop.json",
+  "keeps_improvement": "recorded conditions: perfect band >= no caution - 2 and >= cloned actor + 25 (pooled means); big waves and big kicks: perfect band >= no caution - 3 (pooled means)",
+  "pooled": "means over seeds 0-4; every mark needs every seed (a missing or failed seed fails the mark). The pooled look refuses until futility.json says continue and every seed has a verified values.json or stop.json",
+  "prediction_not_a_mark": "perfect band 60-100 points in strong current (cap-at-80% ceiling 101.8, full-log actor 84.6); matched controls within -5 to +10 of no caution. Written by the plan for its literal oracle; kept unchanged",
+  "recovery": "in strong current the perfect band is at least 49.5 points above no caution (pooled mean of the paired difference; half of check 2's 98.9-point harm)",
+  "room": "in strong current the perfect band beats each gating control (even_pull, push_less, random_1, random_2, each at its matched strength) by at least 20 points (pooled mean of the paired difference), and that difference is positive in at least 4 of 5 seeds, for each control"
+ },
+ "matching": {
+  "chosen_arm": "the rung or evaluated proposal with the best |S/S* - 1| (glq_match's record); its actor is the one locked",
+  "extension": "blind ladder extension, declared now: when the target exceeds every rung's strength of a family, rungs are appended at the top knob times the family's factor (even pull x2: nu = 4, 8, 16; the others x sqrt(10)) until a rung's strength reaches the target, at most 3 rungs; still unreachable -> that control has no matched arm and every mark that needs it fails",
+  "rule": "every gating control (even_pull, push_less, random_1, random_2) is matched blind to the perfect band's strength with the gate's matcher experiments/signal/glq_match.match_parallel (knob 0 = no caution, S = 0, leads every ladder; first rung within tol taken; else log-linear interpolation (linear from 0) then geometric bisection), tol 0.01, at most 5 rounds, strengths only, before any return is computed; the families run in parallel rounds"
+ },
+ "no_bca": "No BCA band, calibrator, threshold, dose, BCA update or BCA training arm. Nothing from algorithms/td3_bc_bca.py or learners.bca_* is called (learners.py imports them; they are never called). From calibration/ only calibration/bank.stratified_bank runs: the gate's data loader (experiments/shift/dataset.py, through acceptance.load_seed) calls it to regenerate the log's calibration-bank split. It is a NumPy row sampler, not a BCA signal.",
+ "oracle": {
+  "band_terms": {
+   "abs_lit": "|delta*(s, a)|",
+   "abs_rel": "|delta*(s, a) - delta*(s, a_i)|",
+   "over_lit": "[-delta*(s, a)]_+",
+   "over_rel": "[delta*(s, a_i) - delta*(s, a)]_+ (the main oracle)",
+   "under_rel": "[delta*(s, a) - delta*(s, a_i)]_+"
+  },
+  "gamma": 0.98,
+  "gradient": "full derivative in a: through r, through s' (critic input and c(s')) and through Q(s, a)",
+  "main_penalty": {
+   "W": "[delta*(s_i, a_i) - delta*(s_i, a)]_+",
+   "amended": "change A1 (changes_before_any_run): the plan's literal |delta*(s, a)| is the reported arm perfect_band_literal",
+   "logged": "delta*(s_i, a_i) is computed once per training row with the same in-program float32 function and the same next command as the arm (shared['d_logged']); a constant in training",
+   "meaning": "the critic's extra overrating of the command a over the row's own recorded command a_i, by its exact one-step error; zero at a = a_i; the one-step counterpart of the long-run harm arm [e(s, a) - e(s, a_i)]_+"
+  },
+  "parts": "(s', r) = thruster_chain.dynamics_jax(s, a, physics): one exact simulator step from the row's state (prepared.states: the float64 of the float32 observation, exactly representable in float32), reward -(|s|^2 + 0.3 |clip(a)|^2) on the clipped command, thrust stalling past the knee as thruster_chain.thrust_jax; c = recorder.stall_aware (the critic's scored controller) on s'; Q_h the frozen critic's two heads at the float32-rounded normalised state ((float32(s) - mean) / std, learners' normalisation) and the command. Min over the heads on both sides, as BCA's own residual (td3_bc_bca.fit_scale and refresh).",
+  "precision": "float32 inside the training program (the same dynamics_jax function); float64 version (dynamics_jax under enable_x64) computed for check (c); see deviations",
+  "residual": "delta*(s, a) = r(s, a) + 0.98 * min_h Q_h(s', c(s')) - min_h Q_h(s, a)"
+ },
+ "other_runs": {
+  "no_stall": "no-stall comparison world, after the stalling world's lock of the same seed, not re-matched: none (check 2's 'no_stall_gapped' actor, reproduced by the gate's code path and checked by hash), perfect band k = 1 (the amended form) with the critic's own scored controller (stall-aware) for c(s'), perfect band k = 1 (the amended form) with the rising-thrust controller for c(s') (the plan's literal wording; reported), even pull at the stalling world's locked nu, range hinge (that world's own recorded range); critic: check 2's no-stall gapped critic; start: the no-stall cloned actor; the W = 0 check (b) against 'none' as well; check (e)'s measurement reported, not a stop condition (the missing commands help there)",
+  "replication": "check 3's critic (the frozen co-trained plain TD3+BC critic on the gapped log, alpha 5): none (check 3's saved 'none' actor; the new program with W = 0 must match it within 1e-5), perfect band k = 1 (the amended form) with c(s') = the host's own actor (its target copy, the actor the critic's own Bellman target reads, no smoothing noise), and the even pull matched blind to that perfect band's strength (ladder nu 0.1-2, same rule); the cloning term in check 3's per-row weighted form, as check 3 ran it; check (e) on this critic with check 3's 'none' actor (stop on failure); check 3's saved arms (harm_placed, strength_matched_even, cap2) are reused from its values.json for comparison"
+ },
+ "outputs": "/home/user/bca/runs/shift_explore/room",
+ "plan": {
+  "path": "/home/user/bca/outputs/shift/beyond-the-data/PLAN.md",
+  "sections": [
+   "4.0",
+   "4.1",
+   "7"
+  ],
+  "sha256": "7c60d71d950a95c2ab62d4f505fd62b370f001febbbffc4f62f9891523fa1ca3"
+ },
+ "pre_spec_timing": {
+  "file": "/home/user/bca/runs/shift_explore/room/pre_spec_timing.json",
+  "note": "random start actor (not the cloned actor), results discarded, no strength or return",
+  "seconds_per_1000_steps_per_arm": {
+   "band": 6.05101605550044,
+   "band_shuffled": 6.572371173999272,
+   "harm": 58.21054791200004,
+   "hinge": 2.9582372959994245,
+   "plain": 3.012883540666735,
+   "push_less": 3.091128587999992,
+   "random": 3.231095586000083
+  },
+  "sha256": "7359e4ed6975fce6debb414a32e65a71142888486c789546a78fe6e34cdb8b75",
+  "steps": 500
+ },
+ "previous_spec": {
+  "archived": "spec_history/spec_v1.json",
+  "note": "version 1, written before any room-test training; only the seed-0 checks ran under it (archived with their outputs in superseded/v1/)",
+  "sha256": "7a3abb1ebd2a553085228be6463f36de4ae3d0ee94e83d0c08989f917e229782"
+ },
+ "run_order": "0. the user approves change A1; 1. seeds 0 and 1: train (lock) then eval, one pinned process each; 2. futility on seeds 0 and 1; 3. only if it says continue: seeds 2-4 (train, eval), then the no-stall arms (no_stall_train, no_stall_eval) and the replication on check 3's critic (replication_train, replication_eval) on seeds 0-4; 4. pooled marks over seeds 0-4. Every train phase writes its lock before its eval phase may run. Logs: runs/shift_explore/room/logs/.",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "setup": {
+  "actor_steps": 20000,
+  "alpha": 5.0,
+  "arms_side_by_side": "the arms of one penalty kind run vmapped in one program, as the gate runs its arms",
+  "batch_rows": "check 2's stream: np.random.default_rng([20261015, seed, 35]).integers(n_train_rows, size=(20000, 256)), the same rows for every arm",
+  "batch_size": 256,
+  "chunk": 4000,
+  "critic": "check 2's frozen fixed-controller critic of the stalling world on the gapped log (runs/shift/<prereg>/critics/base/stall/stall_aware_gap/seed<k>, read with acceptance.get_critic(prereg, sd, 'gap', 'stall_aware', train=False)); its scored policy is the stall-aware controller (recorder.stall_aware: the textbook gain clipped at +-0.8)",
+  "optimiser": "Adam (runtime.networks.torch_adam), learning rate 3e-4, as check 2",
+  "protocol": "check 2's actor-only protocol (acceptance.h2_seed's critic swap), unchanged",
+  "start_actor": "the saved cloned actor (runs/shift/<prereg>/clone/base/stall/seed<k>/actor.msgpack)"
+ },
+ "slope_normalisation": "g_X = sqrt(mean over 4,096 training rows (default_rng([20261015, seed, 63]).choice(n, 4096, replace=False)) of ||grad_a W_X(s, a)||^2) at a = the cloned actor's command (before any training); g_band for the main oracle W = [delta*(s_i, a_i) - delta*(s_i, a)]_+ (change A4). A push-less or random-surface knob of 1 gives the same average command slope as the perfect band at k = 1. Outcome-free: no return, no strength enters it.",
+ "strength": {
+  "definition": "S = root-mean-square change of the command from the no-caution arm on the 5,000 evaluation-split recorded states (learners.strength on prepared.eval_obs; check 3's rule)",
+  "region_check": "the same on the full-throttle-region training states (prepared.region), reported"
+ },
+ "user_approval": "Change A1 alters the plan's main oracle. Seeds 0 and 1 should be launched only after the user approves it. Nothing in the code enforces this; it is recorded here and in the job report.",
+ "variant": "base",
+ "version": 2,
+ "world": "stall"
+}

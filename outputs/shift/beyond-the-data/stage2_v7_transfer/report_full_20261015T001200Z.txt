@@ -1,0 +1,15 @@
+== Stage 2 v7 self-test (full) 20261015T001200Z, commit 7173a31
+PASS ST1 restore and fingerprints: the run files match the pinned sums; the v6 code and fallback.py are in place; the v7 files match the v7 manifest; version 6's approval chain verifies
+INFO ST9 clock: the laptop's clock agrees with https://github.com to within 6 s
+PASS ST2 versions: Python 3.10.20, the gate's eight libraries and flags as recorded, 67 locked packages, installed files and the dependency folder as recorded
+INFO ST2 machine: AMD RYZEN AI MAX+ 395 w/ Radeon 8060S; AVX-512 yes; 32 logical processors; OpenBLAS kernels {'numpy': 'SkylakeX', 'scipy': 'SkylakeX'}; numpy dispatch ['SSSE3', 'SSE41', 'POPCNT', 'SSE42', 'AVX', 'F16C', 'FMA3', 'AVX2', 'AVX512F', 'AVX512CD', 'AVX512_SKX', 'AVX512_CLX', 'AVX512_CNL', 'AVX512_ICL']; glibc 2.39; kernel 6.6.87.2-microsoft-standard-WSL2; XLA device {'kind': 'cpu', 'platform': 'cpu', 'version': 'cpu'}
+Traceback (most recent call last):
+  File "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/lib/selftest_v7.py", line 1340, in <module>
+    sys.exit(main())
+  File "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/lib/selftest_v7.py", line 1320, in main
+    verdict, _ = self_test(cfg, full=a.cmd == "full", out=out)
+  File "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/lib/selftest_v7.py", line 1038, in self_test
+    c = run_check_probe(cfg, "constants", cpus[0])
+  File "/home/user/bca/outputs/shift/beyond-the-data/stage2_v7/laptop/lib/selftest_v7.py", line 510, in run_check_probe
+    return dict(ok=True, **json.loads(lines[-1]))
+TypeError: dict() got multiple values for keyword argument 'ok'

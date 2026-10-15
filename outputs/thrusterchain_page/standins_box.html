@@ -1,0 +1,47 @@
+    <h3 id="standins-ready">After the stop: the data-only stand-ins are running</h3>
+    <p class="status"><span class="tag acc">exploratory</span> Outside the gate. No BCA: no band, calibrator, threshold
+      or BCA update is fitted or used. Training started on {{beyond/status/standins_started_at#s}}; no result is
+      reported here. Specification version {{beyond/status/standins/version#i}}.</p>
+    <p>The stand-ins test, a step of the plan for work beyond the data, asks whether simple penalties that look only at
+      the recorded data can do what Stage 1's oracle did. Each of {{beyond/status/standins/n_penalties#i}} penalties is
+      added to the actor's training, matched in strength to the oracle, and scored on seeds
+      {{beyond/status/standins/seeds_lo#i}}–{{beyond/status/standins/seeds_hi#i}} in the stalling world and in the
+      no-stall world. A penalty <i>captures the room</i> when, pooled over these seeds, its gain over no caution in
+      strong current is at least {{beyond/status/standins/share_of_oracle#p0}} of the oracle's, it scores at least no
+      caution minus {{beyond/status/standins/recorded_margin#i}} points in the recorded conditions, and it beats a
+      matched even pull by at least {{beyond/status/standins/even_margin#i}} points in strong current.</p>
+    <p>Three penalties (density of the recorded commands, distance to the data, and disagreement between the critic's
+      two heads) are measured relative to the row's own recorded command, a change from the plan's formulas; the plan's
+      literal forms run beside them. The mark is carried by the other penalties and one form of each of these three. The
+      user chose which form on {{beyond/status/standins_choice_at#s}}, before any mark was computed: the forms measured
+      from the recorded command, with the plan's forms reported beside them. The choice was given in chat, in one
+      message holding the
+      specification's first 16 characters, <code>accept chat mode</code> (the user accepts that a chat message is weaker
+      evidence than typing at a terminal) and <code>{{beyond/status/standins_choice_words#s}}</code> (the exact words the
+      approval program accepts; <code>decline F1-F3</code> would have chosen the plan's forms). The approval program
+      refuses a second choice. All {{beyond/status/standins/n_penalties#i}} are trained, matched and scored the same way
+      under either choice.</p>
+    <p><b>What changed in version {{beyond/status/standins/version#i}}.</b> The user's choice is needed only by the marks
+      look, the last step, which computes the marks. Training, strength matching, the lock and the evaluations do not
+      wait for it. The choice must still come before the marks are seen, so the approval program refuses once the
+      marks look has run. One limit stays: each seed's evaluation file holds the points of all
+      {{beyond/status/standins/n_penalties#i}} penalties, so the choice is blind only if nobody works the marks out by
+      hand first. The approval records which run files existed when it was written; none did. The two run lanes take
+      their CPUs at launch, because all four CPUs are shared with other tests.</p>
+    <div class="tbl"><table class="stack">
+<thead><tr><th scope="col">Item</th><th scope="col">Value</th></tr></thead><tbody>
+<tr><td>Specification version {{beyond/status/standins/version#i}}, SHA-256</td><td data-label="Value"><code>{{beyond/status/standins/spec_sha256#s}}</code></td></tr>
+<tr><td>Its first 16 characters</td><td data-label="Value"><code>{{beyond/status/standins/spec_prefix#s}}</code>: the user's choice message had to contain them</td></tr>
+<tr><td>Code manifest, SHA-256</td><td data-label="Value"><code>{{beyond/status/standins/manifest_sha256#s}}</code></td></tr>
+<tr><td>Replaces</td><td data-label="Value">specification version 2 <code>{{beyond/status/standins/previous_spec_short#s}}…</code> and manifest <code>{{beyond/status/standins/previous_manifest_short#s}}…</code>, both kept (<code>spec_history/</code>, <code>superseded/v2/</code>)</td></tr>
+<tr><td>Dry run</td><td data-label="Value">Passed. Synthetic: 40 actor steps, a dummy evaluation, no return computed. Training, evaluation and both no-stall phases ran with no approval file; the marks look refused without one; the approval program accepted a synthetic choice while seed files existed, then refused once the marks look had run. The marks unit test passed. Both passed again when rerun after review (13 October, 07:52–07:57 UTC).</td></tr>
+<tr><td>Seed-0 checks</td><td data-label="Value">Not rerun: version {{beyond/status/standins/version#i}} changes no code they execute. The version 2 checks and timing are kept in <code>superseded/v2/</code>.</td></tr>
+<tr><td>Stage 2</td><td data-label="Value">Its pre-registration (version {{beyond/status/stage2_version#i}}, approved by the user) pins specification version {{beyond/status/standins/version#i}} (<code>{{beyond/status/standins/spec_short#s}}…</code>), this manifest (<code>{{beyond/status/standins/manifest_short#s}}…</code>) and <code>standins.py</code> (<code>{{beyond/status/standins/standins_py_short#s}}…</code>). All three verify, so Stage 2 accepts the stand-ins. A new specification or manifest would break these pins again.</td></tr>
+</tbody></table></div>
+    <p>Launched: lane A (seeds {{beyond/status/standins_lane_a/seeds#s}}, CPU {{beyond/status/standins_lane_a/cpu#i}})
+      and lane B (seeds {{beyond/status/standins_lane_b/seeds#s}}, CPU {{beyond/status/standins_lane_b/cpu#i}}) started at
+      {{beyond/status/standins_started_time#s}} UTC (<code>runs/shift_explore/standins/logs/launch_all.log</code>). Do
+      not launch them again: the launcher does not check for an earlier launch, so a second launch would start a second
+      set of lanes on the same CPUs beside the running ones. Because the user's choice exists, the launcher runs the
+      marks look itself, on CPU {{beyond/status/standins_lane_a/cpu#i}}, once all five seeds have finished; nothing needs
+      to be started by hand.</p>

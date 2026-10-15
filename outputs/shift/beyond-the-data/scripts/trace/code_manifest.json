@@ -1,0 +1,46 @@
+{
+ "copies_dir": "/home/user/bca/runs/shift_explore/trace/code",
+ "files": {
+  "checks_seed0.py": "984d2f5ae338d4e0c39fab3696cb211cbfe8af911353c0df9f0428d0651962b9",
+  "checks_v3.py": "438ef3e8d11a59cd62c0559a2b7151139c45f7cf9b2ede7c6e39470edc2ca093",
+  "launch.sh": "d022e44137d489ba856313be455d3b243c0cc353792c688c992a93dde0e9eda5",
+  "run_job.py": "57f7f40e473710d8ce4f9662cda4ffcaf133273a179dea8e0fdc538af5918b88",
+  "signals.py": "976780f2e684420c03e4ca88e86367b19df7f996b4235715d4425ef55f3eb382",
+  "test_trace.py": "ac34cd6e9ba0da2b23c7f875521a355c2179566fa98ecf8f1b8dc2ea0c5a20d1",
+  "tracebed.py": "ff5835ab3e1e32fb0f7a6bcc0cb2820f4cd75f792d221ebada93429cfc15616e",
+  "write_manifest.py": "851e99be8e132e06a18f4295af2b6967547e0e72d721f3fd9603d31fb8cad6a4",
+  "write_spec.py": "d72271dfdca229e705d32ced8274d10ef84368575972126bd00f7124dbfedfc5"
+ },
+ "history": [
+  {
+   "archived": "/home/user/bca/runs/shift_explore/trace/code_manifest_history/v1",
+   "replaced_because": "spec v3 (post hoc: chosen after seeing the 0.5% and 2% results): the shares 1%, 3%, 5% and 10% are added; tracebed.py gains the post-hoc shares, their labels, the spec each share's outputs must name and a guard that refuses writes into spec-v2 outputs; run_job.py refuses spec-v2 shares, labels post-hoc records and writes pooled_v3.json with the map over every share; launch.sh takes explicit CPUs (checked), runs the post-hoc shares and logs to logs/v3_*; checks_v3.py is new; checks_seed0.py refuses under spec v3; write_spec.py gains the append-only v3 path; test_trace.py covers all of it. signals.py is unchanged.",
+   "sha256": "be4e266f89506373a2b936fc2df70122c610f92ad5ed98638f2310d0c5844ab4",
+   "version": 1
+  },
+  {
+   "archived": "/home/user/bca/runs/shift_explore/trace/code_manifest_history/v2",
+   "replaced_because": "after the first run of checks_v3.py (passed; moved to superseded/v3_checks_run1): checks_v3.py keeps the smoke step's own progress lines (tiny-setting losses and flag levels) out of the log, as its record states; run_job.map_lines prints full origin and usable labels. No trained job exists; spec v3 is unchanged.",
+   "sha256": "eac393297013f8ff25f2207f55314b8c0471cff39fc1eac9e9ad598f3db82075",
+   "version": 2
+  },
+  {
+   "archived": "/home/user/bca/runs/shift_explore/trace/code_manifest_history/v3",
+   "replaced_because": "review finding (minor), before any trained job: launch.sh accepted any CPU taskset could pin to, including CPUs 2 and 3, which run the stand-ins and must not be used, and run_job.py's usage example named CPU 3. launch.sh now allows only CPU 0 or CPU 1 (CPUs 2 and 3 are refused before anything is pinned, written or run) and checks the second CPU of 'all' before the logs folder is made; run_job.py's example names CPU 1; checks_v3.py adds the refusal of CPUs 2 and 3 to its refusal checks, runs every launch refusal dry (stub interpreter, scratch output folder, a taskset on PATH that records the CPU asked for), and states the CPU load neutrally; test_trace.py tests that 'all 0 1' pins only to CPUs 0 and 1 and that every launch naming CPU 2 or 3 is refused. Spec v3 is unchanged: the new refusal adds to what it says about the launch. The second run of checks_v3.py moved to superseded/v3_checks_run2.",
+   "sha256": "2a9f276d66a075bd85474364a469462c0a57926d847ca04e4a42545b8ec079f5",
+   "version": 3
+  }
+ ],
+ "kind": "trace-code-manifest",
+ "label": "EXPLORATORY: trace test bed (plan section 4.6), computed outside the gate on saved gate artifacts and new trace logs; not a gated output; changes no pre-registered rule; no BCA band, calibrator, threshold, dose, BCA update or BCA training arm was used (data-only stand-ins only)",
+ "manifests_of_earlier_specs": [
+  "superseded/v1/code_manifest.json"
+ ],
+ "reason": "review finding (minor), before any trained job: launch.sh accepted any CPU taskset could pin to, including CPUs 2 and 3, which run the stand-ins and must not be used, and run_job.py's usage example named CPU 3. launch.sh now allows only CPU 0 or CPU 1 (CPUs 2 and 3 are refused before anything is pinned, written or run) and checks the second CPU of 'all' before the logs folder is made; run_job.py's example names CPU 1; checks_v3.py adds the refusal of CPUs 2 and 3 to its refusal checks, runs every launch refusal dry (stub interpreter, scratch output folder, a taskset on PATH that records the CPU asked for), and states the CPU load neutrally; test_trace.py tests that 'all 0 1' pins only to CPUs 0 and 1 and that every launch naming CPU 2 or 3 is refused. Spec v3 is unchanged: the new refusal adds to what it says about the launch. The second run of checks_v3.py moved to superseded/v3_checks_run2.",
+ "rule": "every phase (build, train, eval, signals, reference, pooled) and the seed-0 checks refuse unless each file here and its copy in copies_dir have these SHA-256 and this manifest names the current spec; any later change needs a new manifest with a reason",
+ "source_dir": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/ood/trace",
+ "spec_sha256": "68bc83401afa2bc694827c7612c57f9c7dc94fa45a778460aaf43050fc82a338",
+ "spec_version": 3,
+ "version": 4,
+ "written": "2026-10-13T09:16:58+0000"
+}

@@ -1,0 +1,90 @@
+{
+ "forecast": {
+  "F_fresh": 0.0,
+  "F_ref": 0.0,
+  "F_ref_against": "the gate's saved actor",
+  "above_tolerance": [],
+  "entry_if_not_inherited": false,
+  "p1a_differs": false,
+  "p1b_reproduces_gate": true,
+  "remake_failed": false,
+  "tolerance": 1e-05
+ },
+ "gate": {
+  "actors_sha256": "35532d105e2fc5bba2ae52fc25350e0ab825173eb20053a3240f31ebbe9e6d5d",
+  "check2_dir": "/home/user/bca/runs/shift/68d9e8779e148b7b/harm_return/base/alpha5/seed4"
+ },
+ "inputs": {
+  "constants_sha256": "6602f9d17e977a3e1f6eb017eb1f0b9ec80b018041d62146f507983f36a5e379",
+  "gate_prereg_sha256": "68d9e8779e148b7bfd2fcc6dc32e0a1091e5bfbbcb83cef2e4b58e4f6ec60fab",
+  "prereg_v7_sha256_at_run": "f3bc1dad956ddbe7d654ca17a08000f9c4e2a482bdd4404f9067a38790e558e7",
+  "prereg_v7_was_final": false,
+  "probe_script_sha256": "21a71839c795b0796b1f41d0eb848bc6da5457fe59481a84c48e9aab26f639ce",
+  "remake_block_sha256": "78e2dc26d4cd4db04d165cc02c95ffc6262fec8f09748d801140d937e6e844a7",
+  "v6_code_manifest_sha256": "4b34af991a56066c41fbb55cb02db4074ae0b7e85b1e50802a53983edda2a753"
+ },
+ "kind": "stage2-v7-probe-p1",
+ "moved_aside": null,
+ "p1a": {
+  "actors": {
+   "no_stall_full": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "cb703300b3a60f75e3b34a2f950895d9178d21b0d08225bbf04c7fa349f715ea",
+    "laptop_failed": false,
+    "laptop_sha256": "cb703300b3a60f75e3b34a2f950895d9178d21b0d08225bbf04c7fa349f715ea",
+    "max_abs_diff": 0.0
+   },
+   "no_stall_gapped": {
+    "differs": false,
+    "gate_failed": false,
+    "gate_sha256": "626fbef5a7e8a3c415a0c6594865693e2505919bde6fa23feb4d01fb183a3fe2",
+    "laptop_failed": false,
+    "laptop_sha256": "626fbef5a7e8a3c415a0c6594865693e2505919bde6fa23feb4d01fb183a3fe2",
+    "max_abs_diff": 0.0
+   }
+  },
+  "call": "L.ActorOnly(prepared(world), clone(world), learn, seed, alpha=5.0).run([L.Arm(name, critic=i) ...], [critics], weighted=False); ao.arm_params(stacked, i) (GATE/acceptance.py:1459-1484)",
+  "names_written": [
+   "no_stall_full",
+   "no_stall_gapped"
+  ],
+  "reference_file": {
+   "path": "refs/seed4/check2_no_stall.msgpack",
+   "sha256": "ef87fc5d12b03b1eb6b18295a08b3ca41eabd709b075140f5db9ec1a475426c5"
+  },
+  "rows_sha256": "1a3d9e50ff0455d1a40d1122bc0448dae2f94f500a4eb4697d694478d709d091",
+  "start_sha256": "7c05d39faf54658c12e6fcbc801ce78b4a8aed8cf12cde74a15b433a2de868ce"
+ },
+ "p1b": {
+  "actor_sha256": "626fbef5a7e8a3c415a0c6594865693e2505919bde6fa23feb4d01fb183a3fe2",
+  "arms": [
+   "w0_check",
+   "pull_2"
+  ],
+  "finite": true,
+  "max_abs_diff_vs_gate": 0.0,
+  "max_abs_diff_vs_p1a": 0.0,
+  "max_abs_diff_vs_p1c": 0.0,
+  "reproduces_gate": true
+ },
+ "p1c": {
+  "actor_sha256": "626fbef5a7e8a3c415a0c6594865693e2505919bde6fa23feb4d01fb183a3fe2",
+  "arms": [
+   "none_no_stall"
+  ],
+  "failed": false,
+  "max_abs_diff_vs_gate": 0.0,
+  "max_abs_diff_vs_p1a": 0.0,
+  "max_abs_diff_vs_p1b": 0.0
+ },
+ "probe": "p1_seed4_no_stall",
+ "seconds": {
+  "p1a": 158.51204442899962,
+  "p1b": 124.59930239999994,
+  "p1c": 59.7671062950003
+ },
+ "seed": 4,
+ "world": "no_stall",
+ "written_utc": "2026-10-15T00:36:03Z"
+}
