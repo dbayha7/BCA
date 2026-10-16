@@ -134,8 +134,10 @@ def amend(content):
                          "(numbers missing)'); a seed with no failure or stop record whose matched rivals could not "
                          "be matched (for example, BCA's switch stayed off where full throttle stalls, so there was "
                          "no strength to match) fails claim 1's marks only ('its matching (a rival could not be "
-                         "matched)'), and claims 2 and 3 and the validity conditions read its numbers as usual; check "
-                         "10's count leaves out a failed seed whose band data were never built")
+                         "matched or scored)'), and claims 2 and 3 and the validity conditions read its numbers as "
+                         "usual; a matched rival whose network was not finite, so that its number is missing, "
+                         "counts the same way; check 10's count leaves out a failed seed whose band data were "
+                         "never built")
     claim4_fails = ("a seed fails claim 4 only on the gate's data checks (the five world checks, the ball's leak "
                     "checks), a main-setting plumbing stop, or a main-setting evaluation that lacks a number claim 4 "
                     "reads with no failure or stop record ('its evaluation (numbers missing)'); a missing near-80 or "

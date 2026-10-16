@@ -638,8 +638,9 @@ unless stated. Every seed is needed. A failed or stopped seed fails every mark t
   these numbers). Claims 2 and 3 then say that they fail because of the failed seed, rather than report pooled numbers
   that cannot be computed. A seed with no failure or stop record whose matched rivals could not be matched (for
   example, BCA's switch stayed off where full throttle stalls, so there was no strength to match) fails claim 1's
-  marks only, and claim 1's sentence names it; claims 2 and 3 and the conditions above read its numbers as usual.
-  Check 10's count leaves out a failed seed whose band data were never built.
+  marks only, and claim 1's sentence names it; claims 2 and 3 and the conditions above read its numbers as usual. A
+  matched rival whose network was not finite, so that its number is missing, counts the same way. Check 10's count
+  leaves out a failed seed whose band data were never built.
 
 ### 9.2 Claim 1: BCA's result holds with the band hidden
 
@@ -1039,8 +1040,8 @@ check 10 failed or a seed failed (both below):
   seed's own clause only.
 - [check] is the name of the first check that failed, in the order of section 8.1; "its [phase] phase" for a
   stopped phase; "its evaluation (numbers missing)" for a seed whose evaluation lacks a number; or "its matching (a
-  rival could not be matched)" for a seed whose matched rivals could not be matched (the bullets on missing numbers
-  below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
+  rival could not be matched or scored)" for a seed whose matched rivals could not be matched (the bullets on missing
+  numbers below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
 - [reason] in claim 1's validity sentence is the harm reason when the harm is below 30 points, the past-80 reason
   when the share is below 25%, and both, joined by "; ", when both fail.
 - In the harm stop, "[or: ...]" is left out when only the harm fails; the second form replaces the first when only
@@ -1081,9 +1082,10 @@ check 10 failed or a seed failed (both below):
   it (without the random-rows control).
 - A seed with no failure or stop record whose matched rivals could not be matched (for example, BCA's switch stayed
   off where full throttle stalls, so there was no strength to match) fails claim 1's marks only, with [check] "its
-  matching (a rival could not be matched)"; claims 2 and 3 and the validity conditions read its numbers as usual. The
-  matched rivals' numbers are the near-80 points in strong current, in both worlds, of the matched range limit, the
-  matched even pull and the two matched random surfaces.
+  matching (a rival could not be matched or scored)"; claims 2 and 3 and the validity conditions read its numbers as
+  usual. The matched rivals' numbers are the near-80 points in strong current, in both worlds, of the matched range
+  limit, the matched even pull and the two matched random surfaces. A matched rival whose network was not finite, so
+  that its number is missing, counts the same way.
 - Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5
   that was missed.
 - On seeds 0-4, the "Always attached" sentence is not written; every claim sentence (sections 14.1-14.4) starts with

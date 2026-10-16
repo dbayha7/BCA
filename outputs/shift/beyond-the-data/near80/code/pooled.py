@@ -37,8 +37,9 @@ with [check] "its evaluation (numbers missing)". A seed with no failure or stop 
 could not be matched (RIVAL_NEEDS: the matched range limit, the matched even pull and the two matched random surfaces,
 in both worlds; the policy phase leaves them null when, for example, BCA's switch stayed off where full throttle
 stalls, so there was no strength to match) fails claim 1's marks only, with [check] "its matching (a rival could not
-be matched)" (failed_checks["claim_1"]): claim 1's go marks and their brackets read the points with that seed's
-near-80 points set to null, and claims 2 and 3 and the validity conditions read its numbers as usual. One whose
+be matched or scored)" (failed_checks["claim_1"]): claim 1's go marks and their brackets read the points with that
+seed's near-80 points set to null, and claims 2 and 3 and the validity conditions read its numbers as usual. A
+matched rival whose network was not finite, so that its number is missing, counts the same way. One whose
 main-setting evaluation lacks a number that claim 4 reads (EVALUATION_NEEDS_CLAIM4, the matched rivals included, and
 EVALUATION_NEEDS_BOTH when both settings ran) fails claim 4 with [check] "its evaluation (numbers missing)". A missing
 near-80 or random-rows number never fails claim 4; a missing main-setting number fails claims 1-3 only as the band
@@ -98,7 +99,7 @@ GO_RULE = dict(g1_margin=K.MARKS["net_lead_margin"], g2_floor=K.MARKS["keeps_flo
 FIRST_HARM_FORM = "lost only [H]"               # where the harm stop's first form starts (section 14.5)
 SEEDS_WORDS = "seed [seeds]"                    # written "seed 2", "seeds 2 and 3", "seeds 1, 2 and 3" (section 14.6)
 EVALUATION_MISSING_CHECK = "its evaluation (numbers missing)"
-RIVAL_MISSING_CHECK = "its matching (a rival could not be matched)"
+RIVAL_MISSING_CHECK = "its matching (a rival could not be matched or scored)"
 
 
 def _go_needs(setting):

@@ -492,13 +492,14 @@ class TestClaim1(Base):
 
     def test_a_missing_rival_fails_the_seed_not_a_clause_of_not_available(self):
         """A matched rival that could not be matched (here the matched even pull, seed 11), with no stop record, fails
-        that seed for claim 1's marks only: claim 1 names it with [check] "its matching (a rival could not be
-        matched)" instead of writing "not available ... below the 10 required", and claims 2 and 3, which never read
-        the rivals, read its numbers as usual (section 14.6)."""
+        that seed for claim 1's marks only: claim 1 names it with [check] "its matching (a rival could not be matched
+        or scored)" instead of writing "not available ... below the 10 required", and claims 2 and 3, which never
+        read the rivals, read its numbers as usual (section 14.6)."""
         lk = self.look(dict(missing_arms={("near80", "stall", 11): ["even_pull"]}))
-        clause = expect("claim1.clause.failed_seed", s="11", check="its matching (a rival could not be matched)")
-        self.assertEqual(clause, "seed 11 failed its matching (a rival could not be matched) and, by the pre-set "
-                                 "rule, counts as failing every mark")
+        clause = expect("claim1.clause.failed_seed", s="11",
+                        check="its matching (a rival could not be matched or scored)")
+        self.assertEqual(clause, "seed 11 failed its matching (a rival could not be matched or scored) and, by the "
+                                 "pre-set rule, counts as failing every mark")
         self.assertEqual(lk["sentences"][1]["text"], self.fail_texts([clause]))
         self.assertEqual(lk["failed_checks"], dict(claims_1_3={}, claim_1={"11": P.RIVAL_MISSING_CHECK},
                                                    claim_4={}))
@@ -887,8 +888,8 @@ class TestClaim4(Base):
     def test_an_unmatched_rival_fails_claim1_only(self):
         """A seed whose matched rivals could not be matched (the policy phase leaves them null, for example when BCA's
         switch stayed off where full throttle stalls), with no stop record, fails claim 1's marks only, with [check]
-        "its matching (a rival could not be matched)": claim 1's marks leave out that seed's near-80 points, while
-        claims 2 and 3 and the validity conditions read its numbers as usual (section 14.6)."""
+        "its matching (a rival could not be matched or scored)": claim 1's marks leave out that seed's near-80 points,
+        while claims 2 and 3 and the validity conditions read its numbers as usual (section 14.6)."""
         rivals = ["standin", "even_pull", "random_1", "random_2"]
         cases = (
             ("standin", dict(missing_arms={("near80", "stall", 12): ["standin"],
@@ -898,7 +899,8 @@ class TestClaim4(Base):
                                                                       None)]))),
             ("all", dict(missing_arms={("near80", w, 12): rivals for w in K.WORLDS})),
         )
-        clause = expect("claim1.clause.failed_seed", s="12", check="its matching (a rival could not be matched)")
+        clause = expect("claim1.clause.failed_seed", s="12",
+                        check="its matching (a rival could not be matched or scored)")
         for sub, spec in cases:
             lk = self.look(spec, sub=sub)
             self.assertEqual(lk["failed_checks"], dict(claims_1_3={}, claim_1={"12": P.RIVAL_MISSING_CHECK},
@@ -941,7 +943,8 @@ class TestClaim4(Base):
         self.assertEqual(lk["failed_checks"], dict(
             claims_1_3={"13": "its actor training phase (near-80 setting, no-stall world)"},
             claim_1={"12": P.RIVAL_MISSING_CHECK}, claim_4={}))
-        clauses = [expect("claim1.clause.failed_seed", s="12", check="its matching (a rival could not be matched)"),
+        clauses = [expect("claim1.clause.failed_seed", s="12",
+                          check="its matching (a rival could not be matched or scored)"),
                    expect("claim1.clause.failed_seed", s="13", check="its actor training phase (near-80 setting, "
                                                                      "no-stall world)")]
         self.assertEqual(lk["sentences"][1], dict(id="claim1.fail", text=T["claim1.fail"].replace(
@@ -959,13 +962,14 @@ class TestClaim4(Base):
         lk = self.look(dict(missing_arms={("near80", w): ["standin", "even_pull", "random_1", "random_2"]
                                           for w in K.WORLDS}), sub="every")
         self.assertEqual(lk["failed_checks"]["claim_1"], {str(s): P.RIVAL_MISSING_CHECK for s in K.CONFIRMATORY})
-        self.assertEqual(lk["sentences"][1]["text"].count("its matching (a rival could not be matched)"), 5)
+        self.assertEqual(lk["sentences"][1]["text"].count("its matching (a rival could not be matched or scored)"), 5)
         self.assertEqual(self.ids(lk), ["always_attached", "claim1.fail", "claim2.pass_pass", "claim2.scale",
                                         "claim3.holds", "claim4.holds", "claim4.both_settings"])
         # seeds 0-4: an unmatched rival on seed 2
         lk = self.look(dict(group="exploratory", missing_arms={("near80", "stall", 2): ["random_1"]}), sub="explo")
         self.assertEqual(lk["failed_checks"], dict(claims_1_3={}, claim_1={"2": P.RIVAL_MISSING_CHECK}, claim_4={}))
-        clause = expect("claim1.clause.failed_seed", s="2", check="its matching (a rival could not be matched)")
+        clause = expect("claim1.clause.failed_seed", s="2",
+                        check="its matching (a rival could not be matched or scored)")
         self.assertEqual(lk["sentences"][0], dict(id="claim1.fail", text=explo(explo_t("claim1.fail").replace(
             "[one clause per missed mark]", clause).replace("[last sentence]", LAST_PASSED))))
         self.assertIn(dict(id="claim2.pass_pass", text=explo(expect("claim2.pass_pass", G="8.0", O="2.0"))),
