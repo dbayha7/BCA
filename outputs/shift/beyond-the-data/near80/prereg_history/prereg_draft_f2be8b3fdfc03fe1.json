@@ -1,0 +1,650 @@
+{
+ "status": "draft",
+ "status_line": "DRAFT for the owner's approval. Nothing has been trained.",
+ "kind": "near80-preregistration-draft",
+ "label": "Version 8, near-80: the main test's setting with every recorded throttle from 70% to 90% also hidden",
+ "approvable": false,
+ "approvable_note": "A draft cannot be approved. After the owner answers the choices, the session writes the final prereg.json, the code manifest and approve_local_near80.py; the owner approves that fingerprint.",
+ "request": {
+  "comment": "what about the values close to 80%. I think they should be deliberately left out of the training data and introduced during testing so we can really see OOD",
+  "answer_to_offer": "yes i do",
+  "offer": "the main test's setting with a band around 80% removed as well (for example thruster 1's throttles from 70% to 90%)"
+ },
+ "question": "When the good commands just below the 80% stall are hidden from training, does BCA still let the controller use them while keeping it from going past 80%, and does it do better than simply staying inside the recorded data?",
+ "band": {
+  "lo": 0.7,
+  "hi": 0.9,
+  "scope": "any",
+  "both_signs": true,
+  "edges_included": true,
+  "comparison": "|a_k| at the exact float64 value of the stored float32 command against the float64 numbers 0.70 and 0.90 (shift.Gap.contains' convention). float32(0.7) = 0.699999988 is outside, float32(0.9) = 0.899999976 inside.",
+  "rule": "a row is in the band when 0.70 <= |a_k| <= 0.90 for at least one thruster k"
+ },
+ "thrusters": {
+  "default": "any of the four",
+  "alternative": "thruster 1 only (the session's example)"
+ },
+ "removal_combination": {
+  "rule": "ball OR band: shift.make_removal(log, 'gap', gap) first (bit for bit), then every band row",
+  "kind": "ball_band",
+  "built_on": "experiments/shift/shift.py Removal (imported, never edited)",
+  "applies_to": {
+   "training_split": true,
+   "calibration_bank": true,
+   "calibration_rows_outside_bank": false,
+   "evaluation_split": false,
+   "test_episodes": false
+  },
+  "input_normalization": "the gate's: from the ball-kept training rows' observations (states only), as step 1",
+  "what_it_adds_on_seeds_0_4": "after the ball, (0.80, 0.90] is already empty on every seed and world, so the band adds only throttles from 0.70 to 0.80: normal driving just below the stall"
+ },
+ "random_rows_control": {
+  "kind": "ball_random_rows",
+  "rule": "the ball, then, in each kind of water (calm, hard water), exactly as many extra training rows as the band removes there, drawn uniformly from the ball-kept training rows of that kind; the bank loses, in each kind of water, exactly as many extra rows as the band takes from it there, drawn uniformly from the ball-kept bank rows of that kind",
+  "hard_water_rule": "RC.Recorder(spec, physics).in_region on each row's state (the water's push above 0.565); every other row is calm",
+  "strata": [
+   "calm",
+   "hard water"
+  ],
+  "rng_tags": {
+   "training": {
+    "calm": [
+     20261012,
+     "rep",
+     99,
+     80,
+     2
+    ],
+    "hard water": [
+     20261012,
+     "rep",
+     99,
+     80,
+     3
+    ]
+   },
+   "bank": {
+    "calm": [
+     20261012,
+     "rep",
+     99,
+     80,
+     4
+    ],
+    "hard water": [
+     20261012,
+     "rep",
+     99,
+     80,
+     5
+    ]
+   },
+   "note": "no tag list ends in 0 (numpy drops a trailing 0)"
+  },
+  "why_stratified": "the band's extra rows are 55-60% hard-water rows (725-924 per seed, stalling world; 49-55% in the no-stall world); a uniform draw took only 154-241 hard-water rows and kept 42.9-45.4% of them against the near-80 setting's 38.5-40.6%, so a band cost would have mixed hiding the 70%-80% commands with thinning the hard-water states",
+  "uniform_draw": "not used",
+  "seen_on_seeds_0_4_after_the_rule_was_set": {
+   "matched_per_stratum": "all 10 seed-worlds, training rows and bank",
+   "hard_water_rows_kept_stalling": "38.5-40.6% (exactly the near-80 setting's)",
+   "gap_rule_lower_end": "0.783-0.791 (both worlds)",
+   "gap_rule_upper_end": "0.977-0.998 (both worlds)",
+   "textbook_rule_clipped_to_recorded_range_points_stalling": {
+    "recorded": 98.5,
+    "big_kicks": 86.7,
+    "big_waves": 96.4,
+    "strong_current": 86.4
+   },
+   "band_cost_of_that_rule_strong_current": "17.2-18.4 points per seed"
+  }
+ },
+ "settings": {
+  "main": {
+   "ball": true,
+   "band": false,
+   "role": "the main test (version 6, step 2); seeds 0-4 read-only from step 2"
+  },
+  "near80": {
+   "ball": true,
+   "band": true,
+   "role": "primary"
+  },
+  "random_rows": {
+   "ball": true,
+   "band": "as many random rows as the band removes, in each kind of water",
+   "role": "control for the row count"
+  }
+ },
+ "host": {
+  "name": "TD3+BC",
+  "protocol": "step 2's actor-only protocol: frozen fixed-controller critic (100,000 updates, learners.fixed_critic), actor from the cloned actor, alpha 5, 20,000 steps in 4,000-step chunks, the gate's fixed batch stream, one CPU per phase",
+  "others": "not in this version: the co-trained full host and ReBRAC (choice 11 (hosts)); IQL (its actor has no slot for the ramp without a new method version); CQL not offered (no configuration on record)"
+ },
+ "arms": {
+  "near80_both_worlds": {
+   "primary": {
+    "obca_k1": "BCA's switched ramp: step 1's gap rule on the setting's kept commands places the ramp; step 1's certificate (margin 0.10) on held-out scores gives the switch and height; step 2's paired penalty, k = 1"
+   },
+   "plumbing_check": {
+    "w0_check": "ramp with height 0 and k = 0 must equal the no-caution actor within 1e-5"
+   },
+   "reported_only_no_test": {
+    "rule": "reported only: no test, no claim, no sentence. Step 2's three attribution tests (its 5-point rule that chose its claim's wording) are not carried over (departure 10)",
+    "obca_k2": "the same at k = 2 (dose)",
+    "fixed_gated": "BCA's switch, height 1.0",
+    "conformal_k1": "plain split conformal switch and height",
+    "meangap_k1": "rank-test switch, mean-gap height",
+    "meandiff_k1": "new: plain mean difference above 0.10 as switch, that difference as height"
+   },
+   "world_blind_rivals": {
+    "obca_forced": "the always-on ramp: BCA's ramp with the switch removed, at the seed's stalling-world BCA height (set from held-out outcomes), in both worlds",
+    "standin": "range limit matched to the primary arm's strength",
+    "even_pull": "matched",
+    "random_surface_1": "matched",
+    "random_surface_2": "matched",
+    "note": "a world-blind rival is a penalty that cannot turn itself off in either world"
+   },
+   "reported": {
+    "push_less": "matched, reported",
+    "range_hinge_k1": "hand-set range limit (k = 1)",
+    "version6_bca": "version 6's lower edge, weighted width, paired, k = 1; band fitted on the setting's kept rows and bank; reported only (choice 8 (version 6's BCA as a reported arm), default yes)"
+   },
+   "references": {
+    "perfect_band": "knows the critic's true one-step error",
+    "knee_ramp": "new: BCA's switch and height, ramp starting at the stall, float32(0.8)",
+    "knee_limit": "new: the range limit's penalty with limits at +-0.80 (the stall)",
+    "none": "no caution",
+    "clone": "cloned actor",
+    "full_none": "against the full-log critic, from this setting's clone and batches"
+   }
+  },
+  "random_rows_both_worlds": [
+   "clone",
+   "none",
+   "w0_check",
+   "obca_k1",
+   "range_hinge_k1"
+  ],
+  "main_setting": {
+   "seeds_0_4": "step 2's saved actors, read-only, checked by fingerprint, re-evaluated with the 70% hold; tied to the new runner by the reproduction check",
+   "seeds_10_14": "step 2's full arm set if choice 6 (the main setting on seeds 10-14) keeps its default of yes (claim 4, version 8's confirmation); step 2's code refuses every seed but 0-4, so its runner is restated for seeds 10-14 in new code, never edited"
+  },
+  "matching": "blind to returns, to obca_k1's stalling-world strength, version 6's ladders and matcher; no-stall world at the stalling world's locked settings"
+ },
+ "fixed_references": [
+  "recording controller",
+  "stall-aware controller (100 points, stalling world)",
+  "rising-thrust controller (100 points, no-stall world)",
+  "textbook rule held to 0.70 (the band's lower edge)",
+  "textbook rule clipped to each setting's recorded range",
+  "best plan within 0.80, 0.70 and 1.0 (first 300 starts per test start set; reported, never in a mark)"
+ ],
+ "situations": {
+  "test_start_sets": [
+   "recorded",
+   "big_kicks",
+   "big_waves",
+   "strong_current"
+  ],
+  "starts_per_set": 1000,
+  "steps": 100,
+  "worlds": [
+   "stall",
+   "no_stall"
+  ],
+  "scored": "strong_current",
+  "note": "the four pinned test start sets; nothing recorded there, nothing removed there",
+  "name": "test start sets (not the calibration bank)"
+ },
+ "seeds": {
+  "exploratory": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "confirmatory": [
+   10,
+   11,
+   12,
+   13,
+   14
+  ],
+  "refused_always": [
+   5,
+   6,
+   7,
+   8,
+   9
+  ],
+  "failed_seed": "a fresh seed that fails a data check or a learner fails every mark of claims 1-3; it fails claim 4 only on the gate's own data checks (the five world checks, the ball's leak checks) or a main-setting plumbing stop; never replaced"
+ },
+ "measures": {
+  "points": "exact 100-step returns on the full test start sets, both worlds, every situation",
+  "hold_level": 0.7,
+  "unseen_throttle_gain": "points as trained minus points with every thruster clipped to [-0.70, 0.70] (the band's lower edge) at test",
+  "overshoot_loss": "points with every thruster clipped to [-0.80, 0.80] (the stall) at test minus points as trained (shift card measure 8)",
+  "zone_shares": "per situation: share of steps with every thruster below 0.70 (seen), some thruster in [0.70, 0.80] and none past 0.80 (unseen, below the stall), some thruster past 0.80",
+  "band_cost": "points in the random-rows setting minus points in the near-80 setting, per arm",
+  "net_across_worlds": "step 2's: gain over none in the stalling world minus loss to none in the no-stall world",
+  "strengths_and_matches": "as step 2",
+  "certificate": "switch, height, 5% bound, ramp ends, group sizes",
+  "critic_error_at_band_rows": "reported: the frozen critic minus the exact value of the stall-aware controller after the command, at evaluation-split band rows and at the same state with the command clipped to 0.70",
+  "version6_width_at_band_rows": "reported: version 6's width at the same pairs",
+  "removed_share_note": "the shift card's removed share is restated for ball or band",
+  "lower_tail": "mean return of the worst 100 of 1,000 starts",
+  "resources": "time and peak memory per phase"
+ },
+ "kill_rules": {
+  "no_training_checks": {
+   "when": "seeds 0-4 before approval (any failure: no approval asked, redraft); every fresh seed when its data are built (a failure fails that seed for claims 1-3; it fails claim 4 only if the check is the gate's own); check 9 once (fixed test start sets); check 10 on fresh seeds is a validity condition for claims 2 and 3 (at least 4 of 5)",
+   "thresholds": {
+    "eval_band_rows_min": 300,
+    "extra_share_min": 0.01,
+    "extra_share_max": 0.06,
+    "full_throttle_removed_min": 0.99,
+    "kept_past80_share_max": 0.002,
+    "identical_rule_min": 0.998,
+    "region_kept_min": 0.35,
+    "region_band_share_min": 0.1,
+    "gap_lo_min": 0.695,
+    "gap_lo_max": 0.7,
+    "bank_min": 500,
+    "stall_aware_band_share_min": 0.5,
+    "hold_loss_min": 15.0,
+    "data_edge_loss_min": 10.0
+   },
+   "checks": [
+    "1 the band is really missing: the leak check passes (no kept training or bank row in the band or the ball; held-out rows untouched); the random-rows control removes the whole ball and exactly the band's number of extra rows in each kind of water, for training rows and bank; before any training phase, each written training file's six arrays have the same SHA-256 as dataset.d4rl_dict of the kept rows (near80lib.training_file_check)",
+    "2 the evaluation split keeps at least 300 band rows",
+    "3 the band removes 1% to 6% of the ball-kept training rows",
+    "4 the gate's five world checks pass on the ball alone; on the near-80 setting full-throttle removal >= 0.99, kept past 80% <= 0.002, identical-rule share >= 0.998, hard-water rows kept >= 0.35 (set after seeing seeds 0-4)",
+    "5 at least 10% of the ball-kept hard-water rows are band rows",
+    "6 step 1's gap rule is defined in the near-80 and random-rows settings; near-80 lower end in [0.695, 0.70]",
+    "7 the calibration bank keeps at least 500 rows",
+    "8 with the band empty, the removal reproduces the gate's kept-row and bank hashes",
+    "9 fixed test start sets: the stall-aware controller has thruster 1 in the band on >= 50% of strong-current steps, and the textbook rule held to 0.70 loses >= 15 points there",
+    "10 per seed, stalling world: the textbook rule clipped to the recorded range loses >= 10 points in strong current when the band is hidden"
+   ],
+   "seen_on_seeds_0_4": "all 117 rules pass on seeds 0-4, both worlds (the review's rerun, and the rerun with the control drawn by kind of water). Seen after the rule was set: check 1's per-kind match of the control; check 6's random-rows gap rule (defined; lower end 0.783-0.791, upper end 0.977-0.998); check 8 (pass on all 10 seed-worlds)",
+   "gap_lo_rule": "near-80 lower end in [lo - 0.005, lo], lo = the band's lower edge (any thruster only)"
+  },
+  "plumbing_after_approval": [
+   "unit tests",
+   "a 40-step smoke run of every phase (scratch)",
+   "with the band empty, bit for bit on seed 0, both worlds: the gate's critic, cloned actor and no-caution actor, and step 2's saved w0_check, obca_k1 and range_hinge_k1 actors (else nothing official starts)",
+   "per phase: w0_check within 1e-5, finite parameters, input hashes, the training-file check; a stopped phase is never rerun and fails every mark that needs it"
+  ],
+  "exploratory_stops": {
+   "harm": {
+    "rule": "pooled over seeds 0-4, near-80 setting, stalling world, strong current: full-log actor minus none >= 30 points and none past 80% on >= 25% of steps",
+    "reason": "30 is twice the largest margin a mark asks (15), so every mark can be met",
+    "on_fail": "stop the near-80 and random-rows settings before seeds 10-14; report"
+   },
+   "rival_unaffected": {
+    "rule": "pooled over seeds 0-4: the hand-set range limit's band cost >= 5 points (stalling, strong current)",
+    "on_fail": "stop the near-80 and random-rows settings before seeds 10-14: the band adds nothing to the main test",
+    "if_no_random_rows_control": "if choice 7 (the random-rows control) is set to no: the main setting minus the near-80 setting instead of the band cost"
+   },
+   "noise_floor": {
+    "rule": "pooled over seeds 0-4, stalling, strong current: |random-rows minus main setting| <= 5 for the hand-set range limit (range_hinge_k1) and obca_k1",
+    "reported_only": "the no-caution actor's difference (the noisiest arm; claim 3 does not use it)",
+    "on_fail": "claim 3 is dropped (reported only); nothing else changes",
+    "if_no_random_rows_control": "if choice 7 (the random-rows control) is set to no: not run"
+   },
+   "not_a_stop": "BCA's own marks on seeds 0-4 never stop the fresh seeds (default of choice 9 (after a poor BCA result on seeds 0-4))",
+   "claim_4": "the harm and rival-unaffected stops do not cancel claim 4: the main setting runs on seeds 10-14 whenever choice 6 (the main setting on seeds 10-14) keeps its default"
+  }
+ },
+ "validity_on_seeds_10_14": {
+  "claims_1_to_3": "harm >= 30 and none past 80% on >= 25% of strong-current steps, pooled, near-80 setting",
+  "claims_2_and_3": "check 10 holds in >= 4 of 5 fresh seeds",
+  "claim_3_also": "the hand-set range limit's band cost >= 5 pooled",
+  "claim_4": "nothing from the near-80 setting: only step 2's three marks; a seed fails claim 4 only on the gate's data checks (the five world checks, the ball's leak checks) or a main-setting plumbing stop"
+ },
+ "pass_marks": {
+  "pooled": "the mean over seeds 10-14 of each seed's paired difference; every seed needed",
+  "claim1_bca_holds": {
+   "source": "step 2's three go marks, unchanged",
+   "net_lead": "net across worlds of obca_k1 >= the largest net of the world-blind rivals + 10",
+   "keeps_the_gain": "stalling world: obca_k1 minus none >= -3 in recorded conditions, big waves, big kicks",
+   "beats_even_pull": "stalling world, strong current: obca_k1 minus the matched even pull >= 15"
+  },
+  "claim2_unseen_commands": {
+   "gain": "obca_k1's unseen-throttle gain >= 5 pooled and > 0 in >= 4 of 5 seeds (stalling, strong current)",
+   "overshoot": "obca_k1's overshoot loss <= 5 pooled (stalling, strong current)",
+   "decides": "which of four fixed sentences is written",
+   "power_gain": "if a seed's gain varies by 3-6 points: about 85-99% if the true gain is 8, about half if 5",
+   "power_overshoot": "if a seed's overshoot loss varies by 3-6 points: about 87-99% if the true loss is 2, about half if 5, about 1-13% if 8"
+  },
+  "claim3_band_cost": {
+   "mark": "hand-set range limit's band cost minus obca_k1's band cost >= 5 pooled and > 0 in >= 4 of 5 seeds",
+   "power": "about 74-85% if the true difference is 8 points, 87-96% if 10, about 45% if 5",
+   "droppable": "by the noise-floor rule on seeds 0-4",
+   "meaning": "where full throttle stalls and BCA's switch is on, BCA's ramp is the always-on ramp: two shapes of caution that cannot switch off are compared, a ramp from the data's edge (at BCA's height) and a hard limit at it"
+  },
+  "claim4_main_setting": {
+   "source": "step 2's three go marks on seeds 10-14 in the main setting",
+   "runs_only_if": "choice 6 (the main setting on seeds 10-14) keeps its default",
+   "separate": "its validity needs nothing from the near-80 setting; a seed fails it only on the gate's data checks or a main-setting plumbing stop; the exploratory stops do not cancel it"
+  }
+ },
+ "claims_word_for_word": "fixed in PREREGISTRATION.md section 14 (the sentences and the bracket table). The final prereg.json copies them verbatim, and the code manifest it pins lists PREREGISTRATION.md and README.md, so its fingerprint covers this document, as in version 6",
+ "compute": {
+  "unit": "CPU-hours (one processor busy for one hour)",
+  "no_training_and_plumbing": "about 0.6",
+  "exploratory_seeds_0_4": "about 10-15",
+  "confirmatory_seeds_10_14": "about 11-15 near-80 and random rows, plus about 6-8.5 for the main setting",
+  "total": "about 28-40",
+  "budget_cap": 50,
+  "machine": "Framework Desktop (AMD Ryzen AI MAX+ 395, 16 cores), Ubuntu 24.04 in WSL with 24 GB, CPU only",
+  "lanes_default": 10,
+  "memory_rule": "version 7's, unchanged: a phase starts only if the reserved peaks of the running phases plus its own are at most WSL's MemTotal minus 8 GiB, and MemAvailable is at least its own reservation plus 8 GiB; an unmeasured phase kind reserves 7 GiB; a measured kind 1.25 x its measured peak; policy phases max(7 GiB, 2 x measured peak). With MemTotal about 23.5 GiB, at most 2 policy phases run at once",
+  "wall_time": "about 8-11 hours in three sittings (at most 2 policy phases at once under version 7's memory rule; about 11-15 CPU-hours of policy phases)",
+  "guard": "a stage that uses more than twice its forecast's upper end pauses and reports",
+  "version6_for_comparison": "estimated at 72-92 process-hours (prereg_v7.json: an estimate that stops nothing)"
+ },
+ "approval": {
+  "route": "the owner's own terminal, as versions 6 and 7",
+  "script": "outputs/shift/beyond-the-data/near80/approve_local_near80.py (written only when the draft is final)",
+  "approval_file": "outputs/shift/beyond-the-data/near80/approval_near80_<first 16 characters>.json (+ .sha256)",
+  "typed": "the first 16 characters of the final prereg.json's SHA-256",
+  "commit": "by the owner, under the owner's own GitHub identity, then pushed",
+  "import_record": "outputs/shift/beyond-the-data/near80/import_near80_<first 16 characters>.json",
+  "never": "no agent writes the approval file or makes that commit; no message counts as approval",
+  "accepts_defaults": "approving the final fingerprint accepts every default; any other choice is a new fingerprint",
+  "import_guard": "every training phase refuses without the import record; the import refuses if the approval commit's author or committer is this session's own git identity (as in version 6); the desktop runner refuses if a git identity is set in root (as in version 7)"
+ },
+ "choices": [
+  {
+   "number": 1,
+   "choice": "which thrusters",
+   "default": "any thruster",
+   "alternatives": [
+    {
+     "value": "thruster 1 only",
+     "check_3_range": [
+      0.01,
+      0.06
+     ],
+     "check_6": "defined only (the ramp starts at 0.773-0.781)",
+     "hold": 0.7
+    }
+   ]
+  },
+  {
+   "number": 2,
+   "choice": "the band's edges",
+   "default": [
+    0.7,
+    0.9
+   ],
+   "default_checks": {
+    "check_3_range": [
+     0.01,
+     0.06
+    ],
+    "check_6_interval": [
+     0.695,
+     0.7
+    ],
+    "hold": 0.7
+   },
+   "alternatives": [
+    {
+     "value": [
+      0.72,
+      0.88
+     ],
+     "check_3_range": [
+      0.005,
+      0.04
+     ],
+     "check_6_interval": [
+      0.715,
+      0.72
+     ],
+     "hold": 0.72,
+     "fails_as_drafted": []
+    },
+    {
+     "value": [
+      0.75,
+      0.85
+     ],
+     "check_3_range": [
+      0.001,
+      0.01
+     ],
+     "check_6_interval": [
+      0.745,
+      0.75
+     ],
+     "hold": 0.75,
+     "fails_as_drafted": [
+      "check 2 (90-164 evaluation band rows; 300 needed)",
+      "check 9 (loses 12.7; 15 needed)"
+     ]
+    },
+    {
+     "value": [
+      0.65,
+      0.95
+     ],
+     "check_3_range": [
+      0.04,
+      0.15
+     ],
+     "check_6_interval": [
+      0.645,
+      0.65
+     ],
+     "hold": 0.65,
+     "fails_as_drafted": []
+    }
+   ],
+   "note": "check 6 interval [lo - 0.005, lo] (any thruster only); hold = lo; the alternatives' check 3 ranges were set after seeing seeds 0-4; checks 4, 5 and 10 were computed for the default only and are computed before the final version if another band is chosen"
+  },
+  {
+   "number": 3,
+   "choice": "with the ball or instead",
+   "default": "with the ball",
+   "alternatives": [
+    "also the band alone as a reported third setting (+6-8 CPU-hours per stage)"
+   ]
+  },
+  {
+   "number": 4,
+   "choice": "signs",
+   "default": "both",
+   "alternatives": [
+    "the negative side only (positive commands from 70% to 90% stay in training)"
+   ]
+  },
+  {
+   "number": 5,
+   "choice": "the hard-water floor on the near-80 setting",
+   "default": 0.35,
+   "alternatives": [
+    0.4
+   ]
+  },
+  {
+   "number": 6,
+   "choice": "the main setting on seeds 10-14",
+   "default": "yes (claim 4, version 8's confirmation of step 2)",
+   "alternatives": [
+    "no; step 2's confirmation then needs seeds 15-19"
+   ]
+  },
+  {
+   "number": 7,
+   "choice": "the random-rows control",
+   "default": "yes",
+   "alternatives": [
+    "no (claim 3 is lost; the rival-unaffected stop uses the main setting minus the near-80 setting; the noise floor is not run)"
+   ]
+  },
+  {
+   "number": 8,
+   "choice": "version 6's BCA as a reported arm",
+   "default": "yes",
+   "alternatives": [
+    "no"
+   ]
+  },
+  {
+   "number": 9,
+   "choice": "after a poor BCA result on seeds 0-4",
+   "default": "run seeds 10-14 anyway",
+   "alternatives": [
+    "stop the near-80 and random-rows settings (saves about 11-15 CPU-hours; claim 4 still runs)"
+   ]
+  },
+  {
+   "number": 10,
+   "choice": "a checkpoint before seeds 10-14",
+   "default": "none beyond the approval",
+   "alternatives": [
+    "a go file typed by the owner"
+   ]
+  },
+  {
+   "number": 11,
+   "choice": "hosts",
+   "default": "TD3+BC actor-only",
+   "alternatives": [
+    "co-trained full host (+4 CPU-hours per stage)",
+    "ReBRAC (+32 CPU-hours per stage; a configuration must be chosen first)"
+   ]
+  },
+  {
+   "number": 12,
+   "choice": "when",
+   "default": "after version 7's run on the desktop finishes",
+   "alternatives": [
+    "alongside, with the lanes split"
+   ]
+  },
+  {
+   "number": 13,
+   "choice": "lanes",
+   "default": 10,
+   "alternatives": [
+    "1-16"
+   ]
+  },
+  {
+   "number": 14,
+   "choice": "the name",
+   "default": "version 8, near-80",
+   "alternatives": [
+    "a separate name, leaving version 8 for a later version"
+   ]
+  },
+  {
+   "number": 15,
+   "choice": "the two readout marks of claim 2",
+   "default": 5,
+   "alternatives": [
+    "report only, no mark"
+   ]
+  }
+ ],
+ "departures": [
+  "the band on top of the ball, applied to training rows and the bank",
+  "the gate's world checks read on the ball alone; a 35% hard-water floor on the near-80 setting (post hoc)",
+  "primary method: restructured BCA (step 2), not version 6's lower edge (reported)",
+  "new control setting: as many random rows as the band removes, drawn separately in calm and in hard water, new random-stream tags",
+  "new arms: plain mean-difference switch; ramp started at the stall; range limit placed at the stall",
+  "new readouts: the 70% hold, zone shares, critic error and version 6's width at band rows",
+  "a harm stop at 30 points before the fresh seeds (step 2 had none), for the near-80 and random-rows settings only",
+  "seeds 10-14 for both settings; version 6's fresh-seed code (seeds 5-9 only) and step 2's runner (seeds 0-4 only) are restated, not reused",
+  "no detection test and no deployment check",
+  "step 2's three attribution tests (5-point rule choosing the claim's wording) are not carried over: those arms, the k = 2 arm and the mean-difference switch are reported only, with no test, no claim and no sentence"
+ ],
+ "no_training_facts_seeds_0_4": {
+  "source": [
+   "scratchpad/near80/facts.md and facts/band_rows.json (row counts)",
+   "facts/situation_use.json (fixed controllers, best plan)",
+   "design_checks/world_checks_band.json (gate's world checks after the band)",
+   "design_compute/range_clip_check.json (textbook rule clipped to the recorded range)",
+   "judge/facts_seed0_stall.json (this code, seed 0, stalling world: reproduces the counts exactly)",
+   "review/facts_all.json and review/hard_water_mix.json (the review's rerun, seeds 0-4, both worlds; uniform control)",
+   "fixes/facts_all_stratified.json and fixes/no_training_checks_stratified.json (this code after the review, seeds 0-4, both worlds; control drawn by kind of water)"
+  ],
+  "stall": {
+   "extra_rows": "1,310-1,531",
+   "extra_share_of_ball_kept": "3.08-3.60%",
+   "kept": "40,969-41,190",
+   "bank_kept": "805-826",
+   "evaluation_band_rows": "984-1,072",
+   "gap_rule_lower_end": "0.6999-0.7000",
+   "gap_rule_upper_end": "0.9874-0.9953",
+   "rows_above": "33-57",
+   "thruster1_recorded_range_lower_end": "about -0.694 (ball alone: about -0.750)",
+   "hard_water_rows_kept": "38.5-40.6% (ball alone 44.5-47.2%)",
+   "band_share_of_ball_kept_hard_water_rows": "12.5-14.3%",
+   "data_edge_loss_strong_current": "17.5-19.0 points",
+   "extra_rows_hard_water": "725-924 (55-60%)"
+  },
+  "no_stall": {
+   "extra_rows": "1,044-1,217",
+   "extra_share_of_ball_kept": "2.46-2.86%",
+   "kept": "41,283-41,456",
+   "bank_kept": "808-832",
+   "evaluation_band_rows": "775-827",
+   "gap_rule_lower_end": "0.6999-0.7000",
+   "rows_above": "28-58",
+   "extra_rows_hard_water": "514-665 (49-55%)"
+  },
+  "fixed_test_start_sets": {
+   "stall_aware_thruster1_band_share": [
+    0.103,
+    0.145,
+    0.252,
+    0.811
+   ],
+   "situations_order": [
+    "recorded",
+    "big_kicks",
+    "big_waves",
+    "strong_current"
+   ],
+   "textbook_held_to_070_points": [
+    97.7,
+    88.5,
+    93.0,
+    70.7
+   ],
+   "best_plan_loss_held_to_070": [
+    1.4,
+    9.4,
+    3.9,
+    21.8
+   ]
+  }
+ },
+ "files": {
+  "written_now": [
+   "PREREGISTRATION.md",
+   "README.md",
+   "prereg_draft.json",
+   "code/near80lib.py",
+   "code/facts_near80.py",
+   "code/test_near80.py"
+  ],
+  "written_after_the_owner_answers": [
+   "prereg.json (+ .sha256)",
+   "code_manifest.json (+ .sha256)",
+   "approve_local_near80.py",
+   "code/import_approval.py",
+   "code/freeze.py",
+   "code/near80_runner.py",
+   "run_near80.sh",
+   "code/pooled.py"
+  ],
+  "outputs": "runs/shift_explore/near80/ (write-once); committed copies in near80/results-*/",
+  "unit_tests": 44
+ }
+}
