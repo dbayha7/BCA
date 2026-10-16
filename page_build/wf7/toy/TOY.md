@@ -7,6 +7,36 @@ The owner asked (16 Oct, 13:38 UTC): "where are the full toy world results? that
 explain". The live page's section#toy-worlds (28,926 characters) covered two notebooks. The new section covers all five,
 in order, and replaces the old one through `apply_toy.py`.
 
+
+## In the cloud (16 Oct 2026, from about 19:00 UTC)
+
+- **The merge with the live page's version 26.** The other session published its own rewrite of section#toy-worlds
+  (service version 1792172582-8406, 121,306 characters, SHA-256 `f7274425…1956`); the owner chose to publish this
+  section with version 26's parts carried in. `build_toy.py` adds `part_bottom()` (the bottom line `#toy-bottom` and
+  the glossary `#toy-words`), the claims table `#toy-claims` / `#toy-claims-table`, `#toy-adds-up` and `#toy-not-shown`
+  in `part_together()`, and reads "What it means for ThrusterChain" from `part_meaning.html` (version 26's role table
+  `#toy-roles-table` and parts `#toy-tc-width`, `-gate`, `-limits`, `-resultf`, `-plans`, in this section's names);
+  `finding_found()` puts `#toy-first-found` … `#toy-fourth-found` on each experiment's "What happened". The fragment
+  is now 197,854 characters with 90 ids, all 24 of version 26's among them. `apply_toy.py` knows version 26's section,
+  refuses to lose any of the old section's ids, and as T3 renames "Part 2" in section#capped-pull (a link, two
+  tooltips) to "experiment 2".
+- **Re-runs.** `rerun/get_sources.sh RUN` extracts the six notebooks from git (SHA-256 checked, as in the table
+  below) and the calibration package; `rerun/run_all.sh RUN` re-runs them with `run_nb.py` (one kernel at a time), plus
+  the sweep copy and three information-only copies made by `rerun/make_extra.py` (the laptop's two extra cells were not
+  handed over and were rebuilt from the notebooks' own variables; a third prints experiment 2's pooled regrets in
+  full); `rerun/compare_nb.py` compares each run with the stored outputs (printed lines: streams plus each display's
+  Markdown, else its plain text). Cloud result: 84, 137, 134, 153, 508 and 1,725 identical printed lines, exactly as on
+  the laptop; only running times differ. Outputs in `run/out/` (committed: `build_toy.py` reads
+  `run/out/extra_weights.json`). Two last digits checked: the break-even multiplier is 13.48868 (13.4887; the page
+  shows 13.49) and experiment 2's pull-width regret is 0.37548 (the page's 0.375; the findings notebook's prose rounds
+  0.3755 again to 0.376).
+- **Numbers.** `check_numbers.py`: 234 quoted numbers (39 of them in the parts carried over from version 26) and 24
+  worked results checked against the cloud re-runs; 0 problems. The ThrusterChain numbers of `part_meaning.html` are
+  checked against the rest of the page in review round 2 (`../build/FIX_LOG.md`); step 1's run record
+  (`outputs/shift/beyond-the-data/restructure/step1/results/results.json` at HEAD) gives 29 to 60 full-throttle rows
+  per seed and world (the findings notebook says 28–59), a 90% point of the comparison group from −0.0493 to
+  −0.0305, and 0.947 for no-stall seed 3.
+
 ## Files
 
 | File | What it is |

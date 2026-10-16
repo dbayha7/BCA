@@ -683,3 +683,109 @@ change between the two builds. It is listed as a test that can fail under load (
   to 790 ms against 2,647 to 3,128 ms. The first battery measured 6,053 against 20,850 ms (T-18: 5,483 against 18,588
   ms): the machine's load moves both, the ratio stays about 0.3. Version 27 lays out only the section on screen; the
   live page lays out all of it.
+
+# Part 5. Rebase onto the live page's version 26 (page version 27, in the cloud, 16 Oct 2026)
+
+Part 4 (the toy worlds' integration, sections 17-22, which BUILD.md names) was written on the laptop after this file
+was copied for the cloud, so it is not in this copy; `wf7/toy/TOY.md` and the toy patch's docstring record that work.
+
+The owner's laptop battery ran out during the version-27 build; the build moved to a cloud session on 16 Oct 2026
+(from about 19:00 UTC). First, the hand-over was checked: `apply_all.py base/core_92ba.html OUT --version 27`
+reproduces the committed `core_v27.html` byte for byte (SHA-256 `2f277292…fac9`) once the wrapper's default path is
+fixed (the files were copied from the laptop's `scratchpad/live6/` into `page_build/base/`, so `WRAPPER` now points at
+`base/live_92ba.html`); all integration checks pass (0 duplicate ids, 0 CR bytes, 4,565 SVG `<use>` references and 426
+in-page links resolve, 7,488,404 bytes with the wrapper).
+
+Then the artifact was read: the live page had moved on to service version **1792172582-8406** (7,374,846 bytes,
+published by the other session at 17:43 UTC; its own history entry is "Version 26, 16 Oct 2026"; the other session's
+chat called its publishes v26, v27 and v28, but the page's history has one new entry). Its core is
+`base/core_8406.html` (the first 531 bytes of `base/live_8406.html`, the wrapper head, are the same bytes as 92ba's;
+the last 15 are `"\n</body></html>"`). Version 27 is now built on it.
+
+## 23. What the live page changed after 92ba (inventory, from the diff of core_92ba against core_8406)
+
+- A new section `section#capped-pull`, "BCA's main channel: the capped pull does not raise return, and what might"
+  (before the toy worlds; headings `#capped-what`, `#capped-see`, `#capped-why`, `#capped-toys`, `#capped-fixes`; one
+  table; seed 0 of the cloud rerun in the main test's four situations, the weighting test's learning curves; three
+  untested fixes). It links into the toy section (`#toy-second`, `#toy-tc-width`, `#toy-adds-up`, `#toy-worlds`) and
+  names the toy experiments "Part 2". Its CSS line `#capped-pull td.n { white-space: normal; }`; its column tooltips in
+  the shared tooltip script's `COLS`.
+- The live panel's learned mode: "Tested on" has a second row, the main test's four situations (`data-sub="sit"`:
+  recorded, big_kicks, big_waves, strong_current; playable only with the 80% hold removed; "exploratory, one seed"),
+  with a 1.4 MB data block `script#sim-sit4-data` and the code around it (`LM_SIT`, `isSit4`, `sitOK`, `lmName`,
+  `LRO_SIT`, the explanation's lines, the cost readout's situation name); the old Choices sidebar's "Tested on" row
+  names the four situations.
+- `section#toy-worlds` rewritten by the other session (121,306 characters, SHA-256 `f7274425…1956`): the four
+  experiments as "Parts 1 to 4", a bottom line, a glossary, every claim in one table, what it all adds up to, and an
+  extended "What it means for ThrusterChain" (role table; widths in training; reading held-out outcomes; where the toys
+  do not carry over; result F as a hypothesis; no plan changes); 24 ids.
+- The old right-hand contents (`nav.toc`): four new entries (BCA's main channel, All 18 claims, What the toys add up
+  to, Toys and ThrusterChain) and a new rule `nav.toc a { padding-block … }`.
+- Results' paragraph "What happened to this plan": the toy notebooks are "committed with their results on 15 Oct"
+  (this build's B13 said the same in other words), and the four toy experiments are summarized.
+- The version history: the entry "Version 26, 16 Oct 2026." (two of the owner's requests: BCA's main channel, the toy
+  worlds' full results).
+
+## 24. Conflicts and how each was merged
+
+- **The toy section** (both builds answered the owner's 13:36 UTC request "where are the full toy world results?").
+  The cloud session asked the owner which to publish; the answer was "Ours, merged in": this build's five-notebook
+  section (charts, worked arithmetic, the shared world, BCA's tools) carrying in what version 26's section has and this
+  one lacked. `build_toy.py` now adds: the bottom line (`#toy-bottom`, reworded with every term defined where it first
+  appears) and the glossary as a collapsed block (`#toy-words`) before the overview; in "What the toy worlds say
+  together", "Every pre-registered claim at a glance" (`#toy-claims`, the 18-claim table, in this section's names: test
+  1 to 4c, claims 1 to 6), "What it all adds up to" (`#toy-adds-up`, this build's seven recommendations merged with
+  version 26's wording: the width doses, Wilks and Gaffke, the project code's 36-row floor) and "What this does not show"
+  (`#toy-not-shown`, a list, with the next steps and the literature report); "What it means for ThrusterChain" is
+  version 26's (`part_meaning.html`: the role table `#toy-roles-table` and `#toy-tc-width`, `-gate`, `-limits`,
+  `-resultf`, `-plans`) in this section's names, with this build's statement that Stage 2's version 7 has ended
+  (version 26 said "Stage 2's pre-registered seeds 5–9 still test the width") and this build's point that the evidence
+  is thin for a shift folded into "Thin evidence". The "What Part N found" headings' ids (`#toy-first-found` …
+  `#toy-fourth-found`) are on each experiment's "What happened". All 24 ids of version 26's section are kept (the
+  patch now refuses to lose any). `apply_toy.py` knows version 26's section by its SHA-256 and, as T3, renames the
+  three "Part 2" names in section#capped-pull (a link and two tooltips) to "experiment 2".
+- **The navigation.** E10 `iw-qualities-table`: its anchor also matched version 26's toy table "The four parts…", so
+  it is lengthened to the caption's own words. E4: the old contents' four new entries go with it (the new navigation
+  lists every unit and part itself); its new hash is in `KNOWN`. E11 also removes version 26's `nav.toc a` rule (it
+  styled only the removed contents). E8: the old Choices script's "Tested on" row's four situations are carried into
+  `nav.js`; its new hash is in `KNOWN`. Contents gets an entry "BCA's main channel" after the weighting test (in the
+  part "Follow-up tests"); its table gets the static id `#capped-table` and a short label (`e_nav_v27r2.py`).
+- **The color patch.** K13b (the learned actors' cost readout): version 26 added the situation's name
+  (`isSit4(S.lm) ? " and start from start 11 of " + lmName(S.lm) : …`); the anchor and the replacement carry it.
+  B13 is dropped (the base already says the notebooks were committed). 89 edits (12 optional) apply.
+- **The integration.** I1's entry describes version 27 on the page as version 26 left it (and that the status box
+  stays removed). The checks now also require version 26's entry, section#capped-pull, `#sim-sit4-data` and the Choices
+  row, and version 26's code as often as in the base outside the toy section (`isSit4`, `LRO_SIT`, the situation
+  buttons, the capped-pull headings and its CSS rule); B13's sentence check became version 26's sentence.
+
+The edit scripts are `rebase/edits/e_color_v27r.py`, `e_nav_v27r.py`, `e_nav_v27r2.py` (with `rep.py`); the other
+changes (build_toy.py, part_meaning.html, apply_toy.py, apply_all.py, check_numbers.py) are in the branch's history
+(commit `a7593b8` and later), each against the hand-over commit `cb1992c`.
+
+## 25. Status statements
+
+Unchanged from part 3 (section 14): they hold as of 16 Oct 2026, 13:44 UTC. Version 26 carried two statements that
+contradict them, both replaced: Results' "its deciding test, on fresh seeds 5–9, still runs under version 7" (B25, as
+on 92ba) and the toy section's "Stage 2's pre-registered seeds 5–9 still test the width" (the merged toy section says
+version 7 has ended and will not run).
+
+## 26. The toy notebooks re-run in the cloud
+
+`wf7/toy/rerun/` (`get_sources.sh`, `make_extra.py`, `run_all.sh`, `compare_nb.py`): the six notebooks extracted from
+git (SHA-256 as in TOY.md), run in a fresh IPython kernel in a scratch folder with NumPy, Matplotlib, jupyter_client and
+ipykernel; the identical printed lines are exactly TOY.md's (84, 137, 134, 153, 508 and 1,725), and only running times
+differ. The laptop's two information-only cells were not handed over and were rebuilt from the notebooks' own variables
+(`make_extra.py`), with a third for experiment 2's pooled regrets in full; they reproduce every number the section
+quotes from them (one last digit: the break-even multiplier is 13.48868, printed now as 13.4887, which the laptop's
+cell had as 13.4886; the page shows 13.49). Experiment 2's pull-width rule's regret is 0.37548 (the page's 0.375; the
+findings notebook's prose says 0.376). `check_numbers.py` now checks 234 quoted numbers (39 new, in the parts carried
+over from version 26) and 24 worked results: 0 problems.
+
+## 27. The build on 8406
+
+`apply_all.py base/core_8406.html OUT --wrapper base/live_8406.html`: base 7,374,300 bytes and 2,167 ids; version 27
+8,944,898 bytes and 3,533 ids (2,776 MathJax glyph ids, 1,087 of them the lesson's); 0 duplicate ids; 4,565 SVG
+`<use>` references and 447 in-page links resolve; 0 CR bytes; the title unchanged; the toy section is the fragment
+(197,854 characters) with all 29 ids it must keep (version 26's 24 and the 5 the navigation once gave the older
+section); one history entry per version, 1 to 27; no status box; 8,945,444 bytes with the wrapper. Every element id of
+core_8406 is in version 27 except the same 18 removed on purpose (the old sidebar's 6, the walkthrough's 12).
