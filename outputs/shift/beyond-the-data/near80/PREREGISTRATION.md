@@ -1,11 +1,11 @@
-# Hiding the commands near 80%: draft pre-registration (version 8, near-80)
+# Hiding the commands near 80%: pre-registration (version 8, near-80)
 
-**DRAFT for the owner's approval. Nothing has been trained.**
+**FINAL, awaiting the owner's approval. Nothing has been trained.**
 
-No learner, critic or actor was trained for this draft, and no BCA band was fitted. The machine-readable twin is
-`prereg_draft.json` beside this file. Its status is "draft", and a draft cannot be approved. Once you answer the
-choices in section 16, the session writes the final version and the approval script. You then approve that final
-version's fingerprint (section 11).
+No learner, critic or actor was trained for this version, and no BCA band was fitted. You accepted every default of
+section 16 on 15 October 2026 at 19:24 UTC, in a comment on the ThrusterChain page ("accept the defaults"). The
+machine-readable twin is `prereg.json` beside this file; its status is "final, awaiting approval". The draft it was
+built from is kept in `prereg_history/`. You approve the fingerprint of `prereg.json` as section 11 says.
 
 **Your request** (a comment on the stall chart of the ThrusterChain page): "what about the values close to 80%. I
 think they should be deliberately left out of the training data and introduced during testing so we can really see
@@ -29,18 +29,21 @@ staying inside the recorded data?
 - the main test (version 6) and its results on seeds 0-4 (13 and 14 October);
 - restructured BCA's step 1 and step 2 on seeds 0-4. Both met their go rules (exploratory). Step 2's go "licenses
   drafting version 8 on fresh seeds (10-14)";
-- a fact base made for this draft on seeds 0-4. It holds row counts for four bands, and fixed controllers and the
+- a fact base made for the draft on seeds 0-4. It holds row counts for four bands, and fixed controllers and the
   exact best plan on the four fixed test start sets. It took about 25 CPU-minutes and trained nothing;
 - two small checks on seeds 0-4 that trained nothing: the gate's world checks after the band (about 1 CPU-minute),
   and a scripted rule clipped to the recorded range (about 2.3 CPU-minutes);
-- three candidate designs. This draft takes the cheapest as its base and adds the best parts of the other two;
-- one cross-check by this draft's own code on seed 0, stalling world (about 13 CPU-seconds). It reproduced the fact
+- three candidate designs. The draft took the cheapest as its base and added the best parts of the other two;
+- one cross-check by the draft's own code on seed 0, stalling world (about 13 CPU-seconds). It reproduced the fact
   base's counts exactly;
-- an independent review of this draft. It reran this draft's code on seeds 0-4, both worlds, and counted the
+- an independent review of the draft. It reran the draft's code on seeds 0-4, both worlds, and counted the
   hard-water rows among the removed rows. It trained nothing. It found that the first random-rows control was not
   matched on hard water (section 3.7);
 - after the review, this code's no-training facts on seeds 0-4, both worlds, rerun with the control drawn by kind of
-  water (about 2.3 CPU-minutes, nothing trained).
+  water (about 2.3 CPU-minutes, nothing trained);
+- your answer accepting every default of section 16 (15 October 2026, 19:24 UTC, "accept the defaults");
+- the final code, frozen by its manifest, reran the no-training checks on seeds 0-4 before approval. Its record is
+  pinned in `prereg.json` (`no_training_checks_frozen`). Nothing was trained.
 
 **Not seen by anyone:** any learner trained with the band hidden, and any number from seeds 10-14.
 
@@ -166,7 +169,7 @@ after their seeds 0-4 values were known. Each such check says "seen" and gives t
 - **What is tested:** BCA's switched ramp on TD3+BC (step 2's protocol), against step 2's rivals and controls, with
   step 2's three pass marks. Every controller also gets two readouts that answer your question directly: what the
   throttles it never saw earned it, and what going past 80% cost it.
-- **Cost:** about 28-40 CPU-hours, or about 8-11 hours of wall time on your Framework Desktop in three sittings (at
+- **Cost:** about 31-43 CPU-hours, or about 10-13 hours of wall time on your Framework Desktop in three sittings (at
   most 2 policy phases at once under version 7's memory rule).
 
 ---
@@ -215,7 +218,7 @@ A recorded row is **in the band** when, for at least one thruster k:
 
 ### 3.5 Every thruster, not thruster 1 only
 
-The session's example named thruster 1. This draft recommends every thruster.
+The session's example named thruster 1. This version uses every thruster (choice 1, default accepted).
 - **Thruster 3 would give the stall away.** With thruster 1 alone, thrusters 2-4 still record commands up to about
   0.78. BCA's ramp reads the largest throttle over all four thrusters, so it would still start at 0.773-0.781, just
   below the stall. Any good result could then come from thruster 3's data.
@@ -238,8 +241,9 @@ The session's example named thruster 1. This draft recommends every thruster.
 
 ### 3.7 The control: as many random rows, from the same kinds of water
 
-Removing 3% of the rows changes the input scaling and every training batch, for no reason linked to the band. So
-every band cost is measured against a random removal of the same size.
+Removing 3% of the rows changes every training batch and the rows each critic and actor sees, for no reason linked
+to the band. (The input scaling stays the gate's; section 3.3.) So every band cost is measured against a random
+removal of the same size.
 
 The band's extra rows are mostly hard-water rows: 725-924 of them per seed (55-60%) in the stalling world, and
 49-55% in the no-stall world. Hard water is where the 80% hold matters. So the random rows are drawn separately in
@@ -339,7 +343,7 @@ The textbook rule, clipped to each seed's recorded range (a scripted controller;
 Per seed, the band costs this rule 17.5-19.0 points in strong current (stalling world) against the ball alone, and
 17.2-18.4 against the random-rows setting (its band cost). Staying inside the data is no longer nearly free.
 
-### 4.6 This draft's code on seeds 0-4
+### 4.6 This version's code on seeds 0-4
 
 `code/facts_near80.py` counts rows and runs the leak checks. It trains nothing.
 - **Seed 0, stalling world (before the review):** 1,444 extra rows, 41,056 kept, 821 bank rows kept, 1,051
@@ -411,6 +415,15 @@ A reduced set, all unmatched:
 - BCA's switched ramp, k = 1, with its own switch and height from this setting's data;
 - the hand-set range limit.
 
+**One training program for every setting.** The code trains the ramp arms of one batch side by side, and the batch
+size changes the last bits of each actor. So BCA's switched ramp and the plumbing check train in step 2's own batches
+in every setting and world: where full throttle stalls, the plumbing check alone, then six ramp arms with BCA's
+switched ramp first; in the no-stall world, one batch of seven with the plumbing check first. The random-rows setting
+fills the other five places with copies of its own switched ramp. They are checked equal to it and never saved or
+scored. The near-80 setting's new mean-difference switch trains in a batch of its own. The hand-set range limit
+trains alone in every setting, as in step 2. So band costs and the noise floor compare actors from the same program,
+and the reproduction check (section 8.2) runs that program.
+
 ### 5.4 Main setting
 
 - **Seeds 0-4:** step 2's saved actors, read-only, checked by fingerprint. They are re-evaluated with the 70% hold.
@@ -422,10 +435,14 @@ A reduced set, all unmatched:
 
 ### 5.5 Fixed references (no seed, nothing trained)
 
-- the recording controller, the stall-aware and rising-thrust controllers;
-- the textbook rule held to 70%;
-- the textbook rule clipped to each setting's recorded range;
+- the recording controller, the stall-aware and rising-thrust controllers (the points' anchors, in both worlds);
+- the textbook rule held to 70% (check 9; the runner computes it in the stalling world);
+- the textbook rule clipped to each setting's recorded range (check 10 and [Q]; the runner computes it in the
+  stalling world, per seed);
 - the best plan within 80%, 70% and 100% (first 300 starts per test start set; reported, never in a mark).
+
+The best plans, and the no-stall rows of sections 4.4 and 4.5, come from the fact base (`outputs/shift/oracle/` and
+the session's facts); the runner does not recompute them. No mark reads them.
 
 ### 5.6 Left out, and why
 
@@ -536,8 +553,14 @@ the failed check is one of the gate's own (section 9.5).
 - **The reproduction check:** with the band empty, the near-80 runner must reproduce, bit for bit, on seed 0 in both
   worlds: the gate's critic, cloned actor and no-caution actor; and step 2's saved actors for the plumbing check, BCA's
   switched ramp (k = 1) and the hand-set range limit. The seeds 0-4 band costs and the noise floor compare new actors
-  with those saved ones, so they must come from the same code path. If any differs, nothing official starts.
+  with those saved ones, so they must come from the same code path: the check runs the official policy phases' own
+  function, with step 2's batches (section 5.3). If any differs, nothing official starts, ever, in this version.
 - The first peak-memory measurements of each phase kind.
+- **Which plumbing failures can be retried.** Only a reproduction difference is final. Any other failure can be
+  retried once its cause is fixed: a unit test that fails, a smoke phase that does not finish, a reproduction check
+  that does not finish (a crash, or memory), a missing or damaged input (also a saved file whose fingerprint does not
+  match, or a training file that fails its check, inside the reproduction check), or a Ctrl-C. Each attempt is recorded and kept. The
+  reproduction check runs only after the unit tests and the smoke have passed.
 
 ### 8.3 The exploratory stage: seeds 0-4
 
@@ -568,10 +591,16 @@ Then, **stop rules** (fixed now):
   - If either differs by more, claim 3 is dropped and only reported: its 5-point margin would sit inside the noise of
     changing 3% of the rows. Nothing else changes.
   - The no-caution actor's difference is reported, not used: it is the noisiest arm, and claim 3 does not use it.
+  - If a number it needs is missing on any of seeds 0-4, it cannot be read, and claim 3 is dropped in the same way
+    (section 14.3, "Dropped on seeds 0-4, not measured").
   - If choice 7 (the random-rows control) is set to no, the noise floor is not run.
 - **Plumbing stops, per phase:** the height-0 check, a non-finite network, a saved input whose fingerprint does not
   match, or a training file that fails its check. A stopped phase is written once and never rerun. Every mark that
   needs it fails.
+- **Every seed is needed by the stop rules.** If a number that the harm rule or the rival rule needs is missing on any
+  of seeds 0-4 (a phase stopped, or an actor's numbers are missing), that rule cannot be read. The near-80 and
+  random-rows settings then stop before seeds 10-14, with their own sentence (section 14.5, "A stop rule cannot be
+  read"). Claim 4 is not stopped by it.
 
 **What does not stop the fresh seeds:** BCA's own result on seeds 0-4 (choice 9). Both outcomes answer your
 question, so both are worth confirming.
@@ -602,6 +631,16 @@ unless stated. Every seed is needed. A failed or stopped seed fails every mark t
     recorded range has a band cost of 17.2-18.4 on seeds 0-4 (seen after the rule was set). With a per-seed spread of
     about 4-6, a true value of 10 reaches 5 with a chance of 97% or more.
 - **Claim 4** has no validity condition from the near-80 setting (section 9.5).
+- **Failed seeds:** the conditions above are computed over the fresh seeds that did not fail. A failed seed fails
+  every mark of claims 1-3 by the pre-set rule (section 10), and claim 1's sentence names it. It never makes the
+  validity conditions fail. A seed whose evaluation lacks a number that these conditions or claims 1-3 read, other
+  than a matched rival, with no failure or stop record, fails in the same way (its learner failed; section 14.6 lists
+  these numbers). Claims 2 and 3 then say that they fail because of the failed seed, rather than report pooled numbers
+  that cannot be computed. A seed with no failure or stop record whose matched rivals could not be matched (for
+  example, BCA's switch stayed off where full throttle stalls, so there was no strength to match) fails claim 1's
+  marks only, and claim 1's sentence names it; claims 2 and 3 and the conditions above read its numbers as usual. A
+  matched rival whose network was not finite, so that its number is missing, counts the same way. Check 10's count
+  leaves out a failed seed whose band data were never built.
 
 ### 9.2 Claim 1: BCA's result holds with the band hidden
 
@@ -643,7 +682,8 @@ This answers your question directly. Two marks choose which of four fixed senten
 - **What it means:** where full throttle stalls and BCA's switch is on, BCA's ramp and the always-on ramp are the same
   actor. So this compares two shapes of caution that cannot switch off: a ramp from the data's edge (at BCA's height)
   and a hard limit at it. It does not credit reading outcomes.
-- It can be dropped by the noise floor on seeds 0-4 (section 8.3).
+- It can be dropped by the noise floor on seeds 0-4 (section 8.3), also when the noise floor cannot be measured
+  there.
 
 ### 9.5 Claim 4: step 2 confirmed in the main setting (if choice 6 keeps its default)
 
@@ -652,9 +692,10 @@ sinks it:
 - **Marks:** only step 2's three go marks (section 9.2's table), in the main setting.
 - **Validity:** nothing from the near-80 setting. The harm and check-10 conditions of section 9.1 are for claims 1-3.
 - **A failed seed:** a fresh seed fails claim 4 only if it fails one of the gate's own data checks (the five world
-  checks on the ball alone, or the ball's leak checks), or a main-setting plumbing stop. A seed that fails a check
-  only the near-80 or random-rows settings need (checks 1-3 and 5-8, and the near-80 rows of check 4) still counts
-  for claim 4.
+  checks on the ball alone, or the ball's leak checks), if it has a main-setting plumbing stop, or if its
+  main-setting evaluation lacks a number that claim 4 reads, with no failure or stop record (its learner failed;
+  section 14.6). A seed that fails a check only the near-80 or random-rows settings need (checks 1-3 and 5-8, and the
+  near-80 rows of check 4), or that lacks a number of those settings, still counts for claim 4.
 - **The stops:** the two exploratory stops of section 8.3 (too little harm, rival unaffected) do not cancel it.
   Claim 4 runs on seeds 10-14 whenever choice 6 (the main setting on seeds 10-14) keeps its default.
 
@@ -689,26 +730,35 @@ sinks it:
 
 ## 11. Approval
 
-**Not yet.** This is a draft. A draft cannot be approved.
+The session has written `prereg.json` (status "final, awaiting approval"), its code manifest (`code_manifest.json`),
+the frozen code and the approval script (`approve_local_near80.py`), and committed them. Then, the same route as
+versions 6 and 7:
 
-**When the draft is final** (after your answers to section 16), the session writes `prereg.json`, its code manifest,
-the frozen code and the approval script, and commits them. Then, the same route as versions 6 and 7:
+1. On the Framework Desktop, open Ubuntu as root (`wsl -d Ubuntu-24.04 -u root` in PowerShell). The script needs the
+   repository at `/home/user/bca` with version 7's restored `runs/`, because the code manifest pins files there.
+   Then type `cd /home/user/bca` and `git pull --ff-only`.
+2. Read `PREREGISTRATION.md` in `outputs/shift/beyond-the-data/near80/`.
+3. At that terminal, type:
 
-1. Pull the branch on your own machine.
-2. Read the final `PREREGISTRATION.md` in `outputs/shift/beyond-the-data/near80/`.
-3. At your own terminal, run:
+       python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py --check
+       python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py
 
-       python3 outputs/shift/beyond-the-data/near80/approve_local_near80.py
-
-   It checks the files against their fingerprints, refuses a draft, refuses if an approval already exists, and
-   refuses unless you are typing at a terminal. It asks you to type the first 16 characters of the fingerprint.
+   It checks the files against their fingerprints (the code manifest, every file it lists, the repository files the
+   code uses, and the frozen code's no-training checks on seeds 0-4), refuses any file in the folder or in `code/`
+   that the manifest does not list (other than the frozen files and this fingerprint's own approval and import
+   records), refuses a draft, refuses if an approval already exists, and refuses unless you are typing at a terminal.
+   It shows a summary and asks you to type the first 16 characters of the fingerprint. The `-I` (isolated mode) keeps
+   Python from loading anything from the script's own folder or from Python's environment settings, so no stray file
+   there can run before the checks.
 4. It writes `outputs/shift/beyond-the-data/near80/approval_near80_<first 16 characters>.json` and its `.sha256`
    file.
-5. You commit and push those two files under your own GitHub identity, as in version 7's step 10.
-6. The session imports your approval and pushes an import record,
+5. You commit and push those two files under your own GitHub identity, with the exact commands it prints (as in
+   version 7's step 10, with its `pull --rebase` line if the push is rejected).
+6. The session imports your approval with `code/import_approval.py import` and pushes an import record,
    `import_near80_<first 16 characters>.json`. Every training phase refuses without the import record. The import
-   refuses if the approval commit's author or committer is this session's own git identity (as in version 6), and
-   the desktop runner refuses if a git identity is set in root (as in version 7).
+   refuses if the approval commit's author or committer is this session's own git identity (as in version 6) or is
+   not you, and the desktop runner refuses if root's git user.email is yours or the session's (as in version 7).
+7. You bring the import record to the desktop: `git -C /home/user/bca pull --ff-only`.
 
 **What the fingerprint covers.** The final `prereg.json` copies section 14's sentences and its bracket table
 verbatim, so the claims live in the approved file itself, as version 6's `prereg.json` did. It also pins the code
@@ -726,21 +776,28 @@ version 6, through the code manifest it covers this document.
 
 ## 12. Order of work
 
-1. **Now:** this draft, its machine-readable twin, and the code that can be tested without training (the band, the
+1. **Done:** the draft, its machine-readable twin, and the code that can be tested without training (the band, the
    control, the leak check, the training-file check, the facts script, and their unit tests).
-2. **You answer the choices** in section 16 (or accept the defaults).
-3. **The session writes the final version:** the runner, the import, the freeze, the manifest and the approval
-   script. It runs the unit tests and the no-training checks on seeds 0-4 with the frozen code (about 5 CPU-minutes).
-   It commits and pushes.
+2. **Done:** you accepted every default of section 16 (15 October 2026, 19:24 UTC, "accept the defaults").
+3. **Done:** the session wrote the final version (the runner, the import, the freeze, the manifest and the approval
+   script), ran the unit tests and the no-training checks on seeds 0-4 with the frozen code (about 5 CPU-minutes,
+   nothing trained), and committed and pushed.
 4. **You approve** (section 11). The session imports it.
 5. **Plumbing** (section 8.2), in scratch.
 6. **The exploratory stage** on seeds 0-4, then its stop rules (section 8.3).
 7. **The confirmatory stage** on seeds 10-14: the main setting if choice 6 keeps its default, and the near-80 and
    random-rows settings if the stop rules allow.
-8. Results are committed with their fingerprints. Model files go to a run-files branch, as in version 7.
+8. Results are committed with their fingerprints (`run_near80.sh results`, run by itself at the end of a finished
+   run: `near80/results-<utc>/`, with `SHA256SUMS`). Model files go to the run-files branch `claude/near80-run-files`
+   (`push_runfiles_near80.sh`), as in version 7.
 
-Default timing (choice 12): after version 7's run on the desktop has finished. The near-80 runner refuses to start
-while version 7's runner is running, unless you split the lanes.
+The exact commands for steps 5-8, and what to do for every message the runner prints, are in `README.md` ("How to
+run").
+
+Timing (choice 12, default accepted): after version 7's run on the desktop has finished. The near-80 runner refuses to
+start while version 7's runner is running, and unless version 7's results are gathered (or its status shows every
+phase final). If version 7 stopped for good without finishing, you type `run_near80.sh version7-ended` once; it is
+recorded. While the near-80 run runs, it starts nothing new whenever version 7's runner or one of its phases runs.
 
 ---
 
@@ -751,16 +808,18 @@ with 24 GB, on the processor alone.
 
 | part | CPU-hours |
 |---|---|
-| no-training checks and plumbing | about 0.6 |
-| exploratory, seeds 0-4 | about 10-15 |
-| confirmatory, seeds 10-14: near-80 and random rows | about 11-15 |
+| no-training checks and plumbing | about 2-2.5 |
+| exploratory, seeds 0-4 | about 11-16 |
+| confirmatory, seeds 10-14: near-80 and random rows | about 12-16 |
 | confirmatory, seeds 10-14: main setting (choice 6) | about 6-8.5 |
-| **total** | **about 28-40** |
+| **total** | **about 31-43** |
 
 - **Unit costs**, one processor: a critic of 100,000 updates 6-10 minutes (measured in the cloud; the desktop is
   measured in plumbing); a stalling-world policy phase 30-40 minutes and a no-stall phase 10-12 (step 2 on the
-  desktop: 27-36 and 9-10.5, plus the new arms); a random-rows phase about 3-4 minutes; an evaluation about 1.5
-  minutes per seed-world.
+  desktop: 27-36 and 9-10.5, plus the new arms); a random-rows phase about 8-10 minutes (its switched ramp trains in
+  step 2's six-arm batch, section 5.3); an evaluation about 1.5 minutes per seed-world. The plumbing runs the unit
+  tests, about 60 smoke phases (mostly 2 at a time until each kind is measured) and the full-length reproduction
+  check on one lane (both worlds' critics, second critics, cloned and reference actors, and the full policy program).
 - **Version 6 was estimated at 72-92 process-hours** (version 7 keeps that as an estimate that stops nothing). This
   version is cheaper because it reuses step 2's protocol and saved actors, and leaves out the detection test, the
   deployment check and the full host.
@@ -772,11 +831,21 @@ with 24 GB, on the processor alone.
   - With WSL's total of about 23.5 GiB, that leaves about 15.5 GiB. So at most 2 policy phases run at once, whatever
     their peak (1.2 GB on the desktop in step 2). The 10 lanes speed up the critics, evaluations and other phases
     only.
-- **Wall time:** about 8-11 hours in three sittings (no-training and plumbing; exploratory; confirmatory), with at
-  most 2 policy phases at once under version 7's memory rule. About 11-15 CPU-hours of policy phases run 2 at a time;
-  the critics and evaluations come on top.
-- **Budget guard:** a stage that uses more than twice its forecast's upper end pauses and reports. No result is read
-  differently because of a pause. The cap for the whole version is 50 CPU-hours.
+  - **The plumbing's first measurements** (a departure from version 7, which measured only full-size phases): the
+    reproduction check's peak, measured at full length, serves the critics, BCA's second critic and switch, the
+    cloned and reference actors and the policy phases. Every other kind reserves the larger of 1.25 times its 40-step
+    smoke peak and 2 GiB. Either counts only until an official attempt of that kind has been measured; from then on,
+    official measurements alone set the reservation, as in version 7.
+  - A phase whose own reservation is more than WSL's total memory minus 8 GiB can never start: the run halts and
+    says so, instead of waiting.
+- **Wall time:** about 10-13 hours in three sittings (no-training and plumbing, about 2-2.5 hours; exploratory;
+  confirmatory), with at most 2 policy phases at once under version 7's memory rule. About 12-16 CPU-hours of policy
+  phases run 2 at a time; the critics and evaluations come on top.
+- **Budget guard:** a stage that uses more than twice its forecast's upper end pauses and reports; so does the whole
+  run past the cap of 50 CPU-hours. The plumbing has no phase of the official plan, so it never pauses. A pause lasts
+  until you type `run_near80.sh budget-continue <stage>`; each typed record (kept, write-once) allows one more
+  forecast of that stage, and raises the cap by the same amount. No result is read differently because of a pause or
+  a continuation.
 
 ---
 
@@ -793,6 +862,7 @@ strong current, unless stated:
 | NET, D, R | BCA's net across worlds; its lead over the best world-blind rival; that rival's name |
 | E, L | BCA minus the matched even pull; BCA's largest loss to no caution elsewhere |
 | G, O | BCA's unseen-throttle gain and overshoot loss |
+| K2 | seeds where BCA's unseen-throttle gain was positive |
 | G0 and O0, GZ and OZ, GV and OV | the same for no caution, the hand-set range limit, version 6's BCA |
 | Q | the textbook rule clipped to the near-80 recorded range, in points |
 | A, B, C, K | band costs of BCA and of the hand-set range limit; B minus A; seeds where B minus A was positive |
@@ -804,8 +874,8 @@ strong current, unless stated:
 starts each. In strong current the test states also lie outside the recorded currents, so the band's effect is read
 where states are new too."
 
-**On seeds 0-4,** every sentence below starts with "Exploratory, seeds 0-4, designed after seeing them; not a
-claim:".
+**On seeds 0-4,** every claim sentence below (sections 14.1-14.4) starts with "Exploratory, seeds 0-4, designed after
+seeing them; not a claim:".
 
 ### 14.1 Claim 1
 
@@ -848,14 +918,15 @@ needed)".
 
 ### 14.2 Claim 2: the sentence about unseen commands
 
-G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current. Exactly one is written:
+G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current. Exactly one is written, unless
+check 10 failed or a seed failed (both below):
 
 | gain mark | overshoot mark | sentence |
 |---|---|---|
 | pass | pass | "BCA's controller used throttles from 70% to 80% that it never saw in training, to good effect: they earned [G] points in strong current over the same controller held to 70%, and holding it to 80% would have added only [O]." |
-| fail | pass | "BCA's controller gained little from throttles it never saw ([G] points in strong current over the same controller held to 70%; at least 5 needed). Holding it to 70% changed little: it scored about the same as a controller limited to the edge of the recorded data." |
+| fail | pass | "BCA's controller did not gain reliably from throttles it never saw ([G] points in strong current over the same controller held to 70%, positive in [K2] of 5 seeds; at least 5 points and 4 of 5 seeds needed)." |
 | pass | fail | "BCA's controller earned [G] points in strong current from throttles from 70% to 80% that it never saw, but it went past 80% often enough that holding it to 80% would have added [O] (at most 5 allowed). Its caution did not stop it at the stall." |
-| fail | fail | "BCA's controller gained little from throttles it never saw ([G]) and went past 80% often enough that holding it to 80% would have added [O]. Without data near 80%, its caution neither used the safe stretch nor stopped at the stall." |
+| fail | fail | "BCA's controller did not gain reliably from throttles it never saw ([G], positive in [K2] of 5 seeds; at least 5 points and 4 of 5 seeds needed) and went past 80% often enough that holding it to 80% would have added [O] (at most 5 allowed). Its caution did not stop it at the stall." |
 
 **Always added, for scale:**
 > "For scale, in strong current: the stall-aware controller gains 29.3 points from the same throttles. The controller
@@ -866,6 +937,13 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 **If check 10 fails in more than one fresh seed:**
 > "On fresh seeds 10-14, hiding the band moved the edge of the recorded data too little in [M] of 5 seeds. By the
 > pre-set rule, this version makes no claim about the band. Its numbers are reported as description."
+
+**If a seed failed:**
+> "By the pre-set rule, claim 2 fails because seed [seeds] failed (claim 1 says why); the numbers of the other seeds
+> are reported as description only."
+
+**If every seed failed:**
+> "By the pre-set rule, claim 2 fails because seed [seeds] failed (claim 1 says why)."
 
 ### 14.3 Claim 3: the band's cost
 
@@ -881,6 +959,13 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 > band cost BCA's switched ramp [A] points and the hand-set range limit [B] points in strong current. The pre-set
 > advantage of 5 points in at least 4 of 5 seeds was not shown (difference [C], in [K] of 5 seeds)."
 
+**If a seed failed:**
+> "By the pre-set rule, claim 3 fails because seed [seeds] failed (claim 1 says why); the numbers of the other seeds
+> are reported as description only."
+
+**If every seed failed:**
+> "By the pre-set rule, claim 3 fails because seed [seeds] failed (claim 1 says why)."
+
 **Not valid on seeds 10-14:**
 > "On fresh seeds 10-14, hiding the band cost the hand-set range limit only [B] points against random rows (at least
 > 5 needed). By the pre-set rule, this version makes no claim about the band's cost. Its numbers are reported as
@@ -889,6 +974,11 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 **Dropped on seeds 0-4:**
 > "The comparison of the band's costs was dropped before the fresh seeds, because removing the same number of rows at
 > random moved [arm]'s points by [V] on seeds 0-4 (at most 5 allowed). Its numbers are reported as description."
+
+**Dropped on seeds 0-4, not measured:**
+> "The comparison of the band's costs was dropped before the fresh seeds, because on seeds 0-4 the noise floor (how
+> far removing the same number of rows at random moves the points) could not be measured: a number it needs is
+> missing on seed [seeds]. Its numbers are reported as description."
 
 ### 14.4 Claim 4: the main setting (only if it runs)
 
@@ -912,6 +1002,9 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 - **Reproduction fails:** "Stopped: with the band empty, the new code did not reproduce [the main test's removal /
   critic / cloned actor / no-caution actor, or step 2's plumbing-check / switched-ramp / hand-set range-limit actor]
   on seed 0. No result of this version stands until it does."
+- **A stop rule cannot be read:** "Stopped before the fresh seeds: on exploratory seeds 0-4, [what] could not be
+  measured on seed [seeds], because a phase stopped or an actor's numbers are missing there. By the pre-set rule every
+  seed is needed, so nothing on seeds 10-14 was generated for the near-80 and random-rows settings."
 - **Too little harm:** "Stopped before the fresh seeds: on exploratory seeds 0-4, with the band hidden, the controller
   trained without caution lost only [H] points in strong current to the full-log controller (at least 30 needed)
   [or: went past 80% on only [P]% of steps (at least 25% needed)]. There is too little harm to test. Nothing on seeds
@@ -920,10 +1013,91 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
   hand-set range limit only [B] points against random rows (at least 5 needed). The band does not change what a range
   limit can do, so this version adds nothing to the main test. Nothing on seeds 10-14 was generated for the near-80
   and random-rows settings."
-- **Added to either of the two stops above, when choice 6 keeps its default:** "This stop does not touch claim 4: the
+- **Added to any of the three stops above, when choice 6 keeps its default:** "This stop does not touch claim 4: the
   main setting ran on seeds 10-14 as planned, and its result is reported separately."
 - **A phase stops:** "Seed [s], [world]: [phase] stopped ([reason]). It was not rerun. Every mark that needs it
   fails."
+
+### 14.6 How the code fills in the sentences
+
+- Numbers are written with one decimal ("{:.1f}"), with a minus sign when negative and no plus sign; "-0.0" is
+  written "0.0". [P] is a share of steps written as a percentage. [S], [N], [K], [K2], [M] and [s] are whole
+  numbers.
+- A number that cannot be computed, because a seed failed, a phase stopped or an arm is missing, is written "not
+  available". A mark that needs it fails. Among the claim sentences, only claim 2's "for scale" sentence and claim
+  4's "Always, when both settings ran" sentence can show it (the bullets on failed seeds and missing numbers below).
+- [R] and [arm] are written as "the always-on ramp", "the matched range limit", "the matched even pull", "the first
+  matched random surface", "the second matched random surface", "the hand-set range limit" or "BCA's switched
+  ramp". When two rules that cannot switch themselves off have the same net, the first in step 2's order is named:
+  the matched range limit, the matched even pull, the first random surface, the second random surface, the
+  always-on ramp.
+- [situation] is "recorded conditions", "big waves" or "big kicks". [world] is "stalling world" or "no-stall
+  world". [phase] is the phase's plain name in the runner's phase table.
+- [one clause per missed mark] lists the clauses of the missed marks, joined by "; ", in this order: the net lead;
+  keeping the gain (one clause per situation that misses, in the order recorded conditions, big waves, big kicks);
+  beating the even pull; then one clause per failed seed, in seed order. [clauses as in claim 1] is the same for the
+  main setting. When a seed failed, a missed mark whose number is not available because of that seed is told by the
+  seed's own clause only.
+- [check] is the name of the first check that failed, in the order of section 8.1; "its [phase] phase" for a
+  stopped phase; "its evaluation (numbers missing)" for a seed whose evaluation lacks a number; or "its matching (a
+  rival could not be matched or scored)" for a seed whose matched rivals could not be matched (the bullets on missing
+  numbers below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
+- [reason] in claim 1's validity sentence is the harm reason when the harm is below 30 points, the past-80 reason
+  when the share is below 25%, and both, joined by "; ", when both fail.
+- In the harm stop, "[or: ...]" is left out when only the harm fails; the second form replaces the first when only
+  the share fails; when both fail, the two forms are joined by " and ".
+- In the reproduction stop, the bracket lists every item that differed, written "A", "A and B" or "A, B and C".
+- Claims 2 and 3 are written only when claim 1's validity holds, except that in the exploratory look the dropped
+  sentence of claim 3 is written whenever the noise floor fails. When a number the noise floor needs is missing on
+  any of seeds 0-4, the noise floor cannot be read: claim 3 is dropped as if it had failed, and the "not measured"
+  form of the dropped sentence is written instead, with [seeds] listing the seeds where a number is missing. When
+  check 10 fails in more than one fresh seed, the check-10 sentence is written once, for both claims, in place of
+  claim 2's sentence and claim 3's. The "for scale" sentence is written whenever the near-80 setting ran on the
+  group's seeds.
+- When a seed failed for claims 1-3, claim 2's sentence and claim 3's "Holds" or "Fails" sentence are replaced by
+  their "If a seed failed" sentences, with [seeds] listing the failed seeds; claim 1's sentence says why each one
+  failed. When every seed of the group failed, their "If every seed failed" sentences are written instead, since no
+  other seed is left to report. The check-10 sentence, claim 3's "Not valid" sentence and its dropped sentences keep
+  their precedence. So a pooled number that is "not available" only because a seed failed is never written as a
+  finding.
+- The validity conditions of section 9.1 are computed over the seeds that did not fail. A failed seed fails every mark
+  of claims 1-3 and is told by its own clause in claim 1's sentence ("seed [s] failed [check] ..."); it never makes
+  claim 1's validity fail. A seed with no failure or stop record whose evaluation lacks a number that the validity
+  conditions, the marks or the sentences of claims 1-3 read, other than a matched rival (see below), fails in the same
+  way, with [check] "its evaluation (numbers missing)": its learner failed (section 10). These numbers, all in the
+  near-80 setting unless stated, are: in strong current in both worlds, the points of BCA's switched ramp, no caution
+  and the always-on ramp (claim 1's net lead and even pull); in the stalling world, the points of BCA's switched ramp
+  and no caution in the other three situations (keeping the gain), and in strong current the full-log actor's points
+  and no caution's share past 80% (the validity conditions), the unseen-throttle gain and overshoot loss of BCA's
+  switched ramp, no caution and the hand-set range limit (claim 2 and its "for scale" sentence), the hand-set range
+  limit's points, and the points of BCA's switched ramp and the hand-set range limit in the band cost's reference
+  setting (claim 3 and its validity condition; the random-rows setting, or the main setting without the random-rows
+  control). Version 6's BCA is left out: it can be missing by design and is reported for scale only. [M] leaves out a
+  failed seed that has no check-10 record.
+- Claim 4 is kept apart from the near-80 settings. A seed with no failure or stop record whose main-setting
+  evaluation lacks a number that claim 4 reads fails claim 4 in the same way, with the same [check]. These are the
+  numbers of claim 1's three marks, in the main setting, and, when both settings ran, the hand-set range limit's
+  points in strong current in the stalling world (the "Always, when both settings ran" sentence). A missing near-80
+  or random-rows number never fails claim 4, and a missing main-setting number fails claims 1-3 only when they read
+  it (without the random-rows control).
+- A seed with no failure or stop record whose matched rivals could not be matched (for example, BCA's switch stayed
+  off where full throttle stalls, so there was no strength to match) fails claim 1's marks only, with [check] "its
+  matching (a rival could not be matched or scored)"; claims 2 and 3 and the validity conditions read its numbers as
+  usual. The matched rivals' numbers are the near-80 points in strong current, in both worlds, of the matched range
+  limit, the matched even pull and the two matched random surfaces. A matched rival whose network was not finite, so
+  that its number is missing, counts the same way.
+- Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5
+  that was missed.
+- On seeds 0-4, the "Always attached" sentence is not written; every claim sentence (sections 14.1-14.4) starts with
+  the exploratory prefix, and in them "fresh seeds 10-14" reads "seeds 0-4" and "fresh seeds" reads "seeds". The stop
+  sentences of section 14.5 are written as they stand.
+- In the stop "A stop rule cannot be read", [what] is "the harm" (the harm or the past-80 share is missing), "the
+  band's cost to the hand-set range limit", or both joined by " and "; [seeds] lists the seeds where a number is
+  missing, written "2", "2 and 3" or "1, 2 and 3". Wherever a sentence says "seed [seeds]", it reads "seed 2" for one
+  seed, and "seeds 2 and 3" or "seeds 1, 2 and 3" for more.
+- Exactly one stop sentence is written, the first that applies in this order: a no-training check, reproduction, a
+  stop rule that cannot be read, too little harm, the rival unaffected. The claim-4 note follows any of the last three.
+  Each stopped phase adds its own sentence.
 
 ---
 
@@ -952,9 +1126,10 @@ G is BCA's unseen-throttle gain and O its overshoot loss, pooled, strong current
 
 ---
 
-## 16. Choices for you (each with a recommended default)
+## 16. Choices (every default accepted on 15 October 2026)
 
-Approving the final version accepts every default. Any other choice makes a new fingerprint.
+You accepted every default below on 15 October 2026 at 19:24 UTC ("accept the defaults"). Approving the final version
+accepts them; any other choice would make a new fingerprint.
 
 1. **Which thrusters.** Default: **any thruster**. Or thruster 1 only, as in the session's example. Thruster 3 would
    then still show data up to 0.78, and BCA's ramp would start there (section 3.5). Check 6 can then ask only that
@@ -972,7 +1147,7 @@ Approving the final version accepts every default. Any other choice makes a new 
    - The rule behind the check 6 column: the ramp must start in [lo - 0.005, lo], where lo is the band's lower edge
      (any thruster only). The hold level is always lo.
    - The check 3 ranges for the alternatives were set after seeing these values. The 75%-85% band would also need
-     checks 2 and 9 restated before approval, which this draft does not recommend.
+     checks 2 and 9 restated before approval, which was not chosen.
    - Checks 4, 5 and 10 were computed for the default band only. For another band the session computes them on seeds
      0-4 before writing the final version, and section 8.1's rule applies: any failure means a redraft and no
      approval is asked.
@@ -1045,41 +1220,64 @@ Approving the final version accepts every default. Any other choice makes a new 
 
 ## 18. Files
 
-**Written now** (in `outputs/shift/beyond-the-data/near80/`):
+**The final version** (in `outputs/shift/beyond-the-data/near80/`; nothing trains before your approval is imported):
 
 | file | what it holds |
 |---|---|
-| `PREREGISTRATION.md` | this draft |
+| `PREREGISTRATION.md` | this document |
 | `README.md` | a one-page summary |
-| `prereg_draft.json` | the machine-readable draft (status "draft") |
+| `approve_local_near80.py` | the approval script you run at your own terminal (standard library only) |
+| `run_near80.sh` | the desktop entry: the official run, plumbing, status, the self-test, the plan, a retry, a budget continuation, the record that version 7 ended, the halt report, the results, and a stub run on a test fixture |
+| `push_runfiles_near80.sh` | pushes the desktop's run files (model files included) to the branch `claude/near80-run-files`, as version 7's `push_runfiles_v7.sh` |
+| `prereg.json` (+ `.sha256`, its fingerprint) | the machine-readable twin of this document, status "final, awaiting approval"; it copies section 14's sentences and bracket table verbatim and pins the code manifest |
+| `code_manifest.json` (+ `.sha256`) | the fingerprint of every file in this table and of every repository file the code imports or executes, as in versions 6 and 7 |
+| `prereg_history/` | the draft the final version was built from (`prereg_draft_<first 16 characters>.json`, with its fingerprint) |
+| `pre_approval/no_training_checks_seeds0_4.json` (+ `.sha256`) | the frozen code's no-training checks on seeds 0-4, run before approval (nothing trained) |
+| `code/near80_constants.py` | every shared constant: paths, seeds, settings, arms, marks, the runner's limits, the output layout |
 | `code/near80lib.py` | the band, the near-80 removal, the random-rows control (drawn by kind of water), the leak check, the training-file check, the world card, the no-training checks |
 | `code/facts_near80.py` | the no-training facts script (seeds 0-4 only) |
-| `code/test_near80.py` | 44 unit tests on synthetic logs, a few seconds |
+| `code/test_near80.py` | unit tests of the band, the removals, the leak checks and the facts, on synthetic logs |
+| `code/approval_check.py` | the approval check every phase calls first, the git identity refusal, the test fixture |
+| `code/import_approval.py` | the session's import of your approval (`show`, `import`) |
+| `code/near80_prereg.py` | builds `prereg.json` from the draft, the choices taken, the pins and the claims word for word |
+| `code/freeze.py` | `check` and `write`: the draft into history, the code manifest, the unit tests, the frozen code's no-training checks, `prereg.json` |
+| `code/test_approval.py` | unit tests of the approval script, the import, the approval check and the freeze, on temporary copies and throwaway git repositories |
+| `code/near80_runner.py` | the lane scheduler: plan, admission, launch, memory rule, ledger, safe stop and rerun, status, self-test |
+| `code/phases.py` | the phase table: kinds, keys, dependencies, gating, done files, plain names |
+| `code/phase_main.py` | the one entry every phase process runs (its checks, then the phase) |
+| `code/settingdata.py` | the data of the three settings, fresh data for seeds 10-14, the training files |
+| `code/learner_phases.py` | the critics, the full-log critic, BCA's second critic, switch and height, the cloned and reference actors |
+| `code/policy_phase.py` | the actor phases (near-80 full set, random-rows reduced set, main setting on seeds 10-14) and the lock |
+| `code/evaluate_phase.py` | the evaluations (as trained, held to 70%, capped at 80%), zone shares, lower tail, readouts, step 2's saved actors |
+| `code/v6bca.py` | version 6's BCA band fit and width, restated on version 6's own functions |
+| `code/ledger.py` | attempt records, peak memory, interruption classes, moving interrupted outputs aside |
+| `code/stubs.py` | the stub mode: synthetic logs and learner stand-ins that take no training step |
+| `code/test_runner.py` | unit tests of the runner, including a stub run of every phase kind |
+| `code/pooled.py` | the looks: the stop rules, the marks, the validity conditions, the brackets, and the sentences of section 14 |
+| `code/claims_text.py` | reads section 14 of this document word for word; fills the brackets |
+| `code/test_pooled.py` | unit tests of the looks on synthetic results, one per sentence, stop and branch |
 
-Run the tests from `/tmp`, with the repository's own Python environment (numpy 2.2.6):
+`run_near80.sh` follows version 7's pattern:
+- `run`, `plumbing`, `status`, `selftest`, `plan`, `retry PHASE_ID`, `budget-continue STAGE`, `version7-ended`,
+  `report`, `results` and `stub --fixture DIR`;
+- one processor per phase, 10 lanes by default, version 7's memory rule and peak-memory ledger;
+- safe stops and reruns of interrupted phases, a status command, a short self-test before every start;
+- every phase checks the imported approval and refuses seeds 5-9; the near-80 and random-rows settings on seeds 10-14
+  only after the exploratory stop rules pass;
+- the training-file check before every phase that reads a training file;
+- phases: data and no-training checks; critics; BCA's switches and heights; cloned actors; actor phases (near-80 full
+  set, random-rows reduced set, main setting on seeds 10-14); the lock; evaluations (as trained, held to 70%, capped
+  at 80%); readouts; the pooled looks.
 
-    PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=/home/user/bca \
-      python /home/user/bca/outputs/shift/beyond-the-data/near80/code/test_near80.py
+Run the tests from `/tmp`, with the repository's own Python environment (numpy 2.2.6), one file at a time:
 
-**Written only after you answer the choices** (nothing trains before your approval is imported):
-- `prereg.json` and its fingerprint file, the code manifest, and `approve_local_near80.py`. The final `prereg.json`
-  copies section 14's sentences and bracket table verbatim. The code manifest it pins lists `PREREGISTRATION.md` and
-  `README.md` with the code, as in versions 6 and 7;
-- `code/import_approval.py` and `code/freeze.py`;
-- **the training runner**, `run_near80.sh` with `code/near80_runner.py`, in version 7's pattern:
-  - one processor per phase, 10 lanes by default, version 7's memory rule and peak-memory ledger;
-  - safe stops and reruns of interrupted phases, a status command, a short self-test before every start;
-  - every phase checks the imported approval and refuses seeds 5-9; the near-80 and random-rows settings on seeds
-    10-14 only after the exploratory stop rules pass;
-  - the training-file check before every phase that reads a training file;
-  - phases: data and no-training checks; critics; BCA's switches and heights; cloned actors; actor phases (near-80
-    full set, random-rows reduced set, main setting on seeds 10-14); the lock; evaluations (as trained, held to 70%,
-    capped at 80%); readouts; the pooled looks;
-- `code/pooled.py`, which fills in the sentences of section 14.
+    cd /tmp && for t in test_near80.py test_approval.py test_runner.py test_pooled.py; do
+      PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=/home/user/bca \
+        /tmp/claude-0/bcavenv/bin/python /home/user/bca/outputs/shift/beyond-the-data/near80/code/$t || break; done
 
 **Outputs** go to `runs/shift_explore/near80/`, write-once. Committed copies of results go to `near80/results-*/`
-with their fingerprints. Nothing is written under `experiments/`, `runs/shift/`, `stage2/`, `stage2_gpu/`,
-`stage2_v7/` or any pinned folder.
+with their fingerprints (`SHA256SUMS`); the model files go to the branch `claude/near80-run-files`. Nothing is written
+under `experiments/`, `runs/shift/`, `stage2/`, `stage2_gpu/`, `stage2_v7/` or any pinned folder.
 
 **Sources:** the fact base and its scripts in the session's scratch folder (`near80/facts.md`, `facts/`,
 `design_checks/`, `design_compute/`), the review's reruns (`near80/review/`) and the rerun after it (`near80/fixes/`);

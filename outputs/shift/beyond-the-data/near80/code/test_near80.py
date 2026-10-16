@@ -1,6 +1,7 @@
-"""Unit tests of the near-80 draft code, on synthetic logs only (no recorded seed is generated, loaded or read; no
-learner is trained; no BCA band is fitted). The fixed banks are used only through tiny 5-start rollouts of scripted
-controllers.
+"""Unit tests of the near-80 data code (the band, the removals, the leak checks, the facts), on synthetic logs only
+(no recorded seed is generated, loaded or read; no learner is trained; no BCA band is fitted). The fixed banks are used
+only through tiny 5-start rollouts of scripted controllers. The machine-readable pre-registration and the documents
+are checked against the code: prereg.json when it exists, otherwise the draft it is built from.
 
 Run (plain unittest; pytest is not installed), from /tmp:
   PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=/home/user/bca \
@@ -23,6 +24,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import near80lib as N  # noqa: E402
+import near80_constants as K  # noqa: E402
 import facts_near80 as F  # noqa: E402
 from experiments.shift import dataset as DS  # noqa: E402
 from experiments.shift import recorder as RC  # noqa: E402
@@ -499,26 +501,52 @@ class TestGuards(unittest.TestCase):
         self.assertTrue(hasattr(mod, "gap_rule") and hasattr(mod, "throttle"))
 
     def test_nothing_written_into_the_code_folder(self):
-        """Only the planned Python files may live here (this draft's three, and the four the final version adds); no
-        output, cache or other file."""
-        allowed = {"near80lib.py", "facts_near80.py", "test_near80.py",
-                   "near80_runner.py", "pooled.py", "import_approval.py", "freeze.py"}
+        """Only the planned Python files may live here (near80_constants.CODE_FILES); no output, cache or other file."""
+        allowed = set(K.CODE_FILES)
         for p in HERE.iterdir():
             self.assertTrue(p.is_file() and p.suffix == ".py", f"not a Python file: {p.name}")
             self.assertIn(p.name, allowed)
-        for name in ("near80lib.py", "facts_near80.py", "test_near80.py"):
+        for name in ("near80lib.py", "facts_near80.py", "test_near80.py", "near80_constants.py"):
             self.assertTrue((HERE / name).is_file(), name)
 
 
-class TestDraftJson(unittest.TestCase):
+def final_or_draft(root=HERE.parent):
+    """('final', prereg.json) when it exists; else ('draft', the draft kept in prereg_history/); else ('draft',
+    prereg_draft.json, before freeze.py moves it); else (None, None)."""
+    p = root / "prereg.json"
+    if p.is_file():
+        return "final", json.loads(p.read_text(encoding="utf8"))
+    hist = root / "prereg_history"
+    kept = sorted(h for h in hist.glob("prereg_draft_*.json") if h.suffix == ".json") if hist.is_dir() else []
+    if kept:
+        return "draft", json.loads(kept[0].read_text(encoding="utf8"))
+    p = root / "prereg_draft.json"
+    if p.is_file():
+        return "draft", json.loads(p.read_text(encoding="utf8"))
+    return None, None
+
+
+class TestFinalJson(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.d = json.loads((HERE.parent / "prereg_draft.json").read_text())
-        cls.doc = (HERE.parent / "PREREGISTRATION.md").read_text()
+        cls.which, cls.d = final_or_draft()
+        if cls.d is None:
+            raise unittest.SkipTest("neither prereg.json nor the draft it is built from is there")
+        cls.doc = (HERE.parent / "PREREGISTRATION.md").read_text(encoding="utf8")
+        cls.readme = (HERE.parent / "README.md").read_text(encoding="utf8")
 
-    def test_draft_matches_the_code(self):
+    def test_json_matches_the_code(self):
         d = self.d
-        self.assertEqual(d["status"], "draft")
+        if self.which == "final":
+            self.assertEqual(d["kind"], K.PREREG_KIND)
+            self.assertEqual(d["status"], K.STATUS_FINAL)
+            self.assertEqual(d["status_line"], K.STATUS_LINE_FINAL)
+            self.assertIs(d["approvable"], True)
+            self.assertEqual(d["missing"], [])
+            self.assertEqual(sorted(d["arms"]["random_rows_both_worlds"]), sorted(K.ARMS["random_rows"]))
+            self.assertEqual(d["arms"]["logical_ids"], {k: list(v) for k, v in K.ARMS.items()})
+        else:
+            self.assertEqual(d["status"], "draft")
         self.assertEqual(d["band"]["lo"], N.BAND_LO)
         self.assertEqual(d["band"]["hi"], N.BAND_HI)
         self.assertEqual(d["band"]["scope"], N.SCOPE)
@@ -533,19 +561,32 @@ class TestDraftJson(unittest.TestCase):
             self.assertEqual(tags["bank"][name], [TC.DATA_SEED, "rep", SH.TAG_RANDOM, N.TAG_NEAR80,
                                                   N.BANK_TAG_BASE + s])
 
-    def _strings(self, x, skip_choices=True):
+    def test_final_choices_constants_and_claims(self):
+        if self.which != "final":
+            self.skipTest("prereg.json is not written yet")
+        d = self.d
+        for c in d["choices"]:
+            self.assertEqual(c["taken"], c["default"], c["number"])
+            self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
+        self.assertEqual(d["owner_answer"], K.OWNER_ANSWER)
+        self.assertEqual(d["constants"], json.loads(json.dumps(K.as_dict(), sort_keys=True)))
+        self.assertIsInstance(d["claims_word_for_word"], dict)
+        self.assertEqual(d["claims_word_for_word"]["source"], "PREREGISTRATION.md section 14")
+
+    def _strings(self, x, skip=("choices", "claims_word_for_word", "constants")):
         if isinstance(x, str):
             yield x
         elif isinstance(x, list):
             for v in x:
-                yield from self._strings(v, skip_choices)
+                yield from self._strings(v, skip)
         elif isinstance(x, dict):
             for k, v in x.items():
-                if not (skip_choices and k == "choices"):
-                    yield from self._strings(v, skip_choices)
+                if k not in skip:
+                    yield from self._strings(v, skip)
 
     def test_every_choice_number_names_its_choice(self):
-        """Every 'choice N' in the JSON is followed by '(name)', the name of the Nth entry of the choices list."""
+        """Every 'choice N' in the JSON is followed by '(name)', the name of the Nth entry of the choices list (the
+        choices themselves, the claims copied word for word and the constants aside)."""
         import re
         choices = self.d["choices"]
         for i, c in enumerate(choices):
@@ -581,6 +622,19 @@ class TestDraftJson(unittest.TestCase):
             defined.update(x.strip() for x in re.split(r",| and ", row) if x.strip())
         used = set(re.findall(r"\[([A-Z][A-Za-z0-9]*)\]", sec[len(table):]))
         self.assertTrue(used <= defined, used - defined)
+
+    def test_documents_are_final(self):
+        """The documents carry the final status lines, a section 14.6, and no draft status."""
+        lines = self.doc.split("\n")
+        self.assertEqual(lines[0], "# Hiding the commands near 80%: pre-registration (version 8, near-80)")
+        bold = "**" + K.STATUS_LINE_FINAL + "**"
+        self.assertEqual(lines[2], bold)
+        self.assertEqual(self.readme.split("\n")[2], bold)
+        self.assertTrue(any(line.startswith("### 14.6 ") for line in lines))
+        for text in (self.doc, self.readme):
+            self.assertNotIn("**DRAFT", text)
+            self.assertNotIn("this draft", text.lower())
+        self.assertEqual(N.STATUS, K.STATUS_LINE_FINAL)
 
 
 if __name__ == "__main__":
