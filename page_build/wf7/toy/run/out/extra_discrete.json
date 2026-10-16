@@ -1,0 +1,87 @@
+{
+ "notebook": "extra_discrete.ipynb",
+ "seconds": 1.6,
+ "cells": [
+  {
+   "cell": 1,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 3,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Training counts [time, context, action]:\n [[[263 240]\n  [ 53  44]]\n\n [[396 107]\n  [ 97   0]]]\nFrozen critic:\n [[[1.1        1.3       ]\n  [1.1        1.44545455]]\n\n [[1.         1.62616822]\n  [1.         2.5       ]]]\nTrain-only count scales:\n [[[0.06166264 0.06454972]\n  [0.13736056 0.15075567]]\n\n [[0.05025189 0.09667365]\n  [0.10153462 1.        ]]]\n"
+    }
+   ]
+  },
+  {
+   "cell": 6,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Known context ratios: [0.41176471 4.33333333]   E_test[w] = 2.960784313725491\nstage, empirical, credible, BCA, weighted empirical, weighted credible, weighted BCA\n(0, 0.0, 0.0, 0.0, 4.3418, 6.2714, 6.2714)\n(1, 16.8212, 16.8212, 16.8212, 14.211, 14.211, 14.211)\n"
+    }
+   ]
+  },
+  {
+   "cell": 8,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Supported shifted test: method | stage | finite coverage: sampled, exact | refusal | mean finite full width\nempirical            0  0.674  0.6750  0.000  0.000\nempirical            1  1.000  1.0000  0.000  2.949\nconformal            0  0.674  0.6750  0.000  0.000\nconformal            1  1.000  1.0000  0.000  2.949\nBCA                  0  0.674  0.6750  0.000  0.000\nBCA                  1  1.000  1.0000  0.000  2.949\nweighted empirical   0  0.842  0.8375  0.000  1.005\nweighted empirical   1  0.955  0.9563  0.000  2.492\nweighted conformal   0  0.842  0.8375  0.000  1.005\nweighted conformal   1  0.955  0.9563  0.000  2.492\nweighted BCA         0  1.000  1.0000  0.000  1.451\nweighted BCA         1  0.955  0.9563  0.000  2.492\n\nNo-shift control, exact (contexts from P_CAL): method | stage 0 | stage 1\nempirical            0.9250  1.0000\nconformal            0.9250  1.0000\nBCA                  0.9250  1.0000\n\nNovelty probe, terminal stage (NaN means no finite certificate):\nconformal            refusal=1.000  finite coverage=nan  width=nan\nBCA                  refusal=1.000  finite coverage=nan  width=nan\nweighted conformal   refusal=1.000  finite coverage=nan  width=nan\nweighted BCA         refusal=1.000  finite coverage=nan  width=nan\n\nORACLE world: harmful\nTrue Q^safe:\n [[[ 1.1  1.3]\n  [ 1.1  1.3]]\n\n [[ 1.   1.5]\n  [ 1.  -3.6]]]\nBCA finite-cell Q^safe containment = 0.8571428571428571 finite-cell mean abs Q error = 0.038803252821944474\nweighted BCA finite-cell Q^safe containment = 1.0 finite-cell mean abs Q error = 0.038803252821944474\nmethod | return | regret | failure risk | actions [t,c] | fallback states\nno penalty            -1.515   2.990   0.520 [[1, 1], [1, 1]] 0\nsupport only           1.475   0.000   0.000 [[1, 1], [1, 0]] 0\nscale only             1.475   0.000   0.000 [[1, 1], [1, 0]] 0\nconformal              1.300   0.175   0.000 [[1, 1], [0, 0]] 0\nBCA                    1.300   0.175   0.000 [[1, 1], [0, 0]] 0\nweighted conformal     1.300   0.175   0.000 [[1, 1], [0, 0]] 0\nweighted BCA           1.300   0.175   0.000 [[1, 1], [0, 0]] 0\n\nORACLE world: harmless\nTrue Q^safe:\n [[[1.1 1.3]\n  [1.1 1.3]]\n\n [[1.  1.5]\n  [1.  2. ]]]\nBCA finite-cell Q^safe containment = 0.8571428571428571 finite-cell mean abs Q error = 0.038803252821944474\nweighted BCA finite-cell Q^safe containment = 1.0 finite-cell mean abs Q error = 0.038803252821944474\nmethod | return | regret | failure risk | actions [t,c] | fallback states\nno penalty             2.125   0.000   0.000 [[1, 1], [1, 1]] 0\nsupport only           1.475   0.650   0.000 [[1, 1], [1, 0]] 0\nscale only             1.475   0.650   0.000 [[1, 1], [1, 0]] 0\nconformal              1.300   0.825   0.000 [[1, 1], [0, 0]] 0\nBCA                    1.300   0.825   0.000 [[1, 1], [0, 0]] 0\nweighted conformal     1.300   0.825   0.000 [[1, 1], [0, 0]] 0\nweighted BCA           1.300   0.825   0.000 [[1, 1], [0, 0]] 0\n"
+    }
+   ]
+  },
+  {
+   "cell": 10,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 12,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "All checks passed. Calibration effective sample size (ESS): 97.22\nMain notebook elapsed seconds: 0.916\n"
+    }
+   ]
+  },
+  {
+   "cell": 14,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Optional seed sweep skipped.\n"
+    }
+   ]
+  },
+  {
+   "cell": 16,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "EXTRA cal contexts seed 7: 264 36\nEXTRA weight sums 264.7058823529412 720.76\nEXTRA stage-0 scores [(0.0, 284), (4.3418, 12), (6.2714, 4)]\nEXTRA break-even at (1,0): 13.4887\nEXTRA BCA widths at (1,0): [0.8452978541271792, 1.6261682242990656] weighted: [0.7141309457281341, 1.3738317757009346]\n"
+    }
+   ]
+  }
+ ]
+}
