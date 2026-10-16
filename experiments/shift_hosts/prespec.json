@@ -1,0 +1,1285 @@
+{
+ "kind": "shift-hosts-prespec",
+ "version": 1,
+ "title": "Unifloral hosts on ThrusterChain: pre-specification version 1",
+ "drafted": "2026-10-16",
+ "approval_summary": [
+  "12 setups per quality: TD3+BC, CQL, IQL and ReBRAC, each alone, with standard BCA and with IW BCA.",
+  "Unifloral at f2dc127, its own defaults; discount 0.98; 100,000 outer steps; JAX 0.6.2 on the card.",
+  "Data: the weighting test's logs, medium-expert and medium, gapped, data seeds 0-4 (hashes fixed).",
+  "Per quality: 60 setup runs, 20 room references, 2 sham-alone runs (TD3+BC, IQL); stage 1 first.",
+  "Caps: medium-expert 14 card-h / 21 processor-h (stages 1-2a); medium 12 / 16 (stage 2b).",
+  "Stage 0 (building and testing, about 4.2 card-h / 17 processor-h) is booked separately, as you chose.",
+  "Stage 3 only where Claim 1 or 2 passes, under a later version you approve, at most 4 / 6 per quality.",
+  "Stop rules S0-S11 with fixed thresholds; any stop halts the driver and nothing is retried silently.",
+  "Claims 0-6, kill rules fixed now: bar +1.8 return units, one-sided 95% bounds, Holm over 4 learners.",
+  "Decisions: CQL's two programs; sham-alone for TD3+BC and IQL; NaN threshold stops, R = +inf refuses.",
+  "Decisions: IQL keeps its learner part on learner-side validity; S9 compares with this environment.",
+  "Amendments made while building are listed with reasons in PRESPEC.md section 16.",
+  "Seeds 0-4 are exploratory: no claim from them is confirmatory.",
+  "Seeds 10-14 of the weighting test's generator (master seed 20261016) are reserved for a confirmation.",
+  "Any later change to code, settings or rules needs a new version and your approval at this terminal."
+ ],
+ "documents": {
+  "prespec_md": "experiments/shift_hosts/PRESPEC.md: the plain-language pre-specification; this file is its machine-readable part. PRESPEC.md is covered by the code manifest; this file by its own SHA-256 in the fingerprint. The two state the same rules.",
+  "plan": "PLAN_UNIFLORAL.md (the approved plan; wf6/plan)",
+  "plan_sha256": "c2cd916f39a9aeef506ee78bc58e21e9c5df6ad7bf3556d469ab70187e6149cb",
+  "fix_log": "FIX_LOG.md (how the plan's three reviews changed it; wf6/plan)",
+  "fix_log_sha256": "3d95c01db8942be3fb91c86bfe0f17a05a82f292ac44d26812d034e5b84041d1"
+ },
+ "plan_sha256": "c2cd916f39a9aeef506ee78bc58e21e9c5df6ad7bf3556d469ab70187e6149cb",
+ "unifloral_pin": {
+  "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+  "manifest": "configs/unifloral.json",
+  "manifest_sha256": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+  "files_sha256": {
+   "baselines/unifloral/algorithms/td3_bc.py": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+   "baselines/unifloral/algorithms/cql.py": "41edbf1c11ad7b408ee6eafd94420e8fd1932afc8bbf72032bc1b9ff47213061",
+   "baselines/unifloral/algorithms/iql.py": "088fca23120fc76fc9e33d01dfe6511726de9790dd3063c806d6a3e2a96992d7",
+   "baselines/unifloral/algorithms/rebrac.py": "d7ea2b2bdf59b35ea6fb2370ca926b8d291bcad566bd0f5a9adbeafe74178d4f"
+  },
+  "imported_by_path": "each file is imported under a module name other than __main__, after its SHA-256 check, with bytecode writing off; its training block never runs (plan 3.1)",
+  "jax_deviation": "Unifloral pins jax[cuda] < 0.6 (baselines/unifloral/requirements.txt:2); training uses /opt/bca-venv with JAX 0.6.2 and the CUDA 12 plugin (choice 9), plus its local zzz_numpy_aliases.pth; equality with an older JAX is not verified"
+ },
+ "settings": {
+  "rule": "each file's Python Args defaults at the pin (td3_bc.py:23-46, cql.py:25-49, iql.py:24-46, rebrac.py:24-52); nothing tuned (plan 3.2)",
+  "args": {
+   "td3_bc": {
+    "lr": 0.0003,
+    "batch_size": 256,
+    "polyak_step_size": 0.005,
+    "td3_alpha": 2.5,
+    "policy_noise": 0.2,
+    "noise_clip": 0.5,
+    "num_critic_updates_per_step": 2
+   },
+   "cql": {
+    "lr": 0.0003,
+    "actor_lr": 3e-05,
+    "batch_size": 256,
+    "polyak_step_size": 0.005,
+    "num_critics": 10,
+    "cql_temperature": 1.0,
+    "cql_min_q_weight": 10.0
+   },
+   "iql": {
+    "lr": 0.0003,
+    "lr_schedule": "cosine to 0 over num_updates, every network",
+    "batch_size": 256,
+    "polyak_step_size": 0.005,
+    "beta": 3.0,
+    "iql_tau": 0.7,
+    "exp_adv_clip": 100.0
+   },
+   "rebrac": {
+    "lr": 0.001,
+    "batch_size": 1024,
+    "polyak_step_size": 0.005,
+    "policy_noise": 0.2,
+    "noise_clip": 0.5,
+    "num_critic_updates_per_step": 2,
+    "critic_bc_coef": 0.01,
+    "actor_bc_coef": 0.001,
+    "actor_ln": false,
+    "critic_ln": true,
+    "norm_obs": false
+   }
+  },
+  "exceptions_all_four": {
+   "gamma": 0.98,
+   "num_updates": 100000,
+   "eval_interval": 2500,
+   "seed": "seeds.streams.unifloral_args_seed_tag31",
+   "data": "the file's own Transition from the prepared arrays, raw observations, done = 0 on every row, time-limit rows (t = 99) kept with their true next states (choice 2)",
+   "scoring": "the project's exact float64 rollouts (scoring), not Unifloral's evaluation"
+  },
+  "card_arithmetic": {
+   "xla_flags_in_effect": "--xla_gpu_deterministic_ops=true",
+   "replaces_unifloral_import_flag": "--xla_gpu_triton_gemm_any=True",
+   "matmul_precision": "highest",
+   "xla_python_client_preallocate": "false",
+   "training_env_processor_processes_also": "--xla_cpu_multi_thread_eigen=false (amendment A5)"
+  },
+  "environments": {
+   "training": "/opt/bca-venv/bin/python (Python 3.10.12, numpy 1.26.4, JAX 0.6.2): the only one that imports the Unifloral files",
+   "scoring": "/opt/bca-shift-venv/bin/python (numpy 2.2.6): data preparation and scoring",
+   "handoff": "no process holds both a Unifloral network and the simulator; files pass with SHA-256 sidecars (handoff.py)"
+  }
+ },
+ "schedule": {
+  "num_updates": 100000,
+  "chunk": 2500,
+  "chunks": 40,
+  "refresh_steps": [
+   10000,
+   15000,
+   20000,
+   25000,
+   30000,
+   35000,
+   40000,
+   45000,
+   50000,
+   55000,
+   60000,
+   65000,
+   70000,
+   75000,
+   80000,
+   85000,
+   90000,
+   95000
+  ],
+  "refreshes": 18,
+  "refresh_rule": "after outer steps 10,000, 15,000, ..., 95,000 (none at the end), between chunks",
+  "s10_step": 10000,
+  "key_hash_steps": [
+   2500,
+   50000,
+   100000
+  ],
+  "snapshot_steps": [
+   10000,
+   50000,
+   95000,
+   100000
+  ],
+  "scored_steps": {
+   "judged": 100000,
+   "shown": 50000
+  },
+  "coverage_step": 95000,
+  "stage1_steps": 15000,
+  "stage1_refresh_steps": [
+   10000
+  ],
+  "stage1_key_hash_steps": [
+   2500
+  ],
+  "cql_programs": "standard and IW: Unifloral's pre-refresh program (dose_active=False) for outer steps 1-10,000, the dose-active program from the first refresh on (decision 1)"
+ },
+ "environment": {
+  "s9_signature": {
+   "backend": "gpu",
+   "card": {
+    "driver_version": "610.62",
+    "name": "NVIDIA GeForce RTX 5070 Ti Laptop GPU"
+   },
+   "device": "gpu",
+   "devices": [
+    "cuda:0"
+   ],
+   "env": {
+    "CUDA_VISIBLE_DEVICES": null,
+    "D4RL_SUPPRESS_IMPORT_ERROR": "1",
+    "DISPLAY": "",
+    "JAX_PLATFORMS": null,
+    "LD_LIBRARY_PATH": "/root/.mujoco/mujoco210/bin",
+    "MUJOCO_GL": "osmesa",
+    "MUJOCO_PY_MUJOCO_PATH": "/root/.mujoco/mujoco210",
+    "OMP_NUM_THREADS": "1",
+    "PYOPENGL_PLATFORM": "osmesa",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "SHIFT_HOSTS_DEVICE": "gpu",
+    "XLA_PYTHON_CLIENT_PREALLOCATE": "false"
+   },
+   "executable": "/opt/bca-venv/bin/python",
+   "jax_platforms": null,
+   "matmul_precision": "highest",
+   "packages": {
+    "chex": "0.1.90",
+    "d4rl": "1.1",
+    "distrax": "0.1.5",
+    "flax": "0.10.7",
+    "gym": "0.23.1",
+    "jax": "0.6.2",
+    "jax-cuda12-pjrt": "0.6.2",
+    "jax-cuda12-plugin": "0.6.2",
+    "jaxlib": "0.6.2",
+    "mujoco-py": "2.1.2.14",
+    "numpy": "1.26.4",
+    "optax": "0.2.8",
+    "scipy": "1.15.3",
+    "tyro": "1.0.13",
+    "wandb": "0.27.0"
+   },
+   "python": "3.10.12",
+   "unifloral_manifest_sha256": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+   "unifloral_revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+   "xla_flags": "--xla_gpu_deterministic_ops=true"
+  },
+  "s9_signature_source": "stages.env_signature of the final stage-0 suite's card process (suite run 20261015T230917Z, SUMMARY.json s9_signature_draft); the same signature is carried by all 58 card-process import records of stage 0",
+  "s9_compares": "every key above, against stages.env_signature(record) of every card run (decision 5)",
+  "launch": "the stage driver is started with LD_LIBRARY_PATH unset and without JAX_PLATFORMS or CUDA_VISIBLE_DEVICES, so card runs record LD_LIBRARY_PATH=/root/.mujoco/mujoco210/bin; root's login shell adds /usr/lib/wsl/lib, which S9 would stop"
+ },
+ "data": {
+  "source": "the weighting test's data, spec version 5, stalling world, master seed 20261016, built by experiments/shift_iw/data.py (plan 2.1)",
+  "qualities": {
+   "medium-expert": "65% of steps uniform random in half the episodes, none in the other half",
+   "medium": "65% of steps uniform random in every episode (a separate test bed, its own Holm families and cap)"
+  },
+  "data_seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "layout": "1,000 episodes of 100 steps per seed: 0-499 train, 500-699 calibrate (5 bank rows each), 700-999 held out; 300-episode test logs under the mild and strong laws",
+  "gap": "the densest-15% ball of commands of the same seed's expert log (experiments/truth/gap.find_gap), cut from training and bank rows only; the uncut full log serves only the room references (plan 2.2)",
+  "copy_manifest": "runs/shift_hosts/source/copy_manifest.json",
+  "copy_manifest_sha256": "2b8c825bfb7d0529e253dcb2de4d5c7849a1907ec86ffe5d9c68e39186c62977",
+  "copied_files": 297,
+  "summary": "runs/shift_hosts/data/summary.json",
+  "summary_sha256": "a6ad49e2a6d1cd1c8571ac756235729a57cbd2bb1d4d0ddf104ab4838ee48d3b",
+  "files": [
+   {
+    "quality": "medium-expert",
+    "seed": 0,
+    "prepared_npz": "runs/shift_hosts/data/medium-expert/seed0/prepared.npz",
+    "prepared_npz_sha256": "58c4f7571f5bca3ccf34cca7f210ccd80d0cc953349f1ae672dd96d8635f4176",
+    "prepared_json": "runs/shift_hosts/data/medium-expert/seed0/prepared.json",
+    "prepared_json_sha256": "6c5f95c0b426ca72ff5f349e2add6faf3e1a25bdf5ce54c17db6a710a751d05b",
+    "rows": {
+     "train": 45301,
+     "bank": 901,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 326.5,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0778,
+     "highest_current_tenth": 0.2379
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium-expert",
+    "seed": 1,
+    "prepared_npz": "runs/shift_hosts/data/medium-expert/seed1/prepared.npz",
+    "prepared_npz_sha256": "2447d191a5a135bb0508d7f3870dacb62c0696de35d4c1b74a4c9e68f707e9e2",
+    "prepared_json": "runs/shift_hosts/data/medium-expert/seed1/prepared.json",
+    "prepared_json_sha256": "c9c48b881747f8a5837b3e84cdf2a8feaa6a1e623d37a310cc24389954890583",
+    "rows": {
+     "train": 45372,
+     "bank": 891,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 321.2,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0782,
+     "highest_current_tenth": 0.2574
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium-expert",
+    "seed": 2,
+    "prepared_npz": "runs/shift_hosts/data/medium-expert/seed2/prepared.npz",
+    "prepared_npz_sha256": "df6120f00fcf1d7155c7cf75bd091febf49f8e14c24c8c6a20b0d90df9de8b9c",
+    "prepared_json": "runs/shift_hosts/data/medium-expert/seed2/prepared.json",
+    "prepared_json_sha256": "a90a615704883d4d72dfb35adee730182159875e390f04d4e9b00a4e03157f02",
+    "rows": {
+     "train": 45005,
+     "bank": 869,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 323.3,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0815,
+     "highest_current_tenth": 0.2694
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium-expert",
+    "seed": 3,
+    "prepared_npz": "runs/shift_hosts/data/medium-expert/seed3/prepared.npz",
+    "prepared_npz_sha256": "4746e8a0566eabdefd07c98aa757541e54acfc9275bc98b9df148c539644807c",
+    "prepared_json": "runs/shift_hosts/data/medium-expert/seed3/prepared.json",
+    "prepared_json_sha256": "9372c7acdb1134ccfc59ace280ad9dd53f35146d9911985833e9280ac5d50610",
+    "rows": {
+     "train": 44923,
+     "bank": 924,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 347.3,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0819,
+     "highest_current_tenth": 0.2656
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium-expert",
+    "seed": 4,
+    "prepared_npz": "runs/shift_hosts/data/medium-expert/seed4/prepared.npz",
+    "prepared_npz_sha256": "7dc21939e9d3d2089540c9c0ebde4e601785923e6424565c53938d143ba1c0c0",
+    "prepared_json": "runs/shift_hosts/data/medium-expert/seed4/prepared.json",
+    "prepared_json_sha256": "34f45fa8ffa3e21adb612e2f9a85e20734e8f7b7818955ab95b73a60288d7269",
+    "rows": {
+     "train": 44902,
+     "bank": 892,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 299.0,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.084,
+     "highest_current_tenth": 0.2877
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium",
+    "seed": 0,
+    "prepared_npz": "runs/shift_hosts/data/medium/seed0/prepared.npz",
+    "prepared_npz_sha256": "5c433e8ac1b57f78f97835457172e481dc941b0a113af965da2f76cc5ed4da25",
+    "prepared_json": "runs/shift_hosts/data/medium/seed0/prepared.json",
+    "prepared_json_sha256": "c4be01d37ff3d57c0c32ef538342a35a97f3002ee63a8ec43e7df5d5af939ca0",
+    "rows": {
+     "train": 47439,
+     "bank": 942,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 350.4,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0557,
+     "highest_current_tenth": 0.1707
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium",
+    "seed": 1,
+    "prepared_npz": "runs/shift_hosts/data/medium/seed1/prepared.npz",
+    "prepared_npz_sha256": "c25704833fc7a0ff1f2d93f13f2ce4360fd56725a52cf982e3dff1c0b7b57116",
+    "prepared_json": "runs/shift_hosts/data/medium/seed1/prepared.json",
+    "prepared_json_sha256": "84fddc455d4528867d59a07edee97fa32e0aa03c9276c7bf28a93845f2263db9",
+    "rows": {
+     "train": 47479,
+     "bank": 933,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 326.4,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0547,
+     "highest_current_tenth": 0.1719
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium",
+    "seed": 2,
+    "prepared_npz": "runs/shift_hosts/data/medium/seed2/prepared.npz",
+    "prepared_npz_sha256": "607bbd1922060c612a23ece36afd29709be59e79a4cddcee67bfb49d3f14260c",
+    "prepared_json": "runs/shift_hosts/data/medium/seed2/prepared.json",
+    "prepared_json_sha256": "f9e617f9f925f1008f7b86ab0f853ea16cef5c787ea950b39b71851af14b81d0",
+    "rows": {
+     "train": 47548,
+     "bank": 934,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 363.2,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0534,
+     "highest_current_tenth": 0.1595
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium",
+    "seed": 3,
+    "prepared_npz": "runs/shift_hosts/data/medium/seed3/prepared.npz",
+    "prepared_npz_sha256": "46cd251426d523f7601956cbdef50c8e384b985ae754474c74fd03335ea33f11",
+    "prepared_json": "runs/shift_hosts/data/medium/seed3/prepared.json",
+    "prepared_json_sha256": "0954d0b9b30b5a2078bb275d4846a078156ff8fbbb8cf5130d70ab3c45eb1fe2",
+    "rows": {
+     "train": 47502,
+     "bank": 964,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 368.8,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0551,
+     "highest_current_tenth": 0.1693
+    },
+    "s11": true
+   },
+   {
+    "quality": "medium",
+    "seed": 4,
+    "prepared_npz": "runs/shift_hosts/data/medium/seed4/prepared.npz",
+    "prepared_npz_sha256": "03368678ce6c71fdee6c3ae1f5fa8888dd77857ed8cd684e075c8541f585cb13",
+    "prepared_json": "runs/shift_hosts/data/medium/seed4/prepared.json",
+    "prepared_json_sha256": "49784c1811e070b1385d2f5e342d3d3fce3a4933be8e96e507c46c1de899f9db",
+    "rows": {
+     "train": 47458,
+     "bank": 954,
+     "full": 50000,
+     "test_strong": 30000,
+     "test_mild": 30000
+    },
+    "bank_kish_exact_weights": 334.6,
+    "rebrac_substituted_next_command_share": {
+     "train": 0.0559,
+     "highest_current_tenth": 0.1778
+    },
+    "s11": true
+   }
+  ],
+  "start_banks": {
+   "start_banks.hdf5": "9ad49e478dffdbc16160c3f69637dfb15b110035d64cf5951608d2b73904d50b",
+   "start_banks.json": "cceb2f2d54c179cbfb00185c4d5dedf62c6ff7838f8357d6fe47596eeb3cb740",
+   "folder": "runs/shift_hosts/source/start_banks"
+  },
+  "exact_iw_weight": "w(c) = p_strong(c) / p_train(c) = 0.090718 e^(4c), in [e^-2, e^2] on every row"
+ },
+ "setups": {
+  "per_learner": {
+   "alone": "Unifloral's imported make_train_step, gapped log",
+   "standard": "restated step with BCA, one threshold for every row; refused rows dose 1 (IQL weight 0)",
+   "iw": "the same restated step, a threshold per row from exact weights; refused rows most caution"
+  },
+  "learners": [
+   "td3_bc",
+   "cql",
+   "iql",
+   "rebrac"
+  ],
+  "also_run": {
+   "room": "each learner alone on the full log, seeds 0-4 (20 per quality); changes no verdict except an S5, which is its learner's Claim 0 failure",
+   "sham_alone": "restated step with BCA present and never refreshed; seed 0, 100,000 steps; TD3+BC and IQL only, one per quality (choice 19, decision 2); reported, never judged",
+   "stage1": "medium-expert, seed 0, 15,000 steps: alone, standard, iw, iw_ones (every weight 1), iw_repeat per learner (20 runs); no return read"
+  },
+  "card_runs_per_quality_100k": 82,
+  "reference_row": "CORL-derived TD3+BC (weighting test), read from its own records after approval; never in a claim, a Holm family or a kill rule"
+ },
+ "bca": {
+  "band": "q +- U around the critic's value; target the learner's own one-step error |y - q|",
+  "width": "U = R x u x max(eta, 1e-6)",
+  "blend": 0.5,
+  "scale_lr": 0.001,
+  "sharpness": 20.0,
+  "width_penalty": 0.005,
+  "unit_averaging": 0.99,
+  "miscoverage": 0.1,
+  "credibility": 0.95,
+  "draws": 1000,
+  "min_bank_rows": 36,
+  "iql": {
+   "scale_hidden": 64,
+   "balance_weight": 0.5,
+   "decision_gain": 1.0,
+   "adam_eps": 1e-05
+  },
+  "scale_network_adam_eps_td3_bc_cql_rebrac": 1e-08,
+  "dose": "1 + 0.5 x U / (U + u), in [1, 1.5], read at the recorded (state, command) with no gradient",
+  "iql_weight": "w = 1 + A / (A + U) x (min(e^(3A), 100) - 1) for A > 0; Unifloral's weight elsewhere",
+  "fit": "once per outer step on that step's batch, Bayesian-bootstrap weights, soft coverage loss",
+  "where": {
+   "td3_bc": "each row's cloning error in the actor loss; fit before both critic updates (choice 13)",
+   "rebrac": "actor_bc_coef * (sg(m) * bc_loss).mean(); doses in [1, 2]; fit as TD3+BC",
+   "cql": "each row's conservative gap for all ten critics; fit just before the critic loss (choice 14)",
+   "iql": "positive-advantage actor weights; fit after the target averaging (choice 15)"
+  }
+ },
+ "iw": {
+  "weights": "exact w(c) from the observed current; bank rows weighted, each training row a test point with its own mass",
+  "grid": "t = 1.01^k covering every training row's and strong-law test step's mass plus w(0.1) and w(1.1); each row rounds its mass up to the next grid point",
+  "grid_ratio": 1.01,
+  "weights_of_one": "grid [1.0]; must equal standard bit for bit (S2)",
+  "refused_rows": {
+   "td3_bc": "dose 1.5",
+   "cql": "dose 1.5",
+   "rebrac": "dose 1.5",
+   "iql": "weight 1 where A > 0, Unifloral's weight elsewhere"
+  },
+  "last_refresh_readouts": "estimated-weight table and coverage (choice 20), shuffled-weights placebo, dose change against the standard threshold; reported, never judged"
+ },
+ "scoring": {
+  "banks": [
+   "none",
+   "mild",
+   "strong",
+   "recorded",
+   "strong_current",
+   "big_waves",
+   "big_kicks"
+  ],
+  "claims_bank": "strong",
+  "rollout": "float64 simulator, 100 steps; parameters cast to float64, observation rounded to float32 first; nan_to_num on the command",
+  "actions": {
+   "td3_bc": "tanh output",
+   "rebrac": "tanh output",
+   "iql": "the mean (already through tanh)",
+   "cql": "sampled tanh-Gaussian with the declared noise; tanh of the mean scored and shown"
+  },
+  "cql_noise": "default_rng([20261016, 1004, bank index]) standard normals 1,000 x 100 x 4 rounded to float32, bank index in the order of banks",
+  "failure_events": {
+   "F1": "the episode's return is strictly below the zero-command controller's return from the same start",
+   "F2": "from state 10 on, the largest norm of the five floats' 10 position and speed numbers is strictly above the 99th percentile (numpy linear) of the same quantity for the stall-aware controller on the same bank"
+  },
+  "points_anchors_strong": {
+   "random": -1351.41,
+   "stall_aware": -80.61
+  }
+ },
+ "seeds": {
+  "master_seed": 20261016,
+  "data_seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "status": "exploratory: already seen by the weighting test; no claim from them is confirmatory",
+  "streams": {
+   "unifloral_args_seed_tag31": {
+    "rule": "default_rng([20261016, rep, 31]).integers(2**31 - 1)",
+    "values": [
+     1903938727,
+     1254516358,
+     233067169,
+     887362575,
+     1751479981
+    ]
+   },
+   "bca_fit_s91_tag91": {
+    "rule": "default_rng([20261016, rep, 91]).integers(2**31 - 1); per-step key fold_in(PRNGKey(s91), outer step)",
+    "values": [
+     1122691669,
+     1435880987,
+     513185736,
+     284360605,
+     1463282055
+    ]
+   },
+   "bca_refresh_s39_tag39": {
+    "rule": "default_rng([20261016, rep, 39]).integers(2**31 - 1); refresh key fold_in(PRNGKey(s39), step)",
+    "values": [
+     512079666,
+     1501176378,
+     1809802209,
+     783476312,
+     382535294
+    ]
+   },
+   "fold_constants": {
+    "td3_bc_and_cql": {
+     "scale_init": 1128352841,
+     "fit_noise": 1179210836,
+     "bootstrap": 1128352850,
+     "refresh_noise": 1213156420,
+     "posterior": 1347375956
+    },
+    "rebrac": {
+     "scale_init": 1380141390,
+     "fit_noise": 1380338004,
+     "bootstrap": 1380077391,
+     "refresh_noise": 1380470604,
+     "posterior": 1380994899
+    },
+    "iql": {
+     "scale_init": 1111703881,
+     "bootstrap": 1111704112,
+     "posterior": 1347375956
+    }
+   },
+   "cql_scoring_noise": "default_rng([20261016, 1004, bank index])",
+   "placebo_permutation_tag95": "default_rng([20261016, rep, 95]).permutation(bank rows)",
+   "coverage_target_noise_tag51": "default_rng([20261016, rep, 51, 2]) (recorded steps), with one more tag 1 (actor commands) or 2 (visited states)",
+   "coverage_bootstrap": [
+    20261016,
+    77
+   ]
+  },
+  "unifloral_key": "PRNGKey(Args.seed), the file's own network split, one split after every 2,500-step chunk (its evaluation key, discarded); BCA's streams never touch it",
+  "reserved_for_confirmation": {
+   "data_seeds": [
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "generator": "the weighting test's (experiments/shift_iw/data.py), master seed 20261016",
+   "separate_from": "version 8's main-study seeds 10-14 (master seed 20261012)",
+   "rule": "nothing in this study creates, reads or trains on them; a confirmation of a passing claim uses them under a pre-registration that keeps these pass marks, approved at the user's terminal"
+  }
+ },
+ "choices": {
+  "1": {
+   "question": "Budget unit",
+   "value": "100,000 outer steps for all four learners"
+  },
+  "2": {
+   "question": "Time-limit rows (t = 99)",
+   "value": "kept, done = 0"
+  },
+  "3": {
+   "question": "Normalization statistics (TD3+BC, IQL, every scale network)",
+   "value": "Unifloral's own: mean and standard deviation of the training rows, NaN replaced by 1"
+  },
+  "4": {
+   "question": "ReBRAC's next command",
+   "value": "Unifloral's roll over kept rows (rebrac.py:335); bank rows by the same roll within the cut calibration episodes"
+  },
+  "5": {
+   "question": "ReBRAC's actor cloning weight",
+   "value": 0.001
+  },
+  "6": {
+   "question": "CQL's strength",
+   "value": "weight 10 over 10 pooled critics"
+  },
+  "7": {
+   "question": "CQL scoring",
+   "value": "sampled, declared noise default_rng([20261016, 1004, bank]) rounded to float32, the same for every CQL setup and seed; tanh of the mean scored and shown"
+  },
+  "8": {
+   "question": "Card arithmetic",
+   "value": "--xla_gpu_deterministic_ops=true and matrix precision highest; Unifloral's Triton flag replaced after import and recorded"
+  },
+  "9": {
+   "question": "Environment",
+   "value": "/opt/bca-venv, JAX 0.6.2, a recorded deviation"
+  },
+  "10": {
+   "question": "Device",
+   "value": "all four learners on the card"
+  },
+  "11": {
+   "question": "IQL",
+   "value": "three separate runs; alone is Unifloral's unchanged step; test (d) not needed"
+  },
+  "12": {
+   "question": "Room references",
+   "value": "included: each learner alone on the full log, 20 per quality"
+  },
+  "13": {
+   "question": "TD3+BC and ReBRAC band fits",
+   "value": "one per outer step, before both critic updates, critics at the start of the step, BCA's own noise draw"
+  },
+  "14": {
+   "question": "CQL band",
+   "value": "q = min of the 10 online critics; fit just before the critic loss with the updated actor, alpha and target critics and BCA's own draw; one dose per row for all 10 critics; refresh from the stored state"
+  },
+  "15": {
+   "question": "IQL band",
+   "value": "q = the target copy this step's advantage reads; refresh q = Polyak(stored target, stored critic, 0.005); fitter keys from BCA's stream"
+  },
+  "16": {
+   "question": "IW refused rows",
+   "value": "most caution: dose 1.5; IQL weight 1 on positive advantage"
+  },
+  "17": {
+   "question": "Medium quality",
+   "value": "included, its own Holm families and cap; runs only if every stop rule passed through stage 2a"
+  },
+  "18": {
+   "question": "Holm family",
+   "value": "the four learners per claim per quality; add-ons never join; every learner stays in"
+  },
+  "19": {
+   "question": "If test (a2) matches only to rounding on the card",
+   "value": "keep the pairing with the imported alone run; one seed-0 sham-alone run per affected learner and quality, reported beside the claims",
+   "applies": {
+    "td3_bc": true,
+    "cql": false,
+    "iql": true,
+    "rebrac": false
+   }
+  },
+  "20": {
+   "question": "Estimated-weight readout",
+   "value": "at the last refresh only: one extra threshold table and its coverage"
+  }
+ },
+ "decisions": [
+  {
+   "id": 1,
+   "what": "CQL's BCA runs use two compiled programs: Unifloral's pre-refresh program (dose_active=False) until outer step 10,000, then the dose-active program",
+   "why": "the single program drifts 1.55e-4 relative on the card at a dose of exactly 1 (test (a2) allows 1e-6); before the first refresh every dose is exactly 1"
+  },
+  {
+   "id": 2,
+   "what": "choice 19 follows the plan's letter: TD3+BC and IQL recorded card rounding differences in test (a2), so S10 is a readout for them and each quality gets a seed-0 sham-alone run for each; CQL and ReBRAC no",
+   "why": "TD3+BC: state and key bit for bit, logged losses within 8.0e-8 relative; IQL: every leaf within 3.8e-7 relative; CQL (two programs) and ReBRAC bit for bit"
+  },
+  {
+   "id": 3,
+   "what": "S5: a NaN threshold stops; R = +inf is a counted refusal ('cannot certify'), not a stop",
+   "why": "plan 4.1 defines R = +inf as cannot certify, with refused rows counted"
+  },
+  {
+   "id": 4,
+   "what": "IQL keeps the learner part of its carry on learner-side validity (its Decision 1)",
+   "why": "selecting the whole carry on a flag that depends on the band fit changed Unifloral's compiled arithmetic (test (a2) failed on the processor); the flag still stops the run (S5)"
+  },
+  {
+   "id": 5,
+   "what": "the S9 signature is the final environment's (environment.s9_signature)",
+   "why": "taken from the final stage-0 suite's card process; equal in all 58 card records of stage 0"
+  }
+ ],
+ "stage_order": {
+  "stage0": "done: code transfer, package, tests (a1)-(i) and the guard's comparison on made-up arrays, data copy and preparation, scoring cache (no learning)",
+  "stage1": "medium-expert, seed 0, 15,000 steps; per learner alone, standard, iw one at a time, then iw_ones and iw_repeat two at once; then S7 on all 20 actors and S2, S4, S8, S10, S9, S6; no return read",
+  "stage2a": [
+   "sham-alone block (TD3+BC, IQL; seed 0)",
+   "seed 0",
+   "seed 1",
+   "seed 2",
+   "seed 3",
+   "seed 4",
+   "room-reference block (20 runs)"
+  ],
+  "stage2a_unit": "a seed is all 12 setups of every learner; S6b before each unit; S4 after every seed and after the room block",
+  "stage2b": "medium, the same, only after every stage-2a lane finished and every stop rule passed",
+  "stage3": "not in this package: only where Claim 1 or 2 passes, under a later version approved at the terminal; order: Claim 2's flattened and shuffled twins in Holm order, then Claim 1's flattened twins in Holm order, then the estimated-weight arm; all 5 seeds or none",
+  "where": "this laptop, WSL /root/bca-hosts, as root; card queue one run at a time (or two if stage 1 shows the gain); up to 8 processor lanes pinned with taskset; outputs under runs/shift_hosts/",
+  "card_cores_default": [
+   0,
+   1
+  ],
+  "lane_cores_default": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8,
+   9
+  ]
+ },
+ "driver_command": {
+  "start": "env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-venv/bin/python -m experiments.shift_hosts.stages start --stage0-card-hours 0 --stage0-processor-hours 0",
+  "operator_options_allowed": [
+   "--accept-s5 RUN_ID (an S5 on a BCA setup traced to the setup, not a package defect)",
+   "--resume-after-stop",
+   "--replace-incomplete RUN_ID ... (named runs that died without a record, each only once its process is gone)"
+  ],
+  "not_used_on_real_data": [
+   "--choice19",
+   "--learners",
+   "--qualities",
+   "--seeds",
+   "--card-device",
+   "--card-cores",
+   "--lane-cores",
+   "--root",
+   "--caps",
+   "--inject",
+   "--dry-run"
+  ]
+ },
+ "stop_rules": {
+  "meaning": "any stop halts the driver: nothing new launches, running children finish, driver/STOP.json and STOP.txt are written; nothing is retried silently; S5 on alone or room is that learner's Claim 0 outcome and the driver goes on; S5 on a BCA setup halts until traced; any change after approval needs a new version approved at the terminal",
+  "definitions": {
+   "bit_for_bit": "equal tobytes() of every leaf of learner state, optimizer states, key carry and per-step outputs",
+   "relative_difference": "max|a - b| / max|b| per leaf"
+  },
+  "S0": {
+   "rule": "any of tests (a1)-(i) or the guard's comparison fails",
+   "a2_card_rule_max_relative_after_60_steps": 1e-06,
+   "float32_rounding_max_relative": 1e-05,
+   "test_d": "not needed (choice 11)",
+   "when": "before stage 1, on the frozen bytes"
+  },
+  "S1": {
+   "rule": "at the start of any run: an imported Unifloral file differs from configs/unifloral.json, or the fingerprint (SHA-256 of prespec.json's SHA-256 and the code manifest) differs from the approved one, or the approval is not committed under the user's address",
+   "approval_email": "35092758+dbayha7@users.noreply.github.com",
+   "code_manifest": [
+    "experiments/shift_hosts/** (except prespec.json and approval_*)",
+    "baselines/unifloral/algorithms/{td3_bc,cql,iql,rebrac}.py",
+    "baselines/unifloral/Dockerfile",
+    "baselines/unifloral/requirements.txt",
+    "configs/unifloral.json",
+    "calibration/*.py",
+    "algorithms/*.py",
+    "runtime/*.py",
+    "experiments/__init__.py",
+    "experiments/shift/*.py",
+    "experiments/shift_iw/*.py",
+    "experiments/shift_iw/launch.sh",
+    "experiments/truth/*.py",
+    "experiments/signal/*.py",
+    "outputs/shift/oracle/oracle.py"
+   ]
+  },
+  "S2": {
+   "rule": "for any learner, iw_ones differs from standard in any bit after the refresh (final key, learner state, BCA state but the carried refusal rule, per-step outputs), or R(1) differs from the stored standard threshold in float32",
+   "when": "stage 1, seed 0, 15,000 steps"
+  },
+  "S3": {
+   "rule": "at any IW refresh, bank scores recomputed from the stored state with the refresh key fail to reproduce the stored standard threshold bit for bit",
+   "fields": [
+    "threshold",
+    "lambda_hat",
+    "lambda_hpd",
+    "n_eff"
+   ]
+  },
+  "S4": {
+   "rule": "a learner's setups differ in initial-parameter hashes (room included), or alone, standard and IW differ in the hash of Unifloral's key carried out of a chunk",
+   "key_hash_steps": [
+    2500,
+    50000,
+    100000
+   ],
+   "stage1_key_hash_steps": [
+    2500
+   ],
+   "stage1_setups": [
+    "alone",
+    "standard",
+    "iw",
+    "iw_ones",
+    "iw_repeat"
+   ],
+   "when": "after stage 1, after every seed, after the room block"
+  },
+  "S5": {
+   "rule": "any non-finite loss, metric, parameter, dose, weight or return; a NaN threshold; a dose outside its bounds; any false per-step validity flag; a refresh failing BCA's validity checks",
+   "threshold_nan": "stop",
+   "threshold_plus_inf": "counted refusal, not a stop (decision 3)",
+   "dose_bounds": {
+    "td3_bc": [
+     1.0,
+     1.5
+    ],
+    "cql": [
+     1.0,
+     1.5
+    ],
+    "rebrac": [
+     1.0,
+     2.0
+    ]
+   },
+   "validity_flags": {
+    "td3_bc": [
+     "inputs_valid",
+     "scale_inputs_valid",
+     "dose_inputs_valid"
+    ],
+    "cql": [
+     "inputs_valid",
+     "scale_inputs_valid",
+     "dose_inputs_valid",
+     "dose_guard_ok"
+    ],
+    "iql": [
+     "inputs_valid",
+     "scale_inputs_valid",
+     "dose_inputs_valid"
+    ],
+    "rebrac": [
+     "inputs_valid",
+     "scale_inputs_valid",
+     "dose_inputs_valid",
+     "batch_valid",
+     "dose_in_range"
+    ]
+   }
+  },
+  "S6": {
+   "rule": "after stage 1: the projection of stages 1-2 of a quality (totals so far plus projected) above its cap, or a learner alone's stage-1 ms per outer step more than twice its reference (at two at once, scaled by the measured slowdown); during stage 2: an alone run more than twice its stage-1 time per outer step",
+   "reference_ms_per_outer_step": {
+    "td3_bc": 0.6,
+    "cql": 2.1,
+    "iql": 0.33,
+    "rebrac": 1.6
+   },
+   "factor": 2.0,
+   "two_at_once": {
+    "min_gain": 1.15,
+    "measured_on": "stage 1's iw alone against iw_ones and iw_repeat together, outer steps per wall-clock second, the four learners together",
+    "also_requires": "S8 held for every learner"
+   },
+   "steady_speed": "median over chunks 2 onward of chunk time less JAX's reported compile time"
+  },
+  "S6b": {
+   "rule": "before each unit (sham-alone block, each seed, room block): running totals plus queued scoring work plus the unit's projected cost would pass the quality's cap; stop between whole units",
+   "card_hour": "one hour of wall-clock time with at least one card run active (union of intervals, monotonic clock)",
+   "processor_hour": "one hour of measured user plus system processor time, summed over all processes"
+  },
+  "S7": {
+   "rule": "open loop, by file: the float32 restatement (actors_f32.py) and the learner's own float32 network disagree by more than 1e-7 on any saved state; closed loop: that restatement and the float64 scoring adapter disagree by more than 0.01 points on any start",
+   "open_loop_max_abs": 1e-07,
+   "closed_loop_max_points": 0.01,
+   "on": "every stage-1 actor and every seed-0 final actor of alone, standard and IW",
+   "cql": "with the same declared noise",
+   "stage0_test_h_adapter_vs_restatement": 1e-05
+  },
+  "S8": {
+   "rule": "the two identical 15,000-step IW runs of a learner (stage 1, seed 0) differ in any bit: final key, learner state, BCA state, per-step outputs, any refresh's threshold"
+  },
+  "S9": {
+   "rule": "a card run's stages.env_signature differs from environment.s9_signature in any key"
+  },
+  "S10": {
+   "rule": "at outer step 10,000 a BCA setup's learner state or key differs in any bit from its learner alone's (stage 1, seed 0)",
+   "step": 10000,
+   "stops_for": [
+    "cql",
+    "rebrac"
+   ],
+   "readout_for": [
+    "td3_bc",
+    "iql"
+   ]
+  },
+  "S11": {
+   "rule": "a copied weighting-test file's SHA-256 differs from its manifest, or a prepared array's row counts or recorded hashes differ from the weighting test's",
+   "when": "at the copy, at preparation, when a run reads its prepared file"
+  }
+ },
+ "claims": {
+  "judged": "per quality, on data seeds 0-4, on the strong-mix bank unless stated; final snapshot (100,000)",
+  "size_bar_return_units": 1.8,
+  "size_bar_origin": "version 4's 3 points (iw/SPEC.md:168)",
+  "items": {
+   "0": {
+    "title": "The learner learned (a gate for reading its BCA rows)",
+    "kill": "the learner alone's mean no-shift return over the 5 seeds is below the bar, or any seed's return of the learner alone is not finite, or a run of Unifloral's unchanged step (alone or room reference) stopped (S5); exactly at the bar passes",
+    "bars": {
+     "medium-expert": {
+      "points": 60,
+      "recording_points": 69.97,
+      "return_units_about": -341.2
+     },
+     "medium": {
+      "points": 39,
+      "recording_points": 48.66,
+      "return_units_about": -501.9
+     }
+    },
+    "no_shift_anchors_rounded": {
+     "random": -800.29,
+     "stall_aware": -35.19
+    },
+    "conversion": "points to return units through the no-shift bank's anchors in start_banks.json (the code uses the file's exact values)",
+    "then": "rows read 'did not learn'; Claims 1-6 not judged; stays in both Holm families with p = 1"
+   },
+   "1": {
+    "title": "Standard BCA beats the learner alone on the strong mix",
+    "kill": "Delta(standard - alone) < +1.8, or L <= 0, or it fails Holm across the four learners",
+    "label": "a TD3+BC pass on medium-expert: 'expected partly by selection; needs seeds 10-14'"
+   },
+   "1c": {
+    "title": "Standard BCA costs return on the strong mix (a flag)",
+    "flag": "Delta(standard - alone) <= -1.8 with upper bound < 0"
+   },
+   "2": {
+    "title": "IW BCA beats standard BCA on the strong mix",
+    "kill": "Delta(IW - standard) < +1.8, or L <= 0, or it fails Holm, or Claim 4a fails for that learner",
+    "expected": "shelved for all four learners"
+   },
+   "2c": {
+    "title": "IW costs return against standard on the strong mix (a flag)",
+    "flag": "Delta(IW - standard) <= -1.8 with upper bound < 0"
+   },
+   "3": {
+    "title": "IW costs nothing without the shift (a flag)",
+    "flag": "on the no-shift bank, Delta(IW - standard) <= -1.8 with upper bound < 0"
+   },
+   "3b": {
+    "title": "Standard BCA costs nothing without the shift (a flag)",
+    "flag": "on the no-shift bank, Delta(standard - alone) <= -1.8 with upper bound < 0"
+   },
+   "4a": {
+    "title": "IW gives the band its promised coverage under the shift (read before Claim 2)",
+    "kill": "at the IW setup's last refresh, on strong-law test steps outside the ball, each step at its own threshold, pooled coverage (mean of the 5 seeds' shares) outside [0.89, 0.96]",
+    "interval_inclusive": [
+     0.89,
+     0.96
+    ]
+   },
+   "4b": {
+    "title": "The shift breaks the standard band (a label, not a gate)",
+    "kill": "the IW setup's band at its standard threshold covers 0.88 or more of the same steps; Claim 2 is still judged, but a pass is labeled 'gain from extra width, not repaired calibration'",
+    "bar": 0.88
+   },
+   "5": {
+    "title": "BCA adds no physical failures",
+    "flag": "a BCA setup's F1 or F2 rate exceeds its learner alone's by 2 percentage points or more on any of the 7 banks (compared exactly on start counts), with L > 0",
+    "bar_percentage_points": 2
+   },
+   "6": {
+    "title": "The gain needs the band's placement, not just more caution (stage 3, only where Claim 1 or 2 passes)",
+    "kill": "Delta(setup - its flattened twin) < +1.8 or L <= 0; for Claim 2 also Delta(IW - shuffled IW) < +1.8 or L <= 0; the gain is then credited to the amount of caution"
+   }
+  },
+  "reading_order": [
+   "S0-S11 with S6b",
+   "0",
+   "4a",
+   "4b",
+   "1",
+   "1c",
+   "2",
+   "2c",
+   "3",
+   "3b",
+   "5",
+   "6"
+  ],
+  "holm_membership": [
+   "every learner stays in each family of its quality; a learner that fails Claim 0, has a non-finite return in either setup compared on any seed, or (Claim 2 only) fails Claim 4a enters with p = 1",
+   "Claims 1 and 2 are judged only when all 5 seeds of all four learners (alone, standard, IW) of the quality are complete, else 'pending'; every other claim waits for the 5 seeds of its own inputs",
+   "runs go seed by seed across learners, so a stop leaves complete seeds; no seed is ever dropped"
+  ],
+  "badges": [
+   "passed",
+   "shelved",
+   "flagged",
+   "pending",
+   "not judged",
+   "did not learn"
+  ],
+  "uncorrected": [
+   "1c",
+   "2c",
+   "3",
+   "3b",
+   "5",
+   "6"
+  ],
+  "claim2_pointer": "mean dose change from standard to IW thresholds over kept training rows at the last refresh, times Delta(standard - alone) / (mean standard dose - 1); IQL with its actor weights; never a gate",
+  "study_rule": "if Claims 1 and 2 are shelved for all four learners on every quality run, the study ends after seeds 0-4, with no stage 3 and no confirmation",
+  "writeups": "every shelved claim and every 'did not learn': The idea / What we tested (and the kill rule) / What happened / Why"
+ },
+ "statistics": {
+  "per_seed": "a setup's mean return over a bank's 1,000 starts (return units: the plain 100-step return)",
+  "delta": "paired per-seed difference of two setups of one learner, averaged over the 5 seeds; sd with n - 1",
+  "bounds": "one-sided 95%: mean -+ T95 x sd / sqrt(5)",
+  "t95_df4": 2.13184678632665,
+  "p_value": "one-sided P(T4 >= mean / (sd / sqrt(5))); sd = 0: p = 0 if mean > 0, else 1",
+  "holm": {
+   "alpha": 0.05,
+   "family": "the four learners, per claim (1 and 2), per quality",
+   "steps": [
+    "0.05/4 = 0.0125",
+    "0.05/3",
+    "0.05/2 = 0.025",
+    "0.05/1 = 0.05"
+   ],
+   "ties": "by learner name",
+   "adjusted_p": "running maximum of min(1, (4 - i + 1) p)"
+  },
+  "no_partial_statistics": "no mean, bound or p-value until exactly 5 finite seeds exist"
+ },
+ "caps": {
+  "medium-expert": {
+   "card_hours": 14,
+   "processor_hours": 21,
+   "covers": "stages 1 and 2a (stage 0 booked separately: budget_recost)"
+  },
+  "medium": {
+   "card_hours": 12,
+   "processor_hours": 16,
+   "covers": "stage 2b (approved separately)"
+  },
+  "stage3_per_quality": {
+   "card_hours": 4,
+   "processor_hours": 6,
+   "covers": "the controls, only where a claim passes, under a later approved version"
+  },
+  "checked_by": [
+   "S6 (after stage 1)",
+   "S6b (before each unit)"
+  ],
+  "change": "a cap changes only with the user's approval"
+ },
+ "budget_recost": {
+  "status": "final (PRESPEC.md section 13)",
+  "decision": "the user's choice of 16 Oct 2026, about 13:45 UTC: stage 0 is booked separately; its compute is recorded as spent and not counted against the caps, which stay as approved",
+  "stage0_card_hours": 4.2,
+  "stage0_processor_hours": 17.0,
+  "stage0_range": {
+   "card_hours": [
+    3.8,
+    4.5
+   ],
+   "processor_hours": [
+    15,
+    19
+   ]
+  },
+  "stage0_through": "2026-10-16T14:40Z, plus the final suite pass recorded in runs/shift_hosts/stage0/SUMMARY.json",
+  "stage0_counted_as": "separately, not against the caps; the driver's first start enters stage 0 as 0 and 0",
+  "driver_stage0_entry": {
+   "card_hours": 0,
+   "processor_hours": 0
+  },
+  "projection": {
+   "stage1": {
+    "card_hours": [
+     0.62,
+     1.13
+    ],
+    "processor_hours": [
+     1.28,
+     2.48
+    ]
+   },
+   "stage2a_medium_expert": {
+    "card_hours": [
+     6.62,
+     10.07
+    ],
+    "processor_hours": [
+     8.21,
+     13.97
+    ]
+   },
+   "stages1_2a_vs_cap_14_21": {
+    "card_hours": [
+     7.25,
+     11.2
+    ],
+    "processor_hours": [
+     9.5,
+     16.46
+    ]
+   },
+   "stage2b_medium_vs_cap_12_16": {
+    "card_hours": [
+     6.62,
+     10.07
+    ],
+    "processor_hours": [
+     8.21,
+     13.97
+    ]
+   },
+   "stage3_one_learner_claim2_twins_vs_cap_4_6": {
+    "card_hours": [
+     1.61,
+     2.48
+    ],
+    "processor_hours": [
+     1.78,
+     2.98
+    ]
+   },
+   "pairs_are": "[central, high]"
+  },
+  "measured_ms_per_outer_step_alone_and_bca": {
+   "td3_bc": [
+    0.58,
+    1.26
+   ],
+   "cql": [
+    2.06,
+    3.2
+   ],
+   "iql": [
+    0.31,
+    1.13
+   ],
+   "rebrac": [
+    1.56,
+    2.89
+   ]
+  },
+  "default_lane_seconds": {
+   "score": 45,
+   "coverage": 90,
+   "s7": 120,
+   "viewer": 70
+  }
+ },
+ "exploratory": {
+  "label": "EXPLORATORY: seeds 0-4 of the weighting test's data, already seen by it; confirmation needs fresh data seeds 10-14 of its generator and a pre-registration approved at the user's terminal",
+  "why": "seeds 0-4 were seen by the weighting test, and medium-expert was chosen after its TD3+BC result (best of 5 qualities; one-sided p 0.0128, about 0.064 allowing for the choice)",
+  "confirmatory_claims": []
+ },
+ "amendments": [
+  {
+   "id": "A1",
+   "plan": "4.3, 4.5 (a2)",
+   "what": "CQL's two compiled programs (decision 1)"
+  },
+  {
+   "id": "A2",
+   "plan": "4.1 validity",
+   "what": "IQL's split validity (decision 4)"
+  },
+  {
+   "id": "A3",
+   "plan": "6.1 S5",
+   "what": "NaN threshold stops; R = +inf is a counted refusal (decision 3)"
+  },
+  {
+   "id": "A4",
+   "plan": "3.4",
+   "what": "BCA's fit keys keep the ports' fold constants; scale start from fold_in(fold_in(PRNGKey(s91), 0), init constant)"
+  },
+  {
+   "id": "A5",
+   "plan": "4.4 choice 8",
+   "what": "training-environment processor processes also set --xla_cpu_multi_thread_eigen=false"
+  },
+  {
+   "id": "A6",
+   "plan": "3.1 safety checks",
+   "what": "two port checks not carried over, IQL's skip rule as compute-then-keep, added validity checks"
+  },
+  {
+   "id": "A7",
+   "plan": "3.7, 5.4, risk 7",
+   "what": "IQL's Q and V identical among standard, IW and sham alone; rounding-level drift against the imported alone run on the card"
+  },
+  {
+   "id": "A8",
+   "plan": "3.1 data copy",
+   "what": "copies under runs/shift_hosts/source/, two extra record sets copied; RESULTS.json checked by its git blob"
+  },
+  {
+   "id": "A9",
+   "plan": "7.3",
+   "what": "data copy, preparation and the scoring cache (with the regret solves) ran in stage 0, no learning"
+  },
+  {
+   "id": "A10",
+   "plan": "6.1 S6b",
+   "what": "S6b also before the sham-alone block and the room block"
+  },
+  {
+   "id": "A11",
+   "plan": "10 item 15",
+   "what": "the WSL push uses GIT_CONFIG_GLOBAL=/root/.bca-gitconfig; the commit message carries the fingerprint's first 16 characters"
+  },
+  {
+   "id": "A12",
+   "plan": "6.1 S1",
+   "what": "S1 widened: the fingerprint also covers the repository code the package runs (experiments/signal included), and the approval must be committed in git HEAD under the user's address"
+  },
+  {
+   "id": "A13",
+   "plan": "3.1 module table, 9.2",
+   "what": "export.py writes results.json only; the page's viewer and actor files are not written by this package"
+  }
+ ]
+}
