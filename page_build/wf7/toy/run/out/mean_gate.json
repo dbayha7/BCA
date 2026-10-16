@@ -1,0 +1,139 @@
+{
+ "notebook": "bca_mean_gate_toy.ipynb",
+ "seconds": 29.5,
+ "cells": [
+  {
+   "cell": 5,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 7,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Every held-out try shows the same gain g; gains range from -1 to +1. Smallest g each gate accepts:\nheld-out tries   BCA mean gate   Hoeffding   empirical Bernstein   t-test\n            10            0.35        0.77                 never   any g above 0\n            29            0.11        0.45                  0.61   any g above 0\n           100            0.03        0.24                  0.17   any g above 0\n\nA candidate gains 0.4 on 95% of tries and loses 10 on the rest (true average -0.12, so harmful).\nWith 29 tries, 23% of samples contain no loss. The t-test sees no spread in those and accepts,\nso it accepts this harmful action about 23% of the time instead of 5%.\nTold that the floor is -10, the BCA mean gate puts 32% of its weighted averages below 0\nfor those same clean samples, far more than 5%, so it refuses.\n"
+    }
+   ]
+  },
+  {
+   "cell": 9,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 10,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Kill rules fingerprint (SHA-256): 50a0f49d678b2205e2dba3af5ea741d8cbc887679127ccdd8612f2c43f93b1d3\n"
+    }
+   ]
+  },
+  {
+   "cell": 12,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "200 seeds in 24 s. The critic proposed something in 75% of situations: 79,355 good proposals and 28,508 harmful ones.\n"
+    }
+   ]
+  },
+  {
+   "cell": 13,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 15,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "gate                               gain  of oracle  good accepted  worst harm  worst disaster harm\nalways safe                       0.000         0%             0%        0.0%                 0.0%\nno gate                           0.138        66%           100%      100.0%               100.0%\ncount rule                        0.065        31%            32%       43.2%                12.4%\nplain average                     0.158        76%            83%       41.4%                36.2%\nshrunk average                    0.151        73%            69%       90.0%                16.4%\nBCA average                       0.136        65%            60%       11.8%                 1.7%\nt-test                            0.080        39%            44%       31.3%                31.3%\nHoeffding                         0.000         0%             0%        0.0%                 0.0%\nempirical Bernstein               0.000         0%             0%        0.0%                 0.0%\nBCA mean gate                     0.045        22%            17%        0.3%                 0.0%\nBCA tail gate                     0.003         2%             1%        0.0%                 0.0%\nsplit-conformal tail              0.019         9%            10%        7.6%                 7.6%\nBCA mean gate, shared budget      0.027        13%            10%        0.0%                 0.0%\noracle gate                       0.208       100%           100%        0.0%                 0.0%\n\nFor reference, picking the truly best candidate in every situation would gain 0.294:\nthe critic's proposals already lose part of that before any gate acts.\n"
+    }
+   ]
+  },
+  {
+   "cell": 16,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 17,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Claim 1, BCA's mean gate keeps its promise: worst harm rate 0.003; worlds above their allowance: 0 -> ALIVE\nClaim 2, tightest guaranteed mean gate: good proposals accepted 17.4% against Hoeffding 0.0% and empirical Bernstein 0.0% -> ALIVE\nClaim 3, the t-test is unsafe with rare disasters: worst rare-disaster harm rate 0.313 -> ALIVE\nClaim 4, crowded worlds: gain 0.0567 against plain average 0.1829 and shrunk average 0.1625 -> SHELVED\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Claim 5, at equal harm: tuned BCA mean gate gains 0.0845; best tuned rival BCA average gains 0.0400 -> ALIVE\nClaim 6, shared 10% harm budget: gain 0.0270 against 0.0453 deciding alone; worst average harmful share of acceptances 0.000 -> SHELVED\n"
+    }
+   ]
+  },
+  {
+   "cell": 19,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "gate                      chosen knob  gain, seeds 0-99  gain, seeds 100-199  worst harm, 100-199\nBCA mean gate                     0.2            0.0864               0.0845                 2.3%\nBCA average                       0.5            0.0410               0.0400                 3.8%\nshrunk average                    0.5            0.0165               0.0187                 1.6%\nHoeffding                         0.5            0.0167               0.0174                 0.1%\nBCA tail gate                     0.2            0.0187               0.0172                 2.9%\nplain average                     1.5            0.0061               0.0070                 0.8%\nempirical Bernstein               0.5            0.0061               0.0061                 0.0%\nsplit-conformal tail             0.05            0.0064               0.0056                 0.3%\ncount rule                        100            0.0001               0.0003                 0.2%\nt-test                           none            0.0000               0.0000                 0.0%\n"
+    }
+   ]
+  },
+  {
+   "cell": 21,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Gain per situation by outcome shape (seeds 100-199, pooled over the other two factors)\ngate                                    steady  rare disaster   rare jackpot\nplain average                           0.1755         0.0951         0.2038\nshrunk average                          0.1616         0.0765         0.2156\nt-test                                  0.0993         0.0843         0.0567\nHoeffding                               0.0000         0.0000         0.0001\nempirical Bernstein                     0.0000         0.0000         0.0000\nBCA mean gate                           0.0540         0.0138         0.0681\nBCA tail gate                           0.0000         0.0099         0.0000\nBCA mean gate, shared budget            0.0370         0.0032         0.0407\noracle gate                             0.1987         0.1565         0.2690\n\nGain per situation by number of candidates (seeds 100-199)\ngate                                    1         3        10        30\nplain average                      0.0597    0.1292    0.2055    0.2381\nshrunk average                     0.0526    0.1236    0.1983    0.2303\nt-test                             0.0314    0.0674    0.1072    0.1144\nHoeffding                          0.0000    0.0000    0.0000    0.0000\nempirical Bernstein                0.0000    0.0000    0.0000    0.0000\nBCA mean gate                      0.0176    0.0415    0.0637    0.0585\nBCA tail gate                      0.0007    0.0023    0.0051    0.0052\nBCA mean gate, shared budget       0.0128    0.0264    0.0379    0.0307\noracle gate                        0.0768    0.1690    0.2683    0.3181\n\nHarm rate by outcome shape, worst over the other factors (seeds 100-199)\ngate                                    steady  rare disaster   rare jackpot\nplain average                            41.4%          36.2%          17.3%\nshrunk average                           34.5%          16.4%          90.0%\nt-test                                    5.7%          31.3%           0.0%\nHoeffding                                 0.0%           0.0%           0.0%\nempirical Bernstein                       0.0%           0.0%           0.0%\nBCA mean gate                             0.1%           0.0%           0.3%\nBCA tail gate                             0.0%           0.0%           0.0%\nBCA mean gate, shared budget              0.0%           0.0%           0.0%\noracle gate                               0.0%           0.0%           0.0%\n\nShare of good proposals accepted, by number of held-out tries (seeds 100-199)\ngate                                 5-9    10-19    20-39    40-69   70-100\nplain average                        71%      80%      89%      95%      96%\nshrunk average                       50%      63%      77%      87%      90%\nt-test                               32%      36%      46%      59%      72%\nHoeffding                             0%       0%       0%       0%       0%\nempirical Bernstein                   0%       0%       0%       0%       0%\nBCA mean gate                         1%       5%      17%      41%      64%\nBCA tail gate                         0%       0%       1%       4%       6%\nBCA mean gate, shared budget          0%       1%       8%      25%      45%\noracle gate                         100%     100%     100%     100%     100%\n"
+    }
+   ]
+  },
+  {
+   "cell": 23,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "1. Gain per situation on seeds 100-199, after tuning on seeds 0-99 to each cap on worst-world harm\ngate                      cap 1%    cap 2%    cap 5%   cap 10%   cap 20%  cap 100%\nplain average              0.001     0.007     0.007     0.036     0.078     0.158\nshrunk average             0.001     0.019     0.019     0.056     0.087     0.151\nBCA average                0.000     0.021     0.040     0.098     0.136     0.136\nt-test                      none      none      none      none     0.040     0.158\nHoeffding                  0.005     0.017     0.017     0.017     0.017     0.017\nempirical Bernstein        0.006     0.006     0.006     0.006     0.006     0.006\nBCA mean gate              0.030     0.061     0.084     0.103     0.137     0.137\nBCA tail gate              0.003     0.003     0.017     0.017     0.027     0.046\nsplit-conformal tail       0.006     0.006     0.006     0.019     0.019     0.062\ncount rule                 0.000     0.000     0.000     0.011     0.011     0.138\nOn seeds 100-199, every tuned gate stayed within its cap: True\n\n2. Worlds (of 36) where each gate loses return at its stated setting, seeds 100-199\ngate                             worlds below 0  lowest world gain\nalways safe                                   0             0.0000\nno gate                                       5            -0.2512\ncount rule                                    0             0.0012\nplain average                                 4            -0.0109\nshrunk average                                0             0.0031\nBCA average                                   0             0.0078\nt-test                                        4            -0.0085\nHoeffding                                     0             0.0000\nempirical Bernstein                           0             0.0000\nBCA mean gate                                 0             0.0008\nBCA tail gate                                 0             0.0000\nsplit-conformal tail                          0             0.0000\nBCA mean gate, shared budget                  0             0.0004\noracle gate                                   0             0.0204\n\nThe hardest worlds: rare disasters and 10% good candidates. Gain by number of candidates, seeds 100-199\ngate                                    1         3        10        30\nno gate                           -0.0667   -0.1453   -0.2311   -0.2512\nplain average                     -0.0049   -0.0109   -0.0059   -0.0071\nt-test                            -0.0028   -0.0085   -0.0017   -0.0018\nshrunk average                     0.0031    0.0083    0.0169    0.0156\nBCA mean gate                      0.0008    0.0038    0.0107    0.0112\nBCA average                        0.0078    0.0219    0.0437    0.0482\noracle gate                        0.0204    0.0539    0.1021    0.1202\n"
+    }
+   ]
+  },
+  {
+   "cell": 25,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "All checks passed. Notebook seconds: 28.9\n"
+    }
+   ]
+  }
+ ]
+}

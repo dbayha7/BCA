@@ -100,12 +100,19 @@ TAG_NARROW = '<span class="tag ok">alive, narrowly</span>'
 TAG_SHELVED = '<span class="tag warn">shelved</span>'
 
 
-def finding(fid, title, idea, tested, happened, why):
+def finding(fid, title, idea, tested, happened, why, happened_id=None):
+    hid = f' id="{happened_id}"' if happened_id else ""
     return (f'<div id="{fid}" class="finding">\n      <p class="f-title">{title}</p>\n      <dl class="kv kv1 pro">\n'
             f'        <dt>The idea</dt><dd>{idea}</dd>\n'
             f'        <dt>What we tested (and the kill rule)</dt><dd>{tested}</dd>\n'
-            f'        <dt>What happened</dt><dd>{happened}</dd>\n'
+            f'        <dt{hid}>What happened</dt><dd>{happened}</dd>\n'
             f'        <dt>Why</dt><dd>{why}</dd>\n      </dl>\n    </div>')
+
+
+def finding_found(happened_id, *args):
+    """A finding whose "What happened" carries an id: version 26's section had a heading "What Part N found" per
+    experiment (#toy-first-found ... #toy-fourth-found), kept as links to the same answer here."""
+    return finding(*args, happened_id=happened_id)
 
 
 def chartbox(cid, svg, legend, tpl, caption):
@@ -121,6 +128,7 @@ def part_overview():
              'seeds only: four experiments and one notebook that gathers them. Nothing here is ThrusterChain evidence or '
              'changes a pre-registered rule. They ask which part of BCA (Bayesian Conformal Aggregation; '
              '<a href="#m-bca">Methods, part 7</a>) can change a decision for the better.</p>')
+    o.append(part_bottom())
     o.append('<h3 id="toy-overview">The five notebooks at a glance</h3>')
     o.append('<p>Each row is one notebook. The rest of the section goes in order: why toy worlds, the shared world '
              '(explained once, step by step), BCA\'s tools in toy terms, then the four experiments in the order they '
@@ -162,6 +170,88 @@ def part_overview():
              'step-by-step lesson version of <code>bca_findings.ipynb</code> at commit <code>2467e29</code> on the '
              'branch <code>claude/bca-findings-walkthrough</code>, not merged. For this page every notebook was run '
              'again from those commits: every printed result matched its stored output, apart from running times.</p>')
+    return "\n    ".join(o)
+
+
+# ====================================================================================== 0b. the bottom line and the words
+# Carried over from the live page's version 26 (service version 1792172582-8406), whose section had a bottom line and a
+# glossary up front (#toy-bottom, #toy-words); reworded for this section's names (experiments 1 to 4) and with every term
+# defined where it first appears. Every number is checked by check_numbers.py.
+def part_bottom():
+    o = ['<h3 id="toy-bottom">The bottom line</h3>']
+    o.append('<p>What the four experiments found, in brief. Each point is explained step by step below, and every '
+             'number comes from toy worlds, not from ThrusterChain.</p>')
+    o.append('<ul class="leads">\n'
+             '      <li><b>As extra caution in training, BCA did not help.</b> The learners on this page use BCA\'s band as a '
+             '<i>width</i>: a margin of error on the critic\'s values (the critic is the learned estimate of each '
+             'action\'s value) that makes training more cautious where the margin is large. In experiments 1 and 2 the '
+             'width was calibrated where it was measured, yet it improved no decision and cost return: in experiment 2 '
+             'the two width rules lost 0.425 and 0.375 per episode against the best possible choices, against 0.122 for '
+             'simply refusing actions with too little data.</li>\n'
+             '      <li><b>As a gate on a risky action, BCA did help.</b> A <i>gate</i> reads the risky action\'s '
+             '<i>held-out tries</i>, its recorded outcomes that training never saw, and either lets the action through '
+             'or falls back to the safe action. In experiment 2 every gate that read these tries closed 38% to 87% of '
+             'the <i>room</i>, the return that refusing thin data loses against the best possible choices; fed '
+             'shuffled tries, none kept its gain.</li>\n'
+             '      <li><b>BCA\'s tail gate keeps a safety promise for the data in hand.</b> It lets the action through only '
+             'if BCA is 95% sure that at least 90% of its outcomes are at least as good as the safe action\'s. In '
+             'experiment 2, in any world where more than 10% of the action\'s outcomes fall below the safe action\'s '
+             '(an <i>unsafe</i> world), it let the action through in at most 3% of seeds (repeat runs), against up to '
+             '38% for split conformal prediction, the standard rule. But with equal weights BCA is a textbook test: it '
+             'decided as the exact binomial test in 99.6% of cases, and it cannot say yes with fewer than 29 tries.</li>\n'
+             '      <li><b>BCA\'s mean gate earns the most at equal safety</b> (experiment 3). The mean gate asks instead '
+             'whether the action beats the safe one on average. With every gate tuned to say yes to a harmful action in '
+             'at most 5% of seeds in every world, BCA\'s mean gate earned 0.084 per situation, about twice the next gate '
+             '(0.040, another gate built on BCA) and 4.5 times the best gate not built on BCA (0.019). With no safety '
+             'requirement, the plain held-out average earns more (0.158 against 0.045).</li>\n'
+             '      <li><b>BCA\'s weights keep its promises when deployment meets conditions in a different mix than the '
+             'recording</b> (experiment 4). Ignoring this shift, the tail gate let unsafe actions through in up to 89.9% '
+             'of seeds; with weights, in at most 4.3%. The price is evidence: under a strong shift it needs about 83 '
+             'tries before it can say yes at all, against 29 with no shift.</li>\n'
+             '      <li><b>The recommended role: a certificate on each deviation, not a penalty in training.</b> A '
+             '<i>deviation</i> is a risky action that the policy, the rule that picks the actions, wants instead of the '
+             'safe one. Compare its held-out outcomes with the safe action\'s value; use the mean gate for return at a '
+             'fixed safety level, the tail gate for "rarely worse than the safe action", and weights only when the '
+             'conditions differ (<a href="#toy-adds-up">What it all adds up to</a>).</li>\n    </ul>')
+    o.append('<details id="toy-words">\n      <summary>Words used in this section</summary>\n      <div class="inner">\n'
+             '        <dl class="kv">\n'
+             '          <dt>Policy</dt><dd>The rule that picks an action in each state.</dd>\n'
+             '          <dt>Critic</dt><dd>The learned estimate of each action\'s value. In experiments 1 and 2 it is a '
+             'table of averages, fitted on training episodes and then frozen.</dd>\n'
+             '          <dt>Safe action, or fallback</dt><dd>An action the recording covers well, so its value is '
+             'known.</dd>\n'
+             '          <dt>Risky action, or deviation</dt><dd>An action the policy wants but the recording barely covers, '
+             'like full throttle on ThrusterChain. Experiments 1 and 2 call it <i>venture</i>, experiment 3 a '
+             '<i>candidate</i>.</dd>\n'
+             '          <dt>Held-out tries</dt><dd>Recorded outcomes of the risky action that training never saw. Only the '
+             'gates read them. Experiment 2 calls them <i>survivors</i>, after ThrusterChain\'s surviving full-throttle '
+             'steps.</dd>\n'
+             '          <dt>Width</dt><dd>A calibrated margin of error on the critic\'s values: subtracted from them as '
+             'extra caution, or (in the learners on this page) used to strengthen the pull toward the recorded actions '
+             'where it is large.</dd>\n'
+             '          <dt>Gate</dt><dd>A rule that reads the held-out tries and either lets the risky action through or '
+             'falls back. The <i>tail gate</i> lets it through only if BCA is 95% sure that at least 90% of its outcomes '
+             'are at least as good as the fallback (experiment 2 calls it the tail certificate); the <i>mean gate</i> '
+             'only if BCA is 95% sure that its average gain over the fallback is above 0.</dd>\n'
+             '          <dt>Promise</dt><dd>What a gate guarantees, with 95% confidence. In an <i>unsafe</i> world more '
+             'than 10% of the risky action\'s outcomes fall below the fallback; in a <i>harmful</i> world its average '
+             'gain over the fallback is below 0. There, a gate that keeps its promise lets the risky action through in '
+             'at most about 5% of seeds.</dd>\n'
+             '          <dt>Regret</dt><dd>The expected return lost against the best possible choices; 0 is '
+             'perfect.</dd>\n'
+             '          <dt>Room and gain</dt><dd>In experiment 2, the room is the regret of the best rule that never reads '
+             'the survivors (0.1215), and a rule\'s gain is the share of the room it closes: 1 for the oracle\'s '
+             'choices, 0 for no better, below 0 for worse. In experiments 3 and 4, a gain is the return won over always '
+             'falling back.</dd>\n'
+             '          <dt>Oracle</dt><dd>A rule that knows the world\'s truth and always chooses best: a reference, not '
+             'a gate anyone could build.</dd>\n'
+             '          <dt>Kill rule, alive, shelved</dt><dd>A kill rule is a result, written down before the run, that '
+             'would shelve a claim (set it aside as unsupported). A claim that survives its kill rule is alive.</dd>\n'
+             '          <dt>Weights</dt><dd>In experiments 1 and 4, each try counts in proportion to how often deployment '
+             'meets its condition, divided by how often the recording did. Both toys know them exactly.</dd>\n'
+             '          <dt>Seed</dt><dd>The number that fixes a run\'s random draws; different seeds are repeat runs that '
+             'differ only by chance.</dd>\n'
+             '        </dl>\n      </div>\n    </details>')
     return "\n    ".join(o)
 
 
@@ -334,7 +424,7 @@ def part_first():
              'only</i> subtracts the count scale with a multiplier of 1; <i>no penalty</i> trusts the critic '
              'everywhere, including its placeholder of 2.5 for the gap, an optimistic guess that no data '
              'support.</p>')
-    o.append(finding("toy-first-brief", "Experiment 1 in four parts",
+    o.append(finding_found("toy-first-found", "toy-first-brief", "Experiment 1 in four parts",
                      "BCA's calibrated width, subtracted from the critic's values as extra caution, makes the policy "
                      "choose better.",
                      "Seven rules on seed 7, in two worlds that differ only at the gap (harmful and harmless), then the "
@@ -586,7 +676,7 @@ def part_second():
              'ventures only if BCA is 95% sure that 90% beat it. Rivals: the same certificate by split conformal or by '
              'the <i>exact binomial test</i>, and the <i>plain average</i>, which ventures if the survivors\' average '
              'reward is at least the critic\'s value of safe. As controls, three gates are fed shuffled rows.</p>')
-    o.append(finding("toy-second-brief", "Experiment 2 in four parts",
+    o.append(finding_found("toy-second-found", "toy-second-brief", "Experiment 2 in four parts",
                      "Some way of using BCA's calibrated errors changes a decision for the better where simpler rules "
                      "cannot.",
                      "Every rule against refusing thin data, pooled over 200 seeds, both shapes, ten advantages and "
@@ -887,7 +977,7 @@ def part_third():
         ("clean sample", f'({fr("10", "10.4")})<sup>29</sup> = 0.32, far more than 0.05: no'),
     ], so="the t-test accepts this harmful action in about 23% of samples instead of 5%; the mean gate refuses every "
           "sample, because the extra weight on the floor stands in for the disaster a clean sample may be hiding."))
-    o.append(finding("toy-third-brief", "Experiment 3 in four parts",
+    o.append(finding_found("toy-third-found", "toy-third-brief", "Experiment 3 in four parts",
                      "BCA's mean gate keeps its 5% promise and, once every gate must be equally safe, earns the most.",
                      "Fourteen gates on 36 worlds; six claims, each with its kill rule (table below), fixed before the "
                      "run. For claim 5 each gate that has a knob takes its best setting on seeds 0–99 among those with "
@@ -1114,7 +1204,7 @@ def part_fourth():
              'of which throw evidence away: <i>rejection sampling</i> (keep each try with chance weight ÷ largest '
              'weight, then run the exact test) and a <i>stratified</i> exact bound per condition; a weighted t-test; '
              'and plain and weighted averages. No proof covers the weighted mean gate.</p>')
-    o.append(finding("toy-fourth-brief", "Experiment 4 in four parts",
+    o.append(finding_found("toy-fourth-found", "toy-fourth-brief", "Experiment 4 in four parts",
                      "BCA's weights keep its tail and mean promises when the held-out tries come from a different mix "
                      "of conditions than deployment, and use the evidence better than the simple valid alternatives.",
                      "Fourteen gates, references included, on 288 worlds, 800 seeds; six claims with kill rules fixed before the run (table "
@@ -1239,6 +1329,55 @@ def part_together():
     ]
     o.append(table("toy-together-claims", "The four experiments: 18 pre-registered claims, 14 alive and 4 shelved.",
                    ["Experiment", "Claims", "Alive", "Shelved", "Answer"], rows, num_cols=(1, 2, 3)))
+    # Every pre-registered claim at a glance, as the live page's version 26 had it (#toy-claims), in this section's
+    # names: experiment 2's tests 1 to 4c, experiments 3 and 4's claims 1 to 6
+    def claim_row(name, tag, key):
+        return f'<tr><td>{name}</td><td data-label="Verdict">{tag}</td><td data-label="Key number">{key}</td></tr>'
+
+    def group_row(href, name):
+        return (f'<tr class="sub"><td><a href="#{href}">{name}</a></td><td data-label="Verdict"></td>'
+                f'<td data-label="Key number"></td></tr>')
+    crows = [
+        group_row("toy-second", "Experiment 2: where can BCA change a decision?"),
+        claim_row("Test 1: BCA\'s width at every action closes at least a quarter of the room", TAG_SHELVED,
+                  f"{M}2.50 and {M}2.09 of the room"),
+        claim_row("Test 2: the step-1 gate closes at least half the room, from the outcomes themselves", TAG_ALIVE,
+                  "+0.58; shuffled outcomes keep none"),
+        claim_row("Test 3: comparing with the safe action\'s value beats a margin against the other rows", TAG_ALIVE,
+                  "Regret 0.028 against 0.051"),
+        claim_row("Test 4a: BCA decides differently from the exact binomial test", TAG_SHELVED, "99.6% agreement"),
+        claim_row("Test 4b: BCA\'s confidence makes deviations safer than split conformal", TAG_NARROW,
+                  "5.5 points safer, against a 5-point bar"),
+        claim_row("Test 4c: safety needs a 90% share, not an average", TAG_ALIVE, "28.8 points safer"),
+        group_row("toy-third", "Experiment 3: can a BCA gate raise return?"),
+        claim_row("Claim 1: the mean gate keeps its promise", TAG_ALIVE, "Worst harm 0.3%"),
+        claim_row("Claim 2: it is the tightest guaranteed mean gate", TAG_ALIVE,
+                  "17.4% of good proposals accepted, against 0%"),
+        claim_row("Claim 3: the t-test is unsafe with rare disasters", TAG_ALIVE, "Up to 31.3% harm"),
+        claim_row("Claim 4: in crowded worlds the mean gate beats simple averaging", TAG_SHELVED,
+                  "0.057 against 0.183 and 0.163"),
+        claim_row("Claim 5: at equal harm the mean gate earns the most", TAG_ALIVE, "0.084 against 0.040"),
+        claim_row("Claim 6: deciding all situations together earns more", TAG_SHELVED, "0.027 against 0.045"),
+        group_row("toy-fourth", "Experiment 4: do BCA\'s weights help under a shift?"),
+        claim_row("Claim 1: ignoring the shift breaks the tail promise", TAG_ALIVE, "Up to 89.9% unsafe deviations"),
+        claim_row("Claim 2: with weights, the tail gate as built keeps its promise", TAG_ALIVE, "At most 4.3%"),
+        claim_row("Claim 3: weights use shifted evidence better than the simple valid alternatives", TAG_ALIVE,
+                  "33.6% against 19.0% and 0%"),
+        claim_row("Claim 4: weighted BCA\'s promise holds for the data in hand, unlike weighted split conformal\'s",
+                  TAG_ALIVE, "4.3% against 38.8%"),
+        claim_row("Claim 5: with weights, the mean gate keeps its promise", TAG_ALIVE, "At most 4.4%"),
+        claim_row("Claim 6: at equal harm, the weighted mean gate earns the most", TAG_NARROW, "0.0975 against 0.0923"),
+    ]
+    o.append('<h4 id="toy-claims">Every pre-registered claim at a glance</h4>')
+    o.append('<p>Eighteen claims in experiments 2 to 4, each with a kill rule written before its experiment\'s first '
+             'run, by the notebooks\' own record. Fourteen survived, and all 18 verdicts came out the same in this '
+             'page\'s re-run. Experiment 1 has no claims. A point here is a percentage point: 5.5 points safer means '
+             'venturing into unsafe worlds 5.5 percentage points less often.</p>')
+    o.append('<div class="tbl"><table id="toy-claims-table" class="stack">\n'
+             '      <caption><span class="cap">All 18 claims: 14 alive, 4 shelved. Toy worlds, toy seeds; not '
+             'ThrusterChain evidence.</span></caption>\n'
+             '      <thead><tr><th scope="col">Claim</th><th scope="col">Verdict</th><th scope="col">Key number</th>'
+             '</tr></thead>\n      <tbody>\n        ' + "\n        ".join(crows) + '\n      </tbody>\n    </table></div>')
     o.append('<p><b>The four shelved claims say the most:</b></p>')
     o.append('<ul class="leads">\n'
              '      <li><b>BCA\'s width does not help as built</b> (experiment 2, test 1). It is measured where the '
@@ -1250,85 +1389,77 @@ def part_together():
              'claim 4): extra caution then mostly turns good candidates away.</li>\n'
              '      <li><b>A shared harm budget does not help when few actions pass at all</b> (experiment 3, claim '
              '6).</li>\n    </ul>')
-    o.append('<p><b>What the notebook concludes for BCA</b> (toy evidence only):</p>')
+    o.append('<h4 id="toy-adds-up">What it all adds up to</h4>')
+    o.append('<p><b>The recommended role for BCA: a certificate on each deviation, not a penalty in training.</b> The '
+             'notebook\'s seven recommendations, from toy evidence only:</p>')
     o.append('<ol>\n'
-             '      <li>Use BCA as a gate on deviations, not as a width in training. The toys cannot judge a dose in '
-             'training, because in them a critic\'s errors never spread through its own training targets; what they show '
-             'is that neither way of using a width beat simply refusing thin data.</li>\n'
-             '      <li>Measure a deviation against the fallback\'s value, not against other rows plus a margin: in '
-             'experiment 2 this cut regret from 0.051 to 0.028 and drops the step-1 gate\'s hand-picked 0.10. A harm '
-             'test still ventured in 27.6% of cases in unsafe worlds; a safety promise needs a gate that asks for proof '
-             'of safety.</li>\n'
-             '      <li>Match the gate to the promise: BCA\'s mean gate for the most return at a fixed safety level '
-             '(0.0845 against 0.0400 in experiment 3, by a narrow margin in experiment 4, both with settings tuned on '
-             'worlds whose truth is known); BCA\'s tail gate for "rarely worse than the fallback" (at most 3% of seeds '
-             'in any unsafe world in experiment 2, against up to 38% for split conformal); the plain held-out average '
-             'when no safety level is required.</li>\n'
-             '      <li>Use weights when the held-out tries come from a different mix of states than deployment, and '
-             'for the weighted mean gate prefer the version with the largest weight on the worst case.</li>\n'
-             '      <li>Compute equal-weight BCA exactly: with 1,000 random draws only 4 of 8 score sets matched the '
-             'exact answer at 28 and at 29 scores, and exact arithmetic lowers the evidence floor from the 36 rows that '
-             'production asks for to 29.</li>\n'
-             '      <li>Describe it plainly: the defensible claims are a safety promise for each decision that holds for '
-             'the data in hand, and the most return at a fixed safety level; the claim that BCA\'s Bayesian posterior '
-             'adds information over a textbook test is not supported.</li>\n'
-             '      <li>Budget the evidence: the tail gate needs at least 29 held-out outcomes per decision with no '
+             '      <li><b>Use BCA as a gate on deviations, not as a width in training.</b> A width calibrated at recorded '
+             'actions cannot see the actions the recording lacks, and its caution costs return (experiments 1 and 2). '
+             'The toys cannot judge a dose in training, because in them a critic\'s errors never spread through its own '
+             'training targets; what they show is that neither way of using a width beat simply refusing thin data. So '
+             'the width doses in the learners that host BCA, the multiplier on the pull toward the recorded actions in '
+             'TD3+BC and similar learners and the penalty multiplier in conservative Q-learning, are the wrong place for '
+             'claims about BCA.</li>\n'
+             '      <li><b>Measure a deviation against the fallback\'s value,</b> not against other rows plus a margin: '
+             'deviate only if a bound on the deviation\'s held-out outcomes beats the fallback\'s value, which the '
+             'critic estimates on data. In experiment 2 this cut regret from 0.051 to 0.028 and drops the step-1 gate\'s '
+             'hand-picked 0.10. A harm test still ventured in 27.6% of cases in unsafe worlds; a safety promise needs a '
+             'gate that asks for proof of safety.</li>\n'
+             '      <li><b>Match the gate to the promise you need.</b> For the most return at a fixed safety level, BCA\'s '
+             'mean gate (0.0845 against 0.0400 and 0.019 in experiment 3, and by a narrow margin in experiment 4, both '
+             'with settings tuned on worlds whose truth is known). For "rarely worse than the fallback", BCA\'s tail gate '
+             '(at most 3% of seeds in any unsafe world in experiment 2, against up to 38% for split conformal). With no '
+             'safety level required, the plain held-out average (experiment 2\'s regret 0.016; experiment 3\'s gain '
+             '0.158).</li>\n'
+             '      <li><b>Use weights when the held-out tries come from a different mix of conditions than '
+             'deployment.</b> They kept both promises in experiment 4, where ignoring the shift broke them. For the '
+             'weighted mean gate, prefer the version with the largest weight on the worst case.</li>\n'
+             '      <li><b>Compute equal-weight BCA exactly.</b> With equal weights the tail gate is the exact binomial '
+             'test. With 1,000 random draws only 4 of 8 score sets matched the exact answer at 28 and at 29 scores, and '
+             'exact arithmetic lowers the evidence floor from 36 rows, the project code\'s allowance for sampling error, '
+             'to 29. Keep the random draws for weighted sets of scores.</li>\n'
+             '      <li><b>Describe it plainly.</b> With equal weights, BCA\'s tail gate is a textbook tolerance limit '
+             '(Wilks\'), and its mean gate is Gaffke\'s bound computed with BCA\'s random draws. The defensible claims '
+             'are a safety promise for each decision that holds for the data in hand, and the most return at a fixed '
+             'safety level; the claim that BCA\'s Bayesian posterior adds information over a textbook test is not '
+             'supported.</li>\n'
+             '      <li><b>Budget the evidence.</b> The tail gate needs at least 29 held-out outcomes per decision with no '
              'shift, about 39 under the moderate shift and about 83 under the strong one.</li>\n    </ol>')
-    o.append('<p><b>What the toys do not show.</b> Every gate was handed the deviation and read real, independent '
-             'held-out tries of it; a real gate must find its deviations and group similar ones, and each split of the '
-             'evidence costs tries. Floors and weights were known exactly: a wrong floor voids the mean gate\'s promise, '
-             'and estimated weights are untested. Each decision stood alone. The mean gate\'s guarantee rests on an '
-             'unreviewed 2026 preprint, and BCA\'s own weighted mean gate has no proof. None of the worlds lets a '
-             'critic\'s errors spread through its own training targets, the main failure in offline learning. The '
-             'notebook proposes three next steps, none of them run yet: a toy test with estimated weights (designed, with '
-             'its kill rules to be fingerprinted before its first run); a ThrusterChain test of the mean gate at '
-             'deviations, which would need a new pre-registration approved by the project owner; and exact '
-             'equal-weight BCA in production, a small change to <code>calibration/wbcp.py</code> that needs the '
-             'owner\'s approval.</p>')
+    o.append('<h4 id="toy-not-shown">What this does not show</h4>')
+    o.append('<ul class="leads">\n'
+             '      <li><b>Toy seeds only.</b> Nothing here is ThrusterChain evidence or evidence about the learners that '
+             'host BCA, and nothing is confirmatory.</li>\n'
+             '      <li><b>The deviation was given.</b> Every gate was handed the deviation and read real, independent '
+             'held-out tries of it. A real gate must find its deviations and group similar ones, and each split of the '
+             'evidence costs tries.</li>\n'
+             '      <li><b>Floors and weights were known exactly.</b> A wrong floor voids the mean gate\'s promise, and '
+             'estimated weights are untested.</li>\n'
+             '      <li><b>Each decision stood alone.</b> None of the worlds lets a critic\'s errors spread through its own '
+             'training targets, the main failure in offline learning.</li>\n'
+             '      <li><b>Two guarantees are open.</b> The mean gate\'s guarantee rests on an unreviewed 2026 preprint, and '
+             'BCA\'s own weighted mean gate, with the average weight on the worst case, has no proof.</li>\n    </ul>')
+    o.append('<p><b>Next steps the notebook proposes</b> (none approved or run): a toy test with estimated weights '
+             '(designed, with its kill rules to be fingerprinted before its first run); a ThrusterChain test of the mean '
+             'gate at deviations, which would change step 2 of the restructured BCA and needs a new pre-registration '
+             'approved by the project owner at their own terminal; and exact equal-weight BCA in the project\'s '
+             '<code>calibration/wbcp.py</code>, a small change that also needs the owner\'s approval. The literature '
+             'behind experiments 3 and 4 is reviewed in <code>reports/Calibrated bounds in policy optimization.md</code>, '
+             'committed with the notebooks.</p>')
     return "\n    ".join(o)
 
 
 # ====================================================================================== 9. meaning for ThrusterChain
 def part_meaning():
-    o = ['<h3 id="toy-meaning">What it means for ThrusterChain</h3>']
-    o.append('<p class="status"><span class="tag acc">exploratory</span> Toy evidence only: it can aim the next '
-             'ThrusterChain tests, not replace them.</p>')
-    o.append('<ul class="leads">\n'
-             '      <li><b>It matches the record.</b> In a read-only diagnosis on seeds 0–4, BCA\'s own width was 0.31 to '
-             '0.36 value units both at a harmful command past 80% and at the 80% cap, while the critic\'s false '
-             'preference for that command was 0.63 to 0.89: as in experiment 2\'s test 1, the width did not react where '
-             'the decision is made (see <a href="#ats-bca">After the stop</a>).</li>\n'
-             '      <li><b>Reading outcomes worked there too.</b> The restructured BCA reads the critic\'s over-predictions '
-             'on the 29 to 60 full-throttle steps per seed and world left after the removal, scored by critics that '
-             'never trained on them. Its step 1 passed: caution on in 5 of 5 stalling seeds, off in 5 of 5 no-stall '
-             'seeds, 106.1 points net across the two worlds against a bar of 90 (designed after seeing seeds 0–4; see '
-             '<a href="#ats-restructure">Restructured BCA</a>). A later route search credited its fixed 0.10 margin, not '
-             'the posterior: with 12 to 45 rows, BCA beat plain split conformal by only 1.78 points. Its step 2, which '
-             'puts the same switch inside training, then met all three of its pass marks (GO, 15 Oct; exploratory); '
-             'there too plain split conformal\'s switch made the same on/off decision as BCA\'s in all 10 runs, and '
-             'nothing was credited to calibration or to BCA\'s Bayesian part.</li>\n'
-             '      <li><b>Where the toy does not carry over.</b> ThrusterChain\'s comparison group was quiet (its 90% '
-             'point stayed between −0.049 and −0.031), so the toy\'s step-1 weakness did not arise. ThrusterChain\'s '
-             'scores use one-step targets, so the critic\'s value of the next state would stay in a harm test (the '
-             'toy\'s last stage has no next state, so there the critic drops out). A tail certificate needs 29 rows; in '
-             'step 1, no-stall seed 3 had 29, and BCA\'s random draws gave it no finite caution size (947 of BCA\'s 1,000 '
-             'random draws cleared the bar; 950 were needed). And the stall is shortfall-shaped (past 80% every command '
-             'pushes less, rather than failing rarely), the shape in which the toy\'s plain average served return '
-             'best.</li>\n'
-             '      <li><b>The evidence is thin for a shift.</b> Experiment 4\'s tail gate needs about 39 held-out '
-             'outcomes per decision under its moderate shift and about 83 under its strong one, against 29 with no shift. '
-             'If step 1\'s 29 to 60 full-throttle steps per seed and world had to be weighted for a shift like those, '
-             'they would be enough for some seeds and worlds under the moderate shift and for none under the strong one. '
-             'On ThrusterChain itself, the <a href="#weighting-test">weighting test</a> found for BCA\'s band what '
-             'experiment 1 found for the width: weighting by the exact ratio restored 90% coverage under a known '
-             'shift, and its exploratory runs found no gain in return from weighting as BCA uses its band.</li>\n'
-             '      <li><b>No plan changes here.</b> The toys propose BCA as a gate that decides whether to venture at the '
-             'gap, rather than as a width in training. Other learners that host BCA were not tested in them. Stage 2\'s '
-             'version 7, which was to test the width on fresh seeds 5–9, has ended and will not run. Step 2 of the '
-             'restructured BCA, its training pilot, was fixed in writing before any training and ran unchanged; any '
-             'change to a pre-registered test needs the project owner\'s approval at their own terminal.</li>\n'
-             '    </ul>')
-    return "\n    ".join(o)
+    """What it means for ThrusterChain: since the rebase onto the live page's version 26 (service version
+    1792172582-8406), its role table and its five parts (#toy-tc-width, #toy-tc-gate, #toy-tc-limits, #toy-tc-resultf,
+    #toy-tc-plans) come from that version's section, in this section's names (experiments 1 to 4) and with this build's
+    status of Stage 2's version 7; the earlier version of this part (the matching record, step 1 and step 2, where the
+    toy does not carry over, the evidence for a shift, no plan changes) is folded into them. The block is the file
+    part_meaning.html next to this script; its ThrusterChain numbers are checked against the rest of the page by
+    check_numbers.py."""
+    s = open(os.path.join(HERE, "part_meaning.html"), encoding="utf-8").read().rstrip("\n")
+    assert s.startswith('    <h3 id="toy-meaning">') and "\r" not in s
+    return s[4:]
 
 
 def build():

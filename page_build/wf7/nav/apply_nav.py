@@ -68,6 +68,11 @@ KNOWN = {
     "E1": {"c7ee78a5d09e8a0d"}, "E2": {"6175747978f305d3", "d7210c08d6f1c341"}, "E4": {"60c929b95f33e9dc"}, "E5": {"bc49df82a2167eb9"},
     "E6": {"8bceb97dc648ed57"}, "E8": {"329dba5e8f45d88c", "8715864a03fa09f2"}, "E11": {"baf0e98bb1791b45"},
 }
+# The live page's version 26 (service version 1792172582-8406, 16 Oct 2026): E4's old contents with its four new entries
+# (BCA's main channel, and three of the toy section's parts, which "In this section" lists).
+KNOWN["E4"].add("77d6fafecdc1b7fe")
+# ... and E8's old Choices script, whose "Tested on" row lists the main test's four situations too (nav.js carries them)
+KNOWN["E8"].add("b0cd8cc4deca8827")
 
 
 def known(label, removed):
@@ -136,6 +141,10 @@ def main():
     a = ("/* the indent marks a subsection in the sidebar; the phone's row of pills has no indent */\n"
          "@media (min-width: 1001px) { nav.toc a.sub { padding-left: 24px; font-size: 13.5px; } }\n")
     once(s, a, "E11 (sub-link indent)")
+    s = s.replace(a, "", 1)
+    # version 26 added a rule for the old contents' links under it; it goes too
+    a = "@media (min-width: 1001px) { nav.toc a { padding-block: 2px; line-height: 1.4; } }\n"
+    once(s, a, "E11 (version 26's contents-link rule)")
     s = s.replace(a, "", 1)
     log.append("E11 page grid and nav.toc CSS")
 

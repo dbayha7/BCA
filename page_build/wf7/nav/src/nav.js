@@ -252,7 +252,9 @@
       row("The learner's data", all('#simtog [data-tog-group="ld"]'), byAttr("data-tog-value"),
         named({ gap: "80% hold removed", full: "All the data" }, "data-tog-value"), { idle: simFixed }),
       row("Tested on", all('#simtog [data-tog-group="lm"]'), byAttr("data-tog-value"),
-        named({ training: "Training mix", strong: "Strong test mix" }, "data-tog-value"), { idle: simFixed }) ] },
+        named({ training: "Training mix", strong: "Strong test mix", recorded: "Main test: recorded conditions (no shift)",
+          big_kicks: "Main test: big starting pushes (small shift)", big_waves: "Main test: big waves (medium shift)",
+          strong_current: "Main test: strong current (large shift)" }, "data-tog-value"), { idle: simFixed }) ] },
     { panel: () => $("task-diagram"), view: "#task-diagram > svg.dg", rows: [
       row("Situation", all("#td-modes:not([hidden]) .td-mode"), byAttr("data-sit"), named(LEVELS, "data-sit")) ] },
     { panel: () => $("stall-chart"), view: "#sc-svg", rows: [

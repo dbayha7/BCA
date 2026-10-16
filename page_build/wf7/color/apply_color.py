@@ -310,7 +310,8 @@ E("K13b", "tooltip", "cost chart while the learned actor drives (versions 21 and
   '      return ["Cost so far at state " + t, "At this state the cost so far is " + lp.slice(0, -1).join(", ") + " and " +\n'
   '        lp[lp.length - 1] + ". All five learned from " + (S.ld === "gap" ? "data with the 80% hold removed" : "all the data") +\n'
   '        (rr ? ", in the cloud rerun of seed 0," : "") +\n'
-  '        " and start from the same start of the " + (S.lm === "strong" ? "strong test mix" : "training mix") +\n'
+  '        (typeof isSit4 === "function" && isSit4(S.lm) ? " and start from start 11 of " + lmName(S.lm)\n'
+  '          : " and start from the same start of the " + (S.lm === "strong" ? "strong test mix" : "training mix")) +\n'
   '        ". The cost so far is minus the return so far, so lower is better."];',
   '      const nm = typeof LRNAME !== "undefined" && S.lr && S.lr !== "td3bc" ? LRNAME[S.lr] + " " : "";\n'
   '      const rr = !!learnedEp().meta.learner;\n'
@@ -319,7 +320,8 @@ E("K13b", "tooltip", "cost chart while the learned actor drives (versions 21 and
   '      const keys = LQ.map(q => [typeof LQVAR === "object" && LQVAR[q] ? LQVAR[q] : "--muted", "line"]);\n'
   '      lines.push("All five " + (nm ? nm + "actors " : "") + "learned from " + (S.ld === "gap" ? "data with the 80% hold removed" : "all the data") +\n'
   '        (rr ? ", in the cloud rerun of seed 0," : "") +\n'
-  '        " and start from the same start of the " + (S.lm === "strong" ? "strong test mix" : "training mix") +\n'
+  '        (typeof isSit4 === "function" && isSit4(S.lm) ? " and start from start 11 of " + lmName(S.lm)\n'
+  '          : " and start from the same start of the " + (S.lm === "strong" ? "strong test mix" : "training mix")) +\n'
   '        ". The cost so far is minus the return so far, so lower is better."); keys.push(null);\n'
   '      return ["Cost so far at state " + t, lines.join("\\n"), JSON.stringify(keys)];')
 E("N7b", "neutral", "cost chart while the learned actor drives (version 21): the actors not on screen drawn opaque and thin, "
@@ -408,9 +410,8 @@ E("X2", "text", "dot-and-range legend: the ring also marks the two starting rows
 # are dropped in page version 27's toy integration: the build's first stage, the toy patch (wf7/toy/apply_toy.py),
 # replaces that section as a whole, and its new text says itself that the notebook "was first committed on 15 Oct, after
 # its runs" (build/rebase/edits/e_color_v27t.py).
-E("B13", "text", "After the stop: the toy notebooks are now committed (branch forked, merged into main at 21:36 UTC)",
-  "(exploratory notebooks, not yet committed\n      to the repository)",
-  "(exploratory notebooks, committed on 15 Oct\n      to the repository's branch <code>forked</code> and merged into its main branch at 21:36 UTC)")
+# B13 (the toy notebooks committed) is dropped since the rebase onto the live page's version 26 (service version
+# 1792172582-8406), which already says so: "(exploratory notebooks, committed with their results on 15 Oct)".
 E("B5", "text", "Results, opening: version 7 was handed off and approved, and the approval checked and recorded; then "
   "it was ended without running (page version 27)",
   "As of 15 Oct 2026, 05:41 UTC, four\n"

@@ -101,7 +101,8 @@ TOY_FRAGMENT = W7 / "toy" / "toy_fragment.html"
 # the ids that the navigation's static edits gave parts of the live page's old toy section (static_edits_v27.py); the
 # new section has them itself (nav/rules/static_edits_v27t.py drops those edits)
 TOY_NAV_IDS = ("toy-reward-table", "toy-pooled-table", "toy-shelved-width", "toy-shelved-posterior", "toy-more-detail")
-WRAPPER = SCR / "live6" / "live_92ba.html"
+# the files were copied from the laptop's scratchpad (live6/) into page_build/base/ when the build moved to the cloud
+WRAPPER = SCR / "base" / "live_92ba.html"
 WRAP_HEAD_BYTES = 531
 WRAP_TAIL = b"\n</body></html>"
 LIMIT = 16 * 1000 * 1000          # 16 MB, counted in decimal megabytes to stay on the safe side
@@ -240,41 +241,43 @@ def no_toy(x):
 
 
 def version_entry(v, d):
+    # Since the rebase onto the live page's version 26 (service version 1792172582-8406, the other session's version
+    # with "BCA's main channel" and its own rewrite of the toy worlds): the entry says what this version adds to the page
+    # as version 26 left it, and that the toy section keeps version 26's parts.
     return (
-        '      <li><b>Version %s, %s.</b> Four of the project owner\'s requests, built on the page as version 26 left it\n'
-        '        (version 25 with its status box removed at the owner\'s request), with everything versions 20 to 26 did kept: a\n'
-        '        step-by-step way to learn the page, an easier way around it, better colors in the plots, and the toy worlds\'\n'
-        '        full results. A new section,\n'
-        '        "Learn step by step", replaces Full walkthrough mode: a lesson in 7 chapters and 39 steps, each with its goal,\n'
-        '        a plain explanation, the rule as a formula with a key to its symbols, the arithmetic worked out line by line\n'
-        '        with real numbers from the project\'s saved runs (some read for the lesson by inference and exact simulation),\n'
-        '        a small control to try the rule and a question to check yourself. A new navigation: the page\'s sections\n'
-        '        grouped in seven parts in a Contents list; beside each section an "In this section" list in which every part\n'
-        '        of the section is a link, the parts versions 20 to 23 added among them (the guide to gauging the observed\n'
-        '        numbers, the live panel\'s switch bar and "Who drives", the notes under the arm tables, the learning curves\'\n'
-        '        table, the two notes on the weighting test\'s result A); Previous and Next, which step through those parts in\n'
-        '        order; one section shown at a time, or the whole page (the choice is remembered); a bar at the bottom of a\n'
-        '        phone\'s screen; and the Choices (every option of the live panels as a short button, the rows of versions 21,\n'
-        '        22 and 25 included, version 25\'s Learner switch among them, still marked "not in use now" while the other\n'
-        '        mode plays) placed under their panels in the "In this section" list, with a Choices button on a phone, which\n'
-        '        steps aside rather than cover a panel\'s own switches. The remaining charts\' colors retuned for contrast and\n'
-        '        for color-blind readers, and each line\'s or bar\'s color shown in their hover readouts, beside version 24\'s\n'
-        '        axis titles, as version 19 did for the learning curves; now also on the learned actors\' cost chart, for each\n'
-        '        of version 25\'s learners, whose lines no longer fade. The Toy worlds section rewritten with the full results\n'
-        '        of all five toy notebooks (the four experiments and the notebook that gathers them); each was run again from\n'
-        '        its committed version, and every number the section quotes from them was checked against those runs. It shows\n'
-        '        what each notebook asks and finds at a glance, the shared two-step world and its weights worked out step by\n'
-        '        step, BCA\'s tools in toy terms, and for each experiment its idea, what was tested and the result that would\n'
-        '        shelve a claim (set it aside), what happened and why, with tables, worked arithmetic and four charts whose\n'
-        '        hover readouts show each line\'s color. Of the 18 claims written down before the runs, 14 are alive and 4\n'
-        '        shelved. The status statements in Results, After the stop and\n'
-        '        the first claim brought up to date at one time: Stage 2\'s plan version 7 was approved by the project owner\n'
-        '        and the approval checked and recorded, but it was then ended without running, so seeds 5 to 9 will not run\n'
-        '        under it; a test that leaves the commands near 80%% throttle out of the training data, its final plan approved\n'
-        '        by the owner, now runs; runs of four learners are planned, with nothing trained yet; the weighting test\'s\n'
-        '        code, specification and exploratory results are in the shared repository. The TD3+BC settings table\'s\n'
-        '        wording fixed: the slowly averaged\n'
-        '        copies move only when the actor updates, that is every second critic update.</li>\n'
+        '      <li><b>Version %s, %s.</b> Four of the project owner\'s requests, built on the page as version 26 left it, with\n'
+        '        everything versions 20 to 26 did kept (the status box under the title stays removed, at the owner\'s\n'
+        '        request): a step-by-step way to learn the page, an easier way around it, better colors in the plots, and the\n'
+        '        toy worlds\' full results, explained step by step. A new section, "Learn step by step", replaces Full\n'
+        '        walkthrough mode: a lesson in 7 chapters and 39 steps, each with its goal, a plain explanation, the rule as a\n'
+        '        formula with a key to its symbols, the arithmetic worked out line by line with real numbers from the\n'
+        '        project\'s saved runs (some read for the lesson by inference and exact simulation), a small control to try\n'
+        '        the rule and a question to check yourself. A new navigation: the page\'s sections grouped in seven parts in a\n'
+        '        Contents list, version 26\'s "BCA\'s main channel" among them; beside each section an "In this section" list\n'
+        '        in which every part of the section is a link, the parts versions 20 to 26 added among them; Previous and\n'
+        '        Next, which step through those parts in order; one section shown at a time, or the whole page (the choice is\n'
+        '        remembered); a bar at the bottom of a phone\'s screen; and the Choices (every option of the live panels as a\n'
+        '        short button, the rows of versions 21, 22 and 25 and the main test\'s four situations included, marked "not\n'
+        '        in use now" while the other mode plays) placed under their panels in the "In this section" list, with a\n'
+        '        Choices button on a phone, which steps aside rather than cover a panel\'s own switches. The remaining charts\'\n'
+        '        colors retuned for contrast and for color-blind readers, and each line\'s or bar\'s color shown in their\n'
+        '        hover readouts, beside version 24\'s axis titles, as version 19 did for the learning curves; now also on the\n'
+        '        learned actors\' cost chart, for each of version 25\'s learners, whose lines no longer fade. The Toy worlds\n'
+        '        section now covers all five toy notebooks (the four experiments and the notebook that gathers them); each was\n'
+        '        run again from its committed version, and every number the section quotes from them was checked against those\n'
+        '        runs. It keeps version 26\'s bottom line, its list of the words it uses, its table of all 18 claims, "What it\n'
+        '        all adds up to" and its parts on ThrusterChain, result F among them, and adds the shared two-step world and\n'
+        '        its weights worked out step by step, BCA\'s tools in toy terms, and for each experiment its idea, what was\n'
+        '        tested and the result that would shelve a claim (set it aside), what happened and why, with tables, worked\n'
+        '        arithmetic and four charts whose hover readouts show each line\'s color; it numbers the experiments 1 to 4\n'
+        '        (version 26 called them Parts). Of the 18 claims written down before the runs, 14 are alive and 4 shelved.\n'
+        '        The status statements in Results, After the stop and the first claim brought up to date at one time: Stage\n'
+        '        2\'s plan version 7 was approved by the project owner and the approval checked and recorded, but it was then\n'
+        '        ended without running, so seeds 5 to 9 will not run under it; a test that leaves the commands near 80%%\n'
+        '        throttle out of the training data, its final plan approved by the owner, now runs; runs of four learners are\n'
+        '        planned, with nothing trained yet; the weighting test\'s code, specification and exploratory results are in\n'
+        '        the shared repository. The TD3+BC settings table\'s wording fixed: the slowly averaged copies move only when\n'
+        '        the actor updates, that is every second critic update.</li>\n'
         % (v, d))
 
 
@@ -360,7 +363,8 @@ def main(argv):
     logs = []
     toy_log = run_stage(TOY, base, s0, [], "0 toy worlds")
     logs.append("[0 toy worlds]\n" + toy_log)
-    if "replacing the live page's section" not in toy_log and "already has this toy section" not in toy_log:
+    if ("replacing the live page's section" not in toy_log and "replacing the live page's version-26 section" not in toy_log
+            and "already has this toy section" not in toy_log):
         die("stage 0: the toy patch was expected to replace the live page's own toy section: %s" % toy_log)
     logs.append("[1 color]\n" + run_stage(COLOR, s0, s1, ["--status-date", d, "--status-time", t, "--version", v], "1 color"))
     logs.append("[2 navigation]\n" + run_stage(NAV, s1, s2, [], "2 navigation"))
@@ -429,6 +433,11 @@ def main(argv):
                     # versions 24-25's version-history entries, and version 25's Learner row in the Choices (nav.js)
                     ("<b>Version 24, 15 Oct 2026.</b>", 1), ("<b>Version 25, 16 Oct 2026.</b>", 1),
                     ('row("Learner", all(\'#simtog [data-tog-group="lr"]\')', 1),
+                    # version 26 (the live page after version 25, service version 1792172582-8406): its entry, its section
+                    # "BCA's main channel", the main test's four situations in the learned mode, and their Choices row
+                    ("<b>Version 26, 16 Oct 2026.</b>", 1), ('<section id="capped-pull">', 1), ('id="sim-sit4-data"', 1),
+                    ('recorded: "Main test: recorded conditions (no shift)",\n          big_kicks: "Main test: big starting pushes '
+                     '(small shift)"', 1),
                     ('named({ fixed: "Fixed controllers", learned: "Learned actor" }, "data-tog-value")', 1)):
         if s.count(need) != n:
             die("%r occurs %d times, expected %d" % (need, s.count(need), n))
@@ -439,10 +448,14 @@ def main(argv):
                  'data-tog-group="lr"', 'id="sim-rerun-data"', 'id="simtog-l-lr"', 'id="simtog-lr-q"', 'id="exLrnT"',
                  'id="exLrn"', "function nowMore()", "function ltipOf(id)", "LRO_RERUN_J", "const LRTIP_OFF = {",
                  "function avgOf(L)", "const lrOK = () =>", "Horizontal axis: ", "Vertical axis: ",
-                 'class="axlab"', "fitTitle(", "#iw-curves .lc-cell svg .axlab"):
+                 'class="axlab"', "fitTitle(", "#iw-curves .lc-cell svg .axlab",
+                 # version 26's code and parts (outside the toy section)
+                 "const isSit4 = lm => LM_SIT.includes(lm)", "const LRO_SIT", 'data-sub="sit"', 'id="simtog-l-lm-sit"',
+                 'id="simtog-lm-q"', 'data-tog-value="strong_current"', 'id="capped-what"', 'id="capped-see"',
+                 'id="capped-why"', 'id="capped-toys"', 'id="capped-fixes"', "#capped-pull td.n { white-space: normal; }"):
         nb, no = no_toy(base_s).count(need), no_toy(s).count(need)
         if nb == 0 or no != nb:
-            die("version 24-25 code %r occurs %d times in BASE and %d times in OUT, outside the toy section (it must be kept "
+            die("version 24-26 code %r occurs %d times in BASE and %d times in OUT, outside the toy section (it must be kept "
                 "as it is)" % (need, nb, no))
     # ... and the toy section's charts follow version 24's rule: each names both of its axes, on the chart and for
     # screen readers
@@ -521,7 +534,7 @@ def main(argv):
                     ("merged into the shared repository's main branch on\n      15 Oct 2026 at 17:18 UTC (commit <code>03726de</code>)", 1),
                     ("approved by the project owner at 15:45 UTC, and the\n      approval was checked and recorded", 1),
                     ("commit\n        <code>de4851c</code>, 15:49 UTC", 1),
-                    ("<code>forked</code> and merged into its main branch at 21:36 UTC)", 1),
+                    ("(exploratory notebooks, committed with their results on 15 Oct)", 1),
                     ("its main branch at commit <code>1ec267e</code> (15 Oct, 21:36 UTC)", 1),
                     ("<code>claude/main-bca-connection-x4o46s</code> at commit <code>0377dd7</code> (16 Oct, 12:38 UTC)", 1),
                     ("head <code>0377dd7</code>, 16 Oct 2026, 12:38 UTC", 1),

@@ -1,0 +1,179 @@
+{
+ "notebook": "extra_channel.ipynb",
+ "seconds": 80.1,
+ "cells": [
+  {
+   "cell": 2,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 4,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 6,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 8,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "n    BCA with 1,000 draws = exact    BCA with 100,000 draws = exact    (8 random score sets each)\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 10               8/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 28               4/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 29               4/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 30               7/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 36               8/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 45               5/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "100               8/8                               8/8\nSmallest n with any finite threshold: 29\n"
+    }
+   ]
+  },
+  {
+   "cell": 10,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Kill rules SHA-256: bb9e03252e9c6be5fc30e72d1172a134498198559d30f51d9552fd86a6afdbc3\n"
+    }
+   ]
+  },
+  {
+   "cell": 12,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 13,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "200 seeds in 70.5 s\nclaimed  mean    0.504   min    0.256   max    0.788\nq_gap    mean    1.506   min    1.242   max    1.788\nq_safe   mean    1.002   min    0.962   max    1.039\nr0       mean    1.712   min    1.511   max    1.960\nr1_min   mean    1.473   min    1.292   max    1.648\nr1_max   mean    8.896   min    8.093   max    9.934\nn_rest   mean  600.655   min  546.000   max  659.000\n"
+    }
+   ]
+  },
+  {
+   "cell": 15,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "P(venture outcome at the gap < 1.0), by world; above 0.10 is an unsafe world:\n  shortfall +1.00: 0.000  +0.50: 0.006  +0.25: 0.106  +0.10: 0.309  -0.10: 0.691  -0.25: 0.894  -0.50: 0.994  -1.00: 1.000  -2.00: 1.000  -4.60: 1.000\n  tail      +1.00: 0.000  +0.50: 0.071  +0.25: 0.107  +0.10: 0.129  -0.10: 0.157  -0.25: 0.179  -0.50: 0.214  -1.00: 0.286  -2.00: 0.429  -4.60: 0.800\n\nBest world-blind rule: range limit.  Room = 0.1215 (its pooled regret minus the oracle's)\n\nrule                            pooled regret gain / room  unsafe-deviation  (tail worlds)\noracle switch                          0.0000        1.00             0.250          0.250\ngreedy                                 0.5505       -3.53             1.000          1.000\nrange limit                            0.1215        0.00             0.000          0.000\ncount penalty                          0.1222       -0.01             0.000          0.000\nhost BC actor                          0.4939       -3.06             0.865          0.865\nA1 width penalty                       0.4253       -2.50             0.003          0.003\nA2 width BC multiplier                 0.3755       -2.09             0.649          0.653\nG1 step-1 certificate                  0.0508        0.58             0.517          0.424\nG1 local reference                     0.0329        0.73             0.241          0.424\nG2R BCA harm test                      0.0282        0.77             0.276          0.424\nG2 BCA tail certificate                0.0758        0.38             0.002          0.002\nG3 split-conformal certificate         0.0392        0.68             0.057          0.078\nG4 exact binomial certificate          0.0753        0.38             0.001          0.001\nG5 plug-in mean                        0.0157        0.87             0.270          0.290\nG6 mean harm test                      0.0634        0.48             0.485          0.681\nG1 shuffled                            0.4356       -2.58             0.899          0.920\nG2R shuffled                           0.3543       -1.91             0.710          0.791\nG2 shuffled                            0.1211        0.00             0.004          0.005\n"
+    }
+   ]
+  },
+  {
+   "cell": 17,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Test 1, width channel (bar: gain at least 0.25 of the room)\n  A1 width penalty: gain / room = -2.50 -> SHELVED\n  A2 width BC multiplier: gain / room = -2.09 -> SHELVED\nTest 2, step-1 gate (bars: gain at least 0.50 of the room; shuffled keeps at most half)\n  gain / room = +0.58; shuffled keeps -4.44 of it -> ALIVE\nTest 3, decision-referenced reference point (bar: G2R's pooled regret below G1's)\n  G2R 0.0282 against G1 0.0508 -> ALIVE\nTest 4a, 'BCA's posterior decides differently from the exact binomial test' (shelved if agreement >= 0.99)\n  agreement 0.9961 -> SHELVED\nTest 4b, 'BCA's credibility makes deviations safer than split conformal' (bar: 0.05 more unsafe deviations)\n  split conformal 0.057 against BCA 0.002 (difference +0.055) -> ALIVE\nTest 4c, 'tail safety needs quantile semantics, not a mean' (bar: 0.05, tail-shape unsafe worlds)\n  plug-in mean 0.290 against BCA 0.002 (difference +0.288) -> ALIVE\nReported, not deciding:\n  G2's pooled regret minus G5's: +0.0601\n  G2 BCA tail certificate: worst unsafe-world deviation rate by evidence size: n=5: 0.000  n=10: 0.000  n=20: 0.000  n=30: 0.025  n=45: 0.030  n=60: 0.020  n=100: 0.015\n  G4 exact binomial certificate: worst unsafe-world deviation rate by evidence size: n=5: 0.000  n=10: 0.000  n=20: 0.000  n=30: 0.030  n=45: 0.005  n=60: 0.010  n=100: 0.015\n"
+    }
+   ]
+  },
+  {
+   "cell": 19,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Pooled regret by evidence size (both shapes, whole ladder)\nevidence size (survivors)             5      10      20      30      45      60     100\ngreedy                           0.5505  0.5505  0.5505  0.5505  0.5505  0.5505  0.5505\nrange limit                      0.1215  0.1215  0.1215  0.1215  0.1215  0.1215  0.1215\ncount penalty                    0.1222  0.1222  0.1222  0.1222  0.1222  0.1222  0.1222\nhost BC actor                    0.4939  0.4939  0.4939  0.4939  0.4939  0.4939  0.4939\nA1 width penalty                 0.4274  0.4253  0.4250  0.4250  0.4247  0.4247  0.4247\nA2 width BC multiplier           0.4075  0.4075  0.4018  0.3985  0.3872  0.3368  0.2891\nG1 step-1 certificate            0.0854  0.0693  0.0482  0.0441  0.0397  0.0362  0.0329\nG1 local reference               0.0661  0.0505  0.0296  0.0264  0.0224  0.0191  0.0161\nG2R BCA harm test                0.0619  0.0457  0.0256  0.0219  0.0176  0.0139  0.0108\nG2 BCA tail certificate          0.1215  0.1215  0.1215  0.0485  0.0411  0.0390  0.0373\nG3 split-conformal certificate   0.1215  0.0318  0.0265  0.0251  0.0266  0.0224  0.0207\nG5 plug-in mean                  0.0297  0.0275  0.0149  0.0125  0.0102  0.0084  0.0065\nG6 mean harm test                0.1600  0.0944  0.0612  0.0443  0.0341  0.0289  0.0208\noracle switch                    0.0000  0.0000  0.0000  0.0000  0.0000  0.0000  0.0000\n\nUnsafe-deviation rate by evidence size (unsafe worlds only)\nevidence size (survivors)             5      10      20      30      45      60     100\nG1 step-1 certificate             0.602   0.568   0.520   0.515   0.491   0.477   0.448\nG2R BCA harm test                 0.392   0.342   0.272   0.265   0.239   0.226   0.196\nG2 BCA tail certificate           0.000   0.000   0.000   0.003   0.003   0.002   0.002\nG3 split-conformal certificate    0.000   0.089   0.076   0.066   0.050   0.058   0.057\nG4 exact binomial certificate     0.000   0.000   0.000   0.004   0.000   0.001   0.002\nG5 plug-in mean                   0.272   0.306   0.261   0.268   0.265   0.257   0.260\nG6 mean harm test                 0.625   0.555   0.500   0.463   0.438   0.423   0.392\n\nShare of (seed, harm shape) where the gap decision changes somewhere along the ladder\nevidence size (survivors)             5      10      20      30      45      60     100\nrange limit                        0.00    0.00    0.00    0.00    0.00    0.00    0.00\nhost BC actor                      0.00    0.00    0.00    0.00    0.00    0.00    0.00\nA1 width penalty                   0.00    0.01    0.01    0.01    0.01    0.01    0.01\nA2 width BC multiplier             0.00    0.00    0.02    0.03    0.05    0.20    0.35\nG1 step-1 certificate              0.99    1.00    1.00    1.00    1.00    1.00    1.00\nG2R BCA harm test                  0.99    1.00    1.00    1.00    1.00    1.00    1.00\nG2 BCA tail certificate            0.00    0.00    0.00    0.91    1.00    1.00    1.00\nG5 plug-in mean                    1.00    1.00    1.00    1.00    1.00    1.00    1.00\n\nInformation only: the step-1 certificate at other margins (its rule uses 0.10)\n  margin 0.00: pooled regret 0.0491\n  margin 0.05: pooled regret 0.0502\n  margin 0.10: pooled regret 0.0508\n  margin 0.25: pooled regret 0.0540\n  margin 0.50: pooled regret 0.0790\n  margin 1.00: pooled regret 0.0837\n"
+    }
+   ]
+  },
+  {
+   "cell": 21,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    },
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 23,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "A1 width coverage at recorded actions, stage 0: 0.902 (target at least 0.90)\nA1 width coverage at recorded actions, stage 1: 0.935 (target at least 0.90)\nAll checks passed. Notebook seconds: 76.8\n"
+    }
+   ]
+  },
+  {
+   "cell": 25,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "shortfall: share of seeds that venture at the gap with 30 survivors (* unsafe world; venture is better on average when the advantage is above 0)\nrule                             +1.00   +0.50   +0.25*  +0.10*  -0.10*  -0.25*  -0.50*  -1.00*  -2.00*  -4.60*\nrange limit                       0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00 \nA2 width BC multiplier            0.67    0.67    0.67    0.67    0.67    0.67    0.67    0.65    0.65    0.65 \nG1 step-1 certificate             1.00    1.00    1.00    1.00    0.98    0.98    0.94    0.00    0.00    0.00 \nG2R BCA harm test                 1.00    1.00    0.85    0.06    0.00    0.00    0.00    0.00    0.00    0.00 \nG2 BCA tail certificate           0.91    0.73    0.03    0.00    0.00    0.00    0.00    0.00    0.00    0.00 \nG3 split-conformal certificate    1.00    0.99    0.35    0.01    0.00    0.00    0.00    0.00    0.00    0.00 \nG5 plug-in mean                   1.00    1.00    1.00    0.99    0.01    0.00    0.00    0.00    0.00    0.00 \n\ntail: share of seeds that venture at the gap with 30 survivors (* unsafe world; venture is better on average when the advantage is above 0)\nrule                             +1.00   +0.50   +0.25*  +0.10*  -0.10*  -0.25*  -0.50*  -1.00*  -2.00*  -4.60*\nrange limit                       0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00 \nA2 width BC multiplier            0.67    0.67    0.67    0.67    0.67    0.67    0.67    0.67    0.66    0.65 \nG1 step-1 certificate             1.00    0.97    0.91    0.81    0.64    0.54    0.38    0.06    0.00    0.00 \nG2R BCA harm test                 1.00    0.97    0.91    0.81    0.64    0.54    0.38    0.06    0.00    0.00 \nG2 BCA tail certificate           0.91    0.10    0.03    0.01    0.00    0.00    0.00    0.00    0.00    0.00 \nG3 split-conformal certificate    1.00    0.60    0.35    0.21    0.10    0.03    0.01    0.00    0.00    0.00 \nG5 plug-in mean                   1.00    0.91    0.76    0.62    0.46    0.33    0.12    0.01    0.00    0.00 \n\nWorst single unsafe world: share of seeds that venture there, by evidence size\nG2 BCA tail certificate         n=5: 0.00  n=10: 0.00  n=20: 0.00  n=30: 0.03  n=45: 0.03  n=60: 0.02  n=100: 0.01\nG4 exact binomial certificate   n=5: 0.00  n=10: 0.00  n=20: 0.00  n=30: 0.03  n=45: 0.01  n=60: 0.01  n=100: 0.01\nG3 split-conformal certificate  n=5: 0.00  n=10: 0.37  n=20: 0.38  n=30: 0.35  n=45: 0.32  n=60: 0.35  n=100: 0.38\nG2R BCA harm test               n=5: 0.89  n=10: 0.90  n=20: 0.85  n=30: 0.91  n=45: 0.89  n=60: 0.92  n=100: 0.90\nG5 plug-in mean                 n=5: 1.00  n=10: 1.00  n=20: 1.00  n=30: 1.00  n=45: 1.00  n=60: 1.00  n=100: 1.00\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "\nThe step-1 gate's reference group (all other final-step calibration rows), over 200 seeds:\n  posterior median of its 90% crossing: mean 1.04, from 0.35 to 1.50\n  5% posterior quantile of that crossing: mean 0.52\n  share of its rows that are the noisy cell's low outcomes (over-prediction near 1.5): 0.107\n"
+    }
+   ]
+  },
+  {
+   "cell": 27,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "EXTRA pooled regret {'oracle switch': '0.0', 'greedy': '0.550549999999996', 'range limit': '0.12154999999999958', 'count penalty': '0.12220000000000013', 'host BC actor': '0.49393499999999047', 'A1 width penalty': '0.4252546428572511', 'A2 width BC multiplier': '0.3754841071428466', 'G1 step-1 certificate': '0.05081723214286071', 'G1 local reference': '0.03288303571428876', 'G2R BCA harm test': '0.028189107142859122', 'G2 BCA tail certificate': '0.07578535714286147', 'G3 split-conformal certificate': '0.039236785714289325', 'G4 exact binomial certificate': '0.07530830357143291', 'G5 plug-in mean': '0.015674285714285686', 'G6 mean harm test': '0.06337732142857386', 'G1 shuffled': '0.4355661607142822', 'G2R shuffled': '0.3542824999999866', 'G2 shuffled': '0.12113446428571394'}\nEXTRA room 0.12154999999999958\n"
+    }
+   ]
+  }
+ ]
+}

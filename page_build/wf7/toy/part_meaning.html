@@ -1,0 +1,149 @@
+    <h3 id="toy-meaning">What it means for ThrusterChain</h3>
+    <p class="status"><span class="tag acc">exploratory</span> Toy evidence can aim the next ThrusterChain tests; it
+      cannot replace them. Every ThrusterChain number below comes from one of three places: this page's own records,
+      linked where they first appear; the restructured BCA's run records in
+      <code>outputs/shift/beyond-the-data/restructure/</code>, named where they are used; or the seed-0 evaluation of
+      16 Oct described below.</p>
+    <div class="tbl"><table id="toy-roles-table" class="stack">
+      <caption><span class="cap">Each role BCA can play: the toys' verdict next to ThrusterChain's record so
+        far.</span></caption>
+      <thead><tr><th scope="col">Role</th><th scope="col">In the toys</th><th scope="col">On ThrusterChain so far</th></tr></thead>
+      <tbody>
+        <tr><td>A width or penalty in training: the capped pull and the lower edge</td><td data-label="In the toys"><span class="tag
+          warn">shelved</span> No decision improved; return fell (experiments 1 and 2).</td><td data-label="On ThrusterChain so far">The capped pull cost 5.3 to
+          8.8 points on the three lower data qualities and gained at most 0.55 points, on medium-expert (a pointer
+          only). The lower edge gained in Stage 2 mostly through a classifier term, and in result F with a supplied
+          command likelihood; what the band's calibration adds there is open.</td></tr>
+        <tr><td>A gate that reads held-out outcomes of the risky action</td><td data-label="In the toys"><span class="tag ok">alive</span> Every
+          such gate closed 38% to 87% of the room (experiment 2).</td><td data-label="On ThrusterChain so far">Step 1 and step 2 of the restructured BCA told the
+          two worlds apart by reading outcomes.</td></tr>
+        <tr><td>BCA's Bayesian part, with equal weights</td><td data-label="In the toys"><span class="tag warn">shelved</span> It is a textbook
+          test (99.6% agreement, experiment 2).</td><td data-label="On ThrusterChain so far">Nothing credited to it: BCA beat plain split conformal by 1.78 points
+          against a 5-point bar.</td></tr>
+        <tr><td>BCA's weights, under a known shift</td><td data-label="In the toys"><span class="tag ok">alive</span> Needed to keep the promise,
+          at a cost in evidence (experiment 4).</td><td data-label="On ThrusterChain so far">Weighting restored the band's coverage, but raised no return as BCA
+          uses its band.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4 id="toy-tc-width">Widths in training: the toys' negative result matches the record</h4>
+    <ul class="leads">
+      <li><b>The capped pull cost return on the three lower data qualities and gained at most about half a
+        point.</b> The <span class="term" data-tip-title="Capped pull" data-tip="The capped pull is BCA&#x27;s own use of its band: at a training row where the band is wide, the pull toward the recorded command is made stronger by a factor from 1 up to, but not reaching, 1.5. It constrains behavior, like TD3+BC&#x27;s own pull; it is not a penalty on values.">capped pull</span> is BCA's own use of its band in training, a stronger pull toward the
+        recorded command where the band is wide: the role the toys shelved. In the weighting test (<a
+        href="#iw-arms">exploratory result B</a>, seeds 0–4, <span class="term" data-tip-title="Strong test" data-tip="The weighting test&#x27;s test episodes with a known shift toward strong currents: currents above 0.7 come in about 64% of its episodes, against about 19% in training.">strong test</span>), unweighted, it scored below
+        plain TD3+BC on random (57.2 against 66.0), medium-replay (71.2 against 77.0) and medium data (78.8 against
+        84.1). On medium-expert it scored 0.55 points above it (91.6 against 91.1; one-sided lower bound +0.21 over the
+        five seeds, which the page treats as a pointer, not evidence, since the run made 63 comparisons per quality
+        with no correction), and on expert it was level (90.2 against 90.3). Weighted, it scored lower still or within 0.1 points of that on every quality; weighting did not raise return
+        on any quality.</li>
+      <li><b>The same in the main test's four situations.</b> An exploratory evaluation made on 16 Oct of the seed-0
+        rerun's actors, the ones the live panel replays, in the main test's four situations (one seed; 1,000 fixed
+        starts per situation; stalling world; points on the weighting test's scale, 0 = uniform random commands, 100 =
+        stall-aware controller; its records are not yet in the repository): unweighted or weighted, the capped pull
+        scored below plain TD3+BC in all four situations on random (5.7 to 12.6 points lower), medium-replay (2.2 to
+        6.1) and medium data (2.3 to 6.7). On medium-expert and expert it scored between 2.3 points lower and 0.2
+        points higher. On this one seed, result B's small medium-expert lead did not appear. The full table, why the
+        capped pull fails and potential fixes are in <a href="#capped-pull">BCA's main channel</a>.</li>
+      <li><b>Even perfectly placed, the pull won back too little.</b> In the main test, the harder pull placed by the
+        critic's exact error beat three controls by only −1.9 to +1.1 points, which stopped that test on 12 Oct (<a
+        href="#ats-routes">Routes and their status</a>).</li>
+      <li><b>The lower edge gained only where something else did the work.</b> The <span class="term" data-tip-title="Lower edge" data-tip="The lower edge is the critic&#x27;s value minus the band&#x27;s width. Used in training, it lowers the critic&#x27;s value of the actor&#x27;s own command where the band there is wider than at the recorded command, which is the kind of caution that value-pessimism methods apply.">lower edge</span> is the
+        other width the toys shelved. As built, BCA's own width barely reacts to the command: in a read-only diagnosis
+        on seeds 0–4 it was 0.31 to 0.36 value units both at a harmful command past 80% and at the 80% cap, while the
+        critic's false preference for that command was 0.63 to 0.89. As in experiment 2's test 1, the width did not react
+        where the decision is made (<a href="#ats-restructure">Restructured BCA</a>). Stage 2's weighted lower edge did
+        win back points in strong current (24.9 against −14.3 for no caution), but 86% of its extra width at harmful
+        commands came from a classifier term that reads where the data lie; it cost 14.8 points in the no-stall world
+        and missed two of its five marks, M4 and M5 (<a href="#ats-stage2">Stage 2</a>). In the weighting test the
+        lower edge, unweighted or weighted, moved return by −0.1 to +0.3 points against the same actor with no extra
+        caution (result B).</li>
+    </ul>
+
+    <h4 id="toy-tc-gate">Reading held-out outcomes: the toys' positive result matches the record</h4>
+    <ul class="leads">
+      <li><b>Step 1 is, in toy terms, a gate.</b> The restructured BCA reads the critic's over-predictions on the 29 to
+        60 full-throttle steps per seed and world left after the removal (step 1's run record,
+        <code>step1/results/results.json</code>), scored by critics that never trained on them: held-out tries of the
+        risky action. Its step 1 passed: caution on in 5 of 5 stalling seeds, off in 5 of 5
+        no-stall seeds, 106.1 points net across the two worlds against a bar of 90 (designed after seeing seeds 0–4;
+        <a href="#ats-restructure">Restructured BCA</a>). In route search round 1, every gain came from reading
+        outcomes against the fixed 0.10 margin (<a href="#ats-routes">Routes and their status</a>).</li>
+      <li><b>Step 2 put the same switch inside the actor's training</b> and met all three of its pass marks (GO, 15
+        Oct; exploratory): net 102.9 across the two worlds, against 77.7 for the same penalty left always on. That
+        whole lead comes from switching off in the no-stall world. The penalty it switches on rises past the gap in the
+        recorded throttles, so where it acts is set by the recorded range; what told the worlds apart was the switch
+        that reads outcomes.</li>
+      <li><b>BCA's Bayesian part got no credit, as in the toys.</b> In step 1 itself, a plain rank test gave the same
+        yes or no in 9 of the 10 seed-and-world pairs. A later route search credited step 1's fixed 0.10 margin, not
+        the posterior: with 12 to 45 rows, BCA beat plain split conformal by only 1.78 points and a plain rank test by
+        only 4.29, both against a 5-point bar. In step 2, plain split conformal's switch made the same on/off decision
+        as BCA's in all 10 runs (step 2's run record, <code>step2_results/results.md</code>), and nothing was credited
+        to calibration or to BCA's Bayesian part. That matches experiment 2's shelved test 4a: with equal weights, BCA is
+        the exact binomial test.</li>
+    </ul>
+
+    <h4 id="toy-tc-limits">Where the toys do not carry over</h4>
+    <ul class="leads">
+      <li><b>A quiet comparison group.</b> ThrusterChain's comparison group was quiet (its 90% point stayed between
+        −0.049 and −0.031 in step 1's run record), so the toy's step-1 weakness, a noisy comparison group, did not arise.</li>
+      <li><b>One-step targets.</b> ThrusterChain's scores use one-step targets, so the critic's value of the next state
+        would stay in a harm test. The toy's last stage has no next state, so there the critic drops out.</li>
+      <li><b>Thin evidence.</b> A tail gate needs 29 rows. In step 1, no-stall seed 3 had 29, and BCA's random draws
+        gave it no finite caution size (947 of BCA's 1,000 random draws cleared the bar; 950 were needed; step 1's run
+        record). In the
+        toys, computed exactly as they recommend, 29 equally weighted rows are just enough for a finite answer. Under a shift they need more: experiment 4's tail gate needs about 39
+        held-out outcomes per decision under its moderate shift and about 83 under its strong one. If step 1's 29 to 60
+        full-throttle steps per seed and world had to be weighted for a shift like those, they would be enough for some
+        seeds and worlds under the moderate shift and for none under the strong one.</li>
+      <li><b>The shape of the harm.</b> The stall is shortfall-shaped (past 80% every command pushes less, rather than
+        failing rarely), the shape in which the toy's plain average served return best: with 30 survivors it ventured
+        in 99% to 100% of seeds where venturing pays and in at most 1% where it loses.</li>
+      <li><b>A given region.</b> In the toys the risky action was given and its held-out tries were real outcomes.
+        Step 1 was given the full-throttle region, and its outcomes are one-step scores from critics.</li>
+    </ul>
+
+    <h4 id="toy-tc-resultf">Result F: what the toys predict, as a hypothesis</h4>
+    <p class="status"><span class="tag acc">exploratory</span> <span class="tag">hypothesis</span> Predictions from toy
+      mechanisms, not ThrusterChain results. The control that would test them has not been run.</p>
+    <p><a href="#iw-return">Result F</a> is the weighting test's one case where BCA's band, used in training, clearly
+      raised return. The band was weighted at the actor's own commands, and the command part of the weight was given
+      the recording controller's exact command likelihood. That likelihood is zero wherever the controller never
+      gives a command; on expert data, that includes every command past 80%. Where it is zero, the band refuses the
+      command, and result F's rule for refused commands gives it <i>no value credit</i>: in the actor's training it
+      earns no more value than the recorded command at that row. (The page calls this rule the <i>fixed
+      fallback</i>; it is not this section's fallback action.)</p>
+    <p>On the strong test, against the band penalty as first planned (version 5's unweighted lower edge), return rose
+      by 2.0 points on medium-expert and 5.8 on expert, every seed positive. An untargeted control, the same amount of
+      no value credit at randomly chosen rows, gained about 1 unit of return, against 25.0 and 74.2 units for the
+      rule. Only the actor was trained, against a frozen critic, and the rule was designed after a first version had
+      lost 9.8 points on medium-expert. Two things are open: the control without the band, the same no-value-credit
+      rule alone with no band, was not run; and with estimated weights the gain held only on expert (2.3 points).</p>
+    <ul class="leads">
+      <li><b>Most of the gain would come from the no-value-credit rule, not from the band's calibration.</b> In experiment 1,
+        refusing the never-tried action did all the safety work, by construction for every method; BCA's calibrated
+        width only added caution on a recorded action with noisy rewards, and cost return (−0.162 per episode). On
+        ThrusterChain, the weighting test's band penalty as first planned (its version 5), on its own, gained nothing
+        (90.6 against 90.7 points on expert). So the
+        toys predict that the untested control would recover most of result F's gain.</li>
+      <li><b>Past 80%, a gate could not do better than the rule.</b> The expert recording holds no commands past 80%, so there are no held-out tries there, and every valid toy gate falls back without evidence (the tail gate cannot
+        say yes below 29 tries). There, a gate and the no-value-credit rule would decide alike.</li>
+      <li><b>The rule would cost return where the unseen commands help.</b> A rule that reads only where the data lie
+        cannot tell a harmful unseen action from a harmless one. In experiment 1, refusal was right in the harmful world and
+        cost 0.65 per episode in the harmless one, and no data could tell them apart. Stage 2's data-only rivals
+        showed the same pattern (<a href="#ats-stage2">Stage 2</a>): the range hinge, a penalty that grows as a
+        command leaves the range of the recorded commands, won back 84.6 points in strong current in the stalling world
+        and lost 20.4 there in the no-stall world. The weighting test does not report result F in a world where pushing past 80% helps.</li>
+      <li><b>Estimated weights lie outside what the toys tested.</b> Experiment 4's weights were known exactly; estimating
+        them is the notebooks' first next step, designed but not run. So the toys do not explain why the estimated
+        weights kept a gain only on expert.</li>
+    </ul>
+
+    <h4 id="toy-tc-plans">No plan changes here</h4>
+    <p>The toys propose BCA as a gate that decides whether to venture at the gap, rather than as a width in training,
+      and the notebook proposes a ThrusterChain test of the mean gate at deviations; it would change step 2 of the
+      restructured BCA and needs a new pre-registration, approved by the project owner at their own terminal, and it
+      has not been approved or run. Other learners that host BCA were not tested in the toys.
+      Stage 2's version 7, which was to test the width on fresh seeds 5–9, has ended and will not run.
+      Step 2 of the restructured BCA, its training pilot, was fixed in writing before any training and ran unchanged;
+      any change to a pre-registered test needs the project owner's approval at their own terminal.</p>

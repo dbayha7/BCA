@@ -9,10 +9,18 @@ Anchors, each checked to occur exactly once (a clear error otherwise, and nothin
   T2  the first '</section>' after T1, with no '<section' between them (the section is not nested).
 The section being replaced must be a version this patch knows (SHA-256 below): the live page's own (versions 19 to
 25 and the live service version 92ba), or that section after our color patch, or after our color and navigation
-patches. A section changed in any other way (for example by the other session) is refused, so that no newer edit is
-overwritten unseen; --allow-unknown-base overrides this after a person has compared the two.
-Checks on the result: no CR byte added, no new duplicate id, every '#id' link anywhere in the page that pointed into
-the old section still resolves, every link and tooltip reference inside the new section resolves, and IN is never
+patches, or the live page's version 26 section (service version 1792172582-8406: the other session's rewrite with
+the full results of the four experiments, compared with this fragment on 16 Oct 2026 and carried into build_toy.py:
+its bottom line, its glossary, its table of all 18 claims, "What it all adds up to" and its ThrusterChain parts, with
+all 24 of its ids). A section changed in any other way (for example by the other session) is refused, so that no newer
+edit is overwritten unseen; --allow-unknown-base overrides this after a person has compared the two.
+  T3  (since version 26) the three places outside the section that name its experiments by version 26's names, all in
+      section#capped-pull ("BCA's main channel"): its link "Part 2" to #toy-second and two of its tooltips ("Part 2 of
+      the toy worlds", "Part 2&#x27;s yardstick") say "experiment 2", as this section does. Each anchor must occur
+      exactly once; a page without section#capped-pull (versions 19 to 25) has none of them and T3 is skipped.
+Checks on the result: no CR byte added, no new duplicate id, every id of the old section is kept (since version
+26; before, an id linked from nowhere could go), every '#id' link anywhere in the page that pointed into the old
+section still resolves, every link and tooltip reference inside the new section resolves, and IN is never
 modified. Re-running on a page that already has this fragment changes nothing.
 
 Order in the build: run it AFTER the color patch (its edits B14 and B15 rewrite two sentences of the old section) and
@@ -38,7 +46,15 @@ KNOWN = {   # SHA-256 of the whole section, '<section id="toy-worlds">' to its '
     # the same after our color and navigation patches (ids on 2 tables, 2 findings and the details)
     "33b80c29c778d6d2ad84a9b5b1516550f436db563b6b55da6f19731e588a190f":
         "live section after the color and navigation patches",
+    # the live page's version 26 (service version 1792172582-8406, 121,306 chars): the other session's rewrite, merged
+    "f7274425c8b8f76180008b9c07bc3b3258131eadae59b0d88d90759b202b1956": "live page's version-26 section (8406), merged",
 }
+# T3: version 26's section#capped-pull names the toy experiments "Part N"; this section calls them experiments
+T3 = [
+    ('<a href="#toy-second">Part 2</a>', '<a href="#toy-second">experiment 2</a>'),
+    ("Part 2 of the toy worlds tried it two ways", "Experiment 2 of the toy worlds tried it two ways"),
+    ("The room is Part 2&#x27;s yardstick", "The room is experiment 2&#x27;s yardstick"),
+]
 
 
 def die(msg):
@@ -118,6 +134,15 @@ def main():
         print(f"apply_toy.py: replacing the {KNOWN[h]} ({len(old):,} characters, SHA-256 {h[:16]}...)")
 
     new = page[:a] + frag + page[b:]
+    t3 = 0
+    if '<section id="capped-pull">' in page:
+        for x, y in T3:
+            n = new.count(x)
+            if n == 1:
+                new = new.replace(x, y, 1)
+                t3 += 1
+            elif not (n == 0 and y in new):
+                die(f"anchor T3 {x!r} occurs {n} times outside the section (expected exactly once)")
 
     # checks on the result
     if new.count("\r") > page.count("\r"):
@@ -146,10 +171,12 @@ def main():
         if ref not in all_ids:
             die(f"a tooltip in the new section refers to the template #{ref}, which is missing")
     lost = sorted(old_ids - all_ids)
+    if lost:
+        die("ids of the old section would be lost: " + ", ".join(lost))
     open(out, "w", encoding="utf-8", newline="").write(new)
     print(f"apply_toy.py: wrote {out}: {len(page):,} -> {len(new):,} characters; section {len(old):,} -> "
           f"{len(frag):,}; ids of the old section kept: {len(old_ids) - len(lost)} of {len(old_ids)}"
-          + (f" (not kept, and linked from nowhere: {', '.join(lost)})" if lost else ""))
+          + (f"; T3: {t3} of {len(T3)} names in section#capped-pull made experiment names" if t3 else ""))
 
 
 if __name__ == "__main__":
