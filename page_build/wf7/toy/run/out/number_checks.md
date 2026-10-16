@@ -132,7 +132,7 @@
 | Exp 3 | caps: cautious | 0.000 \| 0.021 \| 0.040 \| 0.098 \| 0.136 \| 0.136 | bca_mean_gate_toy.ipynb | 23 | same | ok |
 | Exp 3 | caps: shrunk | 0.001 \| 0.019 \| 0.019 \| 0.056 \| 0.087 \| 0.151 | bca_mean_gate_toy.ipynb | 23 | same | ok |
 | Exp 3 | caps: plain | 0.001 \| 0.007 \| 0.007 \| 0.036 \| 0.078 \| 0.158 | bca_mean_gate_toy.ipynb | 23 | same | ok |
-| Exp 3 | caps: t-test | none qualifies \| 0.040 \| 0.158 | bca_mean_gate_toy.ipynb | 23 | same | ok |
+| Exp 3 | caps: t-test | none \| 0.040 \| 0.158 | bca_mean_gate_toy.ipynb | 23 | same | ok |
 | Exp 3 | caps: Hoeffding | 0.005 \| 0.017 \| 0.017 \| 0.017 \| 0.017 \| 0.017 | bca_mean_gate_toy.ipynb | 23 | same | ok |
 | Exp 3 | caps: Bernstein | 0.006 \| 0.006 \| 0.006 \| 0.006 \| 0.006 \| 0.006 | bca_mean_gate_toy.ipynb | 23 | same | ok |
 | Exp 3 | caps: tail | 0.003 \| 0.003 \| 0.017 \| 0.017 \| 0.027 \| 0.046 | bca_mean_gate_toy.ipynb | 23 | same | ok |
@@ -201,7 +201,7 @@
 | Bottom | gates close 38% to 87% | closed 38% to 87% of the room , the return | bca_findings.ipynb (6320224) | 35 (text) | the notebook's text | ok |
 | Bottom | tail gate at most 3% | let the action through in at most 3% of seeds (repeat runs) | bca_channel_toy.ipynb | 17 | same | ok |
 | Bottom | split conformal up to 38% | against up to 38% for split conformal prediction | bca_findings.ipynb (6320224) | 35 (text) | the notebook's text | ok |
-| Bottom | binomial agreement | decided as the exact binomial test in 99.6% of cases | bca_channel_toy.ipynb | 17 | same | ok |
+| Bottom | binomial agreement | made the same decision as the exact binomial test in 99.6% of cases | bca_channel_toy.ipynb | 17 | same | ok |
 | Bottom | 29 tries | and it cannot say yes with fewer than 29 tries | bca_channel_toy.ipynb | 8 | same | ok |
 | Bottom | mean gate 0.084 | BCA's mean gate earned 0.084 per situation | bca_mean_gate_toy.ipynb | 17 | same | ok |
 | Bottom | best gate not built on BCA | 4.5 times the best gate not built on BCA (0.019) | bca_mean_gate_toy.ipynb | 19 | same | ok |

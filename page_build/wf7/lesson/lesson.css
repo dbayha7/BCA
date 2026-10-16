@@ -37,6 +37,7 @@ html:not(.nv-one):not(.ls-own) #learn .ls-step + .ls-step { margin-top: 36px; pa
 
 /* the rule: formula, plain reading, symbol key */
 #learn .ls-rule .math-display { margin: 2px 0 -4px; }
+#learn .ls-rule .math-display mjx-container > svg { max-width: 100%; height: auto; }
 #learn .ls-read { color: var(--ink-2); font-style: italic; max-width: 70ch; }
 #learn .ls-read .ls-gr { font-style: normal; }   /* an italic θ reads as the digit 9: Greek letters stay upright */
 #learn details.ls-keyd { border: 0; background: transparent; margin: -2px 0 6px; }
@@ -46,10 +47,13 @@ html:not(.nv-one):not(.ls-own) #learn .ls-step + .ls-step { margin-top: 36px; pa
 @media (pointer: coarse) { #learn details.ls-keyd > summary, #learn details.ls-wblk > summary { min-height: 44px; padding-top: 10px; } }
 /* touch screens: every control of the lesson at least 44 px */
 @media (pointer: coarse) {
-  #learn .ls-num { min-height: 44px; }
+  #learn input.ls-num { min-height: 44px; }
   #learn .ls-opt, #learn .ls-sb { min-width: 44px; }
   #learn .ls-links a { display: inline-flex; align-items: center; min-height: 44px; }
   #learn .ls-wl { min-height: 44px; }
+  #learn .ls-tag { display: inline-flex; align-items: center; min-height: 44px; position: relative; border-color: transparent; }
+  #learn .ls-tag::before { content: ""; position: absolute; inset: 50% 0 auto; height: 23px; transform: translateY(-50%); box-sizing: border-box; border: 1px solid currentColor; border-radius: 999px; pointer-events: none; }
+  #learn table.ls-t td > a { display: inline-flex; align-items: center; min-height: 44px; }
 }
 
 /* worked lines: the quantity at the left, the chain at the right, = and ≈ in one column; a line wraps before = or ≈ */
@@ -187,7 +191,7 @@ html:not(.nv-one):not(.ls-own) #learn .ls-step + .ls-step { margin-top: 36px; pa
 #learn .ls-map-ring { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
 #learn .ls-map-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
 #learn .ls-map-dot.ls-in { fill: var(--k-stall); }
-#learn .ls-map-trail { fill: none; stroke: var(--accent); stroke-width: 1.2; opacity: .5; }
+#learn .ls-map-trail { fill: none; stroke: var(--muted); stroke-width: 1.2; }
 #learn .ls-trail { fill: var(--accent); }
 #learn .ls-ball-c { fill: var(--k-region-soft); stroke: var(--k-region-ink); stroke-width: 1.5; }
 #learn .ls-ball-80 { stroke: var(--k-stall); stroke-width: 1.2; stroke-dasharray: 4 3; }

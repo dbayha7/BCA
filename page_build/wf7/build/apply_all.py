@@ -245,19 +245,22 @@ def version_entry(v, d):
     # with "BCA's main channel" and its own rewrite of the toy worlds): the entry says what this version adds to the page
     # as version 26 left it, and that the toy section keeps version 26's parts.
     return (
-        '      <li><b>Version %s, %s.</b> Four of the project owner\'s requests, built on the page as version 26 left it, with\n'
-        '        everything versions 20 to 26 did kept (the status box under the title stays removed, at the owner\'s\n'
-        '        request): a step-by-step way to learn the page, an easier way around it, better colors in the plots, and the\n'
+        '      <li><b>Version %s, %s.</b> Four of the project owner\'s requests, built on the page as version 26 left it and as\n'
+        '        it grew after (result F\'s learners in the live panel), with everything versions 20 to 26 did kept, the toy\n'
+        '        worlds section apart, which is rebuilt around version 26\'s parts (the status box under the title stays\n'
+        '        removed, at the owner\'s request): a step-by-step way to learn the page, an easier way around it, better colors in the plots, and the\n'
         '        toy worlds\' full results, explained step by step. A new section, "Learn step by step", replaces Full\n'
         '        walkthrough mode: a lesson in 7 chapters and 39 steps, each with its goal, a plain explanation, the rule as a\n'
         '        formula with a key to its symbols, the arithmetic worked out line by line with real numbers from the\n'
-        '        project\'s saved runs (some read for the lesson by inference and exact simulation), a small control to try\n'
+        '        project\'s saved runs (some read for the lesson by inference and exact simulation; a few marked illustrations use made-up\n'
+        '        numbers), a small control to try\n'
         '        the rule and a question to check yourself. A new navigation: the page\'s sections grouped in seven parts in a\n'
         '        Contents list, version 26\'s "BCA\'s main channel" among them; beside each section an "In this section" list\n'
         '        in which every part of the section is a link, the parts versions 20 to 26 added among them; Previous and\n'
         '        Next, which step through those parts in order; one section shown at a time, or the whole page (the choice is\n'
         '        remembered); a bar at the bottom of a phone\'s screen; and the Choices (every option of the live panels as a\n'
-        '        short button, the rows of versions 21, 22 and 25 and the main test\'s four situations included, marked "not\n'
+        '        short button, the rows of versions 21, 22 and 25, the main test\'s four situations and result F\'s learners\n'
+        '        included, marked "not\n'
         '        in use now" while the other mode plays) placed under their panels in the "In this section" list, with a\n'
         '        Choices button on a phone, which steps aside rather than cover a panel\'s own switches. The remaining charts\'\n'
         '        colors retuned for contrast and for color-blind readers, and each line\'s or bar\'s color shown in their\n'
@@ -265,12 +268,12 @@ def version_entry(v, d):
         '        learned actors\' cost chart, for each of version 25\'s learners, whose lines no longer fade. The Toy worlds\n'
         '        section now covers all five toy notebooks (the four experiments and the notebook that gathers them); each was\n'
         '        run again from its committed version, and every number the section quotes from them was checked against those\n'
-        '        runs. It keeps version 26\'s bottom line, its list of the words it uses, its table of all 18 claims, "What it\n'
+        '        runs. It carries over, reworded, version 26\'s bottom line, its list of the words it uses, its table of all 18 claims, "What it\n'
         '        all adds up to" and its parts on ThrusterChain, result F among them, and adds the shared two-step world and\n'
         '        its weights worked out step by step, BCA\'s tools in toy terms, and for each experiment its idea, what was\n'
-        '        tested and the result that would shelve a claim (set it aside), what happened and why, with tables, worked\n'
+        '        tested and (for experiments 2 to 4) the result that would shelve a claim (set it aside), what happened and why, with tables, worked\n'
         '        arithmetic and four charts whose hover readouts show each line\'s color; it numbers the experiments 1 to 4\n'
-        '        (version 26 called them Parts). Of the 18 claims written down before the runs, 14 are alive and 4 shelved.\n'
+        '        (version 26 called them Parts). Of the 18 claims, written down before the runs by the notebooks\' own record, 14 are alive and 4 shelved.\n'
         '        The status statements in Results, After the stop and the first claim brought up to date at one time: Stage\n'
         '        2\'s plan version 7 was approved by the project owner and the approval checked and recorded, but it was then\n'
         '        ended without running, so seeds 5 to 9 will not run under it; a test that leaves the commands near 80%%\n'
@@ -300,7 +303,7 @@ def integrate(s, t, v, d):
         s,
         "Its status was last brought up to date from the repository\n"
         "      on 15 Oct 2026 at 05:41 UTC; the box below says where each line of work stands.",
-        "Its status was last brought up to date from the repository\n"
+        "Its status was last brought up to date, from the repository and from what the project owner reported,\n"
         "      on %s at %s UTC; the box below says where each line of work stands." % (d, t),
         "I2")
     log.append("I2 After the stop: status time %s, %s UTC, as in the box under it (#ats-status)" % (d, t))
@@ -436,6 +439,8 @@ def main(argv):
                     # version 26 (the live page after version 25, service version 1792172582-8406): its entry, its section
                     # "BCA's main channel", the main test's four situations in the learned mode, and their Choices row
                     ("<b>Version 26, 16 Oct 2026.</b>", 1), ('<section id="capped-pull">', 1), ('id="sim-sit4-data"', 1),
+                    # the live page after version 26 (service version 1792181606-4140): result F's learners
+                    ('id="sim-rf-data"', 1), ('rf_exact: "Result F, exact weights",\n          rf_est: "Result F, estimated weights" }', 1),
                     ('recorded: "Main test: recorded conditions (no shift)",\n          big_kicks: "Main test: big starting pushes '
                      '(small shift)"', 1),
                     ('named({ fixed: "Fixed controllers", learned: "Learned actor" }, "data-tog-value")', 1)):
@@ -452,8 +457,11 @@ def main(argv):
                  # version 26's code and parts (outside the toy section)
                  "const isSit4 = lm => LM_SIT.includes(lm)", "const LRO_SIT", 'data-sub="sit"', 'id="simtog-l-lm-sit"',
                  'id="simtog-lm-q"', 'data-tog-value="strong_current"', 'id="capped-what"', 'id="capped-see"',
-                 'id="capped-why"', 'id="capped-toys"', 'id="capped-fixes"', "#capped-pull td.n { white-space: normal; }"):
-        nb, no = no_toy(base_s).count(need), no_toy(s).count(need)
+                 'id="capped-why"', 'id="capped-toys"', 'id="capped-fixes"', "#capped-pull td.n { white-space: normal; }",
+                 # 4140's result F learners
+                 "const isRF = lr => LR_RF.includes(lr)", "const rfOK = () =>", "const RFT", 'data-tog-value="rf_exact"',
+                 'data-tog-value="rf_est"', 'data-tog-value="le_none"', 'id="simtog-lr-rf-q"', "const lrQs"):
+        nb, no = no_toy(base_s).count(need), no_toy(s[:s.index('<script type="application/json" id="lesson-data">')]).count(need)
         if nb == 0 or no != nb:
             die("version 24-26 code %r occurs %d times in BASE and %d times in OUT, outside the toy section (it must be kept "
                 "as it is)" % (need, nb, no))
@@ -518,7 +526,9 @@ def main(argv):
                   "not run. They run under", "Stage 2 now runs only there", "Near-80 test</b> (approved; no result yet)",
                   "status box</a> at the top", "lines of work continue on this environment",
                   # the old toy section's (versions 19-25), replaced by the toy patch
-                  "seeds 5–9 still test the", "because the notebook is not committed"):
+                  "seeds 5–9 still test the", "because the notebook is not committed",
+                  # review round 2: the route table, After the stop's opening, the lesson's step 7.2
+                  "seeds 5–9 are to run under version 7", "not yet run, can", "has not run yet", "n: 'not run yet'"):
         if stale in s:
             die("an out-of-date status statement is still in the page: %r" % stale)
     for need, n in (("As of %s, %s UTC, this is where four\n      lines of work on this environment stand" % (d, t), 1),
@@ -527,6 +537,7 @@ def main(argv):
                     ("no record of the ending is\n          in the repository.", 1),
                     ("so the\n          deciding test will not run under it.", 1),
                     ("will not run under version 7, which was ended on 16 Oct 2026 without running.", 1),
+                    ("seeds 5–9 were to run under version 7, which was\nended on 16 Oct 2026 without running.", 1),
                     ("version 7, which\n          was to run them, was ended on 16 Oct 2026 without running.</dd>", 1),
                     ("recorded on 16 Oct 2026, 02:27 UTC; later that day the run&#x27;s plan (version 7) was ended without running, so those seeds will not run under it. Nothing has run on those seeds.", 1),
                     ("typed their approval at their own terminal at 15:45 UTC", 1),

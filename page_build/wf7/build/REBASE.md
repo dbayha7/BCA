@@ -789,3 +789,67 @@ over from version 26) and 24 worked results: 0 problems.
 (197,854 characters) with all 29 ids it must keep (version 26's 24 and the 5 the navigation once gave the older
 section); one history entry per version, 1 to 27; no status box; 8,945,444 bytes with the wrapper. Every element id of
 core_8406 is in version 27 except the same 18 removed on purpose (the old sidebar's 6, the walkthrough's 12).
+
+## 28. The live page moved again: service version 1792181606-4140 (result F's learners)
+
+Before review round 2's fixes were applied, the artifact was read again: the other session had published service
+version **1792181606-4140** (8,307,670 bytes, 20:13 UTC; the same 531-byte wrapper head; no new history entry, so its
+page still ends at "Version 26, 16 Oct 2026."). Its core is `base/core_4140.html` (8,307,124 bytes, SHA-256
+`a16dd2eb…f1fc`) with the wrapper `base/live_4140.html`. Against core_8406 it adds only result F's actor-only learners
+to the live panel's Learner switch:
+
+- a second labeled row under Learner (`data-sub="rf"`, label `#simtog-l-lr-rf`, hint `#simtog-lr-rf-q`): No extra
+  caution, Result F with exact weights, Result F with estimated weights (`le_none`, `rf_exact`, `rf_est`; playable with
+  the 80% hold removed on medium-expert and expert data only, "exploratory, one seed"), with its CSS;
+- a 911,188-character data block `script#sim-rf-data` (seed 0's cloud rerun of result F's arms: start-1 episodes on the
+  weighting test's two mixes, start-11 episodes in the main test's four situations) and the code around it (`isRF`,
+  `rfOK`, `RFT`, `lrQs`, `rfBank`, `rfLab`; `LRNAME` gains the three names); the explanation, cost readout, legend,
+  chart title, run box (`#exLrn`, with two links) and the shared tooltip script's cost line handle them, showing two
+  actors instead of five;
+- the old Choices script's Learner row names the three new buttons; the panel's "What you see" texts say "(two,
+  medium-expert and expert, for result F's learners)".
+
+No element id was removed; two were added (`simtog-l-lr-rf`, `simtog-lr-rf-q`).
+
+## 29. Conflicts with 4140 and how each was merged
+
+- **The color patch, K13b** (the learned actors' cost readout in the shared tooltip script). 4140 rewrote the lines
+  K13b's anchor covered (`rf` branch, `lrQs()`, "Both"/"All five", "the cloud rerun of result F's arms"); the anchor
+  and the replacement were rewritten on 4140's text (`rebase/edits/e_color_v27r3.py`): each line is keyed with its
+  quality's color as before (`qs.map(q => (QN[q] || q) + " data: " + …)`), result F's two actors included, and the
+  closing line says "Both result F (exact weights) actors learned …" / "All five BCA actors learned …" (with review
+  round 2's A3).
+- **The navigation, E8** (the old Choices script it replaces). Its SHA-256 changed with the Learner row; the new hash
+  `954959ae7c56fda0` is in `KNOWN` after the block was compared line by line: the only change is the row's names, and
+  `nav.js`'s Choices row "Learner" now names all six buttons (`rebase/edits/e_nav_v27r3.py`).
+- **The integration.** `apply_all.py` also requires 4140's parts as often as in the base: `script#sim-rf-data`, the
+  rf row's ids and buttons, and `isRF`, `rfOK`, `RFT`, `lrQs` (its version-24 to -26 code list, counted outside the
+  toy section and the lesson's own script). Version 27's history entry now says it is built on the page "as version 26
+  left it and as it grew after (result F's learners in the live panel)", and its Choices list includes those learners.
+- Everything else (the toy patch's KNOWN hash of version 26's section, T3, every other color and navigation anchor,
+  the lesson) applied unchanged.
+
+## 30. Status statements, after review round 2
+
+The facts still hold as of 16 Oct 2026, 13:44 UTC (section 14). Review round 2 found three more places that
+contradicted them, now replaced: the route table's Stage 2 row ("are to run under version 7", tag "waiting"; B26 and
+B26b: tag "ended", "were to run under version 7, which was ended on 16 Oct 2026 without running", its caption dated
+16 Oct; so this row is no longer left as dated in part 3), the lesson's step 7.2 ("has not run yet"), and After the
+stop's opening ("not yet run"; B28). After the stop's sources now give EXPERIMENTS.md's state at the head the paragraph
+names (B27). `apply_all.py` refuses every old wording.
+
+## 31. The build on 4140 (the published version 27)
+
+`apply_all.py base/core_4140.html wf7/build/core_v27.html --wrapper base/live_4140.html --preview
+wf7/build/page_v27_final.html`: base 8,307,124 bytes and 2,170 ids; version 27 9,883,547 bytes and 3,536 ids (2,776
+MathJax glyph ids, 1,087 of them the lesson's); 0 duplicate ids; 4,565 SVG `<use>` references and 453 in-page links
+resolve; 0 CR bytes; the toy section is the fragment (199,854 characters) with its 29 kept ids; one history entry per
+version, 1 to 27; no status box; 9,884,093 bytes with the wrapper (`page_v27_final.html`: the first 531 bytes of
+`live_4140.html`, the core, `"\n</body></html>"`). Every element id of core_4140 is in version 27 except the same 18
+removed on purpose. Review round 2's fixes and the re-check are in FIX_LOG.md; the re-check ran on a build byte for
+byte identical to this one. `core_v27.html` in this folder is now this build (the hand-over's 92ba build is commit
+`cb1992c`'s).
+
+Published by the cloud session on 16 Oct 2026 at 23:31 UTC, after the artifact was read once more and found unchanged
+(still 1792181606-4140, identical to `base/live_4140.html`): service version **1792193464-dbac** (no icon passed), read
+back from the service byte for byte identical to `page_v27_final.html` (9,884,093 bytes).

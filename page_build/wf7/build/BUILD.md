@@ -22,17 +22,18 @@ notebooks were re-run on copies, see `wf7/toy/TOY.md`). Nothing is published by 
 ## In the cloud (16 Oct 2026, from about 19:00 UTC): the current build
 
 The build moved to a cloud session when the laptop's battery ran out; paths below are relative to `page_build/`
-(the laptop's `scratchpad/live6/` files are in `base/`). **The base is now the live page's version 26**, service version
-1792172582-8406 (the other session's publish of 17:43 UTC: section#capped-pull "BCA's main channel", the main test's
-four situations in the live panel's learned mode, its own rewrite of the toy worlds), `base/core_8406.html`, with the
-wrapper `base/live_8406.html`. REBASE.md part 5 has the inventory and the merges (the toy section: this build's, with
+(the laptop's `scratchpad/live6/` files are in `base/`). **The base is now the live page as the other session last
+published it**, service version 1792181606-4140 (20:13 UTC): its version 26 (service version 1792172582-8406, 17:43
+UTC: section#capped-pull "BCA's main channel", the main test's four situations in the live panel's learned mode, its
+own rewrite of the toy worlds) plus result F's learners in the live panel, `base/core_4140.html`, with the wrapper
+`base/live_4140.html`. REBASE.md part 5 has the inventories and the merges (the toy section: this build's, with
 version 26's bottom line, glossary, claims table, "What it all adds up to" and ThrusterChain parts carried in, as the
-owner chose). Review round 2 and its fixes are in FIX_LOG.md.
+owner chose). Review round 2 and its fixes are in FIX_LOG.md. The published page is `wf7/build/page_v27_final.html`.
 
 ```sh
 cd page_build
-python3 -X utf8 wf7/build/apply_all.py base/core_8406.html OUT/core_v27.html --stages OUT/stages \
-    --wrapper base/live_8406.html --preview OUT/page_v27.html
+python3 -X utf8 wf7/build/apply_all.py base/core_4140.html wf7/build/core_v27.html --stages OUT/stages \
+    --wrapper base/live_4140.html --preview wf7/build/page_v27_final.html
 # the toy section's own build (needs the re-run outputs in wf7/toy/run/out, committed; to re-run them:
 #   sh wf7/toy/rerun/get_sources.sh RUN && PYTHON=<python with numpy, matplotlib, jupyter_client, ipykernel> \
 #   sh wf7/toy/rerun/run_all.sh RUN && cp RUN/out/*.json wf7/toy/run/out/)
@@ -41,7 +42,7 @@ python3 -X utf8 wf7/toy/build_toy.py && python3 -X utf8 wf7/toy/check_numbers.py
 
 `apply_all.py base/core_92ba.html OUT --version 27` still reproduces the hand-over's `core_v27.html` from the files of
 commit `cb1992c` (checked at the start of the cloud session); with this branch's later sources it no longer applies to
-92ba (its anchors are now version 26's). The laptop's Edge test scripts in `tests/` were not run in the cloud; review
+92ba (its anchors are now version 26's and 4140's); core_8406 no longer passes either (K13b's anchor is 4140's). The laptop's Edge test scripts in `tests/` were not run in the cloud; review
 round 2 used headless Chromium (Playwright) with scripts kept outside the repository, described in FIX_LOG.md.
 
 ## Inputs

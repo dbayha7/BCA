@@ -1003,7 +1003,7 @@ var TCPort = (function () {
       lastW = Wd;
       var Ht = C.height || 220, ml = C.ml || 50, mr = C.mr || 14, mt = C.y.label ? 26 : 12, mb = C.x.label ? 42 : 26;
       geo = { l: ml, t: mt, w: Wd - ml - mr, h: Ht - mt - mb };
-      var s = sv('svg', { 'class': 'chart ls-svg', width: Wd, height: Ht, viewBox: '0 0 ' + Wd + ' ' + Ht, role: 'img', 'aria-label': C.title || '', tabindex: C.hover ? '0' : '-1', focusable: C.hover ? 'true' : 'false' });
+      var s = sv('svg', { 'class': 'chart ls-svg', width: Wd, height: Ht, viewBox: '0 0 ' + Wd + ' ' + Ht, role: 'img', 'aria-label': (C.title || '') + (C.x.label ? ' Horizontal axis: ' + C.x.label + '.' : '') + (C.y.label ? ' Vertical axis: ' + C.y.label + '.' : ''), tabindex: C.hover ? '0' : '-1', focusable: C.hover ? 'true' : 'false' });
       var yt = C.y.ticks || niceTicks(C.y.min, C.y.max, Ht < 180 ? 3 : 5);
       yt.forEach(function (v) {
         if (v < C.y.min - 1e-12 || v > C.y.max + 1e-12) return;
@@ -1452,7 +1452,7 @@ var TCPort = (function () {
       var fl = -1;
       for (var k = 0; k < 5; k++) if (X0[2 * k] === p && X0[2 * k + 1] === v) fl = k;
       var sp = F(p), svv = F(v), p2 = p * p, v2 = v * v, d = Math.sqrt(p2 + v2);
-      L.set(fl >= 0 ? 'd' + sub(fl + 1) : 'd', ['√(' + par(sp) + '² + ' + par(svv) + '²)', '√(' + F(p2) + ' + ' + F(v2) + ')', '√' + F(p2 + v2), F(d)], d);
+      var s2 = parseShown(F(p2)) + parseShown(F(v2)); L.set(fl >= 0 ? 'd' + sub(fl + 1) : 'd', ['√(' + par(sp) + '² + ' + par(svv) + '²)', '√(' + F(p2) + ' + ' + F(v2) + ')', '√' + F(s2), F(d)], d);
       map.set(p, v);
       if (user) L.say();
     }
@@ -1494,10 +1494,10 @@ var TCPort = (function () {
     box.appendChild(Ros(rS, rN));
     var xs = []; for (var i = -100; i <= 100; i++) xs.push(i / 100);
     var chart = Chart(box, { title: 'Push against throttle in both worlds: equal up to 80%; past 80% the stalling world\'s push falls to 0.65 at 90% and 0.5 at full throttle.',
-      height: 230, x: { min: -1, max: 1, label: 'throttle a', ticks: [-1, -0.8, -0.5, 0, 0.5, 0.8, 1] }, y: { min: -1, max: 1, ticks: [-1, -0.5, 0, 0.5, 1] },
+      height: 230, x: { min: -1, max: 1, label: 'throttle a', ticks: [-1, -0.8, -0.5, 0, 0.5, 0.8, 1] }, y: { min: -1, max: 1, label: 'push', ticks: [-1, -0.5, 0, 0.5, 1] },
       series: [], hover: null });
     function cfg() {
-      return { title: chart.cfgTitle, height: 230, x: { min: -1, max: 1, label: 'throttle a', ticks: [-1, -0.8, -0.5, 0, 0.5, 0.8, 1] }, y: { min: -1, max: 1, ticks: [-1, -0.5, 0, 0.5, 1] },
+      return { title: chart.cfgTitle, height: 230, x: { min: -1, max: 1, label: 'throttle a', ticks: [-1, -0.8, -0.5, 0, 0.5, 0.8, 1] }, y: { min: -1, max: 1, label: 'push', ticks: [-1, -0.5, 0, 0.5, 1] },
         series: [
           { key: 'no_stall', name: 'push, no-stall world', color: '--k-rise', dash: true, pts: xs.map(function (x) { return [x, x]; }) },
           { key: 'stall', name: 'push, stalling world', color: '--k-stall', pts: xs.map(function (x) { return [x, P.thrust1(x, 'stall')]; }), keep: true }],
@@ -1834,7 +1834,7 @@ var TCPort = (function () {
     function drawChart() {
       var R = EP.roll(), mn = Math.min.apply(null, R.rewards), lo = Math.min(-0.5, Math.floor(mn * 1.1 * 2) / 2);
       var col = CTRL_COLOR[EP.ctrl];
-      chart.update({ title: 'The 100 rewards of the episode, step ' + t + ' marked.', height: 170, x: { min: -1, max: 100, label: 'step t' }, y: { min: lo, max: 0 },
+      chart.update({ title: 'The 100 rewards of the episode, step ' + t + ' marked.', height: 170, x: { min: -1, max: 100, label: 'step t' }, y: { min: lo, max: 0, label: 'reward rₜ' },
         series: [{ key: 'rewards', name: 'reward rₜ', color: col, kind: 'bars', pts: R.rewards.map(function (r, k) { return [k, r, k === t ? '--ink' : col]; }), keep: true }],
         legendExtra: [{ name: 'the step shown, t = ' + t, color: '--ink' }],
         hover: { xs: R.rewards.map(function (r, k) { return k; }), title: function (x) { return 'step ' + x; },
@@ -1851,7 +1851,8 @@ var TCPort = (function () {
     var cSeg = Seg({ label: 'Controller', value: EP.ctrl, options: CTRLS, onChange: function (k) { EP.set('ctrl', k, me); } });
     var sT = Slider({ label: 'Step t', min: 0, max: 99, step: 1, value: 0, fmt: function (x) { return String(x); }, onInput: function (x) { t = x; draw(true); } });
     var sG = Slider({ label: 'Discount γ', min: 0.9, max: 0.999, step: 0.001, value: g, fmt: function (x) { return F(x, 3); }, onInput: function (x) { g = x; draw(true); } });
-    add(box, cSeg.el, sT.el, sG.el);
+    var wSeg = Seg({ label: 'World', value: EP.world, options: WORLDS, onChange: function (k) { EP.set('world', k, me); } });
+    add(box, cSeg.el, wSeg.el, sT.el, sG.el);
     var rR = Ro('reward rₜ', 'r'), rW = Ro('weight γᵗ', 'w'), rJ = Ro('J so far', 'J'), rJd = Ro('Jγ so far', 'Jd');
     setRich(rJd.key, 'J_γ so far');
     box.appendChild(Ros(rR, rW, rJ, rJd));
@@ -1873,13 +1874,13 @@ var TCPort = (function () {
       }
       var zero = D.env.episodes.zero_throttle.J_100_step_return;
       cmp.textContent = 'For comparison: no throttle from start 0 has J = ' + F(zero, 2) + ' over the whole episode' + (EP.world === 'stall' ? '.' : ' (the same in the no-stall world).');
-      chart.update({ title: 'The 100 weights γᵗ of the discounted return at γ = ' + F(g, 3) + '.', height: 170, x: { min: -1, max: 100, label: 'steps ahead t' }, y: { min: 0, max: 1, ticks: [0, 0.25, 0.5, 0.75, 1] },
+      chart.update({ title: 'The 100 weights γᵗ of the discounted return at γ = ' + F(g, 3) + '.', height: 170, x: { min: -1, max: 100, label: 'steps ahead t' }, y: { min: 0, max: 1, label: 'weight γᵗ', ticks: [0, 0.25, 0.5, 0.75, 1] },
         series: [{ key: 'weights', name: 'weight γᵗ', color: '--accent', kind: 'bars', pts: ret.weights.map(function (x, k) { return [k, x, k === t ? '--ink' : '--accent']; }) }],
         legendExtra: [{ name: 'the step reached, t = ' + t, color: '--ink' }],
         hover: { xs: ret.weights.map(function (x, k) { return k; }), title: function (x) { return x + ' steps ahead'; }, rows: function (x) { return [{ color: '--accent', name: 'γᵗ', value: F(ret.weights[x]) }]; } } });
       if (user) LJd.say();
     }
-    EP.on(function () { cSeg.set(EP.ctrl); draw(false); });
+    EP.on(function () { cSeg.set(EP.ctrl); wSeg.set(EP.world); draw(false); });
     draw(false);
     return { enter: function () { chart.draw(); } };
   };
@@ -1904,7 +1905,7 @@ var TCPort = (function () {
       Lt.set('r₀ + γ r₁ + … + γ' + (H > 1 ? sup(H - 1) : '⁰') + ' r' + sub(H - 1) + ' = ' + F(a) + ' (stall-aware) and ' + F(b) + ' (no throttle) after ' + FI(H) + (H === 1 ? ' step.' : ' steps.'));
       var xs = []; for (var h = 1; h <= 1000; h++) xs.push(h);
       chart.update({ title: 'Partial discounted sums against the horizon H (logarithmic): they settle at −12.7275 and −154.3109.', height: 220, endLabels: true,
-        x: { min: 1, max: 1000, log: true, label: 'horizon H (steps)', ticks: [1, 10, 100, 1000], fmt: function (v) { return FI(v); } }, y: { min: -160, max: 0, ticks: [-150, -100, -50, 0] },
+        x: { min: 1, max: 1000, log: true, label: 'horizon H (steps)', ticks: [1, 10, 100, 1000], fmt: function (v) { return FI(v); } }, y: { min: -160, max: 0, label: 'discounted sum so far', ticks: [-150, -100, -50, 0] },
         series: [{ key: 'sa', name: 'stall-aware', color: '--k-ref', pts: xs.map(function (h) { return [h, s.sa[h - 1]]; }) },
           { key: 'nt', name: 'no throttle', color: '--k-none', dash: true, pts: xs.map(function (h) { return [h, s.nt[h - 1]]; }) }],
         vlines: [{ x: H, color: '--accent', dash: false, label: 'H = ' + FI(H), anchor: H > 300 ? 'end' : 'start' }],
@@ -1948,7 +1949,7 @@ var TCPort = (function () {
     function drawChart() {
       var G = ensureGrid();
       chart.update({ title: 'Value against thruster 1\'s throttle at start 0: the stalling world peaks at 80% (−13.3164) and falls; the no-stall world keeps rising and levels off near full throttle.',
-        height: 230, endLabels: true, x: { min: 60, max: 100, label: 'thruster 1, % upstream', ticks: [60, 70, 80, 90, 100] }, y: { min: -13.8, max: -13.2, ticks: [-13.8, -13.6, -13.4, -13.2] },
+        height: 230, endLabels: true, x: { min: 60, max: 100, label: 'thruster 1, % upstream', ticks: [60, 70, 80, 90, 100] }, y: { min: -13.8, max: -13.2, label: 'value (discounted return)', ticks: [-13.8, -13.6, -13.4, -13.2] },
         series: [{ key: 'no_stall', name: 'no-stall world', color: '--k-rise', dash: true, pts: G.map(function (g) { return [g.u * 100, g.n]; }), keep: true },
           { key: 'stall', name: 'stalling world', color: '--k-stall', pts: G.map(function (g) { return [g.u * 100, g.s]; }), keep: true }],
         vlines: [{ x: 80, label: '80%' }],
@@ -2265,7 +2266,7 @@ var TCPort = (function () {
       Ly.set('y', [F(r9, 6) + ' + 0.98 × ' + par(F(mn, 6)), F(r9, 6) + ' + ' + par(F(gm, 6)), F(y, 6)], y);
       Le2.set('y ' + MINUS + ' q', [F(y, 6) + ' ' + MINUS + ' ' + par(F(C9.q, 6)), F(err, 6)], err);
       var ys = ND.draws.map(function (q, i) { return [i + 1, q.y]; });
-      chart.update({ title: 'The one-step target y for each of the 20 noise draws; the line is y with ε = 0.', height: 170, x: { min: 0, max: 21, label: 'noise draw', ticks: [1, 5, 10, 15, 20] }, y: { min: -23.5, max: -23.1, ticks: [-23.5, -23.4, -23.3, -23.2, -23.1], fmt: function (v) { return F(v, 1); } },
+      chart.update({ title: 'The one-step target y for each of the 20 noise draws; the line is y with ε = 0.', height: 170, x: { min: 0, max: 21, label: 'noise draw', ticks: [1, 5, 10, 15, 20] }, y: { min: -23.5, max: -23.1, label: 'one-step target y', ticks: [-23.5, -23.4, -23.3, -23.2, -23.1], fmt: function (v) { return F(v, 1); } },
         series: [{ key: 'y', name: 'y with a noise draw', color: '--k-learn', kind: 'dots', r: 3.5, pts: ys, keep: true }],
         legendExtra: [{ name: 'y with ε = 0', color: '--ink', dash: true }].concat(d ? [{ name: 'the draw shown', color: '--ink' }] : []),
         hlines: [{ y: C9.y, color: '--ink', label: 'ε = 0' }],
@@ -2293,12 +2294,12 @@ var TCPort = (function () {
     function drawCharts() {
       var lossMax = Math.max.apply(null, ch.map(function (c) { return c.critic_loss; }));
       c1.update({ title: 'The critic loss, averaged over each block of 5,000 updates of the run\'s 100,000; over the last block it is ' + F(run.final.critic_loss) + '.', height: 180,
-        x: { min: 0, max: 100000, label: 'updates', ticks: [0, 25000, 50000, 75000, 100000], fmt: kfmt }, y: { min: 0, max: Math.ceil(lossMax * 1.15 * 100) / 100 },
+        x: { min: 0, max: 100000, label: 'updates', ticks: [0, 25000, 50000, 75000, 100000], fmt: kfmt }, y: { min: 0, max: Math.ceil(lossMax * 1.15 * 100) / 100, label: 'critic loss' },
         series: [{ key: 'loss', name: 'critic loss (both critics)', color: '--k-learn', pts: ch.map(function (c) { return [c.update, c.critic_loss]; }), keep: true }],
         hover: { xs: xs, title: function (x) { return 'the 5,000 updates up to ' + FI(x); }, rows: function (x, k) { return [{ color: '--k-learn', name: 'critic loss', value: F(ch[k].critic_loss) }]; } } });
       var qmin = Math.min.apply(null, ch.map(function (c) { return c.q1_mean_at_actor; }));
       c2.update({ title: 'The mean Q₁ at the actor\'s commands, averaged over each block of 5,000 updates; over the last block it is ' + F(run.final.q1_mean_at_actor, 3) + '.', height: 180,
-        x: { min: 0, max: 100000, label: 'updates', ticks: [0, 25000, 50000, 75000, 100000], fmt: kfmt }, y: { min: Math.floor(qmin * 1.1), max: 0 },
+        x: { min: 0, max: 100000, label: 'updates', ticks: [0, 25000, 50000, 75000, 100000], fmt: kfmt }, y: { min: Math.floor(qmin * 1.1), max: 0, label: 'mean Q₁ at the actor\'s commands' },
         series: [{ key: 'q1', name: 'mean Q₁ at the actor\'s commands', color: '--k-learn', pts: ch.map(function (c) { return [c.update, c.q1_mean_at_actor]; }), keep: true }],
         hover: { xs: xs, title: function (x) { return 'the 5,000 updates up to ' + FI(x); }, rows: function (x, k) { return [{ color: '--k-learn', name: 'mean Q₁', value: F(ch[k].q1_mean_at_actor, 3) }]; } } });
     }
@@ -2327,7 +2328,7 @@ var TCPort = (function () {
     function q1At(c) { if (c === 100000) return run.final.q1_mean_at_actor; for (var i = 0; i < run.chunks.length; i++) if (run.chunks[i].update === c) return run.chunks[i].q1_mean_at_actor; return null; }
     function showA(user) {
       var q = q1At(ck), lam = alpha / Math.abs(q);
-      Ll.set('λ', [(alpha === 2.5 ? '2.5' : String(alpha)) + ' / ' + F(Math.abs(q), 3), F(lam)], lam, 'mean Q₁ at the actor\'s commands was ' + F(q, 3) + ', averaged over the 5,000 updates up to ' + FI(ck));
+      Ll.set('λ', [(alpha === 2.5 ? '2.5' : String(alpha)) + ' / ' + F(Math.abs(q), Math.abs(q) < 10 ? 4 : 3), F(lam)], lam, 'mean Q₁ at the actor\'s commands was ' + F(q, Math.abs(q) < 10 ? 4 : 3) + ', averaged over the 5,000 updates up to ' + FI(ck));
       if (user) Ll.say();
     }
     showA(false);
@@ -2451,7 +2452,7 @@ var TCPort = (function () {
   }
   function scoresCfg(title, extra) {
     var pts = SORTED.map(function (z, i) { return [i + 1, z]; });
-    var cfg = { title: title, height: 220, x: { min: 0, max: 852, label: 'rank among the 851 sorted scores', ticks: [1, 200, 400, 600, 800], fmt: function (v) { return FI(v); } }, y: { min: 0, max: 4, ticks: [0, 1, 2, 3, 4] },
+    var cfg = { title: title, height: 220, x: { min: 0, max: 852, label: 'rank among the 851 sorted scores', ticks: [1, 200, 400, 600, 800], fmt: function (v) { return FI(v); } }, y: { min: 0, max: 4, label: 'score', ticks: [0, 1, 2, 3, 4] },
       series: [{ key: 'scores', name: 'the 851 scores, sorted', color: '--k-learn', kind: 'dots', r: 1.6, pts: pts, keep: true }],
       hover: { xs: pts.map(function (p) { return p[0]; }), title: function (x) { return 'rank ' + FI(x) + ' of 851'; }, rows: function (x) { return [{ color: '--k-learn', name: 'score', value: F(SORTED[x - 1], 4) }]; } } };
     Object.keys(extra || {}).forEach(function (k) { cfg[k] = extra[k]; });
@@ -2572,12 +2573,12 @@ var TCPort = (function () {
       bars.push([n + 1, m.unseenMass, '--warn']);
       var mx = Math.max.apply(null, bars.map(function (b) { return b[1]; }));
       var tks = n === 19 ? [1, 5, 10, 15, 20] : [1, 200, 400, 600, 852];
-      cM.update({ title: 'Each sorted score\'s mass in this draw, and the unseen row\'s at the right end.', height: 170, x: { min: 0, max: n + 2, ticks: tks, fmt: function (v) { return FI(v); } }, y: { min: 0, max: mx * 1.1, fmt: function (v) { return F(v, n === 19 ? 2 : 3); } },
+      cM.update({ title: 'Each sorted score\'s mass in this draw, and the unseen row\'s at the right end.', height: 170, x: { min: 0, max: n + 2, label: 'sorted score', ticks: tks, fmt: function (v) { return FI(v); } }, y: { min: 0, max: mx * 1.1, label: 'mass', fmt: function (v) { return F(v, n === 19 ? 2 : 3); } },
         series: [{ key: 'mass', name: 'mass of a row', color: '--k-learn', kind: 'bars', pts: bars, keep: n === 19 }],
         legendExtra: [{ name: 'the unseen row', color: '--warn' }].concat(m.crossingRank ? [{ name: 'where this draw crosses', color: '--ink' }] : []),
         hover: { xs: xs, title: function (x) { return x === n + 1 ? 'the unseen row' : 'score ' + FI(x) + ' of ' + n; }, rows: function (x) { return [{ color: x === n + 1 ? '--warn' : '--k-learn', name: 'mass', value: F(x === n + 1 ? m.unseenMass : m.masses[x - 1], n === 19 ? 4 : 6) }]; } } });
       var run = m.running.map(function (v, i) { return [i + 1, v]; });
-      cR.update({ title: 'The running total of the masses along the sorted scores; the draw crosses where it first reaches 0.9.', height: 190, x: { min: 0, max: n + 2, label: 'sorted score', ticks: tks, fmt: function (v) { return FI(v); } }, y: { min: 0, max: 1, ticks: [0, 0.5, 0.9] },
+      cR.update({ title: 'The running total of the masses along the sorted scores; the draw crosses where it first reaches 0.9.', height: 190, x: { min: 0, max: n + 2, label: 'sorted score', ticks: tks, fmt: function (v) { return FI(v); } }, y: { min: 0, max: 1, label: 'running total of the masses', ticks: [0, 0.5, 0.9] },
         series: [{ key: 'run', name: 'running total', color: '--ink', pts: run }],
         hlines: [{ y: 0.9, color: '--warn', label: '0.9', anchor: 'start' }],
         vlines: m.crossingRank ? [{ x: m.crossingRank, color: '--accent', label: 'crosses: ' + ordinal(m.crossingRank), anchor: 'end' }] : [],
@@ -2623,7 +2624,7 @@ var TCPort = (function () {
       Lb.set('β', ['max(' + F(be, 4) + ', ' + F(z950, 4) + ')', F(beta, 4)], beta, mode === 'bca' ? 'with the lesson\'s generator' : 'with your browser\'s draws');
       var lo = Math.min(735, ranks[0] - 2), hi = Math.max(800, ranks[ranks.length - 1] + 2), mx = Math.max.apply(null, ranks.map(function (r) { return counts[r]; }));
       chart.update({ title: 'How many of the 1,000 draws cross at each rank, with the empirical threshold (rank 766), the 950th crossing and β.', height: 210,
-        x: { min: lo, max: hi, label: 'rank where a draw crosses', ticks: [740, 750, 760, 770, 780, 790, 800].filter(function (v) { return v >= lo && v <= hi; }) }, y: { min: 0, max: Math.ceil(mx * 1.15) },
+        x: { min: lo, max: hi, label: 'rank where a draw crosses', ticks: [740, 750, 760, 770, 780, 790, 800].filter(function (v) { return v >= lo && v <= hi; }) }, y: { min: 0, max: Math.ceil(mx * 1.15), label: 'draws crossing at that rank' },
         series: [{ key: 'counts', name: 'draws crossing at that rank', color: '--k-learn', kind: 'bars', barW: 0.8, pts: ranks.map(function (r) { return [r, counts[r]]; }), keep: true }],
         vlines: [{ x: 766, color: '--muted', label: 'empirical: 766', anchor: 'end' }, r950v ? { x: r950v, color: '--accent', dash: false, label: '950th: ' + r950v, dy: 14 } : null].filter(Boolean),
         hover: { xs: ranks, title: function (x) { return 'rank ' + x + ' (score ' + F(SORTED[x - 1], 4) + ')'; }, rows: function (x) { return [{ color: '--k-learn', name: 'draws', value: String(counts[x]) }]; } } });
@@ -2656,7 +2657,7 @@ var TCPort = (function () {
       if (exk) {
         var c = exk.all_draws.crossings_at_each_rank, pts = c.map(function (v, i) { return [i + 1, v]; }).filter(function (q) { return q[1] > 0; });
         var mx = Math.max.apply(null, c.concat([1]));
-        chart.update({ title: 'BCA\'s 1,000 draws on ' + n + ' scores: how many cross at each rank.', height: 180, x: { min: 0, max: n + 1, label: 'rank where a draw crosses' }, y: { min: 0, max: Math.ceil(mx * 1.15) },
+        chart.update({ title: 'BCA\'s 1,000 draws on ' + n + ' scores: how many cross at each rank.', height: 180, x: { min: 0, max: n + 1, label: 'rank where a draw crosses' }, y: { min: 0, max: Math.ceil(mx * 1.15), label: 'draws crossing at that rank' },
           series: [{ key: 'h', name: 'draws crossing at that rank', color: '--k-learn', kind: 'bars', barW: 0.7, pts: pts, keep: true }],
           hover: { xs: pts.map(function (q) { return q[0]; }), title: function (x) { return 'rank ' + x + ' of ' + n; }, rows: function (x) { return [{ color: '--k-learn', name: 'draws', value: String(c[x - 1]) }]; } } });
         hnote.textContent = FI(exk.all_draws.draws_that_cross) + ' of 1,000 draws crossed (' + FI(exk.all_draws.draws_that_never_cross) + ' never did); 950 are needed' + (exk.all_draws.draws_that_cross >= 950 ? ': certified.' : ', so β = +∞.');
@@ -2727,7 +2728,7 @@ var TCPort = (function () {
       var q = r / (r + 1), m = P.doseFromRatio(r);
       Lq.set('U / (U + η)', [F(r, 4) + ' / (' + F(r, 4) + ' + 1)', F(r, 4) + ' / ' + F(r + 1, 4), F(q, 4)], q, 'in units of η');
       Lm.set('m', ['1 + 0.5 × ' + F(q, 4), F(m, 4)], m);
-      chart.update({ title: 'The dose against U/η: it rises from 1 toward 1.5 and never reaches it.', height: 210, x: { min: 0, max: 20, label: 'U/η', ticks: [0, 5, 10, 15, 20] }, y: { min: 0.95, max: 1.55, ticks: [1, 1.1, 1.2, 1.3, 1.4, 1.5] },
+      chart.update({ title: 'The dose against U/η: it rises from 1 toward 1.5 and never reaches it.', height: 210, x: { min: 0, max: 20, label: 'U/η', ticks: [0, 5, 10, 15, 20] }, y: { min: 0.95, max: 1.55, label: 'dose m', ticks: [1, 1.1, 1.2, 1.3, 1.4, 1.5] },
         series: [{ key: 'dose', name: 'dose m', color: '--k-learn', pts: xs.map(function (x) { return [x, P.doseFromRatio(x)]; }) }],
         hlines: [{ y: 1.5, color: '--warn', label: '1.5, never reached' }],
         marks: [{ x: Math.min(r, 20), y: m, color: '--k-learn', label: 'm = ' + F(m, 4), anchor: r > 12 ? 'end' : 'start', dy: 16 }, { x: B9.U_over_eta, y: P.doseFromRatio(B9.U_over_eta), color: '--ink', label: 'row 209', r: 4 }],
@@ -2777,10 +2778,10 @@ var TCPort = (function () {
     function show(user) {
       var w = P.weightStrong(c, K), e = 4 * (c - 0.6), htr = P.density(c, WL.training_xi), hte = P.density(c, WL.strong_xi);
       rW.set(F(w, 4), w); rTr.set(F(htr, 4), htr); rTe.set(F(hte, 4), hte);
-      L.set('ω(' + F(c, 4).replace(/0+$/, '').replace(/\.$/, '') + ')', ['exp(4 × (' + F(c, 4).replace(/0+$/, '').replace(/\.$/, '') + ' ' + MINUS + ' 0.6))', 'exp(' + F(e, 4).replace(/0+$/, '').replace(/\.$/, '') + ')', F(w, 4)], w);
-      Lr.set('h_test(c) / h_train(c)', [F(hte, 4) + ' / ' + F(htr, 4), F(hte / htr, 4)], hte / htr, 'the same ratio');
+      L.set('ω(' + F(c, 4).replace(/0+$/, '').replace(/\.$/, '') + ')', ['exp(4 × (' + F(c, 4).replace(/0+$/, '').replace(/\.$/, '') + ' ' + MINUS + ' 0.6))', 'exp(' + F(4 * (parseShown(F(c, 4)) - 0.6), 4).replace(/0+$/, '').replace(/\.$/, '') + ')', F(w, 4)], w);
+      Lr.set('h_test(c) / h_train(c)', [F(hte, 6) + ' / ' + F(htr, 6), F(hte / htr, 4)], hte / htr, 'the same ratio');
       chart.update({ title: 'How often each current appears in training and at the strong test; their ratio at a current is its weight.', height: 220, endLabels: true,
-        x: { min: 0.1, max: 1.1, label: 'current c', ticks: [0.1, 0.3, 0.5, 0.7, 0.9, 1.1] }, y: { min: 0, max: 2.6, ticks: [0, 0.5, 1, 1.5, 2, 2.5] },
+        x: { min: 0.1, max: 1.1, label: 'current c', ticks: [0.1, 0.3, 0.5, 0.7, 0.9, 1.1] }, y: { min: 0, max: 2.6, label: 'how often (density)', ticks: [0, 0.5, 1, 1.5, 2, 2.5] },
         series: [{ key: 'train', name: 'h_train: training', short: 'training', color: '--sit-rec', pts: xs.map(function (x) { return [x, P.density(x, WL.training_xi)]; }) },
           { key: 'test', name: 'h_test: strong test', short: 'strong test', color: '--sit-strong', dash: true, pts: xs.map(function (x) { return [x, P.density(x, WL.strong_xi)]; }) }],
         vlines: [{ x: c, color: '--accent', dash: false, label: 'c = ' + F(c, 2), anchor: c > 0.8 ? 'end' : 'start' }],
@@ -2860,7 +2861,7 @@ var TCPort = (function () {
       { f: 'Stage 1, no BCA: a penalty on the critic\'s value at the actor\'s own command, set from the exact one-step error', n: F(STG.stage1.recovery_mean, 1) + ' of 98.9 points won back', tag: 'exp', link: '#ats-stage1', lt: 'Stage 1' },
       { f: 'Stage 2, BCA\'s lower edge with a learned extra width (seeds 0 to 4)', n: F(STG.stage2_seeds_0_4.claim_numbers.X, 1) + ' points won back', tag: 'exp', link: '#ats-stage2', lt: 'Stage 2' },
       { f: 'Stage 2, a hand-set limit to the recorded range of commands', n: F(STG.stage2_seeds_0_4.claim_numbers.Z, 1) + ' points won back', tag: 'exp', link: '#ats-stage2', lt: 'Stage 2' },
-      { f: 'Stage 2\'s confirmatory run on fresh seeds 5 to 9', n: 'not run yet', tag: 'pre', tt: 'pre-registered plan, not run yet', link: '#ats-stage2', lt: 'Stage 2' },
+      { f: 'Stage 2\'s confirmatory run on fresh seeds 5 to 9', n: 'not run: version 7 was ended without running', tag: 'pre', tt: 'pre-registered plan; version 7, which was to run it, was ended without running', link: '#ats-stage2', lt: 'Stage 2' },
       { f: 'Restructured BCA, step 1: caution on in 5 of 5 stalling-world seeds, off in 5 of 5 no-stall seeds', n: 'net ' + F(STG.restructured_step1.net.net, 1) + ' points (' + STG.restructured_step1.go_no_go.verdict + ')', tag: 'exp', link: '#ats-restructure', lt: 'Restructured BCA' },
       { f: 'Restructured BCA, step 2 (training)', n: 'net ' + F(STG.restructured_step2.net_primary, 1) + ' against ' + F(STG.restructured_step2.best_world_blind_net, 1) + ' for the best rival', tag: 'exp', link: '#ats-restructure', lt: 'Restructured BCA' },
       { f: 'Weighting test, strong test: coverage of one-step errors on test steps outside the removed region', n: m ? m[1] + ' to ' + m[2] + ' without weights; ' + m[3] + ' to ' + m[4] + ' with exact weights' : wt, tag: 'pre', link: '#iw-findings', lt: 'The weighting test\'s findings' }];
@@ -3036,6 +3037,10 @@ var TCPort = (function () {
   markSeen();
   root.addEventListener('walkthrough:enter', function (ev) { var st = ev.target.closest && ev.target.closest('.ls-step'); if (st) enterStep(st); if (ev.target === INTRO) markSeen(); });
   root.addEventListener('walkthrough:leave', function (ev) { var st = ev.target.closest && ev.target.closest('.ls-step'); if (st) leaveStep(st); });
+  // a step the navigation showed before these listeners existed (a deep link at load): its walkthrough:enter is gone
+  if (html.classList.contains('nv-one')) [].slice.call(root.querySelectorAll('.ls-step')).forEach(function (st) {
+    if (!st.hasAttribute('hidden') && !st.classList.contains('nv-off') && !st.classList.contains('ls-off') && st.getClientRects().length) enterStep(st);
+  });
   if (W.IntersectionObserver) {
     var io = new W.IntersectionObserver(function (ents) {
       ents.forEach(function (e) { if (e.isIntersecting && e.target.getClientRects().length) { var st = e.target.closest('.ls-step'); if (st && !st.hasAttribute('hidden') && !st.classList.contains('ls-off') && !st.classList.contains('nv-off')) enterStep(st); } });

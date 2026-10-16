@@ -302,24 +302,28 @@ E("K14", "tooltip", "canvas tooltips: carry the keys (a third element) or clear 
   '      if (tp[2]) { if (cv.getAttribute("data-tip-keys") !== tp[2]) cv.setAttribute("data-tip-keys", tp[2]); } else cv.removeAttribute("data-tip-keys");\n'
   '      if (cv.getAttribute("data-tip") !== tp[1]) cv.setAttribute("data-tip", tp[1]);\n'
   '    };')
-E("K13b", "tooltip", "cost chart while the learned actor drives (versions 21 and 25): one keyed line per data quality, in "
-  "its line's color (--lq-1 .. --lq-5), instead of one sentence; version 25's learner name and cloud rerun in the last line",
-  '      const nm = typeof LRNAME !== "undefined" && S.lr && S.lr !== "td3bc" ? LRNAME[S.lr] + " " : "";\n'
+E("K13b", "tooltip", "cost chart while the learned actor drives (versions 21 and 25, and the live page's result F learners): "
+  "one keyed line per data quality drawn, in its line's color (--lq-1 .. --lq-5), instead of one sentence; the learner's "
+  "name, the rerun and the situation in the last line",
+  '      const rf = typeof isRF === "function" && isRF(S.lr);\n'
+  '      const nm = rf ? RFT.tipnm[S.lr] : typeof LRNAME !== "undefined" && S.lr && S.lr !== "td3bc" ? LRNAME[S.lr] + " " : "";\n'
   '      const rr = !!learnedEp().meta.learner;\n'
-  '      const lp = LQ.map(q => num(-learnedEp(q).g[t], 2) + " for the " + nm + "actor learned from " + q + " data" + (q === S.lq ? " (the one on screen)" : ""));\n'
+  '      const lp = (rf ? lrQs() : LQ).map(q => num(-learnedEp(q).g[t], 2) + " for the " + nm + "actor learned from " + q + " data" + (q === S.lq ? " (the one on screen)" : ""));\n'
   '      return ["Cost so far at state " + t, "At this state the cost so far is " + lp.slice(0, -1).join(", ") + " and " +\n'
-  '        lp[lp.length - 1] + ". All five learned from " + (S.ld === "gap" ? "data with the 80% hold removed" : "all the data") +\n'
-  '        (rr ? ", in the cloud rerun of seed 0," : "") +\n'
+  '        lp[lp.length - 1] + ". " + (rf ? "Both" : "All five") + " learned from " + (S.ld === "gap" ? "data with the 80% hold removed" : "all the data") +\n'
+  '        (rf ? ", in the cloud rerun of result F\'s arms for seed 0," : rr ? ", in the cloud rerun of seed 0," : "") +\n'
   '        (typeof isSit4 === "function" && isSit4(S.lm) ? " and start from start 11 of " + lmName(S.lm)\n'
   '          : " and start from the same start of the " + (S.lm === "strong" ? "strong test mix" : "training mix")) +\n'
   '        ". The cost so far is minus the return so far, so lower is better."];',
-  '      const nm = typeof LRNAME !== "undefined" && S.lr && S.lr !== "td3bc" ? LRNAME[S.lr] + " " : "";\n'
+  '      const rf = typeof isRF === "function" && isRF(S.lr);\n'
+  '      const nm = rf ? RFT.tipnm[S.lr] : typeof LRNAME !== "undefined" && S.lr && S.lr !== "td3bc" ? LRNAME[S.lr] + " " : "";\n'
   '      const rr = !!learnedEp().meta.learner;\n'
   '      const QN = { random: "Random", "medium-replay": "Medium-replay", medium: "Medium", "medium-expert": "Medium-expert", expert: "Expert" };\n'
-  '      const lines = LQ.map(q => (QN[q] || q) + " data: " + num(-learnedEp(q).g[t], 2) + (q === S.lq ? " (the one on screen)" : ""));\n'
-  '      const keys = LQ.map(q => [typeof LQVAR === "object" && LQVAR[q] ? LQVAR[q] : "--muted", "line"]);\n'
-  '      lines.push("All five " + (nm ? nm + "actors " : "") + "learned from " + (S.ld === "gap" ? "data with the 80% hold removed" : "all the data") +\n'
-  '        (rr ? ", in the cloud rerun of seed 0," : "") +\n'
+  '      const qs = rf ? lrQs() : LQ;\n'
+  '      const lines = qs.map(q => (QN[q] || q) + " data: " + num(-learnedEp(q).g[t], 2) + (q === S.lq ? " (the one on screen)" : ""));\n'
+  '      const keys = qs.map(q => [typeof LQVAR === "object" && LQVAR[q] ? LQVAR[q] : "--muted", "line"]);\n'
+  '      lines.push((rf ? "Both " : "All five ") + nm + "actors learned from " + (S.ld === "gap" ? "data with the 80% hold removed" : "all the data") +\n'
+  '        (rf ? ", in the cloud rerun of result F\'s arms for seed 0," : rr ? ", in the cloud rerun of seed 0," : "") +\n'
   '        (typeof isSit4 === "function" && isSit4(S.lm) ? " and start from start 11 of " + lmName(S.lm)\n'
   '          : " and start from the same start of the " + (S.lm === "strong" ? "strong test mix" : "training mix")) +\n'
   '        ". The cost so far is minus the return so far, so lower is better."); keys.push(null);\n'
@@ -420,7 +424,7 @@ E("B5", "text", "Results, opening: version 7 was handed off and approved, and th
   "      the run happens, still awaits its handoff and its own approval);",
   "As of {D}, {T} UTC, this is where four\n"
   "      lines of work on this environment stand: Stage 2's confirmatory seeds 5–9 (its pre-registration is approved; "
-  "version 7, which changes only where and how\n"
+  "version 7, which changed only where and how\n"
   "      the run happens, was handed off on 15 Oct at 07:47 UTC and approved by the project owner at 15:45 UTC, and the\n"
   "      approval was checked and recorded on 16 Oct at 02:27 UTC; later that day version 7 was ended without running,\n"
   "      so those seeds will not run under it);")
@@ -531,13 +535,14 @@ E("B19", "text", "critic viewer, sources: its scripts and the test's code are in
   "<p class=\"note\">Partly in the shared repository since 15 Oct 2026, 17:18 UTC: its main branch now holds the\n"
   "      weighting test's code (<code>experiments/shift_iw</code>) and the scripts named below with their data file\n"
   "      (<code>docs/thrusterchain/qviewer</code>), but not the runs they read (<code>runs/shift_iw_v5</code>), so this\n"
-  "      section still cannot be rebuilt from the repository alone. The rest of this note was written before that merge.\n"
+  "      section still cannot be rebuilt from the repository alone.\n"
   "      This section's data come from the weighting test's\n")
 E("B21", "text", "After the stop, status box: the near-80 test (its final pre-registration approved by the owner and "
   "the approval recorded; it now runs on the owner's desktop computer; no result yet)",
   "        <li><b>The weighting test</b> (its own data and its own points scale): <a href=\"#weighting-test\">the next\n"
   "          section</a>.</li>",
-  "        <li><b>Near-80 test</b> (approved and running; no result yet): a test that also leaves the commands near 80%\n"
+  "        <li><b>Near-80 test</b> (approved and running; no result yet): version 8, the version the restructured BCA's GO\n"
+  "          licensed, with the restructured BCA as its main method and fresh seeds 10–14; it also leaves the commands near 80%\n"
   "          throttle (any thruster from 70% to 90%) out of the training data, which the project owner asked about in a\n"
   "          page comment. Its final pre-registration, frozen on 16 Oct at 01:33 (<code>e3e87c3</code>), was approved by\n"
   "          the owner at their own terminal at 11:50 (committed at 11:51, <code>f79b89c</code>) and the approval\n"
@@ -551,7 +556,9 @@ E("B22", "text", "Results, opening: the two newer lines of work (no results yet;
   "      on its own data, in the next section.</p>",
   "all three in <a href=\"#ats-status\">After the stop</a>); and <a href=\"#weighting-test\">the weighting test</a>,\n"
   "      on its own data, in the next section. Two more have no results yet: runs of four\n"
-  "      learners, whose plan the project owner approved in chat and must still approve at their own terminal, and a test\n"
+  "      learners (TD3+BC, implicit Q-learning, conservative Q-learning and revisited behavior-regularized actor-critic,\n"
+  "      each alone, with BCA and with BCA IW; nothing trained yet),\n"
+  "      whose plan the project owner approved in chat and must still approve at their own terminal; and a test\n"
   "      that leaves the commands near 80% throttle out of the training data, whose final plan the owner approved at\n"
   "      their own terminal on 16 Oct and which now runs on the owner's desktop computer\n"
   "      (<a href=\"#ats-status\">After the stop</a>).</p>")
@@ -568,6 +575,33 @@ E("B25", "text", "After the stop, what happened to the plan: its deciding test w
   "      5–9, still runs under version 7.",
   "The plan is not withdrawn, but its deciding test, on fresh seeds\n"
   "      5–9, will not run under version 7, which was ended on 16 Oct 2026 without running.")
+
+# Review round 2 (cloud, 16 Oct 2026): status statements that still read as if version 7 would run, and the sources'
+# notes that the newer head made out of date.
+E("B26", "text", "After the stop, route table: Stage 2's row says version 7 was ended without running (review A2, C1, F1)",
+  "<span class=\"tag\">waiting</span> Seeds 0–4 missed marks M4 and M5; seeds 5–9 are to run under version 7.",
+  "<span class=\"tag\">ended</span> Seeds 0–4 missed marks M4 and M5; seeds 5–9 were to run under version 7, which was\n"
+  "ended on 16 Oct 2026 without running.")
+E("B26b", "text", "After the stop, route table's caption: Stage 2's row is dated apart",
+  "<caption>Routes tested on the main test's data and their status, as of 15 Oct 2026, 05:41 UTC.</caption>",
+  "<caption>Routes tested on the main test's data and their status, as of 15 Oct 2026, 05:41 UTC (Stage 2's row as of\n"
+  "16 Oct 2026).</caption>")
+E("B19b", "text", "critic viewer, sources: the code and scripts were only local until the merge; the runs still are (review F3)",
+  "are so far only in the\n      project owner's local workspace (<code>bca-shift-work</code>, which is not under version "
+  "control) and in a local\n      clone that has not been pushed. No branch of the shared repository holds them, so this "
+  "section cannot yet be\n      rebuilt from it.",
+  "were, until that merge, only in the\n      project owner's local workspace (<code>bca-shift-work</code>, which is not "
+  "under version control) and in a local\n      clone that had not been pushed; the runs still are.")
+E("B27", "text", "After the stop, sources: EXPERIMENTS.md at the head the paragraph names (review F4)",
+  "The repository's <code>EXPERIMENTS.md</code> was last\n      updated on 13 Oct (<code>1d2ef73</code>) and still calls "
+  "the policy test running; the files above are\n      newer.",
+  "The repository's <code>EXPERIMENTS.md</code> at that head (its header says last updated 14 Oct; its entry 17, the\n"
+  "      weighting test, came in with the weighting test's merge on 15 Oct) still calls Stage 2's policy test running; "
+  "the files above are\n      newer.")
+E("B28", "text", "After the stop, opening: seeds 5-9 could carry Stage 2's claim and have not run (review F7)",
+  "only its fresh seeds 5–9, not yet run, can.</p>",
+  "only its fresh seeds 5–9 could, and they have not run: version 7, which was to run them, was ended on 16 Oct 2026\n"
+  "      without running.</p>")
 
 
 def ids_of(text):

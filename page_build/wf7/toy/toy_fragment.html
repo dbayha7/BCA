@@ -47,6 +47,7 @@
 .toy-legend .toy-sw { margin-right: 1px; }
 #toy-worlds .toy-cnote { margin: 0; }
 #toy-worlds .toy-num { white-space: nowrap; }
+@media (pointer: coarse) { #toy-worlds tr.sub td a { display: inline-flex; align-items: center; min-height: 44px; } }
 @media (max-width: 560px) { #toy-worlds .toy-calc { font-size: 15px; padding: 9px 10px; gap: 2px 6px; }
   #toy-worlds .toy-chart .toy-dl { font-size: 13.5px; } }
 @media (forced-colors: active) { #toy-worlds .toy-chart .toy-ln, .toy-sw .toy-s { stroke: CanvasText; }
@@ -60,8 +61,8 @@
     <ul class="leads">
       <li><b>As extra caution in training, BCA did not help.</b> The learners on this page use BCA's band as a <i>width</i>: a margin of error on the critic's values (the critic is the learned estimate of each action's value) that makes training more cautious where the margin is large. In experiments 1 and 2 the width was calibrated where it was measured, yet it improved no decision and cost return: in experiment 2 the two width rules lost 0.425 and 0.375 per episode against the best possible choices, against 0.122 for simply refusing actions with too little data.</li>
       <li><b>As a gate on a risky action, BCA did help.</b> A <i>gate</i> reads the risky action's <i>held-out tries</i>, its recorded outcomes that training never saw, and either lets the action through or falls back to the safe action. In experiment 2 every gate that read these tries closed 38% to 87% of the <i>room</i>, the return that refusing thin data loses against the best possible choices; fed shuffled tries, none kept its gain.</li>
-      <li><b>BCA's tail gate keeps a safety promise for the data in hand.</b> It lets the action through only if BCA is 95% sure that at least 90% of its outcomes are at least as good as the safe action's. In experiment 2, in any world where more than 10% of the action's outcomes fall below the safe action's (an <i>unsafe</i> world), it let the action through in at most 3% of seeds (repeat runs), against up to 38% for split conformal prediction, the standard rule. But with equal weights BCA is a textbook test: it decided as the exact binomial test in 99.6% of cases, and it cannot say yes with fewer than 29 tries.</li>
-      <li><b>BCA's mean gate earns the most at equal safety</b> (experiment 3). The mean gate asks instead whether the action beats the safe one on average. With every gate tuned to say yes to a harmful action in at most 5% of seeds in every world, BCA's mean gate earned 0.084 per situation, about twice the next gate (0.040, another gate built on BCA) and 4.5 times the best gate not built on BCA (0.019). With no safety requirement, the plain held-out average earns more (0.158 against 0.045).</li>
+      <li><b>BCA's tail gate keeps a safety promise for the data in hand.</b> It lets the action through only if BCA is 95% sure that at least 90% of its outcomes are at least as good as the safe action's. In experiment 2, in any world where more than 10% of the action's outcomes fall below the safe action's (an <i>unsafe</i> world), it let the action through in at most 3% of seeds (repeat runs), against up to 38% for split conformal prediction, the standard rule. But with equal weights BCA is a textbook test: it made the same decision as the exact binomial test in 99.6% of cases, and it cannot say yes with fewer than 29 tries.</li>
+      <li><b>BCA's mean gate earns the most at equal safety</b> (experiment 3). The mean gate asks instead whether the action beats the safe one on average. With every gate tuned to accept at most 5% of the harmful proposals in every world, BCA's mean gate earned 0.084 per situation, about twice the next gate (0.040, another gate built on BCA) and 4.5 times the best gate not built on BCA (0.019). With no safety requirement, the plain held-out average earns more (0.158 against 0.045).</li>
       <li><b>BCA's weights keep its promises when deployment meets conditions in a different mix than the recording</b> (experiment 4). Ignoring this shift, the tail gate let unsafe actions through in up to 89.9% of seeds; with weights, in at most 4.3%. The price is evidence: under a strong shift it needs about 83 tries before it can say yes at all, against 29 with no shift.</li>
       <li><b>The recommended role: a certificate on each deviation, not a penalty in training.</b> A <i>deviation</i> is a risky action that the policy, the rule that picks the actions, wants instead of the safe one. Compare its held-out outcomes with the safe action's value; use the mean gate for return at a fixed safety level, the tail gate for "rarely worse than the safe action", and weights only when the conditions differ (<a href="#toy-adds-up">What it all adds up to</a>).</li>
     </ul>
@@ -76,7 +77,9 @@
           <dt>Held-out tries</dt><dd>Recorded outcomes of the risky action that training never saw. Only the gates read them. Experiment 2 calls them <i>survivors</i>, after ThrusterChain's surviving full-throttle steps.</dd>
           <dt>Width</dt><dd>A calibrated margin of error on the critic's values: subtracted from them as extra caution, or (in the learners on this page) used to strengthen the pull toward the recorded actions where it is large.</dd>
           <dt>Gate</dt><dd>A rule that reads the held-out tries and either lets the risky action through or falls back. The <i>tail gate</i> lets it through only if BCA is 95% sure that at least 90% of its outcomes are at least as good as the fallback (experiment 2 calls it the tail certificate); the <i>mean gate</i> only if BCA is 95% sure that its average gain over the fallback is above 0.</dd>
-          <dt>Promise</dt><dd>What a gate guarantees, with 95% confidence. In an <i>unsafe</i> world more than 10% of the risky action's outcomes fall below the fallback; in a <i>harmful</i> world its average gain over the fallback is below 0. There, a gate that keeps its promise lets the risky action through in at most about 5% of seeds.</dd>
+          <dt>Exact binomial test</dt><dd>A classical test of the tail promise with equal weights: with n tries, b of them below the fallback, it says yes only if b is so small that a world with exactly 10% of outcomes below the fallback would show b or fewer with a chance of at most 5%.</dd>
+          <dt>Situation</dt><dd>In experiment 3, one decision: a safe action and the candidates the critic proposes; its gains are per situation. (Not the main test's four situations on ThrusterChain.)</dd>
+          <dt>Promise</dt><dd>What a gate guarantees, with 95% confidence. In an <i>unsafe</i> world more than 10% of the risky action's outcomes fall below the fallback; in a <i>harmful</i> world its average gain over the fallback is below 0. There, a gate that keeps its promise lets the risky action through in at most about 5% of seeds (in experiment 3, it accepts at most about 5% of the harmful proposals).</dd>
           <dt>Regret</dt><dd>The expected return lost against the best possible choices; 0 is perfect.</dd>
           <dt>Room and gain</dt><dd>In experiment 2, the room is the regret of the best rule that never reads the survivors (0.1215), and a rule's gain is the share of the room it closes: 1 for the oracle's choices, 0 for no better, below 0 for worse. In experiments 3 and 4, a gain is the return won over always falling back.</dd>
           <dt>Oracle</dt><dd>A rule that knows the world's truth and always chooses best: a reference, not a gate anyone could build.</dd>
@@ -102,7 +105,7 @@
     <p class="note">Sources, all read from the repository's history: <code>bca_discrete_toy.ipynb</code> at commit <code>2c8a0e3</code> (15 Oct 2026); <code>bca_channel_toy.ipynb</code>, <code>bca_mean_gate_toy.ipynb</code>, <code>bca_weights_toy.ipynb</code> and <code>bca_findings.ipynb</code> at commit <code>6320224</code> (15 Oct), all on the main branch; and a step-by-step lesson version of <code>bca_findings.ipynb</code> at commit <code>2467e29</code> on the branch <code>claude/bca-findings-walkthrough</code>, not merged. For this page every notebook was run again from those commits: every printed result matched its stored output, apart from running times.</p>
 
     <h3 id="toy-why">Why toy worlds</h3>
-    <p>On ThrusterChain one answer costs hours of training, and many things change at once. In a toy world every true value and every rule's expected return are computed exactly, in seconds, and each notebook isolates one mechanism. The price is realism: a toy shows what can work or fail in principle, never what works on ThrusterChain.</p>
+    <p>On ThrusterChain one answer costs hours of training, and many things change at once. In a toy world every true value is known exactly, a whole experiment runs in seconds to a few minutes, and each notebook isolates one mechanism. The price is realism: a toy shows what can work or fail in principle, never what works on ThrusterChain.</p>
     <p><b>Kill rules.</b> Experiments 2 to 4 were pre-registered. Each claim has a <i>kill rule</i>: a result, written down before the run, that would <i>shelve</i> the claim (set it aside as unsupported). A claim that survives its kill rule is <i>alive</i>. Each notebook prints a fingerprint of its kill rules, a SHA-256 hash that changes if a single character changes, and by each notebook's own record that fingerprint was taken before its first run. The repository cannot confirm the order: the three notebooks were first committed on 15 Oct 2026, together and after their runs (<code>6320224</code>). A <i>seed</i> is the number that fixes a run's random draws, so different seeds are repeat runs that differ only by chance.</p>
 
     <h3 id="toy-world">The world: two steps, two contexts</h3>
@@ -216,7 +219,7 @@
 <span class="toy-cl">regret</span><span class="toy-ce">=</span><span class="toy-cr">0.35 × (1.5 − 1) = 0.175</span>
 </div>
 <p class="toy-so"><b>So:</b> the width pulls venture down to its worst payout, 0, while safe, certain to pay 1, still has 0.845 subtracted. Scale only, with a multiplier of 1, keeps venture and has no regret there.</p>
-    <div class="tbl"><table id="toy-first-seed7" class="stack">
+    <div class="tbl"><table id="toy-first-seed7" data-nav-label="Seed 7: return and regret per episode" class="stack">
       <caption><span class="cap">Seed 7, computed exactly: return and regret per episode at the test mix, in each world, and the first stage's coverage under the test mix. The best possible return is 1.475 in the harmful world and 2.125 in the harmless one.</span></caption>
       <thead><tr><th scope="col">Method</th><th class="n" scope="col">Return, harmful</th><th class="n" scope="col">Regret, harmful</th><th class="n" scope="col">Return, harmless</th><th class="n" scope="col">Regret, harmless</th><th class="n" scope="col">Coverage, first stage</th></tr></thead>
       <tbody>
@@ -267,17 +270,17 @@
 <span class="toy-cl">room</span><span class="toy-ce">=</span><span class="toy-cr">0.12025 + 0.00130 = 0.12155, printed as 0.1215</span>
 </div>
 <p class="toy-so"><b>So:</b> the room is what the <i>oracle</i>, a rule that knows the world, wins back. A gain of 1 means the oracle's choices, 0 means no better than refusing thin data, below 0 means worse. A gate decides only the gap, so it can close at most 0.12025 ÷ 0.12155 = 98.9% of the room.</p>
-    <p><b>The rules.</b> BCA's width as built is subtracted from the critic's value at every action, or multiplies a pull toward the recorded actions, as in the learners BCA is added to, such as TD3+BC (<a href="#m-td3bc">Methods</a>). <i>Gates</i> read the survivors and decide only the gap: venture there, or fall back to safe. The <i>step-1 gate</i> copies the restructured BCA's first step on ThrusterChain (<a href="#toy-meaning">below</a>): fall back if BCA is 95% sure that the survivors' over-predictions (the critic's value minus the outcome) exceed the other last-stage rows' by over 0.10. The <i>harm test</i> falls back if BCA is 95% sure that over 10% of outcomes fall below the critic's value of safe; the <i>tail certificate</i> ventures only if BCA is 95% sure that 90% beat it. Rivals: the same certificate by split conformal or by the <i>exact binomial test</i>, and the <i>plain average</i>, which ventures if the survivors' average reward is at least the critic's value of safe. As controls, three gates are fed shuffled rows.</p>
+    <p><b>The rules.</b> BCA's width as built is subtracted from the critic's value at every action, or multiplies a pull toward the recorded actions, as in the learners BCA is added to, such as TD3+BC (<a href="#m-td3bc">Methods</a>). <i>Gates</i> read the survivors and decide only the gap: venture there, or fall back to safe. The <i>step-1 gate</i> copies the restructured BCA's first step on ThrusterChain (<a href="#toy-meaning">below</a>): fall back if BCA is 95% sure that the survivors' over-predictions (the critic's value minus the outcome) exceed the other last-stage rows' by over 0.10. The <i>harm test</i> falls back if BCA is 95% sure that over 10% of outcomes fall below the critic's value of safe; the <i>tail certificate</i> ventures only if BCA is 95% sure that 90% beat it. Rivals: the same certificate by split conformal or by the <i>exact binomial test</i>, and the <i>plain average</i>, which ventures if the survivors' average reward is at least the critic's value of safe. Two variants also appear in the tables: the step-1 gate compared with context-1 rows only, and the harm test on the average, which ventures unless a one-sided 95% t-test bound shows the survivors' average below the critic's value of safe. As controls, three gates are fed shuffled rows.</p>
     <div id="toy-second-brief" class="finding">
       <p class="f-title">Experiment 2 in four parts</p>
       <dl class="kv kv1 pro">
         <dt>The idea</dt><dd>Some way of using BCA's calibrated errors changes a decision for the better where simpler rules cannot.</dd>
         <dt>What we tested (and the kill rule)</dt><dd>Every rule against refusing thin data, pooled over 200 seeds, both shapes, ten advantages and seven survivor counts (28,000 cases per rule). Six tests, each with its kill rule (table below), fixed before the run.</dd>
-        <dt id="toy-second-found">What happened</dt><dd>The widths did worse than refusing thin data (shelved); every gate that read the survivors closed 38% to 87% of the room, and shuffled rows erased the gain. With equal weights BCA decided as the exact binomial test in 99.6% of cases (shelved). For return the plain average was best; for safety only the tail certificates kept venturing rare in every unsafe world.</dd>
+        <dt id="toy-second-found">What happened</dt><dd>The widths did worse than refusing thin data (shelved); every gate that read the survivors closed 38% to 87% of the room, and shuffled rows erased the gain. With equal weights BCA made the same decision as the exact binomial test in 99.6% of cases (shelved). For return the plain average was best; for safety only the tail certificates kept venturing rare in every unsafe world.</dd>
         <dt>Why</dt><dd>The width is measured at recorded actions and the gap has none, so it cannot see the gap's outcomes. A gate compares the survivors' own outcomes with the value of safe, which the critic knows well: the critic's guess drops out (worked below).</dd>
       </dl>
     </div>
-    <div class="tbl"><table id="toy-pooled-table" class="stack">
+    <div class="tbl"><table id="toy-pooled-table" data-nav-label="Experiment 2&#x27;s six tests, pooled" class="stack">
       <caption><span class="cap">Pooled over 200 seeds, both shapes, ten worlds and seven survivor counts: 28,000 cases per rule.</span></caption>
       <thead><tr><th scope="col">Test: the idea</th><th scope="col">Shelved if</th><th scope="col">Result</th><th scope="col">Verdict</th></tr></thead>
       <tbody>
@@ -298,12 +301,12 @@
 <span class="toy-cl"></span><span class="toy-ce">⇒</span><span class="toy-cr">5 &gt; 0: the tail certificate falls back, as the run recorded</span>
 </div>
 <p class="toy-so"><b>So:</b> every gate except the step-1 gate is really a test of the survivors' raw outcomes against safe's value, which the critic estimates well because safe is in the data.</p>
-    <div class="tbl"><table id="toy-second-case" class="stack">
+    <div class="tbl"><table id="toy-second-case" data-nav-label="One case, every gate" class="stack">
       <caption><span class="cap">One case, every gate: seed 0, 30 survivors, tail shape, advantage −0.25 (17.9% of outcomes below 1.0, average 0.75; falling back is right). From the lesson version of <code>bca_findings.ipynb</code>, which works each decision from scratch and checks it against the run's record.</span></caption>
       <thead><tr><th scope="col">Gate</th><th scope="col">The number it rests on</th><th scope="col">Decision</th></tr></thead>
       <tbody>
-        <tr><td>Step-1 gate</td><td>75,000 of the 1,000,000 pairs of draws differ by at most 0.10; 50,000 (5%) let it venture</td><td>venture</td></tr>
-        <tr><td>BCA harm test</td><td>75 of 1,000 draws cross at or below the claimed advantage; 50 let it venture</td><td>venture</td></tr>
+        <tr><td>Step-1 gate</td><td>75,000 of the 1,000,000 pairs of draws differ by at most 0.10; 50,000 (5%) are needed to venture</td><td>venture</td></tr>
+        <tr><td>BCA harm test</td><td>75 of 1,000 draws cross at or below the claimed advantage; 50 (5%) are needed to venture</td><td>venture</td></tr>
         <tr><td>Harm test on the average (t-test)</td><td>upper bound on the average outcome 1.659, above 1.004</td><td>venture</td></tr>
         <tr><td>Plain average</td><td>average outcome 0.827, below 1.004</td><td>fall back</td></tr>
         <tr><td>Exact binomial certificate</td><td>5 of 30 below 1.004; 30 tries allow 0</td><td>fall back</td></tr>
@@ -362,7 +365,7 @@
 <span><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg>Plain average</span>
 <span><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m toy-hollow"/></svg>Refuse thin data (reads no survivors)</span>
 </div>
-<p class="note toy-cnote">Lower is better; 0 is the oracle, which knows the world. The dashed line at 29 survivors is the fewest a tail certificate can use. The two width rules sit far above this chart, at 0.29 to 0.43, and the other gates between these lines (table below).</p>
+<p class="note toy-cnote">Lower is better; 0 is the oracle, which knows the world. The dashed line at 29 survivors is the fewest a tail certificate can use. The two width rules sit far above this chart, at 0.29 to 0.43, and the other gates between these lines, except the t-test harm gate at 5 survivors (0.160; table below).</p>
       <figcaption>Experiment 2: regret falls as gates read more survivors; refusing thin data cannot use them, and the tail certificate cannot use fewer than 29. Means over 200 seeds, both harm shapes and ten worlds.</figcaption>
       <template id="toy-ch-a-t0"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c1)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m"/></svg><span>BCA tail certificate: <b>0.1215</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c3)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,5.0 L11.0,9.0 L7.0,5.0 Z" class="toy-m"/></svg><span>Split-conformal certificate: <b>0.1215</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg><span>Plain average: <b>0.0297</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m toy-hollow"/></svg><span>Refuse thin data (reads no survivors): <b>0.1215</b></span></div></template>
 <template id="toy-ch-a-t1"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c1)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m"/></svg><span>BCA tail certificate: <b>0.1215</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c3)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,5.0 L11.0,9.0 L7.0,5.0 Z" class="toy-m"/></svg><span>Split-conformal certificate: <b>0.0318</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg><span>Plain average: <b>0.0275</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m toy-hollow"/></svg><span>Refuse thin data (reads no survivors): <b>0.1215</b></span></div></template>
@@ -372,7 +375,7 @@
 <template id="toy-ch-a-t5"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c1)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m"/></svg><span>BCA tail certificate: <b>0.0390</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c3)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,5.0 L11.0,9.0 L7.0,5.0 Z" class="toy-m"/></svg><span>Split-conformal certificate: <b>0.0224</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg><span>Plain average: <b>0.0084</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m toy-hollow"/></svg><span>Refuse thin data (reads no survivors): <b>0.1215</b></span></div></template>
 <template id="toy-ch-a-t6"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c1)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m"/></svg><span>BCA tail certificate: <b>0.0373</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c3)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,5.0 L11.0,9.0 L7.0,5.0 Z" class="toy-m"/></svg><span>Split-conformal certificate: <b>0.0207</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg><span>Plain average: <b>0.0065</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><circle cx="11.0" cy="5.0" r="3" class="toy-m toy-hollow"/></svg><span>Refuse thin data (reads no survivors): <b>0.1215</b></span></div></template>
     </figure>
-    <div class="tbl"><table id="toy-second-regret" class="stack">
+    <div class="tbl"><table id="toy-second-regret" data-nav-label="Pooled regret by number of survivors, every rule" class="stack">
       <caption><span class="cap">The chart's numbers, and every other rule's: pooled regret by number of survivors (both shapes, ten worlds, 200 seeds). Lower is better; the oracle's is 0.</span></caption>
       <thead><tr><th scope="col">Rule</th><th class="n" scope="col">5 survivors</th><th class="n" scope="col">10 survivors</th><th class="n" scope="col">20 survivors</th><th class="n" scope="col">30 survivors</th><th class="n" scope="col">45 survivors</th><th class="n" scope="col">60 survivors</th><th class="n" scope="col">100 survivors</th></tr></thead>
       <tbody>
@@ -388,7 +391,7 @@
         <tr><td>Harm test on the average (t-test)</td><td class="n">0.1600</td><td class="n">0.0944</td><td class="n">0.0612</td><td class="n">0.0443</td><td class="n">0.0341</td><td class="n">0.0289</td><td class="n">0.0208</td></tr>
       </tbody>
     </table></div>
-    <div class="tbl"><table id="toy-second-unsafe" class="stack">
+    <div class="tbl"><table id="toy-second-unsafe" data-nav-label="Unsafe-deviation rate by number of survivors" class="stack">
       <caption><span class="cap">Unsafe-deviation rate by number of survivors: how often each gate ventured at the gap in unsafe worlds (both shapes, 200 seeds). Lower is safer.</span></caption>
       <thead><tr><th scope="col">Gate</th><th class="n" scope="col">5 survivors</th><th class="n" scope="col">10 survivors</th><th class="n" scope="col">20 survivors</th><th class="n" scope="col">30 survivors</th><th class="n" scope="col">45 survivors</th><th class="n" scope="col">60 survivors</th><th class="n" scope="col">100 survivors</th></tr></thead>
       <tbody>
@@ -470,7 +473,7 @@
           <li>"Nothing below 29" holds for exact computation. With the project's 1,000 random draws, BCA gives a finite multiplier at 26 to 28 rows in 3% to 40% of cases, with only 93.5% to 94.8% real confidence, and none at 29 and 30 rows in 30% and 10% of cases.</li>
           <li>The width does respond, weakly and at every action: up to about 45 survivors the shared multiplier barely moves, but with 100 survivors in the worst worlds it rises from about 1.5 to 7–9, and the gap decision of the width used as the multiplier on the pull changes across the worlds in 20% of seed and shape pairs at 60 survivors and 35% at 100. Refusing the merely noisy ventures elsewhere cost the width penalty about 0.30 of its regret.</li>
           <li>The tail certificate's worst unsafe world was 3% of seeds on seeds 0–199, but 3.5% (4.5% for the same certificate by the exact binomial test) on fresh seeds. That is within the 5% the theory allows, which holds against the critic's value of safe (0.96 to 1.04 across seeds) rather than the true 1.0, and every such venture was in a world where venturing pays on average. Split conformal's worst world (32% to 38% of seeds) is also one where venturing pays; where venturing loses on average, it ventured in at most about 10% of seeds with 30 or more survivors.</li>
-          <li>The regret of the width used as the multiplier on the pull is 0.375, not 0.376 as the notebook's write-up says. The shuffled controls drew from the survivors and other rows pooled, so 1% to 14% of each shuffled set were real survivors; that flattered the controls, so test 2 was conservative. The oracle also fixes 0.0013 of regret away from the gap, so every gain is about 1% too low. The notebook's check 5 compares the binomial formula with itself, so the identity rests on the proof and on the project's code, not on that check.</li>
+          <li>The regret of the width used as the multiplier on the pull is 0.375 (0.37548, printed 0.3755), not 0.376 as the notebook's write-up says. The shuffled controls drew from the survivors and other rows pooled, so 1% to 14% of each shuffled set were real survivors; that flattered the controls, so test 2 was conservative. The oracle also fixes 0.0013 of regret away from the gap, so every gain is about 1% too low. The notebook's check 5 compares the binomial formula with itself, so the identity rests on the proof and on the project's code, not on that check.</li>
         </ul>
         <p>Robustness, 100 seeds per setting:</p>
         <ul>
@@ -493,7 +496,7 @@
     <p>The rivals: the plain average of the held-out tries (yes if above 0); a <i>shrunk average</i>, pulled toward the average of all candidates in the seed's 20 situations; <i>BCA's cautious average</i>, (sum of tries + floor) ÷ (tries + 1), which counts the worst possible gain as one extra try; the classical 95% lower bounds on an average (the <i>t-test</i>, which assumes roughly bell-shaped outcomes; <i>Hoeffding</i>'s bound, from the range alone; and <i>empirical Bernstein</i>'s, from the range and the spread; the last two promise 5% for any outcomes inside the range); a count rule (yes with at least 30 held-out tries); BCA's tail gate and split conformal's; and the mean gate deciding all 20 situations together under a shared 10% harm budget (the Benjamini–Hochberg method). A gate's <i>harm rate</i> in a world is the share of harmful proposals it accepts; a world's <i>allowance</i> on a 5% rate is 5% plus three standard errors for its number of harmful proposals.</p>
     <div class="toy-calc" role="group" aria-label="Worked: why rare disasters fool the t-test">
 <span class="toy-ct" aria-hidden="true">Worked: why rare disasters fool the t-test</span>
-<span class="toy-cw">A candidate gains 0.4 on 95% of tries and loses 10 on the rest. With 29 tries:</span>
+<span class="toy-cw">The notebook's own example, outside this experiment's worlds (whose disasters lose 8): a candidate gains 0.4 on 95% of tries and loses 10 on the rest. With 29 tries:</span>
 <span class="toy-cl">true average</span><span class="toy-ce">=</span><span class="toy-cr">0.95 × 0.4 + 0.05 × (−10) = 0.38 − 0.5 = −0.12: harmful</span>
 <span class="toy-cl">chance of no loss</span><span class="toy-ce">=</span><span class="toy-cr">0.95<sup>29</sup> = 0.23</span>
 <span class="toy-cw">In those clean samples every try shows 0.4 and the spread is 0, so the t-test's bound is 0.4 and it says yes. Told that the floor is −10, the mean gate puts this share of its weighted averages below 0:</span>
@@ -521,7 +524,7 @@
         <tr><td>6. Deciding all 20 situations together earns more</td><td>It earns no more, or over 12% of its acceptances are harmful in some world</td><td>0.0270 against 0.0453; harm 0.000</td><td><span class="tag warn">shelved</span></td></tr>
       </tbody>
     </table></div>
-    <div class="tbl"><table id="toy-third-results" class="stack">
+    <div class="tbl"><table id="toy-third-results" data-nav-label="Every gate at its stated setting" class="stack">
       <caption><span class="cap">Every gate at its stated setting (5% where it has a level), seeds 100–199: gain per situation pooled over the 36 worlds, its share of the oracle gate's gain, the share of good proposals accepted, and the highest harm rate over all worlds and over the rare-disaster worlds.</span></caption>
       <thead><tr><th scope="col">Gate</th><th class="n" scope="col">Gain</th><th class="n" scope="col">Of oracle</th><th class="n" scope="col">Good accepted</th><th class="n" scope="col">Worst harm</th><th class="n" scope="col">Worst harm, rare disaster</th></tr></thead>
       <tbody>
@@ -564,7 +567,7 @@
 <rect x="181.2" y="16" width="64.8" height="236" data-tip-focus="no" data-tip-title="Cap 5%: gain per situation, seeds 100–199" data-tip-ref="toy-mg-b-t2"/>
 <rect x="246.0" y="16" width="64.8" height="236" data-tip-focus="no" data-tip-title="Cap 10%: gain per situation, seeds 100–199" data-tip-ref="toy-mg-b-t3"/>
 <rect x="310.8" y="16" width="64.8" height="236" data-tip-focus="no" data-tip-title="Cap 20%: gain per situation, seeds 100–199" data-tip-ref="toy-mg-b-t4"/>
-<rect x="375.6" y="16" width="50.4" height="236" data-tip-focus="no" data-tip-title="Cap no cap: gain per situation, seeds 100–199" data-tip-ref="toy-mg-b-t5"/>
+<rect x="375.6" y="16" width="50.4" height="236" data-tip-focus="no" data-tip-title="No cap: gain per situation, seeds 100–199" data-tip-ref="toy-mg-b-t5"/>
 </g>
 <path class="toy-ln" style="--c:var(--toy-c4)" d="M84.0,207.8 L148.8,162.0 L213.6,128.1 L278.4,100.1 L343.2,49.9 L408.0,49.9"/>
 <g class="toy-pts" style="--c:var(--toy-c4)"><path d="M84.0,203.6 L88.2,210.9 L79.8,210.9 Z" class="toy-m"/><path d="M148.8,157.8 L153.0,165.2 L144.6,165.2 Z" class="toy-m"/><path d="M213.6,123.9 L217.8,131.3 L209.4,131.3 Z" class="toy-m"/><path d="M278.4,95.9 L282.6,103.3 L274.2,103.3 Z" class="toy-m"/><path d="M343.2,45.7 L347.4,53.1 L339.0,53.1 Z" class="toy-m"/><path d="M408.0,45.7 L412.2,53.1 L403.8,53.1 Z" class="toy-m"/></g>
@@ -592,7 +595,7 @@
 <template id="toy-mg-b-t4"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m"/></svg><span>BCA mean gate: <b>0.137</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c3)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,9.0 L15.0,2.0 L7.0,2.0 Z" class="toy-m"/></svg><span>BCA's cautious average: <b>0.136</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg><span>Plain average: <b>0.078</b></span></div></template>
 <template id="toy-mg-b-t5"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m"/></svg><span>BCA mean gate: <b>0.137</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c3)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,9.0 L15.0,2.0 L7.0,2.0 Z" class="toy-m"/></svg><span>BCA's cautious average: <b>0.136</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c2)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m"/></svg><span>Plain average: <b>0.158</b></span></div></template>
     </figure>
-    <div class="tbl"><table id="toy-third-caps" class="stack">
+    <div class="tbl"><table id="toy-third-caps" data-nav-label="Gain at each cap on harm, every gate" class="stack">
       <caption><span class="cap">The chart's numbers, and every other gate's: gain per situation on seeds 100–199 after tuning on seeds 0–99 to each cap on the worst world's harm rate. On seeds 100–199 every tuned gate stayed within its cap.</span></caption>
       <thead><tr><th scope="col">Gate</th><th class="n" scope="col">Cap 1%</th><th class="n" scope="col">Cap 2%</th><th class="n" scope="col">Cap 5%</th><th class="n" scope="col">Cap 10%</th><th class="n" scope="col">Cap 20%</th><th class="n" scope="col">No cap</th></tr></thead>
       <tbody>
@@ -600,7 +603,7 @@
         <tr><td>BCA's cautious average</td><td class="n">0.000</td><td class="n">0.021</td><td class="n">0.040</td><td class="n">0.098</td><td class="n">0.136</td><td class="n">0.136</td></tr>
         <tr><td>Shrunk average</td><td class="n">0.001</td><td class="n">0.019</td><td class="n">0.019</td><td class="n">0.056</td><td class="n">0.087</td><td class="n">0.151</td></tr>
         <tr><td>Plain average</td><td class="n">0.001</td><td class="n">0.007</td><td class="n">0.007</td><td class="n">0.036</td><td class="n">0.078</td><td class="n">0.158</td></tr>
-        <tr><td>t-test</td><td class="n">none qualifies</td><td class="n">none qualifies</td><td class="n">none qualifies</td><td class="n">none qualifies</td><td class="n">0.040</td><td class="n">0.158</td></tr>
+        <tr><td>t-test</td><td class="n">none</td><td class="n">none</td><td class="n">none</td><td class="n">none</td><td class="n">0.040</td><td class="n">0.158</td></tr>
         <tr><td>Hoeffding</td><td class="n">0.005</td><td class="n">0.017</td><td class="n">0.017</td><td class="n">0.017</td><td class="n">0.017</td><td class="n">0.017</td></tr>
         <tr><td>Empirical Bernstein</td><td class="n">0.006</td><td class="n">0.006</td><td class="n">0.006</td><td class="n">0.006</td><td class="n">0.006</td><td class="n">0.006</td></tr>
         <tr><td>BCA tail gate</td><td class="n">0.003</td><td class="n">0.003</td><td class="n">0.017</td><td class="n">0.017</td><td class="n">0.027</td><td class="n">0.046</td></tr>
@@ -608,8 +611,8 @@
         <tr><td>Count rule</td><td class="n">0.000</td><td class="n">0.000</td><td class="n">0.000</td><td class="n">0.011</td><td class="n">0.011</td><td class="n">0.138</td></tr>
       </tbody>
     </table></div>
-    <p class="note">“None qualifies”: no setting of the t-test stayed within the cap on seeds 0–99.</p>
-    <div class="tbl"><table id="toy-third-tuned" class="stack">
+    <p class="note">“None”: no setting of the t-test stayed within the cap on seeds 0–99.</p>
+    <div class="tbl"><table id="toy-third-tuned" data-nav-label="Claim 5: each gate&#x27;s best setting" class="stack">
       <caption><span class="cap">Claim 5: each gate's best setting with at most 5% harm in every world on seeds 0–99, scored on seeds 100–199. A level is the error share a bound allows (0.2 is 80% confidence), a margin the gain an average must clear, a share the tail gates' allowed share below 0.</span></caption>
       <thead><tr><th scope="col">Gate</th><th scope="col">Chosen setting</th><th class="n" scope="col">Gain, seeds 0–99</th><th class="n" scope="col">Gain, seeds 100–199</th><th class="n" scope="col">Worst harm, seeds 100–199</th></tr></thead>
       <tbody>
@@ -651,7 +654,7 @@
     <ol class="toy-steps">
       <li><b>One deviation, five conditions.</b><p>A policy wants to <i>deviate</i>, take a risky action instead of a well-recorded fallback, everywhere in a region of states, or fall back everywhere. The region has five <i>conditions</i>, from mild (0) to harsh (4).</p></li>
       <li><b>A gain, usually small, sometimes a disaster.</b><p>A try's gain over the fallback is usually about 0.5 (0.5 plus noise of spread 0.2, kept between −1 and 2), but sometimes a <i>disaster</i> of −4. The deployment's overall disaster chance, the <i>rung</i>, is one of 0, 0.02, 0.05, 0.08, 0.10, 0.12, 0.15 and 0.20; how it spreads over the conditions is the <i>profile</i>: everywhere alike, mostly in harsh conditions, or mostly in mild ones.</p></li>
-      <li><b>A shift.</b><p>The recorded tries came mostly from mild conditions; deployment may meet harsh ones more often. A try's exact weight is its condition's share at deployment divided by its share among the recorded tries.</p><div class="tbl"><table id="toy-fourth-mix" class="stack">
+      <li><b>A shift.</b><p>The recorded tries came mostly from mild conditions; deployment may meet harsh ones more often. A try's exact weight is its condition's share at deployment divided by its share among the recorded tries.</p><div class="tbl"><table id="toy-fourth-mix" data-nav-label="The five conditions and their shares" class="stack">
       <caption><span class="cap">The five conditions: their share among the recorded tries and at deployment under each shift, and a try's exact weight under the strong shift.</span></caption>
       <thead><tr><th scope="col">Condition</th><th class="n" scope="col">Recorded tries</th><th class="n" scope="col">Deployment, moderate shift</th><th class="n" scope="col">Deployment, strong shift</th><th class="n" scope="col">Weight, strong shift</th></tr></thead>
       <tbody>
@@ -691,7 +694,7 @@
         <dt>Why</dt><dd>Unweighted gates answer for the recording's mix, where the deviation looked safe. Weights make the tries speak for deployment's mix while keeping every try, so they lose less evidence than discarding tries. A shift still costs evidence: the effective number of tries shrinks.</dd>
       </dl>
     </div>
-    <div class="tbl"><table id="toy-fourth-claims" class="stack">
+    <div class="tbl"><table id="toy-fourth-claims" data-nav-label="Experiment 4&#x27;s six claims" class="stack">
       <caption><span class="cap">Experiment 4's six claims, all 800 seeds (claim 6: tuned on seeds 0–399, scored on seeds 400–799).</span></caption>
       <thead><tr><th scope="col">Claim</th><th scope="col">Shelved if</th><th scope="col">Result</th><th scope="col">Verdict</th></tr></thead>
       <tbody>
@@ -703,7 +706,7 @@
         <tr><td>6. At equal harm, the weighted mean gate earns the most</td><td>Another tuned gate earns at least as much on seeds 400–799</td><td>0.0975 against 0.0923 (weighted split conformal)</td><td><span class="tag ok">alive, narrowly</span></td></tr>
       </tbody>
     </table></div>
-    <div class="tbl"><table id="toy-fourth-results" class="stack">
+    <div class="tbl"><table id="toy-fourth-results" data-nav-label="Every gate at its stated setting, 800 seeds" class="stack">
       <caption><span class="cap">Every gate at its stated setting, all 800 seeds: the highest deviation rate over the 144 unsafe worlds (a tail gate keeping its promise stays near 0.05), the rate pooled over the 96 safe shifted worlds (higher uses more of the good evidence), the highest rate over the 108 harmful worlds (a mean gate keeping its promise stays near 0.05), and the pooled gain per decision.</span></caption>
       <thead><tr><th scope="col">Gate</th><th class="n" scope="col">Worst unsafe</th><th class="n" scope="col">Safe, shifted</th><th class="n" scope="col">Worst harmful</th><th class="n" scope="col">Gain</th></tr></thead>
       <tbody>
@@ -831,7 +834,7 @@
 <span><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m toy-hollow"/></svg>BCA mean gate, unweighted</span>
 <span><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m toy-hollow"/></svg>Oracle (deviates when good on average)</span>
 </div>
-<p class="note toy-cnote">Right of the dashed line the deviation is harmful on average, and a mean gate that keeps its promise deviates in at most about 5% of seeds. Dashed lines with hollow markers ignore the shift.</p>
+<p class="note toy-cnote">Right of the dashed line the deviation is harmful on average, and a mean gate that keeps its promise deviates in at most about 5% of seeds. The unweighted mean gate (dashed, hollow triangles) ignores the shift; the gray dashed oracle is a reference.</p>
       <figcaption>The mean promise: the same for the mean gates in harmful worlds. The oracle deviates exactly when the deviation is good on average.</figcaption>
       <template id="toy-wt-m-t0"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m"/></svg><span>BCA mean gate, weighted: <b>0.998</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m toy-hollow"/></svg><span>BCA mean gate, unweighted: <b>1.000</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m toy-hollow"/></svg><span>Oracle (deviates when good on average): <b>1.000</b></span></div></template>
 <template id="toy-wt-m-t1"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m"/></svg><span>BCA mean gate, weighted: <b>0.667</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m toy-hollow"/></svg><span>BCA mean gate, unweighted: <b>0.999</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m toy-hollow"/></svg><span>Oracle (deviates when good on average): <b>1.000</b></span></div></template>
@@ -843,7 +846,7 @@
 <template id="toy-wt-m-t7"><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m"/></svg><span>BCA mean gate, weighted: <b>0.004</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-c4)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><path d="M11.0,1.0 L15.0,8.0 L7.0,8.0 Z" class="toy-m toy-hollow"/></svg><span>BCA mean gate, unweighted: <b>0.150</b></span></div><div class="toy-key"><svg class="toy-sw" viewBox="0 0 22 10" aria-hidden="true" style="--c:var(--toy-ref)"><line class="toy-s toy-dash" x1="1" x2="21" y1="5" y2="5"/><rect x="8.0" y="2.0" width="6" height="6" rx="1" class="toy-m toy-hollow"/></svg><span>Oracle (deviates when good on average): <b>0.000</b></span></div></template>
     </figure>
     </div>
-    <div class="tbl"><table id="toy-fourth-rungs" class="stack">
+    <div class="tbl"><table id="toy-fourth-rungs" data-nav-label="Deviation rate by rung" class="stack">
       <caption><span class="cap">The charts' numbers, and two more gates': deviation rate by rung, harm in harsh conditions, strong shift, 120 held-out tries, 800 seeds. Rungs 0.10 and above are unsafe, 0.12 and above harmful.</span></caption>
       <thead><tr><th scope="col">Gate</th><th class="n" scope="col">Rung 0.00</th><th class="n" scope="col">Rung 0.02</th><th class="n" scope="col">Rung 0.05</th><th class="n" scope="col">Rung 0.08</th><th class="n" scope="col">Rung 0.10</th><th class="n" scope="col">Rung 0.12</th><th class="n" scope="col">Rung 0.15</th><th class="n" scope="col">Rung 0.20</th></tr></thead>
       <tbody>
@@ -872,7 +875,7 @@
 <span class="toy-cl"></span><span class="toy-ce">⇒</span><span class="toy-cr">no, fall back</span>
 </div>
 <p class="toy-so"><b>So:</b> the six bad tries are 5% of the tries but carry 15.1% of the weight, because they come from conditions that deployment meets more often than the recording. Over all 800 seeds of this world the unweighted gate deviated in 42.6% and the weighted gate in 1.4%.</p>
-    <div class="tbl"><table id="toy-fourth-evidence" class="stack">
+    <div class="tbl"><table id="toy-fourth-evidence" data-nav-label="Held-out tries each tail gate needs" class="stack">
       <caption><span class="cap">How many held-out tries each valid tail gate needs before it can say yes at all, even when every try beats the fallback (about; from the notebook's closed forms).</span></caption>
       <thead><tr><th scope="col">Shift</th><th class="n" scope="col">Effective tries per try</th><th class="n" scope="col">Tries kept by rejection</th><th class="n" scope="col">Weighted BCA</th><th class="n" scope="col">Rejection-sampled exact</th><th class="n" scope="col">Stratified exact</th></tr></thead>
       <tbody>
@@ -966,18 +969,19 @@
       <thead><tr><th scope="col">Role</th><th scope="col">In the toys</th><th scope="col">On ThrusterChain so far</th></tr></thead>
       <tbody>
         <tr><td>A width or penalty in training: the capped pull and the lower edge</td><td data-label="In the toys"><span class="tag
-          warn">shelved</span> No decision improved; return fell (experiments 1 and 2).</td><td data-label="On ThrusterChain so far">The capped pull cost 5.3 to
-          8.8 points on the three lower data qualities and gained at most 0.55 points, on medium-expert (a pointer
-          only). The lower edge gained in Stage 2 mostly through a classifier term, and in result F with a supplied
+          warn">shelved</span> No decision improved; return fell (experiments 1 and 2).</td><td data-label="On ThrusterChain so far"><a href="#iw-arms">The capped pull cost 5.3 to
+          8.8 points</a> on the three lower data qualities and gained at most 0.55 points, on medium-expert (a pointer
+          only). The lower edge gained in <a href="#ats-stage2">Stage 2</a> mostly through a classifier term, and in <a
+          href="#toy-tc-resultf">result F</a> with a supplied
           command likelihood; what the band's calibration adds there is open.</td></tr>
         <tr><td>A gate that reads held-out outcomes of the risky action</td><td data-label="In the toys"><span class="tag ok">alive</span> Every
-          such gate closed 38% to 87% of the room (experiment 2).</td><td data-label="On ThrusterChain so far">Step 1 and step 2 of the restructured BCA told the
+          such gate closed 38% to 87% of the room (experiment 2).</td><td data-label="On ThrusterChain so far"><a href="#ats-restructure">Step 1 and step 2 of the restructured BCA</a> told the
           two worlds apart by reading outcomes.</td></tr>
         <tr><td>BCA's Bayesian part, with equal weights</td><td data-label="In the toys"><span class="tag warn">shelved</span> It is a textbook
-          test (99.6% agreement, experiment 2).</td><td data-label="On ThrusterChain so far">Nothing credited to it: BCA beat plain split conformal by 1.78 points
+          test (99.6% agreement, experiment 2).</td><td data-label="On ThrusterChain so far">Nothing credited to it: BCA beat plain split conformal by <a href="#ats-routes">1.78 points</a>
           against a 5-point bar.</td></tr>
         <tr><td>BCA's weights, under a known shift</td><td data-label="In the toys"><span class="tag ok">alive</span> Needed to keep the promise,
-          at a cost in evidence (experiment 4).</td><td data-label="On ThrusterChain so far">Weighting restored the band's coverage, but raised no return as BCA
+          at a cost in evidence (experiment 4).</td><td data-label="On ThrusterChain so far"><a href="#iw-results">Weighting restored the band's coverage</a>, but raised no return as BCA
           uses its band.</td></tr>
       </tbody>
     </table></div>
@@ -1046,7 +1050,7 @@
       <li><b>One-step targets.</b> ThrusterChain's scores use one-step targets, so the critic's value of the next state
         would stay in a harm test. The toy's last stage has no next state, so there the critic drops out.</li>
       <li><b>Thin evidence.</b> A tail gate needs 29 rows. In step 1, no-stall seed 3 had 29, and BCA's random draws
-        gave it no finite caution size (947 of BCA's 1,000 random draws cleared the bar; 950 were needed; step 1's run
+        gave it no finite caution size (947 of BCA's 1,000 random draws crossed; 950 were needed; step 1's run
         record). In the
         toys, computed exactly as they recommend, 29 equally weighted rows are just enough for a finite answer. Under a shift they need more: experiment 4's tail gate needs about 39
         held-out outcomes per decision under its moderate shift and about 83 under its strong one. If step 1's 29 to 60

@@ -73,6 +73,8 @@ KNOWN = {
 KNOWN["E4"].add("77d6fafecdc1b7fe")
 # ... and E8's old Choices script, whose "Tested on" row lists the main test's four situations too (nav.js carries them)
 KNOWN["E8"].add("b0cd8cc4deca8827")
+# ... and the live page after version 26 (service version 1792181606-4140): its "Learner" row names result F's learners
+KNOWN["E8"].add("954959ae7c56fda0")
 
 
 def known(label, removed):

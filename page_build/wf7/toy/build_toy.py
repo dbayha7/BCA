@@ -76,6 +76,7 @@ STYLE = """<style>
 .toy-legend .toy-sw { margin-right: 1px; }
 #toy-worlds .toy-cnote { margin: 0; }
 #toy-worlds .toy-num { white-space: nowrap; }
+@media (pointer: coarse) { #toy-worlds tr.sub td a { display: inline-flex; align-items: center; min-height: 44px; } }
 @media (max-width: 560px) { #toy-worlds .toy-calc { font-size: 15px; padding: 9px 10px; gap: 2px 6px; }
   #toy-worlds .toy-chart .toy-dl { font-size: 13.5px; } }
 @media (forced-colors: active) { #toy-worlds .toy-chart .toy-ln, .toy-sw .toy-s { stroke: CanvasText; }
@@ -198,10 +199,10 @@ def part_bottom():
              'experiment 2, in any world where more than 10% of the action\'s outcomes fall below the safe action\'s '
              '(an <i>unsafe</i> world), it let the action through in at most 3% of seeds (repeat runs), against up to '
              '38% for split conformal prediction, the standard rule. But with equal weights BCA is a textbook test: it '
-             'decided as the exact binomial test in 99.6% of cases, and it cannot say yes with fewer than 29 tries.</li>\n'
+             'made the same decision as the exact binomial test in 99.6% of cases, and it cannot say yes with fewer than 29 tries.</li>\n'
              '      <li><b>BCA\'s mean gate earns the most at equal safety</b> (experiment 3). The mean gate asks instead '
-             'whether the action beats the safe one on average. With every gate tuned to say yes to a harmful action in '
-             'at most 5% of seeds in every world, BCA\'s mean gate earned 0.084 per situation, about twice the next gate '
+             'whether the action beats the safe one on average. With every gate tuned to accept at most 5% of the harmful '
+             'proposals in every world, BCA\'s mean gate earned 0.084 per situation, about twice the next gate '
              '(0.040, another gate built on BCA) and 4.5 times the best gate not built on BCA (0.019). With no safety '
              'requirement, the plain held-out average earns more (0.158 against 0.045).</li>\n'
              '      <li><b>BCA\'s weights keep its promises when deployment meets conditions in a different mix than the '
@@ -233,10 +234,15 @@ def part_bottom():
              'falls back. The <i>tail gate</i> lets it through only if BCA is 95% sure that at least 90% of its outcomes '
              'are at least as good as the fallback (experiment 2 calls it the tail certificate); the <i>mean gate</i> '
              'only if BCA is 95% sure that its average gain over the fallback is above 0.</dd>\n'
+             '          <dt>Exact binomial test</dt><dd>A classical test of the tail promise with equal weights: with n '
+             'tries, b of them below the fallback, it says yes only if b is so small that a world with exactly 10% of '
+             'outcomes below the fallback would show b or fewer with a chance of at most 5%.</dd>\n'
+             '          <dt>Situation</dt><dd>In experiment 3, one decision: a safe action and the candidates the critic '
+             'proposes; its gains are per situation. (Not the main test\'s four situations on ThrusterChain.)</dd>\n'
              '          <dt>Promise</dt><dd>What a gate guarantees, with 95% confidence. In an <i>unsafe</i> world more '
              'than 10% of the risky action\'s outcomes fall below the fallback; in a <i>harmful</i> world its average '
              'gain over the fallback is below 0. There, a gate that keeps its promise lets the risky action through in '
-             'at most about 5% of seeds.</dd>\n'
+             'at most about 5% of seeds (in experiment 3, it accepts at most about 5% of the harmful proposals).</dd>\n'
              '          <dt>Regret</dt><dd>The expected return lost against the best possible choices; 0 is '
              'perfect.</dd>\n'
              '          <dt>Room and gain</dt><dd>In experiment 2, the room is the regret of the best rule that never reads '
@@ -259,7 +265,7 @@ def part_bottom():
 def part_why():
     o = ['<h3 id="toy-why">Why toy worlds</h3>']
     o.append('<p>On ThrusterChain one answer costs hours of training, and many things change at once. In a toy world '
-             'every true value and every rule\'s expected return are computed exactly, in seconds, and each notebook '
+             'every true value is known exactly, a whole experiment runs in seconds to a few minutes, and each notebook '
              'isolates one mechanism. The price is realism: a toy shows what can work or fail in principle, never what '
              'works on ThrusterChain.</p>')
     o.append('<p><b>Kill rules.</b> Experiments 2 to 4 were pre-registered. Each claim has a <i>kill rule</i>: a '
@@ -589,7 +595,7 @@ def chart_channel():
         guides=[(p29, "29 survivors", "start")],
         legend_note="Lower is better; 0 is the oracle, which knows the world. The dashed line at 29 survivors is the "
                     "fewest a tail certificate can use. The two width rules sit far above this chart, at 0.29 to 0.43, "
-                    "and the other gates between these lines (table below).",
+                    "and the other gates between these lines, except the t-test harm gate at 5 survivors (0.160; table below).",
         labels=[{"series": 3, "text": "Refuse thin data", "cols": [6, 5, 4]},
                 {"series": 0, "text": "BCA tail", "cols": [5, 4, 6, 3]},
                 {"series": 1, "text": "Split conformal", "cols": [2, 1, 3, 4, 5]},
@@ -614,9 +620,9 @@ def table_channel_regret():
 
 def table_channel_case():
     rows = [
-        ["Step-1 gate", "75,000 of the 1,000,000 pairs of draws differ by at most 0.10; 50,000 (5%) let it venture",
+        ["Step-1 gate", "75,000 of the 1,000,000 pairs of draws differ by at most 0.10; 50,000 (5%) are needed to venture",
          "venture"],
-        ["BCA harm test", "75 of 1,000 draws cross at or below the claimed advantage; 50 let it venture", "venture"],
+        ["BCA harm test", "75 of 1,000 draws cross at or below the claimed advantage; 50 (5%) are needed to venture", "venture"],
         ["Harm test on the average (t-test)", "upper bound on the average outcome 1.659, above 1.004", "venture"],
         ["Plain average", "average outcome 0.827, below 1.004", "fall back"],
         ["Exact binomial certificate", "5 of 30 below 1.004; 30 tries allow 0", "fall back"],
@@ -675,7 +681,10 @@ def part_second():
              '95% sure that over 10% of outcomes fall below the critic\'s value of safe; the <i>tail certificate</i> '
              'ventures only if BCA is 95% sure that 90% beat it. Rivals: the same certificate by split conformal or by '
              'the <i>exact binomial test</i>, and the <i>plain average</i>, which ventures if the survivors\' average '
-             'reward is at least the critic\'s value of safe. As controls, three gates are fed shuffled rows.</p>')
+             'reward is at least the critic\'s value of safe. Two variants also appear in the tables: the step-1 gate compared '
+             'with context-1 rows only, and the harm test on the average, which ventures unless a one-sided 95% t-test '
+             'bound shows the survivors\' average below the critic\'s value of safe. As controls, three gates are fed '
+             'shuffled rows.</p>')
     o.append(finding_found("toy-second-found", "toy-second-brief", "Experiment 2 in four parts",
                      "Some way of using BCA's calibrated errors changes a decision for the better where simpler rules "
                      "cannot.",
@@ -683,7 +692,7 @@ def part_second():
                      "seven survivor counts (28,000 cases per rule). Six tests, each with its kill rule (table below), "
                      "fixed before the run.",
                      "The widths did worse than refusing thin data (shelved); every gate that read the survivors closed "
-                     "38% to 87% of the room, and shuffled rows erased the gain. With equal weights BCA decided as the "
+                     "38% to 87% of the room, and shuffled rows erased the gain. With equal weights BCA made the same decision as the "
                      "exact binomial test in 99.6% of cases (shelved). For return the plain average was best; for "
                      "safety only the tail certificates kept venturing rare in every unsafe world.",
                      "The width is measured at recorded actions and the gap has none, so it cannot see the gap's "
@@ -842,7 +851,7 @@ def details_second():
                  'true 1.0, and every such venture was in a world where venturing pays on average. Split conformal\'s '
                  'worst world (32% to 38% of seeds) is also one where venturing pays; where venturing loses on average, '
                  'it ventured in at most about 10% of seeds with 30 or more survivors.</li>\n'
-                 '          <li>The regret of the width used as the multiplier on the pull is 0.375, not 0.376 as the '
+                 '          <li>The regret of the width used as the multiplier on the pull is 0.375 (0.37548, printed 0.3755), not 0.376 as the '
                  'notebook\'s write-up says. The shuffled controls drew from the survivors and other rows pooled, so 1% '
                  'to 14% of each shuffled set were real survivors; that flattered the controls, so test 2 was '
                  'conservative. The oracle also fixes 0.0013 of regret away from the gap, so every gain is about 1% too '
@@ -905,7 +914,7 @@ def chart_mean_gate():
         [0, 0.04, 0.08, 0.12, 0.16], lambda t: f"{t:.2f}",
         "Cap on the worst world's harm rate",
         "Gain per situation (return)",
-        lambda i: f"Cap {MG_CAPS[i]}: gain per situation, seeds 100–199", lambda v: f"{v:.3f}",
+        lambda i: ("No cap" if MG_CAPS[i] == "no cap" else f"Cap {MG_CAPS[i]}") + ": gain per situation, seeds 100–199", lambda v: f"{v:.3f}",
         guides=[(0.05 + 0.9 * 2 / 5, "claim 5", "start")], h=310,
         legend_note="Higher is better. A gate's harm rate in a world is the share of harmful proposals it accepts; the "
                     "cap limits the highest harm rate over the 36 worlds. Each gate takes its best setting on seeds 0–99 "
@@ -924,12 +933,12 @@ def table_mean_caps():
     names = [("mean", "<b>BCA mean gate</b>"), ("avg", "BCA's cautious average"), ("shrunk", "Shrunk average"),
              ("plain", "Plain average"), ("ttest", "t-test"), ("hoeff", "Hoeffding"), ("bern", "Empirical Bernstein"),
              ("tail", "BCA tail gate"), ("split", "Split-conformal tail"), ("count", "Count rule")]
-    rows = [[nm] + ["none qualifies" if v is None else f"{v:.3f}" for v in MG[k]] for k, nm in names]
+    rows = [[nm] + ["none" if v is None else f"{v:.3f}" for v in MG[k]] for k, nm in names]
     return table("toy-third-caps", "The chart's numbers, and every other gate's: gain per situation on seeds 100–199 "
                  "after tuning on seeds 0–99 to each cap on the worst world's harm rate. On seeds 100–199 every tuned "
                  "gate stayed within its cap.", ["Gate"] + [f"Cap {c}" if c != "no cap" else "No cap" for c in MG_CAPS], rows,
                  num_cols=tuple(range(1, 7)),
-                 note="“None qualifies”: no setting of the t-test stayed within the cap on seeds 0–99.")
+                 note="“None”: no setting of the t-test stayed within the cap on seeds 0–99.")
 
 
 def part_third():
@@ -969,7 +978,8 @@ def part_third():
              '<i>harm rate</i> in a world is the share of harmful proposals it accepts; a world\'s <i>allowance</i> on a '
              '5% rate is 5% plus three standard errors for its number of harmful proposals.</p>')
     o.append(calc("Worked: why rare disasters fool the t-test", [
-        (None, "A candidate gains 0.4 on 95% of tries and loses 10 on the rest. With 29 tries:"),
+        (None, "The notebook's own example, outside this experiment's worlds (whose disasters lose 8): a candidate gains 0.4 "
+               "on 95% of tries and loses 10 on the rest. With 29 tries:"),
         ("true average", "0.95 × 0.4 + 0.05 × (−10) = 0.38 − 0.5 = −0.12: harmful"),
         ("chance of no loss", "0.95<sup>29</sup> = 0.23"),
         (None, "In those clean samples every try shows 0.4 and the spread is 0, so the t-test's bound is 0.4 and it "
@@ -1123,7 +1133,7 @@ def chart_weights():
         tip_title=lambda i: f"Disaster chance {W_RUNGS[i]:.2f}: deviation rate" + (" (harmful)" if W_RUNGS[i] >= 0.12 else ""),
         guides=[(0.03 + 0.94 * harm_p / 0.20, "harmful →", "start")],
         legend_note="Right of the dashed line the deviation is harmful on average, and a mean gate that keeps its "
-                    "promise deviates in at most about 5% of seeds. Dashed lines with hollow markers ignore the shift.",
+                    "promise deviates in at most about 5% of seeds. The unweighted mean gate (dashed, hollow triangles) ignores the shift; the gray dashed oracle is a reference.",
         labels=[{"series": 1, "text": "unweighted", "cols": [5, 6, 4]},
                 {"series": 0, "text": "weighted", "cols": [2, 3, 1]},
                 {"series": 2, "text": "oracle", "cols": [3, 2, 4]}], **args)
@@ -1462,11 +1472,31 @@ def part_meaning():
     return s[4:]
 
 
+# Review round 2, B6: short labels for the section's tables in "In this section" (their captions are long)
+TABLE_NAV = {
+    "toy-first-seed7": "Seed 7: return and regret per episode", "toy-pooled-table": "Experiment 2's six tests, pooled",
+    "toy-second-case": "One case, every gate", "toy-second-regret": "Pooled regret by number of survivors, every rule",
+    "toy-second-unsafe": "Unsafe-deviation rate by number of survivors", "toy-third-results": "Every gate at its stated setting",
+    "toy-third-caps": "Gain at each cap on harm, every gate", "toy-third-tuned": "Claim 5: each gate's best setting",
+    "toy-fourth-mix": "The five conditions and their shares", "toy-fourth-claims": "Experiment 4's six claims",
+    "toy-fourth-results": "Every gate at its stated setting, 800 seeds", "toy-fourth-rungs": "Deviation rate by rung",
+    "toy-fourth-evidence": "Held-out tries each tail gate needs",
+}
+
+
+def add_nav_labels(s):
+    for tid, lab in TABLE_NAV.items():
+        a = f'<table id="{tid}" '
+        assert s.count(a) == 1, tid
+        s = s.replace(a, f'<table id="{tid}" data-nav-label="{esc(lab)}" ', 1)
+    return s
+
+
 def build():
     parts = [STYLE, part_overview(), part_why(), part_world(), part_tools(), part_first(), part_second(), part_third(),
              part_fourth(), part_together(), part_meaning()]
     body = "\n\n    ".join(parts)
-    return '<section id="toy-worlds">\n    ' + body + '\n  </section>'
+    return '<section id="toy-worlds">\n    ' + add_nav_labels(body) + '\n  </section>'
 
 
 if __name__ == "__main__":

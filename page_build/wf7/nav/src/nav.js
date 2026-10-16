@@ -246,7 +246,8 @@
         named({ recording: "Recording", stall_aware: "Stall-aware", rising_thrust: "Rising-thrust", no_throttle: "No throttle" }, "data-value"), { idle: simLearned }),
       // version 25: the learner (BCA and BCA IW only with the 80% hold removed; their buttons are disabled otherwise)
       row("Learner", all('#simtog [data-tog-group="lr"]'), byAttr("data-tog-value"),
-        named({ td3bc: "TD3+BC", bca: "BCA", bcaiw: "BCA IW" }, "data-tog-value"), { idle: simFixed }),
+        named({ td3bc: "TD3+BC", bca: "BCA", bcaiw: "BCA IW", le_none: "No extra caution", rf_exact: "Result F, exact weights",
+          rf_est: "Result F, estimated weights" }, "data-tog-value"), { idle: simFixed }),
       row("Data quality", all('#simtog [data-tog-group="lq"]'), byAttr("data-tog-value"), named(QUALITIES, "data-tog-value"),
         { idle: simFixed, swatch: el => el.querySelector(".simtog-dot") }),
       row("The learner's data", all('#simtog [data-tog-group="ld"]'), byAttr("data-tog-value"),
@@ -260,7 +261,7 @@
     { panel: () => $("stall-chart"), view: "#sc-svg", rows: [
       row("Training data shown", all("#sc-full, #sc-kept"), el => el.id, named({ "sc-full": "Before the removal", "sc-kept": "After the removal" }, "id")) ] },
     { panel: () => $("qv-panel"), view: "#qv-strip", rows: [
-      row("Dataset quality", all("#qv-panel [data-qv-q]"), byAttr("data-qv-q")),
+      row("Dataset quality", all("#qv-panel [data-qv-q]"), byAttr("data-qv-q"), named(QUALITIES, "data-qv-q")),
       row("The critic's data", all("#qv-panel [data-qv-c]"), byAttr("data-qv-c"), named({ full: "All the data", gap: "80% hold removed" }, "data-qv-c")),
       row("Situation", all("#qv-panel [data-qv-s]"), byAttr("data-qv-s"), named({ training: "Training mix", strong: "Strong test mix" }, "data-qv-s")) ] },
     { panel: () => $("iw-panel-shift") || ($("iw-p-none") && $("iw-p-none").closest(".panel")), view: "#iw-svg-dens", rows: [
@@ -358,8 +359,8 @@
       if (isSheet) {                                       // a drawing taller than the room above the sheet: the
         const h = v.getBoundingClientRect().height;       // sheet is lowered for this press (never below 30% of the
         const want = W.innerHeight - barSpace() - h - 24;  // screen's height)
+        side.style.removeProperty("--nv-peek-h");           // compared with the sheet's own peek height, not the one lowered last
         if (want < side.getBoundingClientRect().height) side.style.setProperty("--nv-peek-h", Math.round(Math.max(W.innerHeight * 0.3, want)) + "px");
-        else side.style.removeProperty("--nv-peek-h");
       }
       requestAnimationFrame(() => {
         const r = v.getBoundingClientRect(), limit = isSheet ? side.getBoundingClientRect().top - 8 : W.innerHeight - barSpace() - 8;
@@ -650,8 +651,8 @@
         sr.hidden = false;
       } else sr.hidden = true;
     }
-    if (note) note.firstChild.nodeValue = one ? "The page shows one section at a time. Contents lists every section: it\n        sits at the left of a wide screen, and opens from the Contents button otherwise. \u201cIn this section\u201d (at the\n        right of a wide screen; on a phone, the middle button of the bar at the bottom) lists the parts of the section\n        on screen, and Previous and Next step through them in order."
-      : "Whole page is on: every section is shown, one after another. Contents lists every section, and \u201cIn this section\u201d (at the right of a wide screen; on a phone, the middle button of the bar at the bottom) lists the parts of the section in view.";
+    if (note) note.firstChild.nodeValue = one ? "The page shows one section at a time. Contents lists every section: it\n        sits at the left of a wide screen, and opens from the Contents button otherwise. \u201cIn this section\u201d (at the\n        right of a wide screen; otherwise the button with the section's name in the bar at the bottom) lists the parts of the section\n        on screen, and Previous and Next step through them in order."
+      : "Whole page is on: every section is shown, one after another. Contents lists every section, and \u201cIn this section\u201d (at the right of a wide screen; otherwise the button with the section's name in the bar at the bottom) lists the parts of the section in view.";
   }
   const barSpace = () => (getComputedStyle(bar).display === "none" ? 0 : Math.max(0, W.innerHeight - bar.getBoundingClientRect().top));
   const readLine = () => Math.min(W.innerHeight * 0.3, 220);
@@ -660,7 +661,10 @@
     clearTimeout(holdAt.t);
     holdAt.t = setTimeout(() => { if (hold) hold.y = W.scrollY; }, ms);
   }
+  // a table scrolls inside its box (div.tbl, overflow: auto), which would clip its scroll margin and its arrival ring
+  const boxOf = el => (el.matches("table") && el.parentElement && el.parentElement.matches(".tbl") ? el.parentElement : el);
   function scrollToEl(el, near) {
+    el = boxOf(el);
     const r = el.getBoundingClientRect();
     const smooth = !calm.matches && near && Math.abs(r.top) < 1.5 * W.innerHeight;
     el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
@@ -668,6 +672,7 @@
   }
   function flash(el) {
     if (!el || units.includes(el) || pages.includes(el)) return;
+    el = boxOf(el);
     el.classList.remove("nv-flash"); void el.offsetWidth; el.classList.add("nv-flash");
     clearTimeout(flash.t); const t = el;
     flash.t = setTimeout(() => t.classList.remove("nv-flash"), calm.matches ? 2500 : 1900);
@@ -895,6 +900,7 @@
       pages.forEach(p => hideEl(p));
     }
     applyLayout(false);
+    html.classList.remove("nv-boot");                      // before go(): under nv-boot no section can be scrolled to
     if (target) {
       go(target, { push: null, focus: false, from: "load" });
       if (one && isHome(target, units[0])) {               // the browser's own jump to the fragment comes at load:
@@ -911,7 +917,6 @@
     else setUnit(units[0], "load");                       // a fresh page is at its top already
     enter(cur);                                            // its drawings redraw at the width the navigation leaves
     if (learn && one && cur !== learn) { const p = $(store.get("tc-learn-last") || ""); curPage = p && steps.includes(p) ? p : null; }
-    html.classList.remove("nv-boot");
     startBar();
     running = true;
     W.__nvInitMs = Math.round(performance.now() - T0);
@@ -929,7 +934,12 @@
   doc.addEventListener("click", e => {                     // every in-page link goes through go()
     if (!running || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a) return;
-    if (a.id === "nv-skip") { e.preventDefault(); const p = cur === learn && one && curPage ? (curPage.querySelector("h3, h4") || headOf(cur)) : headOf(cur); focusOn(p); return; }
+    if (a.id === "nv-skip") {
+      e.preventDefault(); const p = cur === learn && one && curPage ? (curPage.querySelector("h3, h4") || headOf(cur)) : headOf(cur);
+      const r = p.getBoundingClientRect();                 // off screen (Tab came round from the end): the section's top comes back
+      if (r.bottom < 0 || r.top > W.innerHeight - barSpace()) scrollToEl(cur === learn && one && curPage ? curPage : cur, false);
+      focusOn(p); return;
+    }
     let id = a.getAttribute("href").slice(1); try { id = decodeURIComponent(id); } catch (x) { /* keep it */ }
     const el = id && $(id); if (!el || !unitOf(el)) return;
     e.preventDefault();

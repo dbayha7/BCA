@@ -262,3 +262,199 @@ L = learner, N = navigation, T = technical, C = color, G = language).
 - **G16 (minor) fixed** with L9: each first-use note is a sentence ("a new reading is a number computed ..."), and
   the exploratory tooltip reads "Exploratory: found in follow-up work designed after the main test had ended (step
   7.1), so it suggests rather than proves."
+
+# Fix log of page version 27 (round 1 above was version 20's)
+
+## Review round 2 (16 Oct 2026, cloud session, from about 19:50 UTC)
+
+Built on the live page as it then stood: service version 1792172582-8406 (the other session's version 26) when the
+review ran, and 1792181606-4140 (its next publish: result F's learners in the live panel; no history entry) when the
+fixes were made (REBASE.md part 5). Six reviewers, one per dimension (A regression against the live page, B
+navigation, C the toy section, D the lesson, E technical, F language and consistency), each in headless Chromium
+(Playwright) at 390x844 and 1280x900, light and dark; each reviewer's findings went to an adversarial verifier who
+reproduced or refuted every one and wrote the fix. Their scripts and outputs are outside the repository (the session's
+scratchpad), as the laptop's test outputs were. 65 findings: 55 confirmed (9 serious), 10 rejected; 17 more noted by
+the verifiers. Every fix is an exact-replacement edit script in `rebase/edits/` (`e_color_r2.py`, `e_nav_r2.py`,
+`e_toy_r2.py`, `e_toy_r2b.py`, `e_lesson_r2.py`, `e_lesson_r2b.py`, `e_apply_all_r2.py`, with `e_color_v27r3.py` for
+K13b), then rebuilt from the base with `apply_all.py` (all its checks pass) and re-checked (below).
+
+### A. Regression against the live page
+
+Checks that passed: every element id of the live page kept except the 18 removed on purpose; every data-* hook its
+scripts use; every changed sentence outside the toy section, the lesson and the navigation is a deliberate change; the
+live panel's 26 states (Who drives, Learner TD3+BC / BCA / BCA IW, Data quality, the learner's data, both mixes and the
+main test's four situations) identical to the live page's in buttons, readouts, tooltips and cost readouts at four
+views; the Observation Space range bars, the arm tables' tooltips, the learning curves and "Every run in numbers", the
+critic viewer, the task demo, the weighting test's panels, section#capped-pull (links, tooltips), the "Strong test mix"
+tooltip, every live chart's axis titles; no status box; 5,013 in-page links, none broken.
+
+- **A1 (serious) fixed.** The lesson's 17 charts named only the horizontal axis (one named none) and none named its axes
+  to screen readers, against version 24's rule. Every lesson chart now has both axis titles and an accessible name
+  ending "Horizontal axis: … Vertical axis: …" (lesson.js Chart() and 15 chart settings); `apply_all.py`'s
+  version-24 count of those strings leaves out the lesson's own script.
+- **A2 (serious) fixed, with C1 and F1.** The route table's Stage 2 row still said seeds 5–9 "are to run under version
+  7" (tag "waiting"). New color edits B26 (tag "ended"; "were to run under version 7, which was ended on 16 Oct 2026
+  without running") and B26b (the caption dates that row 16 Oct). The row is no longer "left as dated" (REBASE.md
+  part 5); `apply_all.py` refuses the old wording.
+- **A3 (small) fixed, with F16.** The keyed cost readout said "All five learned from …" for TD3+BC; it now says "All
+  five actors learned …" ("All five BCA actors", "Both result F (exact weights) actors", K13b).
+- Noted: the lesson's step 7.2 "not run yet" (fixed with D1); the A1 fix needs the `apply_all.py` count change (done).
+
+### B. Navigation
+
+- **B1 (small, pre-existing symptom) fixed.** A deep link to a part with no box under nv-boot (`#lc-table5`, `#exLrn`)
+  landed at the section's top: nv-boot is now removed before the load's go(), and `#lc-table5` reveals "All five side
+  by side" (a static edit). Both land on their target at 1280 and 390 in the re-check.
+- **B2 (serious) fixed.** Peek mode on a phone raised the sheet again on every second Choices press and cut off the top
+  of the drawing (afterChoice compared with the already lowered height). 7 of 7 presses now keep the drawing whole.
+- **B3 (small) fixed.** A table entry landed flush with the top and its arrival ring was clipped by its scroll box: the
+  navigation scrolls to and rings the table's box (16 px down, ring visible).
+- **B4 rejected.** Tapping outside the open "In this section" sheet does not close it: the sheet is non-modal by
+  design (nav.css; the page above stays usable), unlike the Contents drawer.
+- **B5 (small) fixed.** The skip link focused an off-screen heading after Tab came round from the end; it now brings the
+  section's top back (y 12, heading at 16 px).
+- **B6 (small) fixed for the toy section.** 13 of its table entries were cut at 90 characters: they carry short labels
+  (`build_toy.py`, TABLE_NAV); the section's 56 entries are now uncut.
+- Noted, left: 14 tables elsewhere (Methods, Results, the weighting test, Reference Scores) are also cut at 90
+  characters with an ellipsis, the navigation's documented fallback for long captions; short labels for them would
+  change the navigation's expected lists, so they wait for a navigation pass.
+
+### C. The toy section
+
+Checks that passed: at least three numbers per notebook re-derived from the cloud re-runs (all matched), every worked
+block's arithmetic, the ThrusterChain numbers of the carried-over parts against the page's own records (result B, the
+capped-pull table, Stage 2, routes, step 1's run record), no leftover "Part N" outside version 26's history entry,
+four charts with both axes named and color-keyed tooltips on screen, stacked tables labeled at 390.
+
+- **C1** = A2, fixed. **C2** = D1, fixed.
+- **C3 (small) fixed.** The bottom line gave experiment 3's safety level per seed; it is per harmful proposal ("tuned
+  to accept at most 5% of the harmful proposals in every world"); the glossary's "Promise" says the same for
+  experiment 3 (the verifier's further note).
+- **C4 (small) fixed.** "Why toy worlds" said every rule's expected return is computed exactly in seconds (not true of
+  experiments 3 and 4): "every true value is known exactly, a whole experiment runs in seconds to a few minutes".
+- **C5 (small) fixed.** The glossary defines "Exact binomial test" and "Situation" (experiment 3's, not the main
+  test's).
+- **C6, C7 (small) fixed.** Chart notes: the t-test harm gate at 5 survivors lies outside experiment 2's lines; on the
+  mean-promise chart only the unweighted mean gate ignores the shift (the gray dashed line is the oracle).
+- **C8 (small) fixed.** The one-case table: "50,000 (5%) are needed to venture", "50 (5%) are needed".
+- **C9 (small) fixed.** "0.375 (0.37548, printed 0.3755), not 0.376".
+- **C10 (small) fixed.** The caps table fits its column at 1280 ("none" instead of "none qualifies").
+- **C11 (small, pre-existing) fixed.** "947 of BCA's 1,000 random draws crossed; 950 were needed".
+- **C12 rejected.** "Result B's small medium-expert lead did not appear" on seed 0 is a fair one-seed summary (+0.2 in
+  one situation, −0.7 on average; the sentence before gives the range).
+- **C13 (small, pre-existing) fixed.** The role table links its records where they first appear (result B, Stage 2,
+  result F, the restructured BCA, routes, the weighting test's results).
+- **C14 rejected.** 0.122 (three decimals, as the other two regrets in that sentence) and 0.1215 (the notebook's print)
+  are both correct roundings of 0.12155.
+- **C15 rejected.** Kill rule and seed are defined in the running text where they first appear and again in the
+  collapsed glossary; the reader who does not open the glossary needs the first.
+- **C16 (small) fixed.** Experiment 2's rules introduce the two variants its tables show (the step-1 gate on context-1
+  rows only, the harm test on the average).
+
+### D. The lesson
+
+- **D1 (serious) fixed, with C2 and F2.** Step 7.2's body and its Try it table said Stage 2's seeds 5–9 run "has not
+  run yet": "did not take place: its plan, version 7, was ended without running", and the table row "not run: version 7
+  was ended without running" (`apply_all.py` refuses the old wording).
+- **D2 (serious) fixed.** 1.2's Try it distance line summed exact squares, not the shown ones (false "="): the sum is
+  of the squares as shown; 0 false "=" in the re-check.
+- **D3 (serious) fixed.** 6.3's "Start 0, recorded" preset showed a false "=" and its ratio line missed by up to 7
+  units: the exponent uses the current as shown, the ratio's inputs have 6 decimals.
+- **D4 (small) partly fixed.** 4.4's mean Q has 4 decimals below 10 (the gap falls to 0.6 of a unit); the intro now
+  says "≈" is used when rounding makes the results "differ slightly in the last digits". Four "≈" lines of 1.2 at very
+  small values still differ by about 3 units, from squares shown to 4 decimals (more digits would open larger gaps in
+  the first relation, the verifier's simulation).
+- **D5 (serious) fixed, with E1.** Typed number fields were 40 px tall on touch screens (a later base rule won): the
+  touch rule's selector is `#learn input.ls-num`; all are 44 px.
+- **D6 (small) fixed.** 5.5's rule formula was cut by 4 px at 390: the lesson's rule formulas scale to their box.
+- **D7 (small) fixed.** 2.3's Try it silently used the world chosen in 2.2: it has its own World switch, which follows
+  2.2's (tested).
+- **D8 (small) fixed, with F13.** 3.4 defines "design seed" where it uses it.
+- **D9 (small) fixed.** 6.3's "M(λ)" is "the constant that makes each curve's total 1 (the page's M(ξ))".
+- **D10 (small) fixed.** 4.6's 98.93 and 1.5015 are explained ("the 98.9 points and step 3.5's 1.50 per point, with
+  more digits").
+- **D11 rejected.** 1.5 × 0.643115 is an exact tie; the lesson rounds half to even on purpose (rule D2).
+- **D12 (small) fixed in part.** The two nested parentheses are gone; the straight quotes stay (the page uses straight
+  quotes throughout).
+- Noted, left open: 55 of the lesson's 58 display formulas have an accessible name equal to the caption after them, so
+  a screen reader hears the caption twice; plain readings for them are a content pass (the formula renderer
+  `mj_render.cjs` is on the laptop only).
+
+### E. Technical
+
+Checks that passed: no console error or warning in any unit at four views and with data-theme switched; no NaN,
+undefined, Infinity or "[object" in any unit or in 150 tooltips; the page contract (Google Fonts only; new scripts in
+IIFEs; localStorage in try/catch; no alert, confirm or prompt; bare #id links); no CR byte, no duplicate id, under
+16 MB; load at 390 with a 4x CPU throttle faster than the live page.
+
+- **E1** = D5, fixed.
+- **E2 rejected.** The toy charts' aqua (2.82:1 on white) is documented in TOY.md as deliberate; direct labels and the
+  tables carry the same information.
+- **E3 (small) fixed.** The lesson's state-map trail was drawn at half opacity (2.5:1): solid `--muted` (7.4:1).
+- **E4 rejected.** The Whole page switch's off state is also given in visible text, and it is the live page's own
+  switch component.
+- **E5 (small) fixed.** The lesson's evidence tags (tooltip chips) are 44 px tall on touch screens, their pill still
+  drawn at 23 px (a tap just above no longer opens the "Full detail" fold instead).
+- **E6 (small) fixed.** Links alone in step 7.2's table cells are 44 px tall on touch screens.
+- **E7 (small, pre-existing) fixed.** The claims table's group links are 44 px tall on touch screens.
+- **E8 left (pre-existing).** 165 of the main page's formulas have their TeX source as accessible name (as on the live
+  page); plain readings for them are a content pass of their own.
+- Noted, left: the wave's trail in 1.7 fades its older dots on purpose (their age); the current dot and the ring carry
+  the essentials.
+
+### F. Language and consistency
+
+- **F1** = A2, fixed. **F2** = D1, fixed.
+- **F3 (small) fixed.** The critic viewer's sources note said in one sentence that the code is in the repository and
+  later that no branch holds it: B19 drops its hedge and B19b says the code and scripts were only local until the
+  merge, and the runs still are.
+- **F4 (serious) fixed.** After the stop's sources said EXPERIMENTS.md was last updated on 13 Oct, against the head the
+  paragraph names (0377dd7: "Last updated: 2026-10-14", entry 17 present): B27 states it at that head.
+- **F5 (small) fixed.** Results' opening names the four learners (TD3+BC, implicit Q-learning, conservative Q-learning
+  and revisited behavior-regularized actor-critic, each alone, with BCA and with BCA IW) and its link attaches to the
+  near-80 clause.
+- **F6 (small) fixed.** The near-80 test is said to be the version 8 the restructured BCA's GO licensed (its
+  pre-registration's own title).
+- **F7 (small, pre-existing) fixed.** After the stop's opening said seeds 5–9 are "not yet run": B28, "could, and they
+  have not run: version 7, which was to run them, was ended … without running".
+- **F8 (small) fixed.** Version 27's entry no longer overstates: version 26's toy parts are "carried over, reworded",
+  the shelving result is for experiments 2 to 4, the claims' order is by the notebooks' own record, the lesson's few
+  marked illustrations use made-up numbers, and the toy section is the exception to "everything versions 20 to 26 did
+  kept".
+- **F9 (small) fixed.** The start note names "the button with the section's name in the bar at the bottom".
+- **F10 (small, pre-existing) fixed.** The critic viewer's quality names in the Choices are capitalized as elsewhere.
+- **F11 (small) fixed.** "No cap", not "Cap no cap".
+- **F12 (small, pre-existing) fixed.** The t-test example is labeled the notebook's own, outside the experiment's
+  worlds.
+- **F13** = D8, fixed.
+- **F14 rejected.** The lesson shows two British data-key names in American spelling on purpose (documented in
+  lesson.js); the keys themselves are unchanged.
+- **F15 rejected.** 7.2's quiz agrees with the lesson's definitions of pre-registered and exploratory.
+- **F16** = A3, fixed. **F17 (small) fixed.** "Made the same decision as the exact binomial test".
+- **F18 (small) fixed in part.** Results' opening uses "changed" for version 7; the sentence stays long, because
+  `apply_all.py`'s status checks pin its parts (a later status pass can split it).
+- **F19 (small) fixed.** I2: the status came "from the repository and from what the project owner reported".
+- **F20 (small) fixed.** The bottom bar's landmark is "Navigation bar: contents, this section, previous and next".
+- Noted: the verifiers' warnings that some reviewers' wordings would break `apply_all.py`'s pinned status strings were
+  followed (B5, I2, B21, B28 keep them); the phrases that `check_numbers.py` pins were changed with the text.
+
+### Found in the re-check
+
+- **R2-X1 (small, pre-existing, made more frequent by B1) fixed.** A deep link to a lesson step at load could leave the
+  step's Try it unbuilt (1 to 3 times in 4 at 1280): the navigation sends walkthrough:enter on the next animation frame,
+  but the lesson's script comes after the navigation's and could attach its listener after that frame. The lesson now
+  also enters the step already shown when its listeners are attached (`e_lesson_r2b.py`); 12 of 12 deep links build
+  their Try it.
+
+### The re-check (on the build from service version 1792181606-4140)
+
+`apply_all.py`: every check passes (0 duplicate ids, 4,565 SVG `<use>` and 453 in-page links resolve, 0 CR bytes, one
+history entry per version 1 to 27, no status box, 9,883,547 bytes and 9,884,093 with the wrapper). Every unit shown
+alone at 1280 and 390, light and dark: no console error, no NaN or undefined, no sideways scroll (the weighting test's
+177 wide elements at 390 are inside their scroll boxes, as on the live page). Result F's learners (No extra caution,
+Result F with exact or estimated weights) against the live page at 1280 and 390: the same buttons, disabled states and
+readouts in 30 states, the cost readout keyed for them. The verifiers' own scripts re-run on the new build: B2 7 of 7
+presses whole; A1 every lesson chart names both axes; D2/D3 0 false "="; D5 all typed fields 44 px; D6 no formula
+overflow; E5/E6/E7 targets 44 px; B1, B3, B5 land as intended; B6 0 cut labels; A3/F16 readouts; D7 the World switch;
+every text fix present once and every refused wording absent. `check_numbers.py`: 234 numbers and 24 worked results, 0
+problems. The laptop's Edge test scripts in `tests/` pin the texts of earlier bases and were not run in the cloud.
