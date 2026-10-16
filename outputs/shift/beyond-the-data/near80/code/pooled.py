@@ -31,12 +31,18 @@ Failed seeds. A seed that failed its data (data_main: every claim; data_band che
 stop (near-80, random rows: claims 1-3; main: claim 4; the main data and the full-log critic: every claim) fails every
 mark that needs it: its evaluation numbers are set to null for those settings before any mark is computed, so the
 pooled numbers of the marks are "not available", and the seed's own clause ("seed [s] failed [check] ...") tells it.
-A seed with no failure or stop record whose evaluation lacks a number that the validity conditions or claims 2 and 3
-read from an actor that is always trained (EVALUATION_NEEDS; its learner failed, section 10) fails for claims 1-3 in
-the same way, with [check] "its evaluation (numbers missing)". The validity conditions (section 9.1) are computed over
-the group's seeds that did not fail: a failed seed never makes claim 1 "invalid". When a seed failed, claims 2 and 3
-are written with their "If a seed failed" sentences (section 14.6), never with pooled numbers that the failed seed made
-"not available". Check 10's count M leaves out a failed seed that has no check-10 record. The exploratory stop rules
+A seed with no failure or stop record whose evaluation lacks a number that the validity conditions, the marks or the
+sentences of claims 1-3 read (EVALUATION_NEEDS; its learner failed, section 10) fails for claims 1-3 in the same way,
+with [check] "its evaluation (numbers missing)"; one whose main-setting evaluation lacks a number that claim 4 reads
+(EVALUATION_NEEDS_CLAIM4, and EVALUATION_NEEDS_BOTH when both settings ran) fails claim 4 in the same way. A missing
+near-80 or random-rows number never fails claim 4; a missing main-setting number fails claims 1-3 only as the band
+cost's reference setting (without the random-rows control). Version 6's BCA is not needed (it can be missing by design
+and is reported for scale only). So among the claim sentences only claim 2's "for scale" sentence and claim 4's "Always,
+when both settings ran" sentence can show "not available". The validity conditions (section 9.1) are computed over the
+group's seeds that did not fail: a failed seed never makes claim 1 "invalid". When a seed failed, claims 2 and 3 are
+written with their "If a seed failed" sentences, or their "If every seed failed" sentences when no seed of the group is
+left (section 14.6), never with pooled numbers that the failed seed made "not available". Check 10's count M leaves out
+a failed seed that has no check-10 record. The exploratory stop rules
 (section 8.3) need every seed 0-4: when a number the harm or the rival rule needs is missing on any seed, the near-80
 and random-rows settings stop before the fresh seeds with section 14.5's sentence "A stop rule cannot be read"; when a
 number the noise floor needs is missing, the noise floor cannot be read and claim 3 is dropped with the "not measured"
@@ -86,13 +92,35 @@ GO_RULE = dict(g1_margin=K.MARKS["net_lead_margin"], g2_floor=K.MARKS["keeps_flo
 FIRST_HARM_FORM = "lost only [H]"               # where the harm stop's first form starts (section 14.5)
 SEEDS_WORDS = "seed [seeds]"                    # written "seed 2", "seeds 2 and 3", "seeds 1, 2 and 3" (section 14.6)
 EVALUATION_MISSING_CHECK = "its evaluation (numbers missing)"
-# The numbers the validity conditions (harm, past-80 share, the range limit's band cost) and claims 2 and 3 (BCA's
-# gain, overshoot and band cost) read from the four actors that are always trained: (measure, setting, arm), stalling
-# world, strong current. "band" is the band cost's reference setting: random rows, or main without that control.
-EVALUATION_NEEDS = (("points", "near80", "full_none"), ("points", "near80", "none"), ("past80_share", "near80", "none"),
-                    ("points", "near80", "range_hinge"), ("points", "band", "range_hinge"),
-                    ("points", "near80", "obca_k1"), ("points", "band", "obca_k1"),
-                    ("unseen_gain", "near80", "obca_k1"), ("overshoot_loss", "near80", "obca_k1"))
+
+
+def _go_needs(setting):
+    """The numbers step 2's three go marks read in `setting` (claim 1 or claim 4, and their sentences): BCA's switched
+    ramp, no caution and the five world-blind rivals in strong current in both worlds (the net lead, the even pull,
+    and [X], [W]); BCA's switched ramp and no caution in the stalling world's other three situations (keeping the
+    gain). (measure, setting, world, logical id, situation)."""
+    out = [("points", setting, w, a, SCORED) for w in K.WORLDS for a in (K.PRIMARY, "none") + K.WORLD_BLIND]
+    out += [("points", setting, "stall", a, sit) for sit in K.KEEPS_SITUATIONS for a in (K.PRIMARY, "none")]
+    return tuple(out)
+
+
+# Every number that the validity conditions, the marks or the sentences of claims 1-3 read (section 14.6), as
+# (measure, setting, world, logical id, situation): claim 1's go marks and [X], [W]; the harm ([H]) and the past-80
+# share ([P]); BCA's gain and overshoot ([G], [O], [K2]) and the "for scale" numbers of no caution and the hand-set
+# range limit ([G0], [O0], [GZ], [OZ]); the band costs of claim 3 and its validity condition ([A], [B], [C], [K]).
+# "band" is the band cost's reference setting: random rows, or main without that control. Version 6's BCA ([GV], [OV])
+# is left out: it can be missing by design (its band failed, or the choice is off) and is reported for scale only.
+EVALUATION_NEEDS = _go_needs("near80") + (
+    ("points", "near80", "stall", "full_none", SCORED), ("past80_share", "near80", "stall", "none", SCORED),
+    ("points", "near80", "stall", "range_hinge", SCORED), ("points", "band", "stall", "range_hinge", SCORED),
+    ("points", "band", "stall", K.PRIMARY, SCORED)) + tuple(
+    (measure, "near80", "stall", a, SCORED) for measure in ("unseen_gain", "overshoot_loss")
+    for a in (K.PRIMARY, "none", "range_hinge"))
+# Claim 4 (the main setting only): its go marks and, when both settings ran, the main-setting points of the hand-set
+# range limit that the "Always, when both settings ran" sentence reads ([dR]; [dB] and [d0] read BCA and no caution,
+# already needed). A near-80 number is never needed for claim 4.
+EVALUATION_NEEDS_CLAIM4 = _go_needs("main")
+EVALUATION_NEEDS_BOTH = (("points", "main", "stall", "range_hinge", SCORED),)
 REPRO_ORDER = ("removal", "critic", "clone", "none", "w0_check", "obca_k1", "range_hinge")
 REPRO_PLAIN = {"removal": "the main test's removal", "critic": "the main test's critic",
                "clone": "the main test's cloned actor", "none": "the main test's no-caution actor",
@@ -710,30 +738,45 @@ def load_results(out_root, group, mode="official", prereg_sha256=None, seeds=Non
                 if a.get("kind") == "near80-attempt":
                     R.attempts.append(a)
     R.inputs = dict(rd.inputs)
-    for s, gone in evaluation_gaps(R).items():
-        R.fail(s, "claims_1_3", "numbers missing from its evaluation, with no failure or stop record: "
-                                + ", ".join(gone), EVALUATION_MISSING_CHECK)
+    for which in ("claims_1_3", "claim_4"):
+        for s, gone in evaluation_gaps(R, which).items():
+            R.fail(s, which, "numbers missing from its evaluation, with no failure or stop record: " + ", ".join(gone),
+                   EVALUATION_MISSING_CHECK)
     R.apply_failures()
     return R
 
 
-def evaluation_gaps(R):
-    """{seed: [what is missing]} for the group's seeds that have no failure record for claims 1-3 yet lack a number of
-    EVALUATION_NEEDS (section 14.6): such a seed's learner failed, so it fails every mark of claims 1-3 (section 10).
-    Empty when the near-80 setting did not run on the group's seeds."""
-    if not R.ran["near80"]:
-        return {}
-    band = "random_rows" if R.defaults.get("random_rows_control", True) else "main"
+def evaluation_needs(R, which="claims_1_3"):
+    """The numbers (measure, setting, world, logical id, situation) that claims 1-3 ('claims_1_3') or claim 4
+    ('claim_4') read on these results, with "band" written as the band cost's reference setting. Empty when those
+    claims' setting did not run on the group's seeds (they are "not run")."""
+    if which == "claims_1_3":
+        if not R.ran["near80"]:
+            return ()
+        band = "random_rows" if R.defaults.get("random_rows_control", True) else "main"
+        return tuple((m, band if st == "band" else st, w, a, sit) for m, st, w, a, sit in EVALUATION_NEEDS)
+    if which != "claim_4":
+        raise ValueError(f"unknown claims {which!r}")
+    if not R.ran["main"]:
+        return ()
+    return EVALUATION_NEEDS_CLAIM4 + (EVALUATION_NEEDS_BOTH if R.ran["both"] else ())
+
+
+def evaluation_gaps(R, which="claims_1_3"):
+    """{seed: [what is missing]} for the group's seeds that have no failure record for these claims yet lack a number
+    of evaluation_needs(R, which) (section 14.6): such a seed's learner failed, so it fails every mark of claims 1-3,
+    or claim 4 (section 10)."""
+    book = R.failed_seeds_claims_1_3 if which == "claims_1_3" else R.failed_seeds_claim4
+    needs = evaluation_needs(R, which)
     out = {}
     for s in R.seeds:
-        if s in R.failed_seeds_claims_1_3:
+        if s in book or not needs:
             continue
         gone = []
-        for measure, setting, arm in EVALUATION_NEEDS:
-            st = band if setting == "band" else setting
-            row = R.raw[measure][st]["stall"][s].get(arm)
-            if row is None or row.get(SCORED) is None:
-                gone.append(f"{arm} {measure} ({st})")
+        for measure, st, w, arm, sit in needs:
+            row = R.raw[measure][st][w][s].get(arm)
+            if row is None or row.get(sit) is None:
+                gone.append(f"{arm} {measure} ({SETTING_PLAIN[st]}, {K.WORLD_PLAIN[w]}, {K.SITUATION_PLAIN[sit]})")
         if gone:
             out[s] = gone
     return out
@@ -828,7 +871,9 @@ def brackets(results, group=None, exploratory=None):
         X=x["mean"], H=h["mean"], W=w["mean"], NET=net, D=lead, R=None if best is None else K.ARM_PLAIN[best],
         R_id=best, R_net=best_net, E=ev["mean"],
         L=None if any(v_ is None for v_ in losses) else max(losses), L_by_situation=loss,
-        G=gain[K.PRIMARY]["mean"], O=over[K.PRIMARY]["mean"], G0=gain["none"]["mean"], O0=over["none"]["mean"],
+        G=gain[K.PRIMARY]["mean"], O=over[K.PRIMARY]["mean"],
+        K2=sum(1 for v_ in gain[K.PRIMARY]["per_seed"] if v_ is not None and v_ > 0),
+        G0=gain["none"]["mean"], O0=over["none"]["mean"],
         GZ=gain["range_hinge"]["mean"], OZ=over["range_hinge"]["mean"], GV=gain["version6_bca"]["mean"],
         OV=over["version6_bca"]["mean"], Q=S.mean_or_none(q), A=a_cost["mean"], B=b_cost["mean"],
         C=S.mean_or_none(c_per), K=sum(1 for c in c_per if c is not None and c > 0), M=c10["M"], P=p["mean"],
@@ -1181,6 +1226,15 @@ def failed_seeds_of(look):
     return sorted(int(s) for s in (look.get("failed_checks") or {}).get("claims_1_3") or {})
 
 
+def failed_seed_row(t, claim, look):
+    """{id, text} of claim 2's or claim 3's sentence when a seed failed for claims 1-3: "If a seed failed", or "If
+    every seed failed" when no seed of the group is left whose numbers could be reported (section 14.6)."""
+    failed = failed_seeds_of(look)
+    every = set(int(s) for s in look.get("seeds") or []) <= set(failed)
+    sid = f"{claim}.every_seed_failed" if every else f"{claim}.failed_seed"
+    return dict(id=sid, text=fill_seeds(t(sid), failed))
+
+
 def noise_floor_of(look, group):
     """The noise floor record of the exploratory stop rules (this look's, or the confirmatory look's copy)."""
     st = look.get("stops") if group == "exploratory" else (look.get("exploratory_stops") or {}).get("stops")
@@ -1244,12 +1298,13 @@ def sentences(look, templates, group):
         if not val["claims_2_3"]["passed"]:
             add("claim2.check10", CT.fill(t("claim2.check10"), dict(M=CT.fmt(br["M"], "count"))))
         elif out_c["claim2"] == "fail_failed_seed":
-            add("claim2.failed_seed", fill_seeds(t("claim2.failed_seed"), failed_seeds_of(look)))
+            r = failed_seed_row(t, "claim2", look)
+            add(r["id"], r["text"])
         else:
             c2 = look["marks"]["claim2"]
             sid = "claim2.{}_{}".format("pass" if c2["gain"]["passed"] else "fail",
                                         "pass" if c2["overshoot"]["passed"] else "fail")
-            add(sid, CT.fill(t(sid), dict(G=br["G"], O=br["O"])))
+            add(sid, CT.fill(t(sid), dict(G=br["G"], O=br["O"], K2=CT.fmt(c2["gain"]["positive"], "count"))))
     if c1 != "not run":
         add("claim2.scale", CT.fill(t("claim2.scale"), dict(G0=br["G0"], O0=br["O0"], GZ=br["GZ"], OZ=br["OZ"],
                                                            GV=br["GV"], OV=br["OV"], Q=br["Q"])))
@@ -1260,7 +1315,8 @@ def sentences(look, templates, group):
     elif c3 == "dropped":
         add("claim3.dropped", CT.fill(t("claim3.dropped"), dict(arm=br["arm"] or CT.NOT_AVAILABLE, V=br["V"])))
     elif c3 == "fail_failed_seed":
-        add("claim3.failed_seed", fill_seeds(t("claim3.failed_seed"), failed_seeds_of(look)))
+        r = failed_seed_row(t, "claim3", look)
+        add(r["id"], r["text"])
     elif c3 == "invalid" and why.get("claim3") == "the hand-set range limit's band cost":
         add("claim3.invalid", CT.fill(t("claim3.invalid"), dict(B=val["claim3"]["rival_band_cost"]["value"])))
     elif c3 in ("pass", "fail"):
@@ -1707,13 +1763,13 @@ def look_md(look, digest):
         L += ["## Failed seeds", ""] + [f"- claims 1-3, seed {s}: {r}" for s, r in fs["claims_1_3"].items()] + \
              [f"- claim 4, seed {s}: {r}" for s, r in fs["claim_4"].items()] + [""]
     L += ["## Brackets", "", "| bracket | value |", "|---|---|"]
-    for name in ("S", "N", "X", "H", "W", "NET", "D", "R", "E", "L", "G", "O", "G0", "O0", "GZ", "OZ", "GV", "OV",
-                 "Q", "A", "B", "C", "K", "M", "P", "V", "arm", "dB", "dR", "d0"):
+    for name in ("S", "N", "X", "H", "W", "NET", "D", "R", "E", "L", "G", "O", "K2", "G0", "O0", "GZ", "OZ", "GV",
+                 "OV", "Q", "A", "B", "C", "K", "M", "P", "V", "arm", "dB", "dR", "d0"):
         v = br.get(name)
         if name == "P":
             L.append(f"| P | {_pct(v)} |")
             continue
-        kind = "count" if name in ("S", "N", "K", "M") else "points"
+        kind = "count" if name in ("S", "N", "K", "K2", "M") else "points"
         L.append(f"| {name} | {v if isinstance(v, str) else _f(v, kind)} |")
     rep = look.get("reported") or {}
     pts = (rep.get("measures") or {}).get("points") or {}

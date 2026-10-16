@@ -1,10 +1,10 @@
 {
  "files": {
-  "PREREGISTRATION.md": "172faac6a6ed3dc385a4263a3ebebfac4b8d79a079601fca54d33ad51ec64cb2",
+  "PREREGISTRATION.md": "9caf198b314181476cc5a0cbdbff3330efadfa48b88427020e1de23960e919e2",
   "README.md": "c783f5fe0e3b91146e403665c3e34fad1e10cdffba14fbff8ec0a066c64628e8",
   "approve_local_near80.py": "373b221da762446b99cf1dff5f6a06abb4f7d1207ada542465066ff16e4e9b8c",
   "code/approval_check.py": "2b1373b96fffc2d0e957bb8b61cdb631e3a4a813596812fb3d1f80db6ea505f8",
-  "code/claims_text.py": "a814524aedcfda2e97a930434ca3298479c430b5a02a933d6eb1fa5bb1d6fb8b",
+  "code/claims_text.py": "24f6a5c5992a02d899fad9b946d21cd7462c439638020e1355174c7276396d8f",
   "code/evaluate_phase.py": "a51e60d676912d30df2fe3b863ed8ab97d712e111e5f61e96baa98165aee12e8",
   "code/facts_near80.py": "03299e1698b65e61abea8a4f97a951783e1c31aa97bee8691f23886c766b8e62",
   "code/freeze.py": "c1767b0b0b31696468a811c9185b6e30af348b5ec9dec619ab855889fa2d90a8",
@@ -12,18 +12,18 @@
   "code/learner_phases.py": "e99f8aca8b568f93508e8104c612e71dcd51e187e51419aa8d9f642fcc20e4ee",
   "code/ledger.py": "4911ab69756d571657ed75c54a25661e9b7c1f1a351fe766d22ceb839082f6d7",
   "code/near80_constants.py": "9a94e675fc84bafebae14245ed616740157e143a585087532d00e4f570f9c8d0",
-  "code/near80_prereg.py": "00ce15dc65ae373d7fda140132f6c6695aca8816e4df79316aaffac7292561f4",
+  "code/near80_prereg.py": "2d4bc0e05520e03fe20f74022c2a01bf6a950d4d878b9a37ddbde4fbfa5889aa",
   "code/near80_runner.py": "849f7fee0dbc015bc0f9cf3b421f657645b429f62ad2b20e2474e392eb53247d",
   "code/near80lib.py": "50891f16538caf618d11d15e7665b45e911d1a0cbe288fceeb303b91bd964b77",
   "code/phase_main.py": "c016e9b86f5291aabc75e3b058e9652fed3e80489c0c13ab928887e86972eaf5",
   "code/phases.py": "40d5dc8c48d1d35765356c04854f326a21f7f7e63dd087a398b84285b90ea2f8",
   "code/policy_phase.py": "e0dcaee30820b4aa907e0b25409349963baf9d702ba5945d3266a43494eaae7e",
-  "code/pooled.py": "dce054bc58070589581f9888c1038e72f66a869e6c9860d9791e8e189dce1cbd",
+  "code/pooled.py": "1068c1b6b48cf0a2d735aae72f88badf316877876789363fa49061bdec848022",
   "code/settingdata.py": "b8828d08f0b357612b50c05cfc64f256b95dbe536b0a6af2bc4b34e0436d6160",
   "code/stubs.py": "bfa5cf1c5401edfab556f4b46a0f16395d9f8e90de7bd2c0eeff27f759a874d9",
   "code/test_approval.py": "1fb7e4152e24d67acced3158d1369841562e55c636ededb21b4dda5531edd120",
   "code/test_near80.py": "b4499a9f7fbd1a693ec0233766c42c9ba7d95e07b5dea611c0755f78c45d5c86",
-  "code/test_pooled.py": "2c2ddd66152e00086bbad8295745799a44f92e92f16ef630b8272850505dff8d",
+  "code/test_pooled.py": "96caf934b19f3df1e0783fb204435051b874323a3a99efe12106c0569eabea7a",
   "code/test_runner.py": "bfaf0dd651287b3e3e0e7419d6f8611d68bd0da993c1598d9d7398213354f497",
   "code/v6bca.py": "804599c829cbbe0dead1e745f53f36ee33f23ddfbb90400c4de036a36307e891",
   "push_runfiles_near80.sh": "75ec9fb6ca126f211c41a607d6cf2384f830c625c704cc2b49876afa97241e46",
@@ -35,11 +35,23 @@
    "reason": "Final version 8, near-80: every default of section 16 accepted by the owner on 15 October 2026 at 19:24 UTC ('accept the defaults'); frozen for the owner's approval. Nothing trained.",
    "sha256": "241a298ec61b32b86b227bc2f5c7eb688cf1910701db44a834cdf396095de343",
    "version": 1
+  },
+  {
+   "archived": "code_manifest_history/code_manifest_v2.json",
+   "reason": "Re-freeze after the independent re-check of the fixes: claims 2 and 3 get their own sentence when a seed failed; 'seed [seeds]' is plural for several seeds; a noise floor that cannot be read drops claim 3 with its own sentence; a seed missing numbers with no stop record fails like a failed seed; saved-input and training-file stops inside the reproduction check can be retried; the approval command runs Python in isolated mode and refuses files the manifest does not list; the phases ignore in-tree bytecode caches.",
+   "sha256": "1415502411d6d8310b378be417d8bbfc30f0f6c4ed24e18e19e918cbdf283e53",
+   "version": 2
+  },
+  {
+   "archived": "code_manifest_history/code_manifest_v3.json",
+   "reason": "Re-freeze after a further check: claim 2's two sentences for a failed gain mark now say BCA's controller did not gain reliably and give the number of seeds where its gain was positive (new bracket [K2]) next to both parts of the mark (at least 5 points and 4 of 5 seeds), so a large pooled gain that fails only on the seed count is no longer written as gaining little; the fail/fail sentence no longer says its caution neither used the safe stretch. Nothing trained.",
+   "sha256": "d5dd5d6fd30a6abf8ee372633098e2abf67e8636dae3d441f746c354a3101e8d",
+   "version": 3
   }
  ],
  "kind": "near80-code-manifest",
  "label": "Version 8, near-80: the main test's setting with every recorded throttle from 70% to 90% also hidden",
- "reason": "Re-freeze after the independent re-check of the fixes: claims 2 and 3 get their own sentence when a seed failed; 'seed [seeds]' is plural for several seeds; a noise floor that cannot be read drops claim 3 with its own sentence; a seed missing numbers with no stop record fails like a failed seed; saved-input and training-file stops inside the reproduction check can be retried; the approval command runs Python in isolated mode and refuses files the manifest does not list; the phases ignore in-tree bytecode caches.",
+ "reason": "Re-freeze after the last check's two minor findings: a seed whose evaluation lacks any number that claims 1-3 read (claim 1's rivals in both worlds and BCA and no caution in every situation included; version 6's BCA, reported for scale only, left out), with no failure or stop record, fails claims 1-3, and one whose main-setting evaluation lacks a number that claim 4 reads fails claim 4 only, so no claim sentence but the two description sentences writes 'not available'; claims 2 and 3 get an 'If every seed failed' sentence, without 'the numbers of the other seeds', when no seed is left. Nothing trained.",
  "repository_files": {
   "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "algorithms/cql.py": "2ab5a3fc29b6a7c598e6630bdd377cf89a75ff328a9e90615ebf5f44c538f0e4",
@@ -176,5 +188,5 @@
   "runtime/validation.py": "60e4d51401ef5b24e29eee3e671d9e49182a09f3ba751c17e8f2c155ab140978"
  },
  "rule": "every near-80 phase, the import and the owner's approval script refuse unless each file here has this SHA-256 and this manifest's SHA-256 is the one prereg.json pins",
- "written": "2026-10-15T23:33:42Z"
+ "written": "2026-10-16T00:22:56Z"
 }

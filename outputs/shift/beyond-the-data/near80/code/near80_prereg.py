@@ -126,12 +126,29 @@ def amend(content):
     v = content.setdefault("validity_on_seeds_10_14", {})
     v["failed_seeds"] = ("the validity conditions are computed over the fresh seeds that did not fail; a failed seed "
                          "fails every mark of claims 1-3 and claim 1's sentence names it; it never makes claim 1's "
-                         "validity fail; claims 2 and 3 then write their 'If a seed failed' sentences (section 14.6); "
-                         "a seed with no failure or stop record whose evaluation lacks a number the validity "
-                         "conditions or claims 2 and 3 read from an actor that is always trained fails in the same "
-                         "way ('its evaluation (numbers missing)'); check 10's count leaves out a failed seed whose "
-                         "band data were never built")
-    done.append("validity_on_seeds_10_14: failed seeds")
+                         "validity fail; claims 2 and 3 then write their 'If a seed failed' sentences, or their 'If "
+                         "every seed failed' sentences when no seed is left (section 14.6); a seed with no failure or "
+                         "stop record whose evaluation lacks a number that the validity conditions, the marks or the "
+                         "sentences of claims 1-3 read (section 14.6 lists them; version 6's BCA, reported for scale "
+                         "only, is left out) fails in the same way ('its evaluation (numbers missing)'); check 10's "
+                         "count leaves out a failed seed whose band data were never built")
+    claim4_fails = ("a seed fails claim 4 only on the gate's data checks (the five world checks, the ball's leak "
+                    "checks), a main-setting plumbing stop, or a main-setting evaluation that lacks a number claim 4 "
+                    "reads with no failure or stop record ('its evaluation (numbers missing)'); a missing near-80 or "
+                    "random-rows number never fails it")
+    v["claim_4"] = "nothing from the near-80 setting: only step 2's three marks; " + claim4_fails
+    seeds = content.setdefault("seeds", {})
+    seeds["failed_seed"] = ("a fresh seed that fails a data check or a learner fails every mark of claims 1-3 (so does "
+                            "one whose evaluation lacks a number that claims 1-3 read, with no failure or stop "
+                            "record); " + claim4_fails.replace("a seed fails claim 4", "it fails claim 4")
+                            + "; never replaced")
+    pm = content.setdefault("pass_marks", {}).setdefault("claim4_main_setting", {})
+    pm["separate"] = ("its validity needs nothing from the near-80 setting; "
+                      + claim4_fails.replace("a seed fails claim 4", "a seed fails it")
+                      .replace("; a missing near-80", ", and a missing near-80")
+                      + "; the exploratory stops do not cancel it")
+    done.append("validity_on_seeds_10_14, seeds and pass_marks: failed seeds; a seed whose evaluation lacks a number "
+                "the claims read fails claims 1-3, or claim 4 for a main-setting number")
     return done
 
 
