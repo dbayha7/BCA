@@ -4,7 +4,7 @@
   "fixed_references: which references the runner computes",
   "arms: one training program for every setting (section 5.3)",
   "kill_rules: plumbing retries; a stop rule that cannot be read; a noise floor that cannot be read",
-  "validity_on_seeds_10_14, seeds and pass_marks: failed seeds; a seed whose evaluation lacks a number the claims read fails claims 1-3, or claim 4 for a main-setting number"
+  "validity_on_seeds_10_14, seeds and pass_marks: failed seeds; a seed whose evaluation lacks a number the claims read fails claims 1-3, or claim 4 for a main-setting number; a seed whose matched rivals could not be matched fails claim 1's marks only"
  ],
  "approvable": true,
  "approval": {
@@ -466,14 +466,15 @@
    "[R] and [arm] are written as \"the always-on ramp\", \"the matched range limit\", \"the matched even pull\", \"the first matched random surface\", \"the second matched random surface\", \"the hand-set range limit\" or \"BCA's switched ramp\". When two rules that cannot switch themselves off have the same net, the first in step 2's order is named: the matched range limit, the matched even pull, the first random surface, the second random surface, the always-on ramp.",
    "[situation] is \"recorded conditions\", \"big waves\" or \"big kicks\". [world] is \"stalling world\" or \"no-stall world\". [phase] is the phase's plain name in the runner's phase table.",
    "[one clause per missed mark] lists the clauses of the missed marks, joined by \"; \", in this order: the net lead; keeping the gain (one clause per situation that misses, in the order recorded conditions, big waves, big kicks); beating the even pull; then one clause per failed seed, in seed order. [clauses as in claim 1] is the same for the main setting. When a seed failed, a missed mark whose number is not available because of that seed is told by the seed's own clause only.",
-   "[check] is the name of the first check that failed, in the order of section 8.1; \"its [phase] phase\" for a stopped phase; or \"its evaluation (numbers missing)\" for a seed whose evaluation lacks a number (the bullets on missing numbers below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.",
+   "[check] is the name of the first check that failed, in the order of section 8.1; \"its [phase] phase\" for a stopped phase; \"its evaluation (numbers missing)\" for a seed whose evaluation lacks a number; or \"its matching (a rival could not be matched)\" for a seed whose matched rivals could not be matched (the bullets on missing numbers below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.",
    "[reason] in claim 1's validity sentence is the harm reason when the harm is below 30 points, the past-80 reason when the share is below 25%, and both, joined by \"; \", when both fail.",
    "In the harm stop, \"[or: ...]\" is left out when only the harm fails; the second form replaces the first when only the share fails; when both fail, the two forms are joined by \" and \".",
    "In the reproduction stop, the bracket lists every item that differed, written \"A\", \"A and B\" or \"A, B and C\".",
    "Claims 2 and 3 are written only when claim 1's validity holds, except that in the exploratory look the dropped sentence of claim 3 is written whenever the noise floor fails. When a number the noise floor needs is missing on any of seeds 0-4, the noise floor cannot be read: claim 3 is dropped as if it had failed, and the \"not measured\" form of the dropped sentence is written instead, with [seeds] listing the seeds where a number is missing. When check 10 fails in more than one fresh seed, the check-10 sentence is written once, for both claims, in place of claim 2's sentence and claim 3's. The \"for scale\" sentence is written whenever the near-80 setting ran on the group's seeds.",
    "When a seed failed for claims 1-3, claim 2's sentence and claim 3's \"Holds\" or \"Fails\" sentence are replaced by their \"If a seed failed\" sentences, with [seeds] listing the failed seeds; claim 1's sentence says why each one failed. When every seed of the group failed, their \"If every seed failed\" sentences are written instead, since no other seed is left to report. The check-10 sentence, claim 3's \"Not valid\" sentence and its dropped sentences keep their precedence. So a pooled number that is \"not available\" only because a seed failed is never written as a finding.",
-   "The validity conditions of section 9.1 are computed over the seeds that did not fail. A failed seed fails every mark of claims 1-3 and is told by its own clause in claim 1's sentence (\"seed [s] failed [check] ...\"); it never makes claim 1's validity fail. A seed with no failure or stop record whose evaluation lacks a number that the validity conditions, the marks or the sentences of claims 1-3 read fails in the same way, with [check] \"its evaluation (numbers missing)\": its learner failed (section 10). These numbers, all in the near-80 setting unless stated, are: in strong current in both worlds, the points of BCA's switched ramp, no caution and the five rules that cannot switch themselves off (claim 1's net lead and even pull); in the stalling world, the points of BCA's switched ramp and no caution in the other three situations (keeping the gain), and in strong current the full-log actor's points and no caution's share past 80% (the validity conditions), the unseen-throttle gain and overshoot loss of BCA's switched ramp, no caution and the hand-set range limit (claim 2 and its \"for scale\" sentence), the hand-set range limit's points, and the points of BCA's switched ramp and the hand-set range limit in the band cost's reference setting (claim 3 and its validity condition; the random-rows setting, or the main setting without the random-rows control). Version 6's BCA is left out: it can be missing by design and is reported for scale only. [M] leaves out a failed seed that has no check-10 record.",
+   "The validity conditions of section 9.1 are computed over the seeds that did not fail. A failed seed fails every mark of claims 1-3 and is told by its own clause in claim 1's sentence (\"seed [s] failed [check] ...\"); it never makes claim 1's validity fail. A seed with no failure or stop record whose evaluation lacks a number that the validity conditions, the marks or the sentences of claims 1-3 read, other than a matched rival (see below), fails in the same way, with [check] \"its evaluation (numbers missing)\": its learner failed (section 10). These numbers, all in the near-80 setting unless stated, are: in strong current in both worlds, the points of BCA's switched ramp, no caution and the always-on ramp (claim 1's net lead and even pull); in the stalling world, the points of BCA's switched ramp and no caution in the other three situations (keeping the gain), and in strong current the full-log actor's points and no caution's share past 80% (the validity conditions), the unseen-throttle gain and overshoot loss of BCA's switched ramp, no caution and the hand-set range limit (claim 2 and its \"for scale\" sentence), the hand-set range limit's points, and the points of BCA's switched ramp and the hand-set range limit in the band cost's reference setting (claim 3 and its validity condition; the random-rows setting, or the main setting without the random-rows control). Version 6's BCA is left out: it can be missing by design and is reported for scale only. [M] leaves out a failed seed that has no check-10 record.",
    "Claim 4 is kept apart from the near-80 settings. A seed with no failure or stop record whose main-setting evaluation lacks a number that claim 4 reads fails claim 4 in the same way, with the same [check]. These are the numbers of claim 1's three marks, in the main setting, and, when both settings ran, the hand-set range limit's points in strong current in the stalling world (the \"Always, when both settings ran\" sentence). A missing near-80 or random-rows number never fails claim 4, and a missing main-setting number fails claims 1-3 only when they read it (without the random-rows control).",
+   "A seed with no failure or stop record whose matched rivals could not be matched (for example, BCA's switch stayed off where full throttle stalls, so there was no strength to match) fails claim 1's marks only, with [check] \"its matching (a rival could not be matched)\"; claims 2 and 3 and the validity conditions read its numbers as usual. The matched rivals' numbers are the near-80 points in strong current, in both worlds, of the matched range limit, the matched even pull and the two matched random surfaces.",
    "Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5 that was missed.",
    "On seeds 0-4, the \"Always attached\" sentence is not written; every claim sentence (sections 14.1-14.4) starts with the exploratory prefix, and in them \"fresh seeds 10-14\" reads \"seeds 0-4\" and \"fresh seeds\" reads \"seeds\". The stop sentences of section 14.5 are written as they stand.",
    "In the stop \"A stop rule cannot be read\", [what] is \"the harm\" (the harm or the past-80 share is missing), \"the band's cost to the hand-set range limit\", or both joined by \" and \"; [seeds] lists the seeds where a number is missing, written \"2\", \"2 and 3\" or \"1, 2 and 3\". Wherever a sentence says \"seed [seeds]\", it reads \"seed 2\" for one seed, and \"seeds 2 and 3\" or \"seeds 1, 2 and 3\" for more.",
@@ -671,9 +672,9 @@
  },
  "code": {
   "code_manifest": "code_manifest.json",
-  "code_manifest_sha256": "92e3233e73225c02d8463f197079bf9f2317a95f748a584e7004d5b089f3daf4",
+  "code_manifest_sha256": "4f6d38c46cca0232fc25afb2a2fab8068d808bde1ee5742e6408966e43be3a2f",
   "files": {
-   "PREREGISTRATION.md": "9caf198b314181476cc5a0cbdbff3330efadfa48b88427020e1de23960e919e2",
+   "PREREGISTRATION.md": "f11f803df64f3ed5fe6b948cfe411d83625bd3d34f96099ca0001a0b21136cb4",
    "README.md": "c783f5fe0e3b91146e403665c3e34fad1e10cdffba14fbff8ec0a066c64628e8",
    "approve_local_near80.py": "373b221da762446b99cf1dff5f6a06abb4f7d1207ada542465066ff16e4e9b8c",
    "code/approval_check.py": "2b1373b96fffc2d0e957bb8b61cdb631e3a4a813596812fb3d1f80db6ea505f8",
@@ -685,18 +686,18 @@
    "code/learner_phases.py": "e99f8aca8b568f93508e8104c612e71dcd51e187e51419aa8d9f642fcc20e4ee",
    "code/ledger.py": "4911ab69756d571657ed75c54a25661e9b7c1f1a351fe766d22ceb839082f6d7",
    "code/near80_constants.py": "9a94e675fc84bafebae14245ed616740157e143a585087532d00e4f570f9c8d0",
-   "code/near80_prereg.py": "2d4bc0e05520e03fe20f74022c2a01bf6a950d4d878b9a37ddbde4fbfa5889aa",
+   "code/near80_prereg.py": "45e443fa65b6a6cb904de646ecd505b5c56058fb5163ec4e028c55233ea6df50",
    "code/near80_runner.py": "849f7fee0dbc015bc0f9cf3b421f657645b429f62ad2b20e2474e392eb53247d",
    "code/near80lib.py": "50891f16538caf618d11d15e7665b45e911d1a0cbe288fceeb303b91bd964b77",
    "code/phase_main.py": "c016e9b86f5291aabc75e3b058e9652fed3e80489c0c13ab928887e86972eaf5",
    "code/phases.py": "40d5dc8c48d1d35765356c04854f326a21f7f7e63dd087a398b84285b90ea2f8",
    "code/policy_phase.py": "e0dcaee30820b4aa907e0b25409349963baf9d702ba5945d3266a43494eaae7e",
-   "code/pooled.py": "1068c1b6b48cf0a2d735aae72f88badf316877876789363fa49061bdec848022",
+   "code/pooled.py": "f20b5fd8d4ac9a3b237bd21a1877783294b6a86826ee26de45e9dbcf8cff8c00",
    "code/settingdata.py": "b8828d08f0b357612b50c05cfc64f256b95dbe536b0a6af2bc4b34e0436d6160",
    "code/stubs.py": "bfa5cf1c5401edfab556f4b46a0f16395d9f8e90de7bd2c0eeff27f759a874d9",
    "code/test_approval.py": "1fb7e4152e24d67acced3158d1369841562e55c636ededb21b4dda5531edd120",
    "code/test_near80.py": "b4499a9f7fbd1a693ec0233766c42c9ba7d95e07b5dea611c0755f78c45d5c86",
-   "code/test_pooled.py": "96caf934b19f3df1e0783fb204435051b874323a3a99efe12106c0569eabea7a",
+   "code/test_pooled.py": "114cfc3583fb837a5585e4608246aaad4ea9ddd8c3f8968e94cb28ff9eb31b56",
    "code/test_runner.py": "bfaf0dd651287b3e3e0e7419d6f8611d68bd0da993c1598d9d7398213354f497",
    "code/v6bca.py": "804599c829cbbe0dead1e745f53f36ee33f23ddfbb90400c4de036a36307e891",
    "push_runfiles_near80.sh": "75ec9fb6ca126f211c41a607d6cf2384f830c625c704cc2b49876afa97241e46",
@@ -1337,12 +1338,12 @@
  },
  "missing": [],
  "no_training_checks_frozen": {
-  "code_manifest_sha256": "92e3233e73225c02d8463f197079bf9f2317a95f748a584e7004d5b089f3daf4",
+  "code_manifest_sha256": "4f6d38c46cca0232fc25afb2a2fab8068d808bde1ee5742e6408966e43be3a2f",
   "not_run": [],
   "passed": true,
   "path": "pre_approval/no_training_checks_seeds0_4.json",
   "rules": 117,
-  "sha256": "590294708e1f899f2f9e8ac6078cf3f95e3cfbc57c262c0f101a3fdf672c9f3e"
+  "sha256": "95c51fb801be215f5d2b338892b3a8aa36bc661640cda2938d881cc446459c3c"
  },
  "no_training_facts_seeds_0_4": {
   "fixed_test_start_sets": {
@@ -1569,7 +1570,7 @@
    3,
    4
   ],
-  "failed_seed": "a fresh seed that fails a data check or a learner fails every mark of claims 1-3 (so does one whose evaluation lacks a number that claims 1-3 read, with no failure or stop record); it fails claim 4 only on the gate's data checks (the five world checks, the ball's leak checks), a main-setting plumbing stop, or a main-setting evaluation that lacks a number claim 4 reads with no failure or stop record ('its evaluation (numbers missing)'); a missing near-80 or random-rows number never fails it; never replaced",
+  "failed_seed": "a fresh seed that fails a data check or a learner fails every mark of claims 1-3 (so does one whose evaluation lacks a number that claims 1-3 read, other than a matched rival, with no failure or stop record; one whose matched rivals could not be matched fails claim 1's marks only, and claims 2 and 3 read its numbers as usual); it fails claim 4 only on the gate's data checks (the five world checks, the ball's leak checks), a main-setting plumbing stop, or a main-setting evaluation that lacks a number claim 4 reads with no failure or stop record ('its evaluation (numbers missing)'); a missing near-80 or random-rows number never fails it; never replaced",
   "refused_always": [
    5,
    6,
@@ -1638,7 +1639,7 @@
   "claim_4": "nothing from the near-80 setting: only step 2's three marks; a seed fails claim 4 only on the gate's data checks (the five world checks, the ball's leak checks), a main-setting plumbing stop, or a main-setting evaluation that lacks a number claim 4 reads with no failure or stop record ('its evaluation (numbers missing)'); a missing near-80 or random-rows number never fails it",
   "claims_1_to_3": "harm >= 30 and none past 80% on >= 25% of strong-current steps, pooled, near-80 setting",
   "claims_2_and_3": "check 10 holds in >= 4 of 5 fresh seeds",
-  "failed_seeds": "the validity conditions are computed over the fresh seeds that did not fail; a failed seed fails every mark of claims 1-3 and claim 1's sentence names it; it never makes claim 1's validity fail; claims 2 and 3 then write their 'If a seed failed' sentences, or their 'If every seed failed' sentences when no seed is left (section 14.6); a seed with no failure or stop record whose evaluation lacks a number that the validity conditions, the marks or the sentences of claims 1-3 read (section 14.6 lists them; version 6's BCA, reported for scale only, is left out) fails in the same way ('its evaluation (numbers missing)'); check 10's count leaves out a failed seed whose band data were never built"
+  "failed_seeds": "the validity conditions are computed over the fresh seeds that did not fail; a failed seed fails every mark of claims 1-3 and claim 1's sentence names it; it never makes claim 1's validity fail; claims 2 and 3 then write their 'If a seed failed' sentences, or their 'If every seed failed' sentences when no seed is left (section 14.6); a seed with no failure or stop record whose evaluation lacks a number that the validity conditions, the marks or the sentences of claims 1-3 read, other than a matched rival (section 14.6 lists them; version 6's BCA, reported for scale only, is left out), fails in the same way ('its evaluation (numbers missing)'); a seed with no failure or stop record whose matched rivals could not be matched (for example, BCA's switch stayed off where full throttle stalls, so there was no strength to match) fails claim 1's marks only ('its matching (a rival could not be matched)'), and claims 2 and 3 and the validity conditions read its numbers as usual; check 10's count leaves out a failed seed whose band data were never built"
  },
  "version": "version 8, near-80"
 }

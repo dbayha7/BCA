@@ -633,9 +633,12 @@ unless stated. Every seed is needed. A failed or stopped seed fails every mark t
 - **Claim 4** has no validity condition from the near-80 setting (section 9.5).
 - **Failed seeds:** the conditions above are computed over the fresh seeds that did not fail. A failed seed fails
   every mark of claims 1-3 by the pre-set rule (section 10), and claim 1's sentence names it. It never makes the
-  validity conditions fail. A seed whose evaluation lacks a number that these conditions or claims 1-3 read, with no
-  failure or stop record, fails in the same way (its learner failed; section 14.6 lists these numbers). Claims 2 and
-  3 then say that they fail because of the failed seed, rather than report pooled numbers that cannot be computed.
+  validity conditions fail. A seed whose evaluation lacks a number that these conditions or claims 1-3 read, other
+  than a matched rival, with no failure or stop record, fails in the same way (its learner failed; section 14.6 lists
+  these numbers). Claims 2 and 3 then say that they fail because of the failed seed, rather than report pooled numbers
+  that cannot be computed. A seed with no failure or stop record whose matched rivals could not be matched (for
+  example, BCA's switch stayed off where full throttle stalls, so there was no strength to match) fails claim 1's
+  marks only, and claim 1's sentence names it; claims 2 and 3 and the conditions above read its numbers as usual.
   Check 10's count leaves out a failed seed whose band data were never built.
 
 ### 9.2 Claim 1: BCA's result holds with the band hidden
@@ -1035,8 +1038,9 @@ check 10 failed or a seed failed (both below):
   main setting. When a seed failed, a missed mark whose number is not available because of that seed is told by the
   seed's own clause only.
 - [check] is the name of the first check that failed, in the order of section 8.1; "its [phase] phase" for a
-  stopped phase; or "its evaluation (numbers missing)" for a seed whose evaluation lacks a number (the bullets on
-  missing numbers below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
+  stopped phase; "its evaluation (numbers missing)" for a seed whose evaluation lacks a number; or "its matching (a
+  rival could not be matched)" for a seed whose matched rivals could not be matched (the bullets on missing numbers
+  below). [value] is written with four significant digits, and [threshold] as section 8.1 writes it.
 - [reason] in claim 1's validity sentence is the harm reason when the harm is below 30 points, the past-80 reason
   when the share is below 25%, and both, joined by "; ", when both fail.
 - In the harm stop, "[or: ...]" is left out when only the harm fails; the second form replaces the first when only
@@ -1058,10 +1062,10 @@ check 10 failed or a seed failed (both below):
 - The validity conditions of section 9.1 are computed over the seeds that did not fail. A failed seed fails every mark
   of claims 1-3 and is told by its own clause in claim 1's sentence ("seed [s] failed [check] ..."); it never makes
   claim 1's validity fail. A seed with no failure or stop record whose evaluation lacks a number that the validity
-  conditions, the marks or the sentences of claims 1-3 read fails in the same way, with [check] "its evaluation
-  (numbers missing)": its learner failed (section 10). These numbers, all in the near-80 setting unless stated, are:
-  in strong current in both worlds, the points of BCA's switched ramp, no caution and the five rules that cannot
-  switch themselves off (claim 1's net lead and even pull); in the stalling world, the points of BCA's switched ramp
+  conditions, the marks or the sentences of claims 1-3 read, other than a matched rival (see below), fails in the same
+  way, with [check] "its evaluation (numbers missing)": its learner failed (section 10). These numbers, all in the
+  near-80 setting unless stated, are: in strong current in both worlds, the points of BCA's switched ramp, no caution
+  and the always-on ramp (claim 1's net lead and even pull); in the stalling world, the points of BCA's switched ramp
   and no caution in the other three situations (keeping the gain), and in strong current the full-log actor's points
   and no caution's share past 80% (the validity conditions), the unseen-throttle gain and overshoot loss of BCA's
   switched ramp, no caution and the hand-set range limit (claim 2 and its "for scale" sentence), the hand-set range
@@ -1075,6 +1079,11 @@ check 10 failed or a seed failed (both below):
   points in strong current in the stalling world (the "Always, when both settings ran" sentence). A missing near-80
   or random-rows number never fails claim 4, and a missing main-setting number fails claims 1-3 only when they read
   it (without the random-rows control).
+- A seed with no failure or stop record whose matched rivals could not be matched (for example, BCA's switch stayed
+  off where full throttle stalls, so there was no strength to match) fails claim 1's marks only, with [check] "its
+  matching (a rival could not be matched)"; claims 2 and 3 and the validity conditions read its numbers as usual. The
+  matched rivals' numbers are the near-80 points in strong current, in both worlds, of the matched range limit, the
+  matched even pull and the two matched random surfaces.
 - Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5
   that was missed.
 - On seeds 0-4, the "Always attached" sentence is not written; every claim sentence (sections 14.1-14.4) starts with
