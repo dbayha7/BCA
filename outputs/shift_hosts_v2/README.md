@@ -15,5 +15,5 @@ lie outside the study's code manifest and outside `gate.EXTERNAL_CODE` (`experim
   scratch folder (numpy 2.2.6, JAX 0.6.2 and flax 0.10.7 in a scratch environment; the four situation banks real, the
   three weighting banks made up), and their absolute paths are that folder's.
 - `calibration/outputs/`: their outputs. `out_<scale>_<defect>.txt` are the calibration cases of section 19.6 and
-  19.7 ("Risk"); `smoke_out_15000.txt`, `smoke_out_10000.txt` and `negative.log` are the final smoke test and the
+  19.7 ("Risk"); `smoke_out_15000.txt`, `smoke_out_10000.txt` and `negative_controls.txt` are the final smoke test and the
   negative controls.
