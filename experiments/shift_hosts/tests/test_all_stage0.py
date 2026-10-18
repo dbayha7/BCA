@@ -30,8 +30,9 @@ Two roles, chosen by the device (tests.device(), SHIFT_HOSTS_DEVICE):
              (section 7.2), restating the plan's cost model (scratchpad wf6/understand/env/cost_model.py, card_run, with
              the review's corrections of wf6/plan/checks/recost.py) with the measured numbers.
     hygiene  The WSL package equals the staging folder (sync.sh's rule: carriage returns dropped from *.py), no
-             __pycache__ under /root/bca-hosts, git status shows only the package as new, and the code manifest is
-             the one the suite started with.
+             __pycache__ under /root/bca-hosts, git answers (exit 0, a HEAD) and its status shows no change outside
+             the package (the package new, changed or committed: pre-specification version 2, PRESPEC.md section
+             19), and the code manifest is the one the suite started with.
     After the tests the main block writes runs/shift_hosts/stage0/SUMMARY.json and
     runs/shift_hosts/stage0/manifest_draft.json (each with a sidecar): the draft holds the SHA-256 of every package
     file and of the four Unifloral files (gate.code_manifest). It is a draft: the freeze (prespec.json, the
@@ -707,6 +708,7 @@ def hygiene(staging=None):
     st = subprocess.run(["git", "--no-optional-locks", "-C", str(REPO), "status", "--porcelain"], capture_output=True,
                         text=True)
     out["git_status"] = st.stdout.splitlines()
+    out["git_status_returncode"] = st.returncode
     out["git_head"] = subprocess.run(["git", "--no-optional-locks", "-C", str(REPO), "rev-parse", "HEAD"],
                                      capture_output=True, text=True).stdout.strip()
     if staging:
@@ -901,8 +903,9 @@ class TimingReadoutTest(unittest.TestCase):
 
 class HygieneTest(unittest.TestCase):
     def test_hygiene(self):
-        """The WSL package equals the staging folder; no __pycache__; git shows only the package as new; the code
-        manifest is the same before the suite, after it, and now (no code changed while the tests ran)."""
+        """The WSL package equals the staging folder; no __pycache__; git answers (exit 0, a HEAD) and shows no change
+        outside the package; the code manifest is the same before the suite, after it, and now (no code changed while
+        the tests ran)."""
         h = hygiene(OPTIONS["staging"])
         run = suite_dir()
         now = gate.code_manifest()
@@ -910,7 +913,13 @@ class HygieneTest(unittest.TestCase):
                                   now=[canonical_sha256(now), len(now)])
         READOUTS["hygiene"] = h
         self.assertEqual(h["pycache"], [])
-        self.assertEqual(h["git_status"], ["?? experiments/shift_hosts/"])
+        # git itself must have answered: an empty status from a failed git would otherwise pass the check below
+        self.assertEqual(h["git_status_returncode"], 0, h["git_status"])
+        self.assertRegex(h["git_head"], r"^[0-9a-f]{40}$")
+        # porcelain lines "XY path" (or "XY old -> new"): every path inside the package; empty passes too
+        outside = [line for line in h["git_status"] if not all(part.strip('"').startswith("experiments/shift_hosts/")
+                                                             for part in line[3:].split(" -> "))]
+        self.assertEqual(outside, [], h["git_status"])
         if h["staging_vs_wsl"]["checked"]:
             self.assertEqual(h["staging_vs_wsl"]["mismatches"], [])
         for tag in ("before", "after"):

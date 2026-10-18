@@ -230,6 +230,9 @@ CAVEATS = (
     "shelved claim means no effect large enough to see with 5 seeds, not no effect.",
     "Two point scales: the weighting banks put 0 at uniformly random commands, the four situations at the main study's "
     "recording controller; 100 is the stall-aware controller on both.",
+    "Post hoc: S7's closed-loop limit is pre-specification version 2's 0.05 points per start (version 1: 0.01), set "
+    "after version 1's stage 1 stopped on it (ReBRAC alone, big kicks, 0.0114 points) and before any return was read "
+    "(PRESPEC.md section 19).",
 )
 
 

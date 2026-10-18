@@ -1,8 +1,27 @@
-# Unifloral hosts on ThrusterChain: pre-specification version 1
+# Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc) [DRAFT]
 
-Drafted 16 October 2026, after stage 0, and checked against the package as it stood that morning. It is frozen, with
-`prespec.json` beside it, before any run on real ThrusterChain data. You approve both at your own terminal with
-`approve_hosts.py` (section 18).
+> **DRAFT of 17-18 October 2026: not frozen, not approved.** Drafted in the cloud from version 1's frozen files and
+> revised after review. Before the freeze, on the laptop: the investigation of section 19.6 runs while version 1's
+> approval still verifies (the probe checks it, so the code it imports is version 1's), and its result is written
+> there; you decide what happens if 0.05 is exceeded later (section 19.7); this paragraph is deleted, " [DRAFT]" leaves
+> this title and `prespec.json`'s, `prespec.json`'s `status` becomes `"frozen"` and its three `[TO FILL ...]` slots
+> are filled (section 19.8, step 2). Only then does the stage-0 suite run on these bytes, and only then does
+> version 2 have its fingerprint.
+
+**Version 2 (post hoc).** Drafted 17 October 2026, after version 1's stage 1 stopped on stop rule S7 on 16 October.
+It changes one rule after the start, with a value chosen after the failing value was seen, so the change is post hoc:
+S7's closed-loop limit is 0.05 points per start, not 0.01. Nothing else in the rules changes; the change's
+consequences (stage 1 reruns in full, one stage-0 test is adapted to the committed package, and `results.json` carries
+a post-hoc caveat) are listed in section 19.7. Version 1 was frozen at commit `2e59db0` and approved at `608eefa`
+(fingerprint `8c5e8421922dcceb`). Section 19 is version 2's write-up: what version 1 ran, the stop, your decision,
+what had been seen, what the change can and cannot affect, the investigation, the restart and the budget. The rest is
+version 1's text, changed only in the S7 row of section 9.2, the list of differences below and one note each in
+sections 13 and 18. Where it speaks of the present ("Stage 0 is built and tested", "Nothing has
+trained on ThrusterChain data"), it describes 16 October, before stage 1 started.
+
+**Version 1.** Drafted 16 October 2026, after stage 0, and checked against the package as it stood that morning. It
+is frozen, with `prespec.json` beside it, before any run on real ThrusterChain data. You approve both at your own
+terminal with `approve_hosts.py` (section 18).
 
 **What has and has not happened.** Stage 0 is built and tested. Nothing has trained on ThrusterChain data, no band has
 been fitted on real arrays, and no learned policy's return has been produced or read. BCA's code has run only on
@@ -22,8 +41,8 @@ learning, and fixed, non-learned controllers were scored for the scoring cache.
   the approval files excluded) and of the repository code the package runs (section 9.2, S1). Every run on real data
   re-checks the fingerprint, so any later change to code, settings or rules is refused until a new version is approved.
 - Where this document and the plan differ, this document holds. Every difference is listed with its reason: the
-  decisions in section 7, the amendments in section 16 and the readings in section 17. Everything else is as the plan
-  says.
+  decisions in section 7, the amendments in section 16, the readings in section 17 and version 2's post-hoc change in
+  section 19. Everything else is as the plan says.
 - All of it is exploratory (section 15). No claim from data seeds 0-4 is confirmatory.
 
 ---
@@ -452,7 +471,7 @@ per-step outputs. "Relative difference" of a leaf is max|a − b| / max|b|.
 | S5. Numbers | Any non-finite loss, metric, parameter, dose, weight or return; a NaN threshold (R = +∞ is a counted refusal, decision 3); a dose outside [1, 1.5] (ReBRAC: outside its [1, 2] check); any false per-step validity flag (section 5.3); a refresh failing BCA's own validity checks. A failed run is recorded, never silently retried; what follows is section 9.1. A non-finite scored return (any bank of a scores file) is that learner's Claim 0 outcome for an alone or room run, and halts the driver for a BCA setup unless accepted with `--accept-s5` |
 | S6. Compute | After stage 1: (a) stage 1's measured speeds, at the chosen number of runs sharing the card, project stages 1-2 of a quality, with its totals so far, above its approved cap; or (b) a learner alone's stage-1 time per outer step is more than twice its random-array reference (TD3+BC 0.6 ms, CQL 2.1, IQL 0.33, ReBRAC 1.6; both one run at a time, since stage 1 runs each learner alone by itself, so the limit is never scaled by a two-at-once slowdown). During stage 2: an alone run takes more than twice its stage-1 time per outer step at the chosen concurrency (the stage-1 time times the measured slowdown of a run sharing the card, when two run at once). A resumed driver reuses stage 1's S6 decision while stage 1's records are unchanged. Stop and re-cost |
 | S6b. Budget, as it runs | Before each unit of a quality (the sham-alone block, each seed, the room-reference block): the running totals plus the scoring work already queued plus the unit's projected cost would pass the quality's approved cap. The driver stops between whole units, never inside one; a resumed driver projects only the runs of a unit that have no record yet, and skips the check for a unit with nothing left to run. A card-hour is one hour of wall-clock time with at least one card run active (the union of card-run intervals on the monotonic clock, so two runs at once never count twice); a processor-hour is one hour of measured processor time (user plus system) summed over all processes, the driver's own included, which counts a card run's busy waiting as it really is. A child still running when its driver ended is counted to the driver's last heartbeat, and a run that finished unwatched is counted from its own record |
-| S7. Float32 check | Open loop, by file, on the processor: the float32 restatement in `actors_f32.py` and the learner's own float32 network disagree by more than 1e-7 on any saved state (CQL with the same ε). Closed loop, in the scoring environment: that restatement and the float64 scoring adapter disagree by more than 0.01 points on any start (CQL with the declared noise). Run on every stage-1 actor and on every seed-0 final actor of the alone, standard and IW setups; stage 1's checks and the end of each quality read every result again, and a resumed driver reads a finished lane's result before skipping it |
+| S7. Float32 check | Open loop, by file, on the processor: the float32 restatement in `actors_f32.py` and the learner's own float32 network disagree by more than 1e-7 on any saved state (CQL with the same ε). Closed loop, in the scoring environment: that restatement and the float64 scoring adapter disagree by more than 0.05 points on any start (CQL with the declared noise; version 2's post-hoc limit, section 19; version 1's was 0.01). Run on every stage-1 actor and on every seed-0 final actor of the alone, standard and IW setups; stage 1's checks and the end of each quality read every result again, and a resumed driver reads a finished lane's result before skipping it |
 | S8. Card repeatability | The two identical 15,000-step runs of a learner's IW setup (stage 1, seed 0) differ in any bit: final key, learner state, BCA state, any per-step output or any refresh's threshold |
 | S9. Recorded environment | A card run's environment signature (`stages.env_signature`: Python, executable, package versions, card name and driver, the recorded environment variables, `XLA_FLAGS` in effect, matrix precision, JAX's platforms, backend and devices, Unifloral's revision and manifest SHA-256) differs from `prespec.json`'s `environment.s9_signature` in any key either names. Checked by each real run before its first chunk and again on its record; the driver refuses to start without a complete signature |
 | S10. Equal before the first refresh | At outer step 10,000, just before the first refresh, a BCA setup's learner state (Unifloral's parameters and optimizer states) or key differs in any bit from its learner alone's (stage 1, seed 0, real data). For TD3+BC and IQL this is a readout, with the snapshots' leaf-by-leaf differences, not a stop (decision 2); for CQL and ReBRAC it stops |
@@ -607,6 +626,9 @@ instead (section 13). The numbers of the caps are unchanged.
   score figure from test_scoring's measured 59.6 s for 5 actor readouts on all 7 full banks; the others are
   allowances). The first defaults, 120, 180, 300 and 90 s, added about 6 processor-hours of projection that no
   measurement supports. Once a lane of a kind has run, its measured time replaces the default.
+- **Version 2 (section 19.9).** Version 1's stopped stage 1 used 0.2785 card-hours and 0.4090 processor-hours. They
+  stay counted against medium-expert's cap in the kept ledger, and stage 1 runs again on top of them. The version-2
+  stage-0 suite is stage-0 work, booked separately. The caps are unchanged.
 
 ## 14. Seeds: exploratory now, reserved for a later confirmation (plan 5.3)
 
@@ -785,6 +807,8 @@ left out; the build reports list them.
 
 ## 18. What happens after approval
 
+For version 2, section 19.8 replaces steps 1-3 below; steps 4-7 stand.
+
 1. **You approve at your terminal** (plan 10, item 15, with amendment A11). In a Windows terminal, one line at a time:
 
    ```bash
@@ -838,6 +862,333 @@ left out; the build reports list them.
 7. **Afterward**: if Claims 1 and 2 are shelved everywhere, the study ends after seeds 0-4. Where a claim passes, stage 3
    needs a new pre-specification version (its code is not built yet) within its cap, and a confirmation needs fresh data
    seeds 10-14 of the weighting test's generator under a pre-registration you approve at your terminal.
+
+## 19. Version 2: the change made after the start (post hoc)
+
+This section is the write-up that section 9.1 asks of a new version. Everything in it was decided after version 1's
+stage 1 had started and stopped, so none of it is pre-specified in version 1's sense, and the change it makes is
+labeled post hoc wherever it is reported (section 19.10).
+
+### 19.1 What version 1 ran
+
+- **Version 1** was frozen on 16 October 2026 at 16:21 UTC (commit `2e59db0`, fingerprint
+  `8c5e8421922dccebe5b86f47b44c8d86def2dbdec7da84ba78ba2ba807728179`) and approved by you at your terminal (approval
+  file written 16:29:12 UTC, committed as `608eefa`).
+- At 16:53 UTC the main session's pre-start checks of section 18 passed (the gate verified, S0 passed on the frozen
+  bytes). The auto-mode safety check refused to let the main session start the driver, so you started it yourself, at
+  about 16:58 UTC, in WSL `/root/bca-hosts`, with section 18's command (driver process 410).
+- **Stage 1** (medium-expert, data seed 0, 15,000 outer steps) ran in its fixed order. TD3+BC, CQL and IQL completed
+  all five setups (alone, standard, IW, IW with every weight 1, the IW repeat), and all 15 of their S7 lanes passed
+  both halves. ReBRAC alone completed (exit 0, 49.2 s wall); its S7 lane failed. ReBRAC standard, started at 17:12:00,
+  was running at the halt and was left to finish, as section 9.1 says (no process was left by 17:15; its record is
+  checked on the laptop). ReBRAC's IW, weights-of-1 and repeat runs never started.
+- In all, 17 card runs ended and 16 S7 lanes ran (15 passed, 1 failed). Stage 1's checks S2, S4, S6, S8 and S10 were
+  never computed (the driver's `status.json` lists no checks).
+
+### 19.2 The stop and its numbers
+
+At 17:12:14 UTC the driver stopped: `STOP (S7): stage1/medium-expert/seed0/rebrac-alone/s7: the float32 check failed
+(see its s7.json)`. Nothing was retried.
+
+ReBRAC alone's `lanes/s7-step15000/s7.json`:
+- **Open loop**: passed bit for bit. On all 7,400 saved states the restatement's commands equal Unifloral's own float32
+  network's (`bit_identical_rows` 1.0, `max_abs` 0.0; limit 1e-7).
+- **Closed loop**: failed on one bank, big kicks, and passed on the other six. Differences between the float32
+  restatement and the float64 scoring adapter, over each bank's 1,000 starts (`tol_points` 0.01):
+
+  | Bank | Largest \|points difference\| | Largest \|return difference\| | Mean \|points difference\| |
+  |---|---|---|---|
+  | none | 0.00023 | 0.0018 | 4.6e-7 |
+  | mild | 0.00016 | 0.0016 | 1.0e-6 |
+  | strong | 0.00084 | 0.0107 | 2.4e-6 |
+  | recorded | 0.00035 | 0.00019 | 1.7e-6 |
+  | strong current | 0.0024 | 0.0036 | 1.3e-5 |
+  | big waves | 0.00046 | 0.00032 | 2.3e-6 |
+  | **big kicks** | **0.01139** | **0.0114** | **6.5e-5** |
+
+- `s7.json` keeps each bank's largest and mean difference, not how many starts passed the limit. The big-kicks mean
+  (0.0645 points summed over 1,000 starts) allows between 1 and 6 starts above 0.01. "One start of 1,000", as the
+  question to you put it, was an inference, not a record.
+- The 15 passing lanes of TD3+BC, CQL and IQL: their largest big-kicks differences were 2.5e-5 to 2.5e-4 points and
+  their largest big-waves differences 9.3e-6 to 7.9e-5 points (the display, cut at 900 characters per file, showed
+  those two entries; the other five banks were not displayed).
+- Compute at the stop (`STOP.txt`): medium-expert 0.2785 card-hours and 0.4090 processor-hours; medium none.
+
+### 19.3 Your decision
+
+On 16 October 2026 at 17:16:09 UTC, in chat, you chose the option the main session (Claude) had proposed and marked
+recommended, "Investigate, then version 2 (Recommended)", described as: "I confirm that one episode is rounding
+amplification, not a bug. Then I write pre-spec version 2, labeled post-hoc: S7's closed-loop limit becomes 0.05 points
+per start, everything else unchanged. The test suite reruns and you approve at the terminal. Needs the laptop
+charged." The question (17:16:03 UTC) summarized the stop as "ReBRAC: one start of 1,000 off by 0.0114 points vs the
+0.01 limit"; the stop report and the per-bank numbers of section 19.2 were in the session's tool output (17:15:43 UTC),
+not in a message to you. The question gave the limit in points only; section 19.5 converts it to return units (on the
+strong mix, 0.05 points is 0.635 return units per start). On 17 October you said to go ahead with drafting version 2.
+
+The value 0.05 was proposed by the main session after the failing value was known (it is 4.4 times 0.01139) and was
+fixed by nothing before it, so the change is post hoc. It was chosen before the investigation of section 19.6 ran, and
+that investigation's result does not move it (section 19.6 says what happens if it finds a defect).
+
+### 19.4 What had and had not been seen before the change
+
+- **Seen**: S7's difference statistics for 16 stage-1 actors (per bank, the largest and mean absolute points
+  difference and the largest absolute return difference between the float32 and float64 versions of one policy; the
+  open loop's command differences), the driver's log lines (wall-clock and processor seconds per run; each displayed
+  card run ended "exit 0 (complete)"), its status and the budget totals. Two weak facts follow from these: every
+  stage-1 run shown completed without a stop on its training numbers (no S5), and the S7-checked actors' returns were
+  finite (S7's pass flag requires it, `evaluate.py:606`, and the failing bank's largest difference is finite), at
+  15,000 steps.
+- **Not seen**: no return, points level or score of any learned policy, and no training metric. Stage 1 writes no
+  scores file: its only lanes are S7 lanes (`stages.py:877-882`). `s7.json` holds differences only
+  (`evaluate.py:568-585, 605-609`); the returns behind them exist only in the lane's memory.
+- **On the laptop, never read**: the 17 actors; their run records (per-chunk loss means, including the critics' value
+  estimates); and S7's saved states and commands, from which 74 episode returns per actor could be computed.
+- So **no return had been read before the change**, and no stage-1 return has been displayed in the session since;
+  that none was read on the laptop is yours to confirm before you approve. The investigation of section 19.6 prints
+  differences only and keeps it that way. The decision used only a float32-against-float64 difference of one policy
+  with itself (its cause is the question of section 19.6); it carries no return level and nothing that orders the
+  setups on any claim.
+
+### 19.5 What the change can and cannot affect
+
+- **What the claims read.** Every claim reads only the scored returns of the float64 adapter (`evaluate.score_actor`,
+  through `policies.adapter`; sections 5.6 and 10). The float32 restatement appears only inside S7 (`evaluate.py:576,
+  602`), and S7's closed-loop limit only in S7's own pass flag (`evaluate.py:606`). No claim's number (return, Δ,
+  bound, p-value, Holm step, Claim 0 bar or badge) depends on the limit: each is computed the same way under either
+  limit.
+- **What it decides.** Whether the driver halts, as soon as any S7 lane fails (`stages.py:345-346, 946-952,
+  989-990`): on the 20 stage-1 actors, and on each quality's 12 seed-0 final actors of the alone, standard and IW
+  setups (`stages.py:876-879`); stage 1's checks and each quality's end read every result again (`stages.py:1043,
+  1231-1250`).
+  Seeds 1-4 get no S7 lane. And S7's status in `results.json`.
+- **The new limit in return units.** S7 is judged in points on each bank's own scale; the claims are judged in return
+  units, with a bar of 1.8 on the mean of 5 seeds (section 10). Per start, 0.05 points is (version 1's 0.01 in
+  brackets):
+
+  | Bank | Points per return unit | 0.05 points in return units | Version 1 |
+  |---|---|---|---|
+  | none (Claims 0, 3, 3b) | 0.1307 | 0.383 | 0.077 |
+  | mild | 0.0993 | 0.503 | 0.101 |
+  | strong (Claims 1, 1c, 2, 2c) | 0.0787 | 0.635 | 0.127 |
+  | recorded | 1.871 | 0.027 | 0.005 |
+  | strong current | 0.666 | 0.075 | 0.015 |
+  | big waves | 1.416 | 0.035 | 0.007 |
+  | big kicks | 1.003 | 0.050 | 0.010 |
+
+  (The ratios are each bank's 100 / (top anchor − bottom anchor), and equal `s7.json`'s largest points difference
+  over its largest return difference.)
+- **What it bounds.** S7 checks that the policy scored in float64 acts as the learner's own float32 network does, and
+  only for seed 0's final actors (seeds 1-4 are never checked). At 0.05 points, a strong-bank start may differ by up to
+  0.635 return units between the two; if every start sat at the limit in one direction, one setup's seed-0 strong-mix
+  mean could differ by 0.635 return units, 35% of the 1.8 bar (version 1: 0.127, 7%). Each setup of a Δ may differ in
+  its own direction, so a seed-0 Δ on the strong mix may stand up to 2 × 0.635 = 1.27 return units (71% of the bar;
+  version 1: 0.25, 14%) from the same Δ computed with the float32 networks, and up to 0.77 (43%) on the no-shift bank
+  (Claims 3 and 3b). Observed differences are far smaller: ReBRAC alone's largest strong-bank difference was 0.0107
+  return units on one start, its mean 2.4e-6 points.
+
+### 19.6 The investigation (your chosen first step)
+
+- **Question**: is ReBRAC alone's big-kicks difference consistent with float32 rounding that the closed loop
+  amplified, or is there a defect in the float64 adapter or the float32 restatement?
+- **Tool**: `probe_s7.py`, carried on the branch `claude/shift-hosts-v2` at `outputs/shift_hosts_v2/probe_s7.py`
+  (outside the code manifest) and run from a copy outside the repository, on the laptop at `/root/s7probe/`, so it is
+  in neither the code manifest nor the bytecode check (`gate.py:108-151`); the copy is taken with `git show` from the
+  Windows clone, so nothing in `/root/bca-hosts` changes (section 19.8, step 1). It runs on the laptop, in the scoring environment, with
+  `python -B` and `PYTHONDONTWRITEBYTECODE=1`, before any version-2 byte reaches `/root/bca-hosts`, and only while
+  version 1's approval still verifies: it checks that the approval that verifies is version 1's (fingerprint
+  `8c5e8421922dcceb`), so the code it imports is version 1's, and it has no option to skip that check. The probe itself
+  is not approved code: it runs because you chose "Investigate" (section 19.3) and makes no record of the study. It
+  writes nothing under the repository and has no option to print anything but differences, ratios, ranks, counts,
+  start indices and SHA-256 values: never a return, a points level, a command or a state. It runs twice: on the
+  stage-1 actors at their final step (15,000), and on the same runs' 10,000-step actors (the trend, shown and not
+  judged).
+- **What it measures**, per bank of ReBRAC alone's stage-1 actor (and, with `--compare`, of the other three learners'
+  alone actors): the lane's own rollouts again, which must reproduce `s7.json` bit for bit; the distribution of
+  |points difference| over the 1,000 starts (quantiles, and counts above 0.001, 0.005, 0.01, 0.02 and 0.05); the gap
+  between the two networks at the same state, at every step of both rollouts (the gap injected per step, which S7
+  never measured on a trained actor); a float32 reference spread at the same states (the same actor's formula
+  evaluated a second way in float32, in plain numpy, against the restatement: the size of float32 rounding at this
+  actor's own activations); a control of the same size that leaves the restatement out (the float64 adapter plus
+  offsets of the measured injected size at each start, step and command coordinate, five sign draws, signs fixed per
+  start or drawn per step); smaller controls, shown and not judged (the float64 adapter with its command rounded to
+  float32, or with every float of the start moved by one unit in the last place, and the restatement with its start so
+  moved); and, for the worst start of big kicks, the divergence step by step with any branch the two runs took
+  differently (the observation's float32 rounding, the 80% knee, a command at exactly ±1, flipped ReLU units).
+- **How it is read, fixed now, before it runs on a trained actor.** Only ReBRAC alone's 15,000-step actor is judged;
+  every other actor, step and cell is shown and not judged, and the output marks the judged cells. The reading is
+  "consistent with float32 rounding amplified by the closed loop" when the lane's numbers reproduce bit for bit on all
+  seven banks and all three hold:
+  1. on each of the seven banks, the largest injected gap, over every state of both rollouts, is at most max(1e-5, 10 ×
+     the largest float32 reference spread at the same states); 1e-5 is stage 0's bound for the adapter against the
+     restatement (test (h2)), and the reference spread scales it to this actor's activations, since float32 rounding
+     grows with them (test (h2) records its extreme rows unjudged for that reason, `tests/test_scoring.py:262-265`);
+  2. on big kicks' worst start, the propagated gap (the float64 network at the two runs' different states) reaches the
+     injected one at some step t ≥ 1, and on every such propagation-dominated step the state divergence grows by at
+     most 10 times in one step; steps where a new injection dominates are shown, not judged;
+  3. on big kicks, the same-size control, taken as the largest of its five draws, moves the bank's largest difference
+     by 0.1 to 10 times the restatement's largest difference. The same ratio at the worst start is shown, not judged:
+     that start is selected as the restatement's most extreme of 1,000 and the control's value there is not, which
+     biases that ratio low.
+
+  Any other outcome reads as a possible defect. Readings 2 and 3 test amplification only: the control takes its size
+  from the measured gap, so they hold for any small injected gap, defect or rounding alike. Reading 1 alone bounds the
+  injected gap, so a defect in the float64 adapter smaller than its bound per command coordinate is not excluded.
+- **How these rules were set.** After a cloud calibration on made-up actors and before any trained actor was probed. An
+  earlier bound of about 1e-6 flagged defect-free made-up actors. The rules first drafted here (an absolute 1e-5 in
+  reading 1, every step in reading 2, the worst start in reading 3) flagged defect-free made-up ReBRAC actors whose
+  kernels were scaled by 1.25 to 3 (reading 1 at scales 2 and 3, reading 2 at 1.25 and 3), and the worst-start ratio
+  fell to 0.16 at scale 2, within 1.6 times of its limit. With the rules above, on made-up ReBRAC actors scaled by 1,
+  1.25, 1.5, 2 and 3 and no defect (the four situation banks real, the three weighting banks made up), every bank
+  reproduced the lane's computation bit for bit and all three readings held: the injected gap was 1.1 to 2.5 times the
+  reference spread and at most 25% of its bound, the largest growth on propagation-dominated steps 0.07 to 0.86 of a
+  decade, and the control's ratio 0.73 to 1.69. Made-up defects in the float64 adapter, run through the same judged
+  path, an output bias off by 1e-4 (kernels scaled by 1 and by 2) and a wrong branch on rare states, failed reading 1;
+  readings 2 and 3 held for them, as they must. A 1e-4 bias at scale 3, where the reference spread is 3e-5, was not
+  detected: that is the size limit stated above. The made-up actors of all four learners at scale 1 gave the same
+  picture. The calibration's harness and outputs are in `outputs/shift_hosts_v2/calibration/`, outside the package.
+- **If the lane's numbers do not reproduce, or the reading is a possible defect**, this draft is not frozen. A defect
+  is a code fix and needs its own version (section 9.1); the 0.05 limit is not used to cover it.
+- **Result.** [TO FILL ON THE LAPTOP BEFORE THE FREEZE: the date and time; the SHA-256 of the probe file and of both
+  saved outputs; whether the lane's numbers reproduced bit for bit on every bank; the number of big-kicks starts above
+  0.01 and above 0.05; readings 1-3 with their numbers (the largest injected gap against its bound, the first
+  propagation-dominated step and the largest growth on such steps, the control's ratio) and the verdict line; the
+  largest |points difference| of each bank for the four alone actors at 15,000 and at 10,000 steps.]
+
+### 19.7 The change, exactly, and what stays
+
+- **The change.** `evaluate.S7_CLOSED_TOL_POINTS` is 0.05, not 0.01 (`evaluate.py:95`, the one place it is enforced):
+  per start, on all 7 banks and all 1,000 starts of each, on both of CQL's readouts, for every stage-1 actor and every
+  seed-0 final actor of the alone, standard and IW setups. The open loop's 1e-7 and stage 0's adapter-against-
+  restatement 1e-5 are unchanged.
+- **Edits that follow from it** (all in the code manifest, so the fingerprint changes): the limit's statements in
+  `evaluate.py`'s and `actors_f32.py`'s docstrings; test (h4) in `tests/test_scoring.py`, renamed and its docstrings
+  updated (its body reads the constant, so it now checks 0.05); one caveat added to `export.CAVEATS`, so
+  `results.json` states the post-hoc limit (section 19.10; no number `export.py` computes changes); this document's
+  title, header, list of differences, S7 row (section 9.2), section 13 and section 18 notes and this section; and
+  `prespec.json` (version, title, approval summary, S7, the history of versions). One stage-0 test changes because of
+  the restart, not the limit: since 16 October the package is committed in `/root/bca-hosts`, so `git status` can no
+  longer show it as new, and the hygiene test (`tests/test_all_stage0.py`) now requires that git answers (exit status
+  0 and a HEAD) and shows no change outside the package. It runs in the suite whose summary S0 reads
+  (`gate.py:293-303`), so it changes what passes S0 in exactly that way.
+- **Unchanged**: everything else: every other threshold, claim, mark and bar, the seeds, the caps, the settings, the
+  Unifloral pins, the data and the scoring cache, the fingerprint's format (`gate.py`), `approve_hosts.py`, and the
+  repository code outside the package. Version 1's approval files stay committed and unchanged; they are outside the
+  code manifest, and the gate opens only the current fingerprint's file.
+- **Stage 1 runs again, in full** (20 runs) under version 2's fingerprint. Version 1's records name the old
+  fingerprint and can never count: the runner refuses a record of another identity, and the driver halts on a record of
+  another fingerprint (`runner.py:1043-1053`, `stages.py:779-782`). This reruns a stage that stopped. Section 9.1's "a
+  recorded stop is never rerun" still holds for version 1's records, which stay unchanged in an archive (section
+  19.8), but the stage itself runs again under this version. Repeated card runs are bit for bit (S8), so ReBRAC alone is
+  expected to reproduce its 0.0114 points, which passes at 0.05.
+- **Risk, stated now.** 0.05 is 4.4 times the one value seen, which is the largest of a heavy-tailed distribution (on
+  big kicks, 177 times the mean), measured on 15,000-step actors only; nothing shows how that tail grows by 100,000
+  steps, where the claims are judged. On made-up ReBRAC actors with no defect, rounding-only differences grew much
+  faster than the network's scale: with every kernel scaled by 1, 1.25, 1.5, 2 and 3, big kicks' largest difference was
+  0.00065, 0.0072, 0.13, 0.14 and 22.6 points, and 0, 0, 1, 3 and 32 of 1,000 starts exceeded 0.05 (the cloud
+  calibration of section 19.6). So a later actor may exceed 0.05: one of ReBRAC's stage-1 BCA actors, or any seed-0
+  final actor. A failing S7 lane halts the driver as soon as it finishes (`stages.py:345-346, 989-990`), and S7 has no
+  accept option (section 8). Stage 2a runs the sham-alone block first and then seed 0 learner by learner
+  (`stages.py:1123-1145, 1173`; TD3+BC, CQL, IQL, ReBRAC, `runner.py:125`), so a stop on a ReBRAC seed-0 actor would
+  come after the sham block's 2 runs and 9 seed-0 runs have trained, with their scoring lanes run or queued (scores
+  files on disk, unread). The investigation's 10,000-step run shows whether the tail grew from 10,000 to 15,000 steps.
+- **If 0.05 is exceeded later.** [TO FILL BEFORE THE FREEZE, YOUR DECISION: what happens then. The review proposed
+  "the stop stands; that quality is reported as stopped by S7; no later version relaxes S7 again". With nothing
+  written here, section 9.1 applies: the study waits for another version, written after scores files exist, whose
+  write-up says whether any return had been read.]
+
+### 19.8 The restart, in order
+
+Version 2 replaces steps 1-3 of section 18 with these; steps 4-7 stand.
+
+1. **The investigation** (section 19.6), on the laptop, with version 1's bytes on disk and its approval verifying:
+   two runs, the final step (`--list-s7 --compare`) and the 10,000-step actors (`--step 10000 --compare`). Nothing
+   under `runs/shift_hosts/` is moved or changed before it. The probe is copied out of the Windows clone, not out of
+   `/root/bca-hosts`, which stays at `608eefa` (the commands are at the top of `probe_s7.py`).
+2. **The freeze edits**, in this document and `prespec.json` only: section 19.6's result and section 19.7's decision are
+   filled in; `prespec.json`'s three `[TO FILL ...]` slots are filled in (two lines of `approval_summary`, the
+   investigation's result and your decision, so the approval screen shows both, and `post_hoc_changes` P1's
+   `if_exceeded_later`); the draft paragraph under the title is deleted; " [DRAFT]" leaves both titles; `prespec.json`'s
+   `status` reads `"frozen"`. Then `grep -n "TO FILL" PRESPEC.md prespec.json` prints nothing, and `prespec.json` still
+   loads and `stages.frozen_config()` still works.
+3. **The version-2 bytes in both places**: `/root/bca-hosts`, with the branch `claude/shift-hosts` fast-forwarded to
+   the version-2 draft commit (the reviewed draft, committed without the freeze edits) and step 2's freeze edits
+   applied on top, not yet committed; and the Windows staging folder with the same bytes. `run_stage0.sh` copies the
+   staging folder into WSL first, so the staging folder must hold the final bytes. The two must be equal byte for byte
+   (LF line endings), with no `__pycache__` anywhere. Uncommitted package edits pass the hygiene test (section 19.7).
+4. **Version 1's stage 1 moved aside, never deleted** (git ignores `runs/`): `runs/shift_hosts/stage1/` to
+   `runs/shift_hosts_v1/stage1/`; `runs/shift_hosts/driver/logs/` to `runs/shift_hosts_v1/driver_logs/` (the driver
+   reads a job's last status line from the end of its log, `stages.py:719-729`, so version 1's lines must not sit
+   there); and `driver/state.json`, `state.json.sha256`, `state.json.prev` and `state.json.prev.sha256` to
+   `runs/shift_hosts_v1/driver_state/` (version 1's state holds wall times under the run labels version 2 reuses, and a
+   resumed driver would keep them for a run that finished unwatched, `stages.py:819-824`, and S6 would read them,
+   `stages.py:1070-1076`; without the file and its `.prev` copy the driver starts a fresh state, `stages.py:445,
+   454-456`). Kept where they are: `source/`, `data/` and `scoring_cache/` (S11; their hashes are pinned), `stage0/`
+   (the suite rewrites `SUMMARY.json`; version 1's copy stays in `stage0/suite/20261016T144401Z/`), and the rest of
+   `driver/`: the ledger (version 1's spend and stage 0's entry, section 19.9; the start reads only the ledger,
+   `stages.py:1512-1523`), version 1's `STOP.json`, its sidecar and `STOP.txt`, `driver.log` and `nohup.out`.
+5. **The full stage-0 suite** (`run_stage0.sh`, made-up arrays only) on exactly these bytes, before any approval of
+   version 2 exists: several stage-0 tests require that the gate refuses, and one launches a real runner command
+   expecting the refusal (`tests/test_runner.py:494-521`), which holds only while no approval matches the code on disk.
+   Because version 1's approval file is in the package, `test_guard_compare`'s
+   `test_refuses_now_in_the_real_package` skips (`tests/test_guard_compare.py:248-249`), as `test_all_stage0`'s gate
+   test already does once `prespec.json` exists; `test_runner`'s check still tests the refusal on real data. Version
+   1's suite took about 97 minutes, card timing first: a charged laptop and an idle, cool card. The driver refuses to
+   start until this passes (S0, `gate.require_s0`).
+6. **The pre-commit check**, as for version 1: the staging folder equals WSL; no `__pycache__`; `gate.fingerprint()`
+   gives the fingerprint expected for the frozen bytes; `gate.s0_status()` passed. Then the freeze commit of exactly
+   these bytes ("Unifloral hosts: freeze pre-specification version 2 (fingerprint <first 16>)"), pushed to `origin`
+   and GitHub; `approve_hosts.py` refuses until every file is committed.
+7. **You approve at your terminal** with section 18 step 1's commands, unchanged but for the new first 16 characters.
+   `approve_hosts.py` writes `approval_<new first 16>.json` and its sidecar; you commit them under your address and
+   push. No agent runs this.
+8. **The pre-start checks** of section 18 step 2, without the suite (it ran in step 5): the gate passes, S0 passes,
+   the graphics driver is still 610.62 (S9), no other process uses the card, and the card is idle and cool.
+9. **The start**, by you, as root in `/root/bca-hosts`: section 18's command with `--resume-after-stop`, which the kept
+   `driver/STOP.json` requires (`stages.py:1544-1551`; it moves version 1's stop report aside with a time stamp). The
+   stage-0 options change nothing now, since the ledger already holds stage 0's entry.
+
+   ```bash
+   env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-venv/bin/python \
+       -m experiments.shift_hosts.stages start --stage0-card-hours 0 --stage0-processor-hours 0 --resume-after-stop
+   ```
+
+   Keep the Ubuntu window open for the whole run (minimized is fine): WSL shuts Ubuntu down when no window is
+   attached, and the driver dies with it. `start` returns once the driver runs in the background; it does not itself
+   look for `STOP.json`, so a refusal of the background run appears only in `driver/nohup.out`
+   (`stages.py:1544-1551, 1569-1589`). After `start`, check `driver/nohup.out` and then `driver/driver.log` (`tail -f`
+   once it exists) for "driver starts", and that `driver/STOP.json` became `STOP.json.<time>`. Stage 1 then runs all 20
+   runs from the start, and stage 2a follows by itself once every stage-1 stop rule passes.
+
+### 19.9 Budget
+
+- **Version 1's stage 1 is spent**: 0.2785 card-hours and 0.4090 processor-hours, counted against medium-expert's cap.
+  The kept ledger holds it; S6 and S6b add the ledger's totals to their projections (`budget.py:240-254, 327-337`).
+  Its version-1 entries carry the labels that version 2's stage-1 runs reuse. On a clean run this changes nothing. If a
+  version-2 stage-1 run finishes while no driver watches it (a crash), the resumed driver finds version 1's closed
+  interval under the same label and adds nothing for it (`budget.py:218-238`), so that run's compute would be
+  under-counted; the write-up then adds that run's own recorded time.
+- **Stage 1 again**: 0.62 card-hours (high 1.13) and 1.28 processor-hours (high 2.48), as section 13 projects.
+- **Stages 1-2a with version 1's spend**: 7.53 card-hours (high 11.48) and 9.91 processor-hours (high 16.87), inside
+  14 and 21. In section 13's hard-throttle case (13.8 card-hours) the total comes to about 14.08 card-hours, just over
+  the cap of 14. If stage 1 itself measures the throttled speeds, S6 at the end of stage 1 stops the study, since it
+  projects both qualities from stage 1's speeds and medium's hard-throttle 12.6 card-hours is over its cap of 12 as
+  well (`stages.py:1102-1116`); if the throttling starts later, S6b stops medium-expert between whole units. Either is
+  S6 or S6b as approved, not a new rule.
+- **The version-2 stage-0 suite and the investigation** are stage-0 work: booked separately, like stage 0 (section
+  13), and not entered in the ledger. The suite's own measurement is in `runs/shift_hosts/stage0/SUMMARY.json`.
+- The caps are unchanged. Medium (stage 2b) is unaffected.
+
+### 19.10 Where the post-hoc label appears
+
+- In this document (its title, its header and this section) and in `prespec.json` (`version`, `title`, `status`,
+  `supersedes`, `post_hoc_changes`, S7's entry, and the version-2 notes under `driver_command` and `budget_recost`);
+  before you type, `approve_hosts.py` shows the title and `approval_summary`, whose first lines state this change, what
+  it can affect, the investigation's result and your decision on a later exceedance.
+- In `results.json`: its `caveats` list (`export.CAVEATS`, written at `export.py:1429`) states that S7's closed-loop
+  limit is version 2's post-hoc 0.05 points. It also records the approved fingerprint, which names this version, and
+  with the kept driver folder it lists version 1's S7 stop under S7 as a stop resumed by the operator.
+- Every write-up that reports S7 calls it "S7, with version 2's post-hoc limit of 0.05 points (section 19)".
+- The study stays exploratory (section 15).
 
 ## Words used here
 

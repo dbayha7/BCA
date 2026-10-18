@@ -14,7 +14,7 @@ Why it exists. The scoring environment (/opt/bca-shift-venv) has the simulator b
                        scoring environment, must match them within 1e-7 (evaluate.open_loop_compare). Both run on the
                        processor; CQL uses the same noise on both sides.
   closed loop          in the scoring environment, this restatement (Float32Policy) and the float64 adapter
-                       (policies.py) must agree within 0.01 points on every start (evaluate.closed_loop_check).
+                       (policies.py) must agree within 0.05 points on every start (evaluate.closed_loop_check).
 
 The four actors, restated in plain flax with Unifloral's layer order, so the parameter names are Unifloral's own:
   TD3+BC  td3_bc.py:98-114     z = (o - obs_mean) / (obs_std + 1e-3); 2 x [Dense(256), relu]; tanh(Dense(4)). The

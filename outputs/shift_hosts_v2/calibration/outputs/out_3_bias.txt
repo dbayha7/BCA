@@ -1,0 +1,266 @@
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/probe_s7.py sha256 406ca0ffb0f04ab2b88e280ec1f99393219ca71b148e67f3245c759475eded8a; argv ['--repo', '/tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2wt', '--run-dir', '/tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/rr/cal/root_3_bias/runs/shift_hosts/stage1/medium-expert/seed0/rebrac-alone', '--out', '/tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/rr/cal/out_3_bias.txt']
+probe: python 3.13.16, numpy 2.2.6, jax settings {'xla_flags': '--xla_gpu_deterministic_ops=true --xla_cpu_multi_thread_eigen=false', 'jax_platforms': 'cpu', 'matmul_precision': 'highest', 'jax': '0.6.2', 'backend': 'cpu'}
+probe: code manifest 1bac23634a684cbc (170 files)
+probe: approval 8c5e8421922dcceb verifies (version 1; commit 0000000)
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/rr/cal/root_3_bias/runs/shift_hosts/stage1/medium-expert/seed0/rebrac-alone/lanes/s7-step15000/s7.json sha256 8c8b3b2cf76a88ef51a5ef9d511848b87cb850c1ad3c4233145289f5fb20f913
+probe: rebrac-alone's record was made on code manifest made-up; this process runs 1bac23634a684cbc (DIFFERENT)
+
+=== calibration/rebrac-alone x3 bias step 15000: learner rebrac, actor 9ddc84b1d2de491a, s7.json present (tol_points 0.05); JUDGED (PRESPEC.md 19.6)
+[scored/none] starts 1000 finite True reproduced True | |dpoints| p50 2.88e-04 p90 4.49e-03 p99 8.33e-02 p99.9 2.95e-01 max 12.2649 mean 1.604e-02 | >0.001:270 >0.005:93 >0.01:60 >0.02:38 >0.05:20 | max |dJ| 1.559e+02
+    (i) injected gap max 1.35e-04; float32 reference spread max 2.53e-05 (ratio 5.34); bound max(1e-5, 10 x spread) 2.53e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 488:1.23e+01 327:2.83e-01 85:2.79e-01 598:2.16e-01 716:1.72e-01 925:1.51e-01 416:1.17e-01 515:9.39e-02 787:8.76e-02 646:8.62e-02
+[scored/mild] starts 1000 finite True reproduced True | |dpoints| p50 2.88e-04 p90 4.49e-03 p99 8.33e-02 p99.9 2.95e-01 max 12.2649 mean 1.604e-02 | >0.001:270 >0.005:93 >0.01:60 >0.02:38 >0.05:20 | max |dJ| 1.559e+02
+    (i) injected gap max 1.35e-04; float32 reference spread max 2.53e-05 (ratio 5.34); bound max(1e-5, 10 x spread) 2.53e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 488:1.23e+01 327:2.83e-01 85:2.79e-01 598:2.16e-01 716:1.72e-01 925:1.51e-01 416:1.17e-01 515:9.39e-02 787:8.76e-02 646:8.62e-02
+[scored/strong] starts 1000 finite True reproduced True | |dpoints| p50 2.88e-04 p90 4.49e-03 p99 8.33e-02 p99.9 2.95e-01 max 12.2649 mean 1.604e-02 | >0.001:270 >0.005:93 >0.01:60 >0.02:38 >0.05:20 | max |dJ| 1.559e+02
+    (i) injected gap max 1.35e-04; float32 reference spread max 2.53e-05 (ratio 5.34); bound max(1e-5, 10 x spread) 2.53e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 488:1.23e+01 327:2.83e-01 85:2.79e-01 598:2.16e-01 716:1.72e-01 925:1.51e-01 416:1.17e-01 515:9.39e-02 787:8.76e-02 646:8.62e-02
+[scored/recorded] starts 1000 finite True reproduced True | |dpoints| p50 6.84e-03 p90 1.07e-01 p99 1.98e+00 p99.9 7.02e+00 max 291.661 mean 3.815e-01 | >0.001:851 >0.005:581 >0.01:414 >0.02:298 >0.05:175 | max |dJ| 1.559e+02
+    (i) injected gap max 1.35e-04; float32 reference spread max 2.53e-05 (ratio 5.34); bound max(1e-5, 10 x spread) 2.53e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 488:2.92e+02 327:6.73e+00 85:6.64e+00 598:5.13e+00 716:4.09e+00 925:3.59e+00 416:2.79e+00 515:2.23e+00 787:2.08e+00 646:2.05e+00
+[scored/strong_current] starts 1000 finite True reproduced True | |dpoints| p50 1.83e-03 p90 1.53e-02 p99 1.20e-01 p99.9 3.80e-01 max 0.545047 mean 9.166e-03 | >0.001:628 >0.005:264 >0.01:152 >0.02:81 >0.05:36 | max |dJ| 8.184e-01
+    (i) injected gap max 1.70e-04; float32 reference spread max 2.99e-05 (ratio 5.68); bound max(1e-5, 10 x spread) 2.99e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 190:5.45e-01 562:3.80e-01 189:3.27e-01 5:3.06e-01 252:2.82e-01 850:2.80e-01 654:2.79e-01 87:2.65e-01 350:1.85e-01 300:1.28e-01
+[scored/big_waves] starts 1000 finite True reproduced True | |dpoints| p50 9.31e-03 p90 1.77e-01 p99 3.85e+00 p99.9 1.98e+01 max 27.0471 mean 1.785e-01 | >0.001:890 >0.005:625 >0.01:484 >0.02:353 >0.05:226 | max |dJ| 1.910e+01
+    (i) injected gap max 1.43e-04; float32 reference spread max 3.15e-05 (ratio 4.53); bound max(1e-5, 10 x spread) 3.15e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 753:2.70e+01 843:1.98e+01 125:8.52e+00 303:7.57e+00 508:5.83e+00 138:5.70e+00 919:5.69e+00 103:4.90e+00 416:4.50e+00 966:4.07e+00
+[scored/big_kicks] starts 1000 finite True reproduced True | |dpoints| p50 3.84e-03 p90 6.59e-02 p99 1.81e+00 p99.9 1.31e+01 max 238.192 mean 3.220e-01 | >0.001:769 >0.005:447 >0.01:317 >0.02:212 >0.05:119 | max |dJ| 2.376e+02
+    (i) injected gap max 1.60e-04; float32 reference spread max 4.05e-05 (ratio 3.96); bound max(1e-5, 10 x spread) 4.05e-04: passed True [JUDGED] (stage 0's 1e-5 alone, shown: False)
+    top 10 starts (index:|dpoints|): 128:2.38e+02 689:1.29e+01 827:8.58e+00 817:6.86e+00 489:6.41e+00 196:3.76e+00 166:2.79e+00 8:2.27e+00 224:2.08e+00 459:1.92e+00
+
+--- controls: |dpoints| of rounding-size perturbations that do not involve the restatement ---
+    round = float64 adapter with float32-rounded commands; up/down = start floats +-1 ulp (float64 adapter); f32_up = restatement, +1 ulp; same_fixed0-1 / same_random0-2 = float64 adapter plus offsets of the measured injected size, signs fixed per start or drawn per step (control (e), judged in (iii) as the largest of its five draws); the others are shown, not judged
+[scored/none] J32-J64 worst start 488: 1.23e+01 | round: max 1.91e-03, rho +0.62, worst start 5.94e-05 (rank 42) | up: max 8.88e-14, rho +0.05, worst start 0.00e+00 (rank 316) | down: max 8.53e-14, rho +0.01, worst start 0.00e+00 (rank 305) | same_fixed0: max 3.82e+00, rho +0.91, worst start 3.82e+00 (rank 1) | same_fixed1: max 4.27e-01, rho +0.92, worst start 3.50e-02 (rank 25) | same_random0: max 1.12e+01, rho +0.80, worst start 1.12e+01 (rank 1) | same_random1: max 9.64e-01, rho +0.82, worst start 1.65e-01 (rank 5) | same_random2: max 4.74e-01, rho +0.80, worst start 2.27e-01 (rank 3) | f32_up: max 1.14e-13, rho +0.04, worst start 2.84e-14 (rank 70)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 0.912 (within 0.1-10: True) [shown]; at the worst start 0.912 (shown)
+[scored/mild] J32-J64 worst start 488: 1.23e+01 | round: max 1.91e-03, rho +0.62, worst start 5.94e-05 (rank 42) | up: max 8.88e-14, rho +0.05, worst start 0.00e+00 (rank 316) | down: max 8.53e-14, rho +0.01, worst start 0.00e+00 (rank 305) | same_fixed0: max 4.00e+00, rho +0.91, worst start 4.00e+00 (rank 1) | same_fixed1: max 3.32e+00, rho +0.93, worst start 3.32e+00 (rank 1) | same_random0: max 1.11e+01, rho +0.81, worst start 1.11e+01 (rank 1) | same_random1: max 1.19e+01, rho +0.82, worst start 1.19e+01 (rank 1) | same_random2: max 1.19e+01, rho +0.80, worst start 1.19e+01 (rank 1) | f32_up: max 1.14e-13, rho +0.04, worst start 2.84e-14 (rank 70)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 0.968 (within 0.1-10: True) [shown]; at the worst start 0.968 (shown)
+[scored/strong] J32-J64 worst start 488: 1.23e+01 | round: max 1.91e-03, rho +0.62, worst start 5.94e-05 (rank 42) | up: max 8.88e-14, rho +0.05, worst start 0.00e+00 (rank 316) | down: max 8.53e-14, rho +0.01, worst start 0.00e+00 (rank 305) | same_fixed0: max 3.16e+00, rho +0.93, worst start 3.16e+00 (rank 1) | same_fixed1: max 8.25e-01, rho +0.92, worst start 3.49e-02 (rank 22) | same_random0: max 3.28e-01, rho +0.82, worst start 1.67e-01 (rank 8) | same_random1: max 1.23e+01, rho +0.82, worst start 1.23e+01 (rank 1) | same_random2: max 2.54e-01, rho +0.79, worst start 2.54e-01 (rank 1) | f32_up: max 1.14e-13, rho +0.04, worst start 2.84e-14 (rank 70)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1 (within 0.1-10: True) [shown]; at the worst start 1 (shown)
+[scored/recorded] J32-J64 worst start 488: 2.92e+02 | round: max 4.54e-02, rho +0.62, worst start 1.41e-03 (rank 42) | up: max 2.27e-12, rho +0.06, worst start 0.00e+00 (rank 282) | down: max 2.27e-12, rho +0.01, worst start 2.27e-13 (rank 228) | same_fixed0: max 9.08e+01, rho +0.92, worst start 9.08e+01 (rank 1) | same_fixed1: max 9.35e+01, rho +0.92, worst start 9.35e+01 (rank 1) | same_random0: max 2.69e+02, rho +0.81, worst start 2.69e+02 (rank 1) | same_random1: max 3.26e+01, rho +0.83, worst start 1.98e+00 (rank 10) | same_random2: max 2.92e+02, rho +0.84, worst start 2.92e+02 (rank 1) | f32_up: max 2.73e-12, rho +0.01, worst start 9.09e-13 (rank 27)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1 (within 0.1-10: True) [shown]; at the worst start 1 (shown)
+[scored/strong_current] J32-J64 worst start 190: 5.45e-01 | round: max 6.29e-03, rho +0.47, worst start 2.75e-04 (rank 25) | up: max 1.82e-12, rho -0.04, worst start 0.00e+00 (rank 223) | down: max 1.36e-12, rho -0.04, worst start 0.00e+00 (rank 233) | same_fixed0: max 6.20e-01, rho +0.94, worst start 5.46e-01 (rank 2) | same_fixed1: max 7.45e-01, rho +0.94, worst start 5.45e-01 (rank 3) | same_random0: max 8.04e-01, rho +0.80, worst start 8.04e-01 (rank 1) | same_random1: max 5.98e-01, rho +0.80, worst start 5.44e-01 (rank 3) | same_random2: max 6.19e-01, rho +0.78, worst start 5.24e-01 (rank 3) | f32_up: max 1.82e-12, rho -0.03, worst start 0.00e+00 (rank 246)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.47 (within 0.1-10: True) [shown]; at the worst start 1.47 (shown)
+[scored/big_waves] J32-J64 worst start 753: 2.70e+01 | round: max 1.02e+00, rho +0.62, worst start 3.66e-02 (rank 9) | up: max 1.82e-12, rho +0.02, worst start 0.00e+00 (rank 285) | down: max 1.82e-12, rho +0.05, worst start 0.00e+00 (rank 286) | same_fixed0: max 9.75e+01, rho +0.90, worst start 2.77e+01 (rank 2) | same_fixed1: max 9.80e+01, rho +0.89, worst start 1.32e+01 (rank 4) | same_random0: max 3.95e+02, rho +0.76, worst start 2.95e+00 (rank 16) | same_random1: max 1.74e+01, rho +0.79, worst start 5.27e+00 (rank 10) | same_random2: max 2.51e+01, rho +0.77, worst start 2.51e+01 (rank 1) | f32_up: max 1.82e-12, rho +0.01, worst start 0.00e+00 (rank 279)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 14.6 (within 0.1-10: False) [shown]; at the worst start 1.02 (shown)
+[scored/big_kicks] J32-J64 worst start 128: 2.38e+02 | round: max 7.61e-02, rho +0.59, worst start 4.29e-03 (rank 14) | up: max 2.27e-12, rho -0.01, worst start 6.82e-13 (rank 66) | down: max 2.27e-12, rho -0.00, worst start 0.00e+00 (rank 460) | same_fixed0: max 6.02e+01, rho +0.90, worst start 6.02e+01 (rank 1) | same_fixed1: max 2.38e+02, rho +0.90, worst start 2.38e+02 (rank 1) | same_random0: max 2.35e+02, rho +0.81, worst start 2.35e+02 (rank 1) | same_random1: max 2.31e+02, rho +0.80, worst start 2.31e+02 (rank 1) | same_random2: max 9.67e+01, rho +0.81, worst start 9.67e+01 (rank 1) | f32_up: max 2.50e-12, rho +0.04, worst start 2.27e-13 (rank 272)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 0.999 (within 0.1-10: True) [JUDGED]; at the worst start 0.999 (shown)
+
+--- worst start of scored/big_kicks: start 128, |dpoints| 238.192 (differences only) [JUDGED] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf       -inf      -inf      -inf      -inf      -inf +0.000e+00 +0.000e+00    0    0   0 0,0,0
+  1      -inf      -4.42     -4.04     -4.04     -4.04      -inf -4.135e-06 -4.135e-06    0    0   0 0,0,0
+  2     -4.42      -4.44     -8.07     -8.07     -8.07    -10.95 +1.304e-08 -4.122e-06    2    0   2 0,0,0
+  3     -4.44      -3.52     -3.15     -3.87     -4.01     -3.21 +4.175e-05 +3.763e-05    8    0   0 0,0,0
+  4     -3.52      -3.53      -inf      -inf      -inf      -inf +5.998e-04 +6.374e-04   10    0   0 0,0,0
+  5     -3.53      -3.36     -2.98     -4.00     -4.03     -2.95 +1.052e-03 +1.689e-03   10    0   0 0,0,0
+  6     -3.36      -3.37     -9.90     -9.90     -9.91    -11.99 -1.319e-03 +3.704e-04   10    0   1 0,0,0
+  7     -3.37      -3.22     -2.92     -4.47     -4.40     -2.91 -7.887e-04 -4.183e-04   10    0   2 0,0,0
+  8     -3.22      -3.23    -14.05    -14.05    -14.06    -15.95 -8.786e-05 -5.061e-04    9    0   1 0,0,0
+  9     -3.23      -3.24    -10.66    -10.66    -10.67    -12.83 +6.019e-05 -4.459e-04   10    0   1 0,0,0
+ 10     -3.24      -3.26      -inf      -inf      -inf      -inf +1.544e-04 -2.915e-04   10    0   0 0,0,0
+ 11     -3.26      -3.27      -inf      -inf      -inf      -inf +2.005e-04 -9.107e-05   10    0   0 0,0,0
+ 12     -3.27      -3.28    -12.58    -12.58    -12.58    -14.35 +2.347e-04 +1.437e-04   10    0   1 0,0,0
+ 13     -3.28      -3.29      -inf      -inf      -inf      -inf +2.916e-04 +4.353e-04   10    0   0 0,0,0
+ 14     -3.29      -3.31      -inf      -inf      -inf      -inf +3.274e-04 +7.627e-04   10    0   0 0,0,0
+ 15     -3.31      -3.32      -inf      -inf      -inf      -inf +3.331e-04 +1.096e-03   10    0   0 0,0,0
+ 16     -3.32      -3.33      -inf      -inf      -inf      -inf +2.789e-04 +1.375e-03   10    0   0 0,0,0
+ 17     -3.33      -3.35      -inf      -inf      -inf      -inf +1.555e-04 +1.530e-03   10    0   0 0,0,0
+ 18     -3.35      -3.36      -inf      -inf      -inf      -inf -3.134e-05 +1.499e-03   10    0   0 0,0,0
+ 19     -3.36      -3.37    -10.67    -10.67    -10.68    -12.67 -2.654e-04 +1.233e-03   10    0   1 0,0,0
+ 20     -3.37      -3.39    -13.24    -13.24    -13.24    -15.65 -5.149e-04 +7.184e-04   10    0   1 0,0,0
+ 21     -3.39      -3.40    -13.95    -13.95    -13.94    -15.48 -7.318e-04 -1.339e-05   10    0   1 0,0,0
+ 22     -3.40      -3.42     -7.33     -7.89     -8.09     -7.41 -8.694e-04 -8.828e-04   10    0   0 0,0,0
+ 23     -3.42      -3.43     -7.86     -7.86     -7.26     -7.39 -9.048e-04 -1.788e-03   10    0   0 0,0,0
+ 24     -3.43      -3.45     -9.98     -9.98     -9.98    -11.82 -8.471e-04 -2.635e-03   10    0   1 0,0,0
+ 25     -3.45      -3.46      -inf      -inf      -inf      -inf -7.270e-04 -3.362e-03   10    0   0 0,0,0
+ 26     -3.46      -3.47      -inf      -inf      -inf      -inf -5.805e-04 -3.942e-03   10    0   0 0,0,0
+ 27     -3.47      -3.49      -inf      -inf      -inf      -inf -4.360e-04 -4.378e-03   10    0   0 0,0,0
+ 28     -3.49      -3.51      -inf      -inf      -inf      -inf -3.100e-04 -4.688e-03   10    0   0 0,0,0
+ 29     -3.51      -3.52      -inf      -inf      -inf      -inf -2.074e-04 -4.896e-03   10    0   0 0,0,0
+ 30     -3.52      -3.54    -12.11    -12.11    -12.10    -14.04 -1.262e-04 -5.022e-03   10    0   1 0,0,1
+ 31     -3.54      -3.55     -6.99     -6.99     -6.98     -9.21 -6.254e-05 -5.084e-03   10    0   1 0,0,0
+ 32     -3.55      -3.57     -6.89     -7.31     -7.34     -7.08 -1.293e-05 -5.097e-03   10    0   0 0,0,0
+ 33     -3.57      -3.58     -6.79     -6.86     -7.64     -6.86 +2.562e-05 -5.072e-03   10    0   0 0,0,0
+ 34     -3.58      -3.59    -13.60    -13.60    -13.60    -15.95 +6.330e-05 -5.008e-03   10    0   1 0,0,0
+ 35     -3.59      -3.61      -inf      -inf      -inf      -inf +1.143e-04 -4.894e-03   10    0   0 0,0,0
+ 36     -3.61      -3.63      -inf      -inf      -inf      -inf +1.865e-04 -4.708e-03   10    0   0 0,0,0
+ 37     -3.63      -3.64      -inf      -inf      -inf      -inf +2.753e-04 -4.432e-03    9    0   0 0,0,0
+ 38     -3.64      -3.66      -inf      -inf      -inf      -inf +3.635e-04 -4.069e-03   10    0   0 0,0,0
+ 39     -3.66      -3.67      -inf      -inf      -inf      -inf +4.304e-04 -3.638e-03   10    0   0 0,0,0
+ 40     -3.67      -3.68      -inf      -inf      -inf      -inf +4.606e-04 -3.178e-03   10    0   0 0,0,0
+ 41     -3.68      -3.70      -inf      -inf      -inf      -inf +4.492e-04 -2.729e-03   10    0   0 0,0,0
+ 42     -3.70      -3.71      -inf      -inf      -inf      -inf +4.028e-04 -2.326e-03    9    0   0 0,0,0
+ 43     -3.71      -3.72    -13.26    -13.26    -13.26    -15.26 +3.373e-04 -1.989e-03    9    0   1 0,0,0
+ 44     -3.72      -3.74     -6.91     -7.25     -7.02     -7.55 +2.723e-04 -1.716e-03   10    0   0 0,0,0
+ 45     -3.74      -3.75    -10.08    -10.08    -10.08    -12.75 +2.224e-04 -1.494e-03    9    0   1 0,0,0
+ 46     -3.75      -3.77    -15.48    -15.48    -15.48      -inf +1.907e-04 -1.303e-03   10    0   1 0,0,0
+ 47     -3.77      -3.78      -inf      -inf      -inf      -inf +1.679e-04 -1.135e-03   10    0   0 0,0,0
+ 48     -3.78      -3.79      -inf      -inf      -inf      -inf +1.395e-04 -9.959e-04   10    0   0 0,0,0
+ 49     -3.79      -3.81      -inf      -inf      -inf      -inf +9.303e-05 -9.028e-04   10    0   0 0,0,0
+ 50     -3.81      -3.82      -inf      -inf      -inf      -inf +2.378e-05 -8.791e-04   10    0   0 0,0,0
+ 51     -3.82      -3.84      -inf      -inf      -inf      -inf -6.492e-05 -9.440e-04   10    0   0 0,0,0
+ 52     -3.84      -3.85      -inf      -inf      -inf      -inf -1.636e-04 -1.108e-03   10    0   0 0,0,0
+ 53     -3.85      -3.87    -15.95    -15.95    -15.95      -inf -2.597e-04 -1.367e-03    9    0   1 0,0,0
+ 54     -3.87      -3.88     -7.17     -7.17     -7.17     -9.31 -3.411e-04 -1.708e-03   10    0   1 0,0,0
+ 55     -3.88      -3.87     -4.28     -5.98     -6.17     -4.29 -3.670e-04 -2.075e-03   10    0   0 0,0,0
+ 56     -3.87      -2.88     -2.50     -4.05     -3.93     -2.51 -3.375e-04 -2.413e-03   10    0   0 0,0,0
+ 57     -2.88      -2.44     -2.11     -4.62     -4.61     -2.12 -2.118e-03 -4.531e-03   10    0   0 0,0,0
+ 58     -2.44      -2.16     -1.78     -4.62     -4.58     -1.78 +6.366e-03 +1.835e-03   10    0   0 0,0,0
+ 59     -2.16      -2.17     -4.61     -7.49     -8.81     -4.61 -3.790e-03 -1.954e-03   10    0   0 0,0,1
+ 60     -2.17      -2.18    -14.49    -14.49    -14.44    -15.35 +3.558e-03 +1.604e-03   10    0   1 0,1,0
+ 61     -2.18      -2.19      -inf      -inf      -inf      -inf +9.827e-03 +1.143e-02   10    0   0 0,0,0
+ 62     -2.19      -2.20      -inf      -inf      -inf      -inf +1.497e-02 +2.640e-02   10    0   0 0,0,0
+ 63     -2.20      -2.21      -inf      -inf      -inf      -inf +1.899e-02 +4.539e-02   10    0   0 0,0,0
+ 64     -2.21      -2.22    -11.38    -11.38    -11.27    -11.95 +2.198e-02 +6.737e-02   10    0   1 0,0,0
+ 65     -2.22      -2.23     -5.37     -7.84     -7.12     -5.36 +2.402e-02 +9.139e-02   10    0   0 0,0,0
+ 66     -2.23      -1.38     -1.04     -4.27     -4.14     -1.04 +5.492e-02 +1.463e-01   10    0   0 0,0,0
+ 67     -1.38      -0.46     -0.14     -3.99     -3.97     -0.14 +3.975e-03 +1.503e-01   10    0   0 0,0,0
+ 68     -0.46      -0.11      0.29     -5.32     -5.50      0.29 -3.469e-01 -1.966e-01   10    0   0 7,5,7
+ 69     -0.11       0.09      0.28     -7.50     -4.77      0.28 -7.764e-01 -9.730e-01   10    0   0 20,15,15
+ 70      0.09       0.21      0.29     -9.66     -5.03      0.29 -1.189e+00 -2.162e+00   10    0   0 28,26,29
+ 71      0.21       0.19     -0.48    -12.92     -4.23     -0.48 -1.169e+00 -3.331e+00   10    1   1 37,39,40
+ 72      0.19       0.30      0.26    -14.04     -4.48      0.26 +6.481e-01 -2.683e+00   10    0   1 34,43,46
+ 73      0.30       0.36      0.30    -12.13     -7.84      0.30 +6.102e-01 -2.073e+00   10    0   0 49,55,61
+ 74      0.36       0.41      0.30     -9.35     -9.14      0.30 +1.387e+00 -6.859e-01   10    0   1 71,66,65
+ 75      0.41       0.46      0.30     -7.45    -11.62      0.30 +2.469e+00 +1.784e+00   10    0   1 79,71,65
+ 76      0.46       0.50      0.30     -6.23    -14.95      0.30 +3.810e+00 +5.593e+00   10    0   1 86,75,69
+ 77      0.50       0.49     -0.35     -4.13      -inf     -0.35 +5.140e+00 +1.073e+01   10    1   1 96,79,67
+ 78      0.49       0.50      0.03     -4.03    -15.95      0.03 +5.596e+00 +1.633e+01   10    1   1 91,72,69
+ 79      0.50       0.52      0.30     -5.75    -14.72      0.30 +6.653e+00 +2.298e+01   10    0   1 95,76,70
+ 80      0.52       0.54      0.30     -7.07    -11.34      0.30 +7.647e+00 +3.063e+01   10    0   1 103,80,71
+ 81      0.54       0.56      0.30    -10.94     -9.51      0.30 +8.591e+00 +3.922e+01   10    0   1 103,84,74
+ 82      0.56       0.57      0.30      -inf     -7.68      0.30 +9.445e+00 +4.867e+01   10    0   0 107,89,81
+ 83      0.57       0.58      0.30      -inf     -7.85      0.30 +1.017e+01 +5.883e+01   10    0   0 113,97,76
+ 84      0.58       0.59      0.30      -inf     -7.37      0.30 +1.073e+01 +6.956e+01   10    0   1 111,93,85
+ 85      0.59       0.60      0.30      -inf     -8.03      0.30 +1.112e+01 +8.068e+01   10    0   1 110,102,86
+ 86      0.60       0.61      0.30      -inf     -6.77      0.30 +1.134e+01 +9.202e+01   10    0   1 116,105,88
+ 87      0.61       0.62      0.30      -inf     -7.99      0.30 +1.141e+01 +1.034e+02   10    0   1 124,107,89
+ 88      0.62       0.63      0.30      -inf     -7.90      0.30 +1.135e+01 +1.148e+02   10    0   0 131,108,95
+ 89      0.63       0.63      0.30      -inf     -7.54      0.30 +1.121e+01 +1.260e+02   10    0   0 134,110,100
+ 90      0.63       0.63      0.30      -inf     -8.13      0.30 +1.101e+01 +1.370e+02   10    0   0 133,109,98
+ 91      0.63       0.64      0.30      -inf     -7.65      0.30 +1.081e+01 +1.478e+02   10    0   0 131,110,99
+ 92      0.64       0.64      0.30      -inf     -7.05      0.30 +1.063e+01 +1.584e+02   10    0   0 135,112,100
+ 93      0.64       0.64      0.30      -inf     -7.27      0.30 +1.052e+01 +1.690e+02   10    0   0 142,108,96
+ 94      0.64       0.64      0.30      -inf     -7.84      0.30 +1.052e+01 +1.795e+02   10    0   0 146,106,95
+ 95      0.64       0.65      0.30      -inf     -9.45      0.30 +1.066e+01 +1.901e+02   10    0   0 150,106,100
+ 96      0.65       0.65      0.30      -inf     -9.16      0.30 +1.095e+01 +2.011e+02   10    0   0 151,105,96
+ 97      0.65       0.65      0.30    -15.48     -7.05      0.30 +1.141e+01 +2.125e+02   10    0   2 144,112,95
+ 98      0.65       0.65      0.30    -14.78     -4.23      0.30 +1.220e+01 +2.247e+02   10    1   2 132,106,89
+ 99      0.65       0.65      0.30    -14.34     -4.75      0.30 +1.288e+01 +2.376e+02   10    0   2 128,105,77
+  all steps (shown): largest one-step growth 0.9859430565569187 decades at step 56; 38 steps growing; None decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 46, the first at step 3; largest one-step growth on them 0.9859430565569187 decades at step 56 (at most 1): passed True [JUDGED]
+
+--- worst start of scored/recorded: start 488, |dpoints| 291.661 (differences only) [shown] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf      -4.93     -4.73     -4.73     -4.73      -inf -1.019e-05 -1.019e-05    0    0   2 0,0,0
+  1     -4.93      -4.75     -4.85     -5.03     -5.00     -5.37 -6.415e-07 -1.084e-05    2    0   2 0,0,0
+  2     -4.75      -4.76     -5.27     -4.09     -4.10     -4.14 -1.918e-05 -3.002e-05   10    0   1 0,0,0
+  3     -4.76      -4.76     -6.55     -6.98     -7.18     -6.66 -7.149e-06 -3.717e-05   10    0   2 0,0,0
+  4     -4.76      -4.66     -4.92     -5.44     -5.46     -5.08 -1.911e-06 -3.908e-05   10    0   3 0,0,0
+  5     -4.66      -4.02     -3.89     -4.54     -4.56     -4.00 +8.616e-05 +4.708e-05   10    0   2 0,0,0
+  6     -4.02      -3.95     -4.50     -4.95     -4.93     -4.70 +8.141e-05 +1.285e-04   10    0   2 0,0,0
+  7     -3.95      -3.96     -6.62     -6.52     -7.38     -6.70 +6.010e-05 +1.886e-04   10    0   3 0,0,0
+  8     -3.96      -3.98     -5.63     -6.53     -6.53     -5.58 +5.211e-05 +2.407e-04   10    0   3 0,0,0
+  9     -3.98      -4.02     -4.39     -5.21     -5.25     -4.33 +2.141e-05 +2.621e-04   10    0   2 0,0,0
+ 10     -4.02      -3.61     -3.29     -4.01     -4.01     -3.38 +1.223e-04 +3.844e-04   10    0   1 0,0,0
+ 11     -3.61      -3.52     -3.83     -4.35     -4.35     -3.99 +1.787e-04 +5.631e-04   10    0   2 0,0,0
+ 12     -3.52      -3.48     -4.25     -5.33     -5.35     -4.22 +9.031e-05 +6.534e-04   10    0   3 0,0,1
+ 13     -3.48      -2.58     -2.19     -4.23     -4.26     -2.19 +2.384e-03 +3.038e-03   10    0   1 0,0,0
+ 14     -2.58      -2.59     -7.01     -7.42     -7.26     -6.82 +3.667e-03 +6.705e-03   10    0   2 0,0,0
+ 15     -2.59      -2.60     -7.42     -7.42     -7.07     -7.31 +3.120e-03 +9.826e-03   10    0   3 0,0,0
+ 16     -2.60      -2.62     -6.93     -8.55     -7.03     -7.65 +2.595e-03 +1.242e-02   10    0   3 1,0,0
+ 17     -2.62      -2.63     -7.30     -8.03     -7.40     -7.99 +2.144e-03 +1.456e-02   10    0   2 1,0,0
+ 18     -2.63      -2.64     -6.99     -6.93     -6.98     -8.43 +1.805e-03 +1.637e-02   10    0   2 0,1,0
+ 19     -2.64      -2.65     -7.08     -7.08     -7.08     -9.25 +1.602e-03 +1.797e-02   10    0   3 0,1,0
+ 20     -2.65      -2.66     -6.95     -6.95     -6.95     -9.04 +1.534e-03 +1.951e-02   10    0   3 0,0,0
+ 21     -2.66      -2.66     -8.06     -8.06     -8.05     -9.73 +1.581e-03 +2.109e-02   10    0   3 0,0,0
+ 22     -2.66      -2.67     -9.97     -9.97     -9.96    -11.73 +1.708e-03 +2.279e-02   10    0   1 0,0,0
+ 23     -2.67      -2.68    -11.67    -11.67    -11.66    -13.20 +1.873e-03 +2.467e-02   10    0   2 0,0,0
+ 24     -2.68      -2.69    -10.93    -10.93    -10.90    -12.12 +2.037e-03 +2.670e-02   10    0   2 0,0,0
+ 25     -2.69      -2.70     -8.52     -8.52     -8.49     -9.64 +2.166e-03 +2.887e-02   10    0   2 1,0,0
+ 26     -2.70      -2.71     -6.74     -8.90     -7.89     -6.71 +2.242e-03 +3.111e-02   10    0   1 0,0,1
+ 27     -2.71      -2.14     -2.00     -4.77     -4.73     -2.00 +7.678e-03 +3.879e-02   10    0   0 0,1,0
+ 28     -2.14      -2.15     -4.61     -7.39     -6.99     -4.61 -6.116e-03 +3.267e-02   10    0   1 1,0,0
+ 29     -2.15      -1.67     -1.63     -4.46     -4.55     -1.63 -1.293e-02 +1.975e-02   10    0   1 0,0,0
+ 30     -1.67      -1.71     -1.03     -4.01     -4.03     -1.03 +1.692e-02 +3.666e-02   10    0   2 1,3,2
+ 31     -1.71      -1.96     -1.15     -4.00     -4.02     -1.15 -1.095e-02 +2.571e-02   10    0   2 3,1,3
+ 32     -1.96      -1.46     -1.24     -4.21     -4.23     -1.24 -1.278e-02 +1.293e-02   10    0   1 0,1,1
+ 33     -1.46      -1.47     -3.21     -6.34     -6.45     -3.21 +1.604e-02 +2.897e-02   10    0   0 2,3,4
+ 34     -1.47      -1.48     -3.97     -7.41     -7.04     -3.97 +1.541e-02 +4.438e-02   10    0   0 0,3,2
+ 35     -1.48      -1.49     -5.48     -7.18     -6.97     -5.47 +1.605e-02 +6.043e-02   10    0   0 0,4,1
+ 36     -1.49      -1.50     -4.13     -6.53     -6.61     -4.12 +1.764e-02 +7.807e-02   10    0   2 1,2,3
+ 37     -1.50      -1.45     -1.40     -4.04     -4.01     -1.40 +1.410e-02 +9.217e-02   10    0   2 3,2,2
+ 38     -1.45      -0.68     -0.34     -4.02     -4.02     -0.34 +1.942e-02 +1.116e-01   10    0   1 1,2,0
+ 39     -0.68      -0.15      0.26     -4.73     -4.90      0.26 +2.806e-01 +3.922e-01   10    0   1 5,15,4
+ 40     -0.15       0.03      0.30     -6.67     -7.32      0.30 +1.059e+00 +1.451e+00   10    0   1 24,29,26
+ 41      0.03       0.13      0.30     -7.07     -6.66      0.30 +1.728e+00 +3.179e+00   10    0   2 37,43,30
+ 42      0.13       0.21      0.30     -7.47     -6.85      0.30 +2.273e+00 +5.452e+00   10    0   3 46,48,37
+ 43      0.21       0.27      0.30     -7.08    -13.05      0.30 +1.809e+00 +7.262e+00   10    0   2 51,61,45
+ 44      0.27       0.33      0.30     -6.30    -15.95      0.30 +8.092e-01 +8.071e+00   10    0   2 65,81,60
+ 45      0.33       0.36      0.30     -5.29      -inf      0.30 -5.966e-01 +7.474e+00   10    0   3 81,82,59
+ 46      0.36       0.41      0.30     -7.89      -inf      0.30 -1.721e+00 +5.753e+00   10    0   3 90,72,61
+ 47      0.41       0.39     -3.47     -7.41      -inf     -3.47 -2.665e+00 +3.088e+00   10    0   2 93,73,71
+ 48      0.39       0.38      -inf      -inf      -inf      -inf -3.130e+00 -4.227e-02   10    0   0 94,61,67
+ 49      0.38       0.37      -inf      -inf      -inf      -inf -3.459e+00 -3.501e+00   10    0   0 90,64,63
+ 50      0.37       0.36      -inf      -inf      -inf      -inf -3.813e+00 -7.314e+00   10    0   0 79,51,57
+ 51      0.36       0.35      -inf      -inf      -inf      -inf -4.282e+00 -1.160e+01   10    0   0 73,52,52
+ 52      0.35       0.34      -inf      -inf      -inf      -inf -4.848e+00 -1.644e+01   10    0   0 63,43,42
+ 53      0.34       0.33    -13.25    -13.25      -inf    -13.25 -5.408e+00 -2.185e+01   10    0   1 62,40,42
+ 54      0.33       0.32     -6.04     -6.72      -inf     -6.04 -5.812e+00 -2.766e+01   10    0   2 62,43,42
+ 55      0.32       0.29      0.17     -4.12      -inf      0.17 -6.149e+00 -3.381e+01   10    1   3 60,43,42
+ 56      0.29       0.28     -2.62     -6.32    -15.35     -2.62 -6.538e+00 -4.035e+01   10    0   3 49,47,37
+ 57      0.28       0.27     -2.89     -6.40    -14.88     -2.89 -6.097e+00 -4.645e+01   10    0   3 45,44,34
+ 58      0.27       0.25      0.30     -8.16    -15.11      0.30 -5.322e+00 -5.177e+01   10    0   2 33,39,32
+ 59      0.25       0.25      0.30    -12.64      -inf      0.30 -5.837e+00 -5.761e+01   10    0   1 33,38,35
+ 60      0.25       0.27      0.30    -12.00      -inf      0.30 -6.360e+00 -6.397e+01   10    0   1 32,33,35
+ 61      0.27       0.29      0.30     -7.89      -inf      0.30 -7.004e+00 -7.097e+01   10    0   1 29,31,35
+ 62      0.29       0.28     -5.39     -7.27      -inf     -5.39 -7.833e+00 -7.880e+01   10    0   1 33,31,32
+ 63      0.28       0.27    -15.11    -15.11      -inf    -15.11 -8.136e+00 -8.694e+01   10    0   1 30,31,35
+ 64      0.27       0.26      -inf      -inf      -inf      -inf -8.376e+00 -9.532e+01   10    0   0 29,33,37
+ 65      0.26       0.25      -inf      -inf      -inf      -inf -8.519e+00 -1.038e+02   10    0   0 29,34,35
+ 66      0.25       0.24      -inf      -inf      -inf      -inf -8.525e+00 -1.124e+02   10    0   0 32,38,31
+ 67      0.24       0.23      -inf      -inf      -inf      -inf -8.358e+00 -1.207e+02   10    0   0 34,40,31
+ 68      0.23       0.22      -inf      -inf      -inf      -inf -7.996e+00 -1.287e+02   10    0   0 32,38,32
+ 69      0.22       0.21      -inf      -inf      -inf      -inf -7.452e+00 -1.362e+02   10    0   0 33,30,28
+ 70      0.21       0.20      -inf      -inf      -inf      -inf -6.775e+00 -1.429e+02   10    0   0 34,28,21
+ 71      0.20       0.19      -inf      -inf      -inf      -inf -6.048e+00 -1.490e+02   10    0   0 34,25,24
+ 72      0.19       0.18      -inf      -inf      -inf      -inf -5.360e+00 -1.543e+02   10    0   0 33,28,21
+ 73      0.18       0.17      -inf      -inf      -inf      -inf -4.779e+00 -1.591e+02   10    0   0 32,30,22
+ 74      0.17       0.17      -inf      -inf      -inf      -inf -4.330e+00 -1.635e+02   10    0   0 37,32,23
+ 75      0.17       0.16      -inf      -inf      -inf      -inf -3.985e+00 -1.674e+02   10    0   0 35,32,23
+ 76      0.16       0.15      -inf      -inf      -inf      -inf -3.676e+00 -1.711e+02   10    0   0 31,30,18
+ 77      0.15       0.14      -inf      -inf      -inf      -inf -3.326e+00 -1.744e+02   10    0   0 28,30,19
+ 78      0.14       0.13    -14.12    -14.12      -inf    -14.12 -2.874e+00 -1.773e+02   10    0   1 31,31,24
+ 79      0.13       0.12     -8.40     -8.40    -12.75     -8.40 -2.304e+00 -1.796e+02   10    0   1 35,35,23
+ 80      0.12       0.11     -4.60     -7.72     -8.13     -4.60 -1.640e+00 -1.813e+02   10    0   1 30,35,23
+ 81      0.11       0.11     -1.37     -5.08     -6.95     -1.37 -9.644e-01 -1.822e+02   10    0   0 31,29,26
+ 82      0.11       0.10     -2.05     -5.65     -6.33     -2.05 -2.424e-01 -1.825e+02   10    0   0 31,23,19
+ 83      0.10       0.07     -0.73     -7.25     -4.42     -0.73 +4.877e-01 -1.820e+02   10    0   0 29,24,18
+ 84      0.07       0.05     -1.91    -10.79     -5.67     -1.91 +8.624e-01 -1.811e+02   10    0   0 31,25,23
+ 85      0.05       0.04     -2.85      -inf     -6.66     -2.85 +1.106e+00 -1.800e+02   10    0   1 30,25,27
+ 86      0.04       0.03     -4.01      -inf     -8.16     -4.01 +1.248e+00 -1.788e+02   10    0   1 31,27,23
+ 87      0.03       0.02     -5.71      -inf     -7.48     -5.70 +1.318e+00 -1.774e+02   10    0   1 28,24,24
+ 88      0.02       0.01      -inf      -inf     -8.95     -8.95 +1.351e+00 -1.761e+02   10    0   0 28,21,20
+ 89      0.01      -0.00      -inf      -inf    -11.76    -11.76 +1.383e+00 -1.747e+02   10    0   0 28,26,18
+ 90     -0.00      -0.01      -inf      -inf    -13.91    -13.91 +1.440e+00 -1.733e+02   10    0   0 25,28,21
+ 91     -0.01      -0.02      -inf      -inf    -15.65    -15.65 +1.538e+00 -1.717e+02   10    0   0 24,25,18
+ 92     -0.02      -0.03      -inf      -inf      -inf      -inf +1.673e+00 -1.701e+02   10    0   0 26,28,18
+ 93     -0.03      -0.04      -inf      -inf      -inf      -inf +1.826e+00 -1.682e+02   10    0   0 20,27,16
+ 94     -0.04      -0.05      -inf      -inf      -inf      -inf +1.969e+00 -1.663e+02   10    0   0 21,25,13
+ 95     -0.05      -0.06      -inf      -inf      -inf      -inf +2.073e+00 -1.642e+02   10    0   0 23,25,10
+ 96     -0.06      -0.07      -inf      -inf      -inf      -inf +2.121e+00 -1.621e+02   10    0   0 21,22,14
+ 97     -0.07      -0.07      -inf      -inf      -inf      -inf +2.116e+00 -1.600e+02   10    0   0 22,29,16
+ 98     -0.07      -0.08      -inf      -inf      -inf      -inf +2.074e+00 -1.579e+02   10    0   0 23,24,15
+ 99     -0.08      -0.09      -inf      -inf      -inf      -inf +2.022e+00 -1.559e+02   10    0   0 21,27,17
+  all steps (shown): largest one-step growth 0.9009623165979644 decades at step 13; 23 steps growing; 4.835354102074413 decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 57, the first at step 3; largest one-step growth on them 0.9009623165979644 decades at step 13 (at most 1): passed True [shown]
+
+=== READINGS (PRESPEC.md 19.6), judged on calibration/rebrac-alone x3 bias step 15000 ===
+  the lane's numbers reproduced bit for bit on 7 of 7 banks: True
+  (i) injected gap within max(1e-5, 10 x float32 reference spread) on every bank: True (highest share of its bound: strong_current, 1.70e-04 against 2.99e-04)
+  (ii) big_kicks's worst start 128: propagation reaches injection at step 3; largest growth on propagation-dominated steps 0.9859430565569187 decades: True
+  (iii) big_kicks: same-size control / J32-J64, bank's largest 0.999: True (at the worst start 0.999, shown)
+  big_kicks starts above 0.01 points: 317; above 0.05: 119
+  VERDICT: consistent with float32 rounding amplified by the closed loop: True
+
+probe: bytecode beside hashed code after the run: none; wrote nothing but --out /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/rr/cal/out_3_bias.txt

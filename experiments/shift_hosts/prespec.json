@@ -1,9 +1,25 @@
 {
  "kind": "shift-hosts-prespec",
- "version": 1,
- "title": "Unifloral hosts on ThrusterChain: pre-specification version 1",
- "drafted": "2026-10-16",
+ "version": 2,
+ "title": "Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc) [DRAFT]",
+ "drafted": "2026-10-17",
+ "status": "DRAFT: not frozen, not approved. At the freeze this reads \"frozen\", the title loses \" [DRAFT]\" and the three [TO FILL ...] slots (two approval_summary lines, post_hoc_changes P1's if_exceeded_later) are filled (PRESPEC.md section 19.8, step 2)",
+ "supersedes": {
+  "version": 1,
+  "freeze_commit": "2e59db0",
+  "approval_commit": "608eefa",
+  "fingerprint": "8c5e8421922dccebe5b86f47b44c8d86def2dbdec7da84ba78ba2ba807728179",
+  "prespec_sha256": "c8ce9f98ea019be53b107bcb0ccc4a4e4feaae440a6b98364c4ec6e6a53f435b",
+  "approved_at_utc": "2026-10-16T16:29:12Z",
+  "stopped": "2026-10-16T17:12:14Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-alone)",
+  "records": "version 1's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v1/; they name version 1's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/"
+ },
  "approval_summary": [
+  "Version 2, post hoc (PRESPEC.md section 19): version 1's stage 1 stopped on S7 (16 Oct; ReBRAC alone, big kicks, 0.0114 points); S7's closed-loop limit is now 0.05 points per start, not 0.01. Nothing else in the rules changes; its consequences (section 19.7): stage 1 reruns in full, the stage-0 hygiene test accepts the committed package, results.json carries a post-hoc caveat.",
+  "In return units, 0.05 points is 0.635 per start on the strong mix: up to 35% of the 1.8 bar for one setup's seed-0 mean and up to 71% for a seed-0 delta (version 1: 7% and 14%); seeds 1-4 are never S7-checked; no claim's number depends on the limit (section 19.5).",
+  "No return had been read before the change. Version 1's run records, job logs and driver state are kept aside and never used; its ledger (its stage-1 spend, 0.28 card-h and 0.41 processor-h, stays counted) and its stop report stay in driver/, and results.json lists the stop as resumed by the operator.",
+  "[TO FILL BEFORE THE FREEZE: the investigation's result (section 19.6): reproduced bit for bit yes/no; big-kicks starts above 0.01 and above 0.05; readings 1-3 and the verdict; probe SHA-256, first 16]",
+  "[TO FILL BEFORE THE FREEZE, your decision (section 19.7): what happens if 0.05 is exceeded later]",
   "12 setups per quality: TD3+BC, CQL, IQL and ReBRAC, each alone, with standard BCA and with IW BCA.",
   "Unifloral at f2dc127, its own defaults; discount 0.98; 100,000 outer steps; JAX 0.6.2 on the card.",
   "Data: the weighting test's logs, medium-expert and medium, gapped, data seeds 0-4 (hashes fixed).",
@@ -790,7 +806,9 @@
    "--caps",
    "--inject",
    "--dry-run"
-  ]
+  ],
+  "version2_first_start": "env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-venv/bin/python -m experiments.shift_hosts.stages start --stage0-card-hours 0 --stage0-processor-hours 0 --resume-after-stop",
+  "version2_why": "the kept runs/shift_hosts/driver/ holds version 1's STOP.json, which only --resume-after-stop moves aside (an operator option allowed above); PRESPEC.md section 19.8, step 9"
  },
  "stop_rules": {
   "meaning": "any stop halts the driver: nothing new launches, running children finish, driver/STOP.json and STOP.txt are written; nothing is retried silently; S5 on alone or room is that learner's Claim 0 outcome and the driver goes on; S5 on a BCA setup halts until traced; any change after approval needs a new version approved at the terminal",
@@ -924,9 +942,11 @@
    "processor_hour": "one hour of measured user plus system processor time, summed over all processes"
   },
   "S7": {
-   "rule": "open loop, by file: the float32 restatement (actors_f32.py) and the learner's own float32 network disagree by more than 1e-7 on any saved state; closed loop: that restatement and the float64 scoring adapter disagree by more than 0.01 points on any start",
+   "rule": "open loop, by file: the float32 restatement (actors_f32.py) and the learner's own float32 network disagree by more than 1e-7 on any saved state; closed loop: that restatement and the float64 scoring adapter disagree by more than 0.05 points on any start",
    "open_loop_max_abs": 1e-07,
-   "closed_loop_max_points": 0.01,
+   "closed_loop_max_points": 0.05,
+   "closed_loop_max_points_version1": 0.01,
+   "changed": "version 2, post hoc (PRESPEC.md section 19; post_hoc_changes P1)",
    "on": "every stage-1 actor and every seed-0 final actor of alone, standard and IW",
    "cql": "with the same declared noise",
    "stage0_test_h_adapter_vs_restatement": 1e-05
@@ -1208,7 +1228,25 @@
    "coverage": 90,
    "s7": 120,
    "viewer": 70
-  }
+  },
+  "version1_stage1": {
+   "card_hours": 0.2785,
+   "processor_hours": 0.409,
+   "counted": "against medium-expert's cap, in the kept driver ledger; stage 1 runs again on top of it"
+  },
+  "version2_stages1_2a_with_version1": {
+   "card_hours": [
+    7.53,
+    11.48
+   ],
+   "processor_hours": [
+    9.91,
+    16.87
+   ],
+   "hard_throttle_card_hours": 14.08,
+   "note": "[central, high]; in the hard-throttle case S6 at the end of stage 1 (if stage 1 measures the throttled speeds; it projects medium too) or S6b between whole units (if the throttling starts later) would stop the study"
+  },
+  "version2_stage0_suite": "stage-0 work, booked separately like stage 0 and not entered in the ledger; its measurement in runs/shift_hosts/stage0/SUMMARY.json"
  },
  "exploratory": {
   "label": "EXPLORATORY: seeds 0-4 of the weighting test's data, already seen by it; confirmation needs fresh data seeds 10-14 of its generator and a pre-registration approved at the user's terminal",
@@ -1280,6 +1318,32 @@
    "id": "A13",
    "plan": "3.1 module table, 9.2",
    "what": "export.py writes results.json only; the page's viewer and actor files are not written by this package"
+  }
+ ],
+ "post_hoc_changes": [
+  {
+   "id": "P1",
+   "version": 2,
+   "plan": "6.1 S7",
+   "post_hoc": true,
+   "what": "S7's closed-loop limit is 0.05 points per start (version 1: 0.01): every start of all 7 banks, both CQL readouts, every stage-1 actor and every seed-0 final actor of alone, standard and IW",
+   "code": "evaluate.S7_CLOSED_TOL_POINTS (evaluate.py)",
+   "why": "version 1's stage 1 stopped on S7: ReBRAC alone's closed loop on big kicks, largest per-start difference 0.01139066435681002 points (0.011360856254952978 return units), mean 6.45e-05, over 1,000 starts; the other six banks at most 0.0024 points; the open loop bit for bit on 7,400 states",
+   "decided": "the user, 2026-10-16T17:16:09Z, in chat, choosing the option the main session (Claude) proposed and marked recommended, 'Investigate, then version 2 (Recommended)'; the value 0.05 was the session's proposal; the question summarized the stop as 'ReBRAC: one start of 1,000 off by 0.0114 points vs the 0.01 limit'",
+   "chosen": "after the failing value was seen (0.05 is 4.4 times 0.01139), before the investigation ran",
+   "returns_read_before": "none: S7 records float32-against-float64 differences only, and stage 1 has no scoring lane",
+   "claims_affected": "no claim's number: claims read only the float64 adapter's scored returns, computed the same way under either limit; the limit decides whether the driver halts and S7's status, and bounds the scored float64 policies' faithfulness to the learners' float32 networks (strong mix 0.635 return units per start, up to 1.27 for a delta; seed-0 final actors only)",
+   "investigation": "PRESPEC.md section 19.6 (probe_s7.py outside the repository; differences only)",
+   "consequences": [
+    "stage 1 reruns in full (20 runs) under version 2's fingerprint",
+    "version 1's runs/shift_hosts/stage1/, driver/logs/ and driver/state.json (with its sidecar and .prev copy) are moved to runs/shift_hosts_v1/; the ledger, the stop report, driver.log and nohup.out stay in driver/",
+    "tests/test_all_stage0.py's hygiene test: git answers (exit 0, a HEAD) and shows no change outside the package (the package is committed since version 1)",
+    "tests/test_scoring.py's test (h4) renamed for the new limit",
+    "export.CAVEATS: one caveat states the post-hoc limit in results.json"
+   ],
+   "unchanged": "everything else: every other threshold, claim, mark, bar, seed, cap and setting; S7's open-loop 1e-7",
+   "risk": "0.05 is 4.4 times the one value seen, the largest of a heavy-tailed distribution, on 15,000-step actors; a later actor may exceed it (PRESPEC.md section 19.7), and S7 has no accept option",
+   "if_exceeded_later": "[TO FILL BEFORE THE FREEZE, your decision (PRESPEC.md section 19.7)]"
   }
  ]
 }

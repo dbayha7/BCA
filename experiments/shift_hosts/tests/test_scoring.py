@@ -10,7 +10,7 @@ Test (h), as section 3.9 lists it:
       unifloral) computes each Unifloral actor's own float32 commands (the imported Unifloral classes) on states saved
       here; the restatement must match within 1e-7 on the processor, CQL with the same noise. Negative controls (a
       wrong normalization, CQL's two heads swapped) must fail, so the check has teeth
-  h4  S7, closed loop: the float32 restatement and the float64 adapter agree within 0.01 points on a few starts of every
+  h4  S7, closed loop: the float32 restatement and the float64 adapter agree within 0.05 points on a few starts of every
       bank, CQL with the declared noise
   h5  CQL's noise stream is reproducible: the same bits twice, the declared rule, different banks differ, the training
       environment's numpy draws the same bits, and the cached files (scoring_cache.py) hold the same bits
@@ -401,8 +401,8 @@ class OpenLoopTest(unittest.TestCase):
 
 class ClosedLoopTest(unittest.TestCase):
 
-    def test_h4_closed_loop_within_001_points(self):
-        """h4: on 8 starts of each of the 7 banks, the float32 restatement and the float64 adapter agree within 0.01
+    def test_h4_closed_loop_within_005_points(self):
+        """h4: on 8 starts of each of the 7 banks, the float32 restatement and the float64 adapter agree within 0.05
         points per start, for every learner (CQL with the declared noise, and its tanh-of-mean readout)."""
         from experiments.shift_hosts import evaluate as E
         from experiments.shift_hosts import guard

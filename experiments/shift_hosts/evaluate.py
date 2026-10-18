@@ -45,7 +45,7 @@ S7 (plan sections 3.9 and 6.1):
                answers with actors_f32.open_loop_commands; open_loop_compare checks the float32 restatement against
                those commands within 1e-7
   closed loop  closed_loop_check rolls the float32 restatement and the float64 adapter from the same starts (default:
-               every start) and checks |points difference| <= 0.01 on each (CQL with the declared noise)
+               every start) and checks |points difference| <= 0.05 on each (CQL with the declared noise)
 
 Permission. Scoring an actor file needs guard.MADE_UP with an actor file whose meta says made_up true and that no run
 trained (stage-0 tests' made-up parameters; the runner marks every actor file it writes trained true), or a
@@ -92,7 +92,7 @@ F2_QUANTILE = 0.99                             # plan section 5.4
 WORST_SHARE = 0.10                             # the worst-10% mean
 LOW_PERCENTILE = 0.10                          # the 10th percentile
 S7_OPEN_TOL = 1e-7                             # plan section 3.9 / stop rule S7
-S7_CLOSED_TOL_POINTS = 0.01
+S7_CLOSED_TOL_POINTS = 0.05                    # stop rule S7, pre-specification version 2 (PRESPEC.md section 19)
 COPIED_BANKS = REPO / "runs" / "shift_hosts" / "source" / "start_banks"            # data_copy.start_banks_dir()
 ORIGINAL_BANKS = Path("/root/bca-shift/runs/shift_iw_v5/start_banks")
 START_BANKS_HDF5_SHA256 = "9ad49e478dffdbc16160c3f69637dfb15b110035d64cf5951608d2b73904d50b"   # start_banks.json
@@ -588,7 +588,7 @@ def open_loop_compare(states_path, commands_path, actor_path, tol=S7_OPEN_TOL):
 def closed_loop_check(actor_path, permission, *, banks=BANKS, idx=None, tol_points=S7_CLOSED_TOL_POINTS):
     """S7's closed loop (scoring environment): the float32 restatement (actors_f32.Float32Policy) and the float64
     adapter roll from the same starts (idx; default every start) of each bank; passes when every start's points
-    differ by at most tol_points (0.01) and every return is finite. CQL: both readouts, the scored one with the
+    differ by at most tol_points (0.05) and every return is finite. CQL: both readouts, the scored one with the
     declared noise. Returns per readout and bank the largest differences in points and return units."""
     actor = A32.read_actor_file(actor_path)
     who = require_permission(permission, actor)
