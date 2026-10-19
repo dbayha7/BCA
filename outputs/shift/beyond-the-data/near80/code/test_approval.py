@@ -1041,6 +1041,25 @@ class TestAmendmentFixture(Isolated):
                                                       if k != "desktop_check"})
         self.assertIn("made by another check", "; ".join(AC.desktop_check_problems(result(), no_code)))
 
+    def test_deeply_nested_json_is_a_refusal(self):
+        """JSON nested deeper than the parser allows raises RecursionError, which is not a ValueError: the gate's
+        readers refuse it (a desktop check's result, the owner's approval of the amendment, amendment_1.json) instead of
+        crashing."""
+        fx, cfg = self.fixture()
+        asha = write_test_amendment(fx, self.good_edits(fx), approve=False)
+        amendment = AC.Amendment(fx / AC.AMENDMENT_NAME, asha, AC.read_json_verified(fx / AC.AMENDMENT_NAME))
+        deep = b"[" * 200000 + b"]" * 200000
+        self.assertEqual(AC.desktop_check_problems(deep, amendment), ["it is not UTF-8 JSON"])
+        with self.assertRaisesRegex(AC.ApprovalRefused, "is not UTF-8 JSON"):
+            AC.check_local_amendment_approval(deep, AC.load_prereg(cfg), amendment)
+        p = fx / AC.AMENDMENT_NAME
+        p.write_bytes(deep)
+        Path(str(p) + ".sha256").write_text(f"{AC.sha256_bytes(deep)}  {p.name}\n", encoding="utf8")
+        with self.assertRaisesRegex(AC.ApprovalRefused, "is not JSON"):
+            AC.read_json_verified(p)
+        with self.assertRaisesRegex(AC.ApprovalRefused, "is not JSON"):
+            AC.require_approval(cfg)
+
 
 class TestAmendmentChain(ChainBase):
     """Amendment 1 with git: the session commits the amended files and amendment_1.json; the owner approves it at
@@ -1320,12 +1339,13 @@ class TestApproveLocalAmendment(Isolated):
         self.assertIn(f"its code, as amendment_1.json names it: check_amendment1.py {'1' * 16}, check_amendment1.sh "
                       f"{'2' * 16}", flat)
         self.assertIn("Approving also confirms the item of section 19.6 that is marked for you: to your knowledge "
-                      "nobody, you included, opened a record of the exploratory stage that holds a score or a learner "
-                      "number", flat)
-        self.assertIn("looks/exploratory.json and exploratory.md, and the records of seeds 0-4 under learners/, "
-                      "policy/, eval/, readouts/ and stops/", flat)
-        self.assertIn("If anyone did, press Enter to stop and tell the session; it states it in section 19.6 and "
-                      "gives you a new fingerprint.", flat)
+                      "nobody, you included, opened a record or log of the exploratory stage that holds a score or a "
+                      "learner number", flat)
+        self.assertIn("looks/exploratory.json and looks/exploratory.md; the records of seeds 0-4 under learners/, "
+                      "policy/, eval/, readouts/ and stops/; and the logs of seeds 0-4's phases under logs/", flat)
+        self.assertIn("If anyone did, press Enter to stop and tell the session who opened which files (name the files "
+                      "only; do not say what they showed); it states it in section 19.6 and gives you a new "
+                      "fingerprint.", flat)
         self.assertLess(flat.index("Before you type:"), flat.index("Fingerprint (SHA-256) of amendment_1.json:"))
         self.assertEqual(tree(self.n80), before)
 
@@ -1361,6 +1381,22 @@ class TestApproveLocalAmendment(Isolated):
         write_desktop_check(self.n80, self.asha, name="desktop_check_20261019T000002Z.json")
         code, text = self.run_al()                                         # one passing result file is enough
         self.assertEqual(code, 0, text)
+
+    def test_refuses_deeply_nested_json(self):
+        """A deeply nested desktop check result, or amendment_1.json, whose .sha256 matches: a refusal, not a
+        traceback (the JSON parser raises RecursionError, which is not a ValueError)."""
+        deep = b"[" * 200000 + b"]" * 200000
+        check = self.n80.parent / self.check_rel
+        check.write_bytes(deep)
+        Path(str(check) + ".sha256").write_text(f"{AC.sha256_bytes(deep)}  {check.name}\n", encoding="utf8")
+        self.refused("No desktop check of this amendment has passed")
+        code, text = self.run_al(args=["--check"], stdin=NotTty())
+        self.assertEqual(code, 0, text)
+        self.assertIn("none has passed yet", " ".join(text.split()))
+        p = self.n80 / AC.AMENDMENT_NAME
+        p.write_bytes(deep)
+        Path(str(p) + ".sha256").write_text(f"{AC.sha256_bytes(deep)}  {p.name}\n", encoding="utf8")
+        self.refused("amendment_1.json is not readable JSON", args=["--check"], stdin=NotTty())
 
     def test_refuses_a_malformed_amendment(self):
         good = json.loads(json.dumps(self.body))

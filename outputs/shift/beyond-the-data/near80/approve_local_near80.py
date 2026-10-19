@@ -137,7 +137,7 @@ def sidecar_digest(path):
 def load_json(data, name):
     try:
         return json.loads(data.decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise Refused("{} is not readable JSON.".format(name))
 
 
@@ -254,7 +254,7 @@ def desktop_checks(folder, amendment, amendment_sha):
             raw = read_bytes(path)
             body = json.loads(raw.decode("utf8"))
             ok = sidecar_digest(path) == sha256_bytes(raw)
-        except (OSError, Refused, UnicodeDecodeError, ValueError):
+        except (OSError, Refused, UnicodeDecodeError, ValueError, RecursionError):
             continue
         tests = body.get("unit_tests") if isinstance(body, dict) else None
         if (ok and isinstance(body, dict) and body.get("kind") == CHECK_KIND and body.get("mode") == "official"
@@ -490,11 +490,12 @@ def summary_amendment(info):
                         "the four unit test files)"])), "",
              "Before you type:",
              wrap("Approving also confirms the item of section 19.6 that is marked for you: to your knowledge nobody, "
-                  "you included, opened a record of the exploratory stage that holds a score or a learner number "
-                  "(under runs/shift_explore/near80/: looks/exploratory.json and exploratory.md, and the records of "
-                  "seeds 0-4 under learners/, policy/, eval/, readouts/ and stops/) or read such a number from one. "
-                  "If anyone did, press Enter to stop and tell the session; it states it in section 19.6 and gives "
-                  "you a new fingerprint."), "",
+                  "you included, opened a record or log of the exploratory stage that holds a score or a learner "
+                  "number (under runs/shift_explore/near80/: looks/exploratory.json and looks/exploratory.md; the "
+                  "records of seeds 0-4 under learners/, policy/, eval/, readouts/ and stops/; and the logs of seeds "
+                  "0-4's phases under logs/) or read such a number from one. If anyone did, press Enter to stop and "
+                  "tell the session who opened which files (name the files only; do not say what they showed); it "
+                  "states it in section 19.6 and gives you a new fingerprint."), "",
              "Fingerprint (SHA-256) of amendment_1.json:", "", "    " + info["amendment_sha256"], "",
              "Read it first: {}/PREREGISTRATION.md, section 19".format(FOLDER_POSIX), ""]
     return "\n".join(parts)

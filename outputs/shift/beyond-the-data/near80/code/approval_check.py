@@ -180,7 +180,7 @@ def read_json_verified(path, what=None):
         raise ApprovalRefused(f"{what} differs from its '.sha256' sidecar ({path}): it was changed")
     try:
         return json.loads(raw.decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise ApprovalRefused(f"{what} is not JSON ({path})") from None
 
 
@@ -282,7 +282,7 @@ def load_prereg(cfg=None):
         raise ApprovalRefused(f"{path} differs from its '.sha256' sidecar (the file was changed)")
     try:
         payload = json.loads(raw.decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise ApprovalRefused(f"{path} is not JSON") from None
     if not isinstance(payload, dict) or payload.get("kind") != K.PREREG_KIND:
         raise ApprovalRefused(f"{path} is not the near-80 pre-registration (kind {K.PREREG_KIND!r})")
@@ -409,7 +409,7 @@ def check_local_approval(raw, prereg):
     """The owner's approval file (approve_local_near80.py's output) approves THIS prereg.json. Returns its body."""
     try:
         body = json.loads(bytes(raw).decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise ApprovalRefused("the approval file is not UTF-8 JSON") from None
     if not isinstance(body, dict):
         raise ApprovalRefused("the approval file is not a JSON object")
@@ -607,7 +607,7 @@ def check_local_amendment_approval(raw, prereg, amendment):
     on top of THIS prereg.json. Returns its body."""
     try:
         body = json.loads(bytes(raw).decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise ApprovalRefused("the amendment's approval file is not UTF-8 JSON") from None
     if not isinstance(body, dict):
         raise ApprovalRefused("the amendment's approval file is not a JSON object")
@@ -643,7 +643,7 @@ def desktop_check_problems(raw, amendment):
     problems. approve_local_near80.desktop_checks applies the same rules before the owner approves."""
     try:
         body = json.loads(bytes(raw).decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         return ["it is not UTF-8 JSON"]
     if not isinstance(body, dict):
         return ["it is not a JSON object"]
@@ -713,7 +713,7 @@ def verify_amendment_chain(prereg, amendment, parent_facts, cfg, v6c):
         raise ApprovalRefused(f"{imp.name} differs from its '.sha256' sidecar")
     try:
         body = json.loads(raw_imp.decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise ApprovalRefused(f"{imp.name} is not JSON") from None
     if not isinstance(body, dict):
         raise ApprovalRefused(f"{imp.name} is not a JSON object")
@@ -766,7 +766,7 @@ def verify_chain(prereg, cfg=None, v6c=None, with_amendment=True):
         raise ApprovalRefused(f"{imp.name} differs from its '.sha256' sidecar")
     try:
         body = json.loads(raw_imp.decode("utf8"))
-    except (UnicodeDecodeError, ValueError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         raise ApprovalRefused(f"{imp.name} is not JSON") from None
     if not isinstance(body, dict):
         raise ApprovalRefused(f"{imp.name} is not a JSON object")

@@ -1397,25 +1397,32 @@ and the approval check refuses any other change.
       carry nothing about any learner of this pre-registration. Their files also hold values computed from seed 10's
       real data that do not come from a stand-in, such as the gate's data checks of that seed; none of these was
       read either;
-    - nothing more is read from these scratch runs, and they will be deleted, unread, once `amendment_1.json` is
-      pushed;
+    - nothing more was read from these scratch runs, and they were deleted, unread, on 19 October 2026;
   - no look, and no number this run computed on seeds 0-4 or 10-14 (score, learner number or claim).
 - **Not seen by either session, as each reported:** any number of the exploratory look; any score or learner number
   this run computed on seeds 0-4, beyond what the approved text and step 2's committed results already state; any
   claim; and any score or learner number on seeds 10-14. The desktop session's status output can show the look's
-  allow-or-stop decision (above); the cloud session did not see it.
-- **One fact about the fresh seeds' data follows from what ran.** In the stalling world every fresh seed passed the
-  gate's data checks (the 10 critics of 19.2 start only then), and in the cloud scratch runs seed 10 passed them in
-  both worlds. The desktop check counts any seed-world that failed them.
-- **For you to confirm before you approve: has anyone, you included, opened a record of the exploratory stage that
-  holds a score or a learner number, or read such a number from one?** On your desktop these are, under
-  `runs/shift_explore/near80/`: the look, `looks/exploratory.json` and `exploratory.md` (`run_near80.sh report` also
-  prints from them), and the records of seeds 0-4 under `learners/`, `policy/`, `eval/`, `readouts/` and `stops/`.
-  Neither session reported doing so. The runner's status output, and its line "the exploratory look allows (or
-  stops) the near-80 settings on seeds 10-14", do not count: they show the look's decision, not a score. By approving
-  you confirm that, to your knowledge, nobody did. If anyone did, do not approve this version: tell the session who
-  opened what. It then says so in this section and writes `amendment_1.json` again, with a new fingerprint, for you
-  to approve.
+  allow-or-stop decision (above). The cloud session saw only three lines of it, relayed by the desktop session: the
+  CPU-hours line (`confirmatory_main 0.113, exploratory 12.095, plumbing 1.234`), the line naming the halted phases
+  (`critic.main.stall.s10..s14` and `critic_full.x.stall.s10..s14`) and the `halted: FAILED: critic.main.stall.s10`
+  line. They hold no count of phases by state, no stopped or skipped phase and no line of the look's decision. But
+  they name only phases of the main setting as running on seeds 10-14, which hints at that decision; the cloud
+  session noticed this while writing this section. The decision is not a score, and nothing in this amendment depends
+  on it: the fix is the same either way.
+- **One fact about the fresh seeds' data follows from what ran.** Every fresh seed passed the gate's data checks in
+  both worlds: the data phase writes the main setting's training file (19.2) only for a seed-world that passed them.
+  The cloud scratch runs show nothing about it: in stub mode the data phase records every seed-world as passing. The
+  desktop check counts any seed-world that failed them.
+- **For you to confirm before you approve: has anyone, you included, opened a record or log of the exploratory stage
+  that holds a score or a learner number, or read such a number from one?** On your desktop these are, under
+  `runs/shift_explore/near80/`: the look, `looks/exploratory.json` and `looks/exploratory.md` (`run_near80.sh report`
+  also prints from them); the records of seeds 0-4 under `learners/`, `policy/`, `eval/`, `readouts/` and `stops/`;
+  and the logs of seeds 0-4's phases under `logs/`, whose training lines print learner numbers such as critic and
+  cloning losses. Neither session reported doing so. The runner's status output, and its line "the exploratory look
+  allows (or stops) the near-80 settings on seeds 10-14", do not count: they show the look's decision, not a score.
+  By approving you confirm that, to your knowledge, nobody did. If anyone did, do not approve this version: tell the
+  session who opened which files (name the files only; do not say what they showed). It then says so in this
+  section and writes `amendment_1.json` again, with a new fingerprint, for you to approve.
 - **Nothing was trained on seeds 10-14.** Every failed attempt ended with an error while loading the seed's data,
   before a learner was built. The desktop check confirms that no model file of seeds 10-14 exists.
 
