@@ -1,9 +1,9 @@
 {
  "kind": "shift-hosts-prespec",
  "version": 2,
- "title": "Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc) [DRAFT]",
+ "title": "Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc)",
  "drafted": "2026-10-17",
- "status": "DRAFT: not frozen, not approved. At the freeze this reads \"frozen\", the title loses \" [DRAFT]\" and the three [TO FILL ...] slots (two approval_summary lines, post_hoc_changes P1's if_exceeded_later) are filled (PRESPEC.md section 19.8, step 2)",
+ "status": "frozen",
  "supersedes": {
   "version": 1,
   "freeze_commit": "2e59db0",
@@ -18,8 +18,8 @@
   "Version 2, post hoc (PRESPEC.md section 19): version 1's stage 1 stopped on S7 (16 Oct; ReBRAC alone, big kicks, 0.0114 points); S7's closed-loop limit is now 0.05 points per start, not 0.01. Nothing else in the rules changes; its consequences (section 19.7): stage 1 reruns in full, the stage-0 hygiene test accepts the committed package, results.json carries a post-hoc caveat.",
   "In return units, 0.05 points is 0.635 per start on the strong mix: up to 35% of the 1.8 bar for one setup's seed-0 mean and up to 71% for a seed-0 delta (version 1: 7% and 14%); seeds 1-4 are never S7-checked; no claim's number depends on the limit (section 19.5).",
   "No return had been read before the change. Version 1's run records, job logs and driver state are kept aside and never used; its ledger (its stage-1 spend, 0.28 card-h and 0.41 processor-h, stays counted) and its stop report stay in driver/, and results.json lists the stop as resumed by the operator.",
-  "[TO FILL BEFORE THE FREEZE: the investigation's result (section 19.6): reproduced bit for bit yes/no; big-kicks starts above 0.01 and above 0.05; readings 1-3 and the verdict; probe SHA-256, first 16]",
-  "[TO FILL BEFORE THE FREEZE, your decision (section 19.7): what happens if 0.05 is exceeded later]",
+  "Investigation (19 Oct, laptop): bit for bit on 7 banks; big kicks 1 start above 0.01, 0 above 0.05; reading 1 passed, reading 2 failed (10.3x growth at one step, limit 10x), reading 3 passed (7.38). Its preset verdict said do not freeze; you chose to freeze, disclosed as post hoc P2. Probe sha256 0b6e45d169e56670.",
+  "If a later start exceeds 0.05 points: the stop stands, that quality is reported as stopped by S7, and S7 is never relaxed again (your decision, 19 Oct).",
   "12 setups per quality: TD3+BC, CQL, IQL and ReBRAC, each alone, with standard BCA and with IW BCA.",
   "Unifloral at f2dc127, its own defaults; discount 0.98; 100,000 outer steps; JAX 0.6.2 on the card.",
   "Data: the weighting test's logs, medium-expert and medium, gapped, data seeds 0-4 (hashes fixed).",
@@ -1343,7 +1343,24 @@
    ],
    "unchanged": "everything else: every other threshold, claim, mark, bar, seed, cap and setting; S7's open-loop 1e-7",
    "risk": "0.05 is 4.4 times the one value seen, the largest of a heavy-tailed distribution, on 15,000-step actors; a later actor may exceed it (PRESPEC.md section 19.7), and S7 has no accept option",
-   "if_exceeded_later": "[TO FILL BEFORE THE FREEZE, your decision (PRESPEC.md section 19.7)]"
+   "if_exceeded_later": "the stop stands: the driver halts, that quality is reported as stopped by S7, and no later version relaxes S7 again (the user, 2026-10-19 about 17:20 UTC, in chat, the option marked recommended)"
+  },
+  {
+   "id": "P2",
+   "version": 2,
+   "plan": "PRESPEC.md 19.6 (the investigation's reading rules)",
+   "post_hoc": true,
+   "what": "version 2 is frozen although the investigation's preset verdict read 'do not freeze'",
+   "why": "reading 2 (amplification, one-step growth at most 1 decade on propagation-dominated steps of big kicks' worst start) failed at 1.013 decades at step 11 of start 471; reading 1 (the bound on the injected gap, the only reading that bounds a defect) passed, largest 1.41e-05 against 4.52e-05; reading 3 (same-size control) passed at 7.38; the lane's numbers reproduced bit for bit on 7 of 7 banks",
+   "decided": "the user, 2026-10-19 about 17:20 UTC, in chat, choosing 'Freeze v2, disclose it (Recommended)' after the main session (Claude) put the result to them",
+   "seen_before": "the probe's printed differences, ratios and counts only (outputs/shift_hosts_v2/probe_s7.py prints no return, points level, command or state)",
+   "evidence": {
+    "probe_sha256": "0b6e45d169e566704aa63e142b81b2e84b1ea2a16ad0dcf33fc701d93dcbdd06",
+    "outputs_sha256": {
+     "rebrac_alone.txt": "2b44be664d86ae23961f406ccc94713bdcee9f4753a9b7c192ff3fb7fd50f790",
+     "rebrac_alone_10000.txt": "628459433c002c9dc5506dd878f4c814389885298dc18c0d743105d60c338b94"
+    }
+   }
   }
  ]
 }

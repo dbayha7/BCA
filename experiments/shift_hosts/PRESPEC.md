@@ -1,12 +1,4 @@
-# Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc) [DRAFT]
-
-> **DRAFT of 17-18 October 2026: not frozen, not approved.** Drafted in the cloud from version 1's frozen files and
-> revised after review. Before the freeze, on the laptop: the investigation of section 19.6 runs while version 1's
-> approval still verifies (the probe checks it, so the code it imports is version 1's), and its result is written
-> there; you decide what happens if 0.05 is exceeded later (section 19.7); this paragraph is deleted, " [DRAFT]" leaves
-> this title and `prespec.json`'s, `prespec.json`'s `status` becomes `"frozen"` and its three `[TO FILL ...]` slots
-> are filled (section 19.8, step 2). Only then does the stage-0 suite run on these bytes, and only then does
-> version 2 have its fingerprint.
+# Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc)
 
 **Version 2 (post hoc).** Drafted 17 October 2026, after version 1's stage 1 stopped on stop rule S7 on 16 October.
 It changes one rule after the start, with a value chosen after the failing value was seen, so the change is post hoc:
@@ -1048,11 +1040,41 @@ that investigation's result does not move it (section 19.6 says what happens if 
   picture. The calibration's harness and outputs are in `outputs/shift_hosts_v2/calibration/`, outside the package.
 - **If the lane's numbers do not reproduce, or the reading is a possible defect**, this draft is not frozen. A defect
   is a code fix and needs its own version (section 9.1); the 0.05 limit is not used to cover it.
-- **Result.** [TO FILL ON THE LAPTOP BEFORE THE FREEZE: the date and time; the SHA-256 of the probe file and of both
-  saved outputs; whether the lane's numbers reproduced bit for bit on every bank; the number of big-kicks starts above
-  0.01 and above 0.05; readings 1-3 with their numbers (the largest injected gap against its bound, the first
-  propagation-dominated step and the largest growth on such steps, the control's ratio) and the verdict line; the
-  largest |points difference| of each bank for the four alone actors at 15,000 and at 10,000 steps.]
+- **Result.** The probe ran on the laptop on 19 October 2026: run 1 (`--list-s7 --compare`) from 16:55:47 to 16:59:34
+  UTC, run 2 (`--step 10000 --compare`) to 17:03:19 UTC, from `/root/s7probe/` with `/root/bca-hosts` at `608eefa`,
+  version 1's approval verifying (`8c5e8421922dcceb`) and code manifest `4764d51e` (170 files). SHA-256: the probe
+  `0b6e45d169e566704aa63e142b81b2e84b1ea2a16ad0dcf33fc701d93dcbdd06`; its outputs `rebrac_alone.txt`
+  `2b44be664d86ae23961f406ccc94713bdcee9f4753a9b7c192ff3fb7fd50f790` and `rebrac_alone_10000.txt`
+  `628459433c002c9dc5506dd878f4c814389885298dc18c0d743105d60c338b94` (kept in `/root/s7probe/out/`, outside the
+  repository).
+  - The lane's numbers reproduced bit for bit on all 7 banks.
+  - Big kicks: 1 start above 0.01 points (start 471, 0.0113907) and 0 above 0.05; 9 above 0.001 and 2 above 0.005.
+  - Reading 1, the bound on the injected gap: **passed**. On big kicks the largest injected gap is 1.41e-05, against
+    its bound of 4.52e-05 (10 times the float32 reference spread of 4.52e-06). The highest share of its bound on any
+    bank is 40% (strong: 4.04e-06 against 1.00e-05).
+  - Reading 2, amplification step by step on big kicks' worst start (471): **failed**. Propagation reaches injection
+    at step 5. On the 94 propagation-dominated steps, the largest one-step growth of the state divergence is 1.013
+    decades (a factor of 10.3) at step 11, against at most 1 decade (a factor of 10). That is 1.3% over in decades,
+    or 3% over as a factor.
+  - Reading 3, the same-size control: **passed**. The control's largest difference on big kicks is 7.38 times the
+    restatement's (the limits are 0.1 to 10).
+  - The verdict line, as printed: "consistent with float32 rounding amplified by the closed loop: False -> reads as a
+    possible defect, or the lane did not reproduce: do not freeze".
+  - Shown, not judged. The largest |points difference| over the 7 banks (both of CQL's readouts) at 15,000 steps:
+    ReBRAC 0.0114 (big kicks; its other banks 0.00016 to 0.0024), TD3+BC 0.00019 (strong current), CQL 0.000031 (big
+    kicks) and IQL 0.00011 (big kicks). On big kicks at 10,000 steps: ReBRAC 0.0140 (1 start above 0.01), TD3+BC
+    0.000063, CQL 0.000042 and IQL 0.00010. ReBRAC's largest difference did not grow from 10,000 to 15,000 steps.
+- **Your decision on this result (post hoc; `prespec.json` P2).** The preset verdict said "do not freeze". On 19 October 2026, about 17:20 UTC, in chat,
+  after seeing the probe's output (differences, ratios and counts only; no return, points level, command or state was
+  printed), you chose to freeze version 2 anyway, with this paragraph as its disclosure. The reasons put to you were:
+  - reading 1, the only reading that bounds a defect, passed with room to spare;
+  - reading 3 shows that a nudge of the same size to the float64 adapter alone moves the scores 7.4 times as much as
+    the float32 restatement does, so the closed loop amplifies any tiny difference;
+  - reading 2 tests amplification only. It would hold or fail alike for a defect and for rounding (see above), and it
+    missed its limit by 3% at one step of one start.
+
+  The sentence above, "If the lane's numbers do not reproduce, or the reading is a possible defect, this draft is not
+  frozen", is therefore overridden by your decision for reading 2 only. The numbers reproduced, and reading 1 held.
 
 ### 19.7 The change, exactly, and what stays
 
@@ -1091,10 +1113,8 @@ that investigation's result does not move it (section 19.6 says what happens if 
   (`stages.py:1123-1145, 1173`; TD3+BC, CQL, IQL, ReBRAC, `runner.py:125`), so a stop on a ReBRAC seed-0 actor would
   come after the sham block's 2 runs and 9 seed-0 runs have trained, with their scoring lanes run or queued (scores
   files on disk, unread). The investigation's 10,000-step run shows whether the tail grew from 10,000 to 15,000 steps.
-- **If 0.05 is exceeded later.** [TO FILL BEFORE THE FREEZE, YOUR DECISION: what happens then. The review proposed
-  "the stop stands; that quality is reported as stopped by S7; no later version relaxes S7 again". With nothing
-  written here, section 9.1 applies: the study waits for another version, written after scores files exist, whose
-  write-up says whether any return had been read.]
+- **If 0.05 is exceeded later.** Your decision (19 October 2026, about 17:20 UTC, in chat; the option marked recommended): **the stop stands.** The
+  driver halts as for any stop, that quality is reported as stopped by S7, and no later version relaxes S7 again.
 
 ### 19.8 The restart, in order
 
@@ -1104,12 +1124,12 @@ Version 2 replaces steps 1-3 of section 18 with these; steps 4-7 stand.
    two runs, the final step (`--list-s7 --compare`) and the 10,000-step actors (`--step 10000 --compare`). Nothing
    under `runs/shift_hosts/` is moved or changed before it. The probe is copied out of the Windows clone, not out of
    `/root/bca-hosts`, which stays at `608eefa` (the commands are at the top of `probe_s7.py`).
-2. **The freeze edits**, in this document and `prespec.json` only: section 19.6's result and section 19.7's decision are
-   filled in; `prespec.json`'s three `[TO FILL ...]` slots are filled in (two lines of `approval_summary`, the
-   investigation's result and your decision, so the approval screen shows both, and `post_hoc_changes` P1's
-   `if_exceeded_later`); the draft paragraph under the title is deleted; " [DRAFT]" leaves both titles; `prespec.json`'s
-   `status` reads `"frozen"`. Then `grep -n "TO FILL" PRESPEC.md prespec.json` prints nothing, and `prespec.json` still
-   loads and `stages.frozen_config()` still works.
+2. **The freeze edits**, in this document and `prespec.json` only, made on 19 October 2026. Section 19.6's result and
+   section 19.7's decision were filled in. `prespec.json`'s three fill-in slots were filled in: two lines of
+   `approval_summary` (the investigation's result and your decision, so the approval screen shows both) and
+   `post_hoc_changes` P1's `if_exceeded_later`. P2 was added for your decision on the investigation's result. The draft
+   paragraph under the title was deleted, and the draft marker left both titles. `prespec.json`'s `status` reads
+   `"frozen"`. No fill-in slot is left in either file, `prespec.json` loads, and `stages.frozen_config()` works.
 3. **The version-2 bytes in both places**: `/root/bca-hosts`, with the branch `claude/shift-hosts` fast-forwarded to
    the version-2 draft commit (the reviewed draft, committed without the freeze edits) and step 2's freeze edits
    applied on top, not yet committed; and the Windows staging folder with the same bytes. `run_stage0.sh` copies the
