@@ -1,0 +1,64 @@
+== 1. fixed-n exact binomial floor (beta 0.95)
+  alpha=0.5: n_min=5; n=10: f<=1; n=15: f<=3; n=29: f<=9; n=30: f<=10; n=59: f<=22; n=100: f<=41; n=300: f<=135
+  alpha=0.25: n_min=11; n=10: f<=none; n=15: f<=0; n=29: f<=3; n=30: f<=3; n=59: f<=8; n=100: f<=17; n=300: f<=62
+  alpha=0.2: n_min=14; n=10: f<=none; n=15: f<=0; n=29: f<=1; n=30: f<=2; n=59: f<=6; n=100: f<=13; n=300: f<=48
+  alpha=0.1: n_min=29; n=10: f<=none; n=15: f<=none; n=29: f<=0; n=30: f<=0; n=59: f<=1; n=100: f<=4; n=300: f<=21
+  alpha=0.05: n_min=59; n=10: f<=none; n=15: f<=none; n=29: f<=none; n=30: f<=none; n=59: f<=0; n=100: f<=1; n=300: f<=8
+== 2. three looks (10, 30, 100), Bonferroni 0.05/3 per look
+  alpha=0.5: n_min=6; n=10: f<=1; n=30: f<=8; n=100: f<=38
+  alpha=0.2: n_min=19; n=10: f<=none; n=30: f<=1; n=100: f<=11
+  alpha=0.1: n_min=39; n=10: f<=none; n=30: f<=none; n=100: f<=3
+  alpha=0.05: n_min=80; n=10: f<=none; n=30: f<=none; n=100: f<=0
+== 3. anytime-valid mixture e-process, H0: p >= alpha, reject when E >= 20
+  alpha=0.5 (prior uniform on [0, alpha]): zero-failure n=7; n=10: f<=0; n=30: f<=7; n=100: f<=35; n=300: f<=122
+  alpha=0.2 (prior uniform on [0, alpha]): zero-failure n=20; n=10: f<=none; n=30: f<=0; n=100: f<=9; n=300: f<=40
+  alpha=0.1 (prior uniform on [0, alpha]): zero-failure n=43; n=10: f<=none; n=30: f<=none; n=100: f<=2; n=300: f<=16
+  alpha=0.05 (prior uniform on [0, alpha]): zero-failure n=88; n=10: f<=none; n=30: f<=none; n=100: f<=0; n=300: f<=5
+== 4. weighted floor (alpha 0.1, beta 0.95): 29 / (n_eff/n)
+  none: n_eff/n=1.0: n_min ~ 29
+  moderate: n_eff/n=0.73: n_min ~ 40
+  strong: n_eff/n=0.34: n_min ~ 86
+  O10 strong: n_eff/n=0.35: n_min ~ 83
+  O10 mild: n_eff/n=0.72: n_min ~ 41
+== 5. paired seed tests: min detectable effect (one-sided 5%, power 80%) = delta s.t. noncentral t power 0.8
+  seed sd=1.0: n=5: 1.36; n=10: 0.85; n=15: 0.68; n=20: 0.58
+  seed sd=2.0: n=5: 2.72; n=10: 1.71; n=15: 1.35; n=20: 1.15
+  seed sd=4.0: n=5: 5.44; n=10: 3.41; n=15: 2.70; n=20: 2.31
+  seed sd=6.0: n=5: 8.16; n=10: 5.12; n=15: 4.05; n=20: 3.46
+  seed sd=10.0: n=5: 13.59; n=10: 8.53; n=15: 6.75; n=20: 5.77
+  seeds needed: sd=1.9, delta=1.0: 24
+  seeds needed: sd=1.9, delta=2.0: 8
+  seeds needed: sd=6.3, delta=5.0: 12
+  seeds needed: sd=10.0, delta=5.0: 27
+  seeds needed: sd=4.0, delta=3.0: 13
+== 6. coverage precision: SE of a pooled step coverage near p with E episodes of m steps, design effect
+  p=0.9 rho=0.0 E=200 m=100: deff=1.0 SE=0.21 pp (95% half-width 0.42 pp)
+  p=0.9 rho=0.0 E=1000 m=100: deff=1.0 SE=0.09 pp (95% half-width 0.19 pp)
+  p=0.9 rho=0.0 E=1000 m=30: deff=1.0 SE=0.17 pp (95% half-width 0.34 pp)
+  p=0.9 rho=0.1 E=200 m=100: deff=10.9 SE=0.70 pp (95% half-width 1.37 pp)
+  p=0.9 rho=0.1 E=1000 m=100: deff=10.9 SE=0.31 pp (95% half-width 0.61 pp)
+  p=0.9 rho=0.1 E=1000 m=30: deff=3.9 SE=0.34 pp (95% half-width 0.67 pp)
+  p=0.9 rho=0.3 E=200 m=100: deff=30.7 SE=1.18 pp (95% half-width 2.30 pp)
+  p=0.9 rho=0.3 E=1000 m=100: deff=30.7 SE=0.53 pp (95% half-width 1.03 pp)
+  p=0.9 rho=0.3 E=1000 m=30: deff=9.7 SE=0.54 pp (95% half-width 1.06 pp)
+  p=0.9 rho=0.6 E=200 m=100: deff=60.4 SE=1.65 pp (95% half-width 3.23 pp)
+  p=0.9 rho=0.6 E=1000 m=100: deff=60.4 SE=0.74 pp (95% half-width 1.45 pp)
+  p=0.9 rho=0.6 E=1000 m=30: deff=18.4 SE=0.74 pp (95% half-width 1.46 pp)
+  p=0.5 rho=0.0 E=200 m=100: deff=1.0 SE=0.35 pp (95% half-width 0.69 pp)
+  p=0.5 rho=0.0 E=1000 m=100: deff=1.0 SE=0.16 pp (95% half-width 0.31 pp)
+  p=0.5 rho=0.0 E=1000 m=30: deff=1.0 SE=0.29 pp (95% half-width 0.57 pp)
+  p=0.5 rho=0.1 E=200 m=100: deff=10.9 SE=1.17 pp (95% half-width 2.29 pp)
+  p=0.5 rho=0.1 E=1000 m=100: deff=10.9 SE=0.52 pp (95% half-width 1.02 pp)
+  p=0.5 rho=0.1 E=1000 m=30: deff=3.9 SE=0.57 pp (95% half-width 1.12 pp)
+  p=0.5 rho=0.3 E=200 m=100: deff=30.7 SE=1.96 pp (95% half-width 3.84 pp)
+  p=0.5 rho=0.3 E=1000 m=100: deff=30.7 SE=0.88 pp (95% half-width 1.72 pp)
+  p=0.5 rho=0.3 E=1000 m=30: deff=9.7 SE=0.90 pp (95% half-width 1.76 pp)
+  p=0.5 rho=0.6 E=200 m=100: deff=60.4 SE=2.75 pp (95% half-width 5.39 pp)
+  p=0.5 rho=0.6 E=1000 m=100: deff=60.4 SE=1.23 pp (95% half-width 2.41 pp)
+  p=0.5 rho=0.6 E=1000 m=30: deff=18.4 SE=1.24 pp (95% half-width 2.43 pp)
+== 7. replicate evidence draws needed to show an error rate <= 7.3% when the true rate is 5% (CP upper 95%)
+  R=200: observed 10 errors -> one-sided 95% upper 8.33%
+  R=400: observed 20 errors -> one-sided 95% upper 7.18%
+  R=800: observed 40 errors -> one-sided 95% upper 6.46%
+  R=1000: observed 50 errors -> one-sided 95% upper 6.29%
+  R=2000: observed 100 errors -> one-sided 95% upper 5.88%

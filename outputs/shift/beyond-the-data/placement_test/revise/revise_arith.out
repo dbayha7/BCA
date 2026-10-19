@@ -1,0 +1,70 @@
+1. Pooled validity mark: CP 95% upper bound of the pooled error count <= bar, plus a per-unit guard
+   per-unit guard: 99.9th percentile of Binom(1000, 0.05) = 73 errors in 1,000
+   K=5 units (R*K=5000), bar 0.065: pass iff count <= 296; p=0.04: pooled 1.000, guard 1.000; p=0.05: pooled 0.998, guard 0.997; p=0.055: pooled 0.908, guard 0.966; p=0.06: pooled 0.421, guard 0.818; p=0.065: pooled 0.050, guard 0.475; p=0.07: pooled 0.001, guard 0.138
+   K=5 units (R*K=5000), bar 0.073: pass iff count <= 334; p=0.04: pooled 1.000, guard 1.000; p=0.05: pooled 1.000, guard 0.997; p=0.055: pooled 1.000, guard 0.966; p=0.06: pooled 0.979, guard 0.818; p=0.065: pooled 0.709, guard 0.475; p=0.07: pooled 0.196, guard 0.138
+   K=10 units (R*K=10000), bar 0.065: pass iff count <= 609; p=0.04: pooled 1.000, guard 1.000; p=0.05: pooled 1.000, guard 0.994; p=0.055: pooled 0.995, guard 0.934; p=0.06: pooled 0.657, guard 0.670; p=0.065: pooled 0.049, guard 0.225; p=0.07: pooled 0.000, guard 0.019
+   K=10 units (R*K=10000), bar 0.073: pass iff count <= 686; p=0.04: pooled 1.000, guard 1.000; p=0.05: pooled 1.000, guard 0.994; p=0.055: pooled 1.000, guard 0.934; p=0.06: pooled 1.000, guard 0.670; p=0.065: pooled 0.930, guard 0.225; p=0.07: pooled 0.300, guard 0.019
+   K=20 units (R*K=20000), bar 0.065: pass iff count <= 1242; p=0.04: pooled 1.000, guard 1.000; p=0.05: pooled 1.000, guard 0.987; p=0.055: pooled 1.000, guard 0.872; p=0.06: pooled 0.897, guard 0.448; p=0.065: pooled 0.049, guard 0.051; p=0.07: pooled 0.000, guard 0.000
+   K=20 units (R*K=20000), bar 0.073: pass iff count <= 1399; p=0.04: pooled 1.000, guard 1.000; p=0.05: pooled 1.000, guard 0.987; p=0.055: pooled 1.000, guard 0.872; p=0.06: pooled 1.000, guard 0.448; p=0.065: pooled 0.998, guard 0.051; p=0.07: pooled 0.496, guard 0.000
+2. C-V3 per-bank check: 200 replicate banks x K seed-worlds; pooled share of banks with COR_b < 0.90
+   K=10 (n=2000) bar 0.073: pass iff count <= 126; P(pass | true 0.05) 0.996, | 0.06 0.733, | 0.08 0.002
+   K=20 (n=4000) bar 0.073: pass iff count <= 264; P(pass | true 0.05) 1.000, | 0.06 0.947, | 0.08 0.000
+   actual bank below 0.90 in at most 1 of 10 seed-worlds at a per-bank rate 0.05: 0.914
+3. Looks with Bonferroni 0.05/3 (level 1 - 0.0167): largest harm count that certifies
+   n=10: f <= -1
+   n=30: f <= -1
+   n=39: f <= 0
+   n=40: f <= 0
+   n=70: f <= 1
+   n=100: f <= 3
+   zero-failure floor at 0.05/3: 39; batch: 29
+4. Release power (exact binomial gate, alpha_B 0.1, level 0.95): per-seed certification and P(release passes)
+   release passes iff mean >= +10 and LB > 0 with per-seed values 61.8 (certified) or 0 (refused)
+   S=5 (needs 3 of 5 certified), n=36 (f<=0): pi 0.02: cert 0.48 pass 0.47; pi 0.03: cert 0.33 pass 0.21; pi 0.05: cert 0.16 pass 0.03; pi 0.07: cert 0.07 pass 0.00
+   S=5 (needs 3 of 5 certified), n=50 (f<=1): pi 0.02: cert 0.74 pass 0.88; pi 0.03: cert 0.56 pass 0.60; pi 0.05: cert 0.28 pass 0.14; pi 0.07: cert 0.13 pass 0.02
+   S=5 (needs 3 of 5 certified), n=70 (f<=2): pi 0.02: cert 0.83 pass 0.97; pi 0.03: cert 0.65 pass 0.76; pi 0.05: cert 0.31 pass 0.18; pi 0.07: cert 0.12 pass 0.02
+   S=5 (needs 3 of 5 certified), n=100 (f<=4): pi 0.02: cert 0.95 pass 1.00; pi 0.03: cert 0.82 pass 0.95; pi 0.05: cert 0.44 pass 0.38; pi 0.07: cert 0.16 pass 0.03
+   S=5 (needs 3 of 5 certified), n=150 (f<=8): pi 0.02: cert 1.00 pass 1.00; pi 0.03: cert 0.96 pass 1.00; pi 0.05: cert 0.66 pass 0.79; pi 0.07: cert 0.27 pass 0.13
+   S=5 (needs 3 of 5 certified), n=200 (f<=12): pi 0.02: cert 1.00 pass 1.00; pi 0.03: cert 0.99 pass 1.00; pi 0.05: cert 0.80 pass 0.94; pi 0.07: cert 0.35 pass 0.24
+   S=5 (needs 3 of 5 certified), n=300 (f<=21): pi 0.02: cert 1.00 pass 1.00; pi 0.03: cert 1.00 pass 1.00; pi 0.05: cert 0.95 pass 1.00; pi 0.07: cert 0.56 pass 0.61
+   S=10 (needs 3 of 10 certified), n=36 (f<=0): pi 0.02: cert 0.48 pass 0.93; pi 0.03: cert 0.33 pass 0.70; pi 0.05: cert 0.16 pass 0.20; pi 0.07: cert 0.07 pass 0.03
+   S=10 (needs 3 of 10 certified), n=50 (f<=1): pi 0.02: cert 0.74 pass 1.00; pi 0.03: cert 0.56 pass 0.97; pi 0.05: cert 0.28 pass 0.56; pi 0.07: cert 0.13 pass 0.12
+   S=10 (needs 3 of 10 certified), n=70 (f<=2): pi 0.02: cert 0.83 pass 1.00; pi 0.03: cert 0.65 pass 1.00; pi 0.05: cert 0.31 pass 0.65; pi 0.07: cert 0.12 pass 0.12
+   S=10 (needs 3 of 10 certified), n=100 (f<=4): pi 0.02: cert 0.95 pass 1.00; pi 0.03: cert 0.82 pass 1.00; pi 0.05: cert 0.44 pass 0.88; pi 0.07: cert 0.16 pass 0.22
+   S=10 (needs 3 of 10 certified), n=150 (f<=8): pi 0.02: cert 1.00 pass 1.00; pi 0.03: cert 0.96 pass 1.00; pi 0.05: cert 0.66 pass 1.00; pi 0.07: cert 0.27 pass 0.53
+   S=10 (needs 3 of 10 certified), n=200 (f<=12): pi 0.02: cert 1.00 pass 1.00; pi 0.03: cert 0.99 pass 1.00; pi 0.05: cert 0.80 pass 1.00; pi 0.07: cert 0.35 pass 0.74
+   S=10 (needs 3 of 10 certified), n=300 (f<=21): pi 0.02: cert 1.00 pass 1.00; pi 0.03: cert 1.00 pass 1.00; pi 0.05: cert 0.95 pass 1.00; pi 0.07: cert 0.56 pass 0.98
+   smallest n with per-seed certification >= 0.9:
+   pi 0.02: n = 76
+   pi 0.03: n = 103
+   pi 0.04: n = 154
+   pi 0.05: n = 239
+5. Holm critical values (one-sided 0.05 overall): first step of a family of k claims
+   k=2, S=5: level 0.0250, t crit 2.776 (unadjusted 2.132); mean needed at sd 1.9 / 5.5 / 8.8: 2.4 / 6.8 / 10.9
+   k=2, S=10: level 0.0250, t crit 2.262 (unadjusted 1.833); mean needed at sd 1.9 / 5.5 / 8.8: 1.4 / 3.9 / 6.3
+   k=3, S=5: level 0.0167, t crit 3.186 (unadjusted 2.132); mean needed at sd 1.9 / 5.5 / 8.8: 2.7 / 7.8 / 12.5
+   k=3, S=10: level 0.0167, t crit 2.510 (unadjusted 1.833); mean needed at sd 1.9 / 5.5 / 8.8: 1.5 / 4.4 / 7.0
+   k=5, S=5: level 0.0100, t crit 3.747 (unadjusted 2.132); mean needed at sd 1.9 / 5.5 / 8.8: 3.2 / 9.2 / 14.7
+   k=5, S=10: level 0.0100, t crit 2.821 (unadjusted 1.833); mean needed at sd 1.9 / 5.5 / 8.8: 1.7 / 4.9 / 7.9
+6. Power of a mean >= bar and p <= level claim: P(pass) at true effect delta, seed sd s (simulation, 200,000)
+   S=5, unadjusted (0.05): d=5.0/sd=1.9: 0.50; d=10.0/sd=5.5: 0.94; d=15.0/sd=8.8: 0.93; d=5.0/sd=5.5: 0.41; d=12.0/sd=8.8: 0.80
+   S=5, Holm k=2 first (0.025): d=5.0/sd=1.9: 0.50; d=10.0/sd=5.5: 0.85; d=15.0/sd=8.8: 0.81; d=5.0/sd=5.5: 0.29; d=12.0/sd=8.8: 0.63
+   S=5, Holm k=5 first (0.01): d=5.0/sd=1.9: 0.49; d=10.0/sd=5.5: 0.64; d=15.0/sd=8.8: 0.58; d=5.0/sd=5.5: 0.16; d=12.0/sd=8.8: 0.40
+   S=10, unadjusted (0.05): d=5.0/sd=1.9: 0.50; d=10.0/sd=5.5: 1.00; d=15.0/sd=8.8: 1.00; d=5.0/sd=5.5: 0.50; d=12.0/sd=8.8: 0.99
+   S=10, Holm k=2 first (0.025): d=5.0/sd=1.9: 0.50; d=10.0/sd=5.5: 1.00; d=15.0/sd=8.8: 1.00; d=5.0/sd=5.5: 0.49; d=12.0/sd=8.8: 0.97
+   S=10, Holm k=5 first (0.01): d=5.0/sd=1.9: 0.50; d=10.0/sd=5.5: 0.99; d=15.0/sd=8.8: 0.99; d=5.0/sd=5.5: 0.43; d=12.0/sd=8.8: 0.90
+7. Smoothing law atoms: P(|N(0, 0.2^2)| >= 0.5) per thruster and the share of queries with any atom (4)
+   per thruster 0.0124; any of 4 thrusters 0.0488
+8. B-K1 permutation test: P(p <= 0.05 in >= 4 of 5 seeds | no information) 3.00e-05; >= 8 of 10: 1.61e-09
+   smallest attainable p with 200 shuffles: 1/201 = 0.0050
+9. A-R1 against the best world-blind rule (record values: hinge always 76.5 = 107.4 - 30.9; perfect switch 106.1; one false switch costs 61.8)
+   one false switch in 5 seeds: per-seed diffs [29.6, 29.6, 29.6, 29.6, -32.2], mean 17.2, sd 27.6, LB -9.1
+   perfect switch: per-seed diff 29.6 in every seed (mean >= +10 and LB > 0 if the seed sd is below 31.0)
+10. A-RAND by expectation: per-seed diff = (1 - r) V_S + r C_N with r = 0.5: 83.9
+11. C-R2 recast (dominated check): P(dominated reading | true C - plain = 0) at seed sd s, 5 seeds: mean(plain - C) >= 5 and LB > 0
+   sd 4.0: 0.002
+   sd 5.5: 0.015
+   sd 8.8: 0.039
+12. Per-unit guard over 10 units at an exact 5% rule (count, P(unit passes), P(all 10 pass), P(fail)):
+   66 0.9894 all 10: 0.899 fail 0.101
+   73 0.9994 all 10: 0.9935 fail 0.0065

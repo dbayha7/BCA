@@ -1,0 +1,19 @@
+1. A-R1 vs realized A-RAND, perfect switch, V_S seed sd 0.0: P(fail) = 0.219
+1. A-R1 vs realized A-RAND, perfect switch, V_S seed sd 10.0: P(fail) = 0.209
+   expectation form: per-seed diff = 0.5 V_S + 0.5 C_N ~ 83.9, passes with probability ~1
+2. A-V1/B-V1: pass iff errors <= 59; true 0.04: one 0.998, all 5 0.992, all 10 0.985
+2. A-V1/B-V1: pass iff errors <= 59; true 0.05: one 0.913, all 5 0.635, all 10 0.404
+3. n=36 (f<=0): pi 0.01: cert 0.70, P(B-R1 release passes) 0.83; pi 0.02: cert 0.48, P(B-R1 release passes) 0.47; pi 0.03: cert 0.33, P(B-R1 release passes) 0.21; pi 0.05: cert 0.16, P(B-R1 release passes) 0.03; pi 0.08: cert 0.05, P(B-R1 release passes) 0.00
+3. n=50 (f<=1): pi 0.01: cert 0.91, P(B-R1 release passes) 0.99; pi 0.02: cert 0.74, P(B-R1 release passes) 0.88; pi 0.03: cert 0.56, P(B-R1 release passes) 0.60; pi 0.05: cert 0.28, P(B-R1 release passes) 0.14; pi 0.08: cert 0.08, P(B-R1 release passes) 0.00
+3. n=70 (f<=2): pi 0.01: cert 0.97, P(B-R1 release passes) 1.00; pi 0.02: cert 0.83, P(B-R1 release passes) 0.97; pi 0.03: cert 0.65, P(B-R1 release passes) 0.76; pi 0.05: cert 0.31, P(B-R1 release passes) 0.18; pi 0.08: cert 0.07, P(B-R1 release passes) 0.00
+3. n=100 (f<=4): pi 0.01: cert 1.00, P(B-R1 release passes) 1.00; pi 0.02: cert 0.95, P(B-R1 release passes) 1.00; pi 0.03: cert 0.82, P(B-R1 release passes) 0.95; pi 0.05: cert 0.44, P(B-R1 release passes) 0.38; pi 0.08: cert 0.09, P(B-R1 release passes) 0.01
+4. C-R2 at true diff 0, seed sd 1.9: P(pass) = 0.999
+4. C-R2 at true diff 0, seed sd 4.0: P(pass) = 0.740
+4. C-R2 at true diff 0, seed sd 5.5: P(pass) = 0.514
+4. C-R2 at true diff 0, seed sd 8.8: P(pass) = 0.279
+5. Holm family 2: first step one-sided level 0.0250, t crit 2.776 (vs 2.132)
+5. Holm family 4: first step one-sided level 0.0125, t crit 3.495 (vs 2.132)
+   sd 1.9: mean needed for Holm-4 first step 3.0, unadjusted 1.8
+   sd 5.5: mean needed for Holm-4 first step 8.6, unadjusted 5.2
+   sd 8.8: mean needed for Holm-4 first step 13.8, unadjusted 8.4
+6. min detectable effect at n=5: 1.359 sd

@@ -1,0 +1,23 @@
+main pilot full: 88.5 runs per seed (actor-only 10 of them at 20,000 steps); 34.0 CPU-h and 4.18 card-h per seed; per 5 seeds 170 CPU-h (+20%: 204) or 20.9 card-h (+20%: 25.1)
+main pilot trimmed: 75.5 runs per seed (actor-only 10 of them at 20,000 steps); 28.1 CPU-h and 3.35 card-h per seed; per 5 seeds 140 CPU-h (+20%: 168) or 16.8 card-h (+20%: 20.1)
+main confirmatory full: 79.5 runs per seed (actor-only 10 of them at 20,000 steps); 30.5 CPU-h and 3.79 card-h per seed; per 5 seeds 152 CPU-h (+20%: 183) or 18.9 card-h (+20%: 22.7)
+main confirmatory trimmed: 66.5 runs per seed (actor-only 10 of them at 20,000 steps); 24.5 CPU-h and 2.97 card-h per seed; per 5 seeds 123 CPU-h (+20%: 147) or 14.8 card-h (+20%: 17.8)
+module W: 51.5 runs per seed; 22.4 CPU-h and 2.83 card-h per seed; per 5 seeds 112 CPU-h (+20%: 134) or 14.1 card-h (+20%: 17.0)
+   main pilot:   4.0  hosts S, N, MW+, MW-
+   main pilot:   2.0  A's gated hinge (k = 1) S, N
+   main pilot:   2.0  clones S, N
+   main pilot:   2.0  C-ORACLE co-trained (x64 step) S, N
+   main pilot:   2.0  C-BCA S, N
+   main pilot:   8.0  k = 1 references C-SC, C-RATIO, C-F0, C-SHUF in S, N
+   main pilot:  19.5  matched C-HINGE, C-EVEN, C-SUP (S ladder + N lock)
+   main pilot:  13.0  matched C-F0_m, C-SC_m (S ladder + N lock)
+   main pilot:  10.0  actor-only C-I2 (3 arms) and two actor-only oracles, S, N
+   main pilot:  13.0  matched C-RATIO_m, C-SHUF_m (S ladder + N lock)
+   main pilot:  13.0  C-RAND1, C-RAND2 matched (pilot only)
+   W:            2.0  W hosts S, N twin
+   W:            2.0  W C-BCA weighted S, N
+   W:            2.0  W C-ORACLE S, N
+   W:           26.0  W matched unweighted C-BCA, C-F0_m, C-RATIO_m, C-SC_m
+   W:           19.5  W matched C-SUP, C-HINGE, C-EVEN
+evaluation per seed (main): 8.4 CPU-h; per 5 seeds 42 CPU-h; items {'replicate_blocks': 1.0, 'a_replicates': 0.7, 'ladder_decisions': 1.4, 'staged_b': 0.7, 'online_scoring': 0.4, 'c_v1_refresh_bands': 0.5, 'c_v3_replicate_banks': 3.2, 'truths_and_attribution': 0.5}
+module W evaluation per seed: about 3 CPU-h (B gates and staged decisions, C-V1/C-V3 on W's bands)
