@@ -796,6 +796,665 @@ class TestJson(Isolated):
         self.assertEqual(str(AC.ApprovalRefused("refused: y")), "refused: y")
 
 
+# ============================================================================================ amendment 1
+
+TEST_CHECK_SHA = dict(py="1" * 64, sh="2" * 64)    # a test amendment's 'desktop_check' (the check code it names)
+
+
+def write_test_amendment(fx, edits, typed=None, approve=True, imported=True, delta=None, approval=None):
+    """A test fixture's amendment 1 (test helper; nothing here is a real approval). edits {path in the fixture: bytes}:
+    a .md path gets the bytes appended, any other path is rewritten with them. Writes amendment_1.json (+ .sha256)
+    with the full file list and the delta (keys of `delta` replace the delta's), then (approve) the owner's approval of
+    the amendment (keys of `approval` replace its fields) and (imported) its import record, commit '0' * 40. Returns
+    the amendment's SHA-256."""
+    fx = Path(fx)
+    pre = AC.read_json_verified(fx / K.PREREG_NAME)
+    psha = AC.file_sha256(fx / K.PREREG_NAME)
+    parent_files = dict(AC.read_json_verified(fx / K.MANIFEST_NAME)["files"])
+    appended = {}
+    for rel, data in edits.items():
+        p = fx / rel
+        if rel.endswith(".md"):
+            appended[rel] = dict(parent_bytes=p.stat().st_size, parent_sha256=parent_files[rel])
+            p.write_bytes(p.read_bytes() + data)
+        else:
+            p.write_bytes(data)
+    files = {rel: AC.file_sha256(fx / rel) for rel in parent_files}
+    changed = {rel: [parent_files[rel], files[rel]] for rel in parent_files if files[rel] != parent_files[rel]}
+    prefix = psha[:K.PREFIX_LEN]
+    body = dict(kind=AC.AMENDMENT_KIND, number=AC.AMENDMENT_NUMBER, label=K.LABEL,
+                parent=dict(prereg_sha256=psha, code_manifest_sha256=pre["code"]["code_manifest_sha256"],
+                            approval_sha256=AC.file_sha256(fx / AC.approval_name(prefix)),
+                            import_sha256=AC.file_sha256(fx / AC.import_name(prefix))),
+                files=files,
+                delta=dict(dict(changed=changed, added={}, removed=[], appended=appended), **(delta or {})),
+                desktop_check=TEST_CHECK_SHA, fixture=True)
+    asha = AC.write_json_once(fx / AC.AMENDMENT_NAME, body)
+    a16 = asha[:K.PREFIX_LEN]
+    if approve:
+        appr = dict(kind=AC.AMEND_LOCAL_KIND, label=K.LABEL, mode=K.LOCAL_MODE,
+                    amendment_path=K.N80_REL + "/" + AC.AMENDMENT_NAME, amendment_number=AC.AMENDMENT_NUMBER,
+                    amendment_sha256=asha, parent_prereg_sha256=psha, typed=typed or a16, stdin_isatty=True,
+                    approved_at_utc=AC.utc_now(), approve_local_sha256=files.get("approve_local_near80.py"),
+                    statement=AC.AMEND_STATEMENT.format(sha=asha, parent=psha),
+                    desktop_checks={AC.AMEND_CHECK_PREFIX + "t.json": "0" * 64}, fixture=True)
+        appr.update(approval or {})
+        apsha = AC.write_json_once(fx / AC.AMEND_APPROVAL_NAME.format(prefix=a16), appr)
+        if imported:
+            AC.write_json_once(fx / AC.AMEND_IMPORT_NAME.format(prefix=a16), dict(
+                kind=AC.AMEND_IMPORT_KIND, label=K.LABEL, prereg_sha256=psha, amendment_sha256=asha,
+                amendment_number=AC.AMENDMENT_NUMBER, approval_file=AC.amend_approval_rel(a16),
+                approval_file_sha256=apsha, commit="0" * 40, author=APPROVER, committer=APPROVER, branch=K.BRANCH,
+                fixture=True))
+    return asha
+
+
+def write_desktop_check(n80, asha, name="desktop_check_20261019T000000Z.json", **fields):
+    """A test helper: the desktop check's result file (near80_amendment1/, next to the near-80 folder), as
+    check_amendment1.py writes it when it passed in official mode, made by the check code TEST_CHECK_SHA, with the four
+    unit test files run and passed; keys of `fields` replace its fields (None removes one). Returns its path relative
+    to the folder's parent."""
+    body = dict(kind=AL.CHECK_KIND, mode="official", passed=True, amendment_sha256=asha, check_sha256=TEST_CHECK_SHA,
+                unit_tests={n: 0 for n in K.TEST_FILES}, tests_run=True, fixture=True)
+    body.update(fields)
+    body = {k: v for k, v in body.items() if v is not None}
+    write_json_sidecar(Path(n80).parent / "near80_amendment1" / name, body)
+    return "near80_amendment1/" + name
+
+
+def rewrite_amendment(fx, change):
+    """A test helper: amendment_1.json rewritten in place (+ .sha256) after change(body)."""
+    p = Path(fx) / AC.AMENDMENT_NAME
+    body = json.loads(p.read_text(encoding="utf8"))
+    change(body)
+    return write_json_sidecar(p, body)
+
+
+class TestAmendmentFixture(Isolated):
+    """Amendment 1's gate on test fixtures (no git): the amended files pass only with an approved, imported
+    amendment_1.json that names every change, and the facts keep the approved prereg.json's fingerprint."""
+
+    def fixture(self, name="fx"):
+        cfg = AC.write_test_fixture(self.tmp / name)
+        return Path(cfg.n80_root), cfg
+
+    @staticmethod
+    def good_edits(fx):
+        return {"code/stubs.py": (fx / "code" / "stubs.py").read_bytes() + b"\n# amendment test\n",
+                "PREREGISTRATION.md": b"\n---\n\n## 19. Amendment 1 (test)\n\nAppended.\n"}
+
+    def test_no_amendment_passes_as_today(self):
+        _, cfg = self.fixture()
+        got = AC.require_approval(cfg)
+        self.assertNotIn("amendment", got)
+        self.assertIsNone(AC.load_amendment(AC.load_prereg(cfg), cfg))
+
+    def test_a_good_amendment_passes_and_keeps_the_fingerprint(self):
+        fx, cfg = self.fixture()
+        parent = AC.require_approval(cfg)
+        asha = write_test_amendment(fx, self.good_edits(fx))
+        got = AC.require_approval(cfg)
+        self.assertEqual(got["prereg_sha256"], parent["prereg_sha256"])
+        self.assertEqual({k: v for k, v in got.items() if k != "amendment"}, parent)
+        a = got["amendment"]
+        self.assertEqual((a["number"], a["sha256"], a["prefix"]), (1, asha, asha[:K.PREFIX_LEN]))
+        self.assertEqual((a["approval_file"], a["import_file"]),
+                         (AC.amend_approval_rel(asha[:K.PREFIX_LEN]), AC.amend_import_rel(asha[:K.PREFIX_LEN])))
+        manifest = AC.check_code(AC.load_prereg(cfg), cfg)
+        self.assertEqual(manifest["amendment"], dict(file=AC.AMENDMENT_NAME, sha256=asha))
+        self.assertEqual(manifest["files"]["code/stubs.py"], AC.file_sha256(fx / "code" / "stubs.py"))
+
+    def test_each_refusal(self):
+        good = self.good_edits
+
+        def change_without_amendment(fx):
+            p = fx / "code" / "stubs.py"
+            p.write_bytes(p.read_bytes() + b"# x\n")
+
+        def change_after_the_amendment(fx):
+            write_test_amendment(fx, good(fx))
+            p = fx / "code" / "phases.py"
+            p.write_bytes(p.read_bytes() + b"# y\n")
+
+        def document_edited_in_the_middle(fx):
+            p = fx / "PREREGISTRATION.md"
+            data = p.read_bytes()
+            p.write_bytes(data[:100] + b"X" + data[100:] + b"\n## 19. Amendment 1 (test)\n")
+            parent = AC.read_json_verified(fx / K.MANIFEST_NAME)["files"]["PREREGISTRATION.md"]
+            write_test_amendment(fx, {"code/stubs.py": good(fx)["code/stubs.py"]},
+                                 delta=dict(appended={"PREREGISTRATION.md": dict(parent_bytes=len(data),
+                                                                                 parent_sha256=parent)}))
+
+        def constants_changed(fx):
+            e = good(fx)
+            e["code/near80_constants.py"] = (fx / "code" / "near80_constants.py").read_bytes() + b"\n# a comment\n"
+            write_test_amendment(fx, e)
+
+        def another_amendment_file(fx):
+            write_test_amendment(fx, good(fx))
+            (fx / "amendment_2.json").write_text("{}", encoding="utf8")
+
+        def malformed(key, value, in_delta=False):
+            def tamper(fx):
+                write_test_amendment(fx, good(fx))
+                rewrite_amendment(fx, lambda b: (b["delta"] if in_delta else b).__setitem__(key, value))
+            return tamper
+
+        def a_removed_file(fx):
+            rel = sorted(AC.read_json_verified(fx / K.MANIFEST_NAME)["files"])[0]
+            write_test_amendment(fx, good(fx), delta=dict(removed=[rel]))
+
+        cases = [
+            ("a changed file, no amendment", change_without_amendment, "code/stubs.py differs"),
+            ("not approved", lambda fx: write_test_amendment(fx, good(fx), approve=False),
+             "no approval of amendment 1"),
+            ("not imported", lambda fx: write_test_amendment(fx, good(fx), imported=False), "no import record"),
+            ("a change after the amendment", change_after_the_amendment, "code/phases.py differs"),
+            ("a delta that hides a change", lambda fx: write_test_amendment(fx, good(fx), delta=dict(changed={})),
+             "are not the ones its delta names"),
+            ("a document edited in the middle", document_edited_in_the_middle, "may only be appended to"),
+            ("near80_constants.py changed", constants_changed,
+             "code/near80_constants.py may not change in an amendment"),
+            ("a wrong typed prefix", lambda fx: write_test_amendment(fx, good(fx), typed="0" * 16),
+             "the typed characters are not exactly the first 16"),
+            ("another approve_local_near80.py",
+             lambda fx: write_test_amendment(fx, good(fx), approval=dict(approve_local_sha256="f" * 64)),
+             "made with another approve_local_near80.py"),
+            ("a statement without both fingerprints",
+             lambda fx: write_test_amendment(fx, good(fx), approval=dict(statement="I approve amendment 1.")),
+             "its statement does not name both fingerprints"),
+            ("an amendment_2.json", another_amendment_file, "only amendment 1 is known to this code"),
+            ("a delta that is a list", malformed("delta", [1]), "its parent, files or delta are not of the expected"),
+            ("a parent that is a list", malformed("parent", [1]), "its parent, files or delta are not of the expected"),
+            ("a changed map that is a list", malformed("changed", [1], in_delta=True),
+             "its parent, files or delta are not of the expected"),
+            ("removed paths that are not strings", malformed("removed", [[1]], in_delta=True),
+             "its parent, files or delta are not of the expected"),
+            ("an added file",
+             lambda fx: write_test_amendment(fx, good(fx), delta=dict(added={"code/extra.py": "0" * 64})),
+             "amendment 1 adds and removes no file"),
+            ("a removed file", a_removed_file, "amendment 1 adds and removes no file"),
+            ("an approval that names no desktop check",
+             lambda fx: write_test_amendment(fx, good(fx), approval=dict(desktop_checks={})), "names no desktop check"),
+            ("an approval whose desktop check lies elsewhere",
+             lambda fx: write_test_amendment(fx, good(fx), approval=dict(
+                 desktop_checks={K.N80_REL + "/desktop_check_t.json": "0" * 64})), "names no desktop check"),
+        ]
+        for n, (name, tamper, why) in enumerate(cases):
+            with self.subTest(case=name):
+                fx, cfg = self.fixture(f"fx{n}")
+                tamper(fx)
+                with self.assertRaises(AC.ApprovalRefused) as cm:
+                    AC.require_approval(cfg)
+                self.assertTrue(str(cm.exception).startswith("refused: "), str(cm.exception))
+                self.assertIn(why, str(cm.exception))
+
+    def test_show_names_the_amendment(self):
+        fx, cfg = self.fixture()
+        lines = []
+        IA.show(cfg, log=lines.append)
+        self.assertNotIn("Amendment 1", "\n".join(lines))
+        asha = write_test_amendment(fx, self.good_edits(fx), imported=False)
+        lines = []
+        IA.show(cfg, log=lines.append)
+        text = "\n".join(lines)
+        self.assertIn(f"SHA-256: {asha}\nFirst 16 characters: {asha[:K.PREFIX_LEN]}", text)
+        self.assertIn("import_approval.py import-amendment", text)
+        self.assertIn(AC.amend_import_rel(asha[:K.PREFIX_LEN]), text)
+        self.assertIn("Owner's approval of amendment 1 present: True", text)
+        self.assertIn("Amendment import record present: False", text)
+        rewrite_amendment(fx, lambda b: b.__setitem__("delta", [1]))
+        lines = []
+        IA.show(cfg, log=lines.append)                                       # a malformed one is named, not raised
+        self.assertIn("Amendment 1: refused: amendment_1.json does not amend", "\n".join(lines))
+
+    def test_desktop_check_problems(self):
+        """The import's rules for a result file of the desktop check (the same as approve_local_near80's)."""
+        fx, _ = self.fixture()
+        asha = write_test_amendment(fx, self.good_edits(fx), approve=False)
+        amendment = AC.Amendment(fx / AC.AMENDMENT_NAME, asha, AC.read_json_verified(fx / AC.AMENDMENT_NAME))
+
+        def result(**fields):
+            body = dict(kind=AC.AMEND_CHECK_KIND, mode="official", passed=True, amendment_sha256=asha,
+                        check_sha256=TEST_CHECK_SHA, unit_tests={n: 0 for n in K.TEST_FILES})
+            body.update(fields)
+            return json.dumps({k: v for k, v in body.items() if v is not None}).encode("utf8")
+
+        self.assertEqual(AC.desktop_check_problems(result(), amendment), [])
+        cases = [(dict(kind="x"), "it is not a result of the desktop check"),
+                 (dict(mode="stub"), "it did not run in official mode"),
+                 (dict(passed=False), "it did not pass"),
+                 (dict(amendment_sha256="f" * 64), "it checked another version of amendment_1.json"),
+                 (dict(check_sha256=dict(TEST_CHECK_SHA, py="3" * 64)), "made by another check"),
+                 (dict(check_sha256=None), "made by another check"),
+                 (dict(unit_tests=None), "it did not run and pass the four unit test files"),
+                 (dict(unit_tests={}), "it did not run and pass the four unit test files"),
+                 (dict(unit_tests={n: 0 for n in K.TEST_FILES[:3]}), "the four unit test files"),
+                 (dict(unit_tests=dict({n: 0 for n in K.TEST_FILES}, **{K.TEST_FILES[-1]: 1})),
+                  "the four unit test files"),
+                 (dict(unit_tests={n: False for n in K.TEST_FILES}), "the four unit test files")]
+        for fields, why in cases:
+            with self.subTest(fields=sorted(fields)):
+                self.assertIn(why, "; ".join(AC.desktop_check_problems(result(**fields), amendment)))
+        self.assertEqual(AC.desktop_check_problems(b"\xff", amendment), ["it is not UTF-8 JSON"])
+        no_code = AC.Amendment(amendment.path, asha, {k: v for k, v in amendment.payload.items()
+                                                      if k != "desktop_check"})
+        self.assertIn("made by another check", "; ".join(AC.desktop_check_problems(result(), no_code)))
+
+
+class TestAmendmentChain(ChainBase):
+    """Amendment 1 with git: the session commits the amended files and amendment_1.json; the owner approves it at
+    their own terminal and commits the approval under their own name; the session imports it. Nothing runs until the
+    import is pushed, and the readers' fingerprint (prereg_sha256) never changes."""
+
+    def setUp(self):
+        super().setUp()
+        self.owner_commits()
+        self.do_import()
+        self.push_import()
+        self.parent_facts = AC.require_approval(self.cfg)
+        parent_files = json.loads((self.n80 / K.MANIFEST_NAME).read_text())["files"]
+        (self.n80 / "code" / "x.py").write_text('"""Synthetic code."""\nx = 2\n', encoding="utf8")
+        doc = self.n80 / "PREREGISTRATION.md"
+        n = doc.stat().st_size
+        doc.write_bytes(doc.read_bytes() + b"\n---\n\n## 19. Amendment 1 (synthetic)\n")
+        files = {r: AC.file_sha256(self.n80 / r) for r in parent_files}
+        body = dict(kind=AC.AMENDMENT_KIND, number=AC.AMENDMENT_NUMBER, label=K.LABEL, title="synthetic",
+                    parent=dict(prereg_sha256=self.prereg.sha256,
+                                code_manifest_sha256=self.prereg.payload["code"]["code_manifest_sha256"],
+                                approval_sha256=self.parent_facts["approval_sha256"],
+                                import_sha256=self.parent_facts["import_sha256"]),
+                    files=files, delta=dict(changed={r: [parent_files[r], files[r]] for r in parent_files
+                                                     if files[r] != parent_files[r]}, added={}, removed=[],
+                                            appended={"PREREGISTRATION.md": dict(
+                                                parent_bytes=n, parent_sha256=parent_files["PREREGISTRATION.md"])}),
+                    desktop_check=TEST_CHECK_SHA)
+        self.asha = AC.write_json_once(self.n80 / AC.AMENDMENT_NAME, body)
+        self.a16 = self.asha[:K.PREFIX_LEN]
+        self.a_name = AC.AMEND_APPROVAL_NAME.format(prefix=self.a16)
+        self.i_name = AC.AMEND_IMPORT_NAME.format(prefix=self.a16)
+        self.commit(AGENT, "Near-80: amendment 1 (synthetic)", ".")
+        self.push()
+
+    def owner_approves_amendment(self, author=APPROVER, committer=APPROVER, commit=True):
+        check = K.N80_REL.rsplit("/", 1)[0] + "/" + write_desktop_check(self.n80, self.asha)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            code = AL.main([], folder=str(self.n80), script_path=str(self.n80 / "approve_local_near80.py"),
+                           stdin=Tty(), input_fn=lambda _: self.a16, repo=str(self.repo))
+        self.assertEqual(code, 0, out.getvalue())
+        self.assertIn(f"Near-80: approve amendment 1 {self.a16}", out.getvalue())
+        if not commit:
+            return None
+        rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256", check, check + ".sha256"]
+        c = self.commit(committer, f"Near-80: approve amendment 1 {self.a16}", *rels, author=author)
+        self.push()
+        return c
+
+    def import_amendment(self):
+        return IA.import_amendment(self.cfg, log=quiet)
+
+    def push_amendment_import(self):
+        rels = [f"{K.N80_REL}/{self.i_name}", f"{K.N80_REL}/{self.i_name}.sha256"]
+        self.commit(AGENT, "Near-80: import record of amendment 1", *rels)
+        self.push()
+
+    def amendment_import_refused(self, why):
+        before = tree(self.n80)
+        with self.assertRaises(AC.ApprovalRefused) as cm:
+            self.import_amendment()
+        msg = str(cm.exception)
+        self.assertTrue(msg.startswith("refused: "), msg)
+        self.assertIn(why, msg)
+        self.assertEqual(tree(self.n80), before)
+        return msg
+
+    def require_refused(self, why):
+        with self.assertRaises(AC.ApprovalRefused) as cm:
+            AC.require_approval(self.cfg)
+        self.assertIn(why, str(cm.exception))
+
+    def test_good_chain(self):
+        self.require_refused(f"no approval of amendment 1 ({self.a16})")     # amended code: nothing runs before it
+        self.amendment_import_refused("no approval of amendment 1")
+        commit = self.owner_approves_amendment()
+        body = self.import_amendment()
+        self.assertEqual((body["commit"], body["author"], body["committer"]), (commit, APPROVER, APPROVER))
+        self.assertEqual((body["kind"], body["prereg_sha256"], body["amendment_sha256"], body["approval_file"]),
+                         (AC.AMEND_IMPORT_KIND, self.prereg.sha256, self.asha, AC.amend_approval_rel(self.a16)))
+        self.assertEqual(body["approval_file_sha256"], AC.file_sha256(self.n80 / self.a_name))
+        self.assertIn("Check on GitHub that this commit is yours", body["note"])
+        self.require_refused("not on origin's branch")                        # the import is not pushed yet
+        self.push_amendment_import()
+        got = AC.require_approval(self.cfg)
+        self.assertEqual(got["prereg_sha256"], self.prereg.sha256)           # the readers' fingerprint is unchanged
+        self.assertEqual({k: v for k, v in got.items() if k != "amendment"}, self.parent_facts)
+        a = got["amendment"]
+        self.assertEqual((a["sha256"], a["prefix"], a["commit"], a["author"]), (self.asha, self.a16, commit, APPROVER))
+        self.assertEqual(a["import_sha256"], AC.file_sha256(self.n80 / self.i_name))
+        self.amendment_import_refused("exists already")                        # written once
+
+    def test_refuses_the_agent_as_author(self):
+        self.owner_approves_amendment(author=AGENT)
+        self.amendment_import_refused("own git identity")
+
+    def test_refuses_the_agent_as_committer(self):
+        self.owner_approves_amendment(committer=AGENT)
+        self.amendment_import_refused("own git identity")
+
+    def test_refuses_a_committer_who_is_not_the_owner(self):
+        self.owner_approves_amendment(committer="Synthetic User <user@example.org>")
+        self.amendment_import_refused("not the owner")
+
+    def test_refuses_two_adding_commits(self):
+        self.owner_approves_amendment()
+        rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256"]
+        git(self.repo, "rm", "-q", *rels)
+        git(self.repo, "commit", "-q", "-m", "remove", committer=APPROVER)
+        git(self.repo, "checkout", "HEAD~1", "--", *rels)
+        git(self.repo, "commit", "-q", "-m", "add again", committer=APPROVER)
+        self.push()
+        self.amendment_import_refused("exactly one commit")
+
+    def test_refuses_an_approval_of_another_amendment(self):
+        self.owner_approves_amendment(commit=False)
+        p = self.n80 / self.a_name
+        body = json.loads(p.read_text())
+        body["amendment_sha256"] = "f" * 64
+        write_json_sidecar(p, body)
+        rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256"]
+        self.commit(APPROVER, f"Near-80: approve amendment 1 {self.a16}", *rels)
+        self.push()
+        self.amendment_import_refused("approves another version of amendment_1.json")
+
+    def test_refuses_a_commit_whose_tree_holds_another_amended_file(self):
+        self.owner_approves_amendment(commit=False)
+        x = self.n80 / "code" / "x.py"
+        good = x.read_bytes()
+        x.write_text("x = 99\n", encoding="utf8")
+        rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256", f"{K.N80_REL}/code/x.py"]
+        self.commit(APPROVER, "approve with a change", *rels)
+        self.push()
+        x.write_bytes(good)                                                    # the working tree is as amended
+        self.amendment_import_refused("does not hold the pinned near-80 files")
+
+    def test_refuses_an_owner_commit_without_the_desktop_check(self):
+        self.owner_approves_amendment(commit=False)
+        rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256"]   # the result file is left out
+        self.commit(APPROVER, f"Near-80: approve amendment 1 {self.a16}", *rels)
+        self.push()
+        self.amendment_import_refused("does not hold the passing desktop check")
+        self.require_refused("no import record")
+
+    def test_refuses_an_approval_that_names_a_result_of_another_check(self):
+        self.owner_approves_amendment(commit=False)
+        other = write_desktop_check(self.n80, self.asha, name="desktop_check_20261019T000009Z.json",
+                                    check_sha256=dict(TEST_CHECK_SHA, sh="3" * 64))
+        crel = AL.CHECK_POSIX + "/" + Path(other).name
+        p = self.n80 / self.a_name
+        body = json.loads(p.read_text())
+        body["desktop_checks"] = {crel: AC.file_sha256(self.n80.parent / other)}  # as if the script had named it
+        write_json_sidecar(p, body)
+        rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256", crel, crel + ".sha256"]
+        self.commit(APPROVER, f"Near-80: approve amendment 1 {self.a16}", *rels)
+        self.push()
+        self.amendment_import_refused("made by another check than the one amendment_1.json names")
+
+    def test_refuses_a_change_after_approval(self):
+        self.owner_approves_amendment()
+        self.import_amendment()
+        self.push_amendment_import()
+        AC.require_approval(self.cfg)
+        (self.n80 / "README.md").write_text("changed\n", encoding="utf8")
+        self.require_refused("README.md differs")
+
+    def test_refuses_an_import_that_names_another_amendment(self):
+        self.owner_approves_amendment()
+        self.import_amendment()
+        p = self.n80 / self.i_name
+        body = json.loads(p.read_text())
+        body["amendment_sha256"] = "f" * 64
+        write_json_sidecar(p, body)
+        self.push_amendment_import()
+        self.require_refused("does not match its approval (amendment_sha256)")
+
+
+class TestApproveLocalAmendment(Isolated):
+    """approve_local_near80.py's amendment mode on a synthetic folder whose prereg.json is approved and imported."""
+
+    def setUp(self):
+        super().setUp()
+        self.repo = self.tmp / "repo"
+        self.prereg = build_n80(self.repo)
+        self.n80 = self.repo / K.N80_REL
+        p16 = self.prereg.prefix
+        self.p_approval = AC.approval_name(p16)
+        self.p_import = AC.import_name(p16)
+        asha_p = write_json_sidecar(self.n80 / self.p_approval, {"kind": K.LOCAL_KIND,
+                                                                 "prereg_sha256": self.prereg.sha256})
+        isha_p = write_json_sidecar(self.n80 / self.p_import, {"kind": K.IMPORT_KIND,
+                                                               "prereg_sha256": self.prereg.sha256})
+        self.parent_files = json.loads((self.n80 / K.MANIFEST_NAME).read_text())["files"]
+        (self.n80 / "code" / "x.py").write_text('"""Synthetic code."""\nx = 2\n', encoding="utf8")
+        doc = self.n80 / "PREREGISTRATION.md"
+        self.n = doc.stat().st_size
+        doc.write_bytes(doc.read_bytes() + b"\n---\n\n## 19. Amendment 1 (test)\n")
+        files = {r: AC.file_sha256(self.n80 / r) for r in self.parent_files}
+        self.body = dict(kind=AC.AMENDMENT_KIND, number=AC.AMENDMENT_NUMBER, label=K.LABEL, title="test amendment",
+                         parent=dict(prereg_sha256=self.prereg.sha256,
+                                     code_manifest_sha256=self.prereg.payload["code"]["code_manifest_sha256"],
+                                     approval_sha256=asha_p, import_sha256=isha_p),
+                         files=files,
+                         delta=dict(changed={r: [self.parent_files[r], files[r]] for r in self.parent_files
+                                             if files[r] != self.parent_files[r]}, added={}, removed=[],
+                                    appended={"PREREGISTRATION.md": dict(
+                                        parent_bytes=self.n, parent_sha256=self.parent_files["PREREGISTRATION.md"])}),
+                         unchanged=["prereg.json"], runs=["the failed phases"],
+                         cleared_failures=["critic.main.stall.s10"], why_no_result_changes="the hash chain",
+                         desktop_check=TEST_CHECK_SHA)
+        self.write_amendment()
+        self.check_rel = write_desktop_check(self.n80, self.asha)
+
+    def write_amendment(self):
+        self.asha = write_json_sidecar(self.n80 / AC.AMENDMENT_NAME, self.body)
+        self.a16 = self.asha[:K.PREFIX_LEN]
+        self.a_name = AC.AMEND_APPROVAL_NAME.format(prefix=self.a16)
+
+    def run_al(self, args=(), stdin=None, typed=None):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(out):
+            code = AL.main(list(args), folder=str(self.n80), script_path=str(self.n80 / "approve_local_near80.py"),
+                           stdin=Tty() if stdin is None else stdin,
+                           input_fn=lambda _: self.a16 if typed is None else typed, repo=str(self.repo))
+        return code, out.getvalue()
+
+    def refused(self, why, **kw):
+        before = tree(self.n80)
+        code, text = self.run_al(**kw)
+        self.assertEqual(code, 2, text)
+        self.assertIn("Refused.", text)
+        self.assertIn("Nothing was written.", text)
+        self.assertIn(why, " ".join(text.split()))
+        self.assertEqual(tree(self.n80), before)
+        return text
+
+    def test_writes_exactly_the_two_files_once(self):
+        before = {p for p, _ in tree(self.n80)}
+        code, text = self.run_al()
+        self.assertEqual(code, 0, text)
+        self.assertEqual({p for p, _ in tree(self.n80)} - before, {self.a_name, self.a_name + ".sha256"})
+        raw = (self.n80 / self.a_name).read_bytes()
+        self.assertEqual(AC.sidecar_digest(self.n80 / self.a_name), AC.sha256_bytes(raw))
+        amendment = AC.Amendment(self.n80 / AC.AMENDMENT_NAME, self.asha, self.body)
+        body = AC.check_local_amendment_approval(raw, self.prereg, amendment)
+        self.assertEqual(body["statement"], AC.AMEND_STATEMENT.format(sha=self.asha, parent=self.prereg.sha256))
+        self.assertEqual((body["typed"], body["parent_prereg_sha256"]), (self.a16, self.prereg.sha256))
+        self.assertNotIn("prereg_sha256", body)
+        check = self.n80.parent / self.check_rel
+        self.assertEqual(body["desktop_checks"], {AL.CHECK_POSIX + "/" + check.name: AC.file_sha256(check)})
+        self.assertIn(self.asha, text)
+        rel = f"{K.N80_REL}/{self.a_name}"
+        self.assertIn(f"git add {rel} {rel}.sha256 {AL.CHECK_POSIX}/desktop_check_*", text)
+        self.assertIn(f"git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m "
+                      f"\"Near-80: approve amendment 1 {self.a16}\"", text)
+        self.assertIn(AC.AMEND_IMPORT_NAME.format(prefix=self.a16), text)
+        self.refused("already exists")                                     # never overwrites
+
+    def test_check_writes_nothing_and_shows_each_change(self):
+        before = tree(self.n80)
+        code, text = self.run_al(args=["--check"], stdin=NotTty())
+        self.assertEqual(code, 0, text)
+        flat = " ".join(text.split())
+        self.assertIn("Nothing was asked and nothing was written", flat)
+        self.assertIn("Near-80 (version 8): amendment 1", flat)
+        for rel, (old, new) in self.body["delta"]["changed"].items():
+            self.assertIn(f"{rel}: {old[:16]} -> {new[:16]}", flat)
+        self.assertIn(f"appended to; the first {self.n} bytes are the approved text", flat)
+        self.assertIn(self.asha, flat)
+        self.assertIn("PREREGISTRATION.md, section 19", flat)
+        self.assertIn("The 1 phases that failed and run again as attempt 2 (their failed attempt 1 stays in the ledger "
+                      "and counts toward the budget):", flat)
+        self.assertNotIn("clears", flat)
+        self.assertIn(f"passed: {Path(self.check_rel).name} (official mode, this amendment_1.json, that code; the four "
+                      f"unit test files ran and passed)", flat)
+        self.assertIn(f"its code, as amendment_1.json names it: check_amendment1.py {'1' * 16}, check_amendment1.sh "
+                      f"{'2' * 16}", flat)
+        self.assertIn("Approving also confirms the item of section 19.6 that is marked for you: to your knowledge "
+                      "nobody, you included, opened a record of the exploratory stage that holds a score or a learner "
+                      "number", flat)
+        self.assertIn("looks/exploratory.json and exploratory.md, and the records of seeds 0-4 under learners/, "
+                      "policy/, eval/, readouts/ and stops/", flat)
+        self.assertIn("If anyone did, press Enter to stop and tell the session; it states it in section 19.6 and "
+                      "gives you a new fingerprint.", flat)
+        self.assertLess(flat.index("Before you type:"), flat.index("Fingerprint (SHA-256) of amendment_1.json:"))
+        self.assertEqual(tree(self.n80), before)
+
+    def test_refuses_without_a_passing_desktop_check(self):
+        check = self.n80.parent / self.check_rel
+        variants = [("none", None), ("failed", dict(passed=False)), ("a stub run", dict(mode="stub")),
+                    ("another amendment", dict(amendment_sha256="f" * 64)), ("another kind", dict(kind="x")),
+                    ("a changed result file", "edit"),
+                    ("no unit tests (--no-tests)", dict(unit_tests={}, tests_run=False)),
+                    ("no unit_tests field", dict(unit_tests=None)),
+                    ("three of the four unit test files", dict(unit_tests={n: 0 for n in K.TEST_FILES[:3]})),
+                    ("a failing unit test file", dict(unit_tests=dict({n: 0 for n in K.TEST_FILES},
+                                                                      **{K.TEST_FILES[0]: 1}))),
+                    ("exit codes that are booleans", dict(unit_tests={n: False for n in K.TEST_FILES})),
+                    ("another check code", dict(check_sha256=dict(TEST_CHECK_SHA, py="3" * 64))),
+                    ("no check code", dict(check_sha256=None))]
+        for name, change in variants:
+            with self.subTest(case=name):
+                for p in check.parent.iterdir():
+                    p.unlink()
+                if isinstance(change, dict):
+                    write_desktop_check(self.n80, self.asha, **change)
+                elif change == "edit":
+                    write_desktop_check(self.n80, self.asha)
+                    check.write_bytes(check.read_bytes() + b" ")
+                self.refused("No desktop check of this amendment has passed")
+                code, text = self.run_al(args=["--check"], stdin=NotTty())  # --check reports it and passes
+                self.assertEqual(code, 0, text)
+                self.assertIn("none has passed yet", " ".join(text.split()))
+        for p in check.parent.iterdir():
+            p.unlink()
+        write_desktop_check(self.n80, self.asha, name="desktop_check_20261019T000001Z.json", passed=False)
+        write_desktop_check(self.n80, self.asha, name="desktop_check_20261019T000002Z.json")
+        code, text = self.run_al()                                         # one passing result file is enough
+        self.assertEqual(code, 0, text)
+
+    def test_refuses_a_malformed_amendment(self):
+        good = json.loads(json.dumps(self.body))
+        for key, value, in_delta in (("delta", [1], False), ("parent", [1], False), ("changed", [1], True),
+                                     ("appended", {"PREREGISTRATION.md": 5}, True), ("cleared_failures", 5, False),
+                                     ("unchanged", 3, False), ("runs", [1], False), ("title", ["x"], False),
+                                     ("why_no_result_changes", 7, False), ("desktop_check", {"py": 1}, False)):
+            with self.subTest(case=key):
+                self.body = json.loads(json.dumps(good))
+                (self.body["delta"] if in_delta else self.body)[key] = value
+                self.write_amendment()
+                self.refused("amendment_1.json is malformed", args=["--check"], stdin=NotTty())
+
+    def test_refuses_an_amendment_of_another_study(self):
+        self.body["label"] = "another"
+        self.write_amendment()
+        self.refused("amendment_1.json names another study", args=["--check"], stdin=NotTty())
+
+    def test_refuses_an_amendment_that_names_no_check_code(self):
+        del self.body["desktop_check"]
+        self.write_amendment()
+        for p in (self.n80.parent / self.check_rel).parent.iterdir():
+            p.unlink()
+        self.check_rel = write_desktop_check(self.n80, self.asha)
+        self.refused("No desktop check of this amendment has passed")
+
+    def test_refuses_an_added_or_removed_file(self):
+        good = json.loads(json.dumps(self.body))
+        extra = self.n80 / "code" / "extra.py"
+        extra.write_text("x = 1\n", encoding="utf8")
+        for change in (dict(added={"code/extra.py": AC.file_sha256(extra)}), dict(removed=["code/x.py"])):
+            with self.subTest(change=sorted(change)):
+                self.body = json.loads(json.dumps(good))
+                self.body["delta"].update(change)
+                self.write_amendment()
+                self.refused("amendment 1 adds and removes no file", args=["--check"], stdin=NotTty())
+
+    def test_refuses_a_wrong_typed_prefix(self):
+        self.refused("do not match", typed="0" * 16)
+        self.refused("do not match", typed=self.prereg.prefix)            # the parent's fingerprint is not it
+
+    def test_refuses_an_existing_approval(self):
+        (self.n80 / self.a_name).write_text("{}", encoding="utf8")
+        self.refused("already exists")
+
+    def test_refuses_a_stray_file(self):
+        (self.n80 / "stray.txt").write_text("x", encoding="utf8")
+        self.refused("stray.txt is not a file of this pre-registration", args=["--check"], stdin=NotTty())
+
+    def test_refuses_a_missing_parent_approval(self):
+        for name in (self.p_approval, self.p_approval + ".sha256"):
+            (self.n80 / name).unlink()
+        self.refused("is missing: an amendment is approved only on top of your approval", args=["--check"],
+                     stdin=NotTty())
+
+    def test_refuses_another_parent_import_record(self):
+        write_json_sidecar(self.n80 / self.p_import, {"kind": K.IMPORT_KIND, "prereg_sha256": "f" * 64})
+        self.refused(f"{self.p_import} is not the one amendment_1.json names", args=["--check"], stdin=NotTty())
+
+    def test_refuses_a_changed_amendment_sidecar(self):
+        (self.n80 / (AC.AMENDMENT_NAME + ".sha256")).write_text("0" * 64 + "  amendment_1.json\n", encoding="utf8")
+        self.refused("amendment_1.json does not match its fingerprint file", args=["--check"], stdin=NotTty())
+
+    def test_refuses_an_unnamed_change(self):
+        (self.n80 / "README.md").write_text("changed\n", encoding="utf8")
+        self.refused("README.md differs", args=["--check"], stdin=NotTty())
+
+    def test_refuses_a_delta_that_hides_a_change(self):
+        self.body["delta"]["changed"] = {}
+        self.write_amendment()
+        self.refused("are not the ones its delta names", args=["--check"], stdin=NotTty())
+
+    def test_refuses_a_document_edited_in_the_middle(self):
+        doc = self.n80 / "PREREGISTRATION.md"
+        data = doc.read_bytes()
+        doc.write_bytes(data[:10] + b"X" + data[10:])
+        new = AC.file_sha256(doc)
+        self.body["files"]["PREREGISTRATION.md"] = new
+        self.body["delta"]["changed"]["PREREGISTRATION.md"] = [self.parent_files["PREREGISTRATION.md"], new]
+        self.write_amendment()
+        self.refused("PREREGISTRATION.md may only be appended to", args=["--check"], stdin=NotTty())
+
+    def test_constants_equal_approval_checks(self):
+        self.assertEqual((AL.AMENDMENT_NAME, AL.AMENDMENT_KIND, AL.AMEND_KIND, AL.AMEND_STATEMENT, AL.NEVER_AMENDED),
+                         (AC.AMENDMENT_NAME, AC.AMENDMENT_KIND, AC.AMEND_LOCAL_KIND, AC.AMEND_STATEMENT,
+                          AC.NEVER_AMENDED))
+        self.assertEqual(AL.AMEND_APPROVAL_NAME.format("p"), AC.AMEND_APPROVAL_NAME.format(prefix="p"))
+        self.assertEqual(AL.AMEND_IMPORT_NAME.format("p"), AC.AMEND_IMPORT_NAME.format(prefix="p"))
+        self.assertEqual(AC.AMENDMENT_NUMBER, 1)
+        self.assertEqual((AL.CHECK_KIND, AL.CHECK_POSIX + "/desktop_check_"),
+                         (AC.AMEND_CHECK_KIND, AC.AMEND_CHECK_PREFIX))
+        self.assertEqual(AL.CHECK_TESTS, K.TEST_FILES)
+
+
 # ============================================================================================ freeze.py
 
 def real_draft_bytes():

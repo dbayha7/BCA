@@ -1284,3 +1284,189 @@ under `experiments/`, `runs/shift/`, `stage2/`, `stage2_gpu/`, `stage2_v7/` or a
 version 6's `stage2/PREREGISTRATION.md` and `stage2/prereg.json`; version 7's `stage2_v7/README.md` and
 `stage2_v7/prereg_v7.json` (its memory rule); step 2's `restructure/step2/PRESPEC.md` and
 `restructure/step2_results/README.md`; the main test's results in `results-2026-10-13/` and `results-2026-10-14/`.
+
+---
+
+## 19. Amendment 1 (19 October 2026): rebuilding a fresh seed with the log sizes it was generated with
+
+**What this is.** A labeled post-hoc pre-registration that you approve. Section 8 names that form for moving a
+threshold ("through a labeled post-hoc pre-registration that you approve"); the approved text names no route for
+changing its pinned code, so this amendment takes the same form. It moves no threshold: it changes pinned code only.
+It takes effect only when you approve `amendment_1.json` at your own terminal and the session imports that approval,
+by the route of section 11. Everything above the line `---` that precedes this section is the text you approved on
+16 October 2026, byte for byte (its first 90,867 bytes; the approval check refuses any other change). No rule, mark,
+threshold, seed, setting, arm, sentence of section 14, stop rule, budget, memory rule or lane rule changes.
+
+### 19.1 What it amends
+
+- The pre-registration you approved: `prereg.json`, SHA-256
+  `51e677ab76c8d2f7fa7779d21db7f53bd40d42ff5e6be278d4abfb34c3396d4a`, and its code manifest,
+  `4fc25bbad23eeee4971a575c69611068d7817cb63607a5407fc1cf74b51b8150`.
+- Your approval of it, `approval_near80_51e677ab76c8d2f7.json`, typed on 16 October 2026 at 11:50:43 UTC (commit
+  `f79b89c`), and the session's import record, written at 11:52:58 UTC (commit `287380b`).
+- `prereg.json`, `code_manifest.json` and their fingerprints do not change. Every record already written keeps its
+  fingerprint and is read as before.
+
+### 19.2 What ran before it
+
+On the Framework Desktop, under the approved code:
+- the self-test and the plumbing, which passed (1.234 CPU-hours);
+- the exploratory stage on seeds 0-4 and its look (12.095 CPU-hours);
+- the data of seeds 10-14 in both worlds: 10 data records, each with the main setting's training file;
+- 10 phases that started and failed, all in the stalling world: the main setting's critic (`critic.main.stall.s10`
+  to `s14`) and the full-log critic (`critic_full.x.stall.s10` to `s14`). Each ended with exit 1 and wrote no phase
+  record and no stop; it left its log and its attempt in the ledger.
+
+The runner halted on 16 October 2026 at 19:03:39 UTC ("No new phase starts; nothing was deleted"). The confirmatory
+stage of the main setting had used 0.113 CPU-hours in all. Nothing was retried, moved or deleted.
+
+### 19.3 The cause
+
+- When a fresh seed's data is made (`fresh_seed_data`, `code/settingdata.py`), its record keeps the log sizes it was
+  generated with, the gate's 500, 200 and 300 episodes, under the name `sizes`.
+- The wrapper that writes every phase's record (`run_phase`, `code/phase_main.py`) then adds its own run sizes under
+  the same name. So in the 10 data records, `sizes` holds the wrapper's four run sizes instead.
+- Every later phase of a fresh seed rebuilds the seed's log from its record (`FreshSeed`). It handed the names of
+  those four run sizes to the gate's generator, which stopped with a type error before anything was built or
+  trained.
+- The checks before the run did not catch it. The plumbing's fresh-seed check makes seed 0's data but never reads a
+  written record back. The stub run's stand-in generator ignored the sizes it was given.
+- The plumbing's own fresh-seed record has the same overwritten name. Nothing reads it.
+
+### 19.4 The change
+
+- `code/settingdata.py`: `FreshSeed` takes the log sizes from a new function, `fresh_record_sizes`.
+  - Three positive integers are used as written.
+  - The four run sizes that version 8's wrapper wrote (each empty or a positive integer) are read as the gate's
+    sizes: the ones `fresh_seed_data` used, from the gate's pre-registration, which `prereg.json` pins.
+  - Anything else is refused: the phase writes no phase record and no stop (its attempt is still in the ledger),
+    and the runner halts with REFUSED.
+- `code/stubs.py`: the stand-in generator uses the sizes it is given. It refuses what the real generator refuses, and
+  a recorder or stall slope other than the stub's own.
+- `code/test_runner.py`: a test writes a fresh seed's record through the phase wrapper and reads it back, then runs
+  the phases that failed; another reads back the record as the desktop holds it.
+- `code/approval_check.py`, `code/import_approval.py`, `approve_local_near80.py` and `code/test_approval.py`: the
+  route by which you approve an amendment and every phase checks it (19.9).
+- This section, appended.
+
+Nothing else changes: not `code/phase_main.py` (the records keep their form), not `code/near80_constants.py`, not the
+133 repository files the code uses. `amendment_1.json` lists every changed file with its fingerprint before and after,
+and the approval check refuses any other change.
+
+### 19.5 Why it cannot change a result
+
+- The amended reader changes only where the log sizes come from. For the 10 records on the desktop it uses the gate's
+  sizes (500, 200 and 300 episodes), which `fresh_seed_data` used to make them. A record that holds three positive
+  integers is used as written. The recorder and the stall slope still come from the record, as before; the desktop
+  session compared both with the gate's.
+- Checks still stand before any learner reads a row:
+  - for every phase that rebuilds a fresh seed, the rebuilt log's hashes and both removals' hashes must equal the
+    record's;
+  - for every phase that trains on the training file, its fingerprint, its leak check and the four prepared-row
+    hashes must equal the record's. The full-log critic trains on the whole log, which the first check covers.
+- So each phase gets the data its data record describes, bit for bit, or it stops. It cannot train on other data.
+- The 10 failed attempts are not stops, and they make no seed or learner fail.
+  - A stop is a phase's written stop record (section 8.3); none was written.
+  - A seed's learner fails, in the sense of sections 9.1 and 10, when the confirmatory look finds a number it needs
+    missing with no failure or stop record. That look has not run.
+  - An attempt that ends with an error, as these did, halts the run. The approved runner starts the phase again as a
+    new attempt when you next type `run`. Under the approved code that rerun could only fail again. For these phases
+    the amendment changes only where the log sizes come from. No phase's work depends on its attempt number.
+
+### 19.6 What was seen, and what was not
+
+- **On the desktop, by the session there (bca-47, on your Framework Desktop):**
+  - the tracebacks in the logs of the 10 failed critic phases, and the runner's status output: everything
+    `run_near80.sh status` prints (the counts of phases by state, memory, CPU-hours by stage, any stopped, unfinished
+    or halted phase by name with its note, any pause or budget line, and the halt). The count of skipped phases, and
+    any stopped phase it names, can show which way the exploratory look's decision went (whether the near-80 settings
+    run on seeds 10-14); that decision is not a score;
+  - the 10 fresh seed-worlds of seeds 10-14 rebuilt in memory with the gate's generator, their array hashes compared
+    with each data record's `log_sha256`, and each record's `recorder` and `stall_slope` compared with the gate's;
+  - it did not report reading any other field of the data records, and it opened no look, score or claim.
+- **In the cloud, by the session that wrote this amendment:**
+  - the code, and stub runs on synthetic logs with stand-in learners that take no training step;
+  - while finding the cause, in a scratch folder outside the repository:
+    - it rebuilt seed 10's real data in both worlds with the gate's generator;
+    - it ran seed 10's phases on that data with the stub's stand-in learners and evaluations, to check the code
+      path: data, data band, the critics, switch, clone, reference actors, version 6's band, policy, the
+      confirmatory stage lock, evaluate and readouts;
+    - a stand-in exploratory look let every setting run; the real look was not read;
+    - nothing was trained and no look was computed;
+    - apart from the code's own stop and error messages, none of their numbers was read, and the stand-ins' numbers
+      carry nothing about any learner of this pre-registration. Their files also hold values computed from seed 10's
+      real data that do not come from a stand-in, such as the gate's data checks of that seed; none of these was
+      read either;
+    - nothing more is read from these scratch runs, and they will be deleted, unread, once `amendment_1.json` is
+      pushed;
+  - no look, and no number this run computed on seeds 0-4 or 10-14 (score, learner number or claim).
+- **Not seen by either session, as each reported:** any number of the exploratory look; any score or learner number
+  this run computed on seeds 0-4, beyond what the approved text and step 2's committed results already state; any
+  claim; and any score or learner number on seeds 10-14. The desktop session's status output can show the look's
+  allow-or-stop decision (above); the cloud session did not see it.
+- **One fact about the fresh seeds' data follows from what ran.** In the stalling world every fresh seed passed the
+  gate's data checks (the 10 critics of 19.2 start only then), and in the cloud scratch runs seed 10 passed them in
+  both worlds. The desktop check counts any seed-world that failed them.
+- **For you to confirm before you approve: has anyone, you included, opened a record of the exploratory stage that
+  holds a score or a learner number, or read such a number from one?** On your desktop these are, under
+  `runs/shift_explore/near80/`: the look, `looks/exploratory.json` and `exploratory.md` (`run_near80.sh report` also
+  prints from them), and the records of seeds 0-4 under `learners/`, `policy/`, `eval/`, `readouts/` and `stops/`.
+  Neither session reported doing so. The runner's status output, and its line "the exploratory look allows (or
+  stops) the near-80 settings on seeds 10-14", do not count: they show the look's decision, not a score. By approving
+  you confirm that, to your knowledge, nobody did. If anyone did, do not approve this version: tell the session who
+  opened what. It then says so in this section and writes `amendment_1.json` again, with a new fingerprint, for you
+  to approve.
+- **Nothing was trained on seeds 10-14.** Every failed attempt ended with an error while loading the seed's data,
+  before a learner was built. The desktop check confirms that no model file of seeds 10-14 exists.
+
+### 19.7 What is kept, what runs, and what it costs
+
+- **Kept:** every record under `runs/shift_explore/near80/`, the plumbing record, the exploratory look, and the 10
+  failed attempts in the ledger. Their seconds count toward the budget.
+- **Runs, after your approval is imported:**
+  - the 10 failed phases again (attempt 2), then every phase not yet started, under the amended code;
+  - the records of these phases that run (done or stopped) carry the amendment and its import record in their
+    approval facts; skip records and the looks carry `prereg.json`'s fingerprint only, as before, and the
+    confirmatory look lists the fingerprint of every record it read;
+  - the exploratory look is not recomputed;
+  - the plumbing is not rerun: nothing in it reads a written fresh record back, so rerunning it would not test this
+    change.
+- **Checked before you approve:** a read-only desktop check
+  (`outputs/shift/beyond-the-data/near80_amendment1/check_amendment1.sh`). It:
+  - checks that the near-80 files are exactly the ones `amendment_1.json` lists, and that the approval check accepts
+    them as amended;
+  - runs the four unit test files;
+  - confirms from the ledger that the failed phases are exactly these 10, that each ran only once and left nothing
+    behind, and that no model file of seeds 10-14 exists;
+  - rebuilds all 10 seed-worlds with the amended code and compares every hash of 19.5.
+
+  It trains nothing. It writes only its result file and that file's `.sha256`, which you commit with your approval.
+  The result file records the check's own code (the SHA-256 of `check_amendment1.py` and `check_amendment1.sh`,
+  which `amendment_1.json` names) and the result of each unit test file.
+- **Cost:** the check, about 0.3-0.5 CPU-hours, outside the runner's ledger and budget; its seconds are in its result
+  file. No finished phase reruns. A new fingerprint instead would have meant rerunning about 13.4 CPU-hours, and a
+  second exploratory look.
+
+### 19.8 If it is not approved
+
+The run stays halted. No phase of seeds 10-14 after its data can run, no claim on seeds 10-14 can be read, and the
+halt is reported as it stands.
+
+### 19.9 How it is approved
+
+As in section 11, with `amendment_1.json` in place of `prereg.json`:
+1. Pull, run the desktop check, then `approve_local_near80.py --check` and `approve_local_near80.py`. It shows every
+   changed file with its fingerprint before and after, and asks you to type the first 16 characters of
+   `amendment_1.json`'s fingerprint. It writes `approval_near80_amendment1_<first 16 characters>.json`, which names
+   the desktop check's passing result files. It refuses unless your approval of `prereg.json` and its import record
+   are in place, and unless a result file of the desktop check says that the check passed on this
+   `amendment_1.json`, with the check code it names and the four unit test files run and passed.
+2. Commit and push it, with the desktop check's result file, under your own name.
+3. The session imports it (`code/import_approval.py import-amendment`) and pushes
+   `import_near80_amendment1_<first 16 characters>.json`. The same rules as in section 11 apply: the import refuses
+   if the commit's author or committer is the session's identity, or is not you. It also refuses unless your commit
+   holds each desktop check result file your approval names, unchanged.
+4. Every phase then checks both: your approval of `prereg.json` as before, and your approval of the amendment, with
+   the same git rules. Before both are in place, the amended code refuses to run any phase.
+
+The session offers this amendment to you only after an independent review in a separate session has read it.

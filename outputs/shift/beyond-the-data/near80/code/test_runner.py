@@ -1407,6 +1407,103 @@ class TestTrainingFileCheck(unittest.TestCase):
         self.assertEqual(PH.done(PH.parse_id("data_main.main.stall.s10"), out), "done")
 
 
+FRESH_READBACK = r"""
+import json, sys
+sys.dont_write_bytecode = True
+code, fx, seed, world = sys.argv[1], sys.argv[2], int(sys.argv[3]), sys.argv[4]
+sys.path.insert(0, code)
+from pathlib import Path
+import phases as PH, settingdata as SD, stubs
+run = PH.Run(PH.make_key("critic", "main", world, seed), Path(fx) / "out", mode="stub", fixture=fx)
+stubs.install(run)
+seen, inner = [], SD.fresh_log
+def spy(s, w, spec, sizes, slope):
+    seen.append([list(sizes), slope, type(slope).__name__])
+    return inner(s, w, spec, sizes, slope)
+SD.fresh_log = spy
+rec = json.loads(sys.stdin.read()) if len(sys.argv) > 5 else None
+sd = SD.FreshSeed(seed, world, rec) if rec is not None else SD.seed_data(seed, world, Path(fx) / "out")
+print(json.dumps(dict(seen=seen, rep=sd.rep, world=sd.world)))
+"""
+RUN_SIZE_KEYS_V8 = ["chunk", "starts", "steps", "updates"]
+
+
+@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs builder A's approval_check.py")
+class TestFreshSeedRecordRoundTrip(unittest.TestCase):
+    """Amendment 1. A fresh seed's data record is written through phase_main (the wrapper every runner phase goes
+    through) and read back by every later phase of that seed. Version 8's wrapper writes its run sizes over the
+    record's 'sizes'; FreshSeed handed those dictionary keys to dataset.generate, and every phase after data_main
+    failed on seeds 10-14 (desktop, 16 October 2026). The stub's fresh_log ignored its sizes, so the stub run never
+    saw it. Stub mode only: synthetic logs, nothing trained."""
+
+    def setUp(self):
+        self.fx = _fixture(self)
+        LG.write_json_once(self.fx / "out" / K.LAYOUT["look"].format(group="exploratory"),
+                           dict(kind="near80-look-exploratory", mode="stub", prereg_sha256=None, group="exploratory",
+                                fresh_near80_allowed=True))
+
+    def readback(self, world="stall", record=None, ok=True):
+        r = subprocess.run([PY, "-c", FRESH_READBACK, str(HERE), str(self.fx), "10", world] +
+                           (["record"] if record is not None else []),
+                           input=json.dumps(record) if record is not None else None, cwd="/tmp", env=phase_env(),
+                           capture_output=True, text=True, timeout=900)
+        if not ok:
+            return None, r
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        return json.loads(r.stdout.strip().splitlines()[-1]), r
+
+    def test_record_written_by_the_wrapper_reads_back(self):
+        r = _phase(self.fx, "data_main.main.stall.s10", plan="seeds:0,10")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        rec = LG.read_json_verified(self.fx / "out" / K.LAYOUT["data_main"].format(world="stall", seed=10))
+        self.assertEqual(rec["source"], "fresh")
+        self.assertEqual(sorted(rec["sizes"]), RUN_SIZE_KEYS_V8)      # version 8's wrapper, kept as written
+        got, _ = self.readback()
+        self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])  # the stub's fresh_settings: the log's sizes
+        for pid in ("critic_full.x.stall.s10", "critic.main.stall.s10", "critic_second.main.stall.s10",
+                    "clone.main.stall.s10"):                            # the phases that failed on the desktop
+            r = _phase(self.fx, pid, plan="seeds:0,10")
+            self.assertEqual(r.returncode, 0, pid + "\n" + r.stdout + r.stderr)
+            self.assertEqual(PH.done(PH.parse_id(pid), self.fx / "out"), "done", pid)
+        crit = LG.read_json_verified(self.fx / "out" / PH.record_rel(PH.parse_id("critic.main.stall.s10")))
+        self.assertTrue(crit["training_file_check"]["passed"])
+
+    def test_three_integers_are_used_and_anything_else_is_refused(self):
+        r = _phase(self.fx, "data_main.main.no_stall.s10", plan="seeds:0,10")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        rec = LG.read_json_verified(self.fx / "out" / K.LAYOUT["data_main"].format(world="no_stall", seed=10))
+        got, _ = self.readback("no_stall", dict(rec, sizes=[500, 50, 50]))
+        self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])
+        got, _ = self.readback("no_stall", dict(rec, sizes=dict.fromkeys(RUN_SIZE_KEYS_V8)))   # the desktop's records
+        self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])
+        for bad in (dict(steps=None), dict(rec["sizes"], extra=1), dict(rec["sizes"], steps="40"),
+                    dict(rec["sizes"], steps=0), [500, 50], [500, 50, "50"], [500, 50, True], [0, 50, 50],
+                    [-1, 50, 50], None):
+            _, r2 = self.readback("no_stall", dict(rec, sizes=bad), ok=False)
+            self.assertNotEqual(r2.returncode, 0, repr(bad))
+            self.assertIn("refused: the data record's sizes", r2.stderr, repr(bad))
+
+    def test_the_stub_generator_refuses_what_dataset_generate_refuses(self):
+        r = subprocess.run([PY, "-c", "import sys; sys.dont_write_bytecode = True; sys.path.insert(0, sys.argv[1]);"
+                                      "import dataclasses, stubs\n"
+                                      "spec = stubs._recorder_spec()\n"
+                                      "stubs.stub_fresh_log(10, 'stall', spec, (500, 50, 50), 1.5)\n"
+                                      "other = dataclasses.replace(spec, damping=spec.damping + 0.25)\n"
+                                      "ok3 = (500, 50, 50)\n"
+                                      "for sp, sizes, slope in ((spec, ('chunk', 'starts', 'steps', 'updates'), 1.5),\n"
+                                      "                         (spec, (500, 50), 1.5), (spec, ok3, float('nan')),\n"
+                                      "                         (spec, ok3, 1.6), (other, ok3, 1.5)):\n"
+                                      "    try:\n"
+                                      "        stubs.stub_fresh_log(10, 'stall', sp, sizes, slope)\n"
+                                      "    except TypeError:\n"
+                                      "        continue\n"
+                                      "    raise SystemExit('accepted ' + repr((sp, sizes, slope)))\n"
+                                      "print('ok')", str(HERE)],
+                           cwd="/tmp", env=phase_env(), capture_output=True, text=True, timeout=600)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(r.stdout.strip().splitlines()[-1], "ok")
+
+
 @unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs builder A's approval_check.py")
 class TestStep2Saved(unittest.TestCase):
     @classmethod

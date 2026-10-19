@@ -35,6 +35,23 @@ What it does, in order. If any step fails, it prints "Refused." with the reason,
      and prints the git commands to commit and push them under your own name. Nothing runs until the session has
      imported your approval and pushed its import record (import_near80_<first 16 characters>.json).
 
+Amendment 1 (PREREGISTRATION.md section 19). When amendment_1.json sits next to prereg.json, the script runs in
+amendment mode. Step 1 then also checks:
+  - amendment_1.json matches its .sha256 file, is well formed, and amends THIS prereg.json (the same study) and its
+    code manifest;
+  - the files that differ from the approved code manifest are exactly the ones it names, with their fingerprints
+    before and after; a document is only appended to; no file is added or removed; code/near80_constants.py never
+    changes;
+  - your approval of prereg.json and its import record are in place;
+  - every file has the fingerprint amendment_1.json lists.
+Step 2 also refuses unless the desktop check (near80_amendment1/check_amendment1.sh) has written a result file next to
+this folder that matches its .sha256 file, ran in official mode on THIS amendment_1.json with the check code that
+amendment_1.json names (the SHA-256 of check_amendment1.py and check_amendment1.sh), ran the four unit test files and
+passed; --check only reports it. Step 4 shows each changed file, the check code and the desktop check's passing
+result files. Step 5 asks for the first 16 characters of amendment_1.json's fingerprint. Step 6 writes
+approval_near80_amendment1_<first 16 characters>.json (+ .sha256), which names the desktop check's passing result
+files, and its git commands add them; the session's import refuses unless your commit holds each of them.
+
 Standard library only (Python 3.8 or later); it imports nothing from code/. It asks git, read-only, for the current
 commit and branch.
 Options:
@@ -75,6 +92,19 @@ FROZEN_TOP = (PREREG_NAME, PREREG_NAME + ".sha256", MANIFEST_NAME, MANIFEST_NAME
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
              "Approving it accepts every default of its section 16 and allows the runs it names, under its rules.")
 WIDTH = 100
+# Amendment 1 (PREREGISTRATION.md section 19): approval_check.py's names, restated (test_approval checks they agree).
+AMENDMENT_NAME = "amendment_1.json"
+AMENDMENT_KIND = "near80-amendment"
+AMEND_APPROVAL_NAME = "approval_near80_amendment1_{}.json"
+AMEND_IMPORT_NAME = "import_near80_amendment1_{}.json"
+AMEND_KIND = "near80-local-amendment-approval"
+AMEND_STATEMENT = ("I approve amendment 1 (SHA-256 {sha}) to the near-80 pre-registration {parent}. It changes only "
+                   "the files it lists; every rule, mark, threshold and sentence of that pre-registration is "
+                   "unchanged.")
+NEVER_AMENDED = ("code/near80_constants.py",)
+CHECK_POSIX = "outputs/shift/beyond-the-data/near80_amendment1"     # the desktop check and its result files
+CHECK_KIND = "near80-amendment1-desktop-check"
+CHECK_TESTS = ("test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py")   # near80_constants.TEST_FILES
 
 
 class Refused(Exception):
@@ -111,12 +141,12 @@ def load_json(data, name):
         raise Refused("{} is not readable JSON.".format(name))
 
 
-def unlisted_files(folder, files, prefix):
+def unlisted_files(folder, files, prefix, extra=()):
     """Step 1's last check: every entry of the folder and of its code/ that is neither a file the manifest lists, one
     of the four frozen files at the top (prereg.json, code_manifest.json, each with its .sha256), nor this
     fingerprint's own approval or import record (with .sha256); any __pycache__; any other folder holding a .py file.
     Returns the problems (empty when none)."""
-    allowed = set(f for f in files if "/" not in f) | set(FROZEN_TOP)
+    allowed = set(f for f in files if "/" not in f) | set(FROZEN_TOP) | set(extra)
     for name in (APPROVAL_NAME.format(prefix), IMPORT_NAME.format(prefix)):
         allowed.update((name, name + ".sha256"))
     out = []
@@ -143,8 +173,128 @@ def unlisted_files(folder, files, prefix):
     return out
 
 
-def check_folder(folder=None, script_path=None, repo=REPO):
-    """Step 1. Returns what the rest needs; raises Refused on any mismatch."""
+def delta_problems(parent_files, amendment, folder):
+    """approval_check.delta_problems, restated (standard library only): [] when the amendment's files are the parent
+    manifest's files changed exactly as its delta says, documents only appended to, near80_constants.py unchanged."""
+    files = amendment.get("files") or {}
+    delta = amendment.get("delta") or {}
+    changed, added = delta.get("changed") or {}, delta.get("added") or {}
+    removed, appended = list(delta.get("removed") or []), delta.get("appended") or {}
+    out = []
+    if added or removed:
+        out.append("amendment 1 adds and removes no file (near80_constants.CODE_FILES cannot change)")
+    if set(files) != (set(parent_files) - set(removed)) | set(added):
+        out.append("its file list is not the parent's with the delta's additions and removals")
+    out += ["{} is removed but the parent does not list it".format(r) for r in removed if r not in parent_files]
+    out += ["{} is added but the parent lists it, or its SHA-256 differs".format(r) for r, h in added.items()
+            if r in parent_files or files.get(r) != h]
+    differ = sorted(r for r in set(parent_files) & set(files) if parent_files[r] != files[r])
+    if differ != sorted(changed):
+        out.append("the files that differ from the parent {} are not the ones its delta names {}".format(
+            differ, sorted(changed)))
+    for r, pair in sorted(changed.items()):
+        if not (isinstance(pair, list) and len(pair) == 2 and pair[0] == parent_files.get(r)
+                and pair[1] == files.get(r)):
+            out.append("{}: the delta's old and new SHA-256 are not the parent's and the amendment's".format(r))
+    out += ["{} may not change in an amendment".format(r) for r in NEVER_AMENDED if r in changed or r in removed]
+    for r in sorted(set(changed) | set(removed)):
+        if not r.endswith(".md"):
+            continue
+        a = appended.get(r) or {}
+        path = os.path.join(folder, *r.split("/"))
+        data = read_bytes(path) if os.path.isfile(path) else b""
+        n = a.get("parent_bytes")
+        if not (r in changed and type(n) is int and 0 < n < len(data)
+                and a.get("parent_sha256") == parent_files.get(r) and sha256_bytes(data[:n]) == parent_files.get(r)):
+            out.append("{} may only be appended to (the parent's text byte for byte, then the amendment's)".format(r))
+    return out
+
+
+def _str_map(m, value_ok):
+    return isinstance(m, dict) and all(isinstance(k, str) and value_ok(v) for k, v in m.items())
+
+
+def amendment_shape_ok(body):
+    """approval_check.amendment_shape_ok, restated: parent {...}; files {path: SHA-256}; delta {changed {path: [old,
+    new]}, added {path: SHA-256}, removed [path], appended {path: {...}}} (an absent or empty part counts as empty).
+    It also checks the fields only this script reads, to show them in step 4 (approval_check never reads them):
+    cleared_failures, unchanged and runs are lists of text, title and why_no_result_changes are text, desktop_check
+    is {name: SHA-256}; each may be absent."""
+    if not (all(body.get(k) is None or (isinstance(body[k], list) and all(isinstance(x, str) for x in body[k]))
+                for k in ("cleared_failures", "unchanged", "runs"))
+            and all(body.get(k) is None or isinstance(body[k], str) for k in ("title", "why_no_result_changes"))
+            and (body.get("desktop_check") is None
+                 or _str_map(body["desktop_check"], lambda v: isinstance(v, str)))):
+        return False
+    delta = body.get("delta")
+    if not (isinstance(body.get("parent"), dict) and _str_map(body.get("files"), lambda v: isinstance(v, str))
+            and isinstance(delta, dict)):
+        return False
+    removed = delta.get("removed") or []
+    return (_str_map(delta.get("changed") or {}, lambda v: isinstance(v, list) and len(v) == 2
+                     and all(isinstance(x, str) for x in v))
+            and _str_map(delta.get("added") or {}, lambda v: isinstance(v, str))
+            and isinstance(removed, list) and all(isinstance(r, str) for r in removed)
+            and _str_map(delta.get("appended") or {}, lambda v: isinstance(v, dict)))
+
+
+def desktop_checks(folder, amendment, amendment_sha):
+    """The desktop check's result files (CHECK_POSIX/desktop_check_<utc>.json, next to this folder) that match their
+    .sha256 file, ran in official mode on THIS amendment_1.json with the check code it names ('desktop_check': the
+    SHA-256 of check_amendment1.py and check_amendment1.sh), ran the four unit test files and passed: {file name:
+    SHA-256}. approval_check.desktop_check_problems, restated."""
+    want = amendment.get("desktop_check")
+    d = os.path.join(os.path.dirname(os.path.abspath(folder)), CHECK_POSIX.rsplit("/", 1)[-1])
+    good = {}
+    for name in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        path = os.path.join(d, name)
+        if not (name.startswith("desktop_check_") and name.endswith(".json") and os.path.isfile(path)):
+            continue
+        try:
+            raw = read_bytes(path)
+            body = json.loads(raw.decode("utf8"))
+            ok = sidecar_digest(path) == sha256_bytes(raw)
+        except (OSError, Refused, UnicodeDecodeError, ValueError):
+            continue
+        tests = body.get("unit_tests") if isinstance(body, dict) else None
+        if (ok and isinstance(body, dict) and body.get("kind") == CHECK_KIND and body.get("mode") == "official"
+                and body.get("passed") is True and body.get("amendment_sha256") == amendment_sha
+                and isinstance(want, dict) and bool(want) and body.get("check_sha256") == want
+                and isinstance(tests, dict) and sorted(tests) == sorted(CHECK_TESTS)
+                and all(type(v) is int and v == 0 for v in tests.values())):
+            good[name] = sha256_bytes(raw)
+    return good
+
+
+def load_amendment(folder, prereg_sha, manifest_sha, label):
+    """amendment_1.json (+ .sha256): (body, SHA-256). Raises Refused unless it is amendment 1 of THIS prereg.json (the
+    same study: prereg.json's label)."""
+    path = os.path.join(folder, AMENDMENT_NAME)
+    if not os.path.isfile(path):
+        raise Refused("{} is missing.".format(AMENDMENT_NAME))
+    raw = read_bytes(path)
+    digest = sha256_bytes(raw)
+    if sidecar_digest(path) != digest:
+        raise Refused("{} does not match its fingerprint file (it was changed).".format(AMENDMENT_NAME))
+    body = load_json(raw, AMENDMENT_NAME)
+    if not isinstance(body, dict) or body.get("kind") != AMENDMENT_KIND or body.get("number") != 1:
+        raise Refused("{} is not near-80's amendment 1.".format(AMENDMENT_NAME))
+    if body.get("label") != label:
+        raise Refused("{} names another study.".format(AMENDMENT_NAME))
+    if not amendment_shape_ok(body):
+        raise Refused("{} is malformed: its parent, files or delta are not of the expected form.".format(
+            AMENDMENT_NAME))
+    parent = body["parent"]
+    if parent.get("prereg_sha256") != prereg_sha or parent.get("code_manifest_sha256") != manifest_sha:
+        raise Refused("{} amends another pre-registration or code manifest.".format(AMENDMENT_NAME))
+    if not isinstance(body.get("files"), dict) or not body["files"]:
+        raise Refused("{} lists no files.".format(AMENDMENT_NAME))
+    return body, digest
+
+
+def check_folder(folder=None, script_path=None, repo=REPO, amend=False):
+    """Step 1. Returns what the rest needs; raises Refused on any mismatch. amend: amendment 1's mode (the files are
+    checked against amendment_1.json's list, after the delta check, and the parent must be approved and imported)."""
     folder = folder or os.path.join(repo, *FOLDER_POSIX.split("/"))
     prereg_path = os.path.join(folder, PREREG_NAME)
     if not os.path.isfile(prereg_path):
@@ -179,6 +329,24 @@ def check_folder(folder=None, script_path=None, repo=REPO):
     if not isinstance(files, dict) or not files or files != code.get("files"):
         raise Refused("The manifest's list of files differs from the one prereg.json records.")
     bad = []
+    amendment, amendment_sha, extra = None, None, ()
+    if amend:
+        amendment, amendment_sha = load_amendment(folder, digest, man_sha, prereg.get("label"))
+        bad.extend(delta_problems(files, amendment, folder))
+        parent = amendment.get("parent") or {}
+        p16, a16 = digest[:PREFIX_LEN], amendment_sha[:PREFIX_LEN]
+        for name, want in ((APPROVAL_NAME.format(p16), parent.get("approval_sha256")),
+                           (IMPORT_NAME.format(p16), parent.get("import_sha256"))):
+            path = os.path.join(folder, name)
+            if not os.path.isfile(path):
+                bad.append("{} is missing: an amendment is approved only on top of your approval".format(name))
+            elif file_sha256(path) != want or sidecar_digest(path) != want:
+                bad.append("{} is not the one {} names, or differs from its fingerprint file".format(
+                    name, AMENDMENT_NAME))
+        files = amendment["files"]
+        extra = [n + s for n in (AMENDMENT_NAME, APPROVAL_NAME.format(p16), IMPORT_NAME.format(p16),
+                                 AMEND_APPROVAL_NAME.format(a16), AMEND_IMPORT_NAME.format(a16))
+                 for s in ("", ".sha256")]
     for rel in sorted(files):
         path = os.path.join(folder, *rel.split("/"))
         if not os.path.isfile(path):
@@ -229,13 +397,14 @@ def check_folder(folder=None, script_path=None, repo=REPO):
         dpath = os.path.join(folder, *drel.split("/"))
         if not os.path.isfile(dpath) or file_sha256(dpath) != dsha:
             bad.append("{} is missing or differs".format(drel))
-    bad.extend(unlisted_files(folder, files, digest[:PREFIX_LEN]))
+    bad.extend(unlisted_files(folder, files, digest[:PREFIX_LEN], extra))
     if bad:
         hint = ("\n  (runs/ is not in git: run this on the machine where version 7's restore placed runs/, or restore "
                 "it first.)" if missing_runs else "")
         raise Refused("These files do not match the near-80 pre-registration:\n  - " + "\n  - ".join(bad) + hint)
     return dict(prereg=prereg, sha256=digest, manifest_sha256=man_sha, n_files=len(files),
-                n_repo_files=len(repo_files), script_sha256=files[SCRIPT_NAME], section=section, folder=folder)
+                n_repo_files=len(repo_files), script_sha256=files[SCRIPT_NAME], section=section, folder=folder,
+                amendment=amendment, amendment_sha256=amendment_sha)
 
 
 def git(repo, *args):
@@ -290,6 +459,62 @@ def summary(info):
     return "\n".join(parts)
 
 
+def summary_amendment(info):
+    """Step 4's text for amendment 1."""
+    a = info["amendment"]
+    delta = a.get("delta") or {}
+    check = a.get("desktop_check") or {}
+    changed = ["{}: {} -> {}{}".format(rel, old[:16], new[:16], " (appended to; the first {} bytes are the approved "
+                                                                 "text)".format((delta.get("appended") or {}).get(
+                                                                     rel, {}).get("parent_bytes"))
+               if rel in (delta.get("appended") or {}) else "")
+               for rel, (old, new) in sorted((delta.get("changed") or {}).items())]
+    parts = ["", "Near-80 (version 8): amendment 1", wrap(a.get("title", "")),
+             "  Amends: prereg.json {} (your approval of {} and its import record are in place).".format(
+                 info["sha256"], info["sha256"][:PREFIX_LEN]),
+             "  Checked: prereg.json, code_manifest.json and all {} pinned repository files are unchanged; every other "
+             "file is the parent's except the ones below.".format(info["n_repo_files"]), "",
+             "What changes (SHA-256, first 16 characters, before -> after):", bullets(changed), "",
+             "What does not change:", bullets(a.get("unchanged")), "",
+             "Kept, and what runs after your approval is imported:", bullets(a.get("runs")), "",
+             "The {} phases that failed and run again as attempt 2 (their failed attempt 1 stays in the ledger and "
+             "counts toward the budget):".format(len(a.get("cleared_failures") or [])),
+             bullets(a.get("cleared_failures")), "",
+             "Why it cannot change a result:", wrap(a.get("why_no_result_changes", "")), "",
+             "The desktop check of this amendment ({}/check_amendment1.sh):".format(CHECK_POSIX),
+             bullets(["its code, as amendment_1.json names it: check_amendment1.py {}, check_amendment1.sh {}".format(
+                 str(check.get("py"))[:PREFIX_LEN], str(check.get("sh"))[:PREFIX_LEN])]
+                 + (["passed: {} (official mode, this amendment_1.json, that code; the four unit test files ran and "
+                     "passed)".format(n) for n in sorted(info.get("desktop_checks") or {})]
+                    or ["none has passed yet; run it before you approve (approving refuses until one has passed, with "
+                        "the four unit test files)"])), "",
+             "Before you type:",
+             wrap("Approving also confirms the item of section 19.6 that is marked for you: to your knowledge nobody, "
+                  "you included, opened a record of the exploratory stage that holds a score or a learner number "
+                  "(under runs/shift_explore/near80/: looks/exploratory.json and exploratory.md, and the records of "
+                  "seeds 0-4 under learners/, policy/, eval/, readouts/ and stops/) or read such a number from one. "
+                  "If anyone did, press Enter to stop and tell the session; it states it in section 19.6 and gives "
+                  "you a new fingerprint."), "",
+             "Fingerprint (SHA-256) of amendment_1.json:", "", "    " + info["amendment_sha256"], "",
+             "Read it first: {}/PREREGISTRATION.md, section 19".format(FOLDER_POSIX), ""]
+    return "\n".join(parts)
+
+
+def amendment_body(info, typed, stdin=None, repo=REPO):
+    body = approval_body(info, typed, stdin, repo)
+    for k in ("prereg_path", "prereg_sha256", "code_manifest_sha256"):
+        body.pop(k)
+    body.update(kind=AMEND_KIND, amendment_path=FOLDER_POSIX + "/" + AMENDMENT_NAME, amendment_number=1,
+                amendment_sha256=info["amendment_sha256"], parent_prereg_sha256=info["sha256"],
+                desktop_checks={CHECK_POSIX + "/" + n: h
+                                for n, h in sorted((info.get("desktop_checks") or {}).items())},
+                statement=AMEND_STATEMENT.format(sha=info["amendment_sha256"], parent=info["sha256"]),
+                how=("Typed at a terminal on the owner's own machine with approve_local_near80.py (amendment mode). It "
+                     "takes effect only after the owner commits and pushes it and the session imports it "
+                     "(code/import_approval.py import-amendment) and pushes the import record."))
+    return body
+
+
 def write_once(path, data):
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
     fd = os.open(path, flags, 0o644)
@@ -337,21 +562,31 @@ def main(argv=None, folder=None, script_path=None, stdin=None, input_fn=input, r
         print("Refused. This needs Python 3.8 or later.\nNothing was written.", file=sys.stderr)
         return 2
     try:
-        info = check_folder(folder, script_path, repo)
-        prefix = info["sha256"][:PREFIX_LEN]
-        name = APPROVAL_NAME.format(prefix)
+        base = folder or os.path.join(repo, *FOLDER_POSIX.split("/"))
+        amend = os.path.lexists(os.path.join(base, AMENDMENT_NAME))
+        info = check_folder(folder, script_path, repo, amend=amend)
+        prefix = (info["amendment_sha256"] if amend else info["sha256"])[:PREFIX_LEN]
+        name = (AMEND_APPROVAL_NAME if amend else APPROVAL_NAME).format(prefix)
         path = os.path.join(info["folder"], name)
+        show = summary_amendment if amend else summary
+        if amend:
+            info["desktop_checks"] = desktop_checks(info["folder"], info["amendment"], info["amendment_sha256"])
         if args.check:
-            print(summary(info))
+            print(show(info))
             print("--check: every check passed. Nothing was asked and nothing was written.")
             return 0
         if os.path.lexists(path) or os.path.lexists(path + ".sha256"):
             raise Refused("{} already exists: this fingerprint is approved already. An approval is never "
                           "overwritten.".format(name))
+        if amend and not info["desktop_checks"]:
+            raise Refused("No desktop check of this amendment has passed. Run {}/check_amendment1.sh first "
+                          "(PREREGISTRATION.md section 19.9): its result file must match its .sha256 file, say it ran "
+                          "in official mode and passed, and name amendment_1.json's fingerprint {}.".format(
+                              CHECK_POSIX, info["amendment_sha256"][:PREFIX_LEN]))
         if not (hasattr(stdin, "isatty") and stdin.isatty()):
             raise Refused("Standard input is not a terminal. Run this yourself in a terminal window; do not pipe or "
                           "redirect anything into it.")
-        print(summary(info))
+        print(show(info))
         try:
             typed = input_fn("To approve, type the first {} characters of the fingerprint above (or press Enter to "
                              "stop): ".format(PREFIX_LEN))
@@ -364,7 +599,7 @@ def main(argv=None, folder=None, script_path=None, stdin=None, input_fn=input, r
         if typed != prefix:
             raise Refused("Not approved: the characters typed do not match the first {} characters of the "
                           "fingerprint.".format(PREFIX_LEN))
-        body = approval_body(info, typed, stdin, repo)
+        body = (amendment_body if amend else approval_body)(info, typed, stdin, repo)
         text = json.dumps(body, indent=1, sort_keys=True, ensure_ascii=True).encode("utf8")
         digest = sha256_bytes(text)
         try:
@@ -392,18 +627,22 @@ def main(argv=None, folder=None, script_path=None, stdin=None, input_fn=input, r
     rel = "{}/{}".format(FOLDER_POSIX, name)
     print("\n".join([
         "", "Approval written:", "  " + rel, "  " + rel + ".sha256", "",
-        "It covers the near-80 pre-registration with fingerprint {} only.".format(info["sha256"]), "",
+        ("It covers amendment 1 with fingerprint {} only, on top of the pre-registration {}.".format(
+            info["amendment_sha256"], info["sha256"]) if amend else
+         "It covers the near-80 pre-registration with fingerprint {} only.".format(info["sha256"])), "",
         "Now commit and push it under your own name, from {}, with these exact commands:".format(repo), "",
-        "    git add {0} {0}.sha256".format(rel),
-        "    git -c user.name=\"{}\" -c user.email={} commit -m \"Near-80: approve version 8 {}\"".format(
-            APPROVER_NAME, APPROVER_EMAIL, prefix),
+        ("    git add {0} {0}.sha256 {1}/desktop_check_*".format(rel, CHECK_POSIX) if amend else
+         "    git add {0} {0}.sha256".format(rel)),
+        "    git -c user.name=\"{}\" -c user.email={} commit -m \"Near-80: approve {} {}\"".format(
+            APPROVER_NAME, APPROVER_EMAIL, "amendment 1" if amend else "version 8", prefix),
         "    git push origin {}".format(branch), "",
         "If the push is rejected (\"fetch first\" or \"non-fast-forward\": the session pushed something meanwhile), type:",
         "", "    git -c user.name=\"{}\" -c user.email={} pull --rebase origin {}".format(
             APPROVER_NAME, APPROVER_EMAIL, branch),
         "    git push origin {}".format(branch), "",
         "Once pushed, do not delete, edit or re-add these files. Then tell Claude in the chat that you have pushed;",
-        "nothing runs until the session has imported it and pushed {}.".format(IMPORT_NAME.format(prefix)),
+        "nothing runs until the session has imported it and pushed {}.".format(
+            (AMEND_IMPORT_NAME if amend else IMPORT_NAME).format(prefix)),
         "When the session says it has pushed the import record, bring it here with:", "",
         "    git -C {} pull --ff-only".format(repo), "",
         "If you change your mind before pushing, delete the two files instead.", ""]))

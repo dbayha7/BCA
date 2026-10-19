@@ -218,6 +218,26 @@ def fresh_seed_data(seed, world, out_root=None):
     return rec, SeedView(s, world, rec, lg, gap, spec, physics)
 
 
+RUN_SIZE_KEYS = ("chunk", "starts", "steps", "updates")
+
+
+def fresh_record_sizes(record):
+    """Amendment 1. The log sizes (training, calibration and evaluation episodes) a fresh seed's data record was
+    generated with. fresh_seed_data stores them as 'sizes', three integers. Version 8's phase wrapper
+    (phase_main.run_phase) then wrote its own run sizes ({chunk, starts, steps, updates}) over that key in every
+    data_main record it wrote (each None, or a positive integer in scratch and stub runs); such a record's log was
+    generated with the gate's sizes (fresh_settings(), which fresh_seed_data used), and FreshSeed's log-hash and
+    removal checks confirm them. Exactly these two shapes are read; anything else is refused."""
+    s = record.get("sizes")
+    if isinstance(s, list) and len(s) == 3 and all(type(v) is int and v > 0 for v in s):
+        return tuple(s)
+    if isinstance(s, dict) and tuple(sorted(s)) == RUN_SIZE_KEYS and all(
+            v is None or (type(v) is int and v > 0) for v in s.values()):
+        return tuple(int(v) for v in fresh_settings()[1])
+    raise PH.Refused(f"refused: the data record's sizes {s!r} are neither three positive integers nor the run sizes "
+                     f"that version 8's phase wrapper wrote over them")
+
+
 class FreshSeed(SeedView):
     """A fresh seed regenerated and checked against its data record (version 6's FreshSeed, restated): the log's
     array hashes and both removals must equal the record's."""
@@ -226,7 +246,7 @@ class FreshSeed(SeedView):
         if not record.get("passed_gate_checks"):
             raise PH.Refused(f"refused: fresh seed {seed} ({world}) failed the gate's checks; it is never replaced")
         spec = RC.RecorderSpec(**record["recorder"])
-        lg = fresh_log(seed, world, spec, tuple(record["sizes"]), record["stall_slope"])
+        lg = fresh_log(seed, world, spec, fresh_record_sizes(record), record["stall_slope"])
         if lg.array_hashes() != record["log_sha256"]:
             raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what=f"the regenerated log of seed {seed} "
                                                                           f"({world})"))

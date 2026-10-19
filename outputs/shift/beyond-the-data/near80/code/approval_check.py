@@ -308,7 +308,9 @@ def check_constants(prereg):
 
 
 def check_code(prereg, cfg=None):
-    """The code manifest prereg.json pins, its sidecar, and every near-80 file it lists, unchanged. Returns it."""
+    """The code manifest prereg.json pins, its sidecar, and every near-80 file it lists, unchanged; with amendment 1
+    (amendment_1.json), every file as the amendment lists it, after delta_problems. Returns the manifest (with an
+    amendment, its 'files' are the amendment's and 'amendment' names it)."""
     cfg = cfg or ApprovalConfig()
     root = Path(cfg.n80_root)
     code = prereg.payload.get("code") or {}
@@ -322,6 +324,13 @@ def check_code(prereg, cfg=None):
     files = manifest.get("files")
     if not isinstance(files, dict) or not files or files != code.get("files"):
         raise ApprovalRefused(f"the files {K.MANIFEST_NAME} lists differ from the ones prereg.json records")
+    amendment = load_amendment(prereg, cfg)
+    if amendment is not None:
+        problems = delta_problems(files, amendment.payload, root)
+        if problems:
+            raise ApprovalRefused(f"{AMENDMENT_NAME} changes other files than it names: " + "; ".join(problems))
+        files = amendment.payload["files"]
+        manifest = dict(manifest, files=files, amendment=dict(file=AMENDMENT_NAME, sha256=amendment.sha256))
     bad = []
     for rel, want in sorted(files.items()):
         p = root / rel
@@ -342,7 +351,8 @@ def check_code(prereg, cfg=None):
             if p.name != "__pycache__" and f"code/{p.name}" not in files:
                 bad.append(f"code/{p.name} is not in the manifest")
     if bad:
-        raise ApprovalRefused("near-80 files differ from the pinned code manifest: " + "; ".join(bad))
+        raise ApprovalRefused("near-80 files differ from the pinned code manifest"
+                              + (" and amendment 1" if amendment is not None else "") + ": " + "; ".join(bad))
     return manifest
 
 
@@ -457,8 +467,274 @@ def load_v6_common(repo=K.ROOT):
     return mod
 
 
-def verify_chain(prereg, cfg=None, v6c=None):
-    """The approval file, the import record and (with check_git) git, read-only. Returns the facts of section 4.2."""
+# --------------------------------------------------------------------------------------------- amendment 1
+# A labeled post-hoc change of the pinned code (PREREGISTRATION.md section 19), approved by the owner at their own
+# terminal on top of the approved prereg.json, which never changes. Its names live here, not in near80_constants.py:
+# check_constants compares every upper-case name there with prereg.json's 'constants'.
+AMENDMENT_NAME = "amendment_1.json"
+AMENDMENT_KIND = "near80-amendment"
+AMENDMENT_NUMBER = 1
+AMEND_LOCAL_KIND = "near80-local-amendment-approval"
+AMEND_IMPORT_KIND = "near80-amendment-import-record"
+AMEND_APPROVAL_NAME = "approval_near80_amendment1_{prefix}.json"
+AMEND_IMPORT_NAME = "import_near80_amendment1_{prefix}.json"
+AMEND_STATEMENT = ("I approve amendment 1 (SHA-256 {sha}) to the near-80 pre-registration {parent}. It changes only "
+                   "the files it lists; every rule, mark, threshold and sentence of that pre-registration is "
+                   "unchanged.")
+NEVER_AMENDED = ("code/near80_constants.py",)
+# The desktop check's result files (near80_amendment1/check_amendment1.py, unpinned; section 19.7): the owner's approval
+# names the passing ones with their SHA-256, and the import requires the owner's commit to hold each of them.
+AMEND_CHECK_KIND = "near80-amendment1-desktop-check"
+AMEND_CHECK_PREFIX = K.N80_REL.rsplit("/", 1)[0] + "/near80_amendment1/desktop_check_"
+
+
+@dataclass
+class Amendment:
+    path: Path
+    sha256: str
+    payload: dict = field(repr=False)
+
+    @property
+    def prefix(self):
+        return self.sha256[:K.PREFIX_LEN]
+
+
+def amend_approval_rel(prefix):
+    return K.N80_REL + "/" + AMEND_APPROVAL_NAME.format(prefix=prefix)
+
+
+def amend_import_rel(prefix):
+    return K.N80_REL + "/" + AMEND_IMPORT_NAME.format(prefix=prefix)
+
+
+def load_amendment(prereg, cfg=None):
+    """amendment_1.json against its sidecar, or None when the folder holds no amendment. It must amend THIS
+    prereg.json and the code manifest it pins; no other amendment file may be present."""
+    cfg = cfg or ApprovalConfig()
+    root = Path(cfg.n80_root)
+    others = sorted(p.name for p in root.glob("amendment_*") if p.name not in (AMENDMENT_NAME,
+                                                                             AMENDMENT_NAME + ".sha256"))
+    if others:
+        raise ApprovalRefused(f"only amendment 1 is known to this code; the folder also holds {others}")
+    path = root / AMENDMENT_NAME
+    if not path.exists() and not Path(str(path) + ".sha256").exists():
+        return None
+    body = read_json_verified(path, AMENDMENT_NAME)
+    if not isinstance(body, dict):
+        raise ApprovalRefused(f"{AMENDMENT_NAME} is not a JSON object")
+    if not (body.get("kind") == AMENDMENT_KIND and body.get("number") == AMENDMENT_NUMBER):
+        raise ApprovalRefused(f"{AMENDMENT_NAME} does not amend this pre-registration: it is not near-80's amendment 1")
+    if not amendment_shape_ok(body):
+        raise ApprovalRefused(f"{AMENDMENT_NAME} does not amend this pre-registration: its parent, files or delta are "
+                              f"not of the expected form")
+    parent = body["parent"]
+    code = prereg.payload.get("code") or {}
+    checks = [
+        (body.get("label") == K.LABEL, "it names another study"),
+        (parent.get("prereg_sha256") == prereg.sha256, "it amends another prereg.json"),
+        (parent.get("code_manifest_sha256") == code.get("code_manifest_sha256"), "it amends another code manifest"),
+        (isinstance(body.get("files"), dict) and bool(body.get("files")), "it lists no files"),
+    ]
+    for ok, why in checks:
+        if not ok:
+            raise ApprovalRefused(f"{AMENDMENT_NAME} does not amend this pre-registration: {why}")
+    return Amendment(path, file_sha256(path), body)
+
+
+def _str_map(m, value_ok):
+    return isinstance(m, dict) and all(isinstance(k, str) and value_ok(v) for k, v in m.items())
+
+
+def amendment_shape_ok(body):
+    """amendment_1.json's parent, files and delta have the form the checks read: parent {...}; files {path: SHA-256};
+    delta {changed {path: [old, new]}, added {path: SHA-256}, removed [path], appended {path: {...}}} (an absent or
+    empty part counts as empty)."""
+    delta = body.get("delta")
+    if not (isinstance(body.get("parent"), dict) and _str_map(body.get("files"), lambda v: isinstance(v, str))
+            and isinstance(delta, dict)):
+        return False
+    removed = delta.get("removed") or []
+    return (_str_map(delta.get("changed") or {}, lambda v: isinstance(v, list) and len(v) == 2
+                     and all(isinstance(x, str) for x in v))
+            and _str_map(delta.get("added") or {}, lambda v: isinstance(v, str))
+            and isinstance(removed, list) and all(isinstance(r, str) for r in removed)
+            and _str_map(delta.get("appended") or {}, lambda v: isinstance(v, dict)))
+
+
+def delta_problems(parent_files, amendment, root):
+    """[] when the amendment's files are the parent manifest's files changed exactly as its 'delta' says: 'changed'
+    {path: [old SHA-256, new SHA-256]}, 'added' {path: SHA-256}, 'removed' [path]; a document (.md) only appended to
+    ('appended' {path: {parent_bytes, parent_sha256}}: the file now starts with the parent's bytes); nothing of
+    NEVER_AMENDED changed; and, in amendment 1, nothing added or removed (the code folder's file list,
+    near80_constants.CODE_FILES, cannot change). Otherwise the problems."""
+    files = amendment.get("files") or {}
+    delta = amendment.get("delta") or {}
+    changed, added = delta.get("changed") or {}, delta.get("added") or {}
+    removed, appended = list(delta.get("removed") or []), delta.get("appended") or {}
+    out = []
+    if added or removed:
+        out.append("amendment 1 adds and removes no file (near80_constants.CODE_FILES cannot change)")
+    if set(files) != (set(parent_files) - set(removed)) | set(added):
+        out.append("its file list is not the parent's with the delta's additions and removals")
+    out += [f"{rel} is removed but the parent does not list it" for rel in removed if rel not in parent_files]
+    out += [f"{rel} is added but the parent lists it, or its SHA-256 differs" for rel, h in added.items()
+            if rel in parent_files or files.get(rel) != h]
+    differ = sorted(rel for rel in set(parent_files) & set(files) if parent_files[rel] != files[rel])
+    if differ != sorted(changed):
+        out.append(f"the files that differ from the parent {differ} are not the ones its delta names {sorted(changed)}")
+    for rel, pair in sorted(changed.items()):
+        if not (isinstance(pair, list) and len(pair) == 2 and pair[0] == parent_files.get(rel)
+                and pair[1] == files.get(rel)):
+            out.append(f"{rel}: the delta's old and new SHA-256 are not the parent's and the amendment's")
+    out += [f"{rel} may not change in an amendment" for rel in NEVER_AMENDED
+            if rel in changed or rel in removed]
+    for rel in sorted(set(changed) | set(removed)):
+        if not rel.endswith(".md"):
+            continue
+        a = appended.get(rel) or {}
+        p = Path(root) / rel
+        data = p.read_bytes() if p.is_file() else b""
+        n = a.get("parent_bytes")
+        if not (rel in changed and type(n) is int and 0 < n < len(data)
+                and a.get("parent_sha256") == parent_files.get(rel)
+                and sha256_bytes(data[:n]) == parent_files.get(rel)):
+            out.append(f"{rel} may only be appended to (the parent's text byte for byte, then the amendment's)")
+    return out
+
+
+def check_local_amendment_approval(raw, prereg, amendment):
+    """The owner's approval of amendment 1 (approve_local_near80.py's amendment mode) approves THIS amendment_1.json
+    on top of THIS prereg.json. Returns its body."""
+    try:
+        body = json.loads(bytes(raw).decode("utf8"))
+    except (UnicodeDecodeError, ValueError):
+        raise ApprovalRefused("the amendment's approval file is not UTF-8 JSON") from None
+    if not isinstance(body, dict):
+        raise ApprovalRefused("the amendment's approval file is not a JSON object")
+    files = amendment.payload.get("files") or {}
+    statement = str(body.get("statement", ""))
+    checks = [
+        (body.get("kind") == AMEND_LOCAL_KIND, f"it is not a near-80 amendment approval ({AMEND_LOCAL_KIND})"),
+        (body.get("mode") == K.LOCAL_MODE, f"its mode is not {K.LOCAL_MODE}"),
+        (body.get("label") == K.LABEL, "it names another study"),
+        (body.get("amendment_path") == K.N80_REL + "/" + AMENDMENT_NAME, "it names another amendment file"),
+        (body.get("amendment_number") == AMENDMENT_NUMBER, "it approves another amendment"),
+        (body.get("amendment_sha256") == amendment.sha256, "it approves another version of amendment_1.json"),
+        (body.get("parent_prereg_sha256") == prereg.sha256, "it amends another prereg.json"),
+        (body.get("typed") == amendment.prefix, "the typed characters are not exactly the first 16 of the fingerprint"),
+        (body.get("stdin_isatty") is True, "it was not typed at a terminal"),
+        (bool(body.get("approved_at_utc")), "it holds no time"),
+        (body.get("approve_local_sha256") == files.get("approve_local_near80.py"),
+         "it was made with another approve_local_near80.py"),
+        (amendment.sha256 in statement and prereg.sha256 in statement, "its statement does not name both fingerprints"),
+        (_str_map(body.get("desktop_checks"), lambda v: isinstance(v, str)) and bool(body["desktop_checks"])
+         and all(k.startswith(AMEND_CHECK_PREFIX) and k.endswith(".json") for k in body["desktop_checks"]),
+         "it names no desktop check result (approve_local_near80.py names the passing ones)"),
+    ]
+    for ok, why in checks:
+        if not ok:
+            raise ApprovalRefused(f"the amendment's approval file does not approve this amendment: {why}")
+    return body
+
+
+def desktop_check_problems(raw, amendment):
+    """[] when raw is a result file of the desktop check that passed in official mode on THIS amendment_1.json, with
+    the check code amendment_1.json names ('desktop_check') and the four unit test files run and passed; otherwise the
+    problems. approve_local_near80.desktop_checks applies the same rules before the owner approves."""
+    try:
+        body = json.loads(bytes(raw).decode("utf8"))
+    except (UnicodeDecodeError, ValueError):
+        return ["it is not UTF-8 JSON"]
+    if not isinstance(body, dict):
+        return ["it is not a JSON object"]
+    want = amendment.payload.get("desktop_check")
+    tests = body.get("unit_tests")
+    checks = [
+        (body.get("kind") == AMEND_CHECK_KIND, f"it is not a result of the desktop check ({AMEND_CHECK_KIND})"),
+        (body.get("mode") == "official", "it did not run in official mode"),
+        (body.get("passed") is True, "it did not pass"),
+        (body.get("amendment_sha256") == amendment.sha256, "it checked another version of amendment_1.json"),
+        (isinstance(want, dict) and bool(want) and body.get("check_sha256") == want,
+         "it was made by another check than the one amendment_1.json names"),
+        (isinstance(tests, dict) and sorted(tests) == sorted(K.TEST_FILES)
+         and all(type(v) is int and v == 0 for v in tests.values()),
+         "it did not run and pass the four unit test files"),
+    ]
+    return [why for ok, why in checks if not ok]
+
+
+def _check_owner_commit(record, local_sha, a_rel, i_rel, raw_imp, branch, cfg, v6c):
+    """The git rules of section 11 for one approval file and its import record (version 6's read-only queries)."""
+    try:
+        if cfg.check_git:
+            v6c.check_commit_record(record, local_sha, v6c.agent_emails(v6c.git_session_email()))
+            check_approver(record)
+            v6c.check_commit_in_git(record, a_rel, branch)
+            ref = v6c.remote_ref(branch)
+            adders = v6c.git_adding_commits(ref, a_rel)
+            if adders != [record["commit"]]:
+                raise ApprovalRefused(f"exactly one commit on {ref} must add {a_rel}: git found "
+                                      f"{'nothing (git failed)' if adders is None else adders}")
+            if v6c.git_blob(ref, i_rel) != raw_imp:
+                raise ApprovalRefused(f"the import record {i_rel} is not on origin's branch {branch} as written: "
+                                      f"commit and push it (with its .sha256) before any phase runs")
+        else:
+            v6c.check_commit_record(record, local_sha, v6c.AGENT_GIT_EMAILS)
+            check_approver(record)
+    except v6c.LocalApprovalProblem as problem:
+        raise ApprovalRefused(str(problem)) from None
+
+
+def verify_amendment_chain(prereg, amendment, parent_facts, cfg, v6c):
+    """The owner's approval of amendment 1, its import record and git, as verify_chain does for prereg.json. Returns
+    the 'amendment' block of the approval facts."""
+    parent = amendment.payload.get("parent") or {}
+    if (parent.get("approval_sha256") != parent_facts["approval_sha256"]
+            or parent.get("import_sha256") != parent_facts["import_sha256"]):
+        raise ApprovalRefused(f"{AMENDMENT_NAME} names other approval or import records of its parent")
+    root = Path(cfg.n80_root)
+    prefix = amendment.prefix
+    a_rel, i_rel = amend_approval_rel(prefix), amend_import_rel(prefix)
+    local = root / AMEND_APPROVAL_NAME.format(prefix=prefix)
+    if not local.is_file():
+        raise ApprovalRefused(f"no approval of amendment 1 ({prefix}) at {local} (the owner approves it at their own "
+                              f"terminal with approve_local_near80.py); until then no phase runs")
+    raw = local.read_bytes()
+    local_sha = sha256_bytes(raw)
+    if sidecar_digest(local) != local_sha:
+        raise ApprovalRefused(f"{local.name} differs from its '.sha256' sidecar")
+    check_local_amendment_approval(raw, prereg, amendment)
+    imp = root / AMEND_IMPORT_NAME.format(prefix=prefix)
+    if not imp.is_file():
+        raise ApprovalRefused(f"no import record at {imp} (written by 'import_approval.py import-amendment', then "
+                              f"committed and pushed)")
+    raw_imp = imp.read_bytes()
+    if sidecar_digest(imp) != sha256_bytes(raw_imp):
+        raise ApprovalRefused(f"{imp.name} differs from its '.sha256' sidecar")
+    try:
+        body = json.loads(raw_imp.decode("utf8"))
+    except (UnicodeDecodeError, ValueError):
+        raise ApprovalRefused(f"{imp.name} is not JSON") from None
+    if not isinstance(body, dict):
+        raise ApprovalRefused(f"{imp.name} is not a JSON object")
+    branch = (prereg.payload.get("approval") or {}).get("branch")
+    want = dict(kind=AMEND_IMPORT_KIND, label=K.LABEL, prereg_sha256=prereg.sha256, amendment_sha256=amendment.sha256,
+                amendment_number=AMENDMENT_NUMBER, approval_file=a_rel, approval_file_sha256=local_sha, branch=branch)
+    bad = sorted(k for k, v in want.items() if body.get(k) != v)
+    if bad:
+        raise ApprovalRefused(f"the amendment's import record does not match its approval ({', '.join(bad)})")
+    record = dict(commit=body.get("commit"), author=body.get("author"), committer=body.get("committer"),
+                  committed_sha256=local_sha)
+    _check_owner_commit(record, local_sha, a_rel, i_rel, raw_imp, branch, cfg, v6c)
+    return {"number": AMENDMENT_NUMBER, "file": K.N80_REL + "/" + AMENDMENT_NAME, "sha256": amendment.sha256,
+            "prefix": prefix, "approval_file": a_rel, "approval_sha256": local_sha, "import_file": i_rel,
+            "import_sha256": sha256_bytes(raw_imp), "commit": record["commit"], "author": record["author"]}
+
+
+def verify_chain(prereg, cfg=None, v6c=None, with_amendment=True):
+    """The approval file, the import record and (with check_git) git, read-only; then, when amendment_1.json is
+    present (and with_amendment), the owner's approval of the amendment the same way. Returns the facts of section
+    4.2, with an 'amendment' block after an amendment (prereg_sha256 stays the approved prereg.json's)."""
     cfg = cfg or ApprovalConfig()
     _require_sound_config(cfg)
     if prereg.payload.get("approvable") is not True or prereg.payload.get("status") != K.STATUS_FINAL:
@@ -502,30 +778,17 @@ def verify_chain(prereg, cfg=None, v6c=None):
     record = dict(commit=body.get("commit"), author=body.get("author"), committer=body.get("committer"),
                   committed_sha256=local_sha)
     v6c = v6c or load_v6_common(cfg.repo)
-    try:
-        if cfg.check_git:
-            v6c.check_commit_record(record, local_sha, v6c.agent_emails(v6c.git_session_email()))
-            check_approver(record)
-            v6c.check_commit_in_git(record, a_rel, branch)
-            ref = v6c.remote_ref(branch)
-            adders = v6c.git_adding_commits(ref, a_rel)
-            if adders != [record["commit"]]:
-                raise ApprovalRefused(f"exactly one commit on {ref} must add {a_rel}: git found "
-                                      f"{'nothing (git failed)' if adders is None else adders}")
-            if v6c.git_blob(ref, i_rel) != raw_imp:
-                raise ApprovalRefused(f"the import record {i_rel} is not on origin's branch {branch} as written: "
-                                      f"commit and push it (with its .sha256) before any phase runs")
-        else:
-            v6c.check_commit_record(record, local_sha, v6c.AGENT_GIT_EMAILS)
-            check_approver(record)
-    except v6c.LocalApprovalProblem as problem:
-        raise ApprovalRefused(str(problem)) from None
+    _check_owner_commit(record, local_sha, a_rel, i_rel, raw_imp, branch, cfg, v6c)
     code = prereg.payload.get("code") or {}
-    return {"prereg_sha256": prereg.sha256, "prefix": prefix,
-            "code_manifest_sha256": code.get("code_manifest_sha256"),
-            "approval_file": a_rel, "approval_sha256": local_sha, "import_file": i_rel,
-            "import_sha256": sha256_bytes(raw_imp), "commit": record["commit"], "author": record["author"],
-            "fixture": cfg.fixture is not None}
+    facts = {"prereg_sha256": prereg.sha256, "prefix": prefix,
+             "code_manifest_sha256": code.get("code_manifest_sha256"),
+             "approval_file": a_rel, "approval_sha256": local_sha, "import_file": i_rel,
+             "import_sha256": sha256_bytes(raw_imp), "commit": record["commit"], "author": record["author"],
+             "fixture": cfg.fixture is not None}
+    amendment = load_amendment(prereg, cfg) if with_amendment else None
+    if amendment is not None:
+        facts["amendment"] = verify_amendment_chain(prereg, amendment, facts, cfg, v6c)
+    return facts
 
 
 def require_approval(cfg=None):

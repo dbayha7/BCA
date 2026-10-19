@@ -109,6 +109,24 @@ def synthetic_log(tag, world="stall", seed=7, sizes=(500, 50, 50), length=20):
     return DS.Log(arrays, meta)
 
 
+def stub_fresh_log(seed, world, spec, sizes, slope):
+    """settingdata.fresh_log in stub mode (amendment 1): the synthetic log, built with the sizes it is given. Its
+    arguments are held to dataset.generate's contract (a RecorderSpec, three integer sizes, a finite slope), so a
+    caller that passes what the real generator would refuse fails here too; the recorder and the stall slope must be
+    the stub's fresh_settings() ones (the synthetic log does not depend on them, so a wrong one would go unseen)."""
+    from experiments.shift import recorder as RC
+    if not isinstance(spec, RC.RecorderSpec):
+        raise TypeError(f"fresh_log: spec is {type(spec).__name__}, not a RecorderSpec")
+    sz = tuple(sizes)
+    if len(sz) != 3 or not all(isinstance(v, (int, np.integer)) and not isinstance(v, bool) for v in sz):
+        raise TypeError(f"fresh_log: sizes {sizes!r} are not three integers (dataset.generate takes int(sum(sizes)))")
+    if not (isinstance(slope, (float, int)) and not isinstance(slope, bool) and np.isfinite(slope)):
+        raise TypeError(f"fresh_log: stall slope {slope!r} is not a finite number")
+    if spec != _recorder_spec() or float(slope) != 1.5:
+        raise TypeError(f"fresh_log: recorder or stall slope {slope!r} is not the stub's fresh_settings()")
+    return synthetic_log(TAG_BASE + int(seed), world, sizes=tuple(int(v) for v in sz))
+
+
 def synthetic_gap():
     from experiments.shift import shift as SH
     return SH.Gap(centre=tuple(float(v) for v in PATTERN), rho=0.3, mass=0.15, rule="base", q=0.15,
@@ -287,8 +305,7 @@ def install(run):
     from experiments.shift import learners as L
     SD.gate_seed = _counted("gate_seed", synthetic_seed)
     SD.fresh_settings = _counted("fresh_settings", lambda: (_recorder_spec(), (500, 50, 50), 1.5))
-    SD.fresh_log = _counted("fresh_log", lambda seed, world, spec, sizes, slope:
-                            synthetic_log(TAG_BASE + int(seed), world))
+    SD.fresh_log = _counted("fresh_log", stub_fresh_log)
     SD.fresh_gap = _counted("fresh_gap", lambda lg: (synthetic_gap(), dict(reason="stub", stub=True)))
     SD.anchors = _counted("anchors", stub_anchors)
     SD.gate_record_sha256 = lambda *a, **kw: None
