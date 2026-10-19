@@ -1,0 +1,561 @@
+{
+ "about": "the room check's lock: every arm trained and even caution matched in strength to the placed arm, written before any return is computed",
+ "actors_sha256": "dc28421a97160bc3d321bd19185fd6bf7529f67c9b54d84306e329a75ae18d09",
+ "code_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/shift_iw/__init__.py": "fcf4193aba1b22f438a8004409f6b7e4f688ce98407db7f58c070b26380353c2",
+  "experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+  "experiments/shift_iw/coverage.py": "4d8b7b70f2ea17a7092d207b1c48f34c78ee2d8738c3b91fecbb5eddd92480e1",
+  "experiments/shift_iw/data.py": "1965071f660f9e698f77da15b0b14c0b7288feb71f119f49c843f93df5906e67",
+  "experiments/shift_iw/launch.sh": "19586f0348db903f5db7fe75d2c7b749e7daeb12bce36d143e8ca9893e604166",
+  "experiments/shift_iw/learners_iw.py": "38633ab06fa8078d703bce1fd4330b07e1d09a32f5ae883438902ac685dd7f3c",
+  "experiments/shift_iw/lower_edge.py": "49835423dbb9923946ab61801e2a038964431592ca27ef68fe9d4fc2d593a697",
+  "experiments/shift_iw/run.py": "9e603b305ca249a66e147df703cbc2ecc7fab261627d04226c8bfe32b45e6e24",
+  "experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "finished_at": "2026-10-16T21:21:23+0000",
+ "inputs_sha256": {
+  "random/host/gap/seed1/record.json": "b88e6a3f0fb978dee54e83e2fcba44b9a19b5326755ebde22a8520064e505e41"
+ },
+ "kind": "shift-iw-room",
+ "machine": "vm",
+ "quality": "random",
+ "room": {
+  "arms": [
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "none",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "harm",
+    "name": "placed",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.1",
+    "source": null,
+    "value": 1.1
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.25",
+    "source": null,
+    "value": 1.25
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.5",
+    "source": null,
+    "value": 1.5
+   }
+  ],
+  "chunk_metrics": [
+   [
+    [
+     2.7952160771489143,
+     -206.04098884582518,
+     0.012151528582675382,
+     0.29521607684344053
+    ],
+    [
+     2.840873829007149,
+     -206.35737007904052,
+     0.01213291428796947,
+     0.3408738269805908
+    ],
+    [
+     2.8211273680329323,
+     -206.3270122756958,
+     0.012134678000584244,
+     0.3211273696646094
+    ],
+    [
+     2.8602794884443283,
+     -206.68824505996704,
+     0.012113465387839823,
+     0.36027948661148546
+    ],
+    [
+     2.9261595026254654,
+     -207.1571797981262,
+     0.012086048221448436,
+     0.426159501709044
+    ]
+   ],
+   [
+    [
+     2.7892571042776106,
+     -206.08317879486083,
+     0.012148737176088616,
+     0.2892571041435003
+    ],
+    [
+     2.840084739327431,
+     -206.75130487060548,
+     0.012109443069901317,
+     0.34008473847806453
+    ],
+    [
+     2.8144970378279686,
+     -206.37389767074586,
+     0.012131616457132623,
+     0.314497039988637
+    ],
+    [
+     2.8526625735759734,
+     -206.74105029296874,
+     0.012110067788278684,
+     0.3526625733152032
+    ],
+    [
+     2.9168956154584884,
+     -207.2177069969177,
+     0.012082212920533493,
+     0.41689561619609594
+    ]
+   ],
+   [
+    [
+     2.783355102002621,
+     -205.8887421913147,
+     0.012160475132288412,
+     0.28335510031506417
+    ],
+    [
+     2.8302032681107523,
+     -206.47731178283692,
+     0.012125795454718173,
+     0.3302032696083188
+    ],
+    [
+     2.807989040017128,
+     -206.18136724472046,
+     0.012143209660891444,
+     0.3079890399724245
+    ],
+    [
+     2.8451945114135744,
+     -206.55150982284545,
+     0.012121442018309609,
+     0.3451945121884346
+    ],
+    [
+     2.907872214794159,
+     -207.03117546463014,
+     0.012093354811659083,
+     0.40787221620976927
+    ]
+   ],
+   [
+    [
+     2.7781322659254073,
+     -206.06214278411866,
+     0.012149919447954745,
+     0.27813226599246266
+    ],
+    [
+     2.824483391582966,
+     -206.69282926940917,
+     0.012112824989017099,
+     0.32448339280486105
+    ],
+    [
+     2.8022363309860228,
+     -206.35574927139282,
+     0.012132626643637194,
+     0.3022363317459822
+    ],
+    [
+     2.83867207378149,
+     -206.7281015739441,
+     0.012110770128201694,
+     0.3386720724925399
+    ],
+    [
+     2.900011146426201,
+     -207.20995107650756,
+     0.012082607217598707,
+     0.4000111448690295
+    ]
+   ],
+   [
+    [
+     2.7734655162096025,
+     -205.8099969444275,
+     0.012165623964741827,
+     0.27346551640704275
+    ],
+    [
+     2.8188368757367135,
+     -206.4262427635193,
+     0.01212928773299791,
+     0.3188368758112192
+    ],
+    [
+     2.797086581110954,
+     -206.10531323242188,
+     0.012148187637561932,
+     0.29708658044785263
+    ],
+    [
+     2.8328259541392327,
+     -206.47771169662477,
+     0.012126272140070796,
+     0.33282595402002335
+    ],
+    [
+     2.892968413472176,
+     -206.96126094818115,
+     0.012097939315484836,
+     0.39296841184049847
+    ]
+   ]
+  ],
+  "clone": {
+   "actor_sha256": "a3b622fc344db44e06ff2a8035e3fc767c9047171568921fe281a4cdf701716a",
+   "data": {
+    "bank_rows": 1000,
+    "eval_states": 5000,
+    "obs_mean": [
+     -1.1891404390335083,
+     0.4230254590511322,
+     -0.6421602964401245,
+     0.1446307897567749,
+     -0.3778481185436249,
+     0.1082209050655365,
+     -0.21480104327201843,
+     0.08924580365419388,
+     -0.1512112319469452,
+     0.07356607913970947,
+     0.435110479593277,
+     0.00016392860561609268,
+     0.00018113544501829892
+    ],
+    "obs_std": [
+     1.0514720678329468,
+     0.8269982933998108,
+     0.8445120453834534,
+     0.8438671231269836,
+     0.7316303849220276,
+     0.7022520899772644,
+     0.6125820875167847,
+     0.6125273108482361,
+     0.3941449522972107,
+     0.40018230676651,
+     0.26043447852134705,
+     0.18593591451644897,
+     0.1859309822320938
+    ],
+    "removal": "gap",
+    "rep": 1,
+    "rows": 49920,
+    "sha256": {
+     "bank": "6f23fa21f224b3f18b495547717dfa7b640200c0159015fa94501b9ddb74ec70",
+     "bank_rows": "9b6af96c9df4904cc38120dbbddf93522fcba6688c1190b6ee91e9ceb572dbac",
+     "eval_rows": "9b392ff571f54001c530c3f57e8c8b32d6b903b0f5386322d51b88f64abb0ae9",
+     "normalization": "e32f18d078931093a6531bfc7bd031d0eb888e2825cf8bf4b8f8d236cb4c3d80",
+     "rows": "aa52e3a20e05ab53627b5ca8591f34c6d29614673dd74b560b40b1474f4e1b69",
+     "train": "86f8cc59ae88f3931798492414cf2cb9ab2ace5d680444d8b7ae19c3eeeb35e8"
+    },
+    "world": "stall"
+   },
+   "failed": false,
+   "kind": "shift-clone",
+   "losses": [
+    0.3269743025302887,
+    0.30999770760536194,
+    0.29486048221588135,
+    0.28280603885650635
+   ],
+   "rep": 1,
+   "rows_sha256": "dabd8e8ffb37e879d480468a7d365e1ccf6021d8a24b55bda31754cdaede6c19",
+   "steps": 20000
+  },
+  "dose_history": [
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.494443416595459,
+     "mean": 1.1775684356689453,
+     "min": 1.0,
+     "sd": 0.19918125867843628
+    },
+    "step": 0
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4920709133148193,
+     "mean": 1.1949704885482788,
+     "min": 1.0,
+     "sd": 0.1985972821712494
+    },
+    "step": 4000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.492251992225647,
+     "mean": 1.1877918243408203,
+     "min": 1.0,
+     "sd": 0.19914641976356506
+    },
+    "step": 8000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4932115077972412,
+     "mean": 1.1898903846740723,
+     "min": 1.0,
+     "sd": 0.19865819811820984
+    },
+    "step": 12000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4938063621520996,
+     "mean": 1.1901209354400635,
+     "min": 1.0,
+     "sd": 0.19885434210300446
+    },
+    "step": 16000
+   }
+  ],
+  "failed": {
+   "even_x1.1": false,
+   "even_x1.25": false,
+   "even_x1.5": false,
+   "none": false,
+   "placed": false
+  },
+  "kind": "shift-iw-room",
+  "match": {
+   "S": null,
+   "bracket": null,
+   "converged": false,
+   "evaluations": 0,
+   "glq_match_sha256": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+   "history": [],
+   "knob": null,
+   "ladder_S": [
+    0.0,
+    0.039333210611479194,
+    0.06736396912044669,
+    0.104090318677256
+   ],
+   "ladder_knobs": [
+    0.0,
+    0.10000000000000009,
+    0.25,
+    0.5
+   ],
+   "ladder_multiplier": null,
+   "monotone": true,
+   "multiplier": null,
+   "reachable": false,
+   "relative_error": null,
+   "rounds": 0,
+   "target": 0.10690008862076876,
+   "tol": 0.01
+  },
+  "metric_names": [
+   "actor_loss",
+   "q_mean",
+   "lambda",
+   "bc"
+  ],
+  "names": [
+   "even_x1.1",
+   "even_x1.25",
+   "even_x1.5",
+   "none",
+   "placed"
+  ],
+  "oracle_calls": 5,
+  "rep": 1,
+  "rows_sha256": "38a216c040559b5c34246e0cae9142783d1271c5ac237ebad529e2a3ef34ddde",
+  "start_sha256": "a3b622fc344db44e06ff2a8035e3fc767c9047171568921fe281a4cdf701716a",
+  "strengths": {
+   "even_x1.1": 0.039333210611479194,
+   "even_x1.25": 0.06736396912044669,
+   "even_x1.5": 0.104090318677256,
+   "none": 0.0,
+   "placed": 0.10690008862076876
+  }
+ },
+ "seconds": 1123.7911085470005,
+ "seed": 1,
+ "software": {
+  "flax": "0.10.7",
+  "jax": "0.6.2",
+  "numpy": "2.2.6",
+  "optax": "0.2.8",
+  "python": "3.10.20",
+  "scipy": "1.15.3"
+ },
+ "spec_sha256": "a71af9bd2e51740e481337198e63ec04196b631e3bcd729d3eb2073a589ce0b6",
+ "stage": "room",
+ "status": "finished"
+}

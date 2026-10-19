@@ -1,0 +1,579 @@
+{
+ "about": "the room check's lock: every arm trained and even caution matched in strength to the placed arm, written before any return is computed",
+ "actors_sha256": "cc2ffa694075d40accf1795a06bac05b6babdaf0e33e4c459e10bec59991d2cb",
+ "code_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/shift_iw/__init__.py": "fcf4193aba1b22f438a8004409f6b7e4f688ce98407db7f58c070b26380353c2",
+  "experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+  "experiments/shift_iw/coverage.py": "4d8b7b70f2ea17a7092d207b1c48f34c78ee2d8738c3b91fecbb5eddd92480e1",
+  "experiments/shift_iw/data.py": "1965071f660f9e698f77da15b0b14c0b7288feb71f119f49c843f93df5906e67",
+  "experiments/shift_iw/launch.sh": "19586f0348db903f5db7fe75d2c7b749e7daeb12bce36d143e8ca9893e604166",
+  "experiments/shift_iw/learners_iw.py": "38633ab06fa8078d703bce1fd4330b07e1d09a32f5ae883438902ac685dd7f3c",
+  "experiments/shift_iw/lower_edge.py": "49835423dbb9923946ab61801e2a038964431592ca27ef68fe9d4fc2d593a697",
+  "experiments/shift_iw/run.py": "9e603b305ca249a66e147df703cbc2ecc7fab261627d04226c8bfe32b45e6e24",
+  "experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "finished_at": "2026-10-16T19:02:33+0000",
+ "inputs_sha256": {
+  "medium/host/gap/seed0/record.json": "0791f58cd570f79c34f22bfc43e2e1fd0033af447b4711debf39430c5799aedf"
+ },
+ "kind": "shift-iw-room",
+ "machine": "vm",
+ "quality": "medium",
+ "room": {
+  "arms": [
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "none",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "harm",
+    "name": "placed",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.1",
+    "source": null,
+    "value": 1.1
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.25",
+    "source": null,
+    "value": 1.25
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.5",
+    "source": null,
+    "value": 1.5
+   }
+  ],
+  "chunk_metrics": [
+   [
+    [
+     2.743675460278988,
+     -88.35480766487122,
+     0.028367440584581346,
+     0.24367546072602272
+    ],
+    [
+     2.7771939336657523,
+     -88.51813887214661,
+     0.028315151708200575,
+     0.2771939350180328
+    ],
+    [
+     2.7641211727261545,
+     -88.48828391838073,
+     0.028324604795314373,
+     0.26412117218598724
+    ],
+    [
+     2.7949319350123405,
+     -88.66368810272216,
+     0.02826852183137089,
+     0.2949319347701967
+    ],
+    [
+     2.8465878430604934,
+     -88.90374351692199,
+     0.028192159161437302,
+     0.34658784256875513
+    ]
+   ],
+   [
+    [
+     2.7389627640247345,
+     -88.33730937194824,
+     0.02837171142268926,
+     0.23896276368573308
+    ],
+    [
+     2.781663719415665,
+     -88.65353059005737,
+     0.02827039638021961,
+     0.2816637195684016
+    ],
+    [
+     2.7588195064663887,
+     -88.47410176467895,
+     0.028327794755343347,
+     0.2588195080272853
+    ],
+    [
+     2.7887150419950486,
+     -88.65412650680543,
+     0.028270233223680406,
+     0.2887150430455804
+    ],
+    [
+     2.8389139508605004,
+     -88.8994417705536,
+     0.028192180810496213,
+     0.33891395123302936
+    ]
+   ],
+   [
+    [
+     2.7341792240142824,
+     -88.39038329505921,
+     0.0283555396865122,
+     0.2341792216785252
+    ],
+    [
+     2.7751737989783285,
+     -88.71614692687989,
+     0.028251339997164907,
+     0.2751737989075482
+    ],
+    [
+     2.7534981154203413,
+     -88.5292453956604,
+     0.02831101684458554,
+     0.25349811466038225
+    ],
+    [
+     2.7825790742635728,
+     -88.71131993293763,
+     0.028252882762812077,
+     0.28257907531782983
+    ],
+    [
+     2.831486164808273,
+     -88.95920793151855,
+     0.028174129812046887,
+     0.3314861662015319
+    ]
+   ],
+   [
+    [
+     2.7295938004255293,
+     -88.36017707252502,
+     0.028366415719501673,
+     0.22959380077198147
+    ],
+    [
+     2.769729929089546,
+     -88.69615979957581,
+     0.02825883684447035,
+     0.2697299268990755
+    ],
+    [
+     2.7483985117673875,
+     -88.50027550506591,
+     0.02832147041708231,
+     0.2483985089957714
+    ],
+    [
+     2.7767344883680343,
+     -88.6836070098877,
+     0.028262883056420832,
+     0.2767344878539443
+    ],
+    [
+     2.824412657856941,
+     -88.93317195510865,
+     0.028183545720297843,
+     0.32441265805065633
+    ]
+   ],
+   [
+    [
+     2.725970325410366,
+     -88.50204608535766,
+     0.028317506384570153,
+     0.22597032425552607
+    ],
+    [
+     2.762209409892559,
+     -88.79536917495727,
+     0.02822387978481129,
+     0.2622094088234007
+    ],
+    [
+     2.7443901023864745,
+     -88.64335205459595,
+     0.0282723231902346,
+     0.24439010155946017
+    ],
+    [
+     2.7721052800416945,
+     -88.82891337966919,
+     0.028213230799417944,
+     0.27210528185218574
+    ],
+    [
+     2.818785624265671,
+     -89.08065647506714,
+     0.028133484871126713,
+     0.318785623088479
+    ]
+   ]
+  ],
+  "clone": {
+   "actor_sha256": "e19d7f687b0a993f37d0ef7dcbeca89a03ca7a88269d8c3ab4f356f34b999346",
+   "data": {
+    "bank_rows": 942,
+    "eval_states": 5000,
+    "obs_mean": [
+     -0.74201899766922,
+     0.251760333776474,
+     -0.3858329951763153,
+     0.0809997022151947,
+     -0.2693879008293152,
+     0.0724257230758667,
+     -0.14288556575775146,
+     0.055196601897478104,
+     -0.12656818330287933,
+     0.06127433478832245,
+     0.4115370810031891,
+     -0.004819327965378761,
+     0.0007790230447426438
+    ],
+    "obs_std": [
+     0.7475621104240417,
+     0.6043326258659363,
+     0.617199718952179,
+     0.6292365789413452,
+     0.524876058101654,
+     0.5116994380950928,
+     0.46094828844070435,
+     0.4672745168209076,
+     0.3214515745639801,
+     0.32455679774284363,
+     0.2595624625682831,
+     0.18460409343242645,
+     0.18528345227241516
+    ],
+    "removal": "gap",
+    "rep": 0,
+    "rows": 47439,
+    "sha256": {
+     "bank": "7e1010d1d392a3aed29392e5de78b907566062c1750d78f373125f1506d3437a",
+     "bank_rows": "c2c47111828785598267596ee599dae0c26fe88ac8f377ed25a9848960406fa1",
+     "eval_rows": "2c72dc5180de90ebe559128ed346b5ee61b228d96c5146ec74d4d066d18716f4",
+     "normalization": "58d893ef05cb74c6d4dad1ece9af077d1f3cb54564a69cd56edda189b7a9db9a",
+     "rows": "12b305125cd2a90e517c04e007cd609498625031e17d07de466c2377de17e85b",
+     "train": "a7d46d8de5cfeba2763f79733b77ee6fffab3bfd435913519259a7350486f5db"
+    },
+    "world": "stall"
+   },
+   "failed": false,
+   "kind": "shift-clone",
+   "losses": [
+    0.2599579691886902,
+    0.24652305245399475,
+    0.2339821606874466,
+    0.22431211173534393
+   ],
+   "rep": 0,
+   "rows_sha256": "5c0e128ef175be69e57d1933c527c4ff4dc2e709a42ad57a686dcca54f9a4565",
+   "steps": 20000
+  },
+  "dose_history": [
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4956011772155762,
+     "mean": 1.1741513013839722,
+     "min": 1.0,
+     "sd": 0.1959015280008316
+    },
+    "step": 0
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4956978559494019,
+     "mean": 1.19804048538208,
+     "min": 1.0,
+     "sd": 0.19480864703655243
+    },
+    "step": 4000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4932388067245483,
+     "mean": 1.1974382400512695,
+     "min": 1.0,
+     "sd": 0.19505751132965088
+    },
+    "step": 8000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.493862271308899,
+     "mean": 1.200640082359314,
+     "min": 1.0,
+     "sd": 0.19414721429347992
+    },
+    "step": 12000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4952914714813232,
+     "mean": 1.1893991231918335,
+     "min": 1.0,
+     "sd": 0.1957099437713623
+    },
+    "step": 16000
+   }
+  ],
+  "failed": {
+   "even_x1.1": false,
+   "even_x1.25": false,
+   "even_x1.5": false,
+   "none": false,
+   "placed": false
+  },
+  "kind": "shift-iw-room",
+  "match": {
+   "S": 0.10109740292070826,
+   "bracket": [
+    2,
+    3
+   ],
+   "converged": true,
+   "evaluations": 3,
+   "glq_match_sha256": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+   "history": [
+    [
+     0.4287917849647023,
+     0.09906339418015202
+    ],
+    [
+     0.4630290406468596,
+     0.10428989528472178
+    ],
+    [
+     0.4455816971437007,
+     0.10109740292070826
+    ]
+   ],
+   "knob": 0.4455816971437007,
+   "ladder_S": [
+    0.0,
+    0.04031281046387534,
+    0.06933041410168576,
+    0.11011104889421106
+   ],
+   "ladder_knobs": [
+    0.0,
+    0.10000000000000009,
+    0.25,
+    0.5
+   ],
+   "ladder_multiplier": null,
+   "monotone": true,
+   "multiplier": 1.4455816971437008,
+   "reachable": true,
+   "relative_error": 0.00025145965413253535,
+   "rounds": 3,
+   "target": 0.10107198739371576,
+   "tol": 0.01
+  },
+  "metric_names": [
+   "actor_loss",
+   "q_mean",
+   "lambda",
+   "bc"
+  ],
+  "names": [
+   "even_x1.1",
+   "even_x1.25",
+   "even_x1.5",
+   "matched_even",
+   "none",
+   "placed"
+  ],
+  "oracle_calls": 5,
+  "rep": 0,
+  "rows_sha256": "9475e9c80868826dcd401b5a0b7ff933bb24fccc93bf145a607d0be21505ae9c",
+  "start_sha256": "e19d7f687b0a993f37d0ef7dcbeca89a03ca7a88269d8c3ab4f356f34b999346",
+  "strengths": {
+   "even_x1.1": 0.04031281046387534,
+   "even_x1.25": 0.06933041410168576,
+   "even_x1.5": 0.11011104889421106,
+   "matched_even": 0.10109740292070826,
+   "none": 0.0,
+   "placed": 0.10107198739371576
+  }
+ },
+ "seconds": 1293.5275497749972,
+ "seed": 0,
+ "software": {
+  "flax": "0.10.7",
+  "jax": "0.6.2",
+  "numpy": "2.2.6",
+  "optax": "0.2.8",
+  "python": "3.10.20",
+  "scipy": "1.15.3"
+ },
+ "spec_sha256": "a71af9bd2e51740e481337198e63ec04196b631e3bcd729d3eb2073a589ce0b6",
+ "stage": "room",
+ "status": "finished"
+}
