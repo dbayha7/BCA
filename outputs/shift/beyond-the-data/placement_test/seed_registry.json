@@ -1,0 +1,40 @@
+{
+  "about": "Seed namespaces and their status, for the placement full test (options A harm switch, B safety certificate, C value lower edge). Read-only survey, 19 Oct 2026. Nothing generated, trained or run.",
+  "main_study_generator": {
+    "master_seed": 20261012,
+    "source": "experiments/shift/thruster_chain.py:83 (DATA_SEED); dataset.py:5-15,60 (tags 7 starts/noise, 8 coin, 10 bank); shift.py:53 (99,12,13,14); acceptance.py:126 (51,52); learners.py:96-97 (settings.seed 20261015, tags 31-41)",
+    "has_no_stall_world": true,
+    "taken": {
+      "0-4": "seen by everything (gate, v6 Stage 2, step 1, step 2, routes round 1, near-80 exploratory stage). Exploratory only.",
+      "5-9": "v6/v7 confirmatory seeds (acceptance.py:140 retune_gate_seeds; Stage 2 PREREGISTRATION.md:24-25, 362-384). v7 ended without running 16 Oct; near80lib.py:69,107 refuses them. Retune-physics (stall slope 3.0) logs already generated: outputs/shift/beyond-the-data/stage2_gpu/payload/files/runs__shift__pre__data__retune__{stall,no_stall}__seed5..9__record.json (same start/noise/coin streams as base-physics logs of these seeds).",
+      "10-14": "near-80 version 8 confirmatory seeds (near80lib.py:68): main setting = step 2's confirmation (claim 4), near-80 and random-rows settings. Approved f79b89c, imported 287380b, run started on Titan 16 Oct ~16:01 UTC; no result committed as of 19 Oct.",
+      "15-19": "named as the fallback block for step 2's confirmation if near-80 choice 6 were 'no' (near80/PREREGISTRATION.md:1161-1162; prereg.json:264). Choice 6 kept 'yes', so unused, but keep free in case the Titan run never finishes.",
+      "100-119": "original gate's confirmation seeds (acceptance.py:17-18,141-142; 100-104 also no-stall). Logs generated, T1-T5 checked, records in the stage2_gpu payload (role 'confirmation'); never trained on because the gate stopped before BCA.",
+      "900-909": "Stage 0 design seeds (stage0.py:54-56)."
+    },
+    "never_generated_never_named": "20-99 and 120-899 (grep over origin/main, main-bca-connection-x4o46s, shift-hosts, shift-hosts-v2 and the scratchpad records: no mention of 20-24, 25-29 or 30-34 in this namespace)",
+    "evaluation_banks": "thruster_chain.bank_starts uses one fixed stream default_rng([20261012, 2, 9]) for all four situations (thruster_chain.py:49,84,331-336); dynamics are deterministic (thruster_chain.py:13), so new start banks are the only new randomness in online episodes. Tag 9 is unused by the data streams except as this bank (rep 2)."
+  },
+  "weighting_test_generator": {
+    "master_seed": 20261016,
+    "source": "experiments/shift_iw/world.py:62; data.py:7, 89-92 (tags 1-11; banks [20261016,1000], [20261016,1002]; CQL scoring noise [20261016,1004,bank] in shift_hosts PRESPEC v1:346)",
+    "has_no_stall_world": false,
+    "taken": {
+      "0-4": "seen (weighting test v5, result E/F, arms A/B/C/F0, hosts stage 1).",
+      "10-14": "reserved for the four-learner (Unifloral hosts) study's confirmation (shift_hosts PRESPEC v2 section 14, lines 632-642; claims.py:111,116; prespec.json:640).",
+      "15-19": "named confirmatory seeds of arms A/B/C/F0 (PASSMARKS_arms_ABC_and_F_control.md:4, 229, 673; arms README:4; RESULTS.md:5).",
+      "20-24": "named once and rejected in favour of 15-19 (PASSMARKS:673, 'not 20-24 (fix-pull journal)'); avoid to prevent confusion.",
+      ">=1000": "avoid: data seed 1004 would reuse the CQL scoring-noise entropy [20261016,1004,bank]; 1000 and 1002 are bank-stream ids."
+    },
+    "free": "5-9 (never named; the arms go only lists 'seeds 5-24' as not covered, PASSMARKS:38) and 25-999"
+  },
+  "recommendation": {
+    "pilot_exploratory": "main-study seeds 0-4 (reuse gate logs and critics, step-1 held-out critics, step-2 'none' actors; label exploratory). Weighting-test seeds 0-4 only if a known-shift (IW) arm is kept.",
+    "confirmatory": "main-study seeds 25-29 (never generated, never named in either namespace). If a weighting-test arm is kept, weighting-test seeds 25-29 under the same pre-registration, with a no-stall twin generated for the same seeds.",
+    "extension_if_power_rule_needs_10": "30-34 in the same namespace(s), declared in the pre-registration before any confirmatory data exist.",
+    "optional_fresh_margin_block": "main-study 20-24 (exploratory by declaration) only if the owner wants the margin's break-even rule calibrated on unseen seeds rather than on 0-4.",
+    "do_not_use": "main-study 5-9, 10-14, 15-19, 100-119, 900-909; weighting-test 10-14, 15-19, 20-24, >=1000",
+    "fresh_deployment_banks": "per confirmatory seed k a new start bank, e.g. default_rng([20261012, k, 9]) for k in 25-29 (k != 2), registered in the pre-registration; keep the standard bank [20261012,2,9] as a comparability readout; any online try-gathering stream must be disjoint from the scoring bank.",
+    "rng_tag_registry_note": "step 1 used [20261015,9700|9800,...]; random switching [20261014,seed,w,sit,993]; small_evidence [20261015,9930|9931,...]; runtime monitor [20261015,9930|9940,...] (9930 reused across two routes); arms [20261016,seed,4301-4312,...]. Give the new test its own unused tag block."
+  }
+}
