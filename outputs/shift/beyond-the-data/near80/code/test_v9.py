@@ -65,6 +65,31 @@ SC = TP.SC
 TWIN1, TWIN2, TWIN3 = K.TWIN_ARMS
 POSIX = os.name == "posix"
 WORK = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
+N80 = HERE.parent                           # the folder this file lives in: the real one, or the freeze's as-frozen copy
+
+
+def draft_text():
+    """The version 9 draft's text: prereg_draft.json at the top of the folder, or, once the freeze has moved it, the
+    one kept in prereg_history/ (test_near80.final_or_draft and test_approval.real_draft_bytes read it the same way)."""
+    top = N80 / K.DRAFT_NAME
+    if top.is_file():
+        return top.read_text(encoding="utf8")
+    hist = N80 / K.HISTORY_DIR
+    for p in sorted(hist.glob(K.DRAFT_HISTORY_NAME.format(prefix="*"))) if hist.is_dir() else []:
+        if p.suffix == ".json":
+            text = p.read_text(encoding="utf8")
+            if json.loads(text).get("version") == K.VERSION:
+                return text
+    raise FileNotFoundError(f"no version 9 draft at {top} or in {hist}")
+
+
+def draft_payload():
+    return json.loads(draft_text())
+
+
+def document_is_a_draft():
+    """Line 3 of PREREGISTRATION.md is the DRAFT status line (else the folder is finalized or frozen)."""
+    return (N80 / "PREREGISTRATION.md").read_text(encoding="utf8").split("\n")[2] == f"**{K.STATUS_LINE_DRAFT}**"
 
 
 class Base(unittest.TestCase):
@@ -163,34 +188,64 @@ class TestPooledGroups(unittest.TestCase):
 
 class TestRefusalReading(Base):
     def test_apply_failures_substitutes_none_in_c1(self):
+        """BCA refused in the stalling world: there its own arms and the controls matched to its strength (unmatched)
+        take the no-caution actor's numbers; in the no-stall world of the same seed BCA's own height is finite, so its
+        switched ramp, the ramp at twice its height and the lone copy trained and stand, while the always-on ramp
+        (the stalling world's height) and the controls locked from the stalling world's matching have no actor and
+        take the no-caution actor's numbers."""
         root = TP.make_tree(self.tmp / "a", dict(refused={SEEDS[2]: ["stall"]}))
         R = P.load_results(root, "fresh", "scratch")
         self.assertEqual(R.certified, [s for s in SEEDS if s != SEEDS[2]])
-        for w in K.WORLDS:
-            raw = R.raw["points"]["main"][w][SEEDS[2]]
-            m = R.m["points"]["main"][w][SEEDS[2]]
-            for a in K.BCA_DEPENDENT + P.MATCHED_RIVALS:
-                self.assertIsNone(raw[a], a)                                 # the record holds null
-                self.assertEqual(m[a], raw["none"], a)                       # C1 reads the no-caution actor
-            self.assertEqual(m[TWIN1], raw[TWIN1])                           # the twins' numbers stand
+        raw_s, m_s = R.raw["points"]["main"]["stall"][SEEDS[2]], R.m["points"]["main"]["stall"][SEEDS[2]]
+        for a in K.BCA_DEPENDENT + P.MATCHED_RIVALS:
+            self.assertIsNone(raw_s[a], a)                                   # the record holds null
+            self.assertEqual(m_s[a], raw_s["none"], a)                       # C1 reads the no-caution actor
+        self.assertEqual(m_s[TWIN1], raw_s[TWIN1])                           # the twins' numbers stand
+        raw_n, m_n = R.raw["points"]["main"]["no_stall"][SEEDS[2]], R.m["points"]["main"]["no_stall"][SEEDS[2]]
+        for a in ("obca_k1", "obca_k2", K.NOISE_ARM):
+            self.assertIsNotNone(raw_n[a], a)
+            self.assertEqual(m_n[a], raw_n[a], a)
+        for a in ("obca_forced",) + P.MATCHED_RIVALS:
+            self.assertIsNone(raw_n[a], a)
+            self.assertEqual(m_n[a], raw_n["none"], a)
         for s in SEEDS:
             if s != SEEDS[2]:
                 for w in K.WORLDS:
                     self.assertEqual(R.m["points"]["main"][w][s], R.raw["points"]["main"][w][s])
         self.assertEqual(R.substituted[SEEDS[2]]["stall"], list(K.BCA_DEPENDENT) + list(P.MATCHED_RIVALS))
+        self.assertEqual(R.substituted[SEEDS[2]]["no_stall"], ["obca_forced"] + list(P.MATCHED_RIVALS))
         # the twin differences read n - 1 seeds
         d = P.twin_difference(R.m["points"], TWIN1, R.certified)
         self.assertEqual(d["n"], len(SEEDS) - 1)
         self.assertNotIn(SEEDS[2], d["seeds"])
 
     def test_a_refusal_in_one_world_substitutes_that_world_only_where_null(self):
-        """BCA refused in the no-stall world only: its stalling-world arms trained and stand; the no-stall world's
-        BCA arms and the unmatched controls take the no-caution actor's numbers there."""
+        """BCA refused in the no-stall world only: its stalling-world arms trained and stand (the gain of 30 there is
+        BCA's own), the matching done in the stalling world stands in both worlds, the always-on ramp (the stalling
+        world's finite height) trained in both; only the no-stall world's three BCA arms take the no-caution actor's
+        numbers, so the seed's net is the stalling gain minus no caution's own loss to itself, 0."""
         root = TP.make_tree(self.tmp / "b", dict(refused={SEEDS[0]: ["no_stall"]}))
         R = P.load_results(root, "fresh", "scratch")
         self.assertIn(SEEDS[0], R.refused)
         self.assertNotIn(SEEDS[0], R.certified)
-        self.assertEqual(sorted(R.substituted[SEEDS[0]]["no_stall"]), sorted(K.BCA_DEPENDENT + P.MATCHED_RIVALS))
+        self.assertEqual(R.substituted[SEEDS[0]]["no_stall"], ["obca_k1", "obca_k2", K.NOISE_ARM])
+        self.assertEqual(R.substituted[SEEDS[0]]["stall"], [])
+        raw_s, m_s = R.raw["points"]["main"]["stall"][SEEDS[0]], R.m["points"]["main"]["stall"][SEEDS[0]]
+        for a in K.BCA_DEPENDENT + P.MATCHED_RIVALS:
+            self.assertIsNotNone(raw_s[a], a)
+            self.assertEqual(m_s[a], raw_s[a], a)
+        raw_n, m_n = R.raw["points"]["main"]["no_stall"][SEEDS[0]], R.m["points"]["main"]["no_stall"][SEEDS[0]]
+        self.assertIsNotNone(raw_n["obca_forced"])
+        for a in P.MATCHED_RIVALS:
+            self.assertIsNotNone(raw_n[a], a)
+        for a in ("obca_k1", "obca_k2", K.NOISE_ARM):
+            self.assertIsNone(raw_n[a], a)
+            self.assertEqual(m_n[a], raw_n["none"], a)
+        nets = P.net_per_seed(R.m["points"], K.PRIMARY, R.seeds)
+        self.assertAlmostEqual(nets[0], 30.0)
+        texts = [r["text"] for r in P.make_look(R, TP.BLOCK)["sentences"] if r["id"] == "stop.refused"]
+        self.assertEqual(len(texts), 1)
+        self.assertTrue(texts[0].startswith(f"Seed {SEEDS[0]}, no-stall world"))
 
     def test_the_refused_seed_is_not_a_failed_seed(self):
         look = self.look(dict(refused={SEEDS[1]: ["stall"]}))
@@ -401,7 +456,7 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertNotIn("not part of version 9", K.HOST_PROFILES["cluster"]["entry"])
         self.assertIn("test_v9.py", K.CODE_FILES)
         self.assertIn("test_v9.py", K.TEST_FILES)
-        draft = json.loads((HERE.parent / "prereg_draft.json").read_text(encoding="utf8"))
+        draft = draft_payload()
         self.assertEqual(draft["files"]["entries"], ["run_near80_cluster.sh", "near80_slurm_job.sh", "run_near80.sh",
                                                      "push_runfiles_near80.sh"])
         # the entry's job sizes and Slurm settings are the constants' (the scripts cannot import them)
@@ -426,7 +481,7 @@ class TestConstantsAgree(unittest.TestCase):
     def test_choices_taken_record_the_cluster(self):
         """near80_prereg.choices_taken on the real draft: the defaults, except choices 4 and 9 (the cluster)."""
         NPm = K.load_local("near80_prereg")
-        draft = json.loads((HERE.parent / "prereg_draft.json").read_text(encoding="utf8"))
+        draft = draft_payload()
         taken = NPm.choices_taken(draft["choices"])
         self.assertEqual(len(taken), 11)
         for c, d in zip(taken, draft["choices"]):
@@ -452,14 +507,21 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertFalse(R.group_dependent(PH.parse_id(f"data_main.main.stall.s{f0}")))
 
     def test_documents_name_the_open_items_and_nothing_else(self):
+        """While the document is a draft its one open item (the facts the freeze fills) carries a TODO(FREEZE) mark
+        and nothing else does; once it is finalized (the freeze's as-frozen copy, or the frozen folder) no mark is
+        left anywhere."""
         doc = (HERE.parent / "PREREGISTRATION.md").read_text(encoding="utf8")
         readme = (HERE.parent / "README.md").read_text(encoding="utf8")
         self.assertNotIn("TODO(DECISION", doc)
         self.assertNotIn("TODO(DECISION", readme)
         self.assertNotIn("TODO(OWNER", doc)
         self.assertNotIn("TODO(OWNER", readme)
-        self.assertIn("TODO(FREEZE", doc)
-        self.assertNotIn("TODO(", (HERE.parent / "prereg_draft.json").read_text(encoding="utf8"))
+        self.assertNotIn("TODO(", readme)
+        if document_is_a_draft():
+            self.assertIn("TODO(FREEZE", doc)
+        else:
+            self.assertNotIn("TODO(", doc)
+        self.assertNotIn("TODO(", draft_text())
         for name in ("run_near80_cluster.sh", "near80_slurm_job.sh"):
             self.assertIn(name, readme)
             self.assertIn(name, doc)
@@ -467,6 +529,264 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertNotIn("not part of version 9", readme)
         self.assertIn(K.OWNER_ANSWER["text"], doc)
         self.assertIn(K.OWNER_ANSWER["text"], readme)
+
+
+# --------------------------------------------------------------------------------------------- edge cases of the look
+# (the independent review of 20 October 2026 wrote the first versions of these; kept here so that the freeze runs them)
+
+class TestEverySeedRefuses(Base):
+    def test_all_seeds_refuse_in_the_stalling_world(self):
+        """Every seed refused where full throttle stalls: C1 is read from the numbers (every BCA number there is the
+        no-caution actor's, and BCA's own no-stall loss stands), C2 and C3 are not read, the noise floor cannot be
+        read, ten refusal clauses and ten refusal sentences are written, the certified sentence reads not available."""
+        root = TP.make_tree(self.tmp / "a", dict(refused={s: ["stall"] for s in SEEDS}))
+        R = P.load_results(root, "fresh", "scratch")
+        look = P.make_look(R, TP.BLOCK)
+        self.assertEqual(R.certified, [])
+        self.assertEqual(look["brackets"]["F"], len(SEEDS))
+        self.assertEqual((look["brackets"]["K"], look["brackets"]["NC"]), (0, 0))
+        self.assertEqual(look["outcomes"]["c2"], "not_read")
+        self.assertEqual(look["outcomes"]["c3"], "not_read")
+        self.assertTrue(look["validity"]["noise_floor"]["unmeasured"])
+        self.assertIsNone(look["validity"]["noise_floor"]["passed"])
+        nl = look["marks"]["c1"]["net_lead"]
+        self.assertAlmostEqual(nl["net"], -1.0)                 # stalling gain 0 (no caution), no-stall loss 1 (BCA's)
+        self.assertEqual(look["outcomes"]["c1"], "fail")
+        text = self.text_of(look, "c1.fail")
+        self.assertEqual(text.count("BCA could not set its height"), len(SEEDS))
+        self.assertTrue(text.endswith(TP.T["c1.last.numbers"]))   # the lead missed on its numbers
+        ids = [r["id"] for r in look["sentences"]]
+        self.assertIn("c2.not_read", ids)
+        self.assertEqual(ids.count("stop.refused"), len(SEEDS))
+        self.assertIn("read not available", self.text_of(look, "c1.certified"))
+        md = P.look_md(look, "0" * 64)
+        self.assertIn("Certified seeds (C2, C3 and the noise floor): none", md)
+
+    def test_all_seeds_refuse_in_both_worlds(self):
+        root = TP.make_tree(self.tmp / "a", dict(refused={s: list(K.WORLDS) for s in SEEDS}))
+        R = P.load_results(root, "fresh", "scratch")
+        look = P.make_look(R, TP.BLOCK)
+        self.assertEqual(look["outcomes"]["c2"], "not_read")
+        self.assertEqual([r["id"] for r in look["sentences"]].count("stop.refused"), 2 * len(SEEDS))
+        for s in SEEDS:
+            for w in K.WORLDS:
+                self.assertEqual(set(R.substituted[s][w]), set(K.BCA_DEPENDENT) | set(P.MATCHED_RIVALS))
+        self.assertAlmostEqual(look["marks"]["c1"]["net_lead"]["net"], 0.0)
+
+
+class TestZeroFullThrottleRows(Base):
+    def test_look_with_an_empty_group(self):
+        look = self.look(dict(counts=lambda s, w: 0 if (s, w) == (SEEDS[0], "stall") else 45))
+        cs = look["counts"]
+        self.assertEqual((cs["NMIN"], cs["NREACH"]), (0, 2 * len(SEEDS) - 1))
+        sw = look["reported"]["switches"]["stall"][str(SEEDS[0])]
+        self.assertEqual(sw["n_full_throttle"], 0)
+        self.assertEqual(sw["certify_chance"], 0.0)
+        self.assertEqual(sw["ranks"], {})                       # no sorted tail: no rank
+        self.assertIn("count.reported", [r["id"] for r in look["sentences"]])
+
+    def test_pooled_groups_with_no_full_throttle_row(self):
+        import near80lib as N
+        from experiments.shift import shift as SH
+        T80 = load_test_module("test_near80")
+        log, surv, per_split = T80.synthetic_log()
+        gap = T80.synthetic_gap()
+        rm = SH.make_removal(log, "gap", gap)
+        g = N.pooled_groups(log, gap, rm, t_lo=1.5, step1=None)     # above every throttle index
+        self.assertEqual((g["n_full_throttle"], g["n_survivors"], g["n_heldout_tail"]), (0, 0, 0))
+        self.assertEqual(g["n_rest"], g["n_heldout"])
+        self.assertTrue(g["leak_checks"]["passed"])
+        c = N.certification_expectation(0)
+        self.assertEqual((c["certify_chance"], c["reaches_min_rows"]), (0.0, False))
+        self.assertEqual(K.certify_chance(0), 0.0)
+
+    def test_an_undefined_gap_rule_is_check_4_and_a_stop_of_the_arm_table(self):
+        """Section 8.1, check 4: an undefined gap rule (or a t_lo outside [0.78, 0.80]) is a plumbing stop of the
+        seed-world in the data phase (near80lib.gap_rule_problem, raised by settingdata.data_main), so no switch or
+        policy phase of that seed-world runs. Were an undefined entry to reach the arm table all the same, that
+        world's row is a recorded stop (never a silent pass) and the other world's own row is unaffected."""
+        import near80lib as N
+        import learner_phases as LP
+        import phases as PHreal
+        self.assertIsNone(N.gap_rule_problem(dict(defined=True, t_lo=0.786)))
+        self.assertIsNone(N.gap_rule_problem(dict(defined=True, t_lo=0.78)))
+        self.assertIsNone(N.gap_rule_problem(dict(defined=True, t_lo=0.80)))
+        self.assertIn("check 4", N.gap_rule_problem(dict(defined=False, t_lo=0.95, reason="fewer than 9 rows")))
+        self.assertIn("outside", N.gap_rule_problem(dict(defined=True, t_lo=0.775)))
+        self.assertIn("outside", N.gap_rule_problem(dict(defined=True, t_lo=0.8001)))
+        self.assertIn("outside", N.gap_rule_problem(dict(defined=True, t_lo=None)))
+        self.assertEqual(K.T_LO_RANGE, (0.78, 0.80))
+        PP = K.load_local("policy_phase")
+        S = P.step2()
+        S1 = LP.step1lib()
+        gr = dict(defined=False, t_lo=0.95, t_up=None, n_tail=0, gap=0.0, reason="fewer than 9 rows")
+        und = S1.jsonable(LP.undefined_entry(gr))
+        ok = dict(t_lo=0.79, t_up=0.98, certificate=dict(on=True, height=2.5, q05=0.4, R_tail=2.46, R_rest=-0.04),
+                  groups=dict(n_full_throttle=45, n_rest=4000, mean_full_throttle=0.5, mean_rest=0.1,
+                              q90_full_throttle=1.5, q90_rest=0.3), rank_test=dict(U=1.0, p=0.001))
+        s0 = SEEDS[0]
+        with self.assertRaises(PHreal.PhaseStop) as cm:
+            PP.arm_row_from("main", s0, "stall", {f"stall/seed{s0}": und, f"no_stall/seed{s0}": ok}, S)
+        self.assertEqual(cm.exception.reason, PHreal.STOP_REASONS["check"])
+        with self.assertRaises(PHreal.PhaseStop):
+            PP.arm_row_from("main", s0, "no_stall", {f"stall/seed{s0}": ok, f"no_stall/seed{s0}": und}, S)
+        row = PP.arm_row_from("main", s0, "stall", {f"stall/seed{s0}": ok, f"no_stall/seed{s0}": und}, S)
+        self.assertEqual(row["refused"], [])                    # the stalling world's row reads its own entry
+        row = PP.arm_row_from("main", s0, "stall", {f"stall/seed{s0}": ok, f"no_stall/seed{s0}": ok}, S)
+        self.assertEqual(row["refused"], [])
+
+
+class TestDuplicateRowsAcrossSplits(unittest.TestCase):
+    """Identical commands in two held-out splits are two rows (each log row once); an empty split is fine."""
+
+    @classmethod
+    def setUpClass(cls):
+        T80 = load_test_module("test_near80")
+        cls.log, cls.surv, cls.per_split = T80.synthetic_log()
+        cls.gap = T80.synthetic_gap()
+
+    def test_identical_commands_in_two_splits_are_two_rows(self):
+        import numpy as np
+        import near80lib as N
+        from experiments.shift import dataset as DS
+        from experiments.shift import shift as SH
+        log, gap = self.log, self.gap
+        cal, ev = log.split_rows("calibration"), log.split_rows("evaluation")
+        self.assertEqual(len(cal), len(ev))
+        arrays = {k: np.array(v, copy=True) for k, v in log._arrays.items()}
+        arrays["actions"][ev] = arrays["actions"][cal]            # the evaluation split repeats the calibration commands
+        dup = DS.Log(arrays, dict(log.meta))
+        rm = SH.make_removal(dup, "gap", gap)
+        kept = rm.kept_train_rows(dup)
+        step1 = N.load_step1lib()
+        gr = step1.gap_rule(step1.throttle(dup["actions"][kept]), **K.GAP_RULE)
+        g = N.pooled_groups(dup, gap, rm, gr["t_lo"], step1)
+        held = np.concatenate([g["heldout_tail"], g["heldout_rest"]])
+        self.assertEqual(len(held), len(set(held.tolist())))      # each log row once
+        outside_cal = int((~gap.contains(dup["actions"][cal])).sum())
+        self.assertEqual(g["n_heldout"], 2 * outside_cal)          # both copies counted: distinct rows
+        self.assertEqual(int(np.isin(held, cal).sum()), outside_cal)
+        self.assertEqual(int(np.isin(held, ev).sum()), outside_cal)
+        self.assertFalse(np.isin(held, dup.split_rows("train")).any())
+        self.assertTrue(set(g["survivors"].tolist()) <= set(kept.tolist()))
+        self.assertTrue(g["leak_checks"]["passed"])
+
+    def test_empty_split_is_fine(self):
+        import numpy as np
+        import near80lib as N
+        from experiments.shift import dataset as DS
+        from experiments.shift import shift as SH
+        log, gap = self.log, self.gap
+        arrays = {k: np.array(v, copy=True) for k, v in log._arrays.items()}
+        ev = log.split_rows("evaluation")
+        arrays["infos/split"][ev] = 1                                 # every evaluation row relabelled calibration
+        one = DS.Log(arrays, dict(log.meta))
+        self.assertEqual(len(one.split_rows("evaluation")), 0)
+        rm = SH.make_removal(one, "gap", gap)
+        g = N.pooled_groups(one, gap, rm, 0.9, None)
+        self.assertEqual(g["n_heldout"], int((~gap.contains(one["actions"][one.split_rows("calibration")])).sum()))
+
+
+class TestDataPhaseStop(Base):
+    def test_a_stopped_data_phase_fails_the_seed_with_its_clause(self):
+        """A plumbing stop of the data phase (section 8.1, checks 3 and 4: a leak check, an undefined gap rule or a
+        t_lo outside its range) leaves no record of that seed-world; the look fails the seed by the stop, says so in
+        C1's clause and the stop sentence, and C2 and C3 read the failed-seed sentence."""
+        PHm = K.load_local("phases")
+        reason = PHm.STOP_REASONS["check"]
+        look = self.look(dict(stops=[dict(phase_kind="data_main", setting="main", world="stall", seed=SEEDS[1],
+                                          reason=reason)],
+                              missing_records=[("stall", SEEDS[1])]))
+        self.assertEqual(look["outcomes"]["c1"], "fail")
+        self.assertTrue(look["outcomes"]["c1_by_stop"])
+        self.assertIn(str(SEEDS[1]), look["failed_checks"])
+        self.assertTrue(look["failed_checks"][str(SEEDS[1])].startswith("its main setting's data"))
+        self.assertIn(f"seed {SEEDS[1]}'s the main setting's data", self.text_of(look, "c1.fail"))
+        self.assertTrue(self.text_of(look, "c1.fail").endswith(TP.T["c1.last.stop"]))
+        self.assertEqual(look["outcomes"]["c2"], "fail_failed_seed")
+        ids = [r["id"] for r in look["sentences"]]
+        self.assertEqual(ids[-1], "stop.phase")
+        self.assertIn(f"Seed {SEEDS[1]}, stalling world:", self.text_of(look, "stop.phase"))
+        self.assertIn(reason, self.text_of(look, "stop.phase"))
+        self.assertEqual(look["marks"]["c2"]["certified"], [s for s in SEEDS if s != SEEDS[1]])
+
+
+@unittest.skipUnless(POSIX and (K.CODE / "approval_check.py").is_file(), "POSIX only (taskset, fcntl)")
+class TestGroupJobBeforeSeedJob(unittest.TestCase):
+    """The cluster's group job (--group-only) started BEFORE the seed job: it must wait (start nothing, skip nothing,
+    halt nothing) until the seed job's phases are final, then run the lock, the evaluations and the look. Stub mode on
+    the plumbing's seed 0, nothing trained; a few minutes."""
+
+    @classmethod
+    def setUpClass(cls):
+        import threading
+        import time
+        R = K.load_local("near80_runner")
+        import approval_check as AC
+        PHm = K.load_local("phases")
+        cls.R, cls.PH = R, PHm
+        cls.d = Path(tempfile.mkdtemp(prefix="near80_test_v9_group_"))
+        fx = cls.d / "fx"
+        AC.write_test_fixture(fx)
+        R.stub_fixture_memory(fx)
+        cls.fx = fx
+        cfg = R.stub_cfg(fx, 2, [K.SMOKE_SEEDS[0]])
+        env = cfg.phase_env()
+        cpus, why = R.lane_cpus(1, cfg.sysfs, given=cfg.cpus)
+        assert why is None, why
+        cmd = ["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + ["taskset", "-c", str(cpus[0]), cfg.python,
+                                                                       str(K.CODE / "stubs.py"), "step2-fixture", str(fx)]
+        subprocess.run(cmd, cwd=WORK, check=True, timeout=1800, capture_output=True)
+        cls.approval = cfg.approval()
+        cls.keys = PHm.plan(spec=cfg.plan)
+        cls.lines_g, cls.lines_s = [], []
+        cls.codes = {}
+        cfg_g = R.stub_cfg(fx, 2, [K.SMOKE_SEEDS[0]])
+        cfg_g.group_only, cfg_g.tag = True, "group"
+
+        def group():
+            cls.codes["group"] = R.run_locked(cfg_g, cls.keys, cls.approval, out=cls.lines_g.append, signals=False)
+
+        cls.t = threading.Thread(target=group, daemon=True)
+        cls.t.start()
+        time.sleep(8.0)
+        cls.status_early = json.loads((fx / "out" / "status_group.json").read_text(encoding="utf8"))
+        cls.lines_early = list(cls.lines_g)
+        cfg_s = R.stub_cfg(fx, 2, [K.SMOKE_SEEDS[0]])
+        cfg_s.seeds, cfg_s.tag = [K.SMOKE_SEEDS[0]], "s0"
+        cls.codes["seed"] = R.run_locked(cfg_s, cls.keys, cls.approval, out=cls.lines_s.append, signals=False)
+        cls.t.join(timeout=1200)
+        cls.out = fx / "out"
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.d, ignore_errors=True)
+
+    def test_group_runner_waited_then_finished(self):
+        PHm = self.PH
+        self.assertFalse(self.t.is_alive(), "the group runner did not finish after the seed job")
+        self.assertEqual(self.codes["seed"], 0, "\n".join(self.lines_s[-20:]))
+        self.assertEqual(self.codes["group"], 0, "\n".join(self.lines_g[-20:]))
+        st = self.status_early
+        self.assertTrue(st["group_only"])
+        self.assertEqual(st["counts"].get("running", 0), 0)
+        self.assertEqual(st["counts"].get("skipped", 0), 0)
+        self.assertEqual(st["counts"].get("halted", 0), 0)
+        self.assertIsNone(st["halted"])
+        self.assertTrue(any("phases of other runners are not finished" in line for line in self.lines_early),
+                        self.lines_early[-5:])
+        self.assertFalse(any(" start  " in line for line in self.lines_early), self.lines_early)
+        started_g = [line for line in self.lines_g if " start  " in line]
+        kinds_g = sorted({line.split(" start  ")[1].split(".")[0] for line in started_g})
+        self.assertEqual(kinds_g, ["evaluate", "lock", "look"])
+        started_s = [line for line in self.lines_s if " start  " in line]
+        kinds_s = sorted({line.split(" start  ")[1].split(".")[0] for line in started_s})
+        for kind in ("lock", "evaluate", "look"):
+            self.assertNotIn(kind, kinds_s)
+        self.assertEqual({PHm.phase_id(k): PHm.done(k, self.out) for k in self.keys
+                          if PHm.done(k, self.out) != "done"}, {})
+        look = json.loads((self.out / K.LAYOUT["look"].format(group="smoke")).read_text(encoding="utf8"))
+        self.assertEqual(look["seeds"], [K.SMOKE_SEEDS[0]])
 
 
 # --------------------------------------------------------------------------------------------- the certification chance

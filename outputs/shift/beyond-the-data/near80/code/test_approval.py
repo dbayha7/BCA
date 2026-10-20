@@ -94,7 +94,8 @@ def load_path(name, path):
     return mod
 
 
-AL = load_path("near80_test_approve_local", K.N80 / "approve_local_near80.py")
+N80 = HERE.parent          # the folder this file lives in: the real near-80 folder, or freeze.py's as-frozen copy of it
+AL = load_path("near80_test_approve_local", N80 / "approve_local_near80.py")
 
 
 def write_json_sidecar(path, payload):
@@ -1549,11 +1550,15 @@ class TestApproveLocalAmendment(Isolated):
 # ============================================================================================ freeze.py
 
 def real_draft_bytes():
-    top = K.N80 / "prereg_draft.json"
+    """The version 9 draft of this folder: prereg_draft.json at the top, or the one the freeze kept in
+    prereg_history/ (another version's draft there is left alone)."""
+    top = N80 / "prereg_draft.json"
     if top.is_file():
         return top.read_bytes()
-    kept = [p for p in (K.N80 / K.HISTORY_DIR).glob("prereg_draft_*.json") if p.suffix == ".json"]
-    return kept[0].read_bytes()
+    for p in sorted((N80 / K.HISTORY_DIR).glob("prereg_draft_*.json")):
+        if p.suffix == ".json" and json.loads(p.read_text(encoding="utf8")).get("version") == K.VERSION:
+            return p.read_bytes()
+    raise FileNotFoundError(f"no version 9 draft at the top of {N80} or in its {K.HISTORY_DIR}/")
 
 
 TODO_RE = __import__("re").compile(r"TODO\([^)]*\)")
@@ -1565,6 +1570,18 @@ def finalized(text, name):
     text = text.replace(f"**{K.STATUS_LINE_DRAFT}**", f"**{K.STATUS_LINE_FINAL}**", 1)
     text = TODO_RE.sub("5", text)
     text = text.replace("This draft", "This version").replace("this draft", "this version")
+    return text
+
+
+def drafted(text, name):
+    """A document as a draft awaiting the freeze, whatever state the real one is in: the DRAFT status line on line 3
+    and, in PREREGISTRATION.md, at least one TODO(FREEZE: ...) mark (the freeze refuses both)."""
+    lines = text.split("\n")
+    if len(lines) > 2:
+        lines[2] = f"**{K.STATUS_LINE_DRAFT}**"
+    text = "\n".join(lines)
+    if name == "PREREGISTRATION.md" and not TODO_RE.search(text):
+        text += "\nTODO(FREEZE: a test mark standing for the facts the freeze fills in)\n"
     return text
 
 
@@ -1583,9 +1600,9 @@ def make_n80_copy(dst, claims_real=False, final=True, previous=False):
     dst = Path(dst)
     (dst / "code").mkdir(parents=True)
     for name in ("PREREGISTRATION.md", "README.md"):
-        text = (K.N80 / name).read_text(encoding="utf8")
-        (dst / name).write_text(finalized(text, name) if final else text, encoding="utf8")
-    shutil.copyfile(K.N80 / "approve_local_near80.py", dst / "approve_local_near80.py")
+        text = (N80 / name).read_text(encoding="utf8")
+        (dst / name).write_text(finalized(text, name) if final else drafted(text, name), encoding="utf8")
+    shutil.copyfile(N80 / "approve_local_near80.py", dst / "approve_local_near80.py")
     for name in K.TOP_FILES:
         if not (dst / name).exists():
             (dst / name).write_text("#!/bin/sh\n# a stub for a freeze test\n", encoding="utf8")
@@ -1593,7 +1610,7 @@ def make_n80_copy(dst, claims_real=False, final=True, previous=False):
     (dst / "prereg_draft.json").write_text(finalized(draft, "draft") if final else draft, encoding="utf8")
     for name in K.CODE_FILES:
         if name in A_FILES or (claims_real and name == "claims_text.py"):
-            src = (K.CODE / name).read_text(encoding="utf8")
+            src = (HERE / name).read_text(encoding="utf8")
             (dst / "code" / name).write_text(final_code(src) if final else src, encoding="utf8")
         else:
             (dst / "code" / name).write_text(f'"""A stub of {name} for a freeze test."""\n', encoding="utf8")
@@ -1615,16 +1632,19 @@ def fake_tests(fail=()):
     return fn
 
 
-def fake_facts(passed=True, seeds=None, worlds=None, kill_rule=True, spent=None):
+def fake_facts(passed=True, seeds=None, worlds=None, kill_rule=True, spent=None, t_lo=0.786, leak_passed=True):
     def fn(n80_root, out_path, log):
         seeds_ = list(seeds if seeds is not None else [0, 1, 2, 3, 4])
         worlds_ = list(worlds if worlds is not None else K.WORLDS)
         spent_ = list(spent if spent is not None else K.SPENT_SEEDS)
         results = [dict(rep=s, world=w, defined=passed, groups=dict(n_full_throttle=40 + s, n_rest=4000) if passed
                         else None, certification=dict(reaches_min_rows=True) if passed else None,
-                        version8_groups=dict(n_full_throttle=30 + s, n_rest=800) if passed else None)
+                        version8_groups=dict(n_full_throttle=30 + s, n_rest=800) if passed else None,
+                        gap_rule=dict(defined=passed, t_lo=t_lo if passed else None, t_up=0.98),
+                        leak_checks=dict(passed=leak_passed))
                    for w in worlds_ for s in seeds_]
         spent_rows = [dict(seed=s, rep=s, world=w, defined=True, groups=dict(n_full_throttle=60, n_rest=42000),
+                           gap_rule=dict(t_lo=t_lo, t_up=0.98, n_survivors=30),
                            pooled=dict(calls=dict(bca=w == "stall", meandiff=w == "stall", bca_height=2.0)),
                            recorded=dict(calls=dict(bca=w == "stall", meandiff=w == "stall", bca_height=2.5)),
                            kill_rule=dict(bca=kill_rule, meandiff=True, passed=kill_rule))
@@ -1724,7 +1744,18 @@ class TestFreeze(FreezeBase):
         self.assertEqual(body["pooled_group_counts_frozen"],
                          {"path": NP.FROZEN_REL, "sha256": AC.file_sha256(frozen), "seeds": [0, 1, 2, 3, 4],
                           "worlds": list(K.WORLDS), "summary": {w: {"seed_worlds": 5} for w in K.WORLDS},
-                          "code_manifest_sha256": msha, "role": "reported; outcome-free; no mark reads it"})
+                          "spent_seeds": list(K.SPENT_SEEDS), "spent_summary": {"kill_rule_passed": True},
+                          "code_manifest_sha256": msha, "role": NP.FROZEN_ROLE})
+        # the spent-seed facts are pinned in prereg.json (not only by the file's SHA-256); an infinite recorded
+        # height is written null there (approval_check.plain), so the strict JSON of prereg.json holds
+        rec = dict(path=NP.FROZEN_REL, sha256="0" * 64,
+                   payload=dict(seeds=[0], worlds=["stall"], summary={}, spent_seeds=[10],
+                                spent_summary=dict(kill_rule_passed=True, heights_recorded={"stall/seed10": float("inf")})))
+        fb = NP.frozen_block(rec, msha)
+        self.assertIsNone(fb["spent_summary"]["heights_recorded"]["stall/seed10"])
+        AC.canonical(fb)
+        with self.assertRaises(NP.PreregProblem):
+            NP.frozen_block(dict(rec, payload=dict(rec["payload"], spent_summary=dict(kill_rule_passed=False))), msha)
         self.assertEqual(body["approval"]["approver_email"], K.APPROVER_EMAIL)
         self.assertEqual(body["approval"]["branch"], K.BRANCH)
         self.assertIs(body["approval"]["local_terminal_allowed"], True)
@@ -1865,7 +1896,9 @@ class TestFreeze(FreezeBase):
         for why, facts in (("not 0-4", fake_facts(seeds=[0, 1])), ("not both", fake_facts(worlds=["stall"])),
                            ("the kill rule did not pass", fake_facts(kill_rule=False)),
                            ("the spent-seed facts ran on seeds", fake_facts(spent=[10, 11])),
-                           ("seed-worlds, not 10", fake_facts(spent=[10, 11, 12, 13, 14, 10]))):
+                           ("seed-worlds, not 10", fake_facts(spent=[10, 11, 12, 13, 14, 10])),
+                           ("section 8.1, check 4", fake_facts(t_lo=0.775)),            # t_lo outside [0.78, 0.80]
+                           ("section 8.1, check 3", fake_facts(leak_passed=False))):
             msha = AC.file_sha256(self.n80 / K.MANIFEST_NAME)
             FZ.facts_path(self.out, msha).unlink()                          # else the kept record is reused
             self.refused(why, facts_fn=facts)
@@ -1978,33 +2011,119 @@ class TestFreeze(FreezeBase):
 
 
 class TestFreezeOnTheRealFolder(unittest.TestCase):
-    def test_the_real_folder_is_a_draft_the_freeze_refuses(self):
-        """Version 9 is a draft awaiting the freeze: the constants are fixed (the owner answered), the facts' marks
-        are open in PREREGISTRATION.md and the documents say DRAFT, so freeze.py refuses at step 0 and step 2 and
-        writes nothing; the title is already final and the code folder holds only planned files."""
+    def test_the_folder_state_and_what_the_freeze_says_of_it(self):
+        """The folder this file lives in (the real near-80 folder, or freeze.py check --as-frozen's finalized copy
+        of it), in whichever of its three states it is: a draft awaiting the freeze (the DRAFT status line and the
+        facts' TODO(FREEZE) marks, which freeze.py refuses at steps 0 and 2, writing nothing); finalized but not
+        written (the as-frozen copy: no problem at all); or written (prereg.json of version 9 at the top, the
+        state the plumbing runs in: only the "written once" refusals of step 1 remain). In every state the constants
+        are fixed (the owner answered), the title is final and the code folder holds only planned files."""
+        n80 = N80
+        doc_lines = (n80 / "PREREGISTRATION.md").read_text(encoding="utf8").split("\n")
+        draft = doc_lines[2] == f"**{K.STATUS_LINE_DRAFT}**"
+        state, _ = FZ.previous_prereg(n80)
         self.assertEqual(K.placeholders_present(), [])
-        found = FZ.placeholder_problems(K.N80)
+        found = FZ.placeholder_problems(n80)
         self.assertFalse(any(p.startswith("placeholder not fixed") for p in found), found)
-        self.assertTrue(any(p.startswith("PREREGISTRATION.md carries") for p in found), found)
         self.assertFalse(any(p.startswith("README.md carries") for p in found), found)
         self.assertFalse(any(p.startswith("prereg_draft.json carries") for p in found), found)
-        docs = FZ.document_problems(K.N80)
+        docs = FZ.document_problems(n80)
         self.assertEqual([p for p in docs if "line 1" in p], [])
-        self.assertTrue(any("line 3 is not" in p for p in docs), docs)
-        self.assertTrue(any("still says **DRAFT" in p for p in docs), docs)
-        code_problems = [p for p in FZ.code_folder_problems(K.N80) if not p.endswith(" is missing")]
+        code_problems = [p for p in FZ.code_folder_problems(n80) if not p.endswith(" is missing")]
         self.assertEqual(code_problems, [])
-        before = sorted(p.name for p in K.N80.iterdir())
+        before = sorted(p.name for p in n80.iterdir())
         lines = []
-        self.assertTrue(FZ.check(K.N80, K.OUT, log=lines.append))
-        self.assertIn("Problems (write would refuse)", lines[1])
-        with self.assertRaises(FZ.FreezeRefused) as cm:
-            FZ.write("a test", n80_root=K.N80, out_root=K.OUT, tests_fn=fake_tests(), facts_fn=fake_facts(),
-                     claims_fn=fake_claims, log=quiet)
-        self.assertNotIn("placeholder not fixed", str(cm.exception))     # the owner answered; the marks remain
-        self.assertIn("PREREGISTRATION.md carries", str(cm.exception))
-        self.assertEqual(sorted(p.name for p in K.N80.iterdir()), before)
-        self.assertFalse(K.OUT.exists())
+        all_found = FZ.check(n80, K.OUT, log=lines.append)
+        self.assertEqual(sorted(p.name for p in n80.iterdir()), before)             # check writes nothing
+        if draft:
+            self.assertNotEqual(state, "mine")                     # nothing of this version is written while a draft
+            self.assertTrue(any(p.startswith("PREREGISTRATION.md carries") for p in found), found)
+            self.assertTrue(any("line 3 is not" in p for p in docs), docs)
+            self.assertTrue(any("still says **DRAFT" in p for p in docs), docs)
+            self.assertIn("Problems (write would refuse)", lines[1])
+            with self.assertRaises(FZ.FreezeRefused) as cm:
+                FZ.write("a test", n80_root=n80, out_root=K.OUT, tests_fn=fake_tests(), facts_fn=fake_facts(),
+                         claims_fn=fake_claims, log=quiet)
+            self.assertNotIn("placeholder not fixed", str(cm.exception))     # the owner answered; the marks remain
+            self.assertIn("PREREGISTRATION.md carries", str(cm.exception))
+            self.assertEqual(sorted(p.name for p in n80.iterdir()), before)
+            return
+        self.assertEqual(doc_lines[2], FZ.BOLD_FINAL)
+        self.assertEqual(found, [])                                # no mark anywhere
+        self.assertEqual(docs, [])                                 # the documents and the docstrings are final
+        if state == "mine":
+            # written: every remaining problem is a "written once" refusal of step 1, and write touches nothing
+            self.assertTrue(all_found, lines)
+            self.assertTrue(all("exist" in p for p in all_found), all_found)
+            self.assertTrue(any(p.startswith(f"{K.PREREG_NAME} of {K.VERSION} exists already") for p in all_found),
+                            all_found)
+            with self.assertRaises(FZ.FreezeRefused):
+                FZ.write("a test", n80_root=n80, out_root=K.OUT, tests_fn=fake_tests(), facts_fn=fake_facts(),
+                         claims_fn=fake_claims, log=quiet)
+            self.assertEqual(sorted(p.name for p in n80.iterdir()), before)
+        else:
+            # finalized, not written (the as-frozen copy): nothing stands in the way of write (which is not run here)
+            self.assertEqual(all_found, [])
+            self.assertIn("No problems found.", lines[1])
+
+
+class TestCheckAsFrozen(FreezeBase):
+    """freeze.py check --as-frozen: the finalized copy and what is checked on it; the folder itself is untouched."""
+
+    def test_the_copy_is_finalized_and_the_folder_untouched(self):
+        rmtree(self.n80)
+        self.n80 = make_n80_copy(self.tmp / "near80_draft", final=False)
+        self.assertTrue(FZ.problems(self.n80, self.out))                   # the draft itself refuses
+        before = tree(self.n80)
+        dst = self.tmp / "copy"
+        notes = FZ.finalize_copy(self.n80, dst, log=quiet)
+        self.assertEqual(tree(self.n80), before)
+        self.assertTrue(any("FINAL status line" in n for n in notes), notes)
+        self.assertTrue(any("TODO(...) mark" in n for n in notes), notes)
+        for name in ("PREREGISTRATION.md", "README.md"):
+            text = (dst / name).read_text(encoding="utf8")
+            self.assertEqual(text.split("\n")[2], FZ.BOLD_FINAL, name)
+            self.assertNotIn("TODO(", text)
+            self.assertNotIn("**DRAFT", text)
+        self.assertIn(FZ.AS_FROZEN_FILL, (dst / "PREREGISTRATION.md").read_text(encoding="utf8"))
+        self.assertFalse((dst / K.DRAFT_NAME).exists())                   # step 4 done on the copy
+        kept = [p for p in (dst / K.HISTORY_DIR).glob(K.DRAFT_HISTORY_NAME.format(prefix="*")) if p.suffix == ".json"]
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(AC.sidecar_digest(kept[0]), AC.file_sha256(kept[0]))
+        for p in sorted((dst / "code").glob("*.py")):
+            self.assertNotIn("DRAFT", FZ.first_docstring_line(p) or "", p.name)
+        consts = (dst / "code" / "near80_constants.py").read_text(encoding="utf8")
+        self.assertIn(f'STATUS_LINE_DRAFT = "{K.STATUS_LINE_DRAFT}"', consts)   # the constant's text is untouched
+        self.assertEqual(FZ.problems(dst, self.out), [])
+        self.assertEqual(FZ.document_problems(dst), [])
+        with self.assertRaises(FZ.FreezeRefused):
+            FZ.finalize_copy(self.n80, dst, log=quiet)                     # a fresh folder is required
+
+    def test_check_as_frozen_reports_the_tests_and_removes_the_copy(self):
+        rmtree(self.n80)
+        self.n80 = make_n80_copy(self.tmp / "near80_draft", final=False)
+        before = tree(self.n80)
+        seen = []
+
+        def tests(n80_root, log):
+            seen.append(Path(n80_root))
+            self.assertTrue((Path(n80_root) / "code" / "freeze.py").is_file())
+            self.assertFalse((Path(n80_root) / K.DRAFT_NAME).exists())
+            return {n: 0 for n in K.TEST_FILES}
+        lines = []
+        found = FZ.check_as_frozen(self.n80, self.out, log=lines.append, tests_fn=tests, claims_fn=fake_claims)
+        self.assertEqual(found, [])
+        self.assertEqual(len(seen), 1)
+        self.assertFalse(seen[0].exists())                                 # the copy is removed
+        self.assertNotEqual(seen[0].resolve(), self.n80.resolve())
+        self.assertTrue(any("No problems found." in line for line in lines), lines)
+        self.assertTrue(any("ready for write" in line for line in lines), lines)
+        self.assertEqual(tree(self.n80), before)
+        self.assertFalse(self.out.exists())
+        found = FZ.check_as_frozen(self.n80, self.out, log=quiet, tests_fn=fake_tests(fail=("test_v9.py",)),
+                                   claims_fn=fake_claims)
+        self.assertEqual(found, ["unit tests failed on the finalized copy: ['test_v9.py']"])
+        self.assertEqual(tree(self.n80), before)
 
 
 # ============================================================================================ near80_constants

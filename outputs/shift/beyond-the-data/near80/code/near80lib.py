@@ -50,7 +50,7 @@ from experiments.shift import recorder as RC  # noqa: E402
 from experiments.shift import shift as SH  # noqa: E402
 from experiments.shift import thruster_chain as TC  # noqa: E402
 
-STATUS = K.STATUS_LINE_DRAFT
+STATUS = "pre-approval facts: nothing trained; read-only; pinned by prereg.json once the freeze copies it"
 HOLD = K.HOLD
 CAP_80 = TC.KNEE
 STEP1_DIR = ROOT / "outputs" / "shift" / "beyond-the-data" / "restructure" / "step1"
@@ -61,6 +61,16 @@ POOLED_SPLITS = K.POOLED_SPLITS
 
 class Refused(Exception):
     """A guard refused: nothing was computed or written."""
+
+
+class PooledGroupsError(Exception):
+    """A leak check of the pooled groups failed (section 8.1, check 3); .checks holds every check's result. The data
+    phase records it as a plumbing stop of the seed-world (settingdata.data_main), the switch phase likewise."""
+
+    def __init__(self, checks):
+        failed = sorted(k for k, v in checks.items() if v is False)
+        super().__init__(f"the pooled groups' leak checks failed: {failed}")
+        self.checks = checks
 
 
 # ------------------------------------------------------------------------------------------------ seeds and paths
@@ -161,10 +171,9 @@ def pooled_groups(log, gap, removal, t_lo, step1=None):
     held = heldout_rows(log, gap)
     ft = t[held] > float(t_lo)
     tail_held, rest_held = held[ft], held[~ft]
-    if gap.contains(log["actions"][held]).any():
-        raise AssertionError("a held-out row inside the ball reached the pooled groups")
-    if np.intersect1d(surv, held).size:
-        raise AssertionError("a training row counted among the held-out rows")
+    checks = leak_checks(log, gap, kept, surv, held, tail_held, rest_held)
+    if not checks["passed"]:
+        raise PooledGroupsError(checks)
     return dict(t_lo=float(t_lo), splits=list(POOLED_SPLITS), survivors=surv, heldout_tail=tail_held,
                 heldout_rest=rest_held, n_survivors=int(len(surv)), n_heldout_tail=int(len(tail_held)),
                 n_heldout_rest=int(len(rest_held)), n_full_throttle=int(len(surv) + len(tail_held)),
@@ -172,7 +181,45 @@ def pooled_groups(log, gap, removal, t_lo, step1=None):
                 n_heldout_in_ball=int(gap.contains(log["actions"][np.concatenate(
                     [log.split_rows(s) for s in POOLED_SPLITS])]).sum()),
                 survivors_sha256=DS.sha256_array(surv), heldout_tail_sha256=DS.sha256_array(tail_held),
-                heldout_rest_sha256=DS.sha256_array(rest_held))
+                heldout_rest_sha256=DS.sha256_array(rest_held), leak_checks=checks)
+
+
+def leak_checks(log, gap, kept, surv, held, tail_held, rest_held):
+    """Section 8.1, check 3, as a record: every held-out row outside the ball appears exactly once in the pooled
+    groups; no training row other than a survivor; no ball row (held-out or survivor); the survivors are kept
+    training rows. {name: bool, ..., 'passed': bool}; recorded in the data record, a plumbing stop when any fails."""
+    a = log["actions"]
+    pooled = np.concatenate([tail_held, rest_held])
+    splits = np.concatenate([log.split_rows(s) for s in POOLED_SPLITS])
+    outside = np.sort(splits[~gap.contains(a[splits])])
+    train = np.asarray(log.split_rows("train"), np.int64)
+    out = dict(
+        each_heldout_row_outside_the_ball_once=bool(len(pooled) == len(np.unique(pooled))
+                                                    and np.array_equal(np.sort(pooled), outside)),
+        no_training_row_among_the_heldout_rows=not bool(np.intersect1d(train, held).size),
+        survivors_are_kept_training_rows=bool(np.isin(surv, kept).all() and np.isin(surv, train).all()),
+        no_ball_row=not bool(gap.contains(a[held]).any() or gap.contains(a[surv]).any()),
+        full_throttle_and_rest_disjoint=not bool(np.intersect1d(np.concatenate([surv, tail_held]), rest_held).size),
+    )
+    out["passed"] = all(out.values())
+    return out
+
+
+def gap_rule_problem(gr, t_lo_range=K.T_LO_RANGE):
+    """Section 8.1, check 4, on a gap-rule record (step1lib.gap_rule's dict, or pooled_count_record's 'gap_rule'):
+    None when the rule is defined and its lower end t_lo lies in t_lo_range; else the text of the plumbing stop."""
+    if not gr.get("defined"):
+        return (f"BCA's gap rule is not defined on the ball-kept training commands ({gr.get('reason')}); section "
+                f"8.1, check 4")
+    lo, hi = (float(v) for v in t_lo_range)
+    t_lo = gr.get("t_lo")
+    try:
+        value = float(t_lo)
+    except (TypeError, ValueError):
+        value = float("nan")
+    if not (np.isfinite(value) and lo <= value <= hi):
+        return f"the gap rule's lower end t_lo = {t_lo} lies outside [{lo}, {hi}]; section 8.1, check 4"
+    return None
 
 
 def certification_expectation(n_tail, cfg=K.CERT, min_rows=K.CERT_MIN_ROWS):
@@ -206,7 +253,8 @@ def pooled_count_record(log, gap, removal, step1):
         out["note"] = "the gap rule is not defined: BCA's switch is off and its groups are empty"
         return out
     g = pooled_groups(log, gap, removal, gr["t_lo"], step1)
-    out["groups"] = {k: v for k, v in g.items() if not isinstance(v, np.ndarray)}
+    out["groups"] = {k: v for k, v in g.items() if not isinstance(v, np.ndarray) and k != "leak_checks"}
+    out["leak_checks"] = g["leak_checks"]
     out["certification"] = certification_expectation(g["n_full_throttle"])
     bank = np.asarray(removal.bank_rows(log), np.int64)
     t = throttle_index(log["actions"])

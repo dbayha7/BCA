@@ -5,7 +5,21 @@ Nothing here trains a learner or reads a result. The main session runs it once, 
 open item:
 
   python freeze.py check                                 prints what 'write' would do and every problem; writes nothing
+  python freeze.py check --as-frozen [--keep]            the same on a TEMPORARY COPY of the folder put into the state
+                                                         write's steps 2-4 leave it, then the five test files on that
+                                                         copy (about 5 minutes); the real folder is not touched
   python freeze.py write --reason TEXT [--facts-from PATH]
+
+'check --as-frozen' exists because the five test files read the folder's own state (the status lines, the marks, the
+draft's place) and must pass in the finalized state before 'write' runs them at its step 6, after it has moved files.
+The copy (finalize_copy): the two documents' line 3 set to the FINAL line and every TODO(...) mark replaced by a
+stand-in text (AS_FROZEN_FILL; at the real freeze the facts' table and the redraft count are typed in by hand), the
+phrase "DRAFT, not frozen[, awaiting the owner]" dropped from the module docstring of every code file and of
+approve_local_near80.py and from the header comments of the shell entries (nothing else in them: the constants that
+name the draft state are untouched), and the draft moved into prereg_history/ as step 4 moves it. It then reports
+what 'check' reports (expected: "No problems found."), extracts section 14, and runs the five test files on the copy
+from the work folder with the phases' environment (as step 6). Run it, and make it pass, before 'write'; the by-hand
+edits of the real folder must leave it in the same state (the stand-in text aside).
 
 'write', in order (any problem stops it before the next step):
   0. Refuses while any placeholder of DECISION.md remains: near80_constants.placeholders_present() (the seed count,
@@ -24,11 +38,14 @@ open item:
      rerun checks it there instead; version 8's draft stays beside it).
   5. code_manifest.json (+ .sha256): every near-80 file and every repository file the code imports or executes; the
      earlier manifest (version 8's) is archived in code_manifest_history/ (a rerun with no change keeps it as it is).
-  6. The five unit test files, each run alone from the work folder with the phases' environment; all must pass.
+  6. The five unit test files, each run alone from the work folder with the phases' environment; all must pass
+     ('check --as-frozen' runs the same files on the finalized copy beforehand, so that this step is not the first
+     time they meet the final state).
   7. The frozen code's pre-approval facts (facts_near80.py, about 10-15 CPU-minutes, nothing trained): the pooled
      groups' outcome-free counts on seeds 0-4, and on the spent seeds 10-14 the pooled switch from version 8's
      recorded second critics with the kill rule (BCA's and the mean-difference switch's pooled calls equal version
-     8's recorded calls on all 10 spent seed-worlds; otherwise the freeze refuses: a redraft). Written to
+     8's recorded calls on all 10 spent seed-worlds, per seed-world and in the record's spent_summary; otherwise the
+     freeze refuses: a redraft). Written to
      runs/shift_explore/near80_v9/pre/pooled_facts_<first 16 of the manifest>.json and copied to
      pre_approval/pooled_facts_seeds0_4_spent10_14.json (+ .sha256).
   8. prereg.json (+ .sha256) from near80_prereg.build; prints the fingerprint and the next steps.
@@ -45,6 +62,7 @@ import os  # noqa: E402
 import re  # noqa: E402
 import shutil  # noqa: E402
 import subprocess  # noqa: E402
+import tempfile  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
@@ -68,6 +86,12 @@ TEST_TIMEOUT_S = 3 * 3600
 FACTS_TIMEOUT_S = 2 * 3600
 FILL_RULES_HEADING = "### 14.5"
 TODO_MARK = re.compile(r"TODO\([^)]*\)")
+# 'check --as-frozen' (finalize_copy): the stand-in for a TODO(FREEZE: ...) mark, and the draft phrase of the module
+# docstrings and script headers that the freeze-time edit drops.
+AS_FROZEN_FILL = "(filled at the freeze from the facts record; this is the as-frozen check's stand-in)"
+DRAFT_PHRASE = re.compile(r"DRAFT,\s+not\s+frozen(,\s+awaiting\s+the\s+owner)?")
+AS_FROZEN_SCRIPTS = ("approve_local_near80.py", "run_near80.sh", "run_near80_cluster.sh", "near80_slurm_job.sh",
+                     "push_runfiles_near80.sh")
 
 
 class FreezeRefused(Exception):
@@ -427,10 +451,21 @@ def facts_path(out_root, manifest_sha256):
     return Path(out_root) / "pre" / FACTS_NAME.format(prefix=manifest_sha256[:K.PREFIX_LEN])
 
 
+def _t_lo_in_range(t_lo):
+    """Section 8.1, check 4, on a recorded t_lo (standard library only: freeze.py imports no numpy)."""
+    try:
+        value = float(t_lo)
+    except (TypeError, ValueError):
+        return False
+    lo, hi = (float(v) for v in K.T_LO_RANGE)
+    return value == value and lo <= value <= hi
+
+
 def facts_problems(payload):
     """The facts record is this version's: the counts on seeds 0-4 and both worlds with every seed-world counted,
-    and the spent-seed switch facts on seeds 10-14 and both worlds with the kill rule passed on all 10 (section 8.1,
-    check 5; a failure means a redraft, not a freeze)."""
+    its gap rule defined with t_lo in range and its leak checks passed (section 8.1, checks 3 and 4), and the
+    spent-seed switch facts on seeds 10-14 and both worlds with t_lo in range and the kill rule passed on all 10
+    (section 8.1, check 5; a failure means a redraft, not a freeze)."""
     out = []
     if not isinstance(payload, dict):
         return ["the facts record is not a JSON object"]
@@ -446,6 +481,12 @@ def facts_problems(payload):
     for r in results:
         if not isinstance(r, dict) or r.get("defined") is not True or not r.get("groups"):
             out.append(f"seed {r.get('rep')} ({r.get('world')}): the gap rule is not defined or the groups are missing")
+        elif not _t_lo_in_range((r.get("gap_rule") or {}).get("t_lo")):
+            out.append(f"seed {r.get('rep')} ({r.get('world')}): t_lo {(r.get('gap_rule') or {}).get('t_lo')} is "
+                       f"outside {list(K.T_LO_RANGE)} (section 8.1, check 4)")
+        elif not (r.get("leak_checks") or {}).get("passed"):
+            out.append(f"seed {r.get('rep')} ({r.get('world')}): the pooled groups' leak checks are not recorded as "
+                       f"passed (section 8.1, check 3)")
     if payload.get("spent_seeds") != list(K.SPENT_SEEDS):
         out.append(f"the spent-seed facts ran on seeds {payload.get('spent_seeds')}, not {list(K.SPENT_SEEDS)}")
     spent = payload.get("spent_results") or []
@@ -456,6 +497,13 @@ def facts_problems(payload):
         if not isinstance(kr, dict) or kr.get("passed") is not True:
             out.append(f"spent seed {(r or {}).get('seed')} ({(r or {}).get('world')}): the kill rule did not pass "
                        f"(the pooled calls differ from version 8's recorded calls; a redraft, not a freeze)")
+        elif not _t_lo_in_range(((r or {}).get("gap_rule") or {}).get("t_lo")):
+            out.append(f"spent seed {r.get('seed')} ({r.get('world')}): t_lo {(r.get('gap_rule') or {}).get('t_lo')} "
+                       f"is outside {list(K.T_LO_RANGE)} (section 8.1, check 4)")
+    ss = payload.get("spent_summary")
+    if not isinstance(ss, dict) or ss.get("kill_rule_passed") is not True:
+        out.append("the spent-seed summary does not say the kill rule passed on every spent seed-world "
+                   "(spent_summary.kill_rule_passed is not true)")
     return out
 
 
@@ -520,6 +568,116 @@ def check(n80_root=K.N80, out_root=K.OUT, log=print):
     else:
         log("No problems found.")
     return found
+
+
+# --------------------------------------------------------------------------------------------- check --as-frozen
+
+def _drop_draft_phrase_in_docstring(text):
+    """The module docstring (the first triple-quoted string, with anything before it) without the draft phrase; the
+    rest of the file byte for byte (the constants that name the draft state keep their text)."""
+    i = text.find('"""')
+    j = text.find('"""', i + 3) if i >= 0 else -1
+    if j < 0:
+        return text
+    return DRAFT_PHRASE.sub("frozen", text[:j]) + text[j:]
+
+
+def _drop_draft_phrase_in_header(text):
+    """A shell script's comment lines without the draft phrase; every other line byte for byte."""
+    out = []
+    for line in text.split("\n"):
+        out.append(DRAFT_PHRASE.sub("frozen", line) if line.startswith("#") else line)
+    return "\n".join(out)
+
+
+def finalize_copy(n80_root, dst, log=print):
+    """'check --as-frozen': a copy of the near-80 folder at dst (which must not exist) in the state write's steps 2-4
+    leave it (module docstring). Returns the list of what was changed in the copy."""
+    n80_root, dst = Path(n80_root), Path(dst)
+    if dst.exists():
+        raise FreezeRefused(f"{dst} exists; the as-frozen copy needs a fresh folder")
+    shutil.copytree(n80_root, dst, symlinks=False, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
+    notes = []
+    for name in ("PREREGISTRATION.md", "README.md"):
+        p = dst / name
+        if not p.is_file():
+            continue
+        text = p.read_text(encoding="utf8")
+        lines = text.split("\n")
+        if len(lines) > 2 and lines[2] == f"**{K.STATUS_LINE_DRAFT}**":
+            lines[2] = BOLD_FINAL
+            notes.append(f"{name}: the FINAL status line")
+        text = "\n".join(lines)
+        n = len(TODO_MARK.findall(text))
+        if n:
+            text = TODO_MARK.sub(AS_FROZEN_FILL, text)
+            notes.append(f"{name}: {n} TODO(...) mark{'s' if n != 1 else ''} replaced by the stand-in")
+        p.write_text(text, encoding="utf8")
+    changed = []
+    for p in sorted((dst / "code").glob("*.py")) if (dst / "code").is_dir() else []:
+        text = p.read_text(encoding="utf8")
+        new = _drop_draft_phrase_in_docstring(text)
+        if new != text:
+            p.write_text(new, encoding="utf8")
+            changed.append("code/" + p.name)
+    for name in AS_FROZEN_SCRIPTS:
+        p = dst / name
+        if not p.is_file():
+            continue
+        text = p.read_text(encoding="utf8")
+        new = _drop_draft_phrase_in_docstring(text) if name.endswith(".py") else _drop_draft_phrase_in_header(text)
+        if new != text:
+            p.write_text(new, encoding="utf8")
+            changed.append(name)
+    if changed:
+        notes.append(f"the draft phrase dropped from the docstring or header of {len(changed)} files")
+    rel, _ = move_draft(dst, log=lambda *_a, **_k: None)
+    notes.append(f"the draft at {rel}")
+    for note in notes:
+        log(f"as-frozen copy: {note}")
+    return notes
+
+
+def check_as_frozen(n80_root=K.N80, out_root=K.OUT, log=print, keep=False, tests_fn=None, claims_fn=None):
+    """'freeze.py check --as-frozen' (module docstring): finalize_copy, then check's problems, the extraction of
+    section 14 and the five test files, all on the copy. Returns every problem found (empty when write may run).
+    tests_fn and claims_fn replace the test run and the extraction in tests only."""
+    n80_root, out_root = Path(n80_root), Path(out_root)
+    tmp = Path(tempfile.mkdtemp(prefix="near80_as_frozen_"))
+    dst = tmp / "near80"
+    try:
+        finalize_copy(n80_root, dst, log)
+        found = problems(dst, out_root)
+        if found:
+            log("Problems on the finalized copy (write would refuse):\n  - " + "\n  - ".join(found))
+        else:
+            log("No problems found.")
+        try:
+            fn = claims_fn or NP.load_claims_text(dst / "code").extract_section14
+            claims = fn((dst / "PREREGISTRATION.md").read_text(encoding="utf8"))
+            marks = claims.get("todo_marks") or []
+            log(f"section 14 extracts: {len(claims.get('sentences') or {})} sentences, {len(marks)} TODO(...) marks")
+            if marks:
+                found.append(f"section 14 of the finalized copy carries TODO(...) marks: {marks}")
+        except Exception as error:  # noqa: BLE001 - reported as a problem, never raised past the copy's removal
+            found.append(f"section 14 of the finalized copy does not extract: {error}")
+        log(f"running {', '.join(K.TEST_FILES)} on the finalized copy ({dst}) from the work folder")
+        results = (tests_fn or run_unit_tests)(dst, log)
+        bad = sorted(n for n in K.TEST_FILES if results.get(n) != 0)
+        if bad:
+            found.append(f"unit tests failed on the finalized copy: {bad}")
+        else:
+            log("the five test files pass on the finalized copy")
+        if found:
+            log("as-frozen: NOT ready for write:\n  - " + "\n  - ".join(found))
+        else:
+            log("as-frozen: ready for write (no problem on the finalized copy; every test file passed there)")
+        return found
+    finally:
+        if keep:
+            log(f"the finalized copy is kept at {dst}")
+        else:
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, tests_fn=None, facts_fn=None,
@@ -593,13 +751,18 @@ def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="mode", required=True)
-    sub.add_parser("check")
+    c = sub.add_parser("check")
+    c.add_argument("--as-frozen", action="store_true",
+                   help="check and run the five test files on a temporary finalized copy (module docstring)")
+    c.add_argument("--keep", action="store_true", help="with --as-frozen: keep the copy for inspection")
     w = sub.add_parser("write")
     w.add_argument("--reason", required=True)
     w.add_argument("--facts-from", default=None)
     a = ap.parse_args(argv)
     try:
         if a.mode == "check":
+            if a.as_frozen:
+                return 2 if check_as_frozen(keep=a.keep) else 0
             return 2 if check() else 0
         write(a.reason, facts_from=a.facts_from)
         return 0

@@ -261,6 +261,9 @@ CRITIC_UPDATES = 100_000
 SMOKE_STEPS, SMOKE_CHUNK, SMOKE_UPDATES, SMOKE_STARTS = 40, 20, 40, 20
 CONTROLLER = "stall_aware"
 GAP_RULE = dict(upper_quantile=0.99, min_gap=0.05, min_tail=9)
+# Section 8.1, check 4: the gap rule must be defined and its lower end t_lo must lie in this range (seen 0.782-0.791
+# on the 20 recorded seed-worlds); the data phase stops the seed-world otherwise (near80lib.gap_rule_problem).
+T_LO_RANGE = (0.78, 0.80)
 CERT = dict(alpha=0.1, credibility=0.95, draws=1000, statistic_quantile=0.05, margin=0.10)
 CERT_TAG_HEAD = (20261015, 9700)           # certificate rng tags: [20261015, 9700, seed, WORLD_TAG[world]] (+[1] / [2])
 CERT_MIN_ROWS = 29                         # reported: 0.9^29 < 0.05, the smallest group size whose draws can certify

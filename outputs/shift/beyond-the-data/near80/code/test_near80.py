@@ -106,6 +106,38 @@ class TestPooledGroups(Base):
         self.assertEqual(len(held), int((~inside[cal]).sum() + (~inside[ev]).sum()))
         self.assertTrue(np.all(np.diff(held) > 0))
 
+    def test_leak_checks_are_recorded_and_a_failure_is_an_error(self):
+        """Section 8.1, check 3, as a record of the pooled groups and of the data record; a planted leak (a held-out
+        row among the kept training rows) is a PooledGroupsError, which the data phase turns into a plumbing stop."""
+        g = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
+        c = g["leak_checks"]
+        self.assertTrue(c["passed"])
+        self.assertEqual(set(c), {"each_heldout_row_outside_the_ball_once", "no_training_row_among_the_heldout_rows",
+                                  "survivors_are_kept_training_rows", "no_ball_row", "full_throttle_and_rest_disjoint",
+                                  "passed"})
+        rec = N.pooled_count_record(self.log, self.gap, self.rm, self.step1)
+        self.assertTrue(rec["leak_checks"]["passed"])
+        self.assertNotIn("leak_checks", rec["groups"])
+        self.assertIsNone(N.gap_rule_problem(rec["gap_rule"]), rec["gap_rule"])     # check 4 on the synthetic log
+        held = N.heldout_rows(self.log, self.gap)
+        kept = np.asarray(self.rm.kept_train_rows(self.log), np.int64)
+        leaky = N.leak_checks(self.log, self.gap, kept, g["survivors"], np.concatenate([held, kept[:1]]),
+                              g["heldout_tail"], np.concatenate([g["heldout_rest"], kept[:1]]))
+        self.assertFalse(leaky["passed"])
+        self.assertFalse(leaky["no_training_row_among_the_heldout_rows"])
+        log, rm = self.log, self.rm
+
+        class LeakyRemoval:
+            """A removal whose kept training rows wrongly include the calibration split's rows."""
+            kind = "gap"
+
+            def kept_train_rows(self, lg):
+                return np.concatenate([np.asarray(rm.kept_train_rows(lg), np.int64), lg.split_rows("calibration")])
+        with self.assertRaises(N.PooledGroupsError) as cm:
+            N.pooled_groups(log, self.gap, LeakyRemoval(), self.gr["t_lo"], self.step1)
+        self.assertFalse(cm.exception.checks["survivors_are_kept_training_rows"])
+        self.assertIn("leak checks failed", str(cm.exception))
+
     def test_exact_row_sets(self):
         g = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
         t = N.throttle_index(self.log["actions"])
@@ -362,25 +394,25 @@ class TestDraftJson(unittest.TestCase):
         self.assertTrue(used <= defined, used - defined)
 
     def test_documents_status_lines(self):
-        """A draft carries the draft status line and its TODO marks; a final version the final line and none."""
+        """The document's own status line (line 3) says which state the folder is in: a draft carries the draft line
+        and the freeze's TODO(FREEZE) marks; a finalized document (the freeze's as-frozen copy, or the frozen folder
+        with prereg.json) the final line and no mark. README's line 3 follows it."""
         lines = self.doc.split("\n")
         self.assertTrue(lines[0].startswith("# The main setting on fresh seeds: pre-registration (version 9"))
         self.assertTrue(any(line.startswith("### 14.5 ") for line in lines))
-        if self.which == "final":
-            bold = "**" + K.STATUS_LINE_FINAL + "**"
-            self.assertEqual(lines[2], bold)
-            self.assertEqual(self.readme.split("\n")[2], bold)
-            self.assertNotIn("TODO(DECISION", self.doc)
-            self.assertEqual(K.placeholders_present(), [])
-        else:
-            bold = "**" + K.STATUS_LINE_DRAFT + "**"
-            self.assertEqual(lines[2], bold)
-            self.assertEqual(self.readme.split("\n")[2], bold)
+        draft_line, final_line = "**" + K.STATUS_LINE_DRAFT + "**", "**" + K.STATUS_LINE_FINAL + "**"
+        self.assertIn(lines[2], (draft_line, final_line))
+        self.assertEqual(self.readme.split("\n")[2], lines[2])
+        self.assertNotIn("TODO(OWNER", self.doc)                   # the owner answered on 20 October 2026
+        self.assertNotIn("TODO(DECISION", self.doc)                # DECISION.md fixed every value
+        self.assertEqual(K.placeholders_present(), [])
+        if lines[2] == draft_line:
             self.assertIn("TODO(FREEZE", self.doc)                 # the facts the freeze fills are the open item
-            self.assertNotIn("TODO(OWNER", self.doc)               # the owner answered on 20 October 2026
-            self.assertNotIn("TODO(DECISION", self.doc)            # DECISION.md fixed every value
-            self.assertEqual(K.placeholders_present(), [])
-        self.assertEqual(N.STATUS, K.STATUS_LINE_DRAFT)
+            self.assertNotEqual(self.which, "final")               # no prereg.json of this version while a draft
+        else:
+            self.assertNotIn("TODO(", self.doc)
+            self.assertNotIn("TODO(", self.readme)
+        self.assertNotIn("DRAFT", N.STATUS)                        # the facts record never says DRAFT (it is frozen)
 
 
 class TestFacts(Base):

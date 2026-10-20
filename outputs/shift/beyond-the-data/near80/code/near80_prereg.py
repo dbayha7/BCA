@@ -132,15 +132,25 @@ def load_claims_text(code_dir):
     return mod
 
 
+FROZEN_ROLE = ("reported; the counts are outcome-free; the spent-seed facts carry the kill rule of section 8.1, "
+               "check 5 (passed before the freeze); no mark reads any of it")
+
+
 def frozen_block(facts_record, manifest_sha256):
     """prereg.json's 'pooled_group_counts_frozen': facts_record = {path, sha256, payload} of
-    pre_approval/pooled_group_counts_seeds0_4.json (reported; no pass or fail)."""
+    pre_approval/pooled_facts_seeds0_4_spent10_14.json: the counts' seeds, worlds and summary, and the spent seeds
+    with their summary (the kill rule's result, the pooled and recorded heights, the calls; approval_check.plain
+    turns the recorded infinite heights into null). Reported; no pass or fail is read from it."""
     if facts_record.get("path") != FROZEN_REL:
         raise PreregProblem(f"the frozen counts must be at {FROZEN_REL}")
     payload = facts_record.get("payload") or {}
+    ss = payload.get("spent_summary")
+    if not isinstance(ss, dict) or ss.get("kill_rule_passed") is not True:
+        raise PreregProblem("the facts record's spent_summary does not say the kill rule passed")
     return {"path": FROZEN_REL, "sha256": facts_record["sha256"], "seeds": payload.get("seeds"),
             "worlds": payload.get("worlds"), "summary": payload.get("summary"),
-            "code_manifest_sha256": manifest_sha256, "role": "reported; outcome-free; no mark reads it"}
+            "spent_seeds": payload.get("spent_seeds"), "spent_summary": AC.plain(ss),
+            "code_manifest_sha256": manifest_sha256, "role": FROZEN_ROLE}
 
 
 def summary_block(content):

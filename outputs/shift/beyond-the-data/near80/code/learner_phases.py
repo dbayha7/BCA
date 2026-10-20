@@ -297,11 +297,18 @@ def switch(run, ctx):
         raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the survivors differ from the second critic's"))
     critic2 = SD.load_tree_checked(d / "critic_second.msgpack", L.critic_template(), rec2["file_sha256"])
     sd = ctx.seed(k.world)
-    tail, rest, pooled = switch_scores_pooled(critic2, sd, pg, gr, ctx.learn.gamma)
+    try:
+        tail, rest, pooled = switch_scores_pooled(critic2, sd, pg, gr, ctx.learn.gamma)
+    except N.PooledGroupsError as error:              # section 8.1, check 3 (the data phase checked it first)
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(
+            what="the pooled groups' leak checks failed (section 8.1, check 3)", checks=error.checks)) from None
     entry = certificate_entry(tail, rest, k.seed, k.world, gr)
     refused, why = refusal_of(entry)
     counted = (SD.data_main_record(run.out_root, k.seed, k.world).get("pooled_groups") or {}).get("groups") or {}
-    if counted and (counted.get("n_full_throttle"), counted.get("n_rest")) != (len(tail), len(rest)):
+    if not counted:
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the data record carries no outcome-free count of the "
+                                                               "pooled groups to compare with (section 8.1, check 3)"))
+    if (counted.get("n_full_throttle"), counted.get("n_rest")) != (len(tail), len(rest)):
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the pooled groups differ from the data record's "
                                                                "outcome-free count", counted=counted,
                                                           scored=dict(n_full_throttle=len(tail), n_rest=len(rest))))

@@ -93,8 +93,13 @@ def make_tree(tmp, spec=None):
       points, past        f(setting, world, seed, arm, situation) -> number
       missing_arms        {(world, seed) | world: [logical ids with no actor]}
       missing_values      [(world, seed)]: no values.json (a stopped or skipped phase)
+      missing_records     [(world, seed)]: no record at all of that seed-world (its data phase stopped: write a stop)
       data_main_fail      {seed: (reason, 'leak' | 'marks')}
-      refused             {seed: [worlds]}: BCA's certificate on with an infinite height there
+      refused             {seed: [worlds]}: BCA's certificate on with an infinite height there. As the policy phase
+                          does: in a refused world BCA's switched ramp, the ramp at twice its height and the lone
+                          copy have no actor; when the STALLING world refused, the always-on ramp (it takes the
+                          stalling world's height) has none in either world, and the matched rivals and the
+                          stand-in (matched in the stalling world, locked for the other) have none in either world
       switch_on           f(world, seed) -> bool (default: on in the stalling world, off in the other)
       counts              f(seed, world) -> n_full_throttle (default 45)
       stops               [{phase_kind, setting, world, seed, reason}]
@@ -109,12 +114,15 @@ def make_tree(tmp, spec=None):
     past_f = spec.get("past", default_past)
     missing_arms = spec.get("missing_arms", {})
     missing_values = set(spec.get("missing_values", []))
+    missing_records = set(spec.get("missing_records", []))
     refused = spec.get("refused", {})
     switch_on = spec.get("switch_on", lambda w, s: w == "stall")
     counts = spec.get("counts", lambda s, w: 45)
     locks = {}
     for s in seeds:
         for w in K.WORLDS:
+            if (w, s) in missing_records:
+                continue
             fail = spec.get("data_main_fail", {}).get(s)
             n = counts(s, w)
             put(root / K.LAYOUT["data_main"].format(world=w, seed=s), dict(
@@ -129,7 +137,10 @@ def make_tree(tmp, spec=None):
                     certification=dict(reaches_min_rows=bool(n >= 29), certify_chance=K.certify_chance(n)),
                     version8_groups=dict(n_full_throttle=max(n - 20, 5), n_rest=700))))
         for w in K.WORLDS:
+            if (w, s) in missing_records:
+                continue
             ref = s in refused and w in refused[s]
+            stall_ref = s in refused and "stall" in refused[s]
             on = bool(switch_on(w, s)) or ref
             n = counts(s, w)
             tail = sorted(0.02 * i for i in range(n))                      # the sorted full-throttle scores
@@ -146,17 +157,20 @@ def make_tree(tmp, spec=None):
             if (w, s) in missing_values:
                 continue
             gone = set(missing_arms.get((w, s), [])) | set(missing_arms.get(w, []))
-            if s in refused:
-                gone |= set(K.BCA_DEPENDENT) | set(K.MATCHED) | {"standin"}
+            if ref:                                   # this world's height is infinite: BCA's own arms
+                gone |= {"obca_k1", "obca_k2", K.NOISE_ARM}
+            if stall_ref:                             # the stalling world's height is infinite: the always-on ramp in
+                gone |= {"obca_forced"} | set(K.MATCHED) | {"standin"}   # both worlds; nothing to match to
+            refused_arms = sorted(a for a in K.BCA_DEPENDENT if a in gone)
             ids = {}
             for a in K.ARMS["main"]:
                 ids[a] = None if (a in gone or (w != "stall" and a in K.STALL_ONLY_ARMS)) else a
             table = {a: dict(switch=bool(on), h=(HEIGHTS[a] if on else 0.0), k=KS.get(a, 1.0),
-                             refused=bool(s in refused and a in K.BCA_DEPENDENT)) for a in HEIGHTS}
+                             refused=bool(a in refused_arms)) for a in HEIGHTS}
             lock_sha = put(root / K.LAYOUT["policy_lock"].format(setting="main", world=w, seed=s), dict(
                 env, kind="near80-policy-lock", phase_id=K.phase_id("policy", "main", w, s),
                 setting="main", world=w, seed=s, group=group, arm_ids=ids,
-                refused_arms=sorted(K.BCA_DEPENDENT) if s in refused else [], bca_refused=s in refused,
+                refused_arms=refused_arms, bca_refused=bool(ref),
                 strengths={n_: 1.0 for n_ in ids.values() if n_}, matched_names={}, standin=dict(arm="standin"),
                 arm_table=dict(t_lo=0.79, t_up=0.98, arms=table)))
             locks[K.phase_id("policy", "main", w, s)] = dict(lock_sha256=lock_sha)
@@ -179,7 +193,7 @@ def make_tree(tmp, spec=None):
             put(root / K.LAYOUT["values"].format(setting="main", world=w, seed=s), dict(
                 env, kind="near80-values", phase_id=K.phase_id("evaluate", "main", w, s), setting="main",
                 world=w, seed=s, group=group, source="trained", lock_sha256=lock_sha, arm_ids=ids,
-                refused_arms=sorted(K.BCA_DEPENDENT) if s in refused else [], situations=sits, evaluations={}))
+                refused_arms=refused_arms, situations=sits, evaluations={}))
     for st in spec.get("stops", []):
         pid = K.phase_id(st["phase_kind"], st.get("setting", "x"), st.get("world", "x"), st.get("seed"),
                          st.get("group"))
@@ -290,11 +304,15 @@ class TestExtraction(Base):
             self.assertIn(name, defined)
 
     def test_section_14_carries_no_todo_mark(self):
-        """The margins are fixed; the only marks left in the document (the owner's answer, the freeze's facts) lie
-        outside section 14."""
+        """The margins are fixed; the only marks a draft carries (the freeze's facts) lie outside section 14, and a
+        finalized document (the freeze's as-frozen copy, the frozen folder) carries none."""
         self.assertEqual(BLOCK["todo_marks"], [])
         self.assertEqual(CT.todo_marks("x TODO(OWNER: a) y TODO(FREEZE: b)"), ["TODO(OWNER: a)", "TODO(FREEZE: b)"])
-        self.assertTrue(CT.TODO_MARK.search(DOC))                        # the owner's answer is still open
+        draft = DOC.split("\n")[2] == f"**{K.STATUS_LINE_DRAFT}**"
+        if draft:
+            self.assertTrue(CT.TODO_MARK.search(DOC))                    # the facts the freeze fills are still open
+        else:
+            self.assertFalse(CT.TODO_MARK.search(DOC))
 
     def test_fill_refuses_an_unfilled_bracket(self):
         with self.assertRaises(ValueError):
@@ -488,10 +506,13 @@ class TestRefusal(Base):
         br = look["brackets"]
         self.assertEqual((br["K"], br["F"], br["NC"]), (len(SEEDS) - 1, 1, len(SEEDS) - 1))
         self.assertAlmostEqual(br["X"], 30.0 * (len(SEEDS) - 1) / len(SEEDS))
-        self.assertAlmostEqual(br["NET"], 29.0 * (len(SEEDS) - 1) / len(SEEDS))
+        # the no-stall world's height is finite on that seed, so BCA's switched ramp stood there and lost its own 1
+        # point to no caution: the seed's net is 0 - 1
+        self.assertAlmostEqual(br["NET"], (29.0 * (len(SEEDS) - 1) - 1.0) / len(SEEDS))
         self.assertAlmostEqual(br["E"], 25.0 * (len(SEEDS) - 1) / len(SEEDS))
         sub = look["reported"]["substituted"][str(SEEDS[1])]
         self.assertEqual(set(sub["stall"]), set(K.BCA_DEPENDENT) | set(P.MATCHED_RIVALS))
+        self.assertEqual(set(sub["no_stall"]), {"obca_forced"} | set(P.MATCHED_RIVALS))
         self.assertEqual(set(sub["no_stall"]), set(K.BCA_DEPENDENT) | set(P.MATCHED_RIVALS))
         self.assertEqual(self.texts(look)[1], expect("c1.pass", **dict(PASS1, X="27.0", W="0.9", NET="26.1", D="26.1",
                                                                       E="22.5", K=str(len(SEEDS) - 1), F="1")))

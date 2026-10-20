@@ -378,8 +378,16 @@ def data_main(run):
                        seed_failed_reason=None, passed_gate_checks=True)
     if sd is not None and rec["passed_gate_checks"]:
         t0 = time.perf_counter()
-        rec["pooled_groups"] = N.pooled_count_record(sd.log, sd.gap, removal("main", sd), N.load_step1lib())
+        try:
+            rec["pooled_groups"] = N.pooled_count_record(sd.log, sd.gap, removal("main", sd), N.load_step1lib())
+        except N.PooledGroupsError as error:          # section 8.1, check 3: a plumbing stop of this seed-world
+            raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(
+                what="the pooled groups' leak checks failed (section 8.1, check 3)", checks=error.checks)) from None
         rec["pooled_groups"]["seconds"] = time.perf_counter() - t0
+        problem = N.gap_rule_problem(rec["pooled_groups"]["gap_rule"])
+        if problem:                                   # section 8.1, check 4: a plumbing stop of this seed-world
+            raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what=problem, gap_rule=rec["pooled_groups"]["gap_rule"],
+                                                              t_lo_range=list(K.T_LO_RANGE)))
         learn = learn_settings(run)
         rec["train_file"] = write_training_file("main", sd, run.out_root)
         if not rec["train_file"]["training_file_check"]["passed"]:
