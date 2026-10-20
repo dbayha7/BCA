@@ -430,6 +430,31 @@ def c2_positive_needed(n_certified):
     return int(math.ceil(float(MARKS_C2["positive_share"]) * int(n_certified) - 1e-9))
 
 
+def certify_chance(n_tail, cfg=None):
+    """The exact chance that BCA's certificate gives a finite height for a full-throttle group of n rows: each of
+    the 1,000 posterior draws is infinite with chance (1 - alpha)^n whatever the scores say (its test atom alone
+    exceeds alpha of the mass), and the group is certified when at most (1 - credibility) of the draws are infinite,
+    so P(Binomial(draws, (1 - alpha)^n) <= floor((1 - credibility) * draws)), summed in log space with the standard
+    library: 0 up to 24 rows, 0.405 at 28, 0.700 at 29, 0.896 at 30, 0.976 at 31, 0.9995 at 33."""
+    import math
+    c = CERT if cfg is None else cfg
+    n = int(n_tail)
+    if n <= 0:
+        return 0.0
+    draws = int(c["draws"])
+    q = (1.0 - float(c["alpha"])) ** n
+    k_max = int(math.floor((1.0 - float(c["credibility"])) * draws + 1e-9))
+    if q <= 0.0:
+        return 1.0
+    if q >= 1.0:
+        return 0.0
+    lq, l1q = math.log(q), math.log1p(-q)
+    terms = [math.lgamma(draws + 1) - math.lgamma(k + 1) - math.lgamma(draws - k + 1) + k * lq + (draws - k) * l1q
+             for k in range(0, k_max + 1)]
+    top = max(terms)
+    return float(min(1.0, math.exp(top) * sum(math.exp(t - top) for t in terms)))
+
+
 def load_local(name):
     """N80/code/<name>.py loaded by explicit path as module 'near80_<name>' (avoids step 1's and step 2's pooled.py
     and freeze.py, which step 2's machinery puts first on sys.path)."""

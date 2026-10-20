@@ -1,38 +1,57 @@
 """Near-80 (version 9, main setting): the look. DRAFT, not frozen. One look per group: the fresh group (the official
-run: the validity conditions, then C1 and C2, the pooled-group count and the refusals) and the smoke group (the
-plumbing's seed 0, in scratch and stub runs, every sentence prefixed "not a claim"). Each fills in the sentences of
-section 14 of PREREGISTRATION.md exactly as its section 14.5 says. Also the halt report.
+run: the validity conditions, then C1, then C2 and its mirror C3, the pooled-group count and the refusals) and the
+smoke group (the plumbing's seed 0, in scratch and stub runs, every sentence prefixed "not a claim"). Each fills in
+the sentences of section 14 of PREREGISTRATION.md exactly as its section 14.5 says. Also the halt report.
 
 Inputs (written by the runner's phases, each checked against its .sha256 sidecar; in official mode every record must
 be official and carry the approved fingerprint of prereg.json): the data records (data_main: the gate's checks, the
 outcome-free count of the pooled groups), BCA's switch records (the certificate on the pooled groups; refused: true
-when BCA's height was not finite), the policy locks (the arm tables with the refused arms, the strengths), the values
-of every world and seed, the stop and skip records, the stage lock (its plan names the seeds), the runners' status
-files, the ledger's attempt records (the resource table) and the plumbing record (the halt report).
+when BCA's height was not finite; the sorted full-throttle scores for the ranks), the policy locks (the arm tables
+with the refused arms, the heights, the strengths), the values of every world and seed, the stop and skip records,
+the stage lock (its plan names the seeds), the runners' status files, the ledger's attempt records (the resource
+table) and the plumbing record (the halt report).
 
 The numbers (section 14's bracket table; every one pooled, that is the mean over the group's seeds of each seed's
 paired difference, stalling world, strong current, main setting, unless stated):
   S, N          seeds whose switch is on in the stalling world, off in the no-stall world (whole numbers)
   X, H, W       BCA's switched ramp minus no caution; the full-log actor minus no caution; no-stall: no caution minus BCA
   NET, D, R     step 2's net for BCA; NET minus the net of the best rule that cannot switch itself off; that rule's
-                name (ties: the first in step 2's order). Step 2's own functions (step2lib.net, paired, go_no_go).
+                name. The rivals are K.LEAD_RIVALS (step 2's five world-blind rivals plus the hand-set range limit;
+                ties to the first); step 2's own lead over its own five (step2lib.go_no_go, pinned) is reported beside.
   E, L          BCA minus the matched even pull; BCA's loss to no caution in recorded conditions, big waves, big kicks
-  D1, K1 ...    C2: BCA's net minus the split-conformal switch's net, pooled, and the seeds where it was positive;
-                D2, K2 the mean-difference switch with the ramp; D3, K3 the mean-difference switch with the range limit
+  K, F, NC      the certified seeds (BCA's height finite in both worlds; neither failed nor refused), the refused
+                seeds, and the number of certified seeds C2 and C3 read
+  DC, RC, LC, EC   C1's lead, best rival, largest loss and even-pull margin on the certified seeds alone (description)
+  D1, K1, LB1 ...  C2 and C3: BCA's switched ramp trained alone (obca_k1_alone) minus the twin, net across worlds,
+                over the certified seeds; the seeds where it was positive; the one-sided 95% lower bound of the mean
+                (Student t). Twin 1 the mean-difference switch with the plain 90% gap, 2 with twice it, 3 with the
+                hand-set range limit (K.TWIN_ARMS). KMIN = ceil(0.8 NC).
+  A             seed-worlds (of 20) where the mean-difference switch made BCA's on/off call
   P             no caution's share of strong-current steps past 80% (written as a percentage)
-  V             the noise floor: |BCA's switched ramp minus the same ramp trained alone|, pooled
+  V             the noise floor: |BCA's switched ramp minus the same ramp trained alone|, pooled over the certified seeds
   NSEEDS, SEEDS the number of fresh seeds and their range
   NMIN, NMAX, NREACH, NSW, N8MIN, N8MAX   the pooled full-throttle group's smallest and largest size over the
                 seed-worlds, how many reached 29 rows, how many seed-worlds, and version 8's groups' sizes for scale
 
-Failed seeds (section 14.5). A seed that failed its data (the gate's checks) or had a phase stop fails every mark of
-C1 and C2: its numbers are set to null before any mark is computed, and its own clause ("seed [s] failed [check]
-...") tells it. A seed where BCA REFUSED (its certificate on with a height that is not finite, in either world) fails
-every mark that needs BCA, C1's and C2's, with its own clause ("on seed [s] BCA's certificate did not certify ...");
-the other arms' numbers stay and are reported. A seed with no failure, stop or refusal whose evaluation lacks a
-number C1 or C2 reads fails the same way with [check] "its evaluation (numbers missing)"; one whose matched rivals
-could not be matched fails C1's marks only. The validity conditions are computed over the seeds that did not fail
-(a refused seed's no-caution and full-log numbers count: they do not depend on BCA).
+Failed, stopped and refused seeds (section 14.5). A seed that failed its data (the gate's checks) or had a phase
+stop fails every mark of C1, C2 and C3: its numbers are set to null before any mark is computed, and its own clause
+("seed [s] failed [check] ..." or "seed [s]'s [phase] stopped ...") tells it; when every missed mark is told by such
+a clause, C1's last sentence says that a stop and not a return decided it. A seed where BCA REFUSED (its certificate
+on with a height that is not finite, in either world) is read per arm: in C1 the refused arms (K.BCA_DEPENDENT) and
+the controls matched to BCA (unmatched there) take the no-caution actor's numbers in that seed-world, so no mark
+fails by a missing number and the refusal's cost enters the pooled means; its own clause names it; C2 and C3 leave
+the seed out (they read the certified seeds only, at least K.MIN_CERTIFIED of them). A seed with no failure, stop or
+refusal whose evaluation lacks a number C1, C2 or C3 reads fails the same way with [check] "its evaluation (numbers
+missing)"; one whose matched rivals could not be matched (and BCA did not refuse) fails C1's marks only. The validity
+conditions are computed over the seeds that did not fail (a refused seed's no-caution and full-log numbers count:
+they do not depend on BCA).
+
+C2 and C3 (section 9.3). Per twin, d = NET(obca_k1_alone) - NET(twin) over the certified seeds: "ahead" when the mean
+is at least MARKS_C2.net_margin and d is positive in at least ceil(0.8 n) seeds; "behind" (C3 holds for the twin)
+when the mean is at most MARKS_C3.net_margin and d is positive in at most MARKS_C3.positive_seeds_max seeds; "tie"
+otherwise. C2 holds when BCA is ahead of all three (multiplicity all_three). A failed seed fails C2 and C3 by the
+pre-set rule before anything else is said; then "Not read" below MIN_CERTIFIED certified seeds takes precedence over
+"dropped" by the noise floor; both over holds / fails.
 
 Outputs (write-once): looks/<group>.md (the sentences first, then the tables) and looks/<group>.json (+ .sha256).
 
@@ -66,7 +85,7 @@ MODES = ("official", "scratch", "stub")
 SCORED = K.SCORED
 MEASURES = ("points", "held70_points", "capped80_points", "unseen_gain", "overshoot_loss", "past80_share",
             "zone_shares", "lower_tail_points")
-CLAIMS = ("c1", "c2")
+CLAIMS = ("c1", "c2", "c3")
 SMOKE_STATUS = "plumbing check, not a claim"
 LOOK_KIND = {"fresh": "near80-v9-look-fresh", "smoke": "near80-v9-look-smoke"}
 HALT_KIND = "near80-v9-halt-report"
@@ -75,8 +94,19 @@ GO_RULE = dict(g1_margin=K.MARKS["net_lead_margin"], g2_floor=K.MARKS["keeps_flo
 SEEDS_WORDS = "seed [seeds]"
 EVALUATION_MISSING_CHECK = "its evaluation (numbers missing)"
 RIVAL_MISSING_CHECK = "its matching (a rival could not be matched or scored)"
-TWIN_INDEX = {t: i + 1 for i, t in enumerate(K.TWIN_ARMS)}      # D1/K1 the split-conformal switch, ...
+TWIN_INDEX = {t: i + 1 for i, t in enumerate(K.TWIN_ARMS)}      # D1/K1/LB1 the plain 90% gap, 2 twice it, 3 the limit
 MATCHED_RIVALS = ("standin", "even_pull", "random_1", "random_2")
+# A refused seed-world's arms that take the no-caution actor's numbers in C1 (section 5.4): BCA's own arms and the
+# controls matched to its strength (unmatched when it refused).
+SUBSTITUTED = tuple(K.BCA_DEPENDENT) + MATCHED_RIVALS
+READINGS = ("ahead", "tie", "behind")
+# The dose ladder (reported): the stalling world's strong-current points by height, from the mean gap to the limit.
+LADDER = ("meangap_k1", "fixed_gated", "meandiff_q90x1", "obca_k1", "meandiff_q90x2", "obca_k2", "range_hinge")
+# Student t, one-sided 95% (0.95 quantile) by degrees of freedom 1-30, for the reported lower bound (the pinned
+# environment has no scipy in the look's process); beyond 30 the df-30 value is used (a little conservative).
+T_95 = {1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895, 8: 1.860, 9: 1.833, 10: 1.812,
+        11: 1.796, 12: 1.782, 13: 1.771, 14: 1.761, 15: 1.753, 16: 1.746, 17: 1.740, 18: 1.734, 19: 1.729, 20: 1.725,
+        21: 1.721, 22: 1.717, 23: 1.714, 24: 1.711, 25: 1.708, 26: 1.706, 27: 1.703, 28: 1.701, 29: 1.699, 30: 1.697}
 REPRO_ORDER = ("removal", "critic", "clone", "none", "w0_check", "obca_k1", "range_hinge")
 REPRO_PLAIN = {"removal": "the main test's removal", "critic": "the main test's critic",
                "clone": "the main test's cloned actor", "none": "the main test's no-caution actor",
@@ -87,19 +117,21 @@ SETTING_PLAIN = {"main": "main setting"}
 
 
 def _go_needs(setting="main"):
-    out = [("points", setting, w, a, SCORED) for w in K.WORLDS for a in (K.PRIMARY, "none") + K.WORLD_BLIND]
+    out = [("points", setting, w, a, SCORED) for w in K.WORLDS for a in (K.PRIMARY, "none") + K.LEAD_RIVALS]
     out += [("points", setting, "stall", a, sit) for sit in K.KEEPS_SITUATIONS for a in (K.PRIMARY, "none")]
     return tuple(out)
 
 
 RIVAL_NEEDS = tuple(("points", "main", w, a, SCORED) for w in K.WORLDS for a in MATCHED_RIVALS)
-# What C1 and C2 and the validity conditions read, as (measure, setting, world, logical id, situation), without the
-# matched rivals (a seed with no refusal whose rivals could not be matched fails C1's marks only) and without the
-# BCA-dependent arms of a refused seed (its own clause tells it).
+# What C1, C2, C3 and the validity conditions read, as (measure, setting, world, logical id, situation), without the
+# matched rivals (a seed with no refusal whose rivals could not be matched fails C1's marks only). In a refused seed
+# the BCA-dependent arms and the twins' values are not required (C1 substitutes the no-caution actor for the former;
+# C2 and C3 leave the seed out), only in the certified seeds.
 EVALUATION_NEEDS = tuple(x for x in _go_needs("main") if x not in RIVAL_NEEDS) + (
     ("points", "main", "stall", "full_none", SCORED), ("past80_share", "main", "stall", "none", SCORED)) + tuple(
-    ("points", "main", w, t, SCORED) for w in K.WORLDS for t in K.TWIN_ARMS)
+    ("points", "main", w, t, SCORED) for w in K.WORLDS for t in K.TWIN_ARMS + (K.NOISE_ARM,))
 BCA_NEEDS = tuple(x for x in EVALUATION_NEEDS if x[3] in K.BCA_DEPENDENT)
+CERTIFIED_ONLY_NEEDS = tuple(x for x in EVALUATION_NEEDS if x[3] in K.TWIN_ARMS + tuple(K.BCA_DEPENDENT))
 
 
 class LookRefused(Exception):
@@ -284,9 +316,10 @@ class Reader:
 
 
 class Results:
-    """What a look reads. m[measure]['main'][world][seed][logical id][situation] holds the numbers with failed and
-    refused seeds' BCA numbers set to null (for the marks); raw[...] the same without that rule (for the validity
-    conditions and the reported tables)."""
+    """What a look reads. m[measure]['main'][world][seed][logical id][situation] holds the numbers with a failed
+    seed's numbers set to null and a refused seed-world's BCA-dependent arms and unmatched controls replaced by the
+    no-caution actor's (for the marks); raw[...] the same without those rules (for the validity conditions and the
+    reported tables)."""
 
     def __init__(self, group, seeds, mode, prereg_sha256, out_root):
         self.group, self.seeds, self.mode = group, [int(s) for s in seeds], mode
@@ -295,11 +328,13 @@ class Results:
                     for m in MEASURES}
         self.m = None
         self.values, self.switches, self.locks, self.data_main = {}, {}, {}, {}
-        self.failed = {}                    # seed -> reason (fails C1 and C2)
+        self.failed = {}                    # seed -> reason (fails C1, C2 and C3)
         self.failed_checks = {}             # seed -> [check]
+        self.stopped = {}                   # seed -> [stop summaries] (a seed failed by a stopped phase)
         self.c1_only = {}                   # seed -> reason (a matched rival missing: C1's marks only)
         self.c1_only_checks = {}
-        self.refused = {}                   # seed -> {world: n_full_throttle}: BCA refused (fails the BCA marks)
+        self.refused = {}                   # seed -> {world: n_full_throttle}: BCA refused (read per arm)
+        self.substituted = {}               # seed -> {world: [arms that took the no-caution actor's numbers]}
         self.counts = {}                    # (seed, world) -> the data record's pooled_groups block
         self.phase_stops, self.skipped, self.runner_skipped = [], {}, {}
         self.plumbing, self.attempts, self.notes = None, [], []
@@ -308,6 +343,11 @@ class Results:
     @property
     def pts(self):
         return self.m["points"]
+
+    @property
+    def certified(self):
+        """The seeds neither failed nor refused: the seeds C2, C3 and the noise floor read."""
+        return [s for s in self.seeds if s not in self.failed and s not in self.refused]
 
     def fail(self, seed, reason, check):
         if seed not in self.failed:
@@ -320,7 +360,10 @@ class Results:
             self.c1_only_checks[seed] = check
 
     def apply_failures(self):
-        """m: raw with a failed seed's numbers set to null, and a refused seed's BCA-dependent arms set to null."""
+        """m: raw with a failed seed's numbers set to null, and, in a refused seed, every BCA-dependent arm and every
+        control matched to BCA whose values are null in a seed-world (refused, unmatched) given a copy of the
+        no-caution actor's numbers there (section 5.4: the refused arm's controller is the one trained without
+        caution, and a control matched to zero strength is the same actor). raw is untouched."""
         self.m = copy.deepcopy(self.raw)
         for s in self.failed:
             if s not in self.seeds:
@@ -329,12 +372,17 @@ class Results:
                 for w in K.WORLDS:
                     self.m[measure]["main"][w][s] = {a: None for a in K.ARMS["main"]}
         for s in self.refused:
-            if s not in self.seeds:
+            if s not in self.seeds or s in self.failed:
                 continue
-            for measure in MEASURES:
-                for w in K.WORLDS:
-                    for a in K.BCA_DEPENDENT:
-                        self.m[measure]["main"][w][s][a] = None
+            for w in K.WORLDS:
+                taken = []
+                for a in SUBSTITUTED:
+                    if self.raw["points"]["main"][w][s].get(a) is None:
+                        taken.append(a)
+                        for measure in MEASURES:
+                            none = self.m[measure]["main"][w][s].get("none")
+                            self.m[measure]["main"][w][s][a] = None if none is None else copy.deepcopy(none)
+                self.substituted.setdefault(s, {})[w] = taken
 
     @property
     def ran(self):
@@ -417,8 +465,10 @@ def _add_stop(R, st, rel):
         if summary.get("phase_kind") == "lock" and summary.get("group") == R.group:
             for s in R.seeds:
                 R.fail(s, why, stopped_phase_check(summary))
+                R.stopped.setdefault(s, []).append(summary)
         return
     R.fail(int(seed), why, stopped_phase_check(summary))
+    R.stopped.setdefault(int(seed), []).append(summary)
 
 
 def _phase_order(x):
@@ -559,9 +609,11 @@ def evaluation_needs(R, which):
 
 
 def evaluation_gaps(R, which="all"):
-    """{seed: [what is missing]} for the group's seeds that have no failure record yet lack a number C1 or C2 reads
-    (section 14.5): such a seed's learner failed. A refused seed's BCA-dependent numbers are not required (its own
-    clause tells it); for 'rivals', a seed whose matched rivals could not be matched fails C1's marks only."""
+    """{seed: [what is missing]} for the group's seeds that have no failure record yet lack a number C1, C2 or C3
+    reads (section 14.5): such a seed's learner failed. A refused seed's BCA-dependent numbers (C1 substitutes the
+    no-caution actor) and its twins' numbers (C2 and C3 leave the seed out) are not required; for 'rivals', a seed
+    whose matched rivals could not be matched fails C1's marks only (a refused seed's unmatched rivals are
+    substituted, not missing)."""
     needs = evaluation_needs(R, which)
     out = {}
     for s in R.seeds:
@@ -569,7 +621,7 @@ def evaluation_gaps(R, which="all"):
             continue
         gone = []
         for measure, st, w, arm, sit in needs:
-            if s in R.refused and arm in K.BCA_DEPENDENT:
+            if s in R.refused and (measure, st, w, arm, sit) in CERTIFIED_ONLY_NEEDS:
                 continue
             if s in R.refused and which == "rivals":
                 continue
@@ -608,12 +660,51 @@ def net_per_seed(m, arm, seeds):
     return step2().net(m["main"], arm, seeds)["per_seed"]
 
 
-def twin_difference(m, twin, seeds):
-    """C2's number for one twin: BCA's net across worlds minus the twin's, per seed; pooled mean; seeds positive."""
-    a, b = net_per_seed(m, K.PRIMARY, seeds), net_per_seed(m, twin, seeds)
+def t_one_sided_95(df):
+    """Student t's 0.95 quantile for df degrees of freedom (T_95; the df-30 value beyond 30); None below 1."""
+    df = int(df)
+    if df < 1:
+        return None
+    return T_95[min(df, 30)]
+
+
+def lower_bound_95(per):
+    """The one-sided 95% lower bound of the mean of the paired differences per (None where fewer than two numbers):
+    mean - t(0.95, n - 1) * sd / sqrt(n), sd the sample standard deviation (n - 1). Reported, not used."""
+    xs = [float(v) for v in per if v is not None]
+    n = len(xs)
+    if n < 2:
+        return None
+    mean = sum(xs) / n
+    var = sum((x - mean) ** 2 for x in xs) / (n - 1)
+    return mean - t_one_sided_95(n - 1) * math.sqrt(var) / math.sqrt(n)
+
+
+def twin_difference(m, twin, seeds, bca=K.NOISE_ARM):
+    """C2's and C3's number for one twin: the net across worlds of BCA's side (obca_k1_alone, the copy trained
+    alone like the twins; or obca_k1 for the reported reading) minus the twin's, per seed over `seeds` (the certified
+    seeds); the pooled mean; the seeds positive; n (the seeds with a number); the one-sided 95% lower bound."""
+    a, b = net_per_seed(m, bca, seeds), net_per_seed(m, twin, seeds)
     per = [_diff(x, y) for x, y in zip(a, b)]
     return dict(per_seed=per, mean=step2().mean_or_none(per), positive=sum(1 for v in per if v is not None and v > 0),
-                net_bca=a, net_twin=b)
+                n=sum(1 for v in per if v is not None), lower_bound=lower_bound_95(per), net_bca=a, net_twin=b,
+                seeds=list(seeds), bca=bca)
+
+
+def twin_reading(d, n_certified):
+    """'ahead' (C2's part: the mean at least MARKS_C2.net_margin and positive in at least ceil(0.8 n) seeds),
+    'behind' (C3: the mean at most MARKS_C3.net_margin and positive in at most MARKS_C3.positive_seeds_max seeds) or
+    'tie'; None when the mean is missing. Also the sign thresholds used."""
+    n = int(n_certified)
+    kmin = K.c2_positive_needed(n)
+    kmax = int(K.MARKS_C3["positive_seeds_max"])
+    if d["mean"] is None or n <= 0:
+        return None, dict(kmin=kmin, kmax=kmax, n=n)
+    if d["mean"] >= float(K.MARKS_C2["net_margin"]) and d["positive"] >= kmin:
+        return "ahead", dict(kmin=kmin, kmax=kmax, n=n)
+    if d["mean"] <= float(K.MARKS_C3["net_margin"]) and d["positive"] <= kmax:
+        return "behind", dict(kmin=kmin, kmax=kmax, n=n)
+    return "tie", dict(kmin=kmin, kmax=kmax, n=n)
 
 
 def _count_switch(R, world, want_on):
@@ -641,15 +732,33 @@ def claim1_points(R):
 
 
 def _claim1_numbers(m, seeds):
+    """C1's numbers over `seeds` (points with the failure rules applied): the net lead computed here over
+    K.LEAD_RIVALS (step 2's five world-blind rivals plus the hand-set range limit; ties to the first), with step 2's
+    own go_no_go (pinned step2lib) for the keeps and even-pull marks and for its own lead over its own five rivals
+    (reported beside). Returns (g, net, best_net, lead, keeps, loss, extra) with extra = dict(best, rival_nets,
+    passed, step2_lead)."""
     S = step2()
     g = S.go_no_go(m["main"], seeds, GO_RULE)
     d1 = g["G1_detail"]
     net = d1["net_primary"]["net"]
-    best_net = d1["best_world_blind_net"]
+    rival = {a: S.net(m["main"], a, seeds) for a in K.LEAD_RIVALS}
+    vals = [rival[a]["net"] for a in K.LEAD_RIVALS]
+    best_net = None if any(v is None for v in vals) else max(vals)
+    best = None if best_net is None else [a for a in K.LEAD_RIVALS if rival[a]["net"] == best_net][0]
     lead = None if net is None or best_net is None else net - best_net
+    passed = bool(lead is not None and lead >= float(K.MARKS["net_lead_margin"]))
     keeps = {sit: g["G2_detail"][sit] for sit in K.KEEPS_SITUATIONS}
     loss = {sit: None if keeps[sit]["mean"] is None else -keeps[sit]["mean"] for sit in K.KEEPS_SITUATIONS}
-    return g, net, best_net, lead, keeps, loss
+    s2_best = d1["best_world_blind"]
+    s2_lead = None if net is None or d1["best_world_blind_net"] is None else net - d1["best_world_blind_net"]
+    extra = dict(best=best, best_net=best_net, rival_nets={a: rival[a]["net"] for a in K.LEAD_RIVALS}, passed=passed,
+                 rivals=list(K.LEAD_RIVALS),
+                 step2_lead=dict(best_rival=s2_best, best_rival_plain=None if s2_best is None else K.ARM_PLAIN[s2_best],
+                                 best_rival_net=d1["best_world_blind_net"], lead=s2_lead, passed=bool(g["G1"]),
+                                 rivals=list(K.WORLD_BLIND),
+                                 note="step 2's own lead over its own five world-blind rivals (step2lib.go_no_go, "
+                                      "pinned); reported beside C1's lead over the enlarged set"))
+    return g, net, best_net, lead, keeps, loss, extra
 
 
 def count_summary(R):
@@ -682,39 +791,90 @@ def seeds_range(seeds):
     return CT.join_items([str(s) for s in seeds])
 
 
+def switch_calls(R):
+    """Per seed-world, from the switch records: the four switches' calls (BCA's certificate, the mean difference
+    > 0.10, the plain 90% gap > 0.10, the rank test p < 0.05) and whether each made BCA's call; A = the seed-worlds
+    where the mean-difference switch did."""
+    rows, agree = [], dict(meandiff=0, conformal=0, rank=0)
+    n = 0
+    for s in R.seeds:
+        for w in K.WORLDS:
+            sw = R.switches.get(("main", w, s))
+            if sw is None or not sw.get("defined", True):
+                rows.append(dict(seed=s, world=w, defined=False if sw is not None else None))
+                continue
+            c, g, rt = sw.get("certificate") or {}, sw.get("groups") or {}, sw.get("rank_test") or {}
+            bca = c.get("on")
+            md = _num(g.get("mean_full_throttle")), _num(g.get("mean_rest"))
+            q9 = _num(g.get("q90_full_throttle")), _num(g.get("q90_rest"))
+            p = _num(rt.get("p"))
+            mean_gap = None if None in md else md[0] - md[1]
+            plain_gap = None if None in q9 else q9[0] - q9[1]
+            row = dict(seed=s, world=w, defined=True, bca=bca, height=_num(c.get("height")),
+                       mean_gap=mean_gap, meandiff=None if mean_gap is None else bool(mean_gap > K.MEANDIFF_MARGIN),
+                       plain_gap=plain_gap,
+                       conformal=None if plain_gap is None else bool(plain_gap > K.ARM_RULE["conformal_margin"]),
+                       rank_p=p, rank=None if p is None else bool(p < K.ARM_RULE["rank_p"]), refused=sw.get("refused"))
+            if bca is not None:
+                n += 1
+                for k in ("meandiff", "conformal", "rank"):
+                    if row[k] is not None and bool(row[k]) == bool(bca):
+                        agree[k] += 1
+            rows.append(row)
+    return dict(rows=rows, seed_worlds=n, agree=agree, A=agree["meandiff"])
+
+
 def brackets(results):
     """Every bracket of section 14's table (numbers; R and twin names as plain names), and per-seed lists."""
     R = results
     S = step2()
     m, seeds = R.m, R.seeds
+    cert = R.certified
     pts1 = claim1_points(R)
     x = S.paired(pts1["main"], "stall", K.PRIMARY, "none", seeds, SCORED)
     h = S.paired(m["points"]["main"], "stall", "full_none", "none", seeds, SCORED)
     w = S.paired(pts1["main"], "no_stall", "none", K.PRIMARY, seeds, SCORED)
-    g, net, best_net, lead, keeps, loss = _claim1_numbers(pts1, seeds)
-    best = g["G1_detail"]["best_world_blind"]
+    g, net, best_net, lead, keeps, loss, x1 = _claim1_numbers(pts1, seeds)
+    best = x1["best"]
     ev = g["G3_detail"]
     losses = list(loss.values())
-    twins = {t: twin_difference(m["points"], t, seeds) for t in K.TWIN_ARMS}
+    twins = {t: twin_difference(m["points"], t, cert) for t in K.TWIN_ARMS}
     p = pooled_arm(m["past80_share"], "main", "stall", "none", seeds)
     nf = noise_floor(R)
     cs = count_summary(R)
+    calls = switch_calls(R)
+    # the three marks on the certified seeds alone (description)
+    if cert:
+        gc, netc, bestc_net, leadc, keepsc, lossc, xc = _claim1_numbers(pts1, cert)
+        lossesc = list(lossc.values())
+        cert_marks = dict(lead=leadc, best=xc["best"], best_plain=None if xc["best"] is None else K.ARM_PLAIN[xc["best"]],
+                          loss=None if any(v_ is None for v_ in lossesc) else max(lossesc),
+                          even_pull=gc["G3_detail"]["mean"],
+                          passed=bool(xc["passed"] and gc["G2"] and gc["G3"]), net=netc, n=len(cert))
+    else:
+        cert_marks = dict(lead=None, best=None, best_plain=None, loss=None, even_pull=None, passed=None, net=None, n=0)
     br = dict(
         S=_count_switch(R, "stall", True), N=_count_switch(R, "no_stall", False),
         X=x["mean"], H=h["mean"], W=w["mean"], NET=net, D=lead, R=None if best is None else K.ARM_PLAIN[best],
         R_id=best, R_net=best_net, E=ev["mean"],
         L=None if any(v_ is None for v_ in losses) else max(losses), L_by_situation=loss,
+        K=len(cert), F=len([s for s in R.refused if s in seeds]), NC=len(cert),
+        DC=cert_marks["lead"], RC=cert_marks["best_plain"], RC_id=cert_marks["best"], LC=cert_marks["loss"],
+        EC=cert_marks["even_pull"], certified_marks_pass=cert_marks["passed"],
+        KMIN=K.c2_positive_needed(len(cert)), A=calls["A"],
         P=p["mean"], V=nf["V"], NSEEDS=len(seeds), SEEDS=seeds_range(seeds),
         NMIN=cs["NMIN"], NMAX=cs["NMAX"], NREACH=cs["NREACH"], NSW=cs["NSW"], N8MIN=cs["N8MIN"], N8MAX=cs["N8MAX"])
     for t, i in TWIN_INDEX.items():
         br[f"D{i}"] = twins[t]["mean"]
         br[f"K{i}"] = twins[t]["positive"]
+        br[f"LB{i}"] = twins[t]["lower_bound"]
     per_seed = dict(X=x["per_seed"], H=h["per_seed"], W=w["per_seed"], NET=g["G1_detail"]["net_primary"]["per_seed"],
-                    E=ev["per_seed"], P=p["per_seed"], seeds=list(seeds),
+                    E=ev["per_seed"], P=p["per_seed"], seeds=list(seeds), certified=list(cert),
                     L={sit: [None if v_ is None else -v_ for v_ in keeps[sit]["per_seed"]] for sit in keeps},
-                    twins={t: dict(per_seed=v["per_seed"], net_bca=v["net_bca"], net_twin=v["net_twin"])
-                           for t, v in twins.items()},
-                    noise_floor=nf["per_seed"])
+                    twins={t: dict(per_seed=v["per_seed"], net_bca=v["net_bca"], net_twin=v["net_twin"],
+                                   seeds=v["seeds"]) for t, v in twins.items()},
+                    noise_floor=nf["per_seed"], rival_nets=x1["rival_nets"], step2_lead=x1["step2_lead"],
+                    certified_marks=cert_marks)
     return dict(br, per_seed=per_seed)
 
 
@@ -724,10 +884,10 @@ def seeds_not_failed(R):
 
 
 def noise_floor(R):
-    """Section 8.5's noise floor on the group's seeds that neither failed nor refused (raw numbers): the pooled
+    """Section 9.1's noise floor on the certified seeds (neither failed nor refused; raw numbers): the pooled
     |BCA's switched ramp minus the same ramp trained alone|, stalling world, strong current, at most 5. When no such
     seed is left, or a number is missing on one, it cannot be read (unmeasured: true, passed None)."""
-    seeds = [s for s in R.seeds if s not in R.failed and s not in R.refused]
+    seeds = R.certified
     d = arm_diff(R.raw["points"], K.PRIMARY, K.NOISE_ARM, seeds) if seeds else dict(per_seed=[], mean=None, positive=0)
     gone = [s for s, x in zip(seeds, d["per_seed"]) if x is None]
     unmeasured = bool(not seeds or gone or d["mean"] is None)
@@ -771,76 +931,121 @@ def validity(results):
 
 
 def marks_fixed():
-    """C2's marks as near80_constants holds them, or None while DECISION.md has not fixed them."""
-    c = K.MARKS_C2
-    if any(c.get(k) is None for k in ("net_margin", "positive_seeds_min", "multiplicity")):
+    """C2's and C3's marks as near80_constants holds them, or None while any is not fixed (cannot occur in the
+    frozen code; kept for the extractor's 'Margins not fixed' sentence)."""
+    c2, c3 = K.MARKS_C2, K.MARKS_C3
+    if any(c2.get(k) is None for k in ("net_margin", "positive_seeds_min", "positive_share", "multiplicity")):
         return None
-    return dict(net_margin=float(c["net_margin"]), positive_seeds_min=int(c["positive_seeds_min"]),
-                multiplicity=str(c["multiplicity"]))
+    if any(c3.get(k) is None for k in ("net_margin", "positive_seeds_max")) or K.MIN_CERTIFIED is None:
+        return None
+    return dict(net_margin=float(c2["net_margin"]), positive_seeds_min=int(c2["positive_seeds_min"]),
+                positive_share=float(c2["positive_share"]), multiplicity=str(c2["multiplicity"]),
+                c3_net_margin=float(c3["net_margin"]), c3_positive_seeds_max=int(c3["positive_seeds_max"]),
+                min_certified=int(K.MIN_CERTIFIED))
 
 
 def marks(results):
-    """C1 (step 2's three go marks on the main setting) and C2 (BCA's switched ramp against each plain twin, paired by
-    seed on the net across worlds)."""
+    """C1 (step 2's three go marks on the main setting, the lead over K.LEAD_RIVALS), C2 (BCA's switched ramp trained
+    alone against each plain twin, paired by certified seed on the net across worlds: ahead of all three) and C3 (the
+    mirror: a twin ahead of BCA, one claim per twin)."""
     R = results
     m = R.m
-    g, net, best_net, lead, keeps, loss = _claim1_numbers(claim1_points(R), R.seeds)
-    best = g["G1_detail"]["best_world_blind"]
-    nets = {a: g["G1_detail"]["net_world_blind"][a]["net"] for a in K.WORLD_BLIND}
+    cert = R.certified
+    g, net, best_net, lead, keeps, loss, x1 = _claim1_numbers(claim1_points(R), R.seeds)
+    best = x1["best"]
     c1 = dict(
         net_lead=dict(net=net, best_rival=best, best_rival_plain=None if best is None else K.ARM_PLAIN[best],
-                      best_rival_net=best_net, lead=lead, margin=K.MARKS["net_lead_margin"], rival_nets=nets,
-                      per_seed=g["G1_detail"]["net_primary"]["per_seed"], passed=bool(g["G1"])),
+                      best_rival_net=best_net, lead=lead, margin=K.MARKS["net_lead_margin"], rival_nets=x1["rival_nets"],
+                      rivals=x1["rivals"], per_seed=g["G1_detail"]["net_primary"]["per_seed"], passed=x1["passed"],
+                      step2_lead=x1["step2_lead"]),
         keeps={sit: dict(difference=keeps[sit]["mean"], loss=loss[sit], per_seed=keeps[sit]["per_seed"],
                          floor=K.MARKS["keeps_floor"],
                          passed=bool(keeps[sit]["mean"] is not None and keeps[sit]["mean"] >= K.MARKS["keeps_floor"]))
                for sit in K.KEEPS_SITUATIONS},
         even_pull=dict(difference=g["G3_detail"]["mean"], per_seed=g["G3_detail"]["per_seed"],
                        margin=K.MARKS["even_pull_margin"], passed=bool(g["G3"])),
-        passed=bool(g["G1"] and g["G2"] and g["G3"]))
+        passed=bool(x1["passed"] and g["G2"] and g["G3"]))
     fixed = marks_fixed()
+    n = len(cert)
+    not_read = bool(fixed is not None and n < fixed["min_certified"])
     twins = {}
     for t in K.TWIN_ARMS:
-        d = twin_difference(m["points"], t, R.seeds)
-        passed = None
-        if fixed is not None:
-            passed = bool(d["mean"] is not None and d["mean"] >= fixed["net_margin"]
-                          and d["positive"] >= fixed["positive_seeds_min"])
-        twins[t] = dict(difference=d["mean"], positive=d["positive"], per_seed=d["per_seed"], passed=passed,
-                        plain=K.ARM_PLAIN[t], index=TWIN_INDEX[t])
-    all_pass = None if fixed is None else bool(all(v["passed"] for v in twins.values()))
-    c2 = dict(twins=twins, fixed=fixed, margins=dict(K.MARKS_C2), passed=all_pass,
-              placeholders=sorted(K.placeholders_present()))
-    return {"c1": c1, "c2": c2}
+        d = twin_difference(m["points"], t, cert)
+        reading, thr = (None, dict(kmin=K.c2_positive_needed(n), kmax=int(K.MARKS_C3["positive_seeds_max"]), n=n))
+        if fixed is not None and not not_read:
+            reading, thr = twin_reading(d, n)
+        twins[t] = dict(difference=d["mean"], positive=d["positive"], n=d["n"], lower_bound=d["lower_bound"],
+                        per_seed=d["per_seed"], seeds=d["seeds"], reading=reading,
+                        passed=None if reading is None else bool(reading == "ahead"),
+                        behind=None if reading is None else bool(reading == "behind"),
+                        positive_needed=thr["kmin"], positive_at_most=thr["kmax"], plain=K.ARM_PLAIN[t],
+                        index=TWIN_INDEX[t], bca=K.NOISE_ARM)
+    readable = fixed is not None and not not_read and all(v["reading"] is not None for v in twins.values())
+    all_ahead = None if not readable else bool(all(v["reading"] == "ahead" for v in twins.values()))
+    c2 = dict(twins=twins, fixed=fixed, margins=dict(K.MARKS_C2), passed=all_ahead, n_certified=n,
+              certified=list(cert), min_certified=K.MIN_CERTIFIED, not_read=not_read,
+              positive_needed=K.c2_positive_needed(n), placeholders=sorted(K.placeholders_present()))
+    c3 = dict(twins={t: (None if not readable else bool(v["reading"] == "behind")) for t, v in twins.items()},
+              margins=dict(K.MARKS_C3), passed=None if not readable else bool(any(v["reading"] == "behind"
+                                                                                 for v in twins.values())),
+              n_certified=n, not_read=not_read)
+    return {"c1": c1, "c2": c2, "c3": c3}
 
 
 # --------------------------------------------------------------------------------------------- outcomes and sentences
 
 def outcomes(look):
-    """{c1: status, c2: status, c2_each: {twin: status}} and why."""
+    """{c1: status, c1_by_stop: bool, c2: status, c2_each: {twin: reading}, c3: status, c3_each: {twin: status}} and
+    why. C2's statuses in order of precedence: invalid, not_fixed, fail_failed_seed (a failed seed fails every mark by
+    the pre-set rule), not_read, dropped, pass, fail (section 14.5); C3 follows C2's status, and reads 'holds' /
+    'fails' when C2 was read."""
     val, mk = look["validity"], look["marks"]
     failed = bool(look.get("failed_checks"))
     out, why = {}, {}
     valid = val["claims"]["passed"]
     out["c1"] = "invalid" if not valid else ("pass" if mk["c1"]["passed"] else "fail")
+    out["c1_by_stop"] = bool(out["c1"] == "fail" and _c1_numbers_missed(mk["c1"]) == [] and
+                             (look.get("failed_checks") or look.get("c1_only_checks")))
     fixed = mk["c2"]["fixed"]
     nf = val["noise_floor"]
     each = {}
     if not valid:
         out["c2"], why["c2"] = "invalid", "the validity conditions"
     elif fixed is None:
-        out["c2"], why["c2"] = "not_fixed", "DECISION.md has not fixed C2's margins"
+        out["c2"], why["c2"] = "not_fixed", "the margins are not fixed"
+    elif failed:
+        out["c2"], why["c2"] = "fail_failed_seed", "a seed failed (every mark fails by the pre-set rule)"
+    elif mk["c2"]["not_read"]:
+        out["c2"], why["c2"] = "not_read", f"fewer than {fixed['min_certified']} certified seeds"
     elif nf["passed"] is False:
         out["c2"], why["c2"] = "dropped", "the noise floor"
-    elif failed:
-        out["c2"], why["c2"] = "fail_failed_seed", "a seed failed"
-    elif fixed["multiplicity"] == "each_separately":
-        each = {t: ("pass" if v["passed"] else "fail") for t, v in mk["c2"]["twins"].items()}
-        out["c2"] = "each"
     else:
+        each = {t: v["reading"] for t, v in mk["c2"]["twins"].items()}
         out["c2"] = "pass" if mk["c2"]["passed"] else "fail"
     out["c2_each"] = each
+    if out["c2"] in ("pass", "fail"):
+        out["c3_each"] = {t: ("holds" if v == "behind" else "fails") for t, v in each.items()}
+        out["c3"] = "holds" if any(v == "holds" for v in out["c3_each"].values()) else "fails"
+    else:
+        out["c3_each"] = {}
+        out["c3"] = out["c2"]
+        why["c3"] = why.get("c2")
     return out, why
+
+
+def _c1_numbers_missed(c1):
+    """The marks of C1 missed on their numbers (not by a failed or stopped seed): the net lead, the keeps (per
+    situation), the even pull, as clause names."""
+    out = []
+    if not c1["net_lead"]["passed"] and c1["net_lead"]["lead"] is not None:
+        out.append("net")
+    for sit in K.KEEPS_SITUATIONS:
+        k = c1["keeps"][sit]
+        if not k["passed"] and k["loss"] is not None:
+            out.append(f"keeps:{sit}")
+    if not c1["even_pull"]["passed"] and c1["even_pull"]["difference"] is not None:
+        out.append("even_pull")
+    return out
 
 
 def _template_getter(templates, group):
@@ -854,59 +1059,101 @@ def _template_getter(templates, group):
     return t
 
 
+def certify_percent(n):
+    """[p]: the exact chance of a finite height for a group of n rows, as a percentage number (None when n is not
+    known)."""
+    if n is None:
+        return None
+    return 100.0 * K.certify_chance(int(n))
+
+
 def refused_clause_values(R_refused, seed):
     worlds = R_refused.get(seed) or {}
     ns = [v for v in worlds.values() if v is not None]
-    return dict(s=CT.fmt(seed, "count"), n=CT.fmt(min(ns), "count") if ns else CT.NOT_AVAILABLE,
+    n = min(ns) if ns else None
+    return dict(s=CT.fmt(seed, "count"), n=CT.fmt(n, "count") if n is not None else CT.NOT_AVAILABLE,
+                p=certify_percent(n),
                 world=CT.join_items([K.WORLD_PLAIN[w] for w in K.WORLDS if w in worlds]) or "both worlds")
 
 
 def _c1_clauses(look, t):
-    """[one clause per missed mark] in section 14.5's order; a missed mark whose number is not available because a
-    seed failed or refused is told by that seed's own clause."""
+    """([one clause per missed mark] in section 14.5's order, any clause about a number): the net lead, the keeps,
+    the even pull; then per failed seed, in seed order, the stopped-phase clause (one per stopped phase) for a seed
+    failed by a stop, else the failed-seed clause; then per refused seed. A missed mark whose number is not available
+    because a seed failed is told by that seed's own clause only."""
     mk = look["marks"]["c1"]
     failed = {int(s): c for s, c in (look.get("failed_checks") or {}).items()}
     for s, c in (look.get("c1_only_checks") or {}).items():
         failed.setdefault(int(s), c)
+    stopped = {}
+    for st in look.get("phase_stops") or []:
+        if st.get("seed") is not None:
+            stopped.setdefault(int(st["seed"]), []).append(st)
+        elif st.get("phase_kind") == "lock":
+            for s in failed:
+                stopped.setdefault(s, []).append(st)
     refused = {int(s): v for s, v in (look.get("refused") or {}).items()}
-    covered = bool(failed or refused)
-    out = []
+    covered = bool(failed)
+    out, numbers = [], False
     nl = mk["net_lead"]
     if not nl["passed"] and not (covered and (nl["net"] is None or nl["lead"] is None)):
         out.append(CT.fill(t("c1.clause.net"), dict(NET=nl["net"], D=nl["lead"],
                                                     R=nl["best_rival_plain"] or CT.NOT_AVAILABLE)))
+        numbers = True
     for sit in K.KEEPS_SITUATIONS:
         k = mk["keeps"][sit]
         if not k["passed"] and not (covered and k["loss"] is None):
             out.append(CT.fill(t("c1.clause.keeps"), dict(L=k["loss"], situation=K.SITUATION_PLAIN[sit])))
+            numbers = True
     ep = mk["even_pull"]
     if not ep["passed"] and not (covered and ep["difference"] is None):
         out.append(CT.fill(t("c1.clause.even_pull"), dict(E=ep["difference"])))
+        numbers = True
     for s in sorted(failed):
-        out.append(CT.fill(t("c1.clause.failed_seed"), dict(s=CT.fmt(s, "count"), check=failed[s])))
+        if s in stopped and str(failed[s]).startswith("its ") and " phase" in str(failed[s]):
+            for st in stopped[s]:
+                out.append(CT.fill(t("c1.clause.stopped_seed"),
+                                   dict(s=CT.fmt(s, "count"), phase=phase_text(st.get("phase_kind"), st.get("setting")),
+                                        reason=str(st.get("reason") or "no reason recorded"))))
+        else:
+            out.append(CT.fill(t("c1.clause.failed_seed"), dict(s=CT.fmt(s, "count"), check=failed[s])))
     for s in sorted(refused):
         if s in failed:
             continue
         out.append(CT.fill(t("c1.clause.refused_seed"), refused_clause_values(refused, s)))
     if not out:
         raise ValueError("c1 failed but no mark was missed")
-    return out
+    return out, numbers
 
 
 def _c2_clauses(look, t):
+    """([one clause per twin] in the twins' fixed order, each by its reading, then the refused seeds' clauses in
+    seed order; the last sentence's id by the four cases)."""
     mk = look["marks"]["c2"]
     refused = {int(s): v for s, v in (look.get("refused") or {}).items()}
-    out = []
+    nc = CT.fmt(mk["n_certified"], "count")
+    out, readings = [], {}
     for twin, v in mk["twins"].items():
-        if v["passed"] is False and not (refused and v["difference"] is None):
-            out.append(CT.fill(t("c2.clause.twin"), dict(twin=v["plain"], DT=v["difference"],
-                                                         KT=CT.fmt(v["positive"], "count"),
-                                                         NSEEDS=CT.fmt(len(look["seeds"]), "count"))))
+        r = v["reading"]
+        readings[twin] = r
+        vals = dict(twin=v["plain"], DT=v["difference"], LBT=v["lower_bound"], KT=CT.fmt(v["positive"], "count"), NC=nc)
+        sid = {"ahead": "c2.clause.ahead", "tie": "c2.clause.tie", "behind": "c2.clause.behind"}.get(r)
+        if sid is None:
+            raise ValueError(f"c2 was read but {twin} has no reading")
+        out.append(CT.fill(t(sid), vals))
     for s in sorted(refused):
         out.append(CT.fill(t("c2.clause.refused_seed"), refused_clause_values(refused, s)))
-    if not out:
-        raise ValueError("c2 failed but no twin was missed")
-    return out
+    order = list(K.TWIN_ARMS)
+    behind = [tw for tw in order if readings[tw] == "behind"]
+    if behind:
+        last = ("c2.last.twin", dict(twin=mk["twins"][behind[0]]["plain"]))
+    elif readings[order[0]] == "ahead" and all(readings[tw] == "tie" for tw in order[1:]):
+        last = ("c2.last.dose", {})
+    elif all(readings[tw] == "tie" for tw in order):
+        last = ("c2.last.none", {})
+    else:
+        last = ("c2.last.other", {})
+    return out, last
 
 
 def phase_stop_sentence(template, stop, group=None):
@@ -923,7 +1170,7 @@ def phase_stop_sentence(template, stop, group=None):
 
 def refused_sentence(template, seed, world, n):
     return CT.fill(template, dict(s=CT.fmt(int(seed), "count"), world=K.WORLD_PLAIN.get(world, str(world)),
-                                  n=CT.fmt(n, "count") if n is not None else CT.NOT_AVAILABLE))
+                                  n=CT.fmt(n, "count") if n is not None else CT.NOT_AVAILABLE, p=certify_percent(n)))
 
 
 def reproduction_sentence(template, names):
@@ -972,10 +1219,13 @@ def sentences(look, templates, group):
     if c1 == "pass":
         add("c1.pass", CT.fill(t("c1.pass"), dict(common, S=CT.fmt(br["S"], "count"), N=CT.fmt(br["N"], "count"),
                                                   X=br["X"], H=br["H"], W=br["W"], NET=br["NET"], D=br["D"],
-                                                  R=br["R"] or CT.NOT_AVAILABLE, E=br["E"])))
+                                                  R=br["R"] or CT.NOT_AVAILABLE, E=br["E"],
+                                                  K=CT.fmt(br["K"], "count"), F=CT.fmt(br["F"], "count"))))
     elif c1 == "fail":
+        clauses, numbers = _c1_clauses(look, t)
+        last = t("c1.last.numbers") if numbers else t("c1.last.stop")
         add("c1.fail", CT.fill(t("c1.fail"), common,
-                               specials={"[one clause per missed mark]": "; ".join(_c1_clauses(look, t))}))
+                               specials={"[one clause per missed mark]": "; ".join(clauses), "[last sentence]": last}))
     else:
         v = val["claims"]
         reasons = []
@@ -984,16 +1234,26 @@ def sentences(look, templates, group):
         if not v["past80"]["passed"]:
             reasons.append(CT.fill(t("c1.reason.past80"), dict(P=CT.fmt(v["past80"]["value"], "percent"))))
         add("c1.invalid", CT.fill(t("c1.invalid"), dict(common, reason="; ".join(reasons))))
+    if group == "fresh":
+        cm = br.get("certified_marks_pass")
+        reading = CT.NOT_AVAILABLE if cm is None else ("pass" if cm else "fail")
+        add("c1.certified", CT.fill(t("c1.certified"), dict(NC=CT.fmt(br["NC"], "count"), reading=reading,
+                                                            DC=br["DC"], RC=br["RC"] or CT.NOT_AVAILABLE, LC=br["LC"],
+                                                            EC=br["EC"])), claim=False)
     c2 = out_c["c2"]
     tw = look["marks"]["c2"]["twins"]
-    tvals = dict(common)
+    nc = CT.fmt(br["NC"], "count")
+    tvals = dict(common, NC=nc, KMIN=CT.fmt(br["KMIN"], "count"), A=CT.fmt(br["A"], "count"))
     for twin, v in tw.items():
         tvals[f"D{v['index']}"] = v["difference"]
         tvals[f"K{v['index']}"] = CT.fmt(v["positive"], "count")
+        tvals[f"LB{v['index']}"] = v["lower_bound"]
     if c2 == "not_fixed":
-        add("c2.not_fixed", CT.fill(t("c2.not_fixed"), common))
+        add("c2.not_fixed", CT.fill(t("c2.not_fixed"), tvals))
+    elif c2 == "not_read":
+        add("c2.not_read", CT.fill(t("c2.not_read"), tvals))
     elif c2 == "dropped":
-        add("c2.dropped", CT.fill(t("c2.dropped"), dict(common, V=br["V"])))
+        add("c2.dropped", CT.fill(t("c2.dropped"), dict(tvals, V=br["V"])))
     elif c2 == "fail_failed_seed":
         failed = failed_seeds_of(look)
         every = set(int(s) for s in look["seeds"]) <= set(failed)
@@ -1002,13 +1262,18 @@ def sentences(look, templates, group):
     elif c2 == "pass":
         add("c2.holds", CT.fill(t("c2.holds"), tvals))
     elif c2 == "fail":
-        add("c2.fails", CT.fill(t("c2.fails"), common,
-                                specials={"[one clause per twin not beaten]": "; ".join(_c2_clauses(look, t))}))
-    elif c2 == "each":
-        for twin, v in tw.items():
-            sid = "c2.each.holds" if out_c["c2_each"].get(twin) == "pass" else "c2.each.fails"
-            add(sid, CT.fill(t(sid), dict(common, twin=v["plain"], DT=v["difference"],
-                                          KT=CT.fmt(v["positive"], "count"))))
+        clauses, (last_id, last_vals) = _c2_clauses(look, t)
+        add("c2.fails", CT.fill(t("c2.fails"), tvals,
+                                specials={"[one clause per twin]": "; ".join(clauses),
+                                          "[last sentence]": CT.fill(t(last_id), last_vals)}))
+    if c2 in ("pass", "fail"):
+        behind = [twin for twin, v in tw.items() if v["reading"] == "behind"]
+        for twin in behind:
+            v = tw[twin]
+            add("c3.holds", CT.fill(t("c3.holds"), dict(tvals, twin=v["plain"], DT=v["difference"],
+                                                        KT=CT.fmt(v["positive"], "count"))))
+        if not behind:
+            add("c3.fails", CT.fill(t("c3.fails"), tvals))
     cs = look["counts"]
     add("count.reported", CT.fill(t("count.reported"), dict(common, NMIN=CT.fmt(cs["NMIN"], "count"),
                                                             NMAX=CT.fmt(cs["NMAX"], "count"),
@@ -1030,6 +1295,8 @@ def _claim_of(sid):
         return "c1"
     if sid.startswith("c2"):
         return "c2"
+    if sid.startswith("c3"):
+        return "c3"
     return None
 
 
@@ -1070,15 +1337,40 @@ def reported(R):
               for measure in MEASURES if measure != "zone_shares"}
     zones = {"main": {w: {a: _zone_means(raw, "main", w, a, seeds) for a in K.ARMS["main"]} for w in K.WORLDS}}
     nets = {"main": {a: S.net(raw["points"]["main"], a, seeds) for a in K.ARMS["main"] if a not in ("none", "full_none")}}
-    twins = {t: twin_difference(raw["points"], t, seeds) for t in K.TWIN_ARMS}
+    cert = R.certified
+    twins = {t: dict(against_alone=twin_difference(raw["points"], t, cert, bca=K.NOISE_ARM),
+                     against_batch=twin_difference(raw["points"], t, cert, bca=K.PRIMARY),
+                     over_every_seed=twin_difference(raw["points"], t, seeds, bca=K.NOISE_ARM)) for t in K.TWIN_ARMS}
     switches = {}
     for (st, w, s), sw in sorted(R.switches.items()):
         c, g = sw.get("certificate") or {}, sw.get("groups") or {}
+        sorted_tail = (sw.get("pooled") or {}).get("tail_scores_sorted") or []
+        r_rest, q90_rest = _num(c.get("R_rest")), _num(g.get("q90_rest"))
+        heights = dict(bca=_num(c.get("height")), plain_gap=None if None in (_num(g.get("q90_full_throttle")), q90_rest)
+                       else _num(g.get("q90_full_throttle")) - q90_rest)
+        ranks = {}
+        if sorted_tail:
+            ranks = dict(bca_threshold=_rank_from_top(sorted_tail, _num(c.get("R_tail"))),
+                         plain_q90=_rank_from_top(sorted_tail, _num(g.get("q90_full_throttle"))),
+                         twice_plain=None if heights["plain_gap"] is None or q90_rest is None else
+                         _rank_from_top(sorted_tail, q90_rest + 2.0 * heights["plain_gap"]),
+                         twice_bca=None if heights["bca"] is None or r_rest is None else
+                         _rank_from_top(sorted_tail, r_rest + 2.0 * heights["bca"]), n=len(sorted_tail))
         switches.setdefault(w, {})[str(s)] = dict(
             defined=sw.get("defined"), on=c.get("on"), height=_num(c.get("height")), q05=_num(c.get("q05")),
             finite_share_tail=c.get("finite_share_tail"), t_lo=_num(sw.get("t_lo")), t_up=_num(sw.get("t_up")),
             n_full_throttle=g.get("n_full_throttle"), n_rest=g.get("n_rest"), n_survivors=sw.get("n_survivors"),
-            refused=sw.get("refused"), refusal=sw.get("refusal"))
+            refused=sw.get("refused"), refusal=sw.get("refusal"), heights=heights, ranks=ranks,
+            certify_chance=None if g.get("n_full_throttle") is None else K.certify_chance(int(g["n_full_throttle"])))
+    calls = switch_calls(R)
+    ladder = {}
+    for s in seeds:
+        lock = R.locks.get(("main", "stall", s)) or {}
+        table = ((lock.get("arm_table") or {}).get("arms") or {})
+        ladder[str(s)] = [dict(arm=a, plain=K.ARM_PLAIN.get(a, a), height=(table.get(a) or {}).get("h"),
+                               k=(table.get(a) or {}).get("k"),
+                               points=S.pts_of(raw["points"]["main"], "stall", s, a, SCORED)) for a in LADDER]
+    composites = _composites(R)
     locks = {}
     for (st, w, s), lock in sorted(R.locks.items()):
         ids = lock.get("arm_ids") or {}
@@ -1107,10 +1399,49 @@ def reported(R):
     data = dict(main_failed={str(s): (rec or {}).get("seed_failed_reason") for (s, w), rec in R.data_main.items()
                              if (rec or {}).get("seed_failed_reason")},
                 pooled_counts={f"{w}/seed{s}": c for (s, w), c in sorted(R.counts.items())})
-    return dict(measures=tables, zone_shares=zones, nets=nets, twins=twins, switches=switches, locks=locks,
+    return dict(measures=tables, zone_shares=zones, nets=nets, twins=twins, switches=switches, switch_calls=calls,
+                dose_ladder=ladder, composites=composites, locks=locks, certified=list(cert),
+                substituted={str(s): v for s, v in sorted(R.substituted.items())},
                 noise_floor=noise_floor(R), skipped=dict(R.skipped), runner_skipped=dict(R.runner_skipped),
                 phase_stops=list(R.phase_stops), resources=dict(by_phase_kind=resources, cpu_hours_total=total_hours),
                 data=data, notes=list(R.notes))
+
+
+def _rank_from_top(sorted_tail, threshold):
+    """The rank from the top of a threshold among the sorted full-throttle scores (1 = at or above the largest);
+    None for a missing or non-finite threshold."""
+    if threshold is None or not math.isfinite(float(threshold)):
+        return None
+    t = float(threshold)
+    return int(sum(1 for v in sorted_tail if float(v) > t) + 1)
+
+
+def _composites(R):
+    """The two reported composites, assembled from trained arms per seed (raw points; no training): BCA's switch
+    turning on the hand-set range limit (the range limit where BCA's switch was on, no caution where it was off, in
+    each world); and "refusal means the range limit" (BCA's switched ramp where it set a height, the range limit
+    where it refused). Each with its per-seed net across worlds and the pooled mean."""
+    S = step2()
+    raw = R.raw["points"]["main"]
+    out = {}
+    for name in ("bca_switch_range_limit", "refusal_means_range_limit"):
+        per = []
+        for s in R.seeds:
+            vals = {}
+            for w in K.WORLDS:
+                sw = R.switches.get(("main", w, s)) or {}
+                on = ((sw.get("certificate") or {}).get("on"))
+                if name == "bca_switch_range_limit":
+                    arm = K.HAND_SET_LIMIT if on else "none"
+                else:
+                    arm = K.PRIMARY if S.pts_of(raw, w, s, K.PRIMARY, SCORED) is not None else K.HAND_SET_LIMIT
+                vals[w] = (S.pts_of(raw, w, s, arm, SCORED), S.pts_of(raw, w, s, "none", SCORED))
+            gain = _diff(vals["stall"][0], vals["stall"][1])
+            loss = _diff(vals["no_stall"][1], vals["no_stall"][0])
+            per.append(None if gain is None or loss is None else gain - loss)
+        out[name] = dict(per_seed=per, net=S.mean_or_none(per), seeds=list(R.seeds),
+                         note="a composite of trained arms, assembled after the fact; description only")
+    return out
 
 
 # --------------------------------------------------------------------------------------------- the look
@@ -1142,8 +1473,10 @@ def _finish(look, templates, group):
             claims[c] = dict(status=SMOKE_STATUS, claim="", smoke_outcome=look["outcomes"][c], sentence_ids=ids)
         else:
             claims[c] = dict(status=look["outcomes"][c], sentence_ids=ids)
-            if c == "c2" and look["outcomes"].get("c2_each"):
-                claims[c]["twins"] = dict(look["outcomes"]["c2_each"])
+        if c == "c2" and look["outcomes"].get("c2_each"):
+            claims[c]["twins"] = dict(look["outcomes"]["c2_each"])
+        if c == "c3" and look["outcomes"].get("c3_each"):
+            claims[c]["twins"] = dict(look["outcomes"]["c3_each"])
     look["claims"] = claims
     return look
 
@@ -1337,36 +1670,49 @@ def look_md(look, digest):
         L.append("- Left out of the conditions above (failed; each fails every mark): seed "
                  + CT.join_items([str(s) for s in left_out]))
     L.append("")
-    c1, c2 = mk["c1"], mk["c2"]
+    c1, c2, c3 = mk["c1"], mk["c2"], mk["c3"]
     L += ["## Marks", "", "| claim | mark | value | needed | result |", "|---|---|---|---|---|"]
     nl = c1["net_lead"]
-    L.append(f"| C1 | net lead over {nl['best_rival_plain'] or 'not available'} | {_f(nl['lead'])} | 10 | "
-             f"{'pass' if nl['passed'] else 'fail'} |")
+    L.append(f"| C1 | net lead over {nl['best_rival_plain'] or 'not available'} (the six world-blind rivals) | "
+             f"{_f(nl['lead'])} | 10 | {'pass' if nl['passed'] else 'fail'} |")
+    s2 = nl.get("step2_lead") or {}
+    L.append(f"| (reported) | step 2's own lead over its own five rivals ({s2.get('best_rival_plain') or 'not available'}) | "
+             f"{_f(s2.get('lead'))} | 10 | {'pass' if s2.get('passed') else 'fail'} |")
     for sit in K.KEEPS_SITUATIONS:
         k = c1["keeps"][sit]
         L.append(f"| C1 | keeps the gain, {K.SITUATION_PLAIN[sit]} | {_f(k['difference'])} | -3 | "
                  f"{'pass' if k['passed'] else 'fail'} |")
     L.append(f"| C1 | beats the matched even pull | {_f(c1['even_pull']['difference'])} | 15 | "
              f"{'pass' if c1['even_pull']['passed'] else 'fail'} |")
+    cm = (look.get("per_seed") or {}).get("certified_marks") or {}
+    L.append(f"| (description) | C1's three marks on the {cm.get('n', 0)} certified seeds alone (lead {_f(cm.get('lead'))} "
+             f"over {cm.get('best_plain') or 'not available'}, largest loss {_f(cm.get('loss'))}, even pull "
+             f"{_f(cm.get('even_pull'))}) | | | "
+             f"{'not available' if cm.get('passed') is None else ('pass' if cm.get('passed') else 'fail')} |")
     fixed = c2["fixed"]
-    need = ("not fixed (DECISION.md)" if fixed is None else
-            f"{fixed['net_margin']:g}, and {fixed['positive_seeds_min']} seeds")
+    nc = c2["n_certified"]
+    need = ("not fixed" if fixed is None else
+            f"ahead: mean >= {fixed['net_margin']:g} and positive in >= {c2['positive_needed']} of {nc}; behind: mean <= "
+            f"{fixed['c3_net_margin']:g} and positive in <= {fixed['c3_positive_seeds_max']} of {nc}")
     for twin, v in c2["twins"].items():
-        res = "not fixed" if v["passed"] is None else ("pass" if v["passed"] else "fail")
-        L.append(f"| C2 | net across worlds, BCA minus {v['plain']} (positive in {v['positive']} seeds) | "
+        res = v["reading"] or ("not read" if c2["not_read"] else "not fixed")
+        L.append(f"| C2 / C3 | net across worlds, BCA's switched ramp trained alone minus {v['plain']} (positive in "
+                 f"{v['positive']} of {nc} certified seeds; one-sided 95% lower bound {_f(v['lower_bound'])}) | "
                  f"{_f(v['difference'])} | {need} | {res} |")
     L += [""]
     L += ["## Claims", ""] + [f"- {c}: {v['status']}" + (f" ({v['smoke_outcome']})" if "smoke_outcome" in v else "")
                               + (f" (per twin: {v['twins']})" if v.get("twins") else "")
                               for c, v in look["claims"].items()] + [""]
     if c2["placeholders"]:
-        L += ["Open items DECISION.md must fix (the freeze refuses while any remains): "
-              + ", ".join(c2["placeholders"]), ""]
+        L += ["Open items (the freeze refuses while any remains): " + ", ".join(c2["placeholders"]), ""]
     if look["failed_seeds"] or look["c1_only"] or look["refused"]:
         L += ["## Failed and refused seeds", ""]
         L += [f"- failed, seed {s}: {r}" for s, r in look["failed_seeds"].items()]
         L += [f"- C1's marks only, seed {s}: {r}" for s, r in look["c1_only"].items()]
-        L += [f"- BCA refused, seed {s}: {v}" for s, v in look["refused"].items()] + [""]
+        L += [f"- BCA refused, seed {s}: {v} (in C1 its arms and the controls matched to it take the no-caution "
+              f"actor's numbers; left out of C2 and C3)" for s, v in look["refused"].items()] + [""]
+    L += [f"Certified seeds (C2, C3 and the noise floor): {', '.join(str(s) for s in c2['certified']) or 'none'} "
+          f"({nc}; at least {c2['min_certified']} needed).", ""]
     cs = look["counts"]
     L += ["## The pooled groups (outcome-free, before any training)", "",
           "| seed | world | full-throttle rows | rest | survivors | reaches 29 | version 8's group |",
@@ -1378,14 +1724,16 @@ def look_md(look, digest):
                  f"{_f(r['version8_n_full_throttle'], 'count')} |")
     L.append("")
     L += ["## Brackets", "", "| bracket | value |", "|---|---|"]
-    for name in ("S", "N", "X", "H", "W", "NET", "D", "R", "E", "L", "D1", "K1", "D2", "K2", "D3", "K3", "P", "V",
-                 "NSEEDS", "SEEDS", "NMIN", "NMAX", "NREACH", "NSW", "N8MIN", "N8MAX"):
+    counts = ("S", "N", "K", "F", "NC", "K1", "K2", "K3", "KMIN", "A", "NSEEDS", "NMIN", "NMAX", "NREACH", "NSW",
+              "N8MIN", "N8MAX")
+    for name in ("S", "N", "X", "H", "W", "NET", "D", "R", "E", "L", "K", "F", "NC", "DC", "RC", "LC", "EC", "D1", "K1",
+                 "LB1", "D2", "K2", "LB2", "D3", "K3", "LB3", "KMIN", "A", "P", "V", "NSEEDS", "SEEDS", "NMIN", "NMAX",
+                 "NREACH", "NSW", "N8MIN", "N8MAX"):
         v = br.get(name)
         if name == "P":
             L.append(f"| P | {_pct(v)} |")
             continue
-        kind = "count" if name in ("S", "N", "K1", "K2", "K3", "NSEEDS", "NMIN", "NMAX", "NREACH", "NSW", "N8MIN",
-                                   "N8MAX") else "points"
+        kind = "count" if name in counts else "points"
         L.append(f"| {name} | {v if isinstance(v, str) else _f(v, kind)} |")
     rep = look.get("reported") or {}
     pts = (rep.get("measures") or {}).get("points") or {}
@@ -1396,15 +1744,58 @@ def look_md(look, digest):
             s_ = ((pts["main"].get("stall") or {}).get(a) or {}).get(SCORED, {}).get("mean")
             n_ = ((pts["main"].get("no_stall") or {}).get(a) or {}).get(SCORED, {}).get("mean")
             L.append(f"| {K.ARM_PLAIN.get(a, a)} ({a}) | {_f(s_)} | {_f(n_)} |")
+    tw = rep.get("twins") or {}
+    if tw:
+        L += ["", "## C2 and C3's differences per twin, on the certified seeds (net across worlds; description "
+                  "beyond the readings)", "",
+              "| twin | against BCA trained alone (mean, positive, lower bound) | against the batch-trained obca_k1 | "
+              "over every seed |", "|---|---|---|---|"]
+        for t_, v in tw.items():
+            a_, b_, e_ = v["against_alone"], v["against_batch"], v["over_every_seed"]
+            L.append(f"| {K.ARM_PLAIN.get(t_, t_)} | {_f(a_['mean'])}, {a_['positive']} of {a_['n']}, {_f(a_['lower_bound'])} "
+                     f"| {_f(b_['mean'])}, {b_['positive']} of {b_['n']}, {_f(b_['lower_bound'])} "
+                     f"| {_f(e_['mean'])}, {e_['positive']} of {e_['n']} |")
+    comp = rep.get("composites") or {}
+    if comp:
+        L += ["", "## Reported composites (assembled from trained arms; description only)", ""]
+        L += [f"- {name.replace('_', ' ')}: net across worlds {_f(v['net'])} (per seed "
+              f"{', '.join(_f(x) for x in v['per_seed'])})" for name, v in comp.items()]
     sw = rep.get("switches") or {}
     if sw:
         L += ["", "## BCA's switch on the pooled groups", "",
-              "| world | seed | on | height | full-throttle rows | rest | finite share | refused |", "|---|---|---|---|---|---|---|---|"]
+              "| world | seed | on | height | plain 90% gap | full-throttle rows | rest | finite share | chance of a "
+              "finite height | refused | rank of BCA's threshold / of the plain 90% point (from the top, of n) |",
+              "|---|---|---|---|---|---|---|---|---|---|---|"]
         for w in K.WORLDS:
             for s, r in sorted((sw.get(w) or {}).items(), key=lambda x: int(x[0])):
+                rk = r.get("ranks") or {}
                 L.append(f"| {K.WORLD_PLAIN[w]} | {s} | {r.get('on')} | {_f(r.get('height'), 'value')} | "
+                         f"{_f((r.get('heights') or {}).get('plain_gap'), 'value')} | "
                          f"{_f(r.get('n_full_throttle'), 'count')} | {_f(r.get('n_rest'), 'count')} | "
-                         f"{_f(r.get('finite_share_tail'), 'value')} | {'yes' if r.get('refused') else 'no'} |")
+                         f"{_f(r.get('finite_share_tail'), 'value')} | {_pct(r.get('certify_chance'))} | "
+                         f"{'yes' if r.get('refused') else 'no'} | "
+                         f"{_f(rk.get('bca_threshold'), 'count')} / {_f(rk.get('plain_q90'), 'count')} of "
+                         f"{_f(rk.get('n'), 'count')} |")
+    calls = rep.get("switch_calls") or {}
+    if calls.get("rows"):
+        ag = calls["agree"]
+        L += ["", f"## The switch calls ({calls['seed_worlds']} seed-worlds; made BCA's call: the mean difference "
+                  f"{ag['meandiff']}, the split conformal {ag['conformal']}, the rank test {ag['rank']})", "",
+              "| seed | world | BCA | mean difference (gap) | split conformal (gap) | rank test (p) |",
+              "|---|---|---|---|---|---|"]
+        for r in calls["rows"]:
+            if not r.get("defined"):
+                L.append(f"| {r['seed']} | {K.WORLD_PLAIN.get(r['world'], r['world'])} | the gap rule is not defined | | | |")
+                continue
+            L.append(f"| {r['seed']} | {K.WORLD_PLAIN.get(r['world'], r['world'])} | {r['bca']} | {r['meandiff']} "
+                     f"({_f(r['mean_gap'], 'value')}) | {r['conformal']} ({_f(r['plain_gap'], 'value')}) | {r['rank']} "
+                     f"({_f(r['rank_p'], 'value')}) |")
+    ladder = rep.get("dose_ladder") or {}
+    if ladder:
+        L += ["", "## The dose ladder (stalling world, strong current, points by height)", "",
+              "| seed | " + " | ".join(f"{a}" for a in LADDER) + " |", "|---|" + "---|" * len(LADDER)]
+        for s, rows in ladder.items():
+            L.append(f"| {s} | " + " | ".join(f"{_f(r['points'])} (h {_f(r['height'], 'value')})" for r in rows) + " |")
     stops = look.get("phase_stops") or []
     if stops:
         L += ["", "## Stopped phases", ""] + [f"- {s['phase_id']}: {s['reason']}" for s in stops]

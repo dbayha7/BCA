@@ -66,15 +66,28 @@ class Refused(Exception):
 # ------------------------------------------------------------------------------------------------ seeds and paths
 
 def check_seeds(seeds):
-    """The facts script reads the gate's seeds 0-4 only (their logs are regenerated from the gate's records). The
+    """The facts script counts the gate's seeds 0-4 only (their logs are regenerated from the gate's records). The
     fresh seeds are never generated, loaded or read by it."""
     seeds = [int(s) for s in seeds]
     for s in seeds:
-        if s in K.FRESH:
-            raise Refused(f"refused: seed {s} is a fresh seed of this version; the facts script never generates, "
-                          "loads or reads it")
+        if s in K.FRESH or s in K.RESERVED_SEEDS:
+            raise Refused(f"refused: seed {s} is a fresh or reserved seed of this version; the facts script never "
+                          "generates, loads or reads it")
         if s not in range(0, 5):
             raise Refused(f"refused: seed {s} is not one of the gate's seen seeds 0-4")
+    return seeds
+
+
+def check_spent_seeds(seeds):
+    """The facts script's second mode reads version 8's spent seeds 10-14 only (their logs regenerated and checked
+    against version 8's data records; their recorded second critics loaded, never trained). Nothing else."""
+    seeds = [int(s) for s in seeds]
+    for s in seeds:
+        if s in K.FRESH or s in K.RESERVED_SEEDS:
+            raise Refused(f"refused: seed {s} is a fresh or reserved seed of this version; the facts script never "
+                          "generates, loads or reads it")
+        if s not in K.SPENT_SEEDS:
+            raise Refused(f"refused: seed {s} is not one of version 8's spent seeds {K.SPENT_SEEDS}")
     return seeds
 
 
@@ -165,14 +178,17 @@ def pooled_groups(log, gap, removal, t_lo, step1=None):
 def certification_expectation(n_tail, cfg=K.CERT, min_rows=K.CERT_MIN_ROWS):
     """What the group size alone says about BCA's certificate (reported, outcome-free): a posterior draw is finite
     with probability 1 - (1 - alpha)^n, the group is certified when at least `credibility` of the draws are finite,
-    so the expected finite share and whether n reaches the smallest certifiable size."""
+    so the expected finite share, whether n reaches the smallest certifiable size, and the exact chance of a finite
+    height, certify_chance = P(Binomial(1000, 0.9^n) <= 50) (near80_constants.certify_chance: 0 up to 24 rows, 0.405
+    at 28, 0.700 at 29, 0.896 at 30, 0.976 at 31, 0.9995 at 33)."""
     n = int(n_tail)
     alpha = float(cfg["alpha"])
     expected = 1.0 - (1.0 - alpha) ** n
     return dict(n_full_throttle=n, expected_finite_share=expected, needed_finite_share=float(cfg["credibility"]),
                 min_rows=int(min_rows), reaches_min_rows=bool(n >= min_rows),
-                note="reported only: the certificate itself draws; a group below min_rows cannot be certified, one "
-                     "at or above it usually is (certain only from about 33-36 rows at 1,000 draws)")
+                certify_chance=K.certify_chance(n, cfg),
+                note="reported only: the certificate itself draws; the refusal depends on the group size and the "
+                     "draws alone, never on the scores; certify_chance is exact")
 
 
 def pooled_count_record(log, gap, removal, step1):

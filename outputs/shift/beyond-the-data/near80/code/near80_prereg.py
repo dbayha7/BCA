@@ -143,17 +143,23 @@ def summary_block(content):
     pm = content["pass_marks"]
     c1 = pm["c1_version8_claim4"]
     c2 = pm["c2_twins"]
+    c3 = pm["c3_mirror"]
     claims = [
-        "C1, version 8's claim 4 marks unchanged (step 2's three go marks, main setting, fresh seeds): "
-        f"{c1['net_lead']}; {c1['keeps_the_gain']}; {c1['beats_even_pull']}.",
-        "C2, BCA's switched ramp beats each plain twin (the split-conformal switch, the mean-difference switch with "
-        f"the ramp, the mean-difference switch with the hand-set range limit), paired by seed: {c2['number']}; margin "
-        f"{c2['net_margin']}; seeds positive {c2['positive_seeds_min']}; multiplicity {c2['multiplicity']}.",
+        "C1, version 8's claim 4 marks unchanged (step 2's three go marks, main setting, fresh seeds 40-49; the "
+        f"hand-set range limit joins the world-blind rivals): {c1['net_lead']}; {c1['keeps_the_gain']}; "
+        f"{c1['beats_even_pull']}.",
+        "C2, BCA's switched ramp beats each plain twin (the mean-difference switch with the plain 90% gap, with "
+        f"twice it, with the hand-set range limit), paired by certified seed: {c2['number']}; margin "
+        f"{c2['net_margin']} points; seeds positive at least ceil({c2['positive_share']} n) ({c2['positive_seeds_min']} "
+        f"of 10); multiplicity {c2['multiplicity']}; at least {pm['min_certified']} certified seeds.",
+        f"C3, the mirror, one claim per twin: {c3['reading']}; margin {c3['net_margin']} points; seeds positive at "
+        f"most {c3['positive_seeds_max']}.",
     ]
     kr = content["kill_rules"]
     rules = [f"The refusal rule: {content['refusal_rule']['then']}; {content['refusal_rule']['marks']}.",
              f"The noise floor: {kr['noise_floor']['rule']}; if not, {kr['noise_floor']['on_fail']}.",
              f"Validity: {content['validity']['claims']}.",
+             f"Before approval: {kr['pre_approval_facts']}.",
              f"Plumbing stops: {kr['plumbing_stops']}."]
     return {"claims": claims, "rules": rules}
 
@@ -177,8 +183,15 @@ def build(n80_root, manifest_sha256, manifest, facts_record, repo=K.ROOT, claims
     marks = todo_marks(content)
     if marks:
         raise PreregProblem(f"the draft still carries TODO(DECISION.md) marks: {marks[:5]}")
-    content["pass_marks"]["c2_twins"] = dict(content["pass_marks"]["c2_twins"], **K.MARKS_C2)
-    content["seeds"] = dict(content["seeds"], fresh=list(K.FRESH), fresh_count=len(K.FRESH), plumbing=list(K.SMOKE_SEEDS))
+    content["pass_marks"]["c2_twins"] = dict(content["pass_marks"]["c2_twins"], **K.MARKS_C2, twins=list(K.TWIN_ARMS),
+                                             bca_side=K.NOISE_ARM)
+    content["pass_marks"]["c3_mirror"] = dict(content["pass_marks"].get("c3_mirror") or {}, **K.MARKS_C3,
+                                              twins=list(K.TWIN_ARMS), bca_side=K.NOISE_ARM)
+    content["pass_marks"]["min_certified"] = int(K.MIN_CERTIFIED)
+    content["pass_marks"]["c1_lead_rivals"] = list(K.LEAD_RIVALS)
+    content["seeds"] = dict(content["seeds"], fresh=list(K.FRESH), fresh_count=len(K.FRESH), plumbing=list(K.SMOKE_SEEDS),
+                            reserved_for_a_later_version=list(K.RESERVED_SEEDS),
+                            spent_read_by_the_facts_only=list(K.SPENT_SEEDS))
     content["arms"]["logical_ids"] = {k: list(v) for k, v in K.ARMS.items()}
     if claims_fn is None:
         claims_fn = load_claims_text(n80_root / "code").extract_section14
@@ -201,7 +214,8 @@ def build(n80_root, manifest_sha256, manifest, facts_record, repo=K.ROOT, claims
         pooled_group_counts_frozen=frozen,
         approval=AC.approval_section(K.BRANCH),
         hosts=hosts_block(),
-        runner={"desktop_entry": "run_near80.sh", "cluster_entry": "run_near80_cluster.sh",
+        runner={"desktop_entry": "run_near80.sh",
+                "cluster_entry": "none: drafted, untested, not part of version 9 (V9_BUILD_NOTES.md)",
                 "lanes_default": K.DEFAULT_LANES, "memory_rule": draft["compute"]["memory_rule"],
                 "outputs": "runs/shift_explore/near80_v9/", "phases": list(K.PHASE_KINDS)},
         summary=summary_block(content),

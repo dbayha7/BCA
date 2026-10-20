@@ -789,10 +789,10 @@ The last sentence:
   share is below 25%, and both, joined by "; ", when both fail.
 - In the reproduction stop, the bracket lists every item that differed, written "A", "A and B" or "A, B and C".
 - C2 and C3 are written only when C1's validity holds, in this order of precedence: the margins not fixed (cannot
-  occur); "Not read" (fewer than 8 certified seeds); "Dropped" by the noise floor; a seed failed (the "If a seed
-  failed" sentence, or "If every seed failed" when no seed is left); then "Holds" or "Fails" and C3's sentences.
-  Wherever a sentence says "seed [seeds]", it reads "seed 41" for one seed, and "seeds 41 and 43" or "seeds 40, 41
-  and 43" for more.
+  occur); a seed failed (the "If a seed failed" sentence, or "If every seed failed" when no seed is left: a failed
+  seed fails every mark by the pre-set rule); "Not read" (fewer than 8 certified seeds); "Dropped" by the noise
+  floor; then "Holds" or "Fails" and C3's sentences. Wherever a sentence says "seed [seeds]", it reads "seed 41" for
+  one seed, and "seeds 41 and 43" or "seeds 40, 41 and 43" for more.
 - The certified-seed sentence is written whenever C1 is written on the fresh seeds (not on the plumbing's seed 0).
 - On the plumbing's seed 0, every claim sentence starts with the plumbing prefix and "fresh seeds [SEEDS]" reads
   "the plumbing's seed 0". The sentences of sections 14.3 and 14.4 are written as they stand.

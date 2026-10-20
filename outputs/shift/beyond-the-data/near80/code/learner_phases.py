@@ -226,8 +226,27 @@ def switch_scores_pooled(critic2, sd, pg, gr, gamma):
     rest = s_held[n_t:]
     detail = {k: v for k, v in g.items() if not isinstance(v, np.ndarray)}
     detail.update(scores_tail_sha256=LG.sha256_bytes(np.ascontiguousarray(tail).tobytes()),
-                  scores_rest_sha256=LG.sha256_bytes(np.ascontiguousarray(rest).tobytes()))
+                  scores_rest_sha256=LG.sha256_bytes(np.ascontiguousarray(rest).tobytes()),
+                  # the sorted full-throttle scores (35-135 floats), so that the look can place each height among
+                  # them (its rank from the top) without the critic; the rest's summary beside
+                  tail_scores_sorted=np.sort(np.asarray(tail, np.float64)).tolist(),
+                  rest_scores_summary=dict(n=int(len(rest)), mean=float(rest.mean()) if len(rest) else None,
+                                           q90=float(np.quantile(rest, 0.9, method="inverted_cdf")) if len(rest)
+                                           else None, max=float(rest.max()) if len(rest) else None))
     return tail, rest, detail
+
+
+def height_rank(tail_scores_sorted, threshold):
+    """The rank from the top of a threshold among the full-throttle group's sorted scores: 1 when it is at or above
+    the largest score, k when exactly k - 1 scores lie above it; None for a non-finite threshold or an empty group."""
+    try:
+        t = float(threshold)
+    except (TypeError, ValueError):
+        return None
+    if not np.isfinite(t) or not tail_scores_sorted:
+        return None
+    above = sum(1 for s in tail_scores_sorted if float(s) > t)
+    return int(above + 1)
 
 
 def certificate_entry(tail, rest, seed, world, gr):

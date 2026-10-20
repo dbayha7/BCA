@@ -9,8 +9,10 @@ with the gate's anchors and the setting's prepared data:
   one recorded rollout per situation of the as-trained policy: the zone shares (near80lib.throttle_zones) and the
                  lower tail (mean points of the worst tenth of the starts).
   unseen_gain = points - held70_points; overshoot_loss = capped80_points - points.
-A refused arm (BCA's) has no actor in the lock: its values are null; the look reads the refusal from the switch
-record (the refusal rule, section 8.4).
+A refused arm (BCA's) has no actor in the lock: its values are null in the record, and so are the controls matched
+to it (unmatched); the look reads the refusal from the switch record and substitutes the no-caution actor's numbers
+for them in C1, and leaves the seed out of C2 and C3 (the refusal rule, section 5.4; pooled.Results.apply_failures).
+Every actor of the lock is scored, the twins and BCA's lone copy among them.
 reproduction (plumbing only, scratch, full length, seed 0): the critic, the cloned actor, the no-caution actor, the
 second critic and the switch on VERSION 8's groups (the survivors and the bank: step 1's) must reproduce the gate's
 and step 1's saved files bit for bit; then policy_phase.train_world itself (the function every official policy phase
