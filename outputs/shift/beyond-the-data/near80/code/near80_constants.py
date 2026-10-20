@@ -218,6 +218,11 @@ SEED_REGISTRY = {
 }
 USED_SEEDS = frozenset(list(range(0, 35)) + list(range(100, 120)) + list(range(900, 910)))
 SMOKE_SEEDS = (0,)                         # the plumbing's seed (a gate seed): scratch and stub runs only
+# The owner's rule (20 October 2026): every stub, smoke or plumbing test runs on seed 0, and no test, fixture, default
+# or example names a reserved fresh seed (40-59). The unit tests that need a fresh GROUP of several seeds (the look's
+# arithmetic on synthetic records, the runner's fake phases) patch FRESH to these labels inside the test process: no
+# study uses them, no registry names them, and nothing is ever generated or trained on them.
+TEST_LABELS = tuple(range(1000, 1010))
 SPENT_SEEDS = (10, 11, 12, 13, 14)         # version 8's fresh seeds: read by the pre-approval facts only (section 8.1)
 FRESH_SEED_BLOCK = (40, 59)                # the block version 9 draws its fresh seeds from, in order
 # DECISION.md 2.4: ten fresh seeds, 40-49; seeds 50-59 are reserved for a version 10 and refused by this one.

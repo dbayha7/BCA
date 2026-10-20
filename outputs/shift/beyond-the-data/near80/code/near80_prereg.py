@@ -219,7 +219,7 @@ def build(n80_root, manifest_sha256, manifest, facts_record, repo=K.ROOT, claims
         pooled_group_counts_frozen=frozen,
         approval=AC.approval_section(K.BRANCH),
         hosts=hosts_block(),
-        runner={"desktop_entry": "run_near80.sh (the fallback)",
+        runner={"desktop_entry": "run_near80.sh", "desktop_role": "the fallback (the owner's answer, choice 4)",
                 "cluster_entry": ("run_near80_cluster.sh with near80_slurm_job.sh (the run machine, choice 4): one "
                                   "job per fresh seed, one group job; the same runner, approval import and manifest "
                                   "checks; its stub run finished all 19 phases on the cluster on 20 October 2026"),

@@ -53,7 +53,18 @@ for _name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS"):
 STUB_PATH = os.environ.get("NEAR80_STUB_PYTHONPATH")
 APPROVAL = dict(prereg_sha256="a" * 64, prefix="a" * 16, fixture=True)
 BIG_MEM = "MemTotal:       67108864 kB\nMemAvailable:   62914560 kB\n"
-F0, F1, F2, F3, F4 = K.FRESH[:5]
+# The owner's rule (20 October 2026): no test names a reserved fresh seed (40-59); the fresh GROUP's tests use the
+# synthetic labels K.TEST_LABELS, patched over FRESH for this process (setUpModule); every stub run uses seed 0.
+F0, F1, F2, F3, F4 = K.TEST_LABELS[:5]
+_FRESH_PATCH = mock.patch.object(K, "FRESH", K.TEST_LABELS)
+
+
+def setUpModule():
+    _FRESH_PATCH.start()
+
+
+def tearDownModule():
+    _FRESH_PATCH.stop()
 WORK = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
 
 
@@ -370,7 +381,7 @@ class TestRefusals(unittest.TestCase):
         """--seeds, --group-only and --tag: one runner per job sharing an output root (the per-seed entry); the
         plumbing takes none of them."""
         d = tmpdir(self)
-        cfg = R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", seeds=[F1, F0], tag="s40")
+        cfg = R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", seeds=[F1, F0], tag=f"s{F0}")
         self.assertEqual(cfg.seeds, [F0, F1])
         self.assertTrue(cfg.mine(PH.parse_id(f"critic.main.stall.s{F0}")))
         self.assertTrue(cfg.mine(PH.parse_id(f"policy.main.no_stall.s{F0}")))
@@ -383,7 +394,7 @@ class TestRefusals(unittest.TestCase):
         self.assertTrue(g.mine(PH.parse_id(f"evaluate.main.no_stall.s{F1}")))
         self.assertFalse(g.mine(PH.parse_id(f"critic.main.stall.s{F0}")))
         self.assertFalse(g.mine(PH.parse_id(f"policy.main.stall.s{F0}")))
-        self.assertEqual(R.runner_lock_name("s40"), "runner_s40.lock")
+        self.assertEqual(R.runner_lock_name("group"), "runner_group.lock")
         self.assertEqual(R.status_name(None), K.LAYOUT["status"])
         with self.assertRaises(PH.Refused):
             R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", seeds=[K.SPENT_SEEDS[0]])
@@ -704,7 +715,11 @@ sys.exit(code)
 
 
 class FakeRunner:
-    def __init__(self, test, keys, behavior, lanes=2, poll=0.05):
+    """A runner over fake phases (fake_phase.py stands in for phase_main.py). mode='scratch' for the smoke group's
+    seed 0; the fresh group's phases (the synthetic labels) need mode='stub' with a fixture, since a scratch run
+    refuses the fresh seeds (phases.admit)."""
+
+    def __init__(self, test, keys, behavior, lanes=2, poll=0.05, mode="scratch"):
         self.d = tmpdir(test)
         self.out = self.d / "out"
         (self.out / "locks").mkdir(parents=True)
@@ -712,9 +727,10 @@ class FakeRunner:
         (self.d / "meminfo").write_text(BIG_MEM)
         self.fake = self.d / "fake_phase.py"
         self.fake.write_text(f"CODE = {str(HERE)!r}\n" + FAKE_PHASE)
-        self.cfg = R.Cfg(mode="scratch", out=self.out, plan="smoke", lanes=lanes, cpus=sorted(os.sched_getaffinity(0)),
+        extra = dict(fixture=self.d) if mode == "stub" else {}
+        self.cfg = R.Cfg(mode=mode, out=self.out, plan="smoke", lanes=lanes, cpus=sorted(os.sched_getaffinity(0)),
                          meminfo=self.d / "meminfo", poll=poll, python=PY, phase_main=self.fake,
-                         approval_fn=lambda: APPROVAL)
+                         approval_fn=lambda: APPROVAL, **extra)
         self.keys = keys
         self.lines = []
 
@@ -799,20 +815,20 @@ class TestRunnerWithFakePhases(unittest.TestCase):
     def test_refusal_and_failure_halt(self):
         keys = self.keys(f"critic.main.stall.s{F0}", f"critic.main.stall.s{F1}")
         fr = FakeRunner(self, keys, {f"critic.main.stall.s{F0}": ["refuse"], f"critic.main.stall.s{F1}": ["sleep0.5"]},
-                        lanes=1)
+                        lanes=1, mode="stub")
         self.assertEqual(fr.run(), 97)
         self.assertEqual(fr.started(), [f"critic.main.stall.s{F0}.1"])
         fr2 = FakeRunner(self, keys, {f"critic.main.stall.s{F0}": ["fail"], f"critic.main.stall.s{F1}": ["sleep0.5"]},
-                         lanes=1)
+                         lanes=1, mode="stub")
         self.assertEqual(fr2.run(), 1)
         self.assertTrue(any("FAILED" in line for line in fr2.lines))
 
     def test_budget_pause(self):
         keys = self.keys(f"critic.main.stall.s{F0}", f"critic.main.stall.s{F1}")
-        fr = FakeRunner(self, keys, {})
+        fr = FakeRunner(self, keys, {}, mode="stub")
         fr.cfg.forecast = dict(K.FORECAST_CPU_HOURS, fresh=0.0001)
         pid = f"data_main.main.stall.s{F0}"
-        n = LG.allocate_attempt(fr.out, pid, mode="scratch")
+        n = LG.allocate_attempt(fr.out, pid, mode="stub")
         LG.write_usage(fr.out, pid, n, 10.0, 0)
         LG.finish_attempt(fr.out, dict(phase_kind="data_main", group="fresh"), pid, n, done=True,
                           stopped=False, exit_code=0)
@@ -831,10 +847,10 @@ class TestRunnerWithFakePhases(unittest.TestCase):
 
     def test_over_the_cap_notes_every_waiting_phase(self):
         keys = self.keys(f"critic.main.stall.s{F0}")
-        fr = FakeRunner(self, keys, {})
+        fr = FakeRunner(self, keys, {}, mode="stub")
         fr.cfg.cap = 0.0001
         pid = f"data_main.main.stall.s{F0}"
-        n = LG.allocate_attempt(fr.out, pid, mode="scratch")
+        n = LG.allocate_attempt(fr.out, pid, mode="stub")
         LG.write_usage(fr.out, pid, n, 10.0, 0)
         LG.finish_attempt(fr.out, dict(phase_kind="data_main", group="fresh"), pid, n, done=True,
                           stopped=False, exit_code=0)
@@ -855,13 +871,13 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         """The per-seed entry: a runner with --seeds starts only its seeds' phases; another runner on the other seed
         may hold the root at the same time (its own lock name)."""
         keys = self.keys(f"data_main.main.stall.s{F0}", f"data_main.main.stall.s{F1}")
-        fr = FakeRunner(self, keys, {})
-        fr.cfg.seeds, fr.cfg.tag = [F0], "s40"
+        fr = FakeRunner(self, keys, {}, mode="stub")
+        fr.cfg.seeds, fr.cfg.tag = [F0], f"s{F0}"
         self.assertEqual(fr.run(), 0)
         self.assertEqual(fr.started(), [f"data_main.main.stall.s{F0}.1"])
-        self.assertTrue((fr.out / "status_s40.json").is_file())
-        self.assertTrue(R.lock_free(fr.out / "runner_s40.lock"))
-        fr.cfg.seeds, fr.cfg.tag = [F1], "s41"
+        self.assertTrue((fr.out / f"status_s{F0}.json").is_file())
+        self.assertTrue(R.lock_free(fr.out / f"runner_s{F0}.lock"))
+        fr.cfg.seeds, fr.cfg.tag = [F1], f"s{F1}"
         self.assertEqual(fr.run(), 0)
         self.assertEqual(len(fr.started()), 2)
 
@@ -869,7 +885,7 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         d = tmpdir(self)
         out = d / "out"
         (out / "locks").mkdir(parents=True)
-        pids = [f"critic.main.stall.s{F0}", f"critic.main.stall.s{F1}", f"critic.main.stall.s{F2}"]
+        pids = ["critic.main.stall.s0", "critic.main.no_stall.s0", "critic_full.x.stall.s0"]   # the smoke seed
         (out / "behavior.json").write_text(json.dumps({p: ["sleep1.5"] for p in pids}))
         (d / "meminfo").write_text(BIG_MEM)
         fake = d / "fake_phase.py"
@@ -902,7 +918,7 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         d = tmpdir(self)
         out = d / "out"
         (out / "locks").mkdir(parents=True)
-        pid = f"critic.main.stall.s{F0}"
+        pid = "critic.main.stall.s0"
         (out / "behavior.json").write_text(json.dumps({pid: ["sleep30", "done"]}))
         (d / "meminfo").write_text(BIG_MEM)
         fake = d / "fake_phase.py"
@@ -1630,7 +1646,11 @@ class TestStubEndToEnd(unittest.TestCase):
         self.assertIsNotNone(self.look0, "the smoke look was not written")
         self.assertEqual(self.look0["kind"], "near80-v9-look-smoke")
         self.assertEqual(self.look0["claims"]["c1"]["status"], "plumbing check, not a claim")
-        self.assertEqual(self.look0["outcomes"]["c2"], "not_read")              # one seed: fewer than 8 certified
+        # the stand-ins' points are all 0 (nothing trained), so the validity check fails and every claim reads
+        # 'invalid' before C2's "not read" (one seed) could be said: PREREGISTRATION.md 14.5's precedence
+        self.assertEqual(self.look0["outcomes"], dict(c1="invalid", c1_by_stop=False, c2="invalid", c2_each={},
+                                                      c3="invalid", c3_each={}))
+        self.assertIn("c1.invalid", [r["id"] for r in self.look0["sentences"]])
 
     def test_records_are_stub_and_strict(self):
         out = self.fx0 / "out"

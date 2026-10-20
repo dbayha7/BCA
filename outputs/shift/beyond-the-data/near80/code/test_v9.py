@@ -13,11 +13,12 @@ frozen.
                           refusal lowers BCA's pooled net by its share
   TestSentences           the new anchors extract; the C1 last-sentence rule; the certified sentence; C3's sentences;
                           the refused clause names the seed
-  TestConstantsAgree      approve_local's V8_* equal the constants'; TWIN_ARMS, MARKS_C2 / C3, FRESH 40-49; the one
-                          open placeholder; CAP_CPU_HOURS 55; the cluster scripts out of TOP_FILES and the folder
+  TestConstantsAgree      approve_local's V8_* equal the constants'; TWIN_ARMS, MARKS_C2 / C3, FRESH (the block's first ten); the one
+                          owner's answer recorded; CAP_CPU_HOURS 55; the cluster scripts in TOP_FILES and the folder
   TestCertificationChance the exact binomial chance by group size
-  TestStubRefuse          the stub run (nothing trained) on seeds 40 and 41 with 41 refusing: the look reads C1 with
-                          the substitution and C2 / C3 on the certified seeds, and writes the refusal sentence
+  TestStubRefuse          the stub run (nothing trained) on the plumbing's seed 0, refusing: the look reads C1 with
+                          the substitution (every claim 'invalid': the stand-ins score 0) and writes the refusal
+                          sentences; the refusal is recorded per arm
                           (POSIX only; a few minutes)
 
 Everything runs on synthetic data in temporary folders outside the repository; nothing is trained, no recorded seed
@@ -70,8 +71,11 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="near80_test_v9_"))
         self.assertFalse(P.inside(self.tmp, K.ROOT))
+        self._fresh = mock.patch.object(K, "FRESH", K.TEST_LABELS)      # the synthetic fresh group (no reserved seed)
+        self._fresh.start()
 
     def tearDown(self):
+        self._fresh.stop()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def look(self, spec=None, sub="a"):
@@ -274,7 +278,10 @@ class TestLeadRivals(Base):
         nl = look["marks"]["c1"]["net_lead"]
         self.assertAlmostEqual(nl["net"], 29.0 * (len(SEEDS) - 1) / len(SEEDS))
         self.assertAlmostEqual(nl["per_seed"][5], 0.0)
-        self.assertAlmostEqual(nl["rival_nets"]["range_hinge"], -20.0 * (len(SEEDS) - 1) / len(SEEDS))
+        # the hand-set range limit does not depend on BCA: its net is untouched by the refusal; the matched rivals
+        # and the always-on ramp take the no-caution actor's numbers there (a net of 0 on that seed)
+        self.assertAlmostEqual(nl["rival_nets"]["range_hinge"], -20.0)
+        self.assertAlmostEqual(nl["rival_nets"]["obca_forced"], -1.0 * (len(SEEDS) - 1) / len(SEEDS))
 
 
 # --------------------------------------------------------------------------------------------- the sentences
@@ -438,7 +445,7 @@ class TestConstantsAgree(unittest.TestCase):
     def test_seed_job_leaves_the_lock_dependent_phases_to_the_group_job(self):
         R = K.load_local("near80_runner")
         PH = K.load_local("phases")
-        f0 = K.FRESH[0]
+        f0 = K.SMOKE_SEEDS[0]
         self.assertTrue(R.group_dependent(PH.parse_id("lock.x.x.fresh")))
         self.assertTrue(R.group_dependent(PH.parse_id("look.x.x.fresh")))
         self.assertTrue(R.group_dependent(PH.parse_id(f"evaluate.main.stall.s{f0}")))
@@ -480,8 +487,12 @@ class TestCertificationChance(unittest.TestCase):
 
 @unittest.skipUnless(POSIX and (K.CODE / "approval_check.py").is_file(), "POSIX only (taskset, fcntl)")
 class TestStubRefuse(unittest.TestCase):
-    """near80_runner.py stub --fixture DIR --seeds 40,41 --refuse 41: every phase of the two fresh seeds in stub
-    mode (nothing trained), seed 41's synthetic log keeping too few full-throttle rows for BCA's certificate."""
+    """near80_runner.py stub --fixture DIR --seeds 0 --refuse 0: every phase of the plumbing's seed 0 in stub mode
+    (nothing trained; the owner's rule: a test runs on seed 0 only), its synthetic log keeping too few full-throttle
+    rows for BCA's certificate in both worlds. The stand-ins take no gradient step, so every evaluated point is 0
+    and the look's validity check fails by design: C1, C2 and C3 read 'invalid'; the refusal is recorded per arm,
+    the substitution is reported, and the refusal sentences are written. The arithmetic of C2 and C3 on the
+    certified seeds is tested on synthetic records (TestRefusalReading, TestTwinRules)."""
 
     @classmethod
     def setUpClass(cls):
@@ -492,10 +503,11 @@ class TestStubRefuse(unittest.TestCase):
             if os.environ.get(name):
                 env[name] = os.environ[name]
         lanes = str(min(4, len(os.sched_getaffinity(0))))
-        cls.seeds = (K.FRESH[0], K.FRESH[1])
+        cls.seed = K.SMOKE_SEEDS[0]
+        cls.group = "smoke"
         cls.r = subprocess.run([sys.executable, str(HERE / "near80_runner.py"), "stub", "--fixture", str(cls.fx),
-                                "--lanes", lanes, "--seeds", f"{cls.seeds[0]},{cls.seeds[1]}", "--refuse",
-                                str(cls.seeds[1])], cwd=WORK, env=env, capture_output=True, text=True, timeout=3600)
+                                "--lanes", lanes, "--seeds", str(cls.seed), "--refuse", str(cls.seed)],
+                               cwd=WORK, env=env, capture_output=True, text=True, timeout=3600)
         cls.out = cls.fx / "out"
 
     @classmethod
@@ -507,7 +519,7 @@ class TestStubRefuse(unittest.TestCase):
         import phases as PH
         r = self.r
         self.assertEqual(r.returncode, 0, r.stdout[-4000:] + r.stderr[-4000:])
-        keys = PH.plan(spec=f"seeds:{self.seeds[0]},{self.seeds[1]}")
+        keys = PH.plan(spec=f"seeds:{self.seed}")
         not_done = {PH.phase_id(k): PH.done(k, self.out) for k in keys if PH.done(k, self.out) != "done"}
         self.assertEqual(not_done, {})                                      # no stop: the refusal is not a stop
         hits = {}
@@ -515,20 +527,18 @@ class TestStubRefuse(unittest.TestCase):
             for k, v in (LG.read_json_verified(p).get("stub_guard_hits") or {}).items():
                 hits[k] = hits.get(k, 0) + v
         self.assertEqual(hits, {})
-        self.assertEqual(json.loads((self.fx / "stub.json").read_text())["refuse_seeds"], [self.seeds[1]])
+        self.assertEqual(json.loads((self.fx / "stub.json").read_text())["refuse_seeds"], [self.seed])
 
     def test_the_refusal_is_recorded_per_arm(self):
         import ledger as LG
         import phases as PH
-        good, bad = self.seeds
+        bad = self.seed
         sw = LG.read_json_verified(self.out / PH.record_rel(PH.parse_id(f"switch.main.stall.s{bad}")))
         self.assertTrue(sw["defined"])
         self.assertTrue(sw["certificate"]["on"])
         self.assertTrue(sw["refused"], sw["certificate"])
         self.assertLess(sw["groups"]["n_full_throttle"], K.CERT_MIN_ROWS)
         self.assertLess(K.certify_chance(sw["groups"]["n_full_throttle"]), 0.01)
-        sw_good = LG.read_json_verified(self.out / PH.record_rel(PH.parse_id(f"switch.main.stall.s{good}")))
-        self.assertFalse(sw_good["refused"])
         lock = LG.read_json_verified(self.out / PH.record_rel(PH.parse_id(f"policy.main.stall.s{bad}")))
         self.assertEqual(lock["refused_arms"], sorted(K.BCA_DEPENDENT))
         self.assertTrue(lock["bca_refused"])
@@ -548,34 +558,38 @@ class TestStubRefuse(unittest.TestCase):
         lock_n = LG.read_json_verified(self.out / PH.record_rel(PH.parse_id(f"policy.main.no_stall.s{bad}")))
         self.assertIn("obca_forced", lock_n["refused_arms"])
 
-    def test_the_look_reads_the_refusal_both_ways(self):
+    def test_the_look_reads_the_refusal(self):
         import ledger as LG
-        good, bad = self.seeds
-        look = LG.read_json_verified(self.out / K.LAYOUT["look"].format(group="fresh"))
-        self.assertEqual(look["kind"], "near80-v9-look-fresh")
-        self.assertEqual(look["seeds"], [good, bad])
+        bad = self.seed
+        look = LG.read_json_verified(self.out / K.LAYOUT["look"].format(group=self.group))
+        self.assertEqual(look["kind"], f"near80-v9-look-{self.group}")
+        self.assertEqual(look["seeds"], [bad])
         self.assertIn(str(bad), look["refused"])
+        self.assertEqual(set(look["refused"][str(bad)]), set(K.WORLDS))
         self.assertEqual(look["failed_checks"], {})
         self.assertEqual(look["brackets"]["F"], 1)
-        self.assertEqual(look["brackets"]["K"], 1)
-        self.assertEqual(look["marks"]["c2"]["certified"], [good])
+        self.assertEqual(look["brackets"]["K"], 0)
+        self.assertEqual(look["brackets"]["NC"], 0)
+        self.assertEqual(look["marks"]["c2"]["certified"], [])
         sub = look["reported"]["substituted"][str(bad)]
         self.assertEqual(set(sub["stall"]), set(K.BCA_DEPENDENT) | set(P.MATCHED_RIVALS))
         # C1 read with the substitution: BCA's numbers on the refused seed are the no-caution actor's
         ps = look["per_seed"]
-        self.assertAlmostEqual(ps["X"][1], 0.0)
-        self.assertAlmostEqual(ps["NET"][1], 0.0)
-        # C2 and C3 on the certified seeds: one seed, so not read
-        self.assertEqual(look["outcomes"]["c2"], "not_read")
-        self.assertEqual(look["outcomes"]["c3"], "not_read")
+        self.assertAlmostEqual(ps["X"][0], 0.0)
+        self.assertAlmostEqual(ps["NET"][0], 0.0)
+        # the stand-ins' points are all 0, so the validity check fails and every claim reads 'invalid' (by design
+        # of the stub: nothing is trained); the refusal sentences are written all the same
+        self.assertEqual(look["outcomes"]["c1"], "invalid")
+        self.assertEqual(look["outcomes"]["c2"], "invalid")
+        self.assertEqual(look["outcomes"]["c3"], "invalid")
         ids = [r["id"] for r in look["sentences"]]
-        self.assertIn("c2.not_read", ids)
-        self.assertIn("c1.certified", ids)
+        self.assertIn("c1.invalid", ids)
+        self.assertEqual(ids.count("stop.refused"), 2)
         texts = [r["text"] for r in look["sentences"] if r["id"] == "stop.refused"]
-        self.assertTrue(texts and texts[0].startswith(f"Seed {bad}, stalling world: BCA could not set its height"))
-        self.assertTrue(any(f"on seed {bad} BCA could not set its height" in r["text"] or
-                            f"refused on 1" in r["text"] for r in look["sentences"] if r["id"].startswith("c1.")))
-        md = (self.out / K.LAYOUT["look_md"].format(group="fresh")).read_text(encoding="utf8")
+        self.assertTrue(texts[0].startswith(f"Seed {bad}, stalling world: BCA could not set its height"))
+        self.assertTrue(texts[1].startswith(f"Seed {bad}, no-stall world: BCA could not set its height"))
+        self.assertTrue(all(r["text"].startswith(TP.PREFIX) for r in look["sentences"] if r["id"].startswith("c1.")))
+        md = (self.out / K.LAYOUT["look_md"].format(group=self.group)).read_text(encoding="utf8")
         self.assertIn("BCA refused, seed", md)
         self.assertIn("## The switch calls", md)
 

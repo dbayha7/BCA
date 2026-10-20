@@ -4,7 +4,8 @@
 #   near80_slurm_job.sh run LANES SEED          one fresh seed's phases (both worlds, up to the actor training;
 #                                               the runner ends once only lock-dependent phases remain)
 #   near80_slurm_job.sh group LANES             the group's lock, every evaluation and the look
-#   near80_slurm_job.sh stub LANES FIXTURE [SEEDS]   stub mode on a test fixture outside the clone (trains nothing)
+#   near80_slurm_job.sh stub LANES FIXTURE [SEEDS]   stub mode on a test fixture outside the clone (trains nothing;
+#                                               SEEDS defaults to 0, the plumbing's seed)
 # It never runs as root, refuses the approver's and the cloud's git identities, passes the job's memory to the
 # runner (NEAR80_MEM_TOTAL_KB from SLURM_MEM_PER_NODE) and runs the same frozen runner with the same checks as the
 # desktop entry. One Slurm SIGTERM (a cancel) is a safe stop: the running phases finish, nothing new starts.
@@ -39,7 +40,7 @@ LANES=${2:-10}
 SEED=${3:-}
 FIXTURE=""
 STUB_SEEDS=""
-if [ "$MODE" = stub ]; then FIXTURE=${3:-}; STUB_SEEDS=${4:-}; SEED=""; fi
+if [ "$MODE" = stub ]; then FIXTURE=${3:-}; STUB_SEEDS=${4:-0}; SEED=""; fi
 [ "${NEAR80_HOST:-}" = cluster ] || { echo "refused: NEAR80_HOST is not cluster"; exit 97; }
 [ -n "${NEAR80_ROOT:-}" ] && [ -n "${NEAR80_PYTHON:-}" ] || { echo "refused: NEAR80_ROOT or NEAR80_PYTHON unset"; exit 97; }
 case "$NEAR80_ROOT" in /scratch/dbayha/*) ;; *) echo "refused: NEAR80_ROOT must lie under /scratch/dbayha"; exit 97;; esac
@@ -79,11 +80,7 @@ case "$MODE" in
         "$NEAR80_PYTHON" "$RUNNER" run --lanes "$LANES" --group-only --tag group; CODE_=$?;;
     stub)
         [ -n "$FIXTURE" ] || { echo "refused: stub needs a fixture folder (outside the clone)"; exit 97; }
-        if [ -n "$STUB_SEEDS" ]; then
-            "$NEAR80_PYTHON" "$RUNNER" stub --fixture "$FIXTURE" --lanes "$LANES" --seeds "$STUB_SEEDS"; CODE_=$?
-        else
-            "$NEAR80_PYTHON" "$RUNNER" stub --fixture "$FIXTURE" --lanes "$LANES"; CODE_=$?
-        fi;;
+        "$NEAR80_PYTHON" "$RUNNER" stub --fixture "$FIXTURE" --lanes "$LANES" --seeds "$STUB_SEEDS"; CODE_=$?;;
     *) echo "usage: near80_slurm_job.sh plumbing|run|group|stub LANES [SEED | FIXTURE [SEEDS]]"; exit 1;;
 esac
 echo "near-80 v9 job ends: exit $CODE_, $(date -u +%FT%TZ)"

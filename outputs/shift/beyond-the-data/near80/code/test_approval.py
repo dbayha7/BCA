@@ -1875,10 +1875,12 @@ class TestFreeze(FreezeBase):
                          tuple(str(s) for s in K.SPENT_SEEDS))
 
     def test_refuses_while_a_placeholder_remains(self):
-        """Step 0: the constants' one open item (the owner's answer), a TODO(...) mark in a document (the owner's
-        answer, the freeze's facts), or an unknown multiplicity rule; nothing is moved or written."""
-        self.stack.close()                                                  # the constants as they are
+        """Step 0: the constants' open item (the owner's answer, as it was before 20 October 2026, 18:29 UTC), a
+        TODO(...) mark in a document (the freeze's facts), or an unknown multiplicity rule; nothing is moved or
+        written."""
+        self.stack.close()                                                  # the constants as they were
         self.stack = contextlib.ExitStack()
+        self.stack.enter_context(mock.patch.object(K, "OWNER_ANSWER", None))
         before = tree(self.n80)
         msg = self.refused("placeholder not fixed: owner_answer")
         self.assertNotIn("c2_net_margin", msg)                              # DECISION.md fixed the marks
@@ -1892,13 +1894,13 @@ class TestFreeze(FreezeBase):
         self.assertIn("README.md carries", msg)
         self.assertIn("still says **DRAFT", msg)
         self.assertEqual(tree(self.n80), before)
-        with mock.patch.object(K, "FRESH", (40, 41, 50)):
+        with mock.patch.object(K, "FRESH", K.FRESH[:2] + (K.RESERVED_SEEDS[0],)):
             self.assertIn("seeds (a reserved seed)", K.placeholders_present())
         rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_rule")
         with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, multiplicity="each_tenth")):
             self.refused("c2_multiplicity (not one of the known rules)")
-        with mock.patch.object(K, "FRESH", (40, 41, 60)):
+        with mock.patch.object(K, "FRESH", K.FRESH[:2] + (K.FRESH_SEED_BLOCK[1] + 1,)):
             self.refused("seeds (outside the block)")
         lines = []
         FZ.check(self.n80, self.out, log=lines.append)
@@ -1976,14 +1978,14 @@ class TestFreeze(FreezeBase):
 
 class TestFreezeOnTheRealFolder(unittest.TestCase):
     def test_the_real_folder_is_a_draft_the_freeze_refuses(self):
-        """Version 9 is a draft awaiting the owner: the constants' placeholders are open and the documents say DRAFT,
-        so freeze.py refuses at step 0 and step 2 and writes nothing; the title is already final and the code folder
-        holds only planned files."""
-        self.assertEqual(K.placeholders_present(), ["owner_answer"])
+        """Version 9 is a draft awaiting the freeze: the constants are fixed (the owner answered), the facts' marks
+        are open in PREREGISTRATION.md and the documents say DRAFT, so freeze.py refuses at step 0 and step 2 and
+        writes nothing; the title is already final and the code folder holds only planned files."""
+        self.assertEqual(K.placeholders_present(), [])
         found = FZ.placeholder_problems(K.N80)
-        self.assertTrue(any(p.startswith("placeholder not fixed: owner_answer") for p in found), found)
+        self.assertFalse(any(p.startswith("placeholder not fixed") for p in found), found)
         self.assertTrue(any(p.startswith("PREREGISTRATION.md carries") for p in found), found)
-        self.assertTrue(any(p.startswith("README.md carries") for p in found), found)
+        self.assertFalse(any(p.startswith("README.md carries") for p in found), found)
         self.assertFalse(any(p.startswith("prereg_draft.json carries") for p in found), found)
         docs = FZ.document_problems(K.N80)
         self.assertEqual([p for p in docs if "line 1" in p], [])
@@ -2138,8 +2140,8 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(K.BUDGET_STAGES, ("fresh",))
 
     def test_placeholders_of_decision_md(self):
-        """DECISION.md fixed every value; the owner's answer is the one open item, and the freeze refuses on it."""
-        self.assertEqual(K.placeholders_present(), ["owner_answer"])
+        """DECISION.md fixed every value and the owner answered (20 October 2026): no placeholder is open."""
+        self.assertEqual(K.placeholders_present(), [])
         self.assertEqual(K.PLACEHOLDERS, {})
         self.assertIsNotNone(K.OWNER_ANSWER)
         self.assertEqual(K.FRESH, tuple(range(40, 50)))

@@ -17,8 +17,8 @@
 #       as on the desktop, on the login node (retry and budget-continue are typed; the next 'run' picks them up)
 #   sh .../run_near80_cluster.sh stub --fixture DIR [--seeds a,b] [--lanes N] [--job-name NAME] [--time T]
 #       one job in stub mode on a test fixture outside the clone (stand-ins, nothing trained, no approval needed):
-#       the plumbing-style test of this entry on the cluster. Default --time 01:00:00. A test uses --seeds 0 and a
-#       job name near80-smoke-*, never a fresh seed.
+#       the plumbing-style test of this entry on the cluster. Default --time 01:00:00, --seeds 0 (the plumbing's
+#       seed: a test never runs on a fresh seed) and a job name near80-smoke-* is the convention for a test.
 # Options: --account A (default staruser), --partition P (default Orion), --constraint C (default caslake: one
 #          processor type for the whole run; '' for none), --lanes N (processors per job; default per command as
 #          above), --mem G (GB per job; default per command), --time T (default per command), --seeds a,b (only
@@ -167,13 +167,14 @@ if [ "$CMD" = stub ]; then
     # stub mode on a fixture outside the clone; no self-test gate (the stub's fixture carries its own approval and
     # the runner refuses a fixture inside the clone); one job; the log lands beside the fixture.
     [ -n "$FIXTURE" ] || refuse "stub needs --fixture DIR (a folder outside the clone)"
+    [ -n "$SEEDS" ] || SEEDS=0
     FIXTURE=$(realpath -m "$FIXTURE")
     case "$FIXTURE" in "$NEAR80_ROOT"/*|"$NEAR80_ROOT") refuse "the stub fixture must lie outside the clone";; esac
     [ "${SBATCH_MISSING:-}" = 1 ] && refuse "sbatch is not on PATH (run this on a login node of hpc.charlotte.edu)"
     mkdir -p "$(dirname "$FIXTURE")"
     JID=$(sb "$LANES" "$MEM_GB" "$TIME" --parsable --job-name="$JOB_NAME-stub" --output="$FIXTURE-slurm-%j.out" \
         "$JOB" stub "$LANES" "$FIXTURE" "$SEEDS") || exit 1
-    echo "submitted the stub job $JID (fixture $FIXTURE, seeds ${SEEDS:-all}); watch $FIXTURE-slurm-$JID.out"
+    echo "submitted the stub job $JID (fixture $FIXTURE, seeds $SEEDS); watch $FIXTURE-slurm-$JID.out"
     exit 0
 fi
 # plumbing and run: the self-test first, then sbatch

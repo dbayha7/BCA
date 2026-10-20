@@ -69,7 +69,7 @@ def synthetic_log(rep=SYNTHETIC_REP, seed=7, sizes=(250, 50, 50), length=20, n_t
     first = sizes[0]
     offs = np.random.default_rng(seed + 1).integers(0, length, (sizes[1], 5))
     bank = np.sort(np.unique(np.concatenate([(first + e) * length + np.unique(o) for e, o in enumerate(offs)])))
-    meta = dict(rep=int(rep), bank_rows=bank.tolist(), sizes=list(sizes), length=length,
+    meta = dict(rep=int(rep), world="stall", bank_rows=bank.tolist(), sizes=list(sizes), length=length,
                 physics=TC.world_physics("stall").as_dict(), recorder=RC.DEFAULT_SPEC.as_dict())
     return DS.Log(arrays, meta), survivors["train"], survivors
 
@@ -226,12 +226,12 @@ class TestReadoutHelpers(unittest.TestCase):
 class TestGuardsAndSeeds(unittest.TestCase):
     def test_facts_seeds(self):
         self.assertEqual(N.check_seeds([0, 1, 2, 3, 4]), [0, 1, 2, 3, 4])
-        for bad in ([5], [10], [40], [50], [99]):
+        for bad in ([5], [10], [K.FRESH[0]], [K.RESERVED_SEEDS[0]], [99]):
             with self.assertRaises(N.Refused):
                 N.check_seeds(bad)
         self.assertEqual(N.check_spent_seeds([10, 11, 12, 13, 14]), [10, 11, 12, 13, 14])
         self.assertEqual(N.check_spent_seeds([]), [])
-        for bad in ([0], [5], [15], [40], [50], [99]):
+        for bad in ([0], [5], [15], [K.FRESH[0]], [K.RESERVED_SEEDS[0]], [99]):
             with self.assertRaises(N.Refused):
                 N.check_spent_seeds(bad)
 

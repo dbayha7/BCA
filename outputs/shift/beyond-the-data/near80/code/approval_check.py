@@ -70,7 +70,9 @@ PINS_REL = {
 }
 
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
-             "Approving it accepts every default of its section 16 and allows the runs it names, under its rules.")
+             "Approving it accepts every choice of its section 16 as it records them (the defaults; the university "
+             "cluster as the run machine and the place results come from, the desktop as the fallback) and allows "
+             "the runs it names, under its rules.")
 
 _AUTHOR_RE = re.compile(r"\s*(\S.*?)\s*<([^<>\s]+@[^<>\s]+)>\s*")
 
@@ -464,7 +466,8 @@ def load_v6_common(repo=K.ROOT):
     spec = importlib.util.spec_from_loader(name, loader=None, origin=str(source))
     mod = importlib.util.module_from_spec(spec)
     mod.__file__ = str(source)
-    sys.modules[name] = mod
+    mod.__step2_sha256__ = V6_STAGE2_COMMON_SHA256   # loaded from verified bytes: step 2's import check (machinery.
+    sys.modules[name] = mod                           # check_imports) otherwise refuses a module from version 6's folder
     exec(compile(data, str(source), "exec"), mod.__dict__)
     mod.ROOT = repo
     return mod

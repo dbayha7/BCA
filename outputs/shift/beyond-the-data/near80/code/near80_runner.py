@@ -263,7 +263,10 @@ class Cfg:
         if self.seeds is not None:
             self.seeds = sorted({int(s) for s in self.seeds})
             for s in self.seeds:
-                K.group_of(s)
+                try:
+                    K.group_of(s)
+                except ValueError as error:
+                    raise PH.Refused(str(error)) from None
         if self.mode == "official" and K.HOST == "test":
             raise PH.Refused("refused: the test host never runs an official run")
         if self.mode == "official" and Path(os.path.realpath(str(self.out))) != Path(os.path.realpath(str(K.OUT))):
@@ -1184,6 +1187,11 @@ def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None, refuse=None):
             AC.write_test_fixture(fx)
         if refuse:
             import stubs
+            allowed = {int(s) for s in seeds} if seeds else set(K.SMOKE_SEEDS) | set(K.FRESH)
+            bad = sorted(int(s) for s in refuse if int(s) not in allowed)
+            if bad:
+                out(f"refused: --refuse names seeds this stub run does not have: {bad}")
+                return EXIT_REFUSED
             p = fx / stubs.STUB_FILE
             if not p.exists():
                 p.write_text(json.dumps(dict(refuse_seeds=[int(s) for s in refuse])), encoding="utf8")
@@ -1606,7 +1614,7 @@ def main(argv=None, out=say_line):
     for name in ("run", "plumbing"):
         p = sub.add_parser(name)
         p.add_argument("--lanes", type=int, default=K.DEFAULT_LANES)
-        p.add_argument("--seeds", default=None, help="this runner's seeds, e.g. 40,41 (the cluster's per-seed jobs)")
+        p.add_argument("--seeds", default=None, help="this runner's seeds (the cluster's per-seed jobs: one seed each)")
         p.add_argument("--group-only", action="store_true", help="the group phases only (the cluster's last job)")
         p.add_argument("--tag", default=None, help="this runner's lock and status file name")
     sub.add_parser("status")
@@ -1625,8 +1633,8 @@ def main(argv=None, out=say_line):
     p = sub.add_parser("stub")
     p.add_argument("--fixture", required=True)
     p.add_argument("--lanes", type=int, default=4)
-    p.add_argument("--seeds", default=None, help="a stub run on fewer seeds, e.g. 0,40")
-    p.add_argument("--refuse", default=None, help="seeds whose synthetic data make BCA refuse, e.g. 41")
+    p.add_argument("--seeds", default=None, help="a stub run on fewer seeds (a test uses 0: the plumbing's seed)")
+    p.add_argument("--refuse", default=None, help="seeds whose synthetic data make BCA refuse (a test uses 0)")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "stub":

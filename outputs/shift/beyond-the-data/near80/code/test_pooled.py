@@ -34,7 +34,7 @@ T = {k: v["text"] for k, v in BLOCK["sentences"].items()}
 PREFIX = BLOCK["smoke_prefix"]
 SC = "strong_current"
 OTHER_SITS = ("recorded", "big_waves", "big_kicks")
-SEEDS = list(K.FRESH)
+SEEDS = list(K.TEST_LABELS)      # the synthetic fresh group's labels (FRESH is patched to them in Base); never 40-59
 NS = str(len(SEEDS))
 RANGE = f"{SEEDS[0]}-{SEEDS[-1]}"
 TWIN1, TWIN2, TWIN3 = K.TWIN_ARMS
@@ -236,8 +236,11 @@ class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = Path(tempfile.mkdtemp(prefix="near80_test_pooled_"))
         self.assertFalse(P.inside(self.tmp, K.ROOT))
+        self._fresh = mock.patch.object(K, "FRESH", K.TEST_LABELS)      # the synthetic fresh group (no reserved seed)
+        self._fresh.start()
 
     def tearDown(self):
+        self._fresh.stop()
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def tree(self, spec=None, sub="a"):
