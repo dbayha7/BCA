@@ -307,12 +307,20 @@ class Cfg:
 
     def mine(self, key):
         """Does this runner start this phase? Every phase without --seeds and --group-only; with --seeds, the phases
-        of those seeds; with --group-only, the group phases (lock, look)."""
+        of those seeds that need no group phase (a seed job ends once only lock-dependent phases remain); with
+        --group-only, the group phases (lock, look) and every phase that needs one (the evaluations). The cluster's
+        group job waits for the seed jobs, so a seed job that owned an evaluation would wait for a lock no runner
+        holds."""
         if self.group_only:
-            return key.seed is None
+            return group_dependent(key)
         if self.seeds is not None:
-            return key.seed is not None and int(key.seed) in self.seeds
+            return key.seed is not None and int(key.seed) in self.seeds and not group_dependent(key)
         return True
+
+
+def group_dependent(key):
+    """A group phase (no seed: the lock, the look) or a phase that needs one (the evaluations)."""
+    return key.seed is None or any(d.seed is None for d in PH.needs(key))
 
 
 def stub_fixture_memory(fx):
@@ -1087,6 +1095,14 @@ def default_checks(cfg, for_cmd):
             raise RuntimeError(f"{p} is missing (the room harness lives under runs/, which git does not hold)")
         return "the room harness is in place"
 
+    def v6_run_folder():
+        """Version 6's run folder: its policy code reads runs/shift_explore/stage2/prereg.json (in stub mode too);
+        on the cluster it must be copied beside the gate's data and the room harness (run_near80_cluster.sh, 7)."""
+        p = K.ROOT / "runs" / "shift_explore" / "stage2" / "prereg.json"
+        if not p.is_file():
+            raise RuntimeError(f"{p} is missing (version 6's run folder lives under runs/, which git does not hold)")
+        return "version 6's run folder is in place"
+
     def step2_saved():
         d = K.S2_OUT / "policy"
         missing = [f"seed{s}/{w}/{f}" for s in K.SMOKE_SEEDS for w in K.WORLDS
@@ -1122,6 +1138,7 @@ def default_checks(cfg, for_cmd):
     out["output root writable"] = writable
     out["gate data"] = gate_record
     out["room harness"] = room_code
+    out["version 6's run folder"] = v6_run_folder
     if for_cmd in ("run", "plumbing"):
         out["step 2's saved actors"] = step2_saved
     if for_cmd == "plumbing":

@@ -20,8 +20,8 @@ What it does, in order. If any step fails, it prints "Refused." with the reason,
          your own terminal with your GitHub address;
        - code_manifest.json is the manifest prereg.json pins and matches its own fingerprint file; every file it lists
          (this script included) has the fingerprint it records; every repository file it pins is unchanged;
-       - the frozen code's outcome-free counts on seeds 0-4 (pre_approval/pooled_group_counts_seeds0_4.json) are the
-         ones prereg.json pins;
+       - the frozen code's pre-approval facts (pre_approval/pooled_facts_seeds0_4_spent10_14.json: the pooled
+         counts on seeds 0-4 and the spent-seed switch facts on 10-14; nothing trained) are the ones prereg.json pins;
        - the draft the final version was built from (prereg_history/prereg_draft_<first 16>.json) is the one pinned;
        - the folder and its code/ hold no other file: only the files the manifest lists, prereg.json,
          code_manifest.json (each with its .sha256), this fingerprint's own approval and import records, and version
@@ -81,7 +81,9 @@ SCRIPT_NAME = "approve_local_near80.py"
 FROZEN_NAME = "pre_approval/pooled_facts_seeds0_4_spent10_14.json"
 FROZEN_TOP = (PREREG_NAME, PREREG_NAME + ".sha256", MANIFEST_NAME, MANIFEST_NAME + ".sha256")
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
-             "Approving it accepts every default of its section 16 and allows the runs it names, under its rules.")
+             "Approving it accepts every choice of its section 16 as it records them (the defaults; the university "
+             "cluster as the run machine and the place results come from, the desktop as the fallback) and allows "
+             "the runs it names, under its rules.")
 WIDTH = 100
 # Version 8's history (near80_constants.V8_HISTORY_FILES, V8_HISTORY_DIRS, V8_FROZEN_NAME; test_v9 checks they agree).
 V8_HISTORY_FILES = ("approval_near80_51e677ab76c8d2f7.json", "import_near80_51e677ab76c8d2f7.json", "amendment_1.json",

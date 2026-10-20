@@ -213,6 +213,15 @@ def step2_arms(S, per, seed, world):
     return arms, sources, S.num(e["t_lo"]), S.num(e["t_up"])
 
 
+def standin_log(error):
+    """The log line for a stand-in that did not run: in stub mode the stand-in raises 'stub: not run' by design
+    (stubs.standin_locked), which is not a failure of the phase."""
+    text = repr(error)
+    if str(error).startswith("stub:"):
+        return f"stand-in not run (stub mode, by design): {text}"
+    return f"stand-in error: {text}"
+
+
 def arm_row_from(setting, seed, world, per, S):
     """arm_row on the switch entries {'<world>/seed<k>': entry} of both worlds (the reproduction check passes the
     entries it computed). Every arm is recorded; a refused one carries refused: true and h None."""
@@ -454,7 +463,7 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
                             for k, v in s_trained.items()}
             except Exception as error:   # a rival that cannot run fails every measure that needs it (counts against BCA)
                 standin.update(error=repr(error))
-                MC.log(f"stand-in error: {error!r}")
+                MC.log(standin_log(error))
         else:
             standin["reason"] = "BCA refused on this seed: no strength to match" if bca_refused else \
                 "obca_k1 failed or has no positive strength"
@@ -474,7 +483,7 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
                 standin.update(no_stall_data_side=s_info["info"], seconds=s_info["seconds"])
             except Exception as error:
                 standin["error"] = repr(error)
-                MC.log(f"stand-in error: {error!r}")
+                MC.log(standin_log(error))
     seconds["matching_and_standin"] = time.perf_counter() - t1
     S_, SR = strengths(MC, trained, s_actors, none, pg)
     shape_arms = {n: (row["arms"][n]["h"], row["arms"][n]["k"]) for n in names + tuple(K.LONE_CALLS) if n in trained}

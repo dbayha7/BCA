@@ -94,15 +94,20 @@ def draft_words(x, path=""):
 
 
 def choices_taken(draft_choices):
-    """The draft's list of section 16, each entry marked as taken with its default and accepted at the owner's time."""
+    """The draft's list of section 16, each entry marked as taken (its default, or what OWNER_ANSWER['taken'] names
+    for that number: the owner's answer of 20 October 2026 takes the cluster for choices 4 and 9) and accepted at
+    the owner's time."""
     if not K.OWNER_ANSWER:
         raise PreregProblem("OWNER_ANSWER is not fixed (DECISION.md): the choices cannot be marked as accepted")
+    taken = dict(K.OWNER_ANSWER.get("taken") or {})
     out = []
     for c in draft_choices:
         e = dict(c)
-        e["taken"] = c["default"]
+        e["taken"] = taken.pop(str(c["number"]), c["default"])
         e["accepted"] = K.OWNER_ANSWER["utc"]
         out.append(e)
+    if taken:
+        raise PreregProblem(f"OWNER_ANSWER names choices the draft does not have: {sorted(taken)}")
     return out
 
 
@@ -214,8 +219,11 @@ def build(n80_root, manifest_sha256, manifest, facts_record, repo=K.ROOT, claims
         pooled_group_counts_frozen=frozen,
         approval=AC.approval_section(K.BRANCH),
         hosts=hosts_block(),
-        runner={"desktop_entry": "run_near80.sh",
-                "cluster_entry": "none: drafted, untested, not part of version 9 (V9_BUILD_NOTES.md)",
+        runner={"desktop_entry": "run_near80.sh (the fallback)",
+                "cluster_entry": ("run_near80_cluster.sh with near80_slurm_job.sh (the run machine, choice 4): one "
+                                  "job per fresh seed, one group job; the same runner, approval import and manifest "
+                                  "checks; its stub run finished all 19 phases on the cluster on 20 October 2026"),
+                "cluster_jobs": K.CLUSTER,
                 "lanes_default": K.DEFAULT_LANES, "memory_rule": draft["compute"]["memory_rule"],
                 "outputs": "runs/shift_explore/near80_v9/", "phases": list(K.PHASE_KINDS)},
         summary=summary_block(content),

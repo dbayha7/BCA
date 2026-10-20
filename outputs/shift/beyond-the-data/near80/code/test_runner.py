@@ -373,11 +373,16 @@ class TestRefusals(unittest.TestCase):
         cfg = R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", seeds=[F1, F0], tag="s40")
         self.assertEqual(cfg.seeds, [F0, F1])
         self.assertTrue(cfg.mine(PH.parse_id(f"critic.main.stall.s{F0}")))
+        self.assertTrue(cfg.mine(PH.parse_id(f"policy.main.no_stall.s{F0}")))
         self.assertFalse(cfg.mine(PH.parse_id(f"critic.main.stall.s{F2}")))
         self.assertFalse(cfg.mine(PH.parse_id("lock.x.x.fresh")))
+        self.assertFalse(cfg.mine(PH.parse_id(f"evaluate.main.stall.s{F0}")))     # needs the group's lock
         g = R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", group_only=True)
         self.assertTrue(g.mine(PH.parse_id("lock.x.x.fresh")))
+        self.assertTrue(g.mine(PH.parse_id("look.x.x.fresh")))
+        self.assertTrue(g.mine(PH.parse_id(f"evaluate.main.no_stall.s{F1}")))
         self.assertFalse(g.mine(PH.parse_id(f"critic.main.stall.s{F0}")))
+        self.assertFalse(g.mine(PH.parse_id(f"policy.main.stall.s{F0}")))
         self.assertEqual(R.runner_lock_name("s40"), "runner_s40.lock")
         self.assertEqual(R.status_name(None), K.LAYOUT["status"])
         with self.assertRaises(PH.Refused):
@@ -1730,7 +1735,7 @@ class TestCommands(unittest.TestCase):
         self.assertNotIn("step 2's saved actors", R.default_checks(cfg, "selftest"))
         self.assertIn("code manifest and pins", R.default_checks(cfg, "selftest"))
         for name in ("host", "versions", "jax", "placement", "one processor per lane", "git identity",
-                     "output root writable", "gate data", "room harness"):
+                     "output root writable", "gate data", "room harness", "version 6's run folder"):
             self.assertIn(name, R.default_checks(cfg, "run"))
         self.assertNotIn("version 7 not running", R.default_checks(cfg, "run"))
 

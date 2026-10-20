@@ -875,12 +875,16 @@ def approval_section(branch=K.BRANCH):
         "approver_email": K.APPROVER_EMAIL,
         "branch": branch,
         "accepts_defaults": True,
+        "choices_taken": ("section 16 as prereg.json records them: every default, except the run machine (choice 4) "
+                          "and where results come from (choice 9), which are the university cluster with the "
+                          "desktop as the fallback (the owner's answer of 20 October 2026, 18:29 UTC)"),
         "import_guard": ("every near-80 phase refuses without the import record on origin's branch; the import refuses "
                          "if the approval commit's author or committer is the session's own git identity or the "
                          "configured user.email of the machine running it, or is not the owner; the desktop runner "
                          "refuses if git's user.email there is the approver's or the cloud's"),
-        "hosts": ("the desktop (run_near80.sh); a cluster entry was drafted, never run, and is not part of version 9 "
-                  "(not in this folder, not in the manifest)"),
+        "hosts": ("the cluster hpc.charlotte.edu (run_near80_cluster.sh, near80_slurm_job.sh: sbatch, one job per "
+                  "fresh seed and a group job) runs version 9; the desktop (run_near80.sh) is the fallback; the same "
+                  "frozen code, approval import and manifest checks on both"),
         "never": "no agent writes the approval file or makes that commit; no message counts as approval",
     }
 

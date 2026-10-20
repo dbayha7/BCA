@@ -28,21 +28,28 @@ Version 9 is the same test with the cause fixed and nothing else moved:
   rivals); C2 = BCA's switched ramp beats each plain twin by 5.0 points on the net across worlds, paired by seed, in
   at least ceil(0.8 n) of the n certified seeds (8 of 10), all three twins; C3 = the mirror, a twin beats BCA by 5.0
   points with BCA ahead in at most 1 seed, one claim per twin. C2 and C3 need at least 8 certified seeds.
-- **One entry:** the desktop (as version 8). A cluster entry was drafted, never run, and is not part of version 9.
+- **Two entries:** the university cluster hpc.charlotte.edu (`run_near80_cluster.sh` with `near80_slurm_job.sh`:
+  one Slurm job per fresh seed and a group job for the lock, the evaluations and the look, the same frozen code and
+  checks; its stub run finished all 19 phases there on 20 October) runs version 9 by your answer; the desktop
+  (`run_near80.sh`, as version 8) is the fallback.
 
 ## Fixed by DECISION.md on 20 October 2026
 
 Ten seeds 40-49; C2 5.0 points and ceil(0.8 n) seeds, all three twins; C3 -5.0 points and at most 1 seed; at least 8
-certified seeds; the refusal read per arm (C1: no caution; C2 and C3: the seed left out); the desktop; version 7's
-memory rule; 10 lanes; version 9 in place in `near80/`; the twins' factors 1 and 2; no second held-out log; no fresh
-start bank; no retrain of seeds 0-4's second critics. `REVISION_LOG.md` beside `DECISION.md` records the three
-reviews that shaped these values.
+certified seeds; the refusal read per arm (C1: no caution; C2 and C3: the seed left out); version 7's memory rule; 10
+lanes; version 9 in place in `near80/`; the twins' factors 1 and 2; no second held-out log; no fresh start bank; no
+retrain of seeds 0-4's second critics. `REVISION_LOG.md` beside `DECISION.md` records the three reviews that shaped
+these values.
+
+## Your answer (20 October 2026, 18:29 UTC, in the chat with the cloud assistant)
+
+"Accept the defaults and cluster": every default of section 16, with the university cluster as the run machine
+(choice 4) and the place results come from (choice 9), the desktop kept as the fallback. Recorded with its time and
+place in `OWNER_ANSWER` of `code/near80_constants.py`; `prereg.json` will carry it.
 
 ## What is open (the freeze refuses while it remains)
 
-1. Your answer to section 16 of `PREREGISTRATION.md`: TODO(OWNER: "accept the defaults" is enough; the session
-   records your words, the date and the time in `OWNER_ANSWER` of `code/near80_constants.py`).
-2. The facts the frozen code computes before approval (section 4.2; about 10-15 CPU-minutes, nothing trained) and
+1. The facts the frozen code computes before approval (section 4.2; about 10-15 CPU-minutes, nothing trained) and
    the number of redrafts after their kill rule; the freeze fills them.
 
 `V9_BUILD_NOTES.md` lists every change of this build, every test, the time estimates and the items the freeze fills.
@@ -63,7 +70,28 @@ under your own name. The session imports your approval and pushes `import_near80
 trains before that record is on the branch. Version 8's own approval and import records stay in this folder as
 history; the script allows exactly them.
 
-## How to run on the desktop (after the import)
+## How to run on the cluster (after the import)
+
+On a login node of hpc.charlotte.edu, never as root, from a git clone of the approved commit under `/scratch/dbayha`
+with the environment of `V9_BUILD_NOTES.md` (the pinned Python environment at `/scratch/dbayha/bca-near80/env`, the
+shift dependencies at `/scratch/dbayha/bca-near80/shiftdeps`, the five `runs/` folders copied read-only from the
+desktop), `.../run_near80_cluster.sh` standing for `sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/run_near80_cluster.sh`:
+
+1. `export NEAR80_HOST=cluster NEAR80_ROOT=<the clone> NEAR80_PYTHON=/scratch/dbayha/bca-near80/env/bin/python BCA_SHIFT_DEPS=/scratch/dbayha/bca-near80/shiftdeps`,
+   then `git -C $NEAR80_ROOT pull --ff-only`.
+2. `.../run_near80_cluster.sh selftest` must end with `READY`.
+3. `.../run_near80_cluster.sh plumbing` submits one job (4 processors, 16 GB, 2 hours); its log must end with
+   `plumbing PASSED`. If its reproduction check differs, version 9 moves to the desktop (below).
+4. `.../run_near80_cluster.sh run` submits one job per fresh seed (8 processors, 24 GB, 3 hours; Cascade Lake nodes)
+   and the group job (16 processors) that waits for them: about 1.7 hours in all. `.../run_near80_cluster.sh status`
+   shows what is happening; `scancel` of a job is a safe stop (the running phases finish), and the same `run` command
+   continues afterwards.
+5. When the group job's log prints `Finished`: `.../run_near80_cluster.sh results`, then, in your own SSH session,
+   commit and push the results folder with the commands it prints (`git add -f`), and
+   `sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh` (it needs a terminal and your
+   GitHub sign-in). If the login node cannot push, bring the two folders to the desktop by `tar` and push from there.
+
+## How to run on the desktop (the fallback)
 
 Inside Ubuntu as root, `.../run_near80.sh` standing for `sh /home/user/bca/outputs/shift/beyond-the-data/near80/run_near80.sh`:
 
@@ -85,7 +113,8 @@ version 8's README; `retry <phase>`, `budget-continue fresh` and `report` are th
 - `PREREGISTRATION.md`: the full pre-registration.
 - `prereg_draft.json`: the machine-readable draft; `code/freeze.py write` turns it into `prereg.json` once your
   answer is recorded.
-- `approve_local_near80.py`, `run_near80.sh`, `push_runfiles_near80.sh`: the approval script and the entries.
+- `approve_local_near80.py`, `run_near80_cluster.sh` with `near80_slurm_job.sh`, `run_near80.sh`,
+  `push_runfiles_near80.sh`: the approval script, the cluster entry, the desktop entry and the run-files push.
 - `code/`: the pooled groups and the count (`near80lib.py`, `facts_near80.py`), the approval chain
   (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`,
   `phases.py`, `phase_main.py`, `settingdata.py`, `learner_phases.py`, `policy_phase.py`, `evaluate_phase.py`,

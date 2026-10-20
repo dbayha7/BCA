@@ -5,10 +5,11 @@
 No learner, critic or actor has been trained for this version, and nothing has been frozen. This version was built by
 the session on 20 October 2026, after version 8's run on the Framework Desktop ended (19 October), after the check of
 its results (`../near80_results_check/REPORT.md`), and after `DECISION.md` (the same day, revised after three
-independent reviews) fixed every value below. Two items stay open until the freeze and carry a bracketed mark the
-freeze step (`code/freeze.py`) refuses: your answer to section 16 (sections 0 and 16) and the facts the frozen code
-computes before approval (section 4.2, with the redraft count of section 0). The freeze also refuses while the status
-line above says DRAFT. Version 8's files stay in this folder as history (section 18).
+independent reviews) fixed every value below, and your answer to section 16 (20 October 2026, 18:29 UTC) is recorded
+in sections 0 and 16. One item stays open until the freeze and carries a bracketed mark the freeze step
+(`code/freeze.py`) refuses: the facts the frozen code computes before approval (section 4.2, with the redraft count
+of section 0). The freeze also refuses while the status line above says DRAFT. Version 8's files stay in this folder
+as history (section 18).
 
 **The one question this answers:** on fresh seeds, in the main test's setting (the densest 15% of recorded commands
 removed), does BCA's switched ramp meet step 2's three marks once its two calibration groups are pooled over every
@@ -41,8 +42,7 @@ same groups would not?
   seed-worlds and in 10 of 10 under pooling;
 - `DECISION.md` of 20 October 2026, revised after a statistics review, a fairness review and a feasibility review
   (`REVISION_LOG.md`), which fixed the seeds, the claims, the margins and the refusal reading below;
-- your answer to section 16: TODO(OWNER: the date, the time and the words of the owner's acceptance of the defaults
-  of section 16, recorded in `OWNER_ANSWER` of `code/near80_constants.py`).
+- your answer to section 16, given on 20 October 2026 at 18:29 UTC in the chat with the cloud assistant: "Accept the defaults and cluster", that is every default, with the university cluster as the run machine (choice 4) and the place results come from (choice 9) and the desktop kept as the fallback; recorded, with the time and the place, in `OWNER_ANSWER` of `code/near80_constants.py`.
 
 **Not seen by anyone:** any learner trained with the pooled groups, and any number from seeds 40-49.
 
@@ -107,8 +107,10 @@ seeds 10-14; 0 when the recomputed calls equal version 8's at the first try).
 - **What does not change:** TD3+BC in step 2's actor-only protocol; the gate's recorder, sizes and physics; the ball;
   the four fixed test start sets; the matching rules; BCA's certificate, its draws and its tags; the approval,
   identity and manifest rules.
-- **Cost:** about 18 CPU-hours in all (about 1.65 per seed plus about 1.5 of plumbing), about 5-5.5 hours of wall
-  time on your Framework Desktop in one sitting, plus about an hour of plumbing.
+- **Cost:** on the university cluster (your choice; section 12.2) about 24 CPU-hours in all (about 2.25 per seed on
+  its Cascade Lake nodes plus about 1.5-2 of plumbing) and about 1.7 hours of wall time, every seed at once; on your
+  Framework Desktop (the fallback) about 18 CPU-hours (about 1.65 per seed plus about 1.5 of plumbing) and about
+  5-5.5 hours of wall time in one sitting; plus about an hour of plumbing on either (section 13).
 
 ---
 
@@ -376,7 +378,9 @@ Check 5 failing on seeds 10-14 means a redraft and no approval; the number of re
   survivors and the bank, the only groups step 1 computed), and, through the official policy function given step 1's
   own switch entries, step 2's saved plumbing-check, switched-ramp and hand-set range-limit actors. The pooled
   groups' certificate of seed 0 is computed beside it and reported, not compared. If any item differs, nothing
-  official starts, ever, in this version.
+  official starts on that host, ever, in this version: a difference on the cluster (whose processors differ from the
+  desktop's that made the reference files) moves the whole of version 9 to the desktop fallback (12.1), with its own
+  plumbing from a clean output root; a difference on the desktop too ends this version.
 - The first peak-memory measurements of each phase kind.
 - Only a reproduction difference is final. Any other failure can be retried once its cause is fixed.
 
@@ -521,68 +525,122 @@ supersedes version 8 in place (choice 7); version 8's `prereg.json` moves to `pr
 amendment and results files stay, and its chain is checkable at commit `52914e4`. The branch is
 `claude/main-bca-connection-x4o46s`.
 
-**Approving accepts every default** in section 16. Any other choice makes a new fingerprint.
+**Approving accepts every choice of section 16 as recorded there** (the defaults, with the cluster for choices 4
+and 9 and the desktop as the fallback). Any other choice makes a new fingerprint. The approval itself is typed on
+the desktop, whatever machine runs; the cluster clone fetches the approved commit afterwards.
 
 ---
 
 ## 12. Hosts and order of work
 
-### 12.1 The desktop
+### 12.1 The desktop: the fallback
 
 `run_near80.sh`, as version 8: root inside WSL, tmux, one runner, 1-16 lanes, version 7's memory rule. Version 8's
-checks on version 7's run are gone (it finished on 16 October 2026). The desktop runs version 9 (choice 4): ten seeds
-cost one evening there.
+checks on version 7's run are gone (it finished on 16 October 2026). By your answer (choice 4) the desktop is the
+fallback: it runs version 9 if the cluster's plumbing does not reproduce the reference files (8.2), or if the cluster
+is not available; ten seeds cost one evening there (section 13). The approval is typed on the desktop in either case
+(section 11).
 
-### 12.2 The cluster (hpc.charlotte.edu): drafted, untested, not part of version 9
+### 12.2 The cluster (hpc.charlotte.edu): the run machine
 
-A cluster entry (Slurm; account `staruser`, partition `Orion`, 48-CPU nodes, 30-day limit; a clone under
-`/scratch/dbayha`, never root, the same approval import and manifest checks, an identity rule that refuses the
-approver's and the cloud's identities; one job per fresh seed and one for the group's lock and look) was drafted for
-this version and has never run. Its two scripts are not in this folder, not in the code manifest and not approved
-with it; `V9_BUILD_NOTES.md` says where they are kept and what the desktop entry assumed that they would change. The
-code keeps a `cluster` host profile for the paths' sake. A version 10 of twenty seeds would need the entry, a
-machine table, a seed-0 probe and a decision on the reproduction reference (about a day of work).
+**The entry:** `run_near80_cluster.sh` with its job script `near80_slurm_job.sh`, both pinned in the code manifest
+and approved with it. On a login node, never as root, from a git clone of the approved commit under
+`/scratch/dbayha` (`NEAR80_HOST=cluster`, `NEAR80_ROOT`, `NEAR80_PYTHON`, `BCA_SHIFT_DEPS`), with Slurm account
+`staruser`, partition `Orion` and `--constraint=caslake` (one processor type for the whole run: the 81 Cascade Lake
+nodes of 48 processors, whose OpenBLAS kernel is the desktop's):
+
+1. `selftest` on the login node (READY or NOT READY; runs nothing), then `plumbing`: one job of 4 processors, 16 GB,
+   up to 2 hours (section 8.2: the five unit test files, the 40-step smoke, the fresh-seed path, the reproduction
+   check).
+2. `run`: one job per fresh seed (8 processors, 24 GB, up to 3 hours: its 15 phases of both worlds up to the actor
+   training; the job's runner starts only its seed's phases and ends once only lock-dependent phases remain), then
+   one group job (16 processors, 24 GB, up to 1 hour) for the lock, the 20 evaluations and the look, submitted with
+   `--dependency=afterany` on the seed jobs. Every job runs the same frozen runner with the same approval import and
+   manifest checks as the desktop; the job's Slurm memory stands for the machine's in version 7's memory rule; one
+   phase per allocated processor.
+3. `status`, `plan`, `report`, `retry`, `budget-continue` on the login node, as on the desktop.
+4. **Results:** `results` on the login node copies every record (no model file) into `near80/results-<utc>/` in the
+   clone and prints the `git add -f` and push commands; you commit and push them in your own SSH session under your
+   own identity, and `push_runfiles_near80.sh` (typed in that session: it needs a terminal and your GitHub sign-in)
+   pushes the run files to `claude/near80-v9-run-files`. If the login node cannot push, the two folders come back
+   to the desktop by `tar` over your SSH session and are committed there, exactly as version 8's were.
+
+**What the entry provides that the desktop assumed:** a stand-in `HOME` under `/scratch/dbayha` (nothing is written
+under `/users`); the pinned Python environment rebuilt from the package's lock file with the same tool (uv 0.11.32,
+Python 3.10.20, the 67 hash-checked wheels; numpy 2.2.6, jax 0.6.2 on the processor); the shift dependencies at
+the literal path the gate's pinned pre-registration records (`/root/.cache/bca-shift/py`), provided inside an
+unprivileged user namespace by the job script (a tmpfs over `/root`, the dependency folder bound at that path, the
+real user id mapped back), since the gate's own check refuses any other path; the gate's data (`runs/shift`), the
+room harness, step 2's saved actors and version 6's run folder (`runs/shift_explore/stage2`) copied read-only from
+the desktop clone (the self-test checks them); version 6's pinned libraries rebased onto the clone's path in the
+process after their bytes are verified. The identity rule is the desktop's.
+
+**Tested on the cluster on 20 October 2026** (the record is in `V9_BUILD_NOTES.md`): the environment is byte for byte
+the desktop's (the package list, the wheels, the shift dependencies); a numerics probe and a paired BCA-free driver
+(the critic, the cloned actor, the no-caution actor, two evaluations) gave bit-identical results on the desktop and
+on a Cascade Lake, a Genoa and a Turin node; the four unit test files of version 8 pass on an Orion node; the entry's
+stub run (stand-ins, nothing trained, a synthetic fixture) finished all 19 phases as real Slurm jobs through the
+patched job script. Not covered by any cluster test: BCA's certificate, the second critic, the matching, the lock and
+the look; the plumbing's reproduction check (8.2) decides, and a difference there moves the run to the desktop.
 
 ### 12.3 Order
 
-1. **Done:** this document, its machine-readable twin (`prereg_draft.json`), the code and its tests, `DECISION.md`.
-2. **Your answer to section 16** ("accept the defaults" is enough), recorded in `OWNER_ANSWER`.
+1. **Done:** this document, its machine-readable twin (`prereg_draft.json`), the code and its tests, `DECISION.md`,
+   the cluster entry and its test.
+2. **Done:** your answer to section 16 ("Accept the defaults and cluster", 20 October 2026, 18:29 UTC), recorded in
+   `OWNER_ANSWER`.
 3. The session freezes (`code/freeze.py write`, inside WSL in the pinned environment): the draft into history, the
    manifest, the five unit test files, the facts of section 4.2 (the counts on seeds 0-4; the pooled switch on the
    spent seeds 10-14 from version 8's recorded second critics, with the kill rule; about 10-15 CPU-minutes, nothing
    trained), `prereg.json`; then an independent re-check and the fingerprint.
-4. **You approve** (section 11). The session imports it.
-5. Plumbing (section 8.2), about an hour.
-6. The confirmatory stage on seeds 40-49 (about 5-5.5 hours of wall time) and the look.
-7. Results committed with their fingerprints (`git add -f`: `.gitignore`'s `data/` line hides the data records);
-   model files to the run-files branch `claude/near80-v9-run-files`; the independent check.
+4. **You approve** (section 11, on the desktop). The session imports it; the cluster clone fetches the commit.
+5. Plumbing on the cluster (section 8.2; one job, about 1-1.5 hours). If its reproduction check differs: the desktop
+   fallback (12.1), from step 5 again.
+6. The confirmatory stage on seeds 40-49 (about 1.7 hours of wall time on the cluster; about 5-5.5 on the desktop)
+   and the look.
+7. Results committed with their fingerprints (`git add -f`: `.gitignore`'s `data/` line hides the data records) from
+   the login node in your own SSH session, or from the desktop; model files to the run-files branch
+   `claude/near80-v9-run-files`; the independent check.
 
 ---
 
 ## 13. Compute
 
-On the Framework Desktop in Ubuntu under WSL, on the processor alone, one processor per phase. From version 8's
-ledger of the main setting (`results-20261020T115246Z`): 1.53 and 1.51 CPU-hours per seed for the two seeds that ran
-every phase (critic 5.7 minutes, full-log critic 5.7, second critic 5.7 per world, switch 0.3, clone 0.7, reference
-actors 3.5 and 2.2, the stalling-world actor phase 42 and the no-stall one 9.3, the evaluation 1.5 per world). The
-five programs run alone (four lone ramp calls of about 63 s in the stalling world and about 40 s in the no-stall
-world, and the hinge) add about 0.14 per seed; the pooled scores (about 42,000 rows) seconds.
+One processor per phase, on the processor alone, on either host. **The desktop's numbers** (the Framework Desktop in
+Ubuntu under WSL), from version 8's ledger of the main setting (`results-20261020T115246Z`): 1.53 and 1.51 CPU-hours
+per seed for the two seeds that ran every phase (critic 5.7 minutes, full-log critic 5.7, second critic 5.7 per
+world, switch 0.3, clone 0.7, reference actors 3.5 and 2.2, the stalling-world actor phase 42 and the no-stall one
+9.3, the evaluation 1.5 per world). The five programs run alone (four lone ramp calls of about 63 s in the stalling
+world and about 40 s in the no-stall world, and the hinge) add about 0.14 per seed; the pooled scores (about 42,000
+rows) seconds. **The cluster's numbers** (a Cascade Lake node of Orion, measured on 20 October 2026 with the
+package's own phases at the official sizes, BCA-free): the data phase 0.64, the critics 1.25, the clone 1.16 and the
+actor training 1.41 times the desktop ledger's seconds (the ledger was taken under the desktop's own ten-lane load;
+an idle desktop core is 1.62 times faster than a caslake core), so about 2.05 CPU-hours per seed for version 8's
+phases and about 0.2 for the lone programs; the two actor phases are 59 and 13 minutes there.
 
-| part | CPU-hours |
-|---|---|
-| the facts before approval | about 0.2 (nothing trained) |
-| plumbing | about 1.3-1.5 (version 8: 1.23; the lone programs added to the reproduction) |
-| confirmatory, seeds 40-49, main setting, both worlds | about 16.5-17 (about 1.65 per seed) |
-| **total** | **about 18** |
+| part | desktop, CPU-hours | cluster (caslake), CPU-hours |
+|---|---|---|
+| the facts before approval (on the desktop, nothing trained) | about 0.2 | - |
+| plumbing | about 1.3-1.5 (version 8: 1.23; the lone programs added to the reproduction) | about 1.5-2 |
+| confirmatory, seeds 40-49, main setting, both worlds | about 16.5-17 (about 1.65 per seed) | about 22.5 (about 2.25 per seed) |
+| **total** | **about 18** | **about 24** |
 
-- **Wall time:** version 7's memory rule, unchanged (choice 5): at most 2 actor phases at once, so about 5-5.5 hours
-  with 10 lanes in one sitting (ten stalling-world actor phases of about 47 minutes, ten no-stall of about 13, a
-  lead-in of about 20); about 2.5 hours if the actor reservation were set to 1.25 times its measured peak (choice 5's
-  alternative). The plumbing about an hour.
-- **Lanes:** 10 by default (choice 6).
-- **Budget guard:** as version 8, with a forecast of 2.2 CPU-hours per seed (22 for ten; a safe margin over the 1.65
-  expected); a stage that uses more than twice its forecast (44) pauses and reports; the cap is 2.5 times the
-  forecast, 55 CPU-hours. A pause lasts until you type `budget-continue fresh`.
+- **Wall time on the cluster** (12.2): every seed runs at once, so the wall is one seed's longest chain (data, critic,
+  reference actors, the stalling-world actor phase, the no-stall one: about 96 minutes on caslake with the lone
+  programs) plus the group job's 20 evaluations over 16 lanes (about 4 minutes) and two queue waits (seconds on the
+  day of the test, with about 2,000 idle processors): **about 1.7 hours for the ten seeds**, the same for twenty. The
+  plumbing job about 1-1.5 hours. Allocated processor-hours are about 5 times the CPU-hours used (10 jobs of 8
+  processors for about 1.6 hours), which costs nothing that matters on Orion.
+- **Wall time on the desktop** (the fallback): version 7's memory rule, unchanged (choice 5): at most 2 actor phases
+  at once, so about 5-5.5 hours with 10 lanes in one sitting (ten stalling-world actor phases of about 47 minutes,
+  ten no-stall of about 13, a lead-in of about 20); about 2.5 hours if the actor reservation were set to 1.25 times
+  its measured peak (choice 5's alternative). The plumbing about an hour.
+- **Lanes:** 10 by default on the desktop (choice 6); on the cluster 8 per seed job (a seed's width is 7 phases), 16
+  for the group job, 4 for the plumbing.
+- **Budget guard:** as version 8, with a forecast of 2.2 CPU-hours per seed (22 for ten; a margin over the desktop's
+  1.65 and near the cluster's 2.25); a stage that uses more than twice its forecast (44) pauses and reports; the cap
+  is 2.5 times the forecast, 55 CPU-hours; the cluster's expected 22.5 lies inside both. A pause lasts until you type
+  `budget-continue fresh`.
 
 ---
 
@@ -825,14 +883,23 @@ The last sentence:
    validity check.
 10. **The pre-approval facts read the spent seeds 10-14** (version 8's recorded second critics; nothing trained) with
     the kill rule of 8.1; version 8's no-training checks read seeds 0-4 only.
-11. **The cluster entry is not part of this version** (12.2).
+11. **The run machine is the university cluster** (12.2, your answer to choice 4): one Slurm job per fresh seed and
+    a group job, the same frozen code, approval import and manifest checks; version 8 ran on the desktop, which
+    stays the fallback. Results come from the login node in your own SSH session (choice 9), the desktop as the
+    fallback.
 
 ---
 
-## 16. Choices (defaults; your acceptance is TODO(OWNER: recorded in OWNER_ANSWER with its date, time and words))
+## 16. Choices (defaults, and what your answer takes)
+
+Your answer, 20 October 2026, 18:29 UTC, in the chat with the cloud assistant: **"Accept the defaults and cluster"**,
+recorded in `OWNER_ANSWER` of `code/near80_constants.py` with the time, the place and the choice taken for each
+number: every default, except that choice 4 (the machine) and choice 9 (where results come from) take the university
+cluster, with the desktop kept as the fallback.
 
 1. **The seed count and block.** Default: **ten seeds, 40-49**. Or five (40-44; one refusal then decides C1), fifteen
-   or twenty (40-54 or 40-59; a cluster entry is then needed, about a day of work and a probe).
+   or twenty (40-54 or 40-59; the cluster entry of 12.2 carries them in the same wall time; a version 10). Taken:
+   the default.
 2. **What a refusal means for the marks.** Default: **in C1, BCA's arms count as no caution in that seed-world; in C2
    and C3 the seed is left out** (5.4). Or version 8's rule (every seed is needed; a refusal fails C1, C2 and C3),
    with a 0.35 chance under the default evidence that one refusal voids the test. Or, a method change: a declared
@@ -841,8 +908,10 @@ The last sentence:
    world on seeds 0-4 and would net about 107); it is reported as the composite "refusal means the range limit".
 3. **A second held-out log per seed and world.** Default: **no**. Yes brings the chance of any refusal in ten seeds
    from about 0.35 to about 0.002 and moves BCA's height further toward the plain 90% point.
-4. **The machine.** Default: **the desktop**. Or one Orion node of hpc.charlotte.edu (needs the machine table, a probe
-   and a decision on the reproduction reference; the drafted entry is untested and not part of version 9).
+4. **The machine.** Default: **the desktop**. Or the university cluster hpc.charlotte.edu through the entry of 12.2
+   (one Slurm job per fresh seed on the Cascade Lake nodes and a group job; tested in stub mode on the cluster on 20
+   October 2026; the plumbing's reproduction check decides the bit-for-bit question, and a difference there moves
+   the run to the desktop). **Taken: the cluster; the desktop is the fallback.**
 5. **The actor phase's memory reservation.** Default: **version 7's rule** (2 at once; about 5-5.5 hours of wall). Or
    1.25 times the measured peak (9 at once; about 2.5 hours; changes `TestMemoryRule`).
 6. **Lanes.** Default: **10**.
@@ -851,7 +920,9 @@ The last sentence:
    and the history logic to drop; about half a day).
 8. **The twins' factors.** Default: **the plain 90% gap and twice it** (step 2's k = 1 and k = 2). Or a hand-set
    height of 3.0 for the far twin (on the recorded plateau; a number chosen after seeing seeds 0-4, labelled as such).
-9. **Where results are committed from.** Default: **the desktop**, as versions 6-8.
+9. **Where results are committed from.** Default: **the desktop**, as versions 6-8. Or the cluster's login node, in
+   your own SSH session under your own identity (12.2, step 4), the folders coming back to the desktop by `tar` if
+   the login node cannot push. **Taken: the cluster; the desktop is the fallback.**
 10. **A fresh start bank per seed.** Default: **no**. The four fixed test start sets (`bank_starts`, one stream
     `[20261012, 2, 9]` for every seed) were pre-registered in version 6 and are the same for every arm, so they rig
     nothing; but every design number was chosen on them. Yes adds one fresh bank of 1,000 strong-current starts per
@@ -909,8 +980,10 @@ return credit (L3 not shown)."
 | `README.md` | a one-page summary |
 | `prereg_draft.json` | the machine-readable draft (the freeze moves it into `prereg_history/`) |
 | `approve_local_near80.py` | the approval script you run at your own terminal (standard library only) |
-| `run_near80.sh` | the desktop entry |
-| `push_runfiles_near80.sh` | pushes the run files (model files included) to the branch `claude/near80-v9-run-files` |
+| `run_near80.sh` | the desktop entry (the fallback) |
+| `run_near80_cluster.sh` | the cluster entry (12.2): the self-test on the login node, then `sbatch` jobs |
+| `near80_slurm_job.sh` | the job script the cluster entry submits (the pinned dependency path inside a user namespace, the job's memory, one runner per job) |
+| `push_runfiles_near80.sh` | pushes the run files (model files included) to the branch `claude/near80-v9-run-files`, from the desktop or from the login node |
 | `V9_BUILD_NOTES.md` | the build notes (every change, test, estimate and the items the freeze fills); not pinned |
 | `pre_approval/pooled_facts_seeds0_4_spent10_14.json` | the facts of section 4.2, written by the freeze (nothing trained) |
 | `code/` | the code: `near80_constants.py` (seeds 40-49, the pooled rule, the refusal rule, the twins, `MARKS_C2` 5.0 / ceil(0.8 n) / `all_three`, `MARKS_C3` -5.0 / at most 1, `MIN_CERTIFIED` 8), `near80lib.py` (`pooled_groups`, `pooled_count_record`, `certification_expectation` with the binomial chance), `facts_near80.py` (the counts on seeds 0-4 and the spent-seed switch facts), `learner_phases.py` (`switch_scores_pooled`; `switch_scores_step1` for the reproduction check), `policy_phase.py` (the per-arm refusal, the new arms, the programs run alone), `pooled.py` and `claims_text.py` (the look and section 14), the approval chain (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`, `phases.py`, `phase_main.py`, `settingdata.py`, `evaluate_phase.py`, `ledger.py`, `stubs.py`) and five unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`) |
@@ -920,8 +993,9 @@ return credit (L3 not shown)."
 `approval_near80_51e677ab76c8d2f7.json`, `import_near80_51e677ab76c8d2f7.json`, `amendment_1.json`,
 `approval_near80_amendment1_52fe05b92900290b.json`, `import_near80_amendment1_52fe05b92900290b.json` (each with its
 `.sha256`), `pre_approval/no_training_checks_seeds0_4.json`, and `results-20261020T115246Z/`. Nothing of version 9
-reads them. The cluster scripts drafted for this version are not in this folder (12.2).
+reads them.
 
-**Outputs** go to `runs/shift_explore/near80_v9/` (write-once; version 8's `runs/shift_explore/near80/` is read by
+**Outputs** go to `runs/shift_explore/near80_v9/` under the clone that runs (the cluster clone under
+`/scratch/dbayha`, or the desktop's; write-once; version 8's `runs/shift_explore/near80/` on the desktop is read by
 the facts of section 4.2 and never written). Committed copies of results go to `near80/results-*/` with their
 fingerprints (`git add -f`); the model files to the branch `claude/near80-v9-run-files`.

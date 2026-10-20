@@ -1734,7 +1734,8 @@ class TestFreeze(FreezeBase):
         self.assertEqual(body["runner"]["phases"], list(K.PHASE_KINDS))
         self.assertEqual(body["runner"]["lanes_default"], K.DEFAULT_LANES)
         self.assertEqual(body["runner"]["desktop_entry"], "run_near80.sh")
-        self.assertTrue(body["runner"]["cluster_entry"].startswith("none"))
+        self.assertTrue(body["runner"]["cluster_entry"].startswith("run_near80_cluster.sh"))
+        self.assertEqual(body["runner"]["cluster_jobs"], json.loads(json.dumps(K.CLUSTER)))
         draft = json.loads(kept.read_text(encoding="utf8"))
         self.assertEqual(len(body["choices"]), len(draft["choices"]))
         for c, d in zip(body["choices"], draft["choices"]):
@@ -2140,7 +2141,7 @@ class TestConstants(unittest.TestCase):
         """DECISION.md fixed every value; the owner's answer is the one open item, and the freeze refuses on it."""
         self.assertEqual(K.placeholders_present(), ["owner_answer"])
         self.assertEqual(K.PLACEHOLDERS, {})
-        self.assertIsNone(K.OWNER_ANSWER)
+        self.assertIsNotNone(K.OWNER_ANSWER)
         self.assertEqual(K.FRESH, tuple(range(40, 50)))
         self.assertEqual(K.RESERVED_SEEDS, tuple(range(50, 60)))
         self.assertEqual(K.MARKS_C2, dict(net_margin=5.0, positive_seeds_min=8, positive_share=0.8,

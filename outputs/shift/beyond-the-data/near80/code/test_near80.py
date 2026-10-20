@@ -376,9 +376,10 @@ class TestDraftJson(unittest.TestCase):
             bold = "**" + K.STATUS_LINE_DRAFT + "**"
             self.assertEqual(lines[2], bold)
             self.assertEqual(self.readme.split("\n")[2], bold)
-            self.assertIn("TODO(OWNER", self.doc)                  # the owner's answer is the open item
+            self.assertIn("TODO(FREEZE", self.doc)                 # the facts the freeze fills are the open item
+            self.assertNotIn("TODO(OWNER", self.doc)               # the owner answered on 20 October 2026
             self.assertNotIn("TODO(DECISION", self.doc)            # DECISION.md fixed every value
-            self.assertEqual(K.placeholders_present(), ["owner_answer"])
+            self.assertEqual(K.placeholders_present(), [])
         self.assertEqual(N.STATUS, K.STATUS_LINE_DRAFT)
 
 

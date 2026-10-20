@@ -42,7 +42,7 @@ refuse() { echo "refused: $*"; exit 97; }
 
 require_root() {
     if [ "$(id -u)" != 0 ] || [ "${HOME:-}" != /root ]; then
-        refuse "run this as root with HOME=/root (the desktop entry; version 9 has no other)"
+        refuse "run this as root with HOME=/root (the desktop entry, the fallback; the cluster entry is run_near80_cluster.sh)"
     fi
 }
 

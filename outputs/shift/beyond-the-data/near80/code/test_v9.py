@@ -371,37 +371,96 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertEqual(set(K.ARM_PLAIN), set(K.ARMS["main"]))
         self.assertIn("conformal_k1", K.REPORTED_ONLY)
         self.assertIn("meandiff_k1", K.REPORTED_ONLY)
-        self.assertEqual(K.placeholders_present(), ["owner_answer"])
+        self.assertEqual(K.placeholders_present(), [])
+        self.assertEqual(K.OWNER_ANSWER["text"], "Accept the defaults and cluster")
+        self.assertEqual(K.OWNER_ANSWER["utc"], "2026-10-20T18:29:00Z")
+        self.assertEqual(sorted(K.OWNER_ANSWER["taken"]), ["4", "9"])
+        self.assertEqual(len(K.OWNER_ANSWER["choices"]), 11)
         self.assertEqual(K.PLACEHOLDERS, {})
         self.assertEqual(K.CAP_CPU_HOURS, 55.0)
         self.assertEqual(K.FORECAST_CPU_HOURS_PER_SEED, 2.2)
         self.assertEqual(K.FORECAST_CPU_HOURS, {"plumbing": 2.5, "fresh": 22.0})
         self.assertEqual(K.COUNTS_FROZEN_NAME, "pooled_facts_seeds0_4_spent10_14.json")
 
-    def test_cluster_scripts_are_out(self):
+    def test_cluster_entry_is_in(self):
+        """The owner's answer (20 October 2026): the cluster runs version 9; its two scripts are pinned top-level
+        files, tested in stub mode on the cluster (V9_BUILD_NOTES.md); the desktop entry is the fallback."""
         for name in ("run_near80_cluster.sh", "near80_slurm_job.sh"):
-            self.assertNotIn(name, K.TOP_FILES)
-            self.assertFalse((HERE.parent / name).exists(), name)
+            self.assertIn(name, K.TOP_FILES)
+            self.assertTrue((HERE.parent / name).is_file(), name)
         self.assertEqual(K.TOP_FILES, ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh",
-                                       "push_runfiles_near80.sh"))
+                                       "run_near80_cluster.sh", "near80_slurm_job.sh", "push_runfiles_near80.sh"))
         self.assertIn("cluster", K.HOST_PROFILES)
-        self.assertIn("not part of version 9", K.HOST_PROFILES["cluster"]["entry"])
+        self.assertIn("run_near80_cluster.sh", K.HOST_PROFILES["cluster"]["entry"])
+        self.assertNotIn("not part of version 9", K.HOST_PROFILES["cluster"]["entry"])
         self.assertIn("test_v9.py", K.CODE_FILES)
         self.assertIn("test_v9.py", K.TEST_FILES)
         draft = json.loads((HERE.parent / "prereg_draft.json").read_text(encoding="utf8"))
-        self.assertEqual(draft["files"]["entries"], ["run_near80.sh", "push_runfiles_near80.sh"])
+        self.assertEqual(draft["files"]["entries"], ["run_near80_cluster.sh", "near80_slurm_job.sh", "run_near80.sh",
+                                                     "push_runfiles_near80.sh"])
+        # the entry's job sizes and Slurm settings are the constants' (the scripts cannot import them)
+        entry = (HERE.parent / "run_near80_cluster.sh").read_text(encoding="utf8")
+        job = (HERE.parent / "near80_slurm_job.sh").read_text(encoding="utf8")
+        C = K.CLUSTER
+        self.assertIn(f"ACCOUNT={C['account']}\n", entry)
+        self.assertIn(f"PARTITION={C['partition']}\n", entry)
+        self.assertIn(f"CONSTRAINT={C['constraint']}\n", entry)
+        j = C["jobs"]
+        self.assertIn(f"plumbing) D_LANES={j['plumbing']['lanes']}; D_MEM={j['plumbing']['mem_gb']}; "
+                      f"D_TIME={j['plumbing']['time']};;", entry)
+        self.assertIn(f"run)      D_LANES={j['seed']['lanes']}; D_MEM={j['seed']['mem_gb']}; D_TIME={j['seed']['time']};;",
+                      entry)
+        self.assertIn(f"G_LANES={j['group']['lanes']}; G_MEM={j['group']['mem_gb']}; G_TIME={j['group']['time']}\n", entry)
+        self.assertIn(f"PINNED={C['pinned_deps']}\n", job)
+        self.assertIn("unshare --map-root-user --mount", job)
+        self.assertIn("--group-only --tag group", job)
+        self.assertIn('--seeds "$SEED" --tag "s$SEED"', job)
+        self.assertEqual(C["scratch"], K.CLUSTER_SCRATCH)
+
+    def test_choices_taken_record_the_cluster(self):
+        """near80_prereg.choices_taken on the real draft: the defaults, except choices 4 and 9 (the cluster)."""
+        NPm = K.load_local("near80_prereg")
+        draft = json.loads((HERE.parent / "prereg_draft.json").read_text(encoding="utf8"))
+        taken = NPm.choices_taken(draft["choices"])
+        self.assertEqual(len(taken), 11)
+        for c, d in zip(taken, draft["choices"]):
+            self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
+            if c["number"] in (4, 9):
+                self.assertIn("cluster", c["taken"])
+                self.assertIn("fallback", c["taken"])
+                self.assertNotEqual(c["taken"], d["default"])
+            else:
+                self.assertEqual(c["taken"], d["default"])
+        with mock.patch.object(K, "OWNER_ANSWER", dict(K.OWNER_ANSWER, taken={"12": "x"})):
+            with self.assertRaises(NPm.PreregProblem):
+                NPm.choices_taken(draft["choices"])
+
+    def test_seed_job_leaves_the_lock_dependent_phases_to_the_group_job(self):
+        R = K.load_local("near80_runner")
+        PH = K.load_local("phases")
+        f0 = K.FRESH[0]
+        self.assertTrue(R.group_dependent(PH.parse_id("lock.x.x.fresh")))
+        self.assertTrue(R.group_dependent(PH.parse_id("look.x.x.fresh")))
+        self.assertTrue(R.group_dependent(PH.parse_id(f"evaluate.main.stall.s{f0}")))
+        self.assertFalse(R.group_dependent(PH.parse_id(f"policy.main.no_stall.s{f0}")))
+        self.assertFalse(R.group_dependent(PH.parse_id(f"data_main.main.stall.s{f0}")))
 
     def test_documents_name_the_open_items_and_nothing_else(self):
         doc = (HERE.parent / "PREREGISTRATION.md").read_text(encoding="utf8")
         readme = (HERE.parent / "README.md").read_text(encoding="utf8")
         self.assertNotIn("TODO(DECISION", doc)
         self.assertNotIn("TODO(DECISION", readme)
-        self.assertIn("TODO(OWNER", doc)
+        self.assertNotIn("TODO(OWNER", doc)
+        self.assertNotIn("TODO(OWNER", readme)
         self.assertIn("TODO(FREEZE", doc)
         self.assertNotIn("TODO(", (HERE.parent / "prereg_draft.json").read_text(encoding="utf8"))
         for name in ("run_near80_cluster.sh", "near80_slurm_job.sh"):
-            self.assertNotIn(name, readme)
-        self.assertIn("not part of version 9", doc)
+            self.assertIn(name, readme)
+            self.assertIn(name, doc)
+        self.assertNotIn("not part of version 9", doc)
+        self.assertNotIn("not part of version 9", readme)
+        self.assertIn(K.OWNER_ANSWER["text"], doc)
+        self.assertIn(K.OWNER_ANSWER["text"], readme)
 
 
 # --------------------------------------------------------------------------------------------- the certification chance

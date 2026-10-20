@@ -5,7 +5,7 @@
  "version": "version 9, near-80 main",
  "label": "Version 9, near-80 main: the main test's setting on fresh seeds, with BCA's two groups pooled over every held-out row outside the removal ball",
  "approvable": false,
- "approvable_note": "a draft; freeze.py write builds prereg.json from it once the owner's answer to section 16 is recorded (OWNER_ANSWER in code/near80_constants.py); every other value was fixed by DECISION.md on 20 October 2026",
+ "approvable_note": "a draft; freeze.py write builds prereg.json from it; every value was fixed by DECISION.md on 20 October 2026, and the owner's answer to section 16 (the same day, 18:29 UTC: 'Accept the defaults and cluster') is recorded in OWNER_ANSWER of code/near80_constants.py",
  "request": {
   "from": "version 8's outcome (19 October 2026): claim 4 failed by the pre-set rule because BCA's held-out full-throttle group had 19, 22 and 18 rows on fresh seeds 10, 12 and 13, its certificate did not certify it, and the approved code stopped the whole actor phase of those seeds",
   "job": "version 9 of the near-80 package: the main setting only, on ten fresh seeds never used by any study of this generator, with the refusal fix (BCA's two groups pooled over every held-out row outside the removal ball), the outcome-free count, the refusal rule read per arm, three plain twins and BCA's lone copy as real trained arms, and three claims (C1, C2 and its mirror C3)"
@@ -151,11 +151,12 @@
   "plumbing": "about 1.3-1.5 (version 8: 1.23; the lone programs added to the reproduction); the forecast constant stays 2.5",
   "facts_before_approval": "about 0.2 (nothing trained)",
   "total": "about 18 for the ten seeds (the plumbing included)",
-  "desktop_wall_time": "about 5-5.5 hours for the ten seeds in one sitting under version 7's memory rule (at most 2 actor phases at once: ten stalling-world phases of about 47 min and ten no-stall of about 13 min after a lead-in of about 20 min), plus about an hour of plumbing",
-  "cluster": "not part of version 9: the cluster entry was drafted, never run, and is left out of the manifest (choice 9 and section 12.2)",
+  "desktop_wall_time": "the fallback: about 5-5.5 hours for the ten seeds in one sitting under version 7's memory rule (at most 2 actor phases at once: ten stalling-world phases of about 47 min and ten no-stall of about 13 min after a lead-in of about 20 min), plus about an hour of plumbing",
+  "cluster": "the run machine (the owner's answer, choice 4): hpc.charlotte.edu, Slurm account staruser, partition Orion, --constraint=caslake; one job per fresh seed (8 processors, 24 GB, up to 3 h: its phases up to the actor training) and a group job (16 processors) for the lock, every evaluation and the look; the same frozen runner, approval import and manifest checks; measured on 20 October 2026 with the package's own phases at the official sizes: about 2.25 CPU-hours per seed (version 8's phases 2.05, the lone programs about 0.2), about 22.5 for ten seeds, inside the forecast's pause line (44) and the cap (55); wall time about 1.7 hours for ten seeds (one seed's chain of about 96 minutes plus the group's evaluations and two queue waits), the plumbing job about 1-1.5 hours; a reproduction difference in the plumbing moves the run to the desktop",
   "budget_cap": "2.5 times the forecast: 55 CPU-hours for the ten seeds (2.2 per seed)",
   "guard": "a stage that uses more than twice its forecast (44 CPU-hours) pauses and reports; the plumbing never pauses; a pause lasts until the owner types budget-continue fresh",
-  "machine_desktop": "Framework Desktop (AMD Ryzen AI MAX+ 395, 16 cores), Ubuntu 24.04 in WSL with 24 GB, CPU only",
+  "machine_desktop": "the fallback: Framework Desktop (AMD Ryzen AI MAX+ 395, 16 cores), Ubuntu 24.04 in WSL with 24 GB, CPU only",
+  "machine_cluster": "the Cascade Lake nodes of Orion (Xeon Gold 6248R, 48 processors, 376 GB each, AVX-512 without bf16; numpy's OpenBLAS picks the desktop's SkylakeX kernel there); the pinned environment rebuilt from the stage2_gpu lock file with uv 0.11.32 and Python 3.10.20, byte for byte the desktop's; the shift dependencies provided at the gate's pinned path inside a user namespace",
   "lanes_default": 10,
   "memory_rule": "version 7's, unchanged: a phase starts only if the reserved peaks of the running phases plus its own are at most MemTotal minus 8 GiB, and MemAvailable is at least its own reservation plus 8 GiB; an unmeasured phase kind reserves 7 GiB; a measured kind 1.25 x its measured peak; policy phases max(7 GiB, 2 x measured peak)"
  },
@@ -170,7 +171,8 @@
   "no exploratory stage, no exploratory look, no stop rules on seeds 0-4; seed 0 serves the plumbing only",
   "the noise floor adapted to the training program's batch; C2's and C3's BCA side is the copy trained alone",
   "version 9 supersedes version 8 in place in near80/ (version 8's chain is checkable at commit 52914e4)",
-  "the pre-approval facts read the spent seeds 10-14 (version 8's recorded second critics, nothing trained) with a kill rule on the switch calls"
+  "the pre-approval facts read the spent seeds 10-14 (version 8's recorded second critics, nothing trained) with a kill rule on the switch calls",
+  "the run machine is the university cluster (one Slurm job per fresh seed and a group job; the same frozen code, approval import and manifest checks), the desktop as the fallback; results come from the login node in the owner's own SSH session"
  ],
  "facts_from_version_8": {
   "source": "results-20261020T115246Z and near80_results_check/REPORT.md",
@@ -180,15 +182,15 @@
   "cpu_hours_per_main_setting_seed": [1.533, 1.508]
  },
  "choices": [
-  {"number": 1, "choice": "the seed count and block", "default": "ten seeds, 40-49", "alternatives": ["five (40-44; one refusal then decides C1)", "fifteen or twenty (40-54 or 40-59; a cluster entry would then be needed)"]},
+  {"number": 1, "choice": "the seed count and block", "default": "ten seeds, 40-49", "alternatives": ["five (40-44; one refusal then decides C1)", "fifteen or twenty (40-54 or 40-59; the cluster entry carries them in the same wall time; a version 10)"], "owner_took": "the default"},
   {"number": 2, "choice": "what a refusal means for the marks", "default": "in C1 BCA's arms count as no caution in that seed-world; in C2 and C3 the seed is left out", "alternatives": ["version 8's rule (every seed needed; a refusal fails C1, C2 and C3; chance about 0.35 that one refusal voids the test)", "a method change: a declared fallback (the hand-set range limit or a hard clip) scored as that fallback when BCA refuses; rejected because it would reward refusing (93.1 against 88.6 on seeds 0-4); reported as a composite only"]},
   {"number": 3, "choice": "a second held-out log per seed and world", "default": "no", "alternatives": ["yes: one more log from the same recorder (500/200/300 episodes, a declared stream, never trained on); brings the chance of any refusal in ten seeds from about 0.35 to about 0.002 and moves BCA's height further toward the plain 90% point"]},
-  {"number": 4, "choice": "the machine", "default": "the desktop", "alternatives": ["one Orion node of hpc.charlotte.edu (needs the machine table, a probe and a decision on the reproduction reference; the drafted entry is untested and not part of version 9)"]},
+  {"number": 4, "choice": "the machine", "default": "the desktop", "alternatives": ["the university cluster hpc.charlotte.edu through the cluster entry (one Slurm job per fresh seed on the Cascade Lake nodes and a group job; tested in stub mode on the cluster on 20 October 2026; the plumbing's reproduction check decides the bit-for-bit question, and a difference there moves the run to the desktop)"], "owner_took": "the cluster; the desktop is the fallback (the owner's answer of 20 October 2026, 18:29 UTC)"},
   {"number": 5, "choice": "the actor phase's memory reservation", "default": "version 7's rule (2 at once; about 5-5.5 hours of wall)", "alternatives": ["1.25 times the measured peak (9 at once; about 2.5 hours; changes TestMemoryRule)"]},
   {"number": 6, "choice": "lanes", "default": "10", "alternatives": ["1 to 16"]},
   {"number": 7, "choice": "the folder", "default": "version 9 in place in near80/ (version 8's chain is checkable at commit 52914e4)", "alternatives": ["a new folder near80_v9/ (eight path sites and the history logic; about half a day)"]},
   {"number": 8, "choice": "the twins' factors", "default": "the plain 90% gap and twice it (step 2's k = 1 and k = 2)", "alternatives": ["a hand-set height of 3.0 for the far twin (a number chosen after seeing seeds 0-4, labelled as such)"]},
-  {"number": 9, "choice": "where results are committed from", "default": "the desktop", "alternatives": ["the cluster entry: drafted, untested, not part of version 9"]},
+  {"number": 9, "choice": "where results are committed from", "default": "the desktop", "alternatives": ["the cluster's login node, in the owner's own SSH session under the owner's identity; the folders come back to the desktop by tar if the login node cannot push"], "owner_took": "the cluster; the desktop is the fallback (the owner's answer of 20 October 2026, 18:29 UTC)"},
   {"number": 10, "choice": "a fresh start bank per seed", "default": "no", "alternatives": ["yes: one fresh bank of 1,000 strong-current starts per seed (stream [20261012, 2, 9, 1000 + seed]), scored for every arm as a description-only readout; about 1.5 minutes of evaluation per seed-world and code in evaluate_phase.py"]},
   {"number": 11, "choice": "retrain step 1's second critics on seeds 0-4", "default": "no", "alternatives": ["yes: about 1 CPU-hour of exploratory training on seen seeds, to pin their pooled heights beside seeds 10-14's"]}
  ],
@@ -198,8 +200,8 @@
   "code_manifest": "code_manifest.json",
   "unit_tests": ["test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py", "test_v9.py"],
   "approval_script": "approve_local_near80.py",
-  "entries": ["run_near80.sh", "push_runfiles_near80.sh"],
+  "entries": ["run_near80_cluster.sh", "near80_slurm_job.sh", "run_near80.sh", "push_runfiles_near80.sh"],
   "pre_approval_facts": "pre_approval/pooled_facts_seeds0_4_spent10_14.json",
-  "outputs": "runs/shift_explore/near80_v9/ (write-once); committed copies in near80/results-*/"
+  "outputs": "runs/shift_explore/near80_v9/ under the clone that runs (write-once); committed copies in near80/results-*/"
  }
 }

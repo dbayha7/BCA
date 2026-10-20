@@ -12,14 +12,14 @@ switched ramp trained alone) and three claims (C1: version 8's claim 4 marks unc
 to the world-blind rivals; C2: BCA's switched ramp beats each plain twin by 5 points; C3, the mirror: a twin beats it).
 
 Changing any value here changes the code manifest and so the fingerprint the owner approves. DECISION.md (20 October
-2026, after three reviews) fixed every value below; the one item still open is OWNER_ANSWER (the owner's own words
-accepting the choices of section 16), and freeze.py refuses to freeze while it is None.
+2026, after three reviews) fixed every value below, and OWNER_ANSWER records the owner's own words answering the
+choices of section 16 (the defaults, with the university cluster as the run machine and the place results come from).
 
-Host profiles (section 12 of PREREGISTRATION.md): the desktop (version 8's paths, root inside WSL) runs version 9. A
-cluster profile (hpc.charlotte.edu, Slurm, no root, a clone under /scratch/dbayha) is kept for the paths' sake; its
-entry scripts were drafted, never run, and are not part of version 9 (V9_BUILD_NOTES.md says where they are). The host
-is chosen by NEAR80_HOST; the paths that depend on it are left out of the frozen constants block (HOST_DEPENDENT),
-everything else is frozen.
+Host profiles (section 12 of PREREGISTRATION.md): the cluster (hpc.charlotte.edu, Slurm, never root, a clone under
+/scratch/dbayha, the entry run_near80_cluster.sh with one job per fresh seed and a group job) runs version 9; the
+desktop (version 8's paths, root inside WSL, run_near80.sh) is the fallback. Both run the same frozen code with the
+same approval import and manifest checks. The host is chosen by NEAR80_HOST; the paths that depend on it are left out
+of the frozen constants block (HOST_DEPENDENT), everything else is frozen.
 """
 import importlib.util
 import os
@@ -30,9 +30,9 @@ sys.dont_write_bytecode = True
 
 # ------------------------------------------------------------------------------------------------ placeholders
 # DECISION.md (20 October 2026) fixed the seed count (ten, 40-49), C2's margin (5.0 points, ceil(0.8 n) positive seeds,
-# all three twins), C3 (the mirror: -5.0 points, at most 1 positive seed) and MIN_CERTIFIED (8). Nothing is open here
-# but OWNER_ANSWER below; freeze.py refuses while this dict is not empty, while any mark value is None, while
-# OWNER_ANSWER is None, and while the documents carry "TODO(DECISION" or "**DRAFT".
+# all three twins), C3 (the mirror: -5.0 points, at most 1 positive seed) and MIN_CERTIFIED (8); OWNER_ANSWER below
+# holds the owner's answer. Nothing is open here; freeze.py refuses while this dict is not empty, while any mark value
+# is None, while OWNER_ANSWER is None, and while the documents carry a TODO(...) mark or "**DRAFT".
 PLACEHOLDERS = {}
 
 # ------------------------------------------------------------------------------------------------ host profiles
@@ -40,12 +40,15 @@ HOST_PROFILES = {
     "desktop": dict(root="/home/user/bca", python="/tmp/claude-0/bcavenv/bin/python", home="/root",
                     requires_root=True, entry="run_near80.sh (tmux, one runner, lanes 1-16)",
                     memory="WSL: MemTotal minus 8 GiB (version 7's rule)"),
-    "cluster": dict(root="NEAR80_ROOT: a clone under /scratch/dbayha (never /home/user/bca)",
-                    python="NEAR80_PYTHON: a venv built from the package's pins, or module python/3.12.3",
-                    home="the job's own HOME (never root)", requires_root=False,
-                    entry="not part of version 9: the sbatch entry (account staruser, partition Orion, 48-CPU nodes, "
-                          "30-day limit; one job per seed or per phase group) was drafted and never run; its two "
-                          "scripts are kept outside this folder (V9_BUILD_NOTES.md)",
+    "cluster": dict(root="NEAR80_ROOT: a git clone under /scratch/dbayha (never /home/user/bca)",
+                    python="NEAR80_PYTHON: a venv built from the package's pins (uv 0.11.32, Python 3.10.20, the "
+                           "stage2_gpu lock file's 67 wheels, hash-checked), the shift dependencies in BCA_SHIFT_DEPS",
+                    home="a stand-in HOME under /scratch/dbayha (never root; nothing under /users)", requires_root=False,
+                    entry="run_near80_cluster.sh (sbatch, account staruser, partition Orion, --constraint=caslake: one "
+                          "job per fresh seed at 8 processors, then one group job at 16 for the lock, every "
+                          "evaluation and the look; the same frozen runner, approval import and manifest checks as "
+                          "the desktop; its stub run finished all 19 phases on the cluster on 20 October 2026, "
+                          "V9_BUILD_NOTES.md)",
                     memory="the job's Slurm memory (NEAR80_MEM_TOTAL_KB) minus 8 GiB"),
     "test": dict(root="NEAR80_ROOT (a clone used by the unit tests; never an official run)", python="sys.executable",
                  home="the user's HOME", requires_root=False, entry="the unit tests and stub runs only",
@@ -118,10 +121,31 @@ BRANCH = "claude/main-bca-connection-x4o46s"
 APPROVER_EMAIL = "35092758+dbayha7@users.noreply.github.com"
 APPROVER_NAME = "David Bayha"
 AGENT_EMAILS = ("noreply@anthropic.com",)
-# The owner's own words accepting the choices of PREREGISTRATION.md section 16 (DECISION.md section 16, defaults
-# 1-11), with the time and the place they were said: dict(text=..., utc=..., where=..., choices=[...]). The one item
-# still open: no agent fills it; the freeze refuses while it is None.
-OWNER_ANSWER = None
+# The owner's own words answering the choices of PREREGISTRATION.md section 16 (DECISION.md section 16, defaults
+# 1-11), with the time and the place they were said, and what each choice takes: every default, except that the run
+# machine (choice 4) and the place results come from (choice 9) are the university cluster, with the desktop kept as
+# the fallback. The freeze refuses while this is None; no agent writes it from anything but the owner's words.
+OWNER_ANSWER = dict(
+    text="Accept the defaults and cluster",
+    utc="2026-10-20T18:29:00Z",
+    where="chat with the cloud assistant",
+    choices=["1: ten seeds, 40-49 (the default)",
+             "2: a refusal read per arm: no caution in C1, the seed left out of C2 and C3 (the default)",
+             "3: no second held-out log (the default)",
+             "4: the machine: the university cluster hpc.charlotte.edu (the cluster entry, one job per seed on the "
+             "caslake nodes); the desktop is the fallback",
+             "5: version 7's memory rule (the default)",
+             "6: 10 lanes (the default; on the cluster 8 per seed job and 16 for the group job)",
+             "7: version 9 in place in near80/ (the default)",
+             "8: the plain 90% gap and twice it (the default)",
+             "9: results come from the cluster (the login node, in the owner's own SSH session); the desktop is the "
+             "fallback",
+             "10: no fresh start bank (the default)",
+             "11: no retrain of seeds 0-4's second critics (the default)"],
+    taken={"4": "the university cluster hpc.charlotte.edu (run_near80_cluster.sh); the desktop entry is the fallback",
+           "9": "the cluster: results and run files committed from the login node in the owner's own SSH session "
+                "(run_near80_cluster.sh results, push_runfiles_near80.sh); the desktop is the fallback"},
+)
 
 # ------------------------------------------------------------------------------------------------ the approval files
 PREREG_KIND = "near80-preregistration"
@@ -159,7 +183,8 @@ V8_FROZEN_NAME = "no_training_checks_seeds0_4.json"
 V9_NOTES = "V9_BUILD_NOTES.md"
 
 # Files the code manifest lists, relative to N80 (code/ is listed by name; freeze refuses any other file there).
-TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "push_runfiles_near80.sh")
+TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "run_near80_cluster.sh",
+             "near80_slurm_job.sh", "push_runfiles_near80.sh")
 CODE_FILES = ("near80_constants.py", "near80lib.py", "facts_near80.py", "test_near80.py", "approval_check.py",
               "import_approval.py", "near80_prereg.py", "freeze.py", "test_approval.py", "near80_runner.py",
               "phases.py", "phase_main.py", "settingdata.py", "learner_phases.py", "policy_phase.py",
@@ -293,7 +318,7 @@ MULTIPLICITY_RULES = ("all_three", "each_separately")
 DEFAULTS = dict(setting="main", seeds="ten fresh seeds, 40-49", pooled_groups=True,
                 refusal_rule="per arm: no caution in C1; the seed left out of C2 and C3",
                 noise_floor="obca_k1 trained alone", hosts="TD3+BC actor-only", lanes=10, name="version 9, near-80 main",
-                machine="the desktop")
+                machine="the cluster (hpc.charlotte.edu, caslake nodes); the desktop as the fallback")
 
 # ------------------------------------------------------------------------------------------------ the runner
 PHASE_KINDS = ("data_main", "critic", "critic_full", "critic_second", "switch", "clone", "reference_actors", "policy",
@@ -304,6 +329,15 @@ PHASE_PLAIN = {"data_main": "the main setting's data, the gate's checks and the 
                "reference_actors": "the no-caution and full-log actors", "policy": "the actor training",
                "lock": "the lock", "evaluate": "the evaluation", "look": "the look"}
 DEFAULT_LANES, MAX_LANES = 10, 16
+# The cluster entry's jobs (run_near80_cluster.sh; the smoke of 20 October 2026 measured the sizes): the login node
+# hpc.charlotte.edu, Slurm account staruser, partition Orion, one processor type for a whole run. Lanes are
+# --cpus-per-task; a seed's width is 7 phases; the group job holds every evaluation (2 per seed) beside the lock and
+# the look. The seed job ends once only lock-dependent phases remain (near80_runner.Cfg.mine).
+CLUSTER = dict(login="hpc.charlotte.edu", account="staruser", partition="Orion", constraint="caslake",
+               scratch=CLUSTER_SCRATCH, pinned_deps="/root/.cache/bca-shift/py",
+               jobs=dict(plumbing=dict(lanes=4, mem_gb=16, time="02:00:00"),
+                         seed=dict(lanes=8, mem_gb=24, time="03:00:00"),
+                         group=dict(lanes=16, mem_gb=24, time="01:00:00")))
 GIB = 1024 ** 3
 UNMEASURED_GIB, HEADROOM_GIB, MEASURED_FACTOR = 7, 8, 1.25
 POLICY_KINDS = ("policy",)
