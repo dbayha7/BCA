@@ -1,0 +1,585 @@
+{
+ "cpu_seconds": 4441.812295475002,
+ "fresh_path": {
+  "no_stall": true,
+  "stall": true
+ },
+ "kind": "near80-plumbing",
+ "passed": true,
+ "peaks": {
+  "clone": 1672104,
+  "critic": 1672104,
+  "critic_full": 1672104,
+  "critic_second": 1672104,
+  "data_band": 1677722,
+  "data_main": 1677722,
+  "evaluate": 1677722,
+  "fixed_checks": 1677722,
+  "lock": 1677722,
+  "look_exploratory": 1677722,
+  "policy": 1672104,
+  "readouts": 1677722,
+  "reference_actors": 1672104,
+  "switch": 1672104,
+  "v6_band": 1677722
+ },
+ "prereg_sha256": "51e677ab76c8d2f7fa7779d21db7f53bd40d42ff5e6be278d4abfb34c3396d4a",
+ "reproduction": {
+  "no_stall": {
+   "clone": {
+    "detail": {
+     "near80": "ddc35a113d9f5bbd74b6bb3c01a95503683451ac17da2c44a9f930109c7915c6",
+     "saved": "ddc35a113d9f5bbd74b6bb3c01a95503683451ac17da2c44a9f930109c7915c6"
+    },
+    "passed": true,
+    "plain": "the main test's cloned actor"
+   },
+   "critic": {
+    "detail": {
+     "near80": "b36c9e0030228273fa9f90e113311760ebd4936a44b0cc2d803c91a6751d07a9",
+     "saved": "b36c9e0030228273fa9f90e113311760ebd4936a44b0cc2d803c91a6751d07a9"
+    },
+    "passed": true,
+    "plain": "the main test's critic"
+   },
+   "none": {
+    "detail": {
+     "near80": "cc81aa1cfa19675f37f899878eef10501627347b8bff20a5f26a5f3d485b7e64",
+     "saved": "cc81aa1cfa19675f37f899878eef10501627347b8bff20a5f26a5f3d485b7e64"
+    },
+    "passed": true,
+    "plain": "the main test's no-caution actor"
+   },
+   "obca_k1": {
+    "detail": {
+     "critic_second": {
+      "near80": "c1397479f12b83951755b7c8a44c1b6b0719075dd1767286430cd7320048f6d2",
+      "saved": "c1397479f12b83951755b7c8a44c1b6b0719075dd1767286430cd7320048f6d2"
+     },
+     "obca_k1": {
+      "near80": "cc81aa1cfa19675f37f899878eef10501627347b8bff20a5f26a5f3d485b7e64",
+      "saved": "cc81aa1cfa19675f37f899878eef10501627347b8bff20a5f26a5f3d485b7e64"
+     },
+     "parts": {
+      "critic_second": true,
+      "obca_k1": true,
+      "switch": true
+     },
+     "policy": {
+      "checks": {
+       "b_w0": {
+        "max_abs_diff": 0.0,
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       },
+       "gap_rule": {
+        "n_tail": 37,
+        "passed": true,
+        "t_lo": 0.786250650882721,
+        "t_up": 0.9953150153160095,
+        "table_t_lo": 0.786250650882721,
+        "table_t_up": 0.9953150153160095
+       },
+       "h0_reproduces_reference": {
+        "arms": {
+         "conformal_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "fixed_gated": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "meangap_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "obca_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "obca_k2": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         }
+        },
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       }
+      },
+      "ramp_programs": [
+       [
+        "w0_check",
+        "obca_k1",
+        "obca_k2",
+        "obca_forced",
+        "fixed_gated",
+        "conformal_k1",
+        "meangap_k1"
+       ]
+      ]
+     },
+     "switch": {
+      "near80": {
+       "height": 0.08312661886215089,
+       "on": false,
+       "q05": 0.020833098888397572
+      },
+      "saved": {
+       "height": 0.08312661886215089,
+       "on": false,
+       "q05": 0.020833098888397572
+      }
+     }
+    },
+    "passed": true,
+    "plain": "step 2's switched-ramp actor"
+   },
+   "range_hinge": {
+    "detail": {
+     "near80": "8d6a054f06785c6cb6d0994ce8c1019fe223a692bc4f758ec71ee55967d8c698",
+     "policy": {
+      "checks": {
+       "b_w0": {
+        "max_abs_diff": 0.0,
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       },
+       "gap_rule": {
+        "n_tail": 37,
+        "passed": true,
+        "t_lo": 0.786250650882721,
+        "t_up": 0.9953150153160095,
+        "table_t_lo": 0.786250650882721,
+        "table_t_up": 0.9953150153160095
+       },
+       "h0_reproduces_reference": {
+        "arms": {
+         "conformal_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "fixed_gated": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "meangap_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "obca_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "obca_k2": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         }
+        },
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       }
+      },
+      "ramp_programs": [
+       [
+        "w0_check",
+        "obca_k1",
+        "obca_k2",
+        "obca_forced",
+        "fixed_gated",
+        "conformal_k1",
+        "meangap_k1"
+       ]
+      ]
+     },
+     "saved": "8d6a054f06785c6cb6d0994ce8c1019fe223a692bc4f758ec71ee55967d8c698"
+    },
+    "passed": true,
+    "plain": "step 2's hand-set range-limit actor"
+   },
+   "removal": {
+    "detail": {
+     "near80": [
+      "3cd05fc7da060a5e027fbdacfa6d36e7f3863ac251fbc86226e3c92fc1872673",
+      "eb1542398d6a6cd16adf45e96790199da6df914bb10d1a5fe84f6ac9a5579539"
+     ],
+     "saved": [
+      "3cd05fc7da060a5e027fbdacfa6d36e7f3863ac251fbc86226e3c92fc1872673",
+      "eb1542398d6a6cd16adf45e96790199da6df914bb10d1a5fe84f6ac9a5579539"
+     ]
+    },
+    "passed": true,
+    "plain": "the main test's removal"
+   },
+   "w0_check": {
+    "detail": {
+     "near80": "cc81aa1cfa19675f37f899878eef10501627347b8bff20a5f26a5f3d485b7e64",
+     "policy": {
+      "checks": {
+       "b_w0": {
+        "max_abs_diff": 0.0,
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       },
+       "gap_rule": {
+        "n_tail": 37,
+        "passed": true,
+        "t_lo": 0.786250650882721,
+        "t_up": 0.9953150153160095,
+        "table_t_lo": 0.786250650882721,
+        "table_t_up": 0.9953150153160095
+       },
+       "h0_reproduces_reference": {
+        "arms": {
+         "conformal_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "fixed_gated": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "meangap_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "obca_k1": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         },
+         "obca_k2": {
+          "max_abs_diff": 0.0,
+          "passed": true
+         }
+        },
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       }
+      },
+      "ramp_programs": [
+       [
+        "w0_check",
+        "obca_k1",
+        "obca_k2",
+        "obca_forced",
+        "fixed_gated",
+        "conformal_k1",
+        "meangap_k1"
+       ]
+      ]
+     },
+     "saved": "cc81aa1cfa19675f37f899878eef10501627347b8bff20a5f26a5f3d485b7e64"
+    },
+    "passed": true,
+    "plain": "step 2's plumbing-check actor"
+   }
+  },
+  "stall": {
+   "clone": {
+    "detail": {
+     "near80": "b47cba7ddb0dd759e04f126a6f89c97bfcaa2008dc76a8a65414e1349a05af01",
+     "saved": "b47cba7ddb0dd759e04f126a6f89c97bfcaa2008dc76a8a65414e1349a05af01"
+    },
+    "passed": true,
+    "plain": "the main test's cloned actor"
+   },
+   "critic": {
+    "detail": {
+     "near80": "3a99f1598e914f8a67171d6278786cee7ac4901c5402da8d1b95adaa5fb454b0",
+     "saved": "3a99f1598e914f8a67171d6278786cee7ac4901c5402da8d1b95adaa5fb454b0"
+    },
+    "passed": true,
+    "plain": "the main test's critic"
+   },
+   "none": {
+    "detail": {
+     "near80": "bdd7e5812a269f0d396b36639d01d90f10b37e0dcd62327f067dd2760a4af6ad",
+     "saved": "bdd7e5812a269f0d396b36639d01d90f10b37e0dcd62327f067dd2760a4af6ad"
+    },
+    "passed": true,
+    "plain": "the main test's no-caution actor"
+   },
+   "obca_k1": {
+    "detail": {
+     "critic_second": {
+      "near80": "6f2fc24b81da2f1741569ee4be861e79b057f3b272ce21ad04f9094a523c8950",
+      "saved": "6f2fc24b81da2f1741569ee4be861e79b057f3b272ce21ad04f9094a523c8950"
+     },
+     "obca_k1": {
+      "near80": "581d3a1bf57880bd4281da3b7a9b7369d610ee75b22533feb7b35508221ea98c",
+      "saved": "581d3a1bf57880bd4281da3b7a9b7369d610ee75b22533feb7b35508221ea98c"
+     },
+     "parts": {
+      "critic_second": true,
+      "obca_k1": true,
+      "switch": true
+     },
+     "policy": {
+      "checks": {
+       "b_w0": {
+        "max_abs_diff": 0.0,
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       },
+       "gap_rule": {
+        "n_tail": 34,
+        "passed": true,
+        "t_lo": 0.7860120534896851,
+        "t_up": 0.9953150153160095,
+        "table_t_lo": 0.7860120534896851,
+        "table_t_up": 0.9953150153160095
+       },
+       "h0_reproduces_reference": {
+        "arms": {},
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       }
+      },
+      "ramp_programs": [
+       [
+        "w0_check"
+       ],
+       [
+        "obca_k1",
+        "obca_k2",
+        "obca_forced",
+        "fixed_gated",
+        "conformal_k1",
+        "meangap_k1"
+       ]
+      ]
+     },
+     "switch": {
+      "near80": {
+       "height": 6.019341344833375,
+       "on": true,
+       "q05": 1.0483887863159183
+      },
+      "saved": {
+       "height": 6.019341344833375,
+       "on": true,
+       "q05": 1.0483887863159183
+      }
+     }
+    },
+    "passed": true,
+    "plain": "step 2's switched-ramp actor"
+   },
+   "range_hinge": {
+    "detail": {
+     "near80": "23d09de04841800277ca2560bb5e235d036fd23eb33b73237865dbbd7f639818",
+     "policy": {
+      "checks": {
+       "b_w0": {
+        "max_abs_diff": 0.0,
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       },
+       "gap_rule": {
+        "n_tail": 34,
+        "passed": true,
+        "t_lo": 0.7860120534896851,
+        "t_up": 0.9953150153160095,
+        "table_t_lo": 0.7860120534896851,
+        "table_t_up": 0.9953150153160095
+       },
+       "h0_reproduces_reference": {
+        "arms": {},
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       }
+      },
+      "ramp_programs": [
+       [
+        "w0_check"
+       ],
+       [
+        "obca_k1",
+        "obca_k2",
+        "obca_forced",
+        "fixed_gated",
+        "conformal_k1",
+        "meangap_k1"
+       ]
+      ]
+     },
+     "saved": "23d09de04841800277ca2560bb5e235d036fd23eb33b73237865dbbd7f639818"
+    },
+    "passed": true,
+    "plain": "step 2's hand-set range-limit actor"
+   },
+   "removal": {
+    "detail": {
+     "near80": [
+      "56327c0172c573b5736303c47b0677848ec7de732d112eedcb08ae5047fd04ee",
+      "0bbfaff6f01dcdc01b7044dff90e867fad71091f2e8313436452a5d8d8a41453"
+     ],
+     "saved": [
+      "56327c0172c573b5736303c47b0677848ec7de732d112eedcb08ae5047fd04ee",
+      "0bbfaff6f01dcdc01b7044dff90e867fad71091f2e8313436452a5d8d8a41453"
+     ]
+    },
+    "passed": true,
+    "plain": "the main test's removal"
+   },
+   "w0_check": {
+    "detail": {
+     "near80": "bdd7e5812a269f0d396b36639d01d90f10b37e0dcd62327f067dd2760a4af6ad",
+     "policy": {
+      "checks": {
+       "b_w0": {
+        "max_abs_diff": 0.0,
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       },
+       "gap_rule": {
+        "n_tail": 34,
+        "passed": true,
+        "t_lo": 0.7860120534896851,
+        "t_up": 0.9953150153160095,
+        "table_t_lo": 0.7860120534896851,
+        "table_t_up": 0.9953150153160095
+       },
+       "h0_reproduces_reference": {
+        "arms": {},
+        "passed": true,
+        "reference": "the no-caution actor of this setting (version 6's check (b))",
+        "tol": 1e-05
+       }
+      },
+      "ramp_programs": [
+       [
+        "w0_check"
+       ],
+       [
+        "obca_k1",
+        "obca_k2",
+        "obca_forced",
+        "fixed_gated",
+        "conformal_k1",
+        "meangap_k1"
+       ]
+      ]
+     },
+     "saved": "bdd7e5812a269f0d396b36639d01d90f10b37e0dcd62327f067dd2760a4af6ad"
+    },
+    "passed": true,
+    "plain": "step 2's plumbing-check actor"
+   }
+  }
+ },
+ "reproduction_vmhwm_kb": 1672104,
+ "scratch": "/root/near80_plumbing/20261016T122525Z",
+ "seconds": 3751.6365248940006,
+ "smoke": {
+  "clone.main.no_stall.s0": true,
+  "clone.main.stall.s0": true,
+  "clone.near80.no_stall.s0": true,
+  "clone.near80.stall.s0": true,
+  "clone.random_rows.no_stall.s0": true,
+  "clone.random_rows.stall.s0": true,
+  "critic.main.no_stall.s0": true,
+  "critic.main.stall.s0": true,
+  "critic.near80.no_stall.s0": true,
+  "critic.near80.stall.s0": true,
+  "critic.random_rows.no_stall.s0": true,
+  "critic.random_rows.stall.s0": true,
+  "critic_full.x.stall.s0": true,
+  "critic_second.main.no_stall.s0": true,
+  "critic_second.main.stall.s0": true,
+  "critic_second.near80.no_stall.s0": true,
+  "critic_second.near80.stall.s0": true,
+  "critic_second.random_rows.no_stall.s0": true,
+  "critic_second.random_rows.stall.s0": true,
+  "data_band.band.no_stall.s0": true,
+  "data_band.band.stall.s0": true,
+  "data_main.main.no_stall.s0": true,
+  "data_main.main.stall.s0": true,
+  "evaluate.main.no_stall.s0": true,
+  "evaluate.main.stall.s0": true,
+  "evaluate.near80.no_stall.s0": true,
+  "evaluate.near80.stall.s0": true,
+  "evaluate.random_rows.no_stall.s0": true,
+  "evaluate.random_rows.stall.s0": true,
+  "fixed_checks.x.x.exploratory": true,
+  "lock.x.x.exploratory": true,
+  "look_exploratory.x.x.exploratory": true,
+  "policy.main.no_stall.s0": true,
+  "policy.main.stall.s0": true,
+  "policy.near80.no_stall.s0": true,
+  "policy.near80.stall.s0": true,
+  "policy.random_rows.no_stall.s0": true,
+  "policy.random_rows.stall.s0": true,
+  "readouts.near80.no_stall.s0": true,
+  "readouts.near80.stall.s0": true,
+  "readouts.random_rows.no_stall.s0": true,
+  "readouts.random_rows.stall.s0": true,
+  "reference_actors.main.no_stall.s0": true,
+  "reference_actors.main.stall.s0": true,
+  "reference_actors.near80.no_stall.s0": true,
+  "reference_actors.near80.stall.s0": true,
+  "reference_actors.random_rows.no_stall.s0": true,
+  "reference_actors.random_rows.stall.s0": true,
+  "switch.main.no_stall.s0": true,
+  "switch.main.stall.s0": true,
+  "switch.near80.no_stall.s0": true,
+  "switch.near80.stall.s0": true,
+  "switch.random_rows.no_stall.s0": true,
+  "switch.random_rows.stall.s0": true,
+  "v6_band.near80.no_stall.s0": true,
+  "v6_band.near80.stall.s0": true,
+  "v6_band.random_rows.no_stall.s0": true,
+  "v6_band.random_rows.stall.s0": true
+ },
+ "smoke_peaks": {
+  "clone": 361284,
+  "critic": 387284,
+  "critic_full": 376912,
+  "critic_second": 398652,
+  "data_band": 260768,
+  "data_main": 248664,
+  "evaluate": 364044,
+  "fixed_checks": 195628,
+  "lock": 322092,
+  "look_exploratory": 196852,
+  "policy": 1241044,
+  "readouts": 381876,
+  "reference_actors": 443480,
+  "switch": 399248,
+  "v6_band": 562672
+ },
+ "tests": {
+  "test_approval.py": {
+   "exit_code": 0,
+   "seconds": 8.87787826900012,
+   "tail": "Import) ... ok\ntest_refuses_an_approval_of_another_fingerprint (__main__.TestImport) ... ok\ntest_refuses_an_author_or_committer_who_is_not_the_owner (__main__.TestImport) ... ok\ntest_refuses_the_agent_as_author_or_committer (__main__.TestImport) ... ok\ntest_refuses_the_agent_as_committer (__main__.TestImport) ... ok\ntest_refuses_the_agent_in_another_case (__main__.TestImport) ... ok\ntest_refuses_the_sessions_configured_email_as_author (__main__.TestImport) ... ok\ntest_refuses_the_sessions_configured_email_as_committer (__main__.TestImport) ... ok\ntest_refuses_two_adding_commits (__main__.TestImport) ... ok\ntest_refuses_when_not_approvable_now (__main__.TestImport) ... ok\ntest_refuses_when_the_session_is_configured_as_the_owner (__main__.TestImport)\nA session whose git identity is the owner's address cannot import a commit made under that address. ... ok\ntest_refuses_zero_commits (__main__.TestImport) ... ok\ntest_show (__main__.TestImport) ... ok\ntest_refusal_messages_start_with_refused (__main__.TestJson) ... ok\ntest_write_once_and_read_verified (__main__.TestJson) ... ok\ntest_the_real_folder_refuses_before_the_freeze (__main__.TestRealFolder)\nBefore the freeze there is no prereg.json; after it, nothing is approved and imported until the owner and ... skipped 'an import record exists (after approval this test has nothing to show)'\ntest_passes_on_a_good_chain (__main__.TestRequireApproval) ... ok\ntest_refuses_a_relaxed_configuration_without_a_fixture (__main__.TestRequireApproval) ... ok\ntest_refuses_another_branch (__main__.TestRequireApproval) ... ok\ntest_refuses_changed_constants (__main__.TestRequireApproval) ... ok\ntest_refuses_each_tamper (__main__.TestRequireApproval) ... ok\ntest_refuses_the_agent_identity_at_check_time (__main__.TestRequireApproval)\nverify_chain asks git for the configured user.email at every check: a commit by it is refused. ... ok\n\n----------------------------------------------------------------------\nRan 70 tests in 8.346s\n\nOK (skipped=1)\n"
+  },
+  "test_near80.py": {
+   "exit_code": 0,
+   "seconds": 3.1451759750002566,
+   "tail": ". ok\ntest_catches_a_kept_band_row (__main__.TestLeakCheck) ... ok\ntest_catches_a_kept_bank_band_row (__main__.TestLeakCheck) ... ok\ntest_catches_a_touched_held_out_row (__main__.TestLeakCheck) ... ok\ntest_catches_an_extra_removed_row (__main__.TestLeakCheck) ... ok\ntest_passes (__main__.TestLeakCheck) ... ok\ntest_catches_a_kept_ball_row (__main__.TestRandomRows) ... ok\ntest_catches_a_removed_evaluation_row (__main__.TestRandomRows) ... ok\ntest_catches_bank_count_off_by_one (__main__.TestRandomRows) ... ok\ntest_catches_one_extra_training_row (__main__.TestRandomRows) ... ok\ntest_catches_one_missing_training_row (__main__.TestRandomRows) ... ok\ntest_catches_rows_moved_between_strata (__main__.TestRandomRows)\nSame totals, wrong mix: one extra row moved from hard water to calm. ... ok\ntest_deterministic_and_rep_dependent (__main__.TestRandomRows) ... ok\ntest_leak_check_of_control (__main__.TestRandomRows) ... ok\ntest_matched_counts_and_source (__main__.TestRandomRows) ... ok\ntest_refuses_a_removal_without_the_ball (__main__.TestRandomRows) ... ok\ntest_rng_tags (__main__.TestRandomRows) ... ok\ntest_stratified_by_hard_water (__main__.TestRandomRows)\nIn each kind of water (calm, hard water), the control removes exactly as many training rows and bank rows ... ok\ntest_clip (__main__.TestReadoutHelpers) ... ok\ntest_hold_and_ramp_start_follow_the_band (__main__.TestReadoutHelpers) ... ok\ntest_range_clip_controller (__main__.TestReadoutHelpers) ... ok\ntest_zones (__main__.TestReadoutHelpers) ... ok\ntest_empty_band_reproduces_the_gate_removal_bit_for_bit (__main__.TestRemoval) ... ok\ntest_removed_mask (__main__.TestRemoval) ... ok\ntest_structure (__main__.TestRemoval) ... ok\ntest_thruster1_scope_removes_fewer (__main__.TestRemoval) ... ok\ntest_catches_a_changed_or_missing_row (__main__.TestTrainingFile) ... ok\ntest_matches_the_leak_checked_arrays (__main__.TestTrainingFile) ... ok\n\n----------------------------------------------------------------------\nRan 46 tests in 0.364s\n\nOK\n"
+  },
+  "test_pooled.py": {
+   "exit_code": 0,
+   "seconds": 9.312862891999885,
+   "tail": "uote_markers (__main__.TestExtraction) ... ok\ntest_confirmatory_needs_the_exploratory_look (__main__.TestFilesAndModes) ... ok\ntest_explore_then_confirm_end_to_end (__main__.TestFilesAndModes) ... ok\ntest_main_cli_refuses_official_looks (__main__.TestFilesAndModes) ... refused: the official looks are written by the runner's look phases only\nok\ntest_nothing_written_into_the_code_folder (__main__.TestFilesAndModes) ... ok\ntest_official_refuses_a_scratch_record_and_another_fingerprint (__main__.TestFilesAndModes) ... ok\ntest_official_run_look_with_a_prereg_fixture (__main__.TestFilesAndModes) ... ok\ntest_run_look_writes_once_and_the_fields_the_runner_reads (__main__.TestFilesAndModes) ... ok\ntest_seeds_from_the_plan_and_reserved_seeds_refused (__main__.TestFilesAndModes) ... ok\ntest_tampered_and_mismatched_records_are_refused (__main__.TestFilesAndModes) ... ok\ntest_a_noise_floor_that_cannot_be_read_drops_claim3_without_a_number (__main__.TestStops)\nBCA's random-rows points missing on seed 1 (no stop record): the harm and the rival can be read, the noise ... ok\ntest_a_stop_rule_that_cannot_be_read (__main__.TestStops)\nA near-80 stalling-world policy stop on seed 2 leaves the harm and the band's cost unmeasured on seed 2: ... ok\ntest_exploratory_all_pass_prefix_and_substitutions (__main__.TestStops) ... ok\ntest_halt_report_harm_rival_and_phase_lines (__main__.TestStops) ... ok\ntest_halt_report_no_training_comes_first (__main__.TestStops) ... ok\ntest_halt_report_reproduction_one_two_three (__main__.TestStops) ... ok\ntest_harm_by_h_by_p_and_both (__main__.TestStops) ... ok\ntest_no_training_first_failed_rule (__main__.TestStops) ... ok\ntest_noise_floor_drops_claim3 (__main__.TestStops) ... ok\ntest_noise_floor_tie_names_the_range_limit (__main__.TestStops) ... ok\ntest_rival_unaffected (__main__.TestStops) ... ok\ntest_without_the_random_rows_control (__main__.TestStops) ... ok\n\n----------------------------------------------------------------------\nRan 60 tests in 8.990s\n\nOK\n"
+  },
+  "test_runner.py": {
+   "exit_code": 0,
+   "seconds": 223.18645661400024,
+   "tail": "Phases) ... ok\ntest_second_ctrl_c_is_machine_wide (__main__.TestRunnerWithFakePhases) ... ok\ntest_stop_is_never_rerun_and_skips_dependents (__main__.TestRunnerWithFakePhases) ... ok\ntest_version7_running_holds_new_phases (__main__.TestRunnerWithFakePhases) ... ok\ntest_changed_actor (__main__.TestStep2Saved) ... ok\ntest_changed_lock_byte (__main__.TestStep2Saved) ... ok\ntest_changed_point (__main__.TestStep2Saved) ... ok\ntest_fixture_passes (__main__.TestStep2Saved) ... ok\ntest_every_phase_kind_ran (__main__.TestStubEndToEnd) ... ok\ntest_no_bytecode_in_the_code_folder (__main__.TestStubEndToEnd) ... ok\ntest_nothing_trained (__main__.TestStubEndToEnd) ... ok\ntest_ramp_programs_in_the_stub_run (__main__.TestStubEndToEnd)\nEvery policy phase of the stub runs ran exactly the ramp programs of policy_phase.ramp_layout (step 2's ... ok\ntest_records_are_stub_and_strict (__main__.TestStubEndToEnd) ... ok\ntest_reserved_seeds_never_appear (__main__.TestStubEndToEnd) ... ok\ntest_est_minutes (__main__.TestTable) ... ok\ntest_ids_round_trip (__main__.TestTable) ... ok\ntest_kinds_settings_and_counts (__main__.TestTable) ... ok\ntest_needs_are_in_the_plan_and_acyclic (__main__.TestTable) ... ok\ntest_order_of_the_table (__main__.TestTable) ... ok\ntest_outputs_include_sidecars_and_stop (__main__.TestTable) ... ok\ntest_specific_needs (__main__.TestTable) ... ok\ntest_every_context_checks_the_prepared_rows (__main__.TestTrainingFileCheck)\nsettingdata.SettingContext.prepared compares the rows it serves with the data record's prepared_sha256 ... ok\ntest_look_disallows_fresh_band_settings (__main__.TestTrainingFileCheck) ... ok\ntest_tampered_prepared_hash_stops_switch (__main__.TestTrainingFileCheck)\nBCA's switch reads the setting's prepared rows: the training-file check runs for it too, so a data record ... ok\ntest_tampered_training_file_stops_and_skips (__main__.TestTrainingFileCheck) ... ok\n\n----------------------------------------------------------------------\nRan 82 tests in 222.494s\n\nOK\n"
+  }
+ },
+ "written": "2026-10-16T13:25:27Z"
+}
