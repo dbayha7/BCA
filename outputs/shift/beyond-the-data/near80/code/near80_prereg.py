@@ -31,7 +31,7 @@ CONTENT_KEYS = ("request", "question", "setting", "pooled_groups", "outcome_free
                 "compute", "departures", "facts_from_version_8")
 FROZEN_REL = K.PRE_APPROVAL_DIR + "/" + K.COUNTS_FROZEN_NAME
 DRAFT_WORD = re.compile(r"\bdraft\b", re.IGNORECASE)
-TODO_MARK = re.compile(r"TODO\(DECISION\.md")
+TODO_MARK = re.compile(r"TODO\(")
 # The constants that name the draft state itself (not draft wording): left out of the final payload's word check.
 DRAFT_STATE_CONSTANTS = ("STATUS_DRAFT", "STATUS_LINE_DRAFT", "DRAFT_NAME", "DRAFT_HISTORY_NAME")
 

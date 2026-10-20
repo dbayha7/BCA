@@ -2,15 +2,18 @@
 
 **DRAFT, not frozen, awaiting the owner. Nothing has been trained.**
 
-No learner, critic or actor has been trained for this version, and nothing has been frozen. This draft was built by
-the session on 20 October 2026, after version 8's run on the Framework Desktop ended (19 October) and after the
-check of its results (`../near80_results_check/REPORT.md`). Its open items are marked `TODO(DECISION.md: ...)`; a
-parallel workflow (`DECISION.md`, `BUILD_LIST.md`) fixes them, and the freeze step (`code/freeze.py`) refuses to
-freeze while any remains. Version 8's files stay in this folder as history (section 18).
+No learner, critic or actor has been trained for this version, and nothing has been frozen. This version was built by
+the session on 20 October 2026, after version 8's run on the Framework Desktop ended (19 October), after the check of
+its results (`../near80_results_check/REPORT.md`), and after `DECISION.md` (the same day, revised after three
+independent reviews) fixed every value below. Two items stay open until the freeze and are marked `TODO(...)`: your
+answer to section 16 (`TODO(OWNER: ...)`) and the facts the frozen code computes before approval (`TODO(FREEZE:
+...)`); the freeze step (`code/freeze.py`) refuses to freeze while any such mark, or the status line above, remains.
+Version 8's files stay in this folder as history (section 18).
 
 **The one question this answers:** on fresh seeds, in the main test's setting (the densest 15% of recorded commands
 removed), does BCA's switched ramp meet step 2's three marks once its two calibration groups are pooled over every
-held-out row, and does its switch and height earn anything that a plain switch would not?
+held-out row, and does its height earn anything, by 5 points, that a plain switch with a plain height reading the
+same groups would not?
 
 ---
 
@@ -18,30 +21,35 @@ held-out row, and does its switch and height earn anything that a plain switch w
 
 **Seeds.**
 - Seeds 0-4 are seen by everything. Version 9 uses seed 0 for its plumbing only (nothing on it is a claim).
-- Seeds 5-9 belong to version 6/7; 10-14 to version 8; 15-19 and 20-34 are named by other designs; 100-119 and
-  900-909 by the gate and stage 0. Version 9 never touches any of them.
-- Version 9's fresh seeds come from the block 40-59, which no study of this generator has used or named. The first
-  five are listed in the code (`FRESH = (40, 41, 42, 43, 44)`); the count is `TODO(DECISION.md: the number of fresh
-  seeds, 5, 10, 15 or 20)`. Nobody has generated, loaded or looked at them.
+- Seeds 40-49 are fresh. Only they can carry a claim. Nobody has generated, loaded or looked at them. Seeds 50-59 are
+  reserved for a later version and are refused by this one.
+- Seeds 10-14 are spent (version 8's fresh seeds). This version reads them once, before approval, with version 8's
+  recorded second critics (section 8.1, check 5; nothing trained). Seeds 5-9 belong to version 6/7; 15-19 stay named
+  for version 8's fallback; 20-34 belong to the placement design; 100-119 and 900-909 to the gate and stage 0. This
+  version never touches any of them.
 
 **Written after:**
-- version 8's run (19 October 2026): claim 4 failed by the pre-set rule because on fresh seeds 10, 12 and 13 the
-  held-out full-throttle group had 19, 22 and 18 rows, BCA's certificate did not certify it (its height was infinite),
-  and the approved code stopped the whole actor phase of those seeds (`policy_phase.py`, `step2lib.arm_table`);
-  claims 1-3 did not run (the band's stop rule on seeds 0-4);
-- the check of those results (`near80_results_check/REPORT.md`): the stop is a genuine limit of the method, not a
-  defect; it was foreseeable from the gate's own records (7 of 30 stalling-world seeds have fewer than 29 rows past
-  80% after the removal); the switch's on/off call was right in 10 of 10 fresh seed-worlds;
-- the lost analysis of version 8's records: the group is the removal ball's leakage (training-split full-throttle
-  commands the ball missed, plus 0-3 calibration-bank rows); it reads no outcome; its only size guard was the gap
-  rule's "at least 9 rows"; BCA's height at these sizes equals the top-1 or top-2 held-out tail score; a plain
-  mean-difference test with the same 0.10 margin makes BCA's on/off call in all 20 recorded seed-worlds and, turning
-  on the hand-set range limit, nets as much or more than BCA's switched ramp.
+- version 8's run and its independent check (19-20 October 2026): claim 4 failed by its pre-set rule because BCA's
+  certificate refused on fresh seeds 10, 12 and 13 (held-out full-throttle groups of 19, 22 and 18 rows against a
+  floor of about 29), the approved code stopped the whole actor phase of those seeds, and claims 1-3 did not run (the
+  band's stop rule on seeds 0-4); the switch's on/off call was right in 10 of 10 fresh seed-worlds;
+- five analyses of the records (the verdict, the refusal, the credit, the process, the steelman) and a preview of the
+  pooled groups on the spent seeds 0-4 and 10-14 (counts exact on all 20 seed-worlds; heights on 10-14 from the
+  recorded second critics; nothing trained): the group is the removal ball's leakage; it reads no outcome; its only
+  size guard was the gap rule's "at least 9 rows"; BCA's height at these sizes is the top-1 or top-2 held-out tail
+  score; a plain mean-difference test with the same 0.10 margin makes BCA's on/off call in all 40 recorded
+  seed-worlds and in 10 of 10 under pooling;
+- `DECISION.md` of 20 October 2026, revised after a statistics review, a fairness review and a feasibility review
+  (`REVISION_LOG.md`), which fixed the seeds, the claims, the margins and the refusal reading below;
+- your answer to section 16: TODO(OWNER: the date, the time and the words of the owner's acceptance of the defaults
+  of section 16, recorded in `OWNER_ANSWER` of `code/near80_constants.py`).
 
-**Not seen by anyone:** any learner trained with the pooled groups, and any number from the fresh seeds.
+**Not seen by anyone:** any learner trained with the pooled groups, and any number from seeds 40-49.
 
-**So:** every mark below is fixed before any learner sees the fresh seeds, except the items marked
-`TODO(DECISION.md: ...)`, which DECISION.md fixes before the freeze. Nothing is tuned after the freeze.
+**Redrafts before the freeze:** TODO(FREEZE: the number of redrafts after the kill rule of section 8.1 on the spent
+seeds 10-14; 0 when the recomputed calls equal version 8's at the first try).
+
+**So:** every mark below is fixed before any learner sees the fresh seeds. Nothing is tuned after the freeze.
 
 ---
 
@@ -59,17 +67,21 @@ held-out row, and does its switch and height earn anything that a plain switch w
   `t_lo`.
 - **BCA's two groups**: the rows BCA scores with its second critic to decide its switch and height: the full-throttle
   group and the rest. Version 8's groups were the training-split survivors (ball-kept rows above `t_lo`) plus the
-  calibration bank. Version 9 pools every held-out recorded row outside the ball into them (section 3).
+  calibration bank. Version 9 pools every held-out recorded row outside the ball into them (**the pooled groups**,
+  section 3).
 - **BCA's certificate**: 1,000 posterior draws per group; the switch is on when the 5% quantile of the gap between
   the groups' thresholds is above 0.10; the height is the difference of the deployed thresholds. A draw is infinite
   with probability 0.9 to the power of the group's size, and the group is certified only when at least 95% of the
   draws are finite: at least 29 rows (0.9^29 < 0.05), certain only from about 33-36 rows.
 - **A refusal**: a certificate that is on with an infinite height (the full-throttle group was not certified). Step
-  2's code refuses to build a switched-on arm from it.
-- **The twins**: three plain switches that read the same two groups as BCA and switch the same penalty: the
-  split-conformal switch (step 2's), the mean-difference switch with the ramp, and the mean-difference switch
-  turning on the hand-set range limit (section 5).
-- **Net across worlds**: step 2's measure, BCA's gain over no caution in the stalling world minus its loss to no
+  2's code refuses to build a switched-on arm from it; this version reads that refusal per arm (section 5.4).
+- **The plain twins**: three plain switches that read the same two groups as BCA and make its on/off call by the mean
+  difference of the groups' scores (the same 0.10 margin): with the plain 90%-quantile gap as the ramp's height, with
+  twice that gap, and turning on the hand-set range limit (section 5.3).
+- **The certified seeds**: the fresh seeds where BCA set a finite height in both worlds (neither refused nor failed).
+- **Ahead, tie, behind**: the three readings of BCA against one twin (section 9.3).
+- **The noise floor**: BCA's switched ramp trained in step 2's batch minus the same ramp trained alone (section 9.1).
+- **Net across worlds**: step 2's measure, an arm's gain over no caution in the stalling world minus its loss to no
   caution in the no-stall world, strong current.
 - **Points**: the exact 100-step return on a fixed test start set, scaled so that the recording controller scores 0
   and the world's top controller 100.
@@ -78,40 +90,41 @@ held-out row, and does its switch and height earn anything that a plain switch w
 
 ## 2. The short version
 
-- **What changes against version 8:** one setting (the main setting), fresh seeds from an unused block, and BCA's two
-  groups pooled over every held-out row outside the ball. Everything else of step 2's protocol stays: the critics,
-  the cloned and no-caution actors, the switched ramp, the always-on ramp, the hand-set range limit, the matched
-  rivals, the lock before any score.
+- **What changes against version 8:** one setting (the main setting), ten fresh seeds from an unused block, and BCA's
+  two groups pooled over every held-out row outside the ball: its full-throttle group grows from 18-60 rows to about
+  35-135, past the 29-row floor of its own certificate on every seed seen so far. A refusal fails BCA's arms on that
+  seed, never the seed. Everything else of step 2's protocol stays: the critics, the cloned and no-caution actors,
+  the switched ramp, the always-on ramp, the hand-set range limit, the matched rivals, the lock before any score.
+- **What is tested:** step 2's three marks on ten fresh seeds (C1); whether BCA's switched ramp beats each of three
+  plain twins trained beside it by 5 points (C2): the mean-difference switch with the plain 90% gap, with twice that
+  gap, and turning on the hand-set range limit; and, the mirror, whether a twin beats BCA by 5 points (C3). C2 and C3
+  are read on the seeds where BCA set a height.
 - **Why pooling:** version 8's group had 18-53 rows on fresh seeds; a group below 29 rows cannot be certified. The
   calibration and evaluation splits hold about 50,000 recorded rows per seed-world, of which a few dozen are outside
-  the ball and above `t_lo`. Pooling them adds those rows to the group and about 50,000 rows to the rest. It reads no
+  the ball and above `t_lo`. Pooling them adds those rows to the group and about 42,000 rows to the rest. It reads no
   outcome, touches no training row, and no scored test reads the pooled rows (the four fixed test start sets are
   rollouts).
-- **If BCA still refuses on a seed:** that counts as BCA failing that seed, for the arms that depend on BCA's height
-  only. Every other arm trains and is scored; nothing of the seed stops.
-- **Two claims:** C1, version 8's claim 4 marks unchanged (step 2's three go marks); C2, BCA's switched ramp beats
-  each plain twin, paired by seed, on the net across worlds, with margins `TODO(DECISION.md: the margin and the seed
-  count)` and a multiplicity rule `TODO(DECISION.md: all three twins, or each separately)`.
-- **Cost:** about 2.2 CPU-hours per fresh seed on the desktop (version 8's ledger, plus the two new arm calls and
-  the pooled scores) and about 2.5 for the plumbing; section 13 gives 5, 10, 15 and 20 seeds on the desktop and on
-  the cluster.
+- **What does not change:** TD3+BC in step 2's actor-only protocol; the gate's recorder, sizes and physics; the ball;
+  the four fixed test start sets; the matching rules; BCA's certificate, its draws and its tags; the approval,
+  identity and manifest rules.
+- **Cost:** about 18 CPU-hours in all (about 1.65 per seed plus about 1.5 of plumbing), about 5-5.5 hours of wall
+  time on your Framework Desktop in one sitting, plus about an hour of plumbing.
 
 ---
 
-## 3. The data and the pooled groups, exactly
+## 3. The evidence change, exactly
 
-### 3.1 The removal
+### 3.1 The rule
 
 The main test's ball, exactly as before (`shift.define_gap`, `shift.make_removal(log, 'gap', gap)`), bit for bit, in
-both worlds. The training rows a learner sees, the calibration bank, the test start sets and every rival's own rule
-are unchanged.
-
-### 3.2 The pooled groups
-
-For one seed and world, with `t_lo` from the gap rule on the ball-kept training commands:
+both worlds. Step 1's gap rule, unchanged, fixes `t_lo` and `t_up` on the ball-kept training commands
+(`step1lib.gap_rule`, upper quantile 0.99, least gap 0.05, at least 9 rows). BCA's switch reads every recorded row
+that the learners do not train on: the seed's calibration split (20,000 rows, the bank included) and evaluation split
+(30,000 rows), keeping the rows whose command is outside the ball (the ball's rows are hidden everywhere, as version 8
+hid them from the bank). For one seed and world:
 
 1. **The held-out rows** are every row of the calibration split and of the evaluation split whose command is outside
-   the ball. The ball's rows are hidden everywhere, as version 8 hid them from the bank.
+   the ball.
 2. **The full-throttle group** is the training-split survivors (ball-kept training rows with throttle index above
    `t_lo`, which step 1 already scored and holds out from BCA's second critic) together with the held-out rows with
    throttle index above `t_lo`.
@@ -119,32 +132,69 @@ For one seed and world, with `t_lo` from the gap rule on the ball-kept training 
 
 Version 8's groups (the survivors and the calibration bank) are a subset of these: the bank is part of the
 calibration split. The second critic is unchanged: it trains on the ball-kept training rows minus the survivors, so
-it has seen no full-throttle command, and every row it scores is held out from it. Every switch arm reads the same
-two groups (`policy_phase.arm_row_from` reads one switch record per world). The code: `near80lib.pooled_groups`,
-`learner_phases.switch_scores_pooled`.
+it has seen no full-throttle command, and every row it scores is held out from it. It scores both groups exactly as
+it scored the bank in version 8 (one-sided overestimates, the stall-aware controller at the next state, gamma 0.98).
+BCA's certificate (alpha 0.1, credibility 0.95, 1,000 draws, margin 0.10, the same tags), the split-conformal switch,
+the rank test and the mean-difference switch all read these two groups and no others (`policy_phase.arm_row_from`
+reads one switch record per world). The rest is pooled by the same rule: one rule for both groups. The code:
+`near80lib.pooled_groups`, `learner_phases.switch_scores_pooled`.
 
-### 3.3 What it does not change
+### 3.2 Counted before training
 
-- The training rows, the training file and its checks (`near80lib.training_file_check`).
-- The test start sets (nothing recorded there) and the points.
-- Every rival's own rule: the hand-set range limit's recorded range, the matched rivals' ladders and matcher, the
-  always-on ramp's height (BCA's stalling-world height), the perfect band.
-- Step 2's programs: BCA's switched ramp and the plumbing check train in step 2's own batches (section 5.3), so the
-  plumbing's reproduction check on seed 0 still reproduces step 2's saved actors bit for bit, when given step 1's own
-  switch entries.
+Both groups' sizes depend on commands only. The data phase writes them in the seed's data record, by source (the
+survivors, the calibration rows, the evaluation rows), with the exact chance that a group of that size gives a finite
+height (the chance that at most 50 of 1,000 draws are infinite, each infinite with chance 0.9 to the power of the
+size: 0% up to 24 rows, 40% at 28, 70% at 29, 90% at 30, 98% at 31, about 100% from 33), before any learner of that
+seed trains (`near80lib.pooled_count_record`). No seed is skipped or replaced on its count. The look prints the
+count per seed (section 14.3).
 
-### 3.4 The outcome-free count
+### 3.3 Where it applies, and what it does not change
 
-Before any training, when a seed's data is made, the code counts the pooled groups (`near80lib.pooled_count_record`,
-written into the data record): the full-throttle group's size, the rest's size, the survivors, and whether the group
-reaches 29 rows. It reads commands and split labels only. It is reported (section 14.3); no mark reads it; it fails
-no seed. For scale it also counts version 8's groups.
+To the switch arms only. The training rows, the training file and its checks (`near80lib.training_file_check`); the
+ball; the second critic's training set; the normalisation; the test start sets (nothing recorded there) and the
+points; every rival's own rule (the hand-set range limit's recorded range, the matched rivals' ladders and matcher,
+the always-on ramp's height, which is BCA's stalling-world height, the perfect band); step 2's programs (BCA's
+switched ramp and the plumbing check train in step 2's own batches, section 5.5, so the plumbing's reproduction check
+on seed 0 still reproduces step 2's saved actors bit for bit when given step 1's own switch entries). No scored number
+reads a held-out row.
+
+### 3.4 Why it is fair (five checks)
+
+- It changes BCA's evidence, not BCA: alpha, credibility, draws, margin, the gap rule, the score and the second critic
+  are unchanged; more rows of the same kind are read.
+- Nothing scored reads these rows: points come from exact rollouts on the four fixed test start sets, and no arm
+  trains on a held-out row (a leak check says so per seed, section 8.1 check 3).
+- Every switch arm reads the same two groups, so no rival is disadvantaged; the mean-difference and split-conformal
+  switches make the same calls under pooling as before on all 10 fresh seed-worlds (the preview).
+- It is the natural rule ("every recorded row the learners do not train on"), not a number tuned to the failing
+  seeds; the alternatives that would tune BCA (a lower credibility, a fallback height) are rejected for that reason.
+- Its honest consequence is stated up front: with 35-135 rows BCA's height is a lower order statistic than before,
+  so the heights shrink (0.49-0.73 of version 8's on seeds 11 and 14). If BCA's gain on seeds 0-4 came partly from an
+  inflated dose, this test shows it.
+
+### 3.5 What it does on the seen seeds (the preview on spent seeds; exploratory)
+
+Pooled full-throttle groups: seeds 0-4 stalling 70, 106, 121, 100, 110 (version 8: 35, 47, 59, 43, 47); seeds 10-14
+stalling 35, 109, 46, 38, 58 (version 8: 19, 53, 22, 18, 30); no-stall 37-135. Rest 41,476-42,997 (version 8:
+825-878). No refusal on any of the 20 seed-worlds. Heights on seeds 10-14, stalling world: 2.78, 1.67, 1.85, 1.85, 2.26
+(version 8: infinite, 2.29, infinite, infinite, 4.60). BCA's, the mean-difference and the split-conformal calls are
+unchanged on all 10 fresh seed-worlds; the rank test adds one wrong "on" (seed 11, no-stall). The pooled switch,
+heights and calls on the spent seeds 10-14 are recomputed by the frozen code in the pinned environment from version
+8's recorded second critics before approval (section 8.1, check 5) and pinned in section 4. Seeds 0-4 have no second
+critic on the desktop (step 1 ran on another machine), so only their pooled counts are pinned (choice 11 offers the
+retrain).
+
+### 3.6 A second held-out log (choice 3, default no)
+
+If chosen: one more log per seed and world from the same recorder (500, 200 and 300 episodes), a declared stream,
+never trained on, read whole by the switch arms by the rule of 3.1; a leak check that no row of it enters any
+training set. It is left out by default.
 
 ---
 
-## 4. The facts from version 8 (nothing trained for this version)
+## 4. The facts before any training
 
-From version 8's results (`results-20261020T115246Z/`, fresh seeds 10-14, main setting, stalling world):
+### 4.1 From version 8's run (fresh seeds 10-14, main setting, stalling world)
 
 | seed | version 8's full-throttle group | finite share of the draws | certified | switch | height |
 |---|---|---|---|---|---|
@@ -155,8 +205,25 @@ From version 8's results (`results-20261020T115246Z/`, fresh seeds 10-14, main s
 | 14 | 30 | 0.964 | yes | on | 4.595 |
 
 On seeds 0-4 the same group had 35, 47, 59, 43 and 47 rows, all certified. The switch's on/off call was right in 10
-of 10 fresh seed-worlds (on in the stalling world, off in the no-stall world). The freeze step records the pooled
-groups' sizes on seeds 0-4 (`pre_approval/pooled_group_counts_seeds0_4.json`), outcome-free, nothing trained.
+of 10 fresh seed-worlds (on in the stalling world, off in the no-stall world). Version 8's ledger: 1.53 and 1.51
+CPU-hours for the two main-setting seeds that ran every phase (11 and 14).
+
+### 4.2 The frozen code's facts (nothing trained; `pre_approval/pooled_facts_seeds0_4_spent10_14.json`)
+
+Filled by `facts_near80.py` with the frozen code, in the pinned environment, before approval: the pooled counts and
+sizes by source on seeds 0-4, both worlds, with the gate's checks; on the spent seeds 10-14, both worlds, from version
+8's recorded second critics and data records (each regenerated log and critic checked against its record): BCA's
+pooled certificate (switch, height, 5% bound), the plain 90% gap and twice it, the mean difference, the
+split-conformal and rank-test statistics and calls, each height's rank among the group's scores, and the comparison
+with version 8's recorded calls.
+
+TODO(FREEZE: the table of those facts, copied from the record: per seed-world the pooled sizes, BCA's call and height,
+the plain gap, the mean difference, the four switches' calls and the ranks; and the line "kill rule: passed on 10 of
+10 spent seed-worlds".)
+
+**Kill rule (section 8.1, check 5):** BCA's and the mean-difference switch's pooled calls on seeds 10-14 equal version
+8's recorded calls (on in 5 of 5 stalling, off in 5 of 5 no-stall seed-worlds); otherwise this design is redrafted and
+no approval is asked. The number of redrafts is written in section 0.
 
 ---
 
@@ -168,55 +235,93 @@ TD3+BC in step 2's actor-only protocol, unchanged: each world's critic trained o
 call (100,000 updates), then frozen; actors from that world's cloned actor, 20,000 steps in 4,000-step chunks, alpha
 5, the gate's fixed batch stream; arms of one kind side by side, one processor per phase.
 
-### 5.2 The main setting, both worlds
+### 5.2 The main setting, both worlds: step 2's arm set
+
+Version 8's claim-4 arm set, unchanged, restated for seeds 40-49:
 
 | arm | role |
 |---|---|
-| BCA's switched ramp, k = 1 (`obca_k1`) | **primary** (C1 and C2) |
+| BCA's switched ramp, k = 1 (`obca_k1`) | **primary** (C1); the noise floor's batch side |
 | the ramp with height 0 and k = 0 (`w0_check`) | plumbing check: must equal the no-caution actor within 0.00001 |
-| the ramp at k = 2, BCA's switch with height 1.0, the rank-test switch | reported only (step 2's) |
-| the split-conformal switch (`conformal_k1`) | step 2's; **a twin of C2** |
-| new: the mean-difference switch with the ramp (`meandiff_k1`) | **a twin of C2** |
-| new: the mean-difference switch turning on the hand-set range limit (`meandiff_limit`) | **a twin of C2** |
-| new: BCA's switched ramp trained alone (`obca_k1_alone`) | the noise-floor copy (section 8.5); reported only |
-| the always-on ramp (at BCA's stalling-world height) | world-blind rival |
-| range limit, matched; even pull and two random surfaces, matched | world-blind rivals |
-| push less, matched | reported |
-| the hand-set range limit (`range_hinge`) | reported |
-| perfect band | reference |
-| no-caution, cloned and full-log actors | references |
+| the ramp at k = 2 (`obca_k2`), BCA's switch with height 1.0 (`fixed_gated`), the rank-test switch (`meangap_k1`) | reported only (step 2's) |
+| the split-conformal switch (`conformal_k1`) | reported only (step 2's); its no-stall false alarms are counted; not a twin, because it differs from BCA in its switch as well as its height |
+| the always-on ramp (`obca_forced`, at BCA's stalling-world height) | world-blind rival |
+| the matched range limit (`standin`); the matched even pull and the two matched random surfaces | world-blind rivals |
+| the hand-set range limit (`range_hinge`) | **world-blind rival** (new in this role: section 9.2) |
+| the matched push-less penalty | reported |
+| the perfect band | reference |
+| the no-caution (`none`), cloned (`clone`) and full-log (`full_none`) actors | references |
 
-- **The twins read the same groups as BCA.** The split-conformal switch is on when the 90% quantile of the
-  full-throttle group's scores minus the rest's is above 0.10, with that gap as its height. The mean-difference
-  switch is on when the mean of the full-throttle group's scores minus the mean of the rest's is above 0.10, with
-  that difference as its height (version 8's reported `meandiff_k1`). Turning on the hand-set range limit: when the
-  mean-difference switch is on, the arm is the hand-set range limit (the room's hinge at the recorded range,
-  coefficient 1.0, trained alone in its own program); when off, the ramp with height 0 (checked equal to the
-  no-caution actor). None of the three uses BCA's posterior or its certificate.
-- **The noise-floor copy** is BCA's switched ramp with BCA's own switch and height, trained alone in a ramp program
-  of one instead of step 2's six-arm program. It measures what the program's batch does to an actor's bits and so
-  to its points (section 8.5).
-- **Matching:** as step 2, blind to returns, to the primary arm's stalling-world strength, with version 6's ladders
-  and matcher; the no-stall world uses the stalling world's locked settings.
+### 5.3 New arms (every one trained by its own rule in every seed-world)
 
-### 5.3 One training program
+| arm | switch | height / penalty | why it is there |
+|---|---|---|---|
+| `meandiff_q90x1`, **twin 1**: the mean-difference switch with the plain 90% gap | on when mean(full-throttle group) - mean(rest) > 0.10 (the same 0.10 as BCA's margin, carried unchanged) | the plain 90%-quantile gap of the same two groups (split conformal's statistic; no Bayesian step), k = 1 | the plain height on the near side of BCA's, with BCA's own call: it differs from BCA's switched ramp in height only, so BCA ahead of it is a dose reading. The split-conformal switch cannot play this part: it differs in its switch too (wrongly on in the no-stall world of seeds 10 and 13 under pooling, gaps 0.121 and 0.116 against its 0.10 margin). |
+| `meandiff_q90x2`, **twin 2**: the same switch with twice that gap | the same | twice the plain 90%-quantile gap (step 2's own k = 2 factor) | the plain height on the far side of BCA's on four of the five preview seeds (pooled heights 1.67-2.78 on seeds 10-14 against plain gaps of 0.99-2.48 and twice them 1.98-4.96; on seed 14 BCA's 2.26 is above twice the gap, 1.97). If BCA beats plain x1 but not plain x2, its edge is a dose. |
+| `meandiff_limit`, **twin 3**: the same switch turning on the hand-set range limit | the same | when on, the hand-set range limit's own penalty (the room's hinge at the recorded range, coefficient 1.0, `range_hinge`'s program, run alone); when off, no caution (the ramp with height 0, checked equal to the no-caution actor) | the no-BCA composite that led BCA by 3.2 points on average in the records, now trained as one arm |
+| `obca_k1_alone` (validity, and C2's and C3's BCA side) | BCA's | BCA's height, trained alone instead of in step 2's six-arm batch | the twins train alone, so C2 and C3 compare them with this copy (the same training mode); the noise floor `obca_k1` minus `obca_k1_alone` is the validity check that the batch did not move BCA's points by more than 5 |
+| `meandiff_k1` (reported only) | the mean-difference switch | the mean gap itself (0.4-0.8), k = 1 | version 8's arm, the bottom of the dose ladder; BCA beats it by 40+ points by dose alone, so it is not a twin |
+
+None of the twins uses BCA's posterior or its certificate. **The order of the lone calls is fixed:** after step 2's
+batches, `meandiff_k1`, `meandiff_q90x1`, `meandiff_q90x2`, `obca_k1_alone`, each a ramp program of one, then
+`meandiff_limit` (the hinge program, or a height-0 ramp). **Matching:** as step 2, blind to returns, to the primary
+arm's stalling-world strength, with version 6's ladders and matcher; the no-stall world uses the stalling world's
+locked settings.
+
+**Reported composites, no training:** BCA's switch turning on the hand-set range limit; "refusal means the range
+limit" (BCA's switched ramp where it set a height, the range limit where it refused). Both from trained arms.
+
+### 5.4 The refusal rule
+
+`step2lib.arm_table` refuses a switched-on arm whose height is not finite. Version 8 let that refusal stop the whole
+actor phase. This version reads it per arm: an arm whose switch is on with a height that is not finite is **refused**
+(recorded in the switch record, `refused: true`, and in the arm table; never trained; its actor missing); every other
+arm trains and is scored. The refused arms can only be `obca_k1`, `obca_k2`, `obca_forced` (which takes the stalling
+world's height in both worlds) and `obca_k1_alone`; a refusal of any other arm is a plumbing stop. With no BCA actor
+there is no strength to match, so the matched rivals and the stand-in of that seed are unmatched, as in version 8
+when BCA's switch stayed off. A refused arm's place in step 2's six-arm batch is filled by a height-0 pad, never saved
+or scored, so the other members keep step 2's batch size. The seed is never replaced; nothing of it stops.
+
+**In C1's marks**, a refused arm's numbers are **the no-caution actor's** in that seed-world, and the controls matched
+to BCA's strength (the matched range limit, the matched even pull, the two matched random surfaces) are matched to
+zero strength, which is also the no-caution actor's numbers. Nothing is "not available", so no mark fails by a
+missing number; the refusal's cost enters the pooled means as it would enter a deployment. (The literal reading of an
+infinite height as an infinite penalty, a hard clip at the data's edge which the hand-set range limit approximates,
+is not used: it would reward refusing, since the range limit scored 93.1 against BCA's 88.6 in the stalling world on
+seeds 0-4; it is reported as a composite only.)
+
+**In C2 and C3**, a seed where BCA refused in either world is left out: the twin claims are read on the certified
+seeds (at least 8), with the sign thresholds of section 9.3 for their number. The refusal is named in C2's sentence.
+A refused seed enters no twin difference, because the no-caution actor against a twin would be a difference of about
+-100 and would decide the claim by itself. Reading them on the certified seeds is not outcome selection: a refusal
+depends on the group's size and on BCA's random draws, both written before any arm trains.
+
+**What a refusal is expected to do** (an expectation, not a rule; C1 is read from its marks only): resampling the
+seven recorded main-setting seeds, the pooled lead over the best world-blind rival with ten seeds is about 26 with no
+refusal, 19 with one, 8 with two and -2 with three, against the mark of 10. So one refusal is expected to be
+survived, two are expected to fail the lead mark (about 1 chance in 4 of passing). The chance of no refusal in ten
+seeds is about 0.65, of at most one 0.94 (the gate's 30 logs, leak factor 2.0; 0.55-0.77 and 0.89-0.97 across
+factors 1.8-2.3).
+
+### 5.5 One training program
 
 The code trains the ramp arms of one batch side by side, and the batch size changes the last bits of each actor. So
 BCA's switched ramp and the plumbing check train in step 2's own batches: where full throttle stalls, the plumbing
 check alone, then the six step-2 ramp arms with BCA's switched ramp first; in the no-stall world, one batch of seven
-with the plumbing check first. Then, in calls that leave those programs' bits unchanged: the mean-difference ramp
-alone, the mean-difference range limit alone (a hinge, or a height-0 ramp), and the noise-floor copy alone. A refused
-arm's place in the six-arm batch is filled by a height-0 pad, never saved or scored, so the other members keep step
-2's batch size.
+with the plumbing check first. Then, in calls that leave those programs' bits unchanged, the lone calls of section
+5.3 in their fixed order.
 
-### 5.4 Fixed references (no seed, nothing trained)
+### 5.6 Fixed references (no seed, nothing trained)
 
 The recording controller, the stall-aware and rising-thrust controllers (the points' anchors, in both worlds).
 
-### 5.5 Left out, and why
+### 5.7 Left out, and why
 
-Version 8's band and random-rows settings (the band's stop rule failed on seeds 0-4: a hand-set range limit lost only
-4.3 points to it); version 6's BCA (it depends on the band setting's readouts); the readouts at band rows (no band).
+The near-80 and random-rows settings (version 8's exploratory stop found the band changes nothing for a range limit:
+a hand-set range limit lost only 4.3 points to it); version 6's BCA (it depends on the band setting's readouts, and
+netted 0.13 against no caution in version 8); a fallback height or a lower credibility (they change BCA); a hard clip
+as the reading of an infinite height (it would reward refusing); the split-conformal switch as a twin (it differs
+from BCA in its switch).
 
 ---
 
@@ -233,28 +338,34 @@ current.**
 For every scored actor, world and situation: points on the full test start set; the unseen-throttle readout (points
 as trained minus points held to 70%) and the overshoot readout (points capped at 80% minus as trained), carried over
 from version 8 and reported only; the zone shares; the lower tail (the worst 100 of 1,000 starts); net across worlds;
-strengths and matches; BCA's switch, height, 5% bound, ramp ends and group sizes per seed and world, with the refusal
-when there is one; time and peak memory per phase.
+strengths and matches; time and peak memory per phase. Per seed and world: both groups' sizes by source, the
+certification chance, BCA's switch, height, 5% bound, ramp ends and group sizes, with the refusal when there is one;
+each switch's statistic and call (BCA, the mean difference, the split conformal, the rank test); each ramp arm's
+height and its rank among the full-throttle group's scores.
 
 ---
 
-## 8. The tests, in order
+## 8. The tests, in order (kill rules first)
 
-Every threshold is fixed now (the `TODO(DECISION.md: ...)` items are fixed before the freeze). None moves after its
-numbers exist, except through a labeled post-hoc pre-registration that you approve.
+Every threshold is fixed now. None moves after its numbers exist, except through a labeled post-hoc
+pre-registration that you approve.
 
-### 8.1 The gate's checks on each fresh seed
+### 8.1 The no-training checks (before approval on seeds 0-4 and 10-14; on each fresh seed when its data are built)
 
-When a fresh seed's data is made: the gate's ball must be found, the ball's leak checks must pass, and in the
-stalling world the gate's five world checks must pass. A seed that fails is a failed seed for every mark, written
-down and never replaced (section 10).
+| # | check | pass |
+|---|---|---|
+| 1 | the gate's five world checks on the ball (stalling world); the ball's leak checks | all pass |
+| 2 | the training file equals `dataset.d4rl_dict` of the kept rows (six arrays, SHA-256) | equal |
+| 3 | the pooled groups: every held-out row outside the ball appears exactly once; no training row other than a survivor; no ball row; the outcome-free count equals the sizes the switch scores | all pass |
+| 4 | BCA's gap rule is defined on the ball-kept training commands; `t_lo` in [0.78, 0.80] (seen 0.782-0.791) | defined, in range |
+| 5 | (before approval only) the pooled counts on seeds 0-4; on the spent seeds 10-14, from version 8's recorded second critics, the pooled switch makes version 8's recorded calls (BCA's and the mean-difference switch's) | on in 5 of 5 stalling, off in 5 of 5 no-stall seed-worlds, for both switches |
 
-### 8.2 The outcome-free count
+A fresh seed that fails check 1 or 2 is a failed seed: it fails every mark and is never replaced. A failure of check
+3 or 4 on a fresh seed is a plumbing stop of that seed-world: every mark that needs it fails by the pre-set rule, the
+look says that a stop and not a return decided it, and the marks on the seeds that ran are reported as description.
+Check 5 failing on seeds 10-14 means a redraft and no approval; the number of redrafts is written in section 0.
 
-Section 3.4, in the same data phase, before any learner: reported in the look and in section 14.3's sentence. It
-neither stops nor fails anything.
-
-### 8.3 Plumbing, after approval (scratch only)
+### 8.2 Plumbing, after approval (scratch only)
 
 - The unit tests (five files).
 - A 40-step smoke of every phase kind on seed 0, in scratch, with the pooled groups.
@@ -269,95 +380,130 @@ neither stops nor fails anything.
 - The first peak-memory measurements of each phase kind.
 - Only a reproduction difference is final. Any other failure can be retried once its cause is fixed.
 
-### 8.4 The refusal rule
+### 8.3 No exploratory stage
 
-If, on a fresh seed, BCA's certificate is on with a height that is not finite in either world, BCA has refused on
-that seed. The switch record says so (`refused: true`). The policy phase then leaves out the arms that depend on
-BCA's height, BCA's switched ramp, the ramp at k = 2, the always-on ramp and the noise-floor copy, and trains and
-scores every other arm. With no BCA actor there is no strength to match, so the matched rivals and the stand-in of
-that seed are unmatched, as in version 8 when BCA's switch stayed off. By the pre-set rule the seed fails every mark
-that needs BCA (C1's three marks and C2's), and only those: its own clause in section 14 says so, and the other arms'
-numbers are reported. Nothing of the seed stops. (Version 8 stopped the whole actor phase.)
+Seeds 0-4 are read only by the no-training checks of 8.1 and the reproduction check of 8.2. There is no harm stop
+(the main setting's harm was 98.9 points on seeds 0-4) and no outcome-based stop before the fresh seeds.
 
-### 8.5 The noise floor
+### 8.4 The confirmatory stage: seeds 40-49
 
-Pooled over the fresh seeds that neither failed nor refused, stalling world, strong current: BCA's switched ramp
-minus the noise-floor copy (the same arm trained alone) is at most 5 points in size. If it is larger, C2 is dropped
-and only reported: its margin would sit inside the noise of the training program's batch. The number is reported
-either way. When no seed is left to read it, it cannot be read, and C2 is written as its other rules say. (Version
-8's noise floor compared the random-rows and main settings; without the random-rows setting, this is the adapted
-form.)
-
-### 8.6 The fresh seeds' run
-
-In order, per seed: the data of both worlds (8.1, 8.2); the critics, the full-log critic, BCA's second critics; the
-switches on the pooled groups; the cloned, no-caution and full-log actors; the policy phases with matching (8.4),
-each seed-world locked (every actor's fingerprint written) before any score; the evaluations; then the look.
+In order, per seed: the main setting's data of both worlds (the checks of 8.1 and the outcome-free count); the
+critics, the full-log critic and BCA's second critics; the switches on the pooled groups; the cloned, no-caution and
+full-log actors; the actor phases with matching and the refusal rule (5.4), each seed-world locked (every actor's
+fingerprint written) before any score; the evaluations; then the look. **Nothing on seeds 40-49 stops early on an
+outcome.**
 
 **Plumbing stops, per phase:** the height-0 check, a non-finite network, a saved input whose fingerprint does not
-match, or a training file that fails its check. A stopped phase is written once and never rerun. Every mark that
-needs it fails.
-
-**Nothing on the fresh seeds stops early on an outcome.**
+match, a training file that fails its check, or a pooled-group check. A stopped phase is written once and never
+rerun. Every mark that needs it fails by the pre-set rule, and the sentence says that a stop and not a return decided
+it.
 
 ---
 
 ## 9. Pass marks, with reasons and power
 
-Each mark is pooled over the fresh seeds: the mean of each seed's paired difference. Stalling world, strong current,
-unless stated. Every seed is needed. A failed, stopped or refused seed fails every mark that needs it.
+Each mark is pooled: the mean of each seed's paired difference. Stalling world, strong current, main setting, unless
+stated. C1 is pooled over all ten seeds; a refused seed-world enters it with the no-caution actor's numbers for the
+refused arms and for the controls matched to BCA (5.4). C2 and C3 are pooled over the certified seeds (BCA's height
+finite in both worlds), at least 8 of them. A failed seed (8.1) fails every mark; a stopped phase fails every mark
+that needs it, and its sentence says so.
 
-### 9.1 Validity conditions (without them, no claim either way)
+### 9.1 Validity
 
-- The harm is at least 30 points: the full-log actor beats the no-caution actor by at least 30, pooled.
-- The no-caution actor goes past 80% on at least 25% of strong-current steps, pooled.
-- Both are computed over the seeds that did not fail (a refused seed's no-caution and full-log numbers count: they
-  do not depend on BCA). On the main setting on seeds 0-4 these were 98.9 points and 73.2%.
+- **For every claim:** the harm is at least 30 points (the full-log actor beats the no-caution actor by at least 30,
+  pooled), and the no-caution actor goes past 80% on at least 25% of strong-current steps, pooled; both over the
+  seeds that did not fail (a refused seed's no-caution and full-log numbers count: they do not depend on BCA). On
+  the main setting on seeds 0-4 these were 98.9 points and 73.2%.
+- **For C2 and C3:** the noise floor, `obca_k1` minus `obca_k1_alone`, pooled over the certified seeds, within 5
+  points either way. If not, C2 and C3 are dropped and reported only (their 5-point margin would sit inside the
+  training noise). C2 and C3 read `obca_k1_alone` as BCA's side, the same training mode as the twins; the differences
+  against the batch-trained `obca_k1` are reported beside them. At least 8 certified seeds; otherwise C2 and C3 are
+  not read. When no certified seed is left to read the noise floor, it cannot be read, and C2 and C3 are written as
+  their other rules say. C1 has no validity condition beyond the checks of 8.1.
 
-### 9.2 C1: version 8's claim 4 marks, unchanged
+### 9.2 C1: step 2 confirmed in the main setting (version 8's claim 4 marks, unchanged)
 
-Step 2's three go marks on the fresh seeds, main setting:
+| mark | pass | reason | on the main setting, seeds 0-4 (exploratory) |
+|---|---|---|---|
+| net lead | BCA's net across worlds is at least the best world-blind rival's plus 10; the world-blind rivals are the matched range limit, the matched even pull, the two matched random surfaces, the always-on ramp and the hand-set range limit (ties go to the first in that order) | step 2's margin | +25.3 over the always-on ramp (standard error 2.3); the hand-set range limit nets 76.5 |
+| keeps the gain | BCA minus no caution is at least -3 in recorded conditions, big waves and big kicks | version 6's margin | +8.0, +21.2, +19.8 |
+| beats the even pull | BCA minus the matched even pull is at least 15 | version 6's margin | +100.8 |
 
-| mark | pass | reason |
+- **One change to the rival set (the marks are unchanged):** the hand-set range limit joins the world-blind rivals for
+  the net-lead mark (it cannot switch itself off, and with refusals it is the rival that keeps the lead mark from
+  collapsing). Version 8 listed it as "reported; used in claim 3". On every recorded main-setting set it is below the
+  always-on ramp (76.5 against 77.7 on seeds 0-4; 64.0 against 76.6 on seed 11; 79.3 against 81.5 on seed 14), so
+  nothing changes where BCA acts; in the near-80 setting, which version 9 does not run, it was above it (54.7
+  against 49.1). The lead is computed in this version's look over the enlarged set; step 2's own lead over its own
+  five rivals (`step2lib.go_no_go`, pinned) is reported beside it.
+- Under the refusal rule with ten seeds the pooled lead is about 26 (sd 1.3) with no refusal, 19 (sd 2.5) with one, 8
+  (sd 2.4) with two and -2 with three (resampling the seven recorded main-setting seeds). One refusal is expected to
+  be survived, two to fail the lead mark (about 1 chance in 4 of passing). This is an expectation; the mark is read
+  from the numbers.
+- The marks on the certified seeds alone are reported beside C1, description only.
+- Prediction: passes with 0 or 1 refusal; the heights shrink to about 0.5-0.75 of version 8's, so BCA's own
+  stalling-world points may fall toward the plain switch's; the lead mark is about the switch, not the height, and
+  is expected to hold.
+
+### 9.3 C2 and C3: BCA's switched ramp against each plain twin
+
+For each twin T in {the mean-difference switch with the plain 90% gap, with twice it, turning on the hand-set range
+limit}: d = NET(BCA's switched ramp trained alone, `obca_k1_alone`) minus NET(T), the net across worlds in strong
+current, per certified seed; n certified seeds.
+
+| reading | rule | n = 10 / 9 / 8 |
 |---|---|---|
-| net lead | BCA's net across worlds is at least the best world-blind rival's plus 10 | step 2's margin |
-| keeps the gain | BCA minus no caution is at least -3 in recorded conditions, big waves and big kicks | version 6's margin |
-| beats the even pull | BCA minus the matched even pull is at least 15 | version 6's margin |
+| BCA ahead of T (C2's part) | the mean of d is at least 5.0, and d is positive in at least ceil(0.8 n) seeds | 8 / 8 / 7 (a coin gives that many with chance 0.055 / 0.020 / 0.035) |
+| T ahead of BCA (C3 for T) | the mean of d is at most -5.0, and d is positive in at most 1 seed | 1 / 1 / 1 (coin chance 0.011 / 0.020 / 0.035) |
+| tie | otherwise; written "BCA's switched ramp was not shown to beat T by 5 points" (never "did as well" or "interchangeable": a true 5-point edge reads "tie" about half the time) | |
 
-### 9.3 C2: BCA's switched ramp beats each plain twin
+**C2 holds when BCA is ahead of all three twins** (one claim; the multiplicity rule is `all_three`: a conjunction
+keeps the error rate at the per-twin level, so no Holm step is applied). **C3 holds for a twin when that twin is
+ahead of BCA** (one claim per twin; the three form a family whose chance of any false "ahead" under a true tie is
+0.001 / 0.014 / 0.023 / 0.028 at per-seed spreads 5 / 7.5 / 10 / 15). The three readings are reported in every
+case, with the one-sided 95% lower bound of each mean (Student t on the certified seeds; reported, not used) and the
+same differences against the batch-trained `obca_k1`.
 
-For each twin, paired by seed: BCA's net across worlds minus the twin's net across worlds, pooled, is at least
-`TODO(DECISION.md: the margin)` points, and positive in at least `TODO(DECISION.md: the seed count)` of the fresh
-seeds. The multiplicity rule, `TODO(DECISION.md: 'all_three' or 'each_separately')`, says whether C2 is one claim
-that holds only when every twin is beaten, or one claim per twin, each read on its own. The code reads them from
-`MARKS_C2` in `code/near80_constants.py`; the freeze refuses while any is `None`.
-
-- **Why the net across worlds:** a switch earns its keep in both worlds, on in the stalling world and off in the
-  no-stall world; the net rewards both calls at once.
-- **What the twins separate:** where BCA and a twin make the same on/off call, the comparison is of heights only; the
-  mean-difference switch with the range limit replaces the ramp by a hard limit at the data's edge.
-- **The refused seeds:** a refused seed counts as BCA failing that seed against every twin.
-- **The noise floor** (section 8.5) can drop C2.
+- **Why 5 points:** the project's smallest mark unit (version 8's claims 2 and 3: "5 points, and 4 of 5 seeds"; step
+  2's 5-point wording rule; round 1's bar), and about one per-seed standard deviation of the paired differences
+  within the main setting (1.9-5.2). A 5-point mean is a difference an operator would notice.
+- **Why ceil(0.8 n) and at most 1:** the sign parts at about the 5% and 1-3% levels; C3's is stricter because three
+  twins give three chances. Version 8's 4 of 5 (chance 0.19) was carried by the mean.
+- **Power per twin (ten certified seeds, simulated):** a true BCA edge of 10 points is read "ahead" with chance 1.00
+  (spread 5) or 0.79 (spread 10); 5 points: 0.48 (0.31 at spread 10); 3 points: 0.10; 0: 0.001 (0.028 at spread 10,
+  0.044 at 15); the main-setting BCA-conformal spread on seeds 0-4 (5.6, sd 1.9): 0.84. A true twin edge of 10 is
+  read "T ahead" with 0.98 (spread 5) or 0.51 (spread 10); the composite's recorded 4.5-point edge (sd 5.2) with
+  0.27, "tie" 0.73; 3.2 points with 0.09. So the test finds a 10-point edge either way, finds a 5-point edge about
+  half the time, and invents one with chance at most about 0.03 per twin.
+- **Power of the conjunction (C2 as a whole, shared BCA side):** three true 5-point edges: 0.23 (spread 5) or 0.09
+  (spread 10); three true 10-point edges: 0.99 or 0.56; the predicted pattern (6, 0, -3.5): 0.00. C2 is a demanding
+  claim by design: it credits BCA's height only when it beats a plain height on both sides of it and the range limit.
+- **What the twins separate:** where BCA and a twin make the same on/off call (the mean-difference switch made BCA's
+  call in 40 of 40 recorded seed-worlds), the comparison is of heights only; the gated range limit replaces the ramp
+  by a hard limit at the data's edge.
+- Prediction: C2 fails and C3 does not fire; "ahead" or "tie" against the plain gap, "tie" against twice it, "tie"
+  against the gated range limit.
 
 ### 9.4 Rules about the marks
 
 - No mark moves after its numbers exist.
-- The two claims are read separately. Neither rescues the other.
-- The plumbing's seed 0 never carries a claim.
+- C1, C2 and C3 are read separately. None rescues another (version 8's rule 9.6).
+- Seeds 0-4 never carry a claim; the plumbing's seed 0 never carries a claim.
 
 ---
 
-## 10. The fresh seeds
+## 10. Confirmation on fresh seeds 40-49
 
-- **Data:** new logs of both worlds, with the gate's recorder, sizes and settings (stall slope 1.5). Then the ball,
-  its leak checks and the gate's five world checks (required for every claim), the training file, the outcome-free
-  count.
-- **A fresh seed that fails** a data check, or whose learner fails, fails every mark. A refused seed fails the marks
-  that need BCA (section 8.4). A failed seed is written down and never replaced.
-- **Learners:** every seed-world is made fresh: critics, BCA's second critics, cloned actors, the full-log actors,
-  every arm of section 5.
-- **Frozen from this pre-registration:** the pooled groups' rule, every arm, ladder, matching rule and mark, the seed
-  list.
+- **Data:** new logs of both worlds with the gate's recorder, sizes and settings (stall slope 1.5), as version 8's
+  amendment 1 builds them. Then the ball, its leak checks, the gate's five world checks (required for every claim),
+  the training file, the pooled count.
+- **A fresh seed that fails** check 1 or 2 fails every mark and is never replaced. A stopped phase fails every mark
+  that needs it (a stop, not a reading). A refused seed is read by the refusal rule (5.4).
+- **Learners:** every seed-world is made fresh: critics, the full-log critic, BCA's second critics, cloned actors, the
+  reference actors, every arm of section 5.
+- **Frozen from this pre-registration:** the pooled rule, the refusal rule, every arm, ladder, matching rule and
+  mark, the seeds, the sentences of section 14.
+- **The confirmatory look:** the validity conditions of 9.1, then C1, then C2 and C3; the code fills in section 14.
 - **Old code that refuses these seeds is restated, never edited.** Version 6's fresh-seed code and step 2's runner
   are restated for the fresh seeds in new code.
 
@@ -368,9 +514,12 @@ that holds only when every twin is beaten, or one claim per twin, each read on i
 The route of versions 6, 7 and 8, on the Framework Desktop, inside Ubuntu as root, from `/home/user/bca`:
 `python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py --check`, then the same without `--check`.
 The script checks every file against the code manifest, refuses any file the manifest does not list other than
-version 8's history (section 18), refuses a draft, and asks you to type the first 16 characters of `prereg.json`'s
-fingerprint. The session imports your approval (`code/import_approval.py import`) and pushes the import record.
-Every phase, on the desktop or on the cluster, refuses without it.
+version 8's history (section 18) and the build notes, refuses a draft, and asks you to type the first 16 characters
+of `prereg.json`'s fingerprint. The session imports your approval (`code/import_approval.py import`) and pushes the
+import record. Every phase refuses without it. The folder is `outputs/shift/beyond-the-data/near80/`: version 9
+supersedes version 8 in place (choice 7); version 8's `prereg.json` moves to `prereg_history/`, its approval, import,
+amendment and results files stay, and its chain is checkable at commit `52914e4`. The branch is
+`claude/main-bca-connection-x4o46s`.
 
 **Approving accepts every default** in section 16. Any other choice makes a new fingerprint.
 
@@ -381,56 +530,59 @@ Every phase, on the desktop or on the cluster, refuses without it.
 ### 12.1 The desktop
 
 `run_near80.sh`, as version 8: root inside WSL, tmux, one runner, 1-16 lanes, version 7's memory rule. Version 8's
-checks on version 7's run are gone (it finished on 16 October 2026).
+checks on version 7's run are gone (it finished on 16 October 2026). The desktop runs version 9 (choice 4): ten seeds
+cost one evening there.
 
-### 12.2 The cluster (hpc.charlotte.edu)
+### 12.2 The cluster (hpc.charlotte.edu): drafted, untested, not part of version 9
 
-`run_near80_cluster.sh` submits Slurm jobs (account `staruser`, partition `Orion`, 48-CPU nodes, 30-day limit) that
-run the same frozen code from a clone under `/scratch/dbayha`, never as root, with the same approval import and
-manifest checks, and a git identity rule that refuses the approver's and the cloud's identities. One job runs the
-plumbing; then one job per fresh seed (its 17 phases, both worlds); then one job for the group's lock and look. Each
-job's runner starts only its own seed's phases and shares one output root; every phase holds its own lock, so no
-phase runs twice. The runner reads the job's memory from Slurm and reserves within it. Results are gathered and
-pushed with `run_near80.sh results` and `push_runfiles_near80.sh` from the cluster (the owner's GitHub sign-in on the
-cluster), to the branches of section 18. What the desktop entry assumed and the cluster entry changes is listed in
-`V9_BUILD_NOTES.md` and in `run_near80_cluster.sh`'s header.
+A cluster entry (Slurm; account `staruser`, partition `Orion`, 48-CPU nodes, 30-day limit; a clone under
+`/scratch/dbayha`, never root, the same approval import and manifest checks, an identity rule that refuses the
+approver's and the cloud's identities; one job per fresh seed and one for the group's lock and look) was drafted for
+this version and has never run. Its two scripts are not in this folder, not in the code manifest and not approved
+with it; `V9_BUILD_NOTES.md` says where they are kept and what the desktop entry assumed that they would change. The
+code keeps a `cluster` host profile for the paths' sake. A version 10 of twenty seeds would need the entry, a
+machine table, a seed-0 probe and a decision on the reproduction reference (about a day of work).
 
 ### 12.3 Order
 
-1. **Done:** this draft, its machine-readable twin (`prereg_draft.json`), the code and its tests.
-2. **DECISION.md** fixes the open items (seed count, C2's margins, the multiplicity rule, the owner's answer).
-3. The session freezes (`code/freeze.py write`): the draft into history, the manifest, the tests, the outcome-free
-   counts on seeds 0-4 (nothing trained), `prereg.json`.
+1. **Done:** this document, its machine-readable twin (`prereg_draft.json`), the code and its tests, `DECISION.md`.
+2. **Your answer to section 16** ("accept the defaults" is enough), recorded in `OWNER_ANSWER`.
+3. The session freezes (`code/freeze.py write`, inside WSL in the pinned environment): the draft into history, the
+   manifest, the five unit test files, the facts of section 4.2 (the counts on seeds 0-4; the pooled switch on the
+   spent seeds 10-14 from version 8's recorded second critics, with the kill rule; about 10-15 CPU-minutes, nothing
+   trained), `prereg.json`; then an independent re-check and the fingerprint.
 4. **You approve** (section 11). The session imports it.
-5. Plumbing (section 8.3), on the host you choose.
-6. The fresh seeds' run and the look.
-7. Results committed with their fingerprints; model files to the run-files branch.
+5. Plumbing (section 8.2), about an hour.
+6. The confirmatory stage on seeds 40-49 (about 5-5.5 hours of wall time) and the look.
+7. Results committed with their fingerprints (`git add -f`: `.gitignore`'s `data/` line hides the data records);
+   model files to the run-files branch `claude/near80-v9-run-files`; the independent check.
 
 ---
 
 ## 13. Compute
 
-From version 8's ledger of the main setting on seeds 10-14 (one processor; `results-20261020T115246Z`): critic 5.7
-minutes, full-log critic 5.7, second critic 5.7 per world, switch 0.3, clone 0.7, reference actors 3.5 (stalling) and
-2.2, the stalling-world actor phase 42 and the no-stall one 9.3, the evaluation 1.5 per world; about 1.8 CPU-hours per
-seed. Version 9 adds three ramp calls alone and one hinge (about 0.3 CPU-hours) and the pooled scores (about 50,000
-rows, seconds). So about 2.2 CPU-hours per fresh seed, about 2.5 for the plumbing (the reproduction check at full
-length is most of it).
+On the Framework Desktop in Ubuntu under WSL, on the processor alone, one processor per phase. From version 8's
+ledger of the main setting (`results-20261020T115246Z`): 1.53 and 1.51 CPU-hours per seed for the two seeds that ran
+every phase (critic 5.7 minutes, full-log critic 5.7, second critic 5.7 per world, switch 0.3, clone 0.7, reference
+actors 3.5 and 2.2, the stalling-world actor phase 42 and the no-stall one 9.3, the evaluation 1.5 per world). The
+five programs run alone (four lone ramp calls of about 63 s in the stalling world and about 40 s in the no-stall
+world, and the hinge) add about 0.14 per seed; the pooled scores (about 42,000 rows) seconds.
 
-| fresh seeds | CPU-hours (plumbing included) | desktop wall time (2 policy phases at once) | cluster wall time (one 48-CPU node, one job per seed) |
-|---|---|---|---|
-| 5 | about 13-14 | about 6-7 hours in two sittings | about 2.5 hours (the plumbing) + about 1.5 hours |
-| 10 | about 24-25 | about 11-13 hours in three sittings | about 2.5 + 1.5 hours |
-| 15 | about 35-36 | about 16-19 hours in four sittings | about 2.5 + 1.5 hours (two nodes: the same) |
-| 20 | about 46-47 | about 21-25 hours in five sittings | about 2.5 + 1.5 hours |
+| part | CPU-hours |
+|---|---|
+| the facts before approval | about 0.2 (nothing trained) |
+| plumbing | about 1.3-1.5 (version 8: 1.23; the lone programs added to the reproduction) |
+| confirmatory, seeds 40-49, main setting, both worlds | about 16.5-17 (about 1.65 per seed) |
+| **total** | **about 18** |
 
-- **Lanes:** 10 by default on the desktop; on the cluster a seed's job asks for 10 processors (its chain runs at most
-  a few phases at once) and the plumbing for 10.
-- **Memory:** version 7's rule, unchanged on the desktop (at most 2 policy phases at once). On the cluster each job
-  asks Slurm for 24 GB and the runner reserves within it (7 GiB per unmeasured kind).
-- **Budget guard:** a forecast of 2.2 CPU-hours per seed times the seed count; a stage that uses more than twice its
-  forecast pauses and reports; the cap is 2.5 times the forecast. A pause lasts until you type
-  `budget-continue fresh`.
+- **Wall time:** version 7's memory rule, unchanged (choice 5): at most 2 actor phases at once, so about 5-5.5 hours
+  with 10 lanes in one sitting (ten stalling-world actor phases of about 47 minutes, ten no-stall of about 13, a
+  lead-in of about 20); about 2.5 hours if the actor reservation were set to 1.25 times its measured peak (choice 5's
+  alternative). The plumbing about an hour.
+- **Lanes:** 10 by default (choice 6).
+- **Budget guard:** as version 8, with a forecast of 2.2 CPU-hours per seed (22 for ten; a safe margin over the 1.65
+  expected); a stage that uses more than twice its forecast (44) pauses and reports; the cap is 2.5 times the
+  forecast, 55 CPU-hours. A pause lasts until you type `budget-continue fresh`.
 
 ---
 
@@ -446,10 +598,15 @@ strong current, stalling world, main setting, unless stated:
 | W | no-stall world: no caution minus BCA |
 | NET, D, R | BCA's net across worlds; its lead over the best world-blind rival; that rival's name |
 | E, L | BCA minus the matched even pull; BCA's largest loss to no caution elsewhere |
-| D1, K1 | BCA's net across worlds minus the split-conformal switch's, pooled; seeds where it was positive |
-| D2, K2 | the same against the mean-difference switch with the ramp |
-| D3, K3 | the same against the mean-difference switch with the hand-set range limit |
-| DT, KT | the same for the twin a clause names |
+| K, F | seeds where BCA set a finite height in both worlds (the certified seeds); seeds where it refused |
+| NC | the number of certified seeds C2 and C3 read |
+| DC, RC, LC, EC | the lead, the best rival, the largest loss and the even-pull margin on the certified seeds alone (description) |
+| D1, K1, LB1 | BCA's switched ramp trained alone minus the mean-difference switch with the plain 90% gap, net across worlds, pooled over the certified seeds; seeds where it was positive; its one-sided 95% lower bound |
+| D2, K2, LB2 | the same against the mean-difference switch with twice the plain 90% gap |
+| D3, K3, LB3 | the same against the mean-difference switch with the hand-set range limit |
+| DT, KT, LBT | the same for the twin a clause names |
+| KMIN | ceil(0.8 NC): the seeds C2's sign part requires |
+| A | seed-worlds, of 20, where the mean-difference switch made BCA's on/off call |
 | P | no caution's share of steps past 80% |
 | V | the noise floor: the size of BCA's switched ramp minus the same ramp trained alone, pooled |
 | NSEEDS, SEEDS | the number of fresh seeds and their range |
@@ -467,15 +624,20 @@ of the code; not a claim:".
 
 **All three marks pass:**
 > "On fresh seeds [SEEDS], in the main setting (only the densest 15% of commands removed) with BCA's two groups pooled
-> over every held-out row, BCA's switched ramp met all three pre-set marks. Its switch turned caution on in [S] of
-> [NSEEDS] seeds where full throttle stalls and off in [N] of [NSEEDS] where it does not. In strong current it gained
-> [X] points over no caution where full throttle stalls (the full-log controller gained [H]) and lost [W] where full
-> throttle helps: a net of [NET], [D] more than the best rule that cannot switch itself off ([R]). It stayed within 3
-> points of no caution or better in the other three situations, and beat the matched even pull by [E]."
+> over every held-out row outside the ball, step 2's result held: BCA's switched ramp met all three pre-set marks.
+> Its switch turned caution on in [S] of [NSEEDS] seeds where full throttle stalls and off in [N] of [NSEEDS] where it
+> does not. In strong current it gained [X] points over no caution where full throttle stalls (the full-log controller
+> gained [H]) and lost [W] where full throttle helps: a net of [NET], [D] more than the best rule that cannot switch
+> itself off ([R]). It stayed within 3 points of no caution or better in the other three situations, and beat the
+> matched even pull by [E]. It set a height on [K] of the [NSEEDS] seeds and refused on [F]; where it refused, its
+> switched ramp, the ramp at twice its height, the always-on ramp and its noise-floor copy count as the controller
+> trained without caution. Where full throttle stalls and its switch was on, its controller is the same as the
+> always-on ramp's, so that gain comes from where the ramp starts and from its height, not from the switch."
 
 **Any mark fails:**
-> "On fresh seeds [SEEDS], in the main setting with BCA's two groups pooled over every held-out row, BCA's switched
-> ramp did not meet its pre-set marks: [one clause per missed mark]."
+> "On fresh seeds [SEEDS], in the main setting with BCA's two groups pooled over every held-out row outside the ball,
+> step 2's result did not hold: BCA's switched ramp did not meet its pre-set marks: [one clause per missed mark].
+> [last sentence]"
 
 The clauses:
 - "its net across worlds of [NET] was [D] above the best rule that cannot switch itself off ([R]), below the 10
@@ -483,8 +645,21 @@ The clauses:
 - "it lost [L] points to no caution in [situation], more than the 3 allowed"
 - "it beat the matched even pull by [E] in strong current, below the 15 required"
 - "seed [s] failed [check] and, by the pre-set rule, counts as failing every mark"
-- "on seed [s] BCA's certificate did not certify its pooled full-throttle group of [n] rows ([world]; the height was
-  infinite), so by the pre-set rule BCA fails this seed; the other arms were trained and scored"
+- "on seed [s] BCA could not set its height from [n] held-out full-throttle rows ([world]; chance of a finite height
+  [p]%), so its switched ramp, the ramp at twice its height, the always-on ramp and its noise-floor copy count there
+  as the controller trained without caution, and the rivals matched to its strength as matched to none; every other
+  arm ran"
+- "seed [s]'s [phase] stopped ([reason]) and, by the pre-set rule, every mark that needs it fails"
+
+The last sentence:
+- "Step 2's exploratory result was not reproduced on these seeds." (written when a mark was missed on its numbers)
+- "A stop, not a return, decided this: no reading of BCA's return is claimed, and the marks on the seeds that ran
+  are reported as description." (written when every missed mark is told by a stop clause or a failed-seed clause
+  alone)
+
+**Always after C1, the certified seeds:**
+> "Description only: on the [NC] seeds where BCA set a height in both worlds, the three marks read [reading] (lead
+> [DC] over [RC], largest loss [LC], even-pull margin [EC])."
 
 **Validity fails:**
 > "On fresh seeds [SEEDS], the main setting did not produce the harm it was built to test ([reason]). It supports no
@@ -494,50 +669,69 @@ The reasons: "the controller trained without caution lost only [H] points to the
 needed)", or "the controller trained without caution went past 80% on only [P]% of strong-current steps (at least 25%
 needed)".
 
-### 14.2 C2: BCA's switched ramp against each plain twin
+### 14.2 C2 and C3: BCA's switched ramp against each plain twin
 
 **Holds (every twin beaten):**
-> "On fresh seeds [SEEDS], BCA's switched ramp beat each plain switch that read the same two groups, paired by seed on
-> the net across worlds: the split-conformal switch by [D1] points (positive in [K1] of [NSEEDS] seeds), the
-> mean-difference switch with the ramp by [D2] ([K2] of [NSEEDS]) and the mean-difference switch with the hand-set
-> range limit by [D3] ([K3] of [NSEEDS]); at least TODO(DECISION.md: the margin) points and TODO(DECISION.md: the seed
-> count) of [NSEEDS] seeds were required for each."
+> "On the [NC] fresh seeds where BCA set its height, BCA's switched ramp beat each plain twin that read the same two
+> groups and made its call by the same mean difference, paired by seed on the net across worlds: the plain 90% gap by
+> [D1] points (positive in [K1] of [NC] seeds), twice that gap by [D2] ([K2] of [NC]) and the hand-set range limit by
+> [D3] ([K3] of [NC]); at least 5.0 points and [KMIN] of [NC] seeds were required for each. Something in BCA's height,
+> beyond a plain switch and a plain height on either side of it, earned return here. The plain mean-difference switch
+> made BCA's on/off call in [A] of 20 seed-worlds, so nothing is credited to the switch."
 
 **Fails:**
-> "On fresh seeds [SEEDS], BCA's switched ramp did not beat every plain switch that read the same two groups: [one
-> clause per twin not beaten]."
+> "On the [NC] fresh seeds where BCA set its height, BCA's switched ramp did not beat every plain twin by the pre-set
+> margin: [one clause per twin]. [last sentence]"
 
 The clauses:
-- "[twin], by [DT] points on the net across worlds (positive in [KT] of [NSEEDS] seeds; at least TODO(DECISION.md:
-  the margin) points and TODO(DECISION.md: the seed count) seeds were required)"
-- "on seed [s] BCA's certificate did not certify its pooled full-throttle group of [n] rows ([world]), so by the
-  pre-set rule BCA fails this seed against every twin"
+- "it was ahead of [twin] by [DT] points (positive in [KT] of [NC] seeds)"
+- "it was not shown to beat [twin] by 5 points (mean [DT], one-sided 95% lower bound [LBT], positive in [KT] of [NC]
+  seeds)"
+- "[twin] was ahead of it by [DT] points (positive in only [KT] of [NC] seeds)"
+- "seed [s] was left out of this reading because BCA refused there (C1 carries its cost)"
+
+The last sentence:
+- "Its gain over the plain height was matched by twice that height and by the hand-set range limit: a dose, not a
+  calibration. Nothing is credited to BCA's Bayesian step or to its height." (written when BCA was ahead of the plain
+  gap and tied with the other two)
+- "No difference of 5 points or more from a plain switch with a plain height, of either size, or from the hand-set
+  range limit was shown. No credit beyond a plain rule is shown." (written when BCA tied with all three)
+- "A rule with no BCA in it, [twin], did better by the pre-set margin (C3)." (written when any twin was ahead; the
+  first such twin in the twins' order is named)
+- "No credit beyond a plain rule is shown." (written otherwise)
+
+**A twin ahead (C3 holds for it):**
+> "On the [NC] fresh seeds where BCA set its height, [twin] beat BCA's switched ramp by [DT] points on the net
+> across worlds, paired by seed (BCA ahead in only [KT] of [NC] seeds; at most 1 was allowed and at least 5.0 points
+> were required). A rule with no BCA in it did better by the pre-set margin."
+
+**No twin ahead (C3 fails):**
+> "No plain twin beat BCA's switched ramp by the pre-set margin."
 
 **Each separately, a twin beaten:**
-> "On fresh seeds [SEEDS], BCA's switched ramp beat [twin] by [DT] points on the net across worlds, paired by seed
-> (positive in [KT] of [NSEEDS] seeds; at least TODO(DECISION.md: the margin) points and TODO(DECISION.md: the seed
-> count) seeds were required)."
+> "(Not used: the multiplicity rule is all_three.)"
 
 **Each separately, a twin not beaten:**
-> "On fresh seeds [SEEDS], BCA's switched ramp did not beat [twin]: [DT] points on the net across worlds, paired by
-> seed (positive in [KT] of [NSEEDS] seeds; at least TODO(DECISION.md: the margin) points and TODO(DECISION.md: the
-> seed count) seeds were required)."
+> "(Not used: the multiplicity rule is all_three.)"
 
 **Dropped by the noise floor:**
-> "The comparison with the plain switches was dropped, because BCA's switched ramp trained alone differed from the
-> same ramp trained in step 2's program by [V] points, pooled (at most 5 allowed): C2's margin would sit inside the
-> noise of the training program. Its numbers are reported as description."
+> "C2 and C3 were not read: BCA's switched ramp trained alone differed from its batch-trained copy by [V] points (at
+> most 5 allowed), so the 5-point margin sits inside the training noise. The differences from the three twins are
+> reported ([D1], [D2], [D3]), not claimed."
+
+**Not read (too few certified seeds):**
+> "C2 and C3 were not read: BCA set its height on only [NC] seeds (at least 8 needed). The differences from the
+> three twins are reported ([D1], [D2], [D3]), not claimed."
 
 **Margins not fixed:**
-> "C2's margins were not fixed when this look was written (DECISION.md): no claim is read. The numbers against each
-> plain switch are reported as description."
+> "(Cannot occur: the margins are fixed in this document; kept for the extractor.)"
 
 **If a seed failed:**
-> "By the pre-set rule, C2 fails because seed [seeds] failed (C1 says why); the numbers of the other seeds are
+> "By the pre-set rule, C2 and C3 fail because seed [seeds] failed (C1 says why); the numbers of the other seeds are
 > reported as description only."
 
 **If every seed failed:**
-> "By the pre-set rule, C2 fails because seed [seeds] failed (C1 says why)."
+> "By the pre-set rule, C2 and C3 fail because seed [seeds] failed (C1 says why)."
 
 ### 14.3 The pooled groups (reported)
 
@@ -551,44 +745,55 @@ The clauses:
 - **Reproduction fails:** "Stopped: the new code did not reproduce [the main test's removal / critic / cloned actor /
   no-caution actor, or step 2's plumbing-check / switched-ramp / hand-set range-limit actor] on seed 0. No result of
   this version stands until it does."
-- **BCA refuses on a seed-world:** "Seed [s], [world]: BCA's certificate did not certify its pooled full-throttle group
-  of [n] rows (the height was infinite). By the pre-set rule BCA fails this seed; every other arm was trained and
-  scored."
-- **A phase stops:** "Seed [s], [world]: [phase] stopped ([reason]). It was not rerun. Every mark that needs it
-  fails."
+- **BCA refuses on a seed-world:** "Seed [s], [world]: BCA could not set its height from [n] held-out full-throttle
+  rows (chance of a finite height [p]%). In C1 its switched ramp, the ramp at twice its height, the always-on ramp
+  and its noise-floor copy count there as the controller trained without caution; the seed is left out of C2 and C3;
+  every other arm ran."
+- **A phase stops:** "Seed [s], [world]: [phase] stopped ([reason]). It was not rerun. By the pre-set rule every mark
+  that needs it fails; this is a stop, not a reading of BCA's return."
 
 ### 14.5 How the code fills in the sentences
 
 - Numbers are written with one decimal ("{:.1f}"), with a minus sign when negative and no plus sign; "-0.0" is
-  written "0.0". [P] is a share of steps written as a percentage. [S], [N], [K1], [K2], [K3], [KT], [NSEEDS], [NMIN],
-  [NMAX], [NREACH], [NSW], [N8MIN], [N8MAX], [n] and [s] are whole numbers. [SEEDS] is the seeds' range, "40-44".
-- A number that cannot be computed, because a seed failed, a phase stopped, BCA refused or an arm is missing, is
-  written "not available". A mark that needs it fails.
-- [R] is written as "the always-on ramp", "the matched range limit", "the matched even pull", "the first matched
-  random surface" or "the second matched random surface"; ties go to the first in step 2's order. [twin] is "the
-  split-conformal switch", "the mean-difference switch with the ramp" or "the mean-difference switch with the
-  hand-set range limit".
+  written "0.0". [P] is a share of steps written as a percentage; [p] is a chance written as a percentage with one
+  decimal. [S], [N], [K], [F], [NC], [K1], [K2], [K3], [KT], [KMIN], [A], [NSEEDS], [NMIN], [NMAX], [NREACH], [NSW],
+  [N8MIN], [N8MAX], [n] and [s] are whole numbers. [SEEDS] is the seeds' range, "40-49". [KMIN] = ceil(0.8 NC).
+  [LBT] (and [LB1]-[LB3]) is the one-sided 95% lower bound of the mean of d, Student t on the certified seeds.
+- A number that cannot be computed, because a seed failed, a phase stopped or an arm is missing, is written "not
+  available". A mark that needs it fails. A refused seed-world's BCA-dependent arms and the controls matched to BCA
+  are not missing in C1: they take the no-caution actor's numbers (section 5.4).
+- [R] (and [RC]) is written as "the always-on ramp", "the matched range limit", "the matched even pull", "the first
+  matched random surface", "the second matched random surface" or "the hand-set range limit"; ties go to the first in
+  the order of section 9.2. [twin] is "the mean-difference switch with the plain 90% gap", "the mean-difference switch
+  with twice the plain 90% gap" or "the mean-difference switch with the hand-set range limit".
 - [situation] is "recorded conditions", "big waves" or "big kicks". [world] is "stalling world", "no-stall world" or,
   for a refusal in both, "stalling world and no-stall world". [phase] is the phase's plain name in the runner's
-  phase table.
+  phase table. [reading] is "pass" or "fail" (the three marks on the certified seeds alone), or "not available" when
+  no seed certified.
 - [one clause per missed mark] lists the clauses of the missed marks, joined by "; ", in this order: the net lead;
-  keeping the gain (one clause per situation that misses); beating the even pull; then one clause per failed seed, in
-  seed order; then one clause per refused seed, in seed order. [one clause per twin not beaten] lists the twins'
-  clauses in the order split-conformal, mean-difference ramp, mean-difference range limit, then the refused seeds'
-  clauses. A missed mark whose number is not available because a seed failed or refused is told by that seed's own
-  clause only.
+  keeping the gain (one clause per situation that misses, in the order recorded conditions, big waves, big kicks);
+  beating the even pull; then one clause per failed seed, in seed order (the stopped-phase clause for a seed failed by
+  a stop, one per stopped phase; the failed-seed clause otherwise); then one clause per refused seed, in seed order.
+  A missed mark whose number is not available because a seed failed is told by that seed's own clause only.
+- C1's last sentence is the first form when any clause of the net lead, the keeps or the even pull appears, otherwise
+  the second.
+- [one clause per twin] lists the twins' clauses in the twins' fixed order (the plain 90% gap, twice it, the hand-set
+  range limit), each by its reading (ahead, tie, behind), then the refused seeds' clauses in seed order. C2's last
+  sentence is chosen by the four cases in their order. C3's "A twin ahead" sentence is written once per twin ahead, in
+  the twins' order, else the "No twin ahead" sentence once; C3's sentences follow C2's.
 - [check] is "the ball's leak checks", "the gate's five world checks on the ball alone", "its [phase] phase" for a
   stopped phase, "its evaluation (numbers missing)" for a seed whose evaluation lacks a number, or "its matching (a
-  rival could not be matched or scored)" for a seed whose matched rivals could not be matched (that seed fails C1's
-  marks only).
+  rival could not be matched or scored)" for a seed whose matched rivals could not be matched and BCA did not refuse
+  (that seed fails C1's marks only).
 - [reason] in C1's validity sentence is the harm reason when the harm is below 30 points, the past-80 reason when the
   share is below 25%, and both, joined by "; ", when both fail.
 - In the reproduction stop, the bracket lists every item that differed, written "A", "A and B" or "A, B and C".
-- C2 is written only when C1's validity holds, in this order of precedence: the margins not fixed; dropped by the
-  noise floor; a seed failed (the "If a seed failed" sentence, or "If every seed failed" when no seed is left); then
-  "Holds" or "Fails" under the rule 'all_three', or one "Each separately" sentence per twin under 'each_separately'.
+- C2 and C3 are written only when C1's validity holds, in this order of precedence: the margins not fixed (cannot
+  occur); "Not read" (fewer than 8 certified seeds); "Dropped" by the noise floor; a seed failed (the "If a seed
+  failed" sentence, or "If every seed failed" when no seed is left); then "Holds" or "Fails" and C3's sentences.
   Wherever a sentence says "seed [seeds]", it reads "seed 41" for one seed, and "seeds 41 and 43" or "seeds 40, 41
   and 43" for more.
+- The certified-seed sentence is written whenever C1 is written on the fresh seeds (not on the plumbing's seed 0).
 - On the plumbing's seed 0, every claim sentence starts with the plumbing prefix and "fresh seeds [SEEDS]" reads
   "the plumbing's seed 0". The sentences of sections 14.3 and 14.4 are written as they stand.
 - Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5
@@ -598,47 +803,99 @@ The clauses:
 
 ## 15. Departures from version 8, fixed now
 
-1. **One setting**, the main setting; no band, no random rows, no band readouts, no version 6 arm.
-2. **BCA's two groups pooled** over every held-out recorded row outside the ball (section 3).
-3. **The refusal rule:** BCA refusing fails the seed for the BCA-dependent arms only; nothing stops (section 8.4).
-4. **The outcome-free count** of the pooled groups, recorded before any training (section 3.4).
-5. **Two new trained arms**, the twins of C2, plus the noise-floor copy.
-6. **Fresh seeds from an unused block** (40-59), the count fixed by DECISION.md.
-7. **No exploratory stage**, no exploratory look and no stop rules on seeds 0-4; seed 0 serves the plumbing only.
-8. **The noise floor** adapted to the training program's batch (section 8.5).
-9. **A cluster entry** beside the desktop entry (section 12.2).
+1. **BCA's groups are pooled** over every held-out row outside the ball (section 3). Version 8 read the survivors and
+   the 1,000-row bank.
+2. **A refusal is read per arm**: in C1 as no caution (5.4); in C2 and C3 the seed is left out. Version 8 stopped the
+   whole actor phase and both evaluations, and the seed failed every mark.
+3. **Main setting only; no exploratory stage; no harm stop.**
+4. **Ten fresh seeds, 40-49.**
+5. **Four new trained arms** (`meandiff_q90x1`, `meandiff_q90x2`, `meandiff_limit`, `obca_k1_alone`) and two claims
+   about them (C2 and its mirror C3), with step 2's 5-point unit and sign counts. Version 8 reported the switched
+   rivals with no claim (its departure 10); the reason given there, that facts about each arm's switch and height
+   were unknown in the near-80 setting, does not apply in the main setting, where they are recorded on seven seeds.
+   The split-conformal switch is reported, not a twin: it differs from BCA in its switch as well as its height.
+6. **The hand-set range limit joins the world-blind rivals** for the net-lead mark; version 8 listed it as
+   "reported; used in claim 3". The marks themselves are unchanged. The lead is computed in version 9's own look
+   over the enlarged set; step 2's lead over its own set is reported beside it.
+7. **Both groups' sizes are counted and written before training**, with the certificate's floor stated (29 rows).
+8. **Version 9 supersedes version 8 in place** (`near80/`), with a new fingerprint; version 8's `prereg.json` moves to
+   `prereg_history/`, its approval, import, amendment and results files stay, and its chain is checkable at
+   `52914e4`.
+9. **C2's and C3's BCA side is the copy trained alone**, the twins' own training mode; the noise floor remains the
+   validity check.
+10. **The pre-approval facts read the spent seeds 10-14** (version 8's recorded second critics; nothing trained) with
+    the kill rule of 8.1; version 8's no-training checks read seeds 0-4 only.
+11. **The cluster entry is not part of this version** (12.2).
 
 ---
 
-## 16. Choices (defaults; the owner's acceptance is `TODO(DECISION.md: the owner's answer)`)
+## 16. Choices (defaults; your acceptance is TODO(OWNER: recorded in OWNER_ANSWER with its date, time and words))
 
-1. **The setting.** Default: **the main setting only**. Or the near-80 band as well (version 8's claims 1-3 on fresh
-   seeds; about +2.5 CPU-hours per seed).
-2. **The seeds.** Default: **the first N of the block 40-59**, N fixed by DECISION.md. Or another unused block.
-3. **The pooled groups.** Default: **every held-out row outside the ball** (the calibration and evaluation splits).
-   Or the calibration split alone (about half the rows).
-4. **The refusal rule.** Default: **the BCA-dependent arms only** fail; every other arm trains. Or version 8's stop.
-5. **The noise floor.** Default: **BCA's switched ramp trained alone**, at most 5 points. Or none.
-6. **Hosts.** Default: **TD3+BC, actor-only**.
-7. **Lanes.** Default: **10**.
-8. **The name.** Default: **"version 9, near-80 main"**.
-9. **Where it runs.** Default: **the desktop**; the cluster entry is ready (section 12.2).
+1. **The seed count and block.** Default: **ten seeds, 40-49**. Or five (40-44; one refusal then decides C1), fifteen
+   or twenty (40-54 or 40-59; a cluster entry is then needed, about a day of work and a probe).
+2. **What a refusal means for the marks.** Default: **in C1, BCA's arms count as no caution in that seed-world; in C2
+   and C3 the seed is left out** (5.4). Or version 8's rule (every seed is needed; a refusal fails C1, C2 and C3),
+   with a 0.35 chance under the default evidence that one refusal voids the test. Or, a method change: a declared
+   fallback (the hand-set range limit, a hard clip at the data's edge) when BCA refuses, scored as that fallback;
+   rejected here because it would reward refusing (the range limit scored 93.1 against BCA's 88.6 in the stalling
+   world on seeds 0-4 and would net about 107); it is reported as the composite "refusal means the range limit".
+3. **A second held-out log per seed and world.** Default: **no**. Yes brings the chance of any refusal in ten seeds
+   from about 0.35 to about 0.002 and moves BCA's height further toward the plain 90% point.
+4. **The machine.** Default: **the desktop**. Or one Orion node of hpc.charlotte.edu (needs the machine table, a probe
+   and a decision on the reproduction reference; the drafted entry is untested and not part of version 9).
+5. **The actor phase's memory reservation.** Default: **version 7's rule** (2 at once; about 5-5.5 hours of wall). Or
+   1.25 times the measured peak (9 at once; about 2.5 hours; changes `TestMemoryRule`).
+6. **Lanes.** Default: **10**.
+7. **The folder.** Default: **version 9 in place in `near80/`** (version 8's `--check` then passes only at commit
+   `52914e4`; its chain is recorded in that commit's report). Or a new folder `near80_v9/` (eight path sites to move
+   and the history logic to drop; about half a day).
+8. **The twins' factors.** Default: **the plain 90% gap and twice it** (step 2's k = 1 and k = 2). Or a hand-set
+   height of 3.0 for the far twin (on the recorded plateau; a number chosen after seeing seeds 0-4, labelled as such).
+9. **Where results are committed from.** Default: **the desktop**, as versions 6-8.
+10. **A fresh start bank per seed.** Default: **no**. The four fixed test start sets (`bank_starts`, one stream
+    `[20261012, 2, 9]` for every seed) were pre-registered in version 6 and are the same for every arm, so they rig
+    nothing; but every design number was chosen on them. Yes adds one fresh bank of 1,000 strong-current starts per
+    seed (stream `[20261012, 2, 9, 1000 + seed]`), scored for every arm as a description-only readout: about 1.5
+    minutes of evaluation per seed-world and its anchors, plus code in `evaluate_phase.py`.
+11. **Retrain step 1's second critics on seeds 0-4** to pin their pooled heights beside seeds 10-14's. Default: **no**
+    (about 1 CPU-hour of exploratory training on seen seeds; the kill rule reads seeds 10-14, which need no training).
 
 ---
 
 ## 17. What could fool us, and what we expect
 
-- **The pooled rest is large** (about 50,000 rows): BCA's threshold on the rest becomes tight, so the height may
-  grow. Guard: the heights are reported per seed and world, and C2 compares BCA with switches that read the same
-  rest.
-- **The full-throttle group may still be small** on some seed: a refusal. Guard: the refusal rule and the count.
-- **A twin with the same call and a smaller height is a dose comparison**, as step 2 said. Guard: C2 credits nothing
-  to BCA's posterior; it says only that the switched ramp beat each twin's actor.
-- **Rivals getting worse is not BCA getting better.** Guard: each arm's own points are reported in both worlds.
-- **The batch changes bits.** Guard: the noise floor.
+**Limits, with the guard against each:**
+1. **The heights shrink under pooling** (0.49-0.73 of version 8's on seeds 11 and 14), so BCA's stalling-world points
+   may fall. Guard: this is the test's purpose; both heights are reported on seeds 10-14; C1's lead mark is about the
+   switch.
+2. **A fresh seed with very few leaked rows** (the gate's 30 logs include one with 11; pooled, about 22) refuses even
+   under pooling. Guard: the outcome-free count, the refusal rule, ten seeds; the chance is about 1 in 23 per seed
+   (leak factor 2.0; 1 in 17 to 1 in 38 across 1.8-2.3).
+3. **The split-conformal switch is wrongly on in some no-stall seed-worlds** (0.121 and 0.116 on seeds 10 and 13
+   under pooling; its margin is step 2's 0.10). Guard: it is reported, not a twin; the twins make BCA's call by the
+   mean difference, so their readings are about heights.
+4. **The rank test's false alarms grow with 42,000 rest rows** (one new on seed 11). Guard: reported only.
+5. **The 2 x plain twin may sit past the dose plateau on some seeds** (as twice BCA's height did in the near-80
+   setting). Guard: the ladder is reported per seed; the prediction says "tie or plain ahead".
+6. **Training noise.** Guard: the noise floor (9.1) drops C2 and C3 if it exceeds the margin.
+7. **Seeds 11 and 14 were a selected pair.** Guard: no number from them is a mark; the predictions use seeds 0-4's
+   spreads and the preview.
+8. **Strong current lies outside the recorded currents.** Guard: stated in every claim, as version 8.
+9. **The kill rule is a check on spent seeds** (10-14) of BCA's and the mean-difference switch's calls only; it is
+   not a fresh-seed test. Guard: the number of redrafts is written in section 0; the twins' calls are pinned beside.
+10. **The 0.10 margin was placed in step 1 after seeing seeds 0-4** on BCA's own statistic and is carried to every
+    switch arm unchanged. Guard: labelled; retuned nowhere; the switch-call table shows every disagreement.
+11. **The four fixed start banks are the ones every design number was chosen on.** Guard: symmetric across arms and
+    pre-registered since version 6; choice 10 offers a fresh bank per seed as a readout.
+12. **Rivals getting worse is not BCA getting better.** Guard: each arm's own points are reported in both worlds.
 
-**Predictions (not marks):** the pooled groups certify on most fresh seeds; the mean-difference switch makes BCA's
-on/off call on every seed; C2's outcome depends on the heights, which nobody has seen.
+**Predictions, written before any training (not marks):** C1 passes with 0 or 1 refusal; C2 fails with BCA ahead of
+or tied with the plain gap, tied with twice it, tied with the gated range limit; C3 does not fire; the pooled heights
+on the fresh seeds lie between 1.5 and 3.0; the no-caution actor scores near -14 in strong current where full throttle
+stalls; the mean-difference switch makes BCA's call in 19 or 20 of the 20 seed-worlds. The expected verdict: "BCA
+works as a switched harm gate on ThrusterChain (L1, pre-registered). It was not shown to beat a plain switch with a
+plain height of either size, or the hand-set range limit, by 5 points (L2 not shown). Its Bayesian parts earn no
+return credit (L3 not shown)."
 
 ---
 
@@ -653,18 +910,18 @@ on/off call on every seed; C2's outcome depends on the heights, which nobody has
 | `prereg_draft.json` | the machine-readable draft (the freeze moves it into `prereg_history/`) |
 | `approve_local_near80.py` | the approval script you run at your own terminal (standard library only) |
 | `run_near80.sh` | the desktop entry |
-| `run_near80_cluster.sh`, `near80_slurm_job.sh` | the cluster entry (sbatch) and its job script |
 | `push_runfiles_near80.sh` | pushes the run files (model files included) to the branch `claude/near80-v9-run-files` |
-| `V9_BUILD_NOTES.md` | the build notes (every change, test, estimate and placeholder); not pinned |
-| `code/` | the code (section 18 of version 8's document lists the roles; `near80lib.py` now holds the pooled groups and the count, `facts_near80.py` the counts on seeds 0-4, `test_v9.py` the new tests) |
+| `V9_BUILD_NOTES.md` | the build notes (every change, test, estimate and the items the freeze fills); not pinned |
+| `pre_approval/pooled_facts_seeds0_4_spent10_14.json` | the facts of section 4.2, written by the freeze (nothing trained) |
+| `code/` | the code: `near80_constants.py` (seeds 40-49, the pooled rule, the refusal rule, the twins, `MARKS_C2` 5.0 / ceil(0.8 n) / `all_three`, `MARKS_C3` -5.0 / at most 1, `MIN_CERTIFIED` 8), `near80lib.py` (`pooled_groups`, `pooled_count_record`, `certification_expectation` with the binomial chance), `facts_near80.py` (the counts on seeds 0-4 and the spent-seed switch facts), `learner_phases.py` (`switch_scores_pooled`; `switch_scores_step1` for the reproduction check), `policy_phase.py` (the per-arm refusal, the new arms, the programs run alone), `pooled.py` and `claims_text.py` (the look and section 14), the approval chain (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`, `phases.py`, `phase_main.py`, `settingdata.py`, `evaluate_phase.py`, `ledger.py`, `stubs.py`) and five unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`) |
 
 **Version 8's history, kept unchanged:** `prereg_history/prereg_superseded_51e677ab76c8d2f7.json` (its approved
 `prereg.json`, moved there by the freeze), `code_manifest_history/code_manifest_v6.json` (its manifest),
 `approval_near80_51e677ab76c8d2f7.json`, `import_near80_51e677ab76c8d2f7.json`, `amendment_1.json`,
 `approval_near80_amendment1_52fe05b92900290b.json`, `import_near80_amendment1_52fe05b92900290b.json` (each with its
 `.sha256`), `pre_approval/no_training_checks_seeds0_4.json`, and `results-20261020T115246Z/`. Nothing of version 9
-reads them.
+reads them. The cluster scripts drafted for this version are not in this folder (12.2).
 
-**Outputs** go to `runs/shift_explore/near80_v9/` (write-once; version 8's `runs/shift_explore/near80/` is never
-written). Committed copies of results go to `near80/results-*/` with their fingerprints; the model files to the branch
-`claude/near80-v9-run-files`.
+**Outputs** go to `runs/shift_explore/near80_v9/` (write-once; version 8's `runs/shift_explore/near80/` is read by
+the facts of section 4.2 and never written). Committed copies of results go to `near80/results-*/` with their
+fingerprints (`git add -f`); the model files to the branch `claude/near80-v9-run-files`.

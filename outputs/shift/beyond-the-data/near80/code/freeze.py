@@ -39,6 +39,7 @@ import ast  # noqa: E402
 import importlib.util  # noqa: E402
 import json  # noqa: E402
 import os  # noqa: E402
+import re  # noqa: E402
 import shutil  # noqa: E402
 import subprocess  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -60,6 +61,7 @@ FACTS_NAME = "pooled_group_counts_{prefix}.json"
 TEST_TIMEOUT_S = 3 * 3600
 FACTS_TIMEOUT_S = 2 * 3600
 FILL_RULES_HEADING = "### 14.5"
+TODO_MARK = re.compile(r"TODO\([^)]*\)")
 
 
 class FreezeRefused(Exception):
@@ -69,22 +71,24 @@ class FreezeRefused(Exception):
 # --------------------------------------------------------------------------------------------- step 0: placeholders
 
 def placeholder_problems(n80_root):
-    """Step 0: every open item of DECISION.md, in the constants and in the documents."""
-    out = [f"placeholder not fixed (DECISION.md): {name}" for name in K.placeholders_present()]
+    """Step 0: every open item, in the constants (near80_constants.placeholders_present: the owner's answer) and in
+    the documents (any TODO(...) mark: TODO(OWNER: ...) for the owner's answer, TODO(FREEZE: ...) for the facts the
+    freeze fills into section 4 and the redraft count of section 0)."""
+    out = [f"placeholder not fixed: {name}" for name in K.placeholders_present()]
     for name in ("PREREGISTRATION.md", "README.md", DRAFT_NAME):
         p = Path(n80_root) / name
         if p.is_file():
             text = p.read_text(encoding="utf8")
-            n = text.count("TODO(DECISION")
+            n = len(TODO_MARK.findall(text))
             if n:
-                out.append(f"{name} carries {n} TODO(DECISION.md) mark{'s' if n != 1 else ''}")
+                out.append(f"{name} carries {n} TODO(...) mark{'s' if n != 1 else ''}")
     hist = Path(n80_root) / K.HISTORY_DIR
     if hist.is_dir():
         for p in sorted(hist.glob(K.DRAFT_HISTORY_NAME.format(prefix="*"))):
-            if p.suffix == ".json" and "TODO(DECISION" in p.read_text(encoding="utf8"):
+            if p.suffix == ".json" and TODO_MARK.search(p.read_text(encoding="utf8")):
                 try:
                     if json.loads(p.read_text(encoding="utf8")).get("version") == K.VERSION:
-                        out.append(f"{K.HISTORY_DIR}/{p.name} carries TODO(DECISION.md) marks")
+                        out.append(f"{K.HISTORY_DIR}/{p.name} carries TODO(...) marks")
                 except ValueError:
                     pass
     return out

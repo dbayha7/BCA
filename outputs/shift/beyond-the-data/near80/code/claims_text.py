@@ -12,9 +12,9 @@ capitalized bracket that a template uses is not in the bracket table.
 fill(template, values, specials) writes a template's brackets: a table bracket or a one-word bracket ([S], [s],
 [check], ...) from `values`, and a longer placeholder ([one clause per missed mark], ...) from `specials`, replaced as
 a whole. Text put in is never read again for brackets. A bracket of the template that is not filled is a ValueError,
-so a sentence never leaves the code with a '[' of its template behind. The literal "TODO(DECISION.md: ...)" marks of
-the draft are not brackets: they stay in the sentence until DECISION.md fills them (the freeze refuses while any
-remains).
+so a sentence never leaves the code with a '[' of its template behind. A literal "TODO(...)" mark (the owner's
+answer, the facts the freeze fills) is not a bracket: it stays in the text until it is filled (the freeze refuses
+while any remains).
 
 fmt(x, kind) writes a number as section 14.5 says: one decimal, a minus sign when negative and no plus sign, "-0.0"
 written "0.0", "not available" for a number that cannot be computed. Standard library only.
@@ -40,16 +40,29 @@ _ANCHORS = (
     ("c1.clause.even_pull", "14.1", "item", ("The clauses:", 2)),
     ("c1.clause.failed_seed", "14.1", "item", ("The clauses:", 3)),
     ("c1.clause.refused_seed", "14.1", "item", ("The clauses:", 4)),
+    ("c1.clause.stopped_seed", "14.1", "item", ("The clauses:", 5)),
+    ("c1.last.numbers", "14.1", "string", ("The last sentence:", 0)),
+    ("c1.last.stop", "14.1", "string", ("The last sentence:", 1)),
+    ("c1.certified", "14.1", "quote", "Always after C1, the certified seeds:"),
     ("c1.invalid", "14.1", "quote", "Validity fails:"),
     ("c1.reason.harm", "14.1", "string", ("The reasons:", 0)),
     ("c1.reason.past80", "14.1", "string", ("The reasons:", 1)),
     ("c2.holds", "14.2", "quote", "Holds (every twin beaten):"),
     ("c2.fails", "14.2", "quote", "Fails:"),
-    ("c2.clause.twin", "14.2", "item", ("The clauses:", 0)),
-    ("c2.clause.refused_seed", "14.2", "item", ("The clauses:", 1)),
+    ("c2.clause.ahead", "14.2", "item", ("The clauses:", 0)),
+    ("c2.clause.tie", "14.2", "item", ("The clauses:", 1)),
+    ("c2.clause.behind", "14.2", "item", ("The clauses:", 2)),
+    ("c2.clause.refused_seed", "14.2", "item", ("The clauses:", 3)),
+    ("c2.last.dose", "14.2", "string", ("The last sentence:", 0)),
+    ("c2.last.none", "14.2", "string", ("The last sentence:", 1)),
+    ("c2.last.twin", "14.2", "string", ("The last sentence:", 2)),
+    ("c2.last.other", "14.2", "string", ("The last sentence:", 3)),
+    ("c3.holds", "14.2", "quote", "A twin ahead (C3 holds for it):"),
+    ("c3.fails", "14.2", "quote", "No twin ahead (C3 fails):"),
     ("c2.each.holds", "14.2", "quote", "Each separately, a twin beaten:"),
     ("c2.each.fails", "14.2", "quote", "Each separately, a twin not beaten:"),
     ("c2.dropped", "14.2", "quote", "Dropped by the noise floor:"),
+    ("c2.not_read", "14.2", "quote", "Not read (too few certified seeds):"),
     ("c2.not_fixed", "14.2", "quote", "Margins not fixed:"),
     ("c2.failed_seed", "14.2", "quote", "If a seed failed:"),
     ("c2.every_seed_failed", "14.2", "quote", "If every seed failed:"),
@@ -63,7 +76,8 @@ FILL_RULES_SECTION = "14.5"
 
 CAPITAL_BRACKET = re.compile(r"\[([A-Z][A-Za-z0-9]*)\]")
 SIMPLE_BRACKET = r"\[([A-Za-z0-9]+)\](%?)"
-TODO_MARK = re.compile(r"TODO\(DECISION\.md[^)]*\)")
+# A mark the freeze refuses: TODO(OWNER: ...) for the owner's answer, TODO(FREEZE: ...) for what the freeze fills.
+TODO_MARK = re.compile(r"TODO\([^)]*\)")
 
 
 # --------------------------------------------------------------------------------------------- number writing

@@ -5,16 +5,21 @@ gate or JAX.
 Version 9 supersedes version 8 in this folder: the main test's setting only (the densest-15% removal ball; no near-80
 band setting, no random-rows setting), on fresh seeds no study of this generator has used, with BCA's two groups
 pooled over every held-out recorded row outside the removal ball (the refusal fix), an outcome-free count of the
-full-throttle group before any training, the refusal rule (BCA refusing on a seed fails that seed for the
-BCA-dependent arms only), two new trained arms (the mean-difference switch with the ramp, and turning on the hand-set
-range limit) and two claims (C1: version 8's claim 4 marks unchanged; C2: BCA's switched ramp beats each plain twin).
+full-throttle group before any training, the refusal rule (BCA refusing on a seed fails BCA's own arms on that
+seed, never the seed: in C1 they count as the no-caution actor; C2 and C3 leave the seed out), four new trained arms
+(the mean-difference switch with the plain 90% gap, with twice it, turning on the hand-set range limit, and BCA's
+switched ramp trained alone) and three claims (C1: version 8's claim 4 marks unchanged, the hand-set range limit added
+to the world-blind rivals; C2: BCA's switched ramp beats each plain twin by 5 points; C3, the mirror: a twin beats it).
 
-Changing any value here changes the code manifest and so the fingerprint the owner approves. Values that DECISION.md
-has not fixed yet are listed in PLACEHOLDERS; freeze.py refuses to freeze while any remains.
+Changing any value here changes the code manifest and so the fingerprint the owner approves. DECISION.md (20 October
+2026, after three reviews) fixed every value below; the one item still open is OWNER_ANSWER (the owner's own words
+accepting the choices of section 16), and freeze.py refuses to freeze while it is None.
 
-Host profiles (section 12 of PREREGISTRATION.md): the desktop (version 8's paths, root inside WSL) and the cluster
-(hpc.charlotte.edu, Slurm, no root, a clone under /scratch/dbayha). The host is chosen by NEAR80_HOST; the paths that
-depend on it are left out of the frozen constants block (HOST_DEPENDENT), everything else is frozen.
+Host profiles (section 12 of PREREGISTRATION.md): the desktop (version 8's paths, root inside WSL) runs version 9. A
+cluster profile (hpc.charlotte.edu, Slurm, no root, a clone under /scratch/dbayha) is kept for the paths' sake; its
+entry scripts were drafted, never run, and are not part of version 9 (V9_BUILD_NOTES.md says where they are). The host
+is chosen by NEAR80_HOST; the paths that depend on it are left out of the frozen constants block (HOST_DEPENDENT),
+everything else is frozen.
 """
 import importlib.util
 import os
@@ -24,18 +29,11 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 # ------------------------------------------------------------------------------------------------ placeholders
-# DECISION.md / BUILD_LIST.md (a parallel workflow) fix the claims' margins, the seed count and the multiplicity rule.
-# Each entry below names one open item. freeze.py refuses while this dict is not empty, while any MARKS_C2 value is
-# None, while OWNER_ANSWER is None, and while the documents carry "TODO(DECISION" or "**DRAFT".
-TODO = "TODO(DECISION.md)"
-PLACEHOLDERS = {
-    "seed_count": f"{TODO}: the number of fresh seeds (5, 10, 15 or 20); FRESH lists the first five of the block 40-59",
-    "c2_net_margin": f"{TODO}: C2's margin, in points, on the paired difference of nets across worlds",
-    "c2_positive_seeds_min": f"{TODO}: C2's least number of seeds whose paired difference is positive",
-    "c2_multiplicity": f"{TODO}: 'all_three' (C2 holds only when every twin is beaten) or 'each_separately' (one "
-                       f"claim per twin, each read on its own)",
-    "owner_answer": f"{TODO}: the owner's acceptance of section 16's defaults (words, time, place)",
-}
+# DECISION.md (20 October 2026) fixed the seed count (ten, 40-49), C2's margin (5.0 points, ceil(0.8 n) positive seeds,
+# all three twins), C3 (the mirror: -5.0 points, at most 1 positive seed) and MIN_CERTIFIED (8). Nothing is open here
+# but OWNER_ANSWER below; freeze.py refuses while this dict is not empty, while any mark value is None, while
+# OWNER_ANSWER is None, and while the documents carry "TODO(DECISION" or "**DRAFT".
+PLACEHOLDERS = {}
 
 # ------------------------------------------------------------------------------------------------ host profiles
 HOST_PROFILES = {
@@ -45,8 +43,9 @@ HOST_PROFILES = {
     "cluster": dict(root="NEAR80_ROOT: a clone under /scratch/dbayha (never /home/user/bca)",
                     python="NEAR80_PYTHON: a venv built from the package's pins, or module python/3.12.3",
                     home="the job's own HOME (never root)", requires_root=False,
-                    entry="run_near80_cluster.sh (sbatch: account staruser, partition Orion, 48-CPU nodes, 30-day "
-                          "limit; one job per seed or per phase group)",
+                    entry="not part of version 9: the sbatch entry (account staruser, partition Orion, 48-CPU nodes, "
+                          "30-day limit; one job per seed or per phase group) was drafted and never run; its two "
+                          "scripts are kept outside this folder (V9_BUILD_NOTES.md)",
                     memory="the job's Slurm memory (NEAR80_MEM_TOTAL_KB) minus 8 GiB"),
     "test": dict(root="NEAR80_ROOT (a clone used by the unit tests; never an official run)", python="sys.executable",
                  home="the user's HOME", requires_root=False, entry="the unit tests and stub runs only",
@@ -119,7 +118,10 @@ BRANCH = "claude/main-bca-connection-x4o46s"
 APPROVER_EMAIL = "35092758+dbayha7@users.noreply.github.com"
 APPROVER_NAME = "David Bayha"
 AGENT_EMAILS = ("noreply@anthropic.com",)
-OWNER_ANSWER = None                        # TODO(DECISION.md): dict(text=..., utc=..., where=..., choices=...)
+# The owner's own words accepting the choices of PREREGISTRATION.md section 16 (DECISION.md section 16, defaults
+# 1-11), with the time and the place they were said: dict(text=..., utc=..., where=..., choices=[...]). The one item
+# still open: no agent fills it; the freeze refuses while it is None.
+OWNER_ANSWER = None
 
 # ------------------------------------------------------------------------------------------------ the approval files
 PREREG_KIND = "near80-preregistration"
@@ -142,7 +144,7 @@ DRAFT_HISTORY_NAME = "prereg_draft_{prefix}.json"
 SUPERSEDED_NAME = "prereg_superseded_{prefix}.json"
 MANIFEST_HISTORY_DIR = "code_manifest_history"
 PRE_APPROVAL_DIR = "pre_approval"
-COUNTS_FROZEN_NAME = "pooled_group_counts_seeds0_4.json"
+COUNTS_FROZEN_NAME = "pooled_facts_seeds0_4_spent10_14.json"   # the pre-approval facts (nothing trained)
 TEST_MARKER = "NEAR80_TEST_FIXTURE"
 TEST_MARKER_TEXT = "near-80 test fixture: synthetic files only\n"
 
@@ -157,8 +159,7 @@ V8_FROZEN_NAME = "no_training_checks_seeds0_4.json"
 V9_NOTES = "V9_BUILD_NOTES.md"
 
 # Files the code manifest lists, relative to N80 (code/ is listed by name; freeze refuses any other file there).
-TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "run_near80_cluster.sh",
-             "near80_slurm_job.sh", "push_runfiles_near80.sh")
+TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "push_runfiles_near80.sh")
 CODE_FILES = ("near80_constants.py", "near80lib.py", "facts_near80.py", "test_near80.py", "approval_check.py",
               "import_approval.py", "near80_prereg.py", "freeze.py", "test_approval.py", "near80_runner.py",
               "phases.py", "phase_main.py", "settingdata.py", "learner_phases.py", "policy_phase.py",
@@ -192,10 +193,11 @@ SEED_REGISTRY = {
 }
 USED_SEEDS = frozenset(list(range(0, 35)) + list(range(100, 120)) + list(range(900, 910)))
 SMOKE_SEEDS = (0,)                         # the plumbing's seed (a gate seed): scratch and stub runs only
+SPENT_SEEDS = (10, 11, 12, 13, 14)         # version 8's fresh seeds: read by the pre-approval facts only (section 8.1)
 FRESH_SEED_BLOCK = (40, 59)                # the block version 9 draws its fresh seeds from, in order
-# TODO(DECISION.md): the count (5, 10, 15 or 20) is not fixed; the list below is the first five of the block. The
-# freeze refuses while PLACEHOLDERS names "seed_count".
-FRESH = (40, 41, 42, 43, 44)
+# DECISION.md 2.4: ten fresh seeds, 40-49; seeds 50-59 are reserved for a version 10 and refused by this one.
+FRESH = tuple(range(40, 50))
+RESERVED_SEEDS = tuple(range(50, 60))
 GROUPS = ("smoke", "fresh")
 WORLDS = ("stall", "no_stall")
 WORLD_TAG = {"stall": 1, "no_stall": 2}    # step 1's tags; never end a tag list in 0
@@ -236,14 +238,21 @@ POOLED_SPLITS = ("calibration", "evaluation")
 PRIMARY = "obca_k1"
 W0 = "w0_check"
 STEP2_RAMP_ARMS = ("obca_k1", "obca_k2", "obca_forced", "fixed_gated", "conformal_k1", "meangap_k1")
-TWIN_ARMS = ("conformal_k1", "meandiff_k1", "meandiff_limit")      # C2: the plain twins of BCA's switched ramp
-NOISE_ARM = "obca_k1_alone"                                        # the noise floor: obca_k1 trained alone
+# C2's and C3's twins (DECISION.md 2.5): the mean-difference switch with the plain 90%-quantile gap, with twice that
+# gap, and turning on the hand-set range limit. Each makes BCA's call by the mean difference, so BCA ahead of or
+# behind one is a reading about heights.
+TWIN_ARMS = ("meandiff_q90x1", "meandiff_q90x2", "meandiff_limit")
+NOISE_ARM = "obca_k1_alone"                                        # BCA's switched ramp trained alone: the noise
+                                                                   # floor's copy and C2's and C3's BCA side
 BCA_DEPENDENT = ("obca_k1", "obca_k2", "obca_forced", "obca_k1_alone")   # refused when BCA's height is not finite
-NEW_ARMS = ("meandiff_k1", "meandiff_limit", "obca_k1_alone")
+NEW_ARMS = ("meandiff_k1", "meandiff_q90x1", "meandiff_q90x2", "meandiff_limit", "obca_k1_alone")
+LONE_CALLS = ("meandiff_k1", "meandiff_q90x1", "meandiff_q90x2", "obca_k1_alone")   # ramp programs of one, in order;
+                                                                                    # then meandiff_limit (a hinge)
 MATCHED = ("even_pull", "push_less", "random_1", "random_2")
 WORLD_BLIND = ("standin", "even_pull", "random_1", "random_2", "obca_forced")   # step 2's order (ties: first)
-REPORTED_ONLY = ("obca_k2", "fixed_gated", "meangap_k1", "obca_k1_alone")
 HAND_SET_LIMIT = "range_hinge"
+LEAD_RIVALS = WORLD_BLIND + (HAND_SET_LIMIT,)      # C1's net-lead rivals (DECISION.md 2.5; ties go to the first)
+REPORTED_ONLY = ("obca_k2", "fixed_gated", "meangap_k1", "conformal_k1", "meandiff_k1", "obca_k1_alone")
 ARMS = {
     "main": ("none", "clone", "full_none", W0) + STEP2_RAMP_ARMS + NEW_ARMS + ("perfect_band", "range_hinge")
             + MATCHED + ("standin",),
@@ -257,7 +266,9 @@ ARM_PLAIN = {"obca_k1": "BCA's switched ramp", "obca_forced": "the always-on ram
              "clone": "the cloned actor", "w0_check": "the plumbing check",
              "obca_k2": "the ramp at twice BCA's height", "fixed_gated": "BCA's switch with height 1.0",
              "conformal_k1": "the split-conformal switch", "meangap_k1": "the rank-test switch",
-             "meandiff_k1": "the mean-difference switch with the ramp",
+             "meandiff_k1": "the mean-difference switch with the mean gap as its height",
+             "meandiff_q90x1": "the mean-difference switch with the plain 90% gap",
+             "meandiff_q90x2": "the mean-difference switch with twice the plain 90% gap",
              "meandiff_limit": "the mean-difference switch with the hand-set range limit",
              "obca_k1_alone": "BCA's switched ramp trained alone (the noise-floor copy)"}
 
@@ -270,12 +281,19 @@ MARKS = dict(
     keeps_floor=-3.0,
     even_pull_margin=15.0,
 )
-# TODO(DECISION.md): C2's margins and its multiplicity rule. None means not fixed; the freeze refuses.
-MARKS_C2 = dict(net_margin=None, positive_seeds_min=None, multiplicity=None)
+# C2 (DECISION.md 2.6): per twin, d = NET(obca_k1_alone) - NET(twin) over the certified seeds; "BCA ahead" when the
+# mean of d is at least net_margin and d is positive in at least ceil(positive_share * n) seeds (8 of 10, 8 of 9, 7 of
+# 8; positive_seeds_min is the ten-seed value); C2 holds when BCA is ahead of all three twins.
+MARKS_C2 = dict(net_margin=5.0, positive_seeds_min=8, positive_share=0.8, multiplicity="all_three")
+# C3 (the mirror, one claim per twin): "the twin ahead" when the mean of d is at most net_margin and d is positive in
+# at most positive_seeds_max seeds. Otherwise the reading is a tie ("not shown to beat T by 5 points").
+MARKS_C3 = dict(net_margin=-5.0, positive_seeds_max=1)
+MIN_CERTIFIED = 8                          # C2 and C3 are read only when at least this many seeds certified
 MULTIPLICITY_RULES = ("all_three", "each_separately")
-DEFAULTS = dict(setting="main", seeds="the first N of the block 40-59", pooled_groups=True, refusal_rule="arms only",
+DEFAULTS = dict(setting="main", seeds="ten fresh seeds, 40-49", pooled_groups=True,
+                refusal_rule="per arm: no caution in C1; the seed left out of C2 and C3",
                 noise_floor="obca_k1 trained alone", hosts="TD3+BC actor-only", lanes=10, name="version 9, near-80 main",
-                cluster="hpc.charlotte.edu, Slurm, account staruser, partition Orion")
+                machine="the desktop")
 
 # ------------------------------------------------------------------------------------------------ the runner
 PHASE_KINDS = ("data_main", "critic", "critic_full", "critic_second", "switch", "clone", "reference_actors", "policy",
@@ -298,8 +316,10 @@ PHASE_ENV = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/b
              "PYTHONPYCACHEPREFIX": PYCACHE_PREFIX, "JAX_PLATFORMS": "cpu", "OMP_NUM_THREADS": "1"}
 if HOST == "cluster":
     PHASE_ENV["PATH"] = os.environ.get("PATH", PHASE_ENV["PATH"])        # the module's python and its tools
-# Version 8's ledger, main setting on seeds 10-14 (results-20261020T115246Z): about 1.8 CPU-hours per seed; the two
-# new ramp calls and the pooled scores add about 0.3. The forecast scales with the seed count.
+# Version 8's ledger (results-20261020T115246Z): 1.52 CPU-hours per main-setting seed (seeds 11 and 14: 1.53 and
+# 1.51, both worlds, every phase); the five programs run alone (four lone ramp calls of about 63 s in the stalling
+# world and 40 s in the no-stall world, and the hinge) add about 0.14; the pooled scores seconds. About 1.65 expected;
+# 2.2 is the forecast with margin (the guard pauses at twice it; the cap is 2.5 times it: 55 CPU-hours for ten seeds).
 FORECAST_CPU_HOURS_PER_SEED = 2.2
 FORECAST_CPU_HOURS = {"plumbing": 2.5, "fresh": FORECAST_CPU_HOURS_PER_SEED * len(FRESH)}
 BUDGET_STAGES = ("fresh",)
@@ -382,19 +402,32 @@ def group_of(seed):
 
 
 def placeholders_present():
-    """The open items DECISION.md must fix: PLACEHOLDERS' names, plus any MARKS_C2 value or OWNER_ANSWER still None.
-    Empty when everything is fixed (then freeze.py may freeze)."""
+    """The open items: PLACEHOLDERS' names, any MARKS_C2 or MARKS_C3 value still None, MIN_CERTIFIED None, and
+    OWNER_ANSWER None (the owner's own words). Empty when everything is fixed (then freeze.py may freeze)."""
     out = list(PLACEHOLDERS)
     for k, v in MARKS_C2.items():
         if v is None and f"c2_{k}" not in out:
             out.append(f"c2_{k}")
+    for k, v in MARKS_C3.items():
+        if v is None and f"c3_{k}" not in out:
+            out.append(f"c3_{k}")
+    if MIN_CERTIFIED is None:
+        out.append("min_certified")
     if OWNER_ANSWER is None and "owner_answer" not in out:
         out.append("owner_answer")
     if MARKS_C2.get("multiplicity") not in (None,) + MULTIPLICITY_RULES:
         out.append("c2_multiplicity (not one of the known rules)")
     if not (FRESH_SEED_BLOCK[0] <= min(FRESH) and max(FRESH) <= FRESH_SEED_BLOCK[1]):
         out.append("seeds (outside the block)")
+    if set(FRESH) & set(RESERVED_SEEDS):
+        out.append("seeds (a reserved seed)")
     return out
+
+
+def c2_positive_needed(n_certified):
+    """ceil(positive_share * n): the seeds C2's sign part requires (8 of 10, 8 of 9, 7 of 8)."""
+    import math
+    return int(math.ceil(float(MARKS_C2["positive_share"]) * int(n_certified) - 1e-9))
 
 
 def load_local(name):

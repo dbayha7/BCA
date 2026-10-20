@@ -12,31 +12,40 @@ of those seeds. The switch's on/off call itself was right in 10 of 10 seed-world
 Version 9 is the same test with the cause fixed and nothing else moved:
 
 - **One setting**, the main test's (the densest 15% of recorded commands removed). No band, no random rows.
-- **Fresh seeds** from a block no study of this generator has used (40-59). The count is an open item.
+- **Ten fresh seeds, 40-49**, from a block no study of this generator has used (50-59 are reserved for a later
+  version).
 - **BCA's two groups pooled** over every held-out recorded row outside the removal ball (the whole calibration split
   and the whole evaluation split), fixed in advance; every switch arm reads the same groups; the training rows, the
-  test start sets and every rival's own rule are unchanged; no scored test reads the pooled rows.
+  test start sets and every rival's own rule are unchanged; no scored test reads the pooled rows. On the 20 known
+  seed-worlds the group grows from 18-60 rows to 35-135 and BCA refuses on none of them (a preview, nothing trained).
 - **An outcome-free count** of the full-throttle group per seed and world, recorded before any training (reported).
-- **The refusal rule:** if BCA still refuses on a seed, that counts as BCA failing that seed for the arms that depend
-  on BCA's height only; every other arm trains and is scored.
-- **Two new trained arms** reading the same groups: the mean-difference switch with the ramp, and the mean-difference
-  switch turning on the hand-set range limit.
-- **Two claims:** C1 = version 8's claim 4 marks, unchanged; C2 = BCA's switched ramp beats each plain twin (the
-  split-conformal switch and the two mean-difference switches), paired by seed, with margins and a multiplicity rule
-  that `DECISION.md` fixes.
-- **Two entries:** the desktop (as version 8) and the cluster at hpc.charlotte.edu (Slurm).
+- **The refusal rule:** if BCA still refuses on a seed, its own arms count as the controller trained without caution
+  in that seed-world for C1, and the seed is left out of C2 and C3; every other arm trains and is scored; nothing
+  stops.
+- **Four new trained arms** reading the same groups: the mean-difference switch with the plain 90% gap, with twice
+  that gap, turning on the hand-set range limit (the three plain twins), and BCA's switched ramp trained alone.
+- **Three claims:** C1 = version 8's claim 4 marks, unchanged (the hand-set range limit joins the world-blind
+  rivals); C2 = BCA's switched ramp beats each plain twin by 5.0 points on the net across worlds, paired by seed, in
+  at least ceil(0.8 n) of the n certified seeds (8 of 10), all three twins; C3 = the mirror, a twin beats BCA by 5.0
+  points with BCA ahead in at most 1 seed, one claim per twin. C2 and C3 need at least 8 certified seeds.
+- **One entry:** the desktop (as version 8). A cluster entry was drafted, never run, and is not part of version 9.
 
-## What is open (the freeze refuses while any remains)
+## Fixed by DECISION.md on 20 October 2026
 
-`code/near80_constants.py` lists them in `PLACEHOLDERS`, and the documents carry `TODO(DECISION.md: ...)` marks:
+Ten seeds 40-49; C2 5.0 points and ceil(0.8 n) seeds, all three twins; C3 -5.0 points and at most 1 seed; at least 8
+certified seeds; the refusal read per arm (C1: no caution; C2 and C3: the seed left out); the desktop; version 7's
+memory rule; 10 lanes; version 9 in place in `near80/`; the twins' factors 1 and 2; no second held-out log; no fresh
+start bank; no retrain of seeds 0-4's second critics. `REVISION_LOG.md` beside `DECISION.md` records the three
+reviews that shaped these values.
 
-1. the number of fresh seeds (5, 10, 15 or 20; `FRESH` lists the first five of the block);
-2. C2's margin on the paired net across worlds, in points;
-3. C2's least number of seeds with a positive paired difference;
-4. C2's multiplicity rule: `all_three` (one claim, every twin beaten) or `each_separately` (one claim per twin);
-5. your acceptance of section 16's defaults (`OWNER_ANSWER`).
+## What is open (the freeze refuses while it remains)
 
-`V9_BUILD_NOTES.md` lists where each is read.
+1. Your answer to section 16 of `PREREGISTRATION.md`: TODO(OWNER: "accept the defaults" is enough; the session
+   records your words, the date and the time in `OWNER_ANSWER` of `code/near80_constants.py`).
+2. The facts the frozen code computes before approval (section 4.2; about 10-15 CPU-minutes, nothing trained) and
+   the number of redrafts after their kill rule; the freeze fills them.
+
+`V9_BUILD_NOTES.md` lists every change of this build, every test, the time estimates and the items the freeze fills.
 
 ## How to approve (after the freeze)
 
@@ -60,48 +69,29 @@ Inside Ubuntu as root, `.../run_near80.sh` standing for `sh /home/user/bca/outpu
 
 1. `git -C /home/user/bca pull --ff-only`
 2. `.../run_near80.sh selftest` must end with `READY`.
-3. In tmux (`tmux new -s near80`): `.../run_near80.sh plumbing --lanes 10` (about 2.5 hours) must end with
+3. In tmux (`tmux new -s near80`): `.../run_near80.sh plumbing --lanes 10` (about an hour) must end with
    `plumbing PASSED`.
-4. In tmux: `.../run_near80.sh run --lanes 10`. Ctrl-C once stops safely; the same command continues after any
-   restart. `.../run_near80.sh status` shows what is happening.
-5. When it prints `Finished`, commit and push the results folder with the commands it prints, then
+4. In tmux: `.../run_near80.sh run --lanes 10` (about 5-5.5 hours in one sitting). Ctrl-C once stops safely; the
+   same command continues after any restart. `.../run_near80.sh status` shows what is happening.
+5. When it prints `Finished`, commit and push the results folder with the commands it prints (`git add -f`: the
+   repository's `.gitignore` hides `data/` folders), then
    `sh /home/user/bca/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh`.
 
 The messages (`UNFINISHED`, `WAITING FOR RETRY`, `PAUSED`, `HALT`, `REFUSED`, `FAILED`) and what to do are as in
 version 8's README; `retry <phase>`, `budget-continue fresh` and `report` are the answers.
 
-## How to run on the cluster (hpc.charlotte.edu)
-
-From a login node, with a clone under `/scratch/dbayha`, never as root, your own HOME, and a venv built from the
-package's pins (or `module load python/3.12.3` and the pins on top):
-
-```bash
-export NEAR80_HOST=cluster NEAR80_ROOT=/scratch/dbayha/bca NEAR80_PYTHON=/scratch/dbayha/bcavenv/bin/python
-sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/run_near80_cluster.sh selftest
-sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/run_near80_cluster.sh plumbing      # one job
-sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/run_near80_cluster.sh run           # one job per seed, then the look
-sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/run_near80_cluster.sh status
-```
-
-`run` submits one job per fresh seed (its 17 phases) and a last job for the lock and the look, all under account
-`staruser` on partition `Orion`, 10 processors and 24 GB each, 30-day limit. The jobs share one output root; each
-runner starts only its own seed's phases. `results` and `push_runfiles_near80.sh` then run on the login node with
-your GitHub sign-in. The header of `run_near80_cluster.sh` lists what the desktop entry assumed and the cluster
-entry changes (root, the path, tmux, the memory rule's source, version 7's placement).
-
 ## Files
 
-- `PREREGISTRATION.md`: the full pre-registration (DRAFT).
-- `prereg_draft.json`: the machine-readable draft; `code/freeze.py write` turns it into `prereg.json` once DECISION.md
-  has fixed the open items.
-- `approve_local_near80.py`, `run_near80.sh`, `run_near80_cluster.sh`, `near80_slurm_job.sh`,
-  `push_runfiles_near80.sh`: the approval script and the entries.
+- `PREREGISTRATION.md`: the full pre-registration.
+- `prereg_draft.json`: the machine-readable draft; `code/freeze.py write` turns it into `prereg.json` once your
+  answer is recorded.
+- `approve_local_near80.py`, `run_near80.sh`, `push_runfiles_near80.sh`: the approval script and the entries.
 - `code/`: the pooled groups and the count (`near80lib.py`, `facts_near80.py`), the approval chain
   (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`,
   `phases.py`, `phase_main.py`, `settingdata.py`, `learner_phases.py`, `policy_phase.py`, `evaluate_phase.py`,
   `ledger.py`, `stubs.py`), the look (`pooled.py`, `claims_text.py`), the constants (`near80_constants.py`) and five
   unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`).
-- `V9_BUILD_NOTES.md`: every change, test, estimate and open item of this build.
+- `V9_BUILD_NOTES.md`: every change, test, estimate and open item of this build (not pinned).
 - Version 8's history: its approval and import records, `amendment_1.json`, `pre_approval/`,
   `results-20261020T115246Z/`, and (after the freeze) `prereg_history/prereg_superseded_51e677ab76c8d2f7.json` and
   `code_manifest_history/code_manifest_v6.json`.
