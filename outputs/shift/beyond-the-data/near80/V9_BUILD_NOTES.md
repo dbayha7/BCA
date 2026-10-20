@@ -12,12 +12,17 @@ has been trained, frozen, approved or run officially; the DRAFT markers stay unt
   positive seeds over all three twins, C3 at -5.0 and at most 1, `MIN_CERTIFIED` 8, the twins `meandiff_q90x1`,
   `meandiff_q90x2`, `meandiff_limit`, the refusal readings (C1: no caution; C2 and C3: the seed left out), the lead
   over `WORLD_BLIND + (range_hinge,)`.
-- **The owner's answer** (20 October 2026, 14:29 Eastern = 18:29 UTC, in the chat with the cloud assistant):
-  "Accept the defaults and cluster". Recorded verbatim in `OWNER_ANSWER` of `code/near80_constants.py` with the time,
-  the place, a line per choice, and `taken` for the two choices that are not the defaults: choice 4 (the machine) is
-  the university cluster hpc.charlotte.edu and choice 9 (where results come from) is the cluster's login node in the
-  owner's own SSH session; the desktop is the fallback for both. `near80_prereg.choices_taken` writes those two from
-  `OWNER_ANSWER["taken"]`; `placeholders_present()` is empty.
+- **The owner's answers** (20 October 2026, in the chat with the cloud assistant). First, at 14:29 Eastern = 18:29
+  UTC: "Accept the defaults and cluster". The build read "cluster" as taking choice 4 (the machine) and choice 9
+  (where results are committed from); the correctness review (S4) asked for the owner to confirm the reading of
+  choice 9, and the owner answered, at about 15:20 Eastern = 19:20 UTC: "committed from desktop after copying over
+  from cluster". Both are recorded verbatim in `OWNER_ANSWER` of `code/near80_constants.py` with their times, the
+  place and a line per choice; `taken` names the one choice that is not its default (4: the university cluster
+  hpc.charlotte.edu, the desktop the fallback), `second` the answer that settled choice 9 (its default, the desktop:
+  the results folder and the output root copied from the cluster over the owner's SSH session, checked by SHA-256 on
+  the desktop, committed and pushed from the desktop's clone, as version 8's records were).
+  `near80_prereg.choices_taken` writes choice 4 from `OWNER_ANSWER["taken"]` and stamps choice 9 with the second
+  answer's time; `placeholders_present()` is empty.
 - **The cluster entry is part of version 9**: `run_near80_cluster.sh` and `near80_slurm_job.sh` are back in the
   folder and in `TOP_FILES` (the code manifest will pin them), with the cluster smoke's patch list applied
   (section 4). `PREREGISTRATION.md` 12.2 describes the cluster run, 12.1 the desktop as the fallback, 13 the measured
@@ -25,7 +30,9 @@ has been trained, frozen, approved or run officially; the DRAFT markers stay unt
 - **Open until the freeze** (by rule): the two `TODO(FREEZE: ...)` marks (section 4.2's table of the pre-approval
   facts and section 0's redraft count: filled by hand from the record `freeze.py write` produces), the DRAFT status
   lines of `PREREGISTRATION.md` and `README.md`, and "DRAFT, not frozen" in the code files' first docstring lines
-  (section 7).
+  (section 7). **Before `freeze.py write`, run `freeze.py check --as-frozen`** (section 9, B1): it puts a temporary
+  copy of the folder into the finalized state and runs the five test files there; the by-hand edits must leave the
+  real folder in the same state.
 
 ## 2. The two rules of 20 October 2026, and how the build reads them
 
@@ -110,7 +117,16 @@ manifest as `code_manifest_history/code_manifest_v6.json`... (the next free numb
 | `code/v6bca.py` | **deleted** | version 6's BCA arm is not in version 9 (section 5.7) |
 
 New, not in version 8's manifest (the freeze pins them): `code/test_v9.py`, `run_near80_cluster.sh`,
-`near80_slurm_job.sh`; `prereg_draft.json` (moved to `prereg_history/` by the freeze); this file (never pinned).
+`near80_slurm_job.sh`; `prereg_draft.json` (moved to `prereg_history/` by the freeze); this file (never pinned);
+`decision/` (the session's decision files as history, never pinned; section 9, F2).
+
+**The review round (section 9) touched these near-80 files again**, all before the freeze and so before anything
+is pinned: `PREREGISTRATION.md`, `README.md`, `prereg_draft.json`, `approve_local_near80.py`,
+`push_runfiles_near80.sh`, `run_near80_cluster.sh`, and under `code/`: `approval_check.py`, `freeze.py`,
+`learner_phases.py`, `near80_constants.py`, `near80_prereg.py`, `near80_runner.py`, `near80lib.py`, `settingdata.py`
+and the five test files. **Repository files pinned by version 8's manifest: still none changed** (`git diff 52914e4
+--name-status` outside the near-80 folder is empty at the end of the round); the gate's pre-registration and the
+shift dependencies: nothing changed.
 
 ## 4. The cluster entry and its test record
 
@@ -176,7 +192,12 @@ sign-in); or the two folders come back to the desktop by `tar` and are pushed fr
 - `cd6d8a8` the seed rule for the tests; the first test round's fixes (section 6).
 - `1731ca2` the second round's fixes.
 - `e9a7264` the synthetic fresh labels through the environment; the third round's fixes.
-- (the commit after this file: the build notes; any fix of the fourth round)
+- `64a12f4` the build notes.
+- `37422e3` the review round, the correctness findings (B1, S1-S3, M1, M3) and the review's extra tests (section 9).
+- `5179079` the owner's second answer, choice 9 (results committed from the desktop after the copy from the cluster).
+- `6e0ca0a` the review round, the fairness findings (F1-F6, M1-M4, M7) and the decision files as history.
+- `c2c6efa` test_pooled's two expectations follow the world-aware refusal fixture.
+- (the commit after this file: these notes, the fifth test round's record)
 
 ## 6. Tests
 
@@ -228,10 +249,31 @@ version 8's `test_changed_point` expected a stop version 9 no longer has (its `e
 290 tests, all pass (version 8's four files had 296: `test_changed_point` went with its phase, and the test files were
 rewritten for version 9's claims). The logs: `/tmp/bridge/work/v9b/test_<name>.log` in the WSL distro.
 
+**Round 5** (the review round, `c2c6efa`; the same bridge, a clone of the branch under `/tmp/bridge/work/v9fix/repo`
+bound over `/home/user/bca` in a private mount namespace with the owner's `runs/` bound read-only, each file alone
+with `env -i` and the phases' environment). The independent correctness review (section 9, B1) had found that four
+of the five files asserted the DRAFT state, so that `freeze.py write` would have refused at its own step 6 and the
+plumbing after approval would have failed its unit-test step; the files now read the folder's own state, and were
+run in BOTH states:
+
+| file | tests | the draft state, as committed | the as-frozen state (`freeze.py check --as-frozen`: the finalized copy) |
+|---|---|---|---|
+| test_near80.py | 28 | OK, 4 s | OK (0.1 s of tests) |
+| test_approval.py | 109 (1 skipped) | OK, 29 s | OK, 1 skipped (30 s) |
+| test_runner.py | 83 | OK, 207 s | OK (223 s) |
+| test_pooled.py | 45 | OK, 7 s (after `c2c6efa`; `6e0ca0a` had 2 failures of its own expectations, section 9 M1) | OK (7 s) |
+| test_v9.py | 37 | OK, 196 s | OK (202 s) |
+
+302 tests (290 + 12: the review's extra tests and the as-frozen tests). The draft-state logs:
+`/tmp/bridge/work/v9fix/draft_test_<name>.log`; the as-frozen log: `/tmp/bridge/work/v9fix/asfrozen.log`; the job
+scripts: the session's scratchpad `v9fix/jobs/`. The owner's clone was never written (still at `67209d2`; its `git
+status` shows the same two untracked `results-*` folders of 19 and 20 October as before; no file under its near-80
+folder newer than the shipped bundle; the bound `runs/` read-only); no `__pycache__` was left in the clone.
+
 ## 7. `freeze.py check` in the scratch clone (writes nothing)
 
-Run at `1731ca2` and again at `e9a7264` (the final code; the same output) in the same namespace (the real paths:
-`/home/user/bca`, the pinned Python). It reports 0
+Run at `1731ca2`, `e9a7264` and again at `c2c6efa` (the review round's code; the same output) in the same namespace
+(the real paths: `/home/user/bca`, the pinned Python). It reports 0
 placeholders and would: move version 8's `prereg.json` into `prereg_history/`, move `prereg_draft.json` to
 `prereg_history/prereg_draft_<first 16>.json`, write the manifest (30 near-80 files, the repository files under 10
 pinned folders), run the five test files, run `facts_near80.py --seeds 0 1 2 3 4 --spent-switch 10 11 12 13 14
@@ -248,6 +290,14 @@ pinned folders), run the five test files, run `facts_near80.py --seeds 0 1 2 3 4
 Section 14 extracts cleanly (37 sentences, no mark). The code folder holds exactly the 23 planned files, no
 `__pycache__`.
 
+**`freeze.py check --as-frozen`** (new in the review round; the same namespace, at `c2c6efa`): on the finalized
+copy it reports "No problems found.", section 14 extracts (37 sentences, 0 marks), the five test files pass there
+(section 6, round 5; 438 s in all) and it ends "as-frozen: ready for write". The by-hand edits of the real
+folder at the freeze must reproduce that state: the two FINAL status lines; the two `TODO(FREEZE: ...)` marks replaced
+by the facts' table and the redraft count; "DRAFT, not frozen[, awaiting the owner]" dropped from the module
+docstrings of the 23 code files and of `approve_local_near80.py` and from the header comments of the four shell
+entries (25 files; `STATUS_LINE_DRAFT`'s text in the constants stays as it is); then `freeze.py write` moves the draft.
+
 ## 8. For the owner's attention
 
 1. The freeze runs on the desktop (`freeze.py write` inside WSL): the facts step reads version 8's run files under
@@ -257,18 +307,117 @@ Section 14 extracts cleanly (37 sentences, no mark). The code folder holds exact
    the desktop with its own plumbing; a difference on the desktop too ends the version. This is the one place where
    the cluster choice changed a rule's wording; the review of the draft should look at it.
 3. Section 11: the approval is typed on the desktop as before; the statement the owner types says "every choice of
-   its section 16 as it records them (the defaults; the university cluster ...; the desktop as the fallback)".
+   its section 16 as it records them (the defaults; the university cluster as the run machine, the desktop as the
+   fallback; the results copied from the cluster to the desktop and committed from there)".
 4. The cluster smoke read five pinned `runs/` folders of the WSL clone (nothing written) and ran the draft entry's
    stub on seed 40 (`cluster/CLUSTER_READY.md` part A asks whether both were within the rules); from now on every
-   stub uses seed 0.
+   stub uses seed 0. Both facts are now disclosed in `PREREGISTRATION.md` section 0 and `README.md` (section 9, F1).
 5. The cluster clone for the real run must be a git clone of the approved commit under `/scratch/dbayha` with the
    `runs/` folders hard-linked from `runs_pinned/` (`SETUP.md`, `CLUSTER_READY.md` B8); `/scratch/dbayha/bca-near80/repo_v9`
    is the draft at `0b886d1` and must be replaced.
 6. The `NEAR80_STUB_FRESH_LABELS` hook in the constants (section 2) exists for the tests only; if the owner would
    rather have the tests run the fresh group on real seed labels, the hook and `TEST_LABELS` are the two lines to
-   remove, and the tests would again refer to `K.FRESH[0]` and so on.
+   remove, and the tests would again refer to `K.FRESH[0]` and so on. `PREREGISTRATION.md` section 18 now names it
+   (section 9, fairness M7).
+7. The second answer (choice 9) is recorded as the owner gave it; the results step of `PREREGISTRATION.md` 12.2 and
+   `README.md` say what to type; `run_near80_cluster.sh results` prints the copy-back steps and writes the SHA-256
+   list of the output root (`OUTPUT_ROOT_SHA256SUMS`) for the check on the desktop.
+8. Section 8.1's check 4 (`t_lo` in [0.78, 0.80]) is now implemented as a stop of the data phase (section 9, S2);
+   the recorded values on the 20 known seed-worlds are 0.782-0.791 and the synthetic logs of the tests give about
+   0.795, so no test or plumbing run trips it; a fresh seed outside the range would be a plumbing stop of that
+   seed-world, as the document already said.
 
-## 9. Time estimates (unchanged from DECISION.md, with the cluster's numbers)
+## 9. Review round (20 October 2026): two independent reviews before the freeze
+
+Two reviews of `64a12f4` were applied, each finding re-verified against the code first: a correctness review
+(`v9review_correctness.md` in the session's scratchpad: B1 blocking, S1-S4, M1-M5) and a fairness review
+(`v9review_fairness.md`: F1-F6, M1-M8). What was done, and what was rejected and why.
+
+**Correctness review.**
+- **B1 (blocking), applied as its fix list says.** `test_v9.py` reads the draft through one helper (`draft_text`,
+  `draft_payload`: the top, else `prereg_history/prereg_draft_*.json` of this version) and asserts the `TODO(FREEZE`
+  mark only while line 3 of `PREREGISTRATION.md` is the DRAFT line, else no mark anywhere; `test_pooled.py`'s mark
+  assertion is conditional the same way; `test_near80.py` branches on the document's own status line (not on
+  `final_or_draft()`) and no longer pins `near80lib.STATUS`; `test_approval.py`'s real-folder test reads the folder
+  the file lives in (so the as-frozen copy tests itself) and asserts, by state, the draft refusals, "No problems
+  found." on a finalized folder, or only the "written once" refusals once `prereg.json` exists (the plumbing's state;
+  `write` is never called on a finalized, unwritten folder); its placeholder test writes an explicit `TODO(FREEZE:
+  ...)` mark and the DRAFT line into its temporary copy instead of relying on the real document. The process fix:
+  `freeze.py check --as-frozen [--keep]` (`finalize_copy`, `check_as_frozen`; documented in freeze.py's docstring and
+  section 7 above) puts a temporary copy into the state steps 2-4 leave it and runs the check, the extraction of
+  section 14 and the five test files there before `write` touches anything; two tests cover it. Both states were
+  run (section 6, round 5).
+- **S1, applied.** `near80_prereg.frozen_block` pins `spent_seeds` and `spent_summary` (the kill rule's result, the
+  pooled and recorded heights through `approval_check.plain`, so an infinite recorded height is null in the strict
+  JSON) and refuses a summary that does not say the kill rule passed; `freeze.facts_problems` requires
+  `spent_summary.kill_rule_passed`; the owner's summary no longer prints `null` there.
+- **S2, applied (implemented, not struck).** `DECISION.md` appendix 8.1 fixed the check, so the code now does it:
+  `near80_constants.T_LO_RANGE = (0.78, 0.80)`, `near80lib.gap_rule_problem` (undefined, or `t_lo` outside the range:
+  the text of the stop names the gap rule, the minor cousin), raised by `settingdata.data_main` as a `PhaseStop` of
+  the seed-world right after the count; `freeze.facts_problems` refuses a facts record whose seeds 0-4 or 10-14 have
+  `t_lo` outside the range. `prereg_draft.json`'s `pooled_group_checks` names it.
+- **S3, applied.** The facts record's `status` is a sentence about the facts ("pre-approval facts: nothing trained;
+  read-only; ..."), never the DRAFT line.
+- **S4, superseded by the owner.** The owner was asked and answered choice 9 (section 1): the desktop, after the copy
+  from the cluster. Recorded everywhere the first reading had been written (the constants, the statement,
+  `approval_check.approval_section`, `near80_prereg.choices_taken`, sections 0, 11, 12.2, 12.3, 15, 16, 18 of the
+  pre-registration, `README.md`, the draft, the two shell entries, `near80_runner.make_results`, the tests). No
+  toggle constant was added: the answer is final; `OWNER_ANSWER["taken"]` is the one place a non-default choice is
+  named.
+- **M1, applied.** `test_pooled.make_tree` refuses per world as the policy phase does (this world's three BCA arms
+  have no actor; when the stalling world refused, the always-on ramp, the matched rivals and the stand-in have none
+  in either world); `test_v9`'s one-world test now tests that world only, and two expectations in `test_pooled` moved
+  with the fixture (a stall-only refusal leaves BCA's own no-stall loss of 1 point in the net lead and in the
+  composite "refusal means the range limit").
+- **M2, applied as fairness F5** (the same sentence).
+- **M3, applied.** `near80lib.leak_checks` records the five checks (each held-out row outside the ball once, no
+  training row among the held-out rows, the survivors kept training rows, no ball row, the two groups disjoint) in the
+  pooled groups and in the data record (`leak_checks`); a failure is `PooledGroupsError`, which the data phase and the
+  switch phase record as a `PhaseStop` (never an uncaught `AssertionError`); a data record without the count stops
+  the switch phase instead of skipping the comparison; `freeze.facts_problems` requires the checks recorded as passed.
+- **M4, rejected.** The order (the manifest at step 5, the tests at step 6) is kept: the manifest written before
+  the tests is what the re-check after the facts compares against, so a file changed while the tests run is caught;
+  with `check --as-frozen` run first, a test failure at step 6 is no longer the expected first contact with the
+  final state, so the cost (one archived manifest per rerun) should not arise.
+- **M5, rejected.** `facts_near80.py` keeps `json.dumps(..., default=float)`: the only readers of the facts file are
+  Python's loader (the freeze, the approval script's hash check, the tests), the recorded infinite heights of seeds
+  10, 12 and 13 are a fact worth keeping as `Infinity` in the record itself, and the copy that goes into
+  `prereg.json` (S1) passes through `approval_check.plain`, so prereg.json stays strict JSON. A strict reader of
+  the facts file would have to map `Infinity` itself; noted here.
+- The review's extra tests (`v9rc/extra/test_rc_extra.py`) were added to `test_v9.py` where sound: every seed
+  refusing (one world; both), the one-world refusal (rewritten on the world-aware fixture), the empty full-throttle
+  group (the look, the pooled groups, the arm table's stop on an undefined entry together with check 4), duplicate
+  commands across the held-out splits, the empty split, the group job started before the seed job (POSIX; about 2
+  minutes). The scratchpad version's expectation that the stalling world's row stops when only the no-stall gap
+  rule is undefined was wrong (the review's own section 4 says so); the test asserts the right behaviour, and with
+  S2 the data phase stops such a seed-world before any arm table is built. A data-phase stop is tested on the
+  synthetic tree too (`missing_records`).
+
+**Fairness review.**
+- **F1, applied** verbatim (section 0 of the pre-registration, after the seeds; `README.md`'s cluster bullet).
+- **F2, applied.** `PREREGISTRATION.md` 14.6 holds `DECISION.md` section 3's table word for word with the added
+  "Validity fails" row; `decision/` holds `DECISION.md`, `REVISION_LOG.md`, `credit.md`, `c3_rule.py`/`.out`,
+  `review_stats_calc.py`/`.out`, `PREVIEW.md` (CRLF turned to LF, nothing else changed) and a `README.md` naming
+  them; `approve_local_near80.py` allows the folder by name (`V9_DECISION_DIR`, equal to the constants' and checked
+  by `test_v9`; the folder is never on Python's path), `freeze.py` needed no change (it refuses nothing at the top
+  level that is not under `code/`). Section 14's bracket test scans 14.1-14.5 only: 14.6's brackets ([T], [F],
+  [d], ...) are the write-up's, filled by hand, as 14.6 says. Section 0 now gives `DECISION.md`'s path.
+- **F3, applied** (the "holds" sentence: "where it did, the comparison is of heights alone, and nothing is credited
+  to the switch"); no code change, the bracket set is unchanged.
+- **F4, applied** (9.1's sentence, departure 15.12, the draft's `departures`, the validity row of 14.6).
+- **F5, applied** (the C1 pass sentence; no code change).
+- **F6, applied** (the twin's 5-point edge, 0.38 against 0.48, after "3.2 points with 0.09").
+- **M1, M2, M3, M4, M7, applied** as written (M4 with the one precision the fill rules already carried: a matched
+  rival that could not be matched fails C1's marks only).
+- **M5, rejected (it was optional).** A second form of C1's last sentence under refusals would add an anchor to
+  section 14 (38 sentences instead of the 37 both reviews read) and a branch in `pooled.sentences`; the certified-seed
+  sentence that always follows C1, and the refusal clauses and sentences, already say that a refusal's charge decided
+  the lead.
+- **M6, not edited.** `DECISION.md` is kept verbatim as history (F2); the stale line is named in `decision/README.md`
+  and the pre-registration's 17.1 is right.
+- **M8, covered by F2's row.**
+
+## 10. Time estimates (unchanged from DECISION.md, with the cluster's numbers)
 
 The facts before approval about 0.2 CPU-hours on the desktop; the plumbing about an hour on the desktop, about
 1-1.5 hours as one cluster job; the ten seeds about 1.7 hours of wall on the cluster (about 24 CPU-hours) or about
