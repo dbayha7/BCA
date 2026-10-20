@@ -1,13 +1,14 @@
-"""Unit tests of the near-80 runner (builder B's files): the phase table, the refusals, the memory rule against version
-7's, the ledger's interruption classes, the training-file check, the safe stop, the budget guard, step 2's saved
-actors, and the end-to-end stub run. Synthetic data and stubs only: nothing is trained (every learner is replaced by a
-stand-in that takes no gradient step), no recorded seed 5-14 is generated, loaded or read, and nothing is written into
-the repository (temporary folders only).
+"""Unit tests of the near-80 version 9 runner: the phase table (the main setting, the smoke and fresh groups), the
+refusals, the memory rule against version 7's, the ledger's interruption classes, the training-file check, the safe
+stop, the budget guard, step 2's saved actors, the restated step-1 and step-2 code (the arm table with the per-arm
+refusal, the lone calls), and the end-to-end stub run on the plumbing's seed. Synthetic data and stubs only: nothing
+is trained (every learner is replaced by a stand-in that takes no gradient step), no recorded seed is generated,
+loaded or read, and nothing is written into the repository (temporary folders only). DRAFT, not frozen.
 
-Run (plain unittest), from /tmp:
-  PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=/home/user/bca \\
-    /tmp/claude-0/bcavenv/bin/python /home/user/bca/outputs/shift/beyond-the-data/near80/code/test_runner.py
-It takes a few minutes (the end-to-end stub run is most of it).
+Run (plain unittest), from the work folder, with NEAR80_HOST and NEAR80_ROOT set for a host other than the desktop:
+  PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=<repo> \\
+    <python> <repo>/outputs/shift/beyond-the-data/near80/code/test_runner.py
+It takes a few minutes (the end-to-end stub run is most of it). POSIX only (fcntl, taskset).
 """
 import sys
 
@@ -16,7 +17,6 @@ sys.dont_write_bytecode = True
 import ast  # noqa: E402
 import fcntl  # noqa: E402
 import importlib.util  # noqa: E402
-import io  # noqa: E402
 import json  # noqa: E402
 import os  # noqa: E402
 import shutil  # noqa: E402
@@ -30,12 +30,16 @@ import unittest.mock  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-ROOT = Path("/home/user/bca")
-for _p in (str(HERE), str(ROOT)):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
 
 import near80_constants as K  # noqa: E402
+
+ROOT = Path(K.ROOT)
+DESKTOP_ROOT = Path(K.DESKTOP_ROOT)
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import ledger as LG  # noqa: E402
 import phases as PH  # noqa: E402
 import phase_main as PM  # noqa: E402
@@ -43,9 +47,14 @@ import near80_runner as R  # noqa: E402
 
 PY = sys.executable
 TEST_ENV = {k: v for k, v in K.PHASE_ENV.items() if k != "PYTHONPYCACHEPREFIX"}   # as stub phases (Cfg.phase_env)
+for _name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS"):
+    if os.environ.get(_name):
+        TEST_ENV[_name] = os.environ[_name]
 STUB_PATH = os.environ.get("NEAR80_STUB_PYTHONPATH")
 APPROVAL = dict(prereg_sha256="a" * 64, prefix="a" * 16, fixture=True)
 BIG_MEM = "MemTotal:       67108864 kB\nMemAvailable:   62914560 kB\n"
+F0, F1, F2, F3, F4 = K.FRESH[:5]
+WORK = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
 
 
 def tmpdir(test):
@@ -57,7 +66,7 @@ def tmpdir(test):
 
 
 def partners_present():
-    """A's approval chain and C's looks are needed by the end-to-end stub run only."""
+    """The approval chain and the looks are needed by the end-to-end stub run only."""
     have_pooled = (K.CODE / "pooled.py").is_file() or bool(STUB_PATH)
     return (K.CODE / "approval_check.py").is_file() and have_pooled
 
@@ -74,24 +83,29 @@ def phase_env():
 class TestTable(unittest.TestCase):
     def test_kinds_settings_and_counts(self):
         keys = PH.plan()
-        ids = [PH.phase_id(k) for k in keys]
-        self.assertEqual(len(ids), len(set(ids)))
-        self.assertEqual({k.kind for k in keys}, set(K.PHASE_KINDS))
+        self.assertEqual(len(keys), len(set(keys)))
         count = {}
         for k in keys:
             count[k.kind] = count.get(k.kind, 0) + 1
-        self.assertEqual(count, dict(fixed_checks=1, data_main=20, data_band=20, critic=50, critic_full=5,
-                                     critic_second=50, switch=50, clone=50, reference_actors=50, v6_band=40,
-                                     policy=50, lock=2, evaluate=60, readouts=40, look_exploratory=1,
-                                     look_confirmatory=1))
+        n = len(K.FRESH)
+        self.assertEqual(count, dict(data_main=2 * n, critic=2 * n, critic_full=n, critic_second=2 * n, switch=2 * n,
+                                     clone=2 * n, reference_actors=2 * n, policy=2 * n, lock=1, evaluate=2 * n,
+                                     look=1))
         for k in keys:
-            if k.kind in PH.LEARNER_KINDS:
-                want = PH.BAND_SETTINGS if k.seed in K.EXPLORATORY else ("main",) + PH.BAND_SETTINGS
-                self.assertIn(k.setting, want)
+            if k.kind in PH.LEARNER_KINDS or k.kind in ("evaluate", "data_main"):
+                self.assertEqual(k.setting, "main")
             if k.kind == "critic_full":
-                self.assertEqual((k.world, k.seed in K.CONFIRMATORY), ("stall", True))
+                self.assertEqual((k.setting, k.world), ("x", "stall"))
             if k.seed is not None:
-                self.assertNotIn(k.seed, K.RESERVED)
+                self.assertIn(k.seed, K.FRESH)
+                self.assertNotIn(k.seed, K.USED_SEEDS)
+                self.assertEqual(k.group, "fresh")
+            else:
+                self.assertEqual(k.group, "fresh")
+        smoke = PH.plan(spec="smoke")
+        self.assertEqual({k.seed for k in smoke if k.seed is not None}, {0})
+        self.assertEqual({k.group for k in smoke}, {"smoke"})
+        self.assertEqual({k.kind for k in smoke}, set(K.PHASE_KINDS))
 
     def test_order_of_the_table(self):
         kinds = [k.kind for k in PH.plan()]
@@ -101,11 +115,12 @@ class TestTable(unittest.TestCase):
     def test_ids_round_trip(self):
         for k in PH.plan() + PH.plan(spec="smoke"):
             self.assertEqual(PH.parse_id(PH.phase_id(k)), k)
-        self.assertEqual(PH.phase_id(PH.make_key("policy", "near80", "stall", 3)), "policy.near80.stall.s3")
-        self.assertEqual(PH.phase_id(PH.make_key("lock", group="exploratory")), "lock.x.x.exploratory")
+        self.assertEqual(PH.phase_id(PH.make_key("policy", "main", "stall", F0)), f"policy.main.stall.s{F0}")
+        self.assertEqual(PH.phase_id(PH.make_key("lock", group="fresh")), "lock.x.x.fresh")
+        self.assertEqual(PH.phase_id(PH.make_key("look", group="smoke")), "look.x.x.smoke")
 
     def test_needs_are_in_the_plan_and_acyclic(self):
-        for spec in ("full", "smoke", "seeds:0,10"):
+        for spec in ("full", "smoke", f"seeds:0,{F0}", f"seeds:{F0},{F1}"):
             keys = PH.plan(spec=spec)
             inside = set(keys)
             for k in keys:
@@ -115,53 +130,57 @@ class TestTable(unittest.TestCase):
             self.assertTrue(all(v > 0 for v in pr.values()))
 
     def test_specific_needs(self):
-        k = PH.parse_id("policy.near80.no_stall.s12")
+        k = PH.parse_id(f"policy.main.no_stall.s{F2}")
         n = set(PH.phase_id(x) for x in PH.needs(k))
-        self.assertEqual(n, {"switch.near80.stall.s12", "switch.near80.no_stall.s12", "critic.near80.no_stall.s12",
-                             "clone.near80.no_stall.s12", "reference_actors.near80.no_stall.s12",
-                             "v6_band.near80.no_stall.s12", "policy.near80.stall.s12"})
-        k = PH.parse_id("reference_actors.main.stall.s11")
-        self.assertIn("critic_full.x.stall.s11", [PH.phase_id(x) for x in PH.needs(k)])
-        k = PH.parse_id("reference_actors.near80.stall.s1")
+        self.assertEqual(n, {f"switch.main.stall.s{F2}", f"switch.main.no_stall.s{F2}", f"critic.main.no_stall.s{F2}",
+                             f"clone.main.no_stall.s{F2}", f"reference_actors.main.no_stall.s{F2}",
+                             f"policy.main.stall.s{F2}"})
+        k = PH.parse_id(f"reference_actors.main.stall.s{F1}")
+        self.assertIn(f"critic_full.x.stall.s{F1}", [PH.phase_id(x) for x in PH.needs(k)])
+        k = PH.parse_id(f"reference_actors.main.no_stall.s{F1}")
         self.assertNotIn("critic_full", " ".join(PH.phase_id(x) for x in PH.needs(k)))
-        self.assertEqual([PH.phase_id(x) for x in PH.needs(PH.parse_id("data_main.main.stall.s10"))],
-                         ["look_exploratory.x.x.exploratory"])
-        self.assertEqual(PH.needs(PH.parse_id("data_main.main.stall.s3")), [])
+        self.assertEqual(PH.needs(PH.parse_id(f"data_main.main.stall.s{F0}")), [])
+        self.assertEqual([PH.phase_id(x) for x in PH.needs(PH.parse_id(f"switch.main.stall.s{F0}"))],
+                         [f"critic_second.main.stall.s{F0}"])
+        ev = PH.parse_id(f"evaluate.main.stall.s{F0}")
+        self.assertEqual([PH.phase_id(x) for x in PH.needs(ev)], ["lock.x.x.fresh", f"policy.main.stall.s{F0}"])
+        look = PH.parse_id("look.x.x.fresh")
+        kinds = {x.kind for x in PH.needs(look, PH.plan())}
+        self.assertEqual(kinds, {"evaluate", "data_main", "switch"})
 
     def test_est_minutes(self):
-        self.assertEqual(PH.est_minutes(PH.parse_id("policy.near80.stall.s0")), 40)
-        self.assertEqual(PH.est_minutes(PH.parse_id("policy.main.no_stall.s10")), 12)
-        self.assertEqual(PH.est_minutes(PH.parse_id("policy.random_rows.stall.s0")), 4)
-        self.assertEqual(PH.est_minutes(PH.parse_id("data_main.main.stall.s0")), 1)
-        self.assertEqual(PH.est_minutes(PH.parse_id("data_main.main.stall.s10")), 3)
+        self.assertEqual(PH.est_minutes(PH.parse_id("policy.main.stall.s0")), 50)
+        self.assertEqual(PH.est_minutes(PH.parse_id(f"policy.main.no_stall.s{F0}")), 14)
+        self.assertEqual(PH.est_minutes(PH.parse_id("data_main.main.stall.s0")), 3)
 
     def test_outputs_include_sidecars_and_stop(self):
-        k = PH.parse_id("policy.near80.stall.s0")
+        k = PH.parse_id(f"policy.main.stall.s{F0}")
         out = PH.outputs(k)
-        for rel in ("policy/near80/stall/seed0/lock.json", "policy/near80/stall/seed0/lock.json.sha256",
-                    "policy/near80/stall/seed0/actors.msgpack", "policy/near80/stall/seed0/stop.json",
-                    "stops/policy.near80.stall.s0.json"):
+        for rel in (f"policy/main/stall/seed{F0}/lock.json", f"policy/main/stall/seed{F0}/lock.json.sha256",
+                    f"policy/main/stall/seed{F0}/actors.msgpack", f"policy/main/stall/seed{F0}/stop.json",
+                    f"stops/policy.main.stall.s{F0}.json"):
             self.assertIn(rel, out)
+        self.assertIn("looks/fresh.md", PH.outputs(PH.parse_id("look.x.x.fresh")))
 
 
 class TestRefusals(unittest.TestCase):
-    def test_reserved_and_outside_seeds_for_every_kind_and_mode(self):
+    def test_used_reserved_and_outside_seeds_for_every_kind_and_mode(self):
         for kind in K.PHASE_KINDS:
-            for seed in list(K.RESERVED) + [15, 99, 100]:
+            for seed in list(K.SPENT_SEEDS) + list(K.RESERVED_SEEDS[:2]) + [5, 15, 20, 99, 100]:
                 for mode in ("official", "scratch", "stub"):
                     with self.assertRaises(PH.Refused):
-                        PH.check_key(PH.parse_id(f"{kind}.near80.stall.s{seed}"), mode,
-                                     "full" if mode == "official" else "seeds:0,10")
-        for seed in K.RESERVED:
+                        PH.check_key(PH.parse_id(f"{kind}.main.stall.s{seed}"), mode,
+                                     "full" if mode == "official" else f"seeds:0,{F0}")
+        for seed in list(K.SPENT_SEEDS) + list(K.RESERVED_SEEDS):
             with self.assertRaises(PH.Refused):
-                PH.parse_id(f"critic.near80.stall.s{seed}")
+                PH.parse_id(f"critic.main.stall.s{seed}")
 
-    def test_phase_main_refuses_reserved_seeds_in_every_mode(self):
+    def test_phase_main_refuses_used_and_reserved_seeds_in_every_mode(self):
         d = tmpdir(self)
         fx = d / "fx"
         fx.mkdir()
         (fx / K.TEST_MARKER).write_text(K.TEST_MARKER_TEXT)
-        for seed in K.RESERVED:
+        for seed in (K.SPENT_SEEDS[0], K.RESERVED_SEEDS[0], 5):
             for kind in ("data_main", "critic", "policy", "evaluate"):
                 pid = f"{kind}.main.stall.s{seed}"
                 self.assertEqual(PM.main(["--phase-id", pid, "--out", str(K.OUT), "--mode", "official"]), 97)
@@ -172,102 +191,84 @@ class TestRefusals(unittest.TestCase):
         self.assertFalse((fx / "out").exists())
 
     def test_scratch_never_reaches_fresh_seeds(self):
-        """Scratch mode is the plumbing on seed 0 (section 8.2): a phase of seeds 10-14, or of the confirmatory group,
-        is refused in scratch mode for every kind and plan, before any approval or data step."""
+        """Scratch mode is the plumbing on seed 0 (section 8.2): a phase of a fresh seed, or of the fresh group, is
+        refused in scratch mode for every kind and plan, before any approval or data step."""
         d = tmpdir(self)
-        for pid in ("data_main.main.stall.s10", "data_band.band.stall.s12", "policy.near80.stall.s12",
-                    "critic_full.x.stall.s14"):
+        for pid in (f"data_main.main.stall.s{F0}", f"policy.main.stall.s{F2}", f"critic_full.x.stall.s{F4}"):
             self.assertEqual(PM.main(["--phase-id", pid, "--out", str(d / "scratch"), "--mode", "scratch"]), 97)
             self.assertEqual(PM.main(["--phase-id", pid, "--out", str(d / "scratch"), "--mode", "scratch", "--plan",
                                       "smoke"]), 97)
         self.assertFalse((d / "scratch").exists())
         for kind in K.PHASE_KINDS:
-            for seed in K.CONFIRMATORY:
-                for setting in ("main", "near80", "random_rows", "band", "x"):
+            for seed in K.FRESH[:2]:
+                for setting in ("main", "x"):
                     for spec in ("full", "smoke", f"seeds:0,{seed}"):
                         with self.assertRaises(PH.Refused) as cm:
                             PH.check_key(PH.make_key(kind, setting, "stall", seed), "scratch", spec)
                         self.assertTrue(str(cm.exception).startswith("refused"))
-        for kind in ("lock", "look_confirmatory"):
+        for kind in ("lock", "look"):
             with self.assertRaises(PH.Refused):
-                PH.check_key(PH.make_key(kind, group="confirmatory"), "scratch", "smoke")
+                PH.check_key(PH.make_key(kind, group="fresh"), "scratch", "smoke")
         with self.assertRaises(PH.Refused):                       # scratch is the smoke plan only
             PH.check_key(PH.parse_id("data_main.main.stall.s0"), "scratch", "full")
         PH.check_key(PH.parse_id("data_main.main.stall.s0"), "scratch", "smoke")
-        look = dict(kind="near80-look-exploratory", prereg_sha256=None, fresh_near80_allowed=True, mode="scratch")
-        for pid in ("data_main.main.stall.s10", "policy.near80.stall.s12"):
-            ok, why = PH.admit(PH.parse_id(pid), APPROVAL, look, "scratch")
-            self.assertFalse(ok)
-            self.assertEqual(why, PH.SCRATCH_FRESH)
+        ok, why = PH.admit(PH.parse_id(f"data_main.main.stall.s{F0}"), APPROVAL, None, "scratch")
+        self.assertFalse(ok)
+        self.assertEqual(why, PH.SCRATCH_FRESH)
         with self.assertRaises(PH.Refused):
             R.Cfg(mode="scratch", out=d / "o", plan="full")
         self.assertEqual(R.Cfg(mode="scratch", out=d / "o").plan, "smoke")
 
     def test_combinations_outside_the_table(self):
-        for pid in ("critic.main.stall.s0", "v6_band.main.stall.s10", "critic_full.x.stall.s0",
-                    "data_band.near80.stall.s0", "readouts.main.stall.s10", "policy.band.stall.s0",
-                    "lock.x.x.x", "nonsense.x.x.x", "critic.near80.moon.s0"):
+        for pid in ("critic.near80.stall.s0", "v6_band.main.stall.s0", "data_band.band.stall.s0",
+                    "readouts.main.stall.s0", "policy.random_rows.stall.s0", "critic_full.x.no_stall.s0",
+                    "critic.main.stall.x", "lock.x.x.x", "nonsense.x.x.x", "critic.main.moon.s0", "look.x.x.band"):
             with self.assertRaises(PH.Refused):
                 PH.check_key(PH.parse_id(pid))
         PH.check_key(PH.parse_id("critic_full.x.stall.s0"), "scratch", "smoke")
         with self.assertRaises(PH.Refused):
             PH.check_key(PH.parse_id("critic_full.x.stall.s0"), "official", "smoke")
+        with self.assertRaises(PH.Refused):                       # the smoke seed never runs officially
+            PH.check_key(PH.parse_id("critic.main.stall.s0"), "official", "full")
+        with self.assertRaises(PH.Refused):                       # the official run has the fresh group only
+            PH.check_key(PH.make_key("lock", group="smoke"), "official", "full")
+        PH.check_key(PH.parse_id(f"critic.main.stall.s{F0}"), "official", "full")
 
-    def test_admission_of_fresh_seeds(self):
-        look_ok = dict(kind="near80-look-exploratory", prereg_sha256=APPROVAL["prereg_sha256"],
-                       fresh_near80_allowed=True, mode="official")
-        look_no = dict(look_ok, fresh_near80_allowed=False)
-        main10 = PH.parse_id("data_main.main.stall.s10")
-        band10 = PH.parse_id("data_band.band.stall.s10")
-        crit10 = PH.parse_id("critic.near80.stall.s10")
-        rr10 = PH.parse_id("policy.random_rows.no_stall.s14")
-        mcrit10 = PH.parse_id("critic.main.stall.s10")
-        self.assertFalse(PH.admit(main10, None, look_ok)[0])                       # no approval
-        self.assertFalse(PH.admit(PH.parse_id("critic.near80.stall.s0"), None, None)[0])
-        ok, why = PH.admit(main10, APPROVAL, None)                                # before the exploratory look
-        self.assertFalse(ok)
-        self.assertTrue(why.startswith("refused"))
-        self.assertFalse(PH.admit(main10, APPROVAL, dict(look_ok, prereg_sha256="b" * 64))[0])
-        self.assertFalse(PH.admit(main10, APPROVAL, dict(look_ok, kind="other"))[0])
-        for k in (band10, crit10, rr10):
-            ok, why = PH.admit(k, APPROVAL, look_no)
-            self.assertEqual((ok, why), (False, PH.SKIP_LOOK))
-            self.assertTrue(PH.is_skip(why))
-            self.assertEqual(PH.admit(k, APPROVAL, look_ok), (True, None))
-        self.assertEqual(PH.admit(main10, APPROVAL, look_no), (True, None))      # the main setting still runs
-        self.assertEqual(PH.admit(mcrit10, APPROVAL, look_no), (True, None))
-        self.assertEqual(PH.admit(PH.parse_id("critic.near80.stall.s0"), APPROVAL, None), (True, None))
-        # scratch and stub records carry no fingerprint
-        self.assertEqual(PH.admit(main10, APPROVAL, dict(look_ok, prereg_sha256=None), "stub"), (True, None))
-        self.assertFalse(PH.admit(main10, APPROVAL, dict(look_ok, prereg_sha256=None), "official")[0])
+    def test_admission(self):
+        """Every phase needs the approval facts; a fresh phase is refused in scratch mode; nothing else gates a
+        phase (version 8's exploratory look and its stop rules are gone)."""
+        main40 = PH.parse_id(f"data_main.main.stall.s{F0}")
+        self.assertFalse(PH.admit(main40, None)[0])
+        self.assertFalse(PH.admit(PH.parse_id("critic.main.stall.s0"), None)[0])
+        self.assertEqual(PH.admit(main40, APPROVAL), (True, None))
+        self.assertEqual(PH.admit(main40, APPROVAL, None, "stub"), (True, None))
+        self.assertEqual(PH.admit(PH.parse_id("critic.main.stall.s0"), APPROVAL, None, "scratch"), (True, None))
+        self.assertEqual(PH.admit(PH.make_key("lock", group="fresh"), APPROVAL, None, "scratch")[1], PH.SCRATCH_FRESH)
+        self.assertFalse(PH.is_skip(PH.SCRATCH_FRESH))
 
     def test_skip_rules_from_files(self):
         out = tmpdir(self)
-        look = dict(kind="near80-look-exploratory", prereg_sha256=None, fresh_near80_allowed=False, group="exploratory")
-        LG.write_json_once(out / K.LAYOUT["look"].format(group="exploratory"), look)
         keys = PH.plan()
-        self.assertEqual(PH.rule_skip(PH.parse_id("critic.near80.stall.s11"), out, keys), PH.SKIP_LOOK)
-        self.assertEqual(PH.rule_skip(PH.parse_id("data_band.band.no_stall.s11"), out, keys), PH.SKIP_LOOK)
-        self.assertIsNone(PH.rule_skip(PH.parse_id("critic.main.stall.s11"), out, keys))
         # a stopped need skips its dependents, through chains
-        stop = PH.parse_id("critic_second.near80.stall.s2")
+        stop = PH.parse_id(f"critic_second.main.stall.s{F1}")
         LG.write_json_once(out / PH.stop_rel(stop), dict(kind="near80-phase-stop", reason="x"))
         self.assertEqual(PH.done(stop, out), "stopped")
-        self.assertIn("was stopped", PH.rule_skip(PH.parse_id("switch.near80.stall.s2"), out, keys))
-        self.assertIn("was skipped", PH.rule_skip(PH.parse_id("policy.near80.stall.s2"), out, keys))
-        self.assertIn("was skipped", PH.rule_skip(PH.parse_id("evaluate.near80.no_stall.s2"), out, keys))
-        self.assertEqual(PH.needs_state(PH.parse_id("evaluate.near80.no_stall.s2"), out, keys)[0], "skip")
-        self.assertIsNone(PH.rule_skip(PH.parse_id("lock.x.x.exploratory"), out, keys))
-        # a failed seed: data_band failures fail the near-80 settings only; data_main failures every setting
-        LG.write_json_once(out / K.LAYOUT["data_band"].format(world="no_stall", seed=12),
-                           dict(kind="near80-data-band", seed_failed_reason="check 3 failed"))
-        self.assertIn("failed a no-training check", PH.rule_skip(PH.parse_id("critic.random_rows.stall.s12"), out, keys))
-        self.assertIsNone(PH.rule_skip(PH.parse_id("critic.main.stall.s12"), out, keys))
-        LG.write_json_once(out / K.LAYOUT["data_main"].format(world="stall", seed=13),
+        self.assertIn("was stopped", PH.rule_skip(PH.parse_id(f"switch.main.stall.s{F1}"), out, keys))
+        self.assertIn("was skipped", PH.rule_skip(PH.parse_id(f"policy.main.stall.s{F1}"), out, keys))
+        self.assertIn("was skipped", PH.rule_skip(PH.parse_id(f"policy.main.no_stall.s{F1}"), out, keys))
+        self.assertIn("was skipped", PH.rule_skip(PH.parse_id(f"evaluate.main.no_stall.s{F1}"), out, keys))
+        self.assertEqual(PH.needs_state(PH.parse_id(f"evaluate.main.no_stall.s{F1}"), out, keys)[0], "skip")
+        self.assertIsNone(PH.rule_skip(PH.parse_id("lock.x.x.fresh"), out, keys))
+        self.assertIsNone(PH.rule_skip(PH.parse_id(f"critic.main.stall.s{F1}"), out, keys))   # not a dependent
+        self.assertIsNone(PH.rule_skip(PH.parse_id(f"switch.main.stall.s{F2}"), out, keys))   # another seed
+        # a failed seed: a data_main failure in either world fails every phase of the seed
+        LG.write_json_once(out / K.LAYOUT["data_main"].format(world="stall", seed=F3),
                            dict(kind="near80-data-main", seed_failed_reason="the gate's checks failed"))
-        for pid in ("critic.main.no_stall.s13", "critic_full.x.stall.s13", "data_band.band.stall.s13",
-                    "evaluate.near80.stall.s13"):
+        for pid in (f"critic.main.no_stall.s{F3}", f"critic_full.x.stall.s{F3}", f"evaluate.main.stall.s{F3}",
+                    f"policy.main.no_stall.s{F3}"):
             self.assertIn("failed the gate's checks", PH.rule_skip(PH.parse_id(pid), out, keys))
+        self.assertIsNone(PH.rule_skip(PH.parse_id(f"data_main.main.no_stall.s{F3}"), out, keys))
+        self.assertEqual(PH.needs_state(PH.parse_id("lock.x.x.fresh"), out, keys)[0], "wait")
 
     def test_out_root_rules(self):
         d = tmpdir(self)
@@ -279,7 +280,13 @@ class TestRefusals(unittest.TestCase):
             PM.check_out_root(ROOT / "runs" / "shift_explore" / "restructure" / "step2", "official")
         with self.assertRaises(PM.Refusal):
             PM.check_out_root(d / "elsewhere", "official")
-        self.assertEqual(PM.check_out_root(K.OUT, "official"), Path(os.path.realpath(K.OUT)))
+        if K.HOST == "test":
+            with self.assertRaises(PM.Refusal):                       # the test host never runs an official phase
+                PM.check_out_root(K.OUT, "official")
+            with self.assertRaises(PH.Refused):
+                R.Cfg(mode="official")
+        else:
+            self.assertEqual(PM.check_out_root(K.OUT, "official"), Path(os.path.realpath(K.OUT)))
         with self.assertRaises(PM.Refusal):
             PM.check_out_root(d / "out", "stub", fixture=d)            # no marker
         (d / K.TEST_MARKER).write_text(K.TEST_MARKER_TEXT)
@@ -290,6 +297,8 @@ class TestRefusals(unittest.TestCase):
             R.Cfg(mode="scratch", out=ROOT / "runs" / "x")
         with self.assertRaises(PH.Refused):
             R.Cfg(mode="official", out=d)
+        self.assertTrue(str(K.OUT).replace("\\", "/").endswith("runs/shift_explore/near80_v9"))
+        self.assertTrue(str(K.V8_OUT).replace("\\", "/").endswith("runs/shift_explore/near80"))
 
     def test_pinned_list_equals_step2s(self):
         sys.path.insert(0, str(K.S2_DIR))
@@ -299,7 +308,7 @@ class TestRefusals(unittest.TestCase):
             spec.loader.exec_module(mod)
         finally:
             sys.path.remove(str(K.S2_DIR))
-        self.assertEqual(tuple(str(p) for p in mod.PINNED), tuple(str(ROOT / r) for r in PM.PINNED_REL))
+        self.assertEqual(tuple(str(p) for p in mod.PINNED), tuple(str(DESKTOP_ROOT / r) for r in PM.PINNED_REL))
 
     def test_environment_and_processors(self):
         PM.check_environment("official", environ=dict(K.PHASE_ENV), affinity={3})
@@ -314,10 +323,10 @@ class TestRefusals(unittest.TestCase):
 
     def test_write_once(self):
         out = tmpdir(self)
-        k = PH.parse_id("critic.near80.stall.s1")
+        k = PH.parse_id(f"critic.main.stall.s{F1}")
         PM.check_write_once(k, out)
-        (out / "learners/near80/stall/seed1").mkdir(parents=True)
-        (out / "learners/near80/stall/seed1/critic.msgpack").write_bytes(b"x")
+        (out / f"learners/main/stall/seed{F1}").mkdir(parents=True)
+        (out / f"learners/main/stall/seed{F1}/critic.msgpack").write_bytes(b"x")
         with self.assertRaises(PM.Refusal):
             PM.check_write_once(k, out)
         LG.write_json_once(out / PH.record_rel(k), dict(kind="near80-critic"))
@@ -347,63 +356,48 @@ class TestRefusals(unittest.TestCase):
         self.assertEqual(R.main(["stub", "--fixture", "/nonexistent_near80", "--lanes", "17"], out=out.append), 97)
         self.assertTrue(all(line.startswith("refused") for line in out))
 
-    def test_stub_refuses_repository_fixture_and_reserved_seeds(self):
+    def test_stub_refuses_repository_fixture_and_used_seeds(self):
         out = []
         self.assertEqual(R.main(["stub", "--fixture", str(ROOT / "runs" / "x")], out=out.append), 97)
         d = tmpdir(self)
         self.assertEqual(R.main(["stub", "--fixture", str(d), "--seeds", "0,7"], out=out.append), 97)
+        self.assertEqual(R.main(["stub", "--fixture", str(d), "--seeds", f"0,{K.RESERVED_SEEDS[0]}"],
+                                out=out.append), 97)
+        self.assertEqual(R.main(["stub", "--fixture", str(d), "--seeds", "0", "--refuse", "12"], out=out.append), 97)
         self.assertFalse(any(d.iterdir()))
 
-    def test_second_runner_and_version7(self):
+    def test_runner_options_for_several_runners(self):
+        """--seeds, --group-only and --tag: one runner per job sharing an output root (the per-seed entry); the
+        plumbing takes none of them."""
+        d = tmpdir(self)
+        cfg = R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", seeds=[F1, F0], tag="s40")
+        self.assertEqual(cfg.seeds, [F0, F1])
+        self.assertTrue(cfg.mine(PH.parse_id(f"critic.main.stall.s{F0}")))
+        self.assertFalse(cfg.mine(PH.parse_id(f"critic.main.stall.s{F2}")))
+        self.assertFalse(cfg.mine(PH.parse_id("lock.x.x.fresh")))
+        g = R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", group_only=True)
+        self.assertTrue(g.mine(PH.parse_id("lock.x.x.fresh")))
+        self.assertFalse(g.mine(PH.parse_id(f"critic.main.stall.s{F0}")))
+        self.assertEqual(R.runner_lock_name("s40"), "runner_s40.lock")
+        self.assertEqual(R.status_name(None), K.LAYOUT["status"])
+        with self.assertRaises(PH.Refused):
+            R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", seeds=[K.SPENT_SEEDS[0]])
+        with self.assertRaises(PH.Refused):
+            R.Cfg(mode="stub", out=d / "fx" / "out", fixture=d / "fx", tag="a b")
+        out = []
+        self.assertEqual(R.main(["plumbing", "--seeds", f"{F0}"], out=out.append), 97)
+        self.assertIn("one job", out[-1])
+
+    def test_second_runner_refused(self):
         out = tmpdir(self)
-        cfg = R.Cfg(mode="scratch", out=out / "o", poll=0.05, approval_fn=lambda: APPROVAL, r7=out / "r7")
+        cfg = R.Cfg(mode="scratch", out=out / "o", poll=0.05, approval_fn=lambda: APPROVAL)
         (out / "o").mkdir()
         with open(out / "o" / "runner.lock", "a") as h:
             fcntl.flock(h, fcntl.LOCK_EX | fcntl.LOCK_NB)
             lines = []
             self.assertEqual(R.run_locked(cfg, [], APPROVAL, lines.append, signals=False), 97)
             self.assertIn("another near-80 runner", lines[-1])
-        (out / "r7" / "locks").mkdir(parents=True)
-        self.assertFalse(R.version7_running(out / "r7"))
-        with open(out / "r7" / "runner.lock", "a") as h:
-            fcntl.flock(h, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.assertTrue(R.version7_running(out / "r7"))
-            lines = []
-            self.assertEqual(R.cmd_run(cfg, lines.append), 97)
-            self.assertEqual(lines[-1], R.V7_MESSAGE)
-        with open(out / "r7" / "locks" / "policy_train_seed6.lock", "a") as h:
-            fcntl.flock(h, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            self.assertTrue(R.version7_running(out / "r7"))
-            self.assertEqual(R.held_phase_locks(out / "r7"), ["policy_train_seed6"])
-        self.assertFalse(R.version7_running(out / "r7"))
-
-    def test_version7_must_have_finished(self):
-        out = tmpdir(self)
-        r7, res = out / "r7", out / "v7" / "results" / "BUNDLE.json"
-        cfg = R.Cfg(mode="scratch", out=out / "o", approval_fn=lambda: APPROVAL, r7=r7, v7_results=res)
-        ok, why = R.version7_finished(cfg)
-        self.assertFalse(ok)
-        self.assertIn(f"{R.RUN_N80} version7-ended", why)
-        r7.mkdir()
-        (r7 / "status.json").write_text(json.dumps(dict(tasks={"a": dict(state="done"), "b": dict(state="unfinished")})))
-        self.assertFalse(R.version7_finished(cfg)[0])
-        (r7 / "status.json").write_text(json.dumps(dict(tasks={"a": dict(state="done"), "b": dict(state="skipped"),
-                                                              "c": dict(state="inherited")})))
-        self.assertTrue(R.version7_finished(cfg)[0])
-        (r7 / "status.json").unlink()
-        LG.write_json_once(res, dict(kind="stage2-v7-results", partial=True))
-        self.assertFalse(R.version7_finished(cfg)[0])
-        res.unlink()
-        (res.parent / "BUNDLE.json.sha256").unlink()
-        LG.write_json_once(res, dict(kind="stage2-v7-results", partial=False))
-        self.assertTrue(R.version7_finished(cfg)[0])
-        res.unlink()
-        (res.parent / "BUNDLE.json.sha256").unlink()
-        lines = []
-        self.assertEqual(R.cmd_version7_ended(cfg, lines.append, isatty=False), 97)
-        self.assertEqual(R.cmd_version7_ended(cfg, lines.append, isatty=True, argv=["version7-ended"]), 0)
-        self.assertTrue(R.version7_finished(cfg)[0])
-        self.assertEqual(R.cmd_version7_ended(cfg, lines.append, isatty=True, argv=["version7-ended"]), 97)
+        self.assertFalse(hasattr(R, "version7_running"))         # version 8's version-7 gating is gone
 
     def test_plumbing_record_required(self):
         out = tmpdir(self)
@@ -527,54 +521,56 @@ class TestMemoryRule(unittest.TestCase):
 
 class TestBudget(unittest.TestCase):
     def test_pause_and_cap(self):
-        paused, over = R.budget({"exploratory": 33.0, "plumbing": 0.1})
-        self.assertIn("exploratory", paused)
-        self.assertIn(R.PAUSE_TEXT, paused["exploratory"])
-        self.assertIn(f"{R.RUN_N80} budget-continue exploratory", paused["exploratory"])
+        f = K.FORECAST_CPU_HOURS["fresh"]
+        self.assertAlmostEqual(f, 2.2 * len(K.FRESH))
+        self.assertEqual(K.CAP_CPU_HOURS, 55.0)
+        paused, over = R.budget({"fresh": 2 * f + 1.0, "plumbing": 0.1})
+        self.assertIn("fresh", paused)
+        self.assertIn(R.PAUSE_TEXT, paused["fresh"])
+        self.assertIn(f"{R.RUN_N80} budget-continue fresh", paused["fresh"])
         self.assertIsNone(over)
-        paused, over = R.budget({"exploratory": 31.9})
+        paused, over = R.budget({"fresh": 2 * f - 0.1})
         self.assertEqual(paused, {})
-        paused, over = R.budget({"exploratory": 25.0, "confirmatory_band": 20.0, "confirmatory_main": 10.0})
+        paused, over = R.budget({"fresh": 40.0, "plumbing": 20.0})
         self.assertIsNotNone(over)
         self.assertIn("budget-continue <stage>", over)
         # the plumbing has no phase of the plan: it never pauses (its hours still count toward the cap)
         paused, over = R.budget({"plumbing": 9.0})
         self.assertEqual((paused, over), ({}, None))
         # each typed continuation raises the stage's pause point and the cap by one forecast of the stage
-        f = K.FORECAST_CPU_HOURS["exploratory"]
-        self.assertEqual(R.budget({"exploratory": 2 * f + 1}, continues={"exploratory": 1})[0], {})
-        self.assertIn("exploratory", R.budget({"exploratory": 3 * f + 1}, continues={"exploratory": 1})[0])
-        hours = {"exploratory": 30.0, "confirmatory_band": 21.0}
+        self.assertEqual(R.budget({"fresh": 2 * f + 1}, continues={"fresh": 1})[0], {})
+        self.assertIn("fresh", R.budget({"fresh": 3 * f + 1}, continues={"fresh": 1})[0])
+        hours = {"fresh": 40.0, "plumbing": 21.0}
         self.assertIsNotNone(R.budget(hours)[1])
-        self.assertIsNone(R.budget(hours, continues={"confirmatory_band": 1})[1])
+        self.assertIsNone(R.budget(hours, continues={"fresh": 1})[1])
 
     def test_budget_continue_is_typed_and_recorded(self):
         out = tmpdir(self)
         cfg = R.Cfg(mode="scratch", out=out / "o", approval_fn=lambda: APPROVAL)
         lines = []
-        self.assertEqual(R.cmd_budget_continue(cfg, "exploratory", lines.append, isatty=False), 97)
+        self.assertEqual(R.cmd_budget_continue(cfg, "fresh", lines.append, isatty=False), 97)
         self.assertEqual(R.cmd_budget_continue(cfg, "plumbing", lines.append, isatty=True), 97)
-        self.assertEqual(R.cmd_budget_continue(cfg, "exploratory", lines.append, isatty=True, argv=["x"]), 0)
-        self.assertEqual(R.cmd_budget_continue(cfg, "exploratory", lines.append, isatty=True, argv=["x"]), 0)
-        self.assertEqual(R.budget_continues(out / "o"), {"exploratory": 2})
-        rec = LG.read_json_verified(out / "o" / K.LAYOUT["budget_continue"].format(stage="exploratory", n=2))
-        self.assertEqual((rec["kind"], rec["stage"], rec["n"]), ("near80-budget-continue", "exploratory", 2))
+        self.assertEqual(R.cmd_budget_continue(cfg, "fresh", lines.append, isatty=True, argv=["x"]), 0)
+        self.assertEqual(R.cmd_budget_continue(cfg, "fresh", lines.append, isatty=True, argv=["x"]), 0)
+        self.assertEqual(R.budget_continues(out / "o"), {"fresh": 2})
+        rec = LG.read_json_verified(out / "o" / K.LAYOUT["budget_continue"].format(stage="fresh", n=2))
+        self.assertEqual((rec["kind"], rec["stage"], rec["n"]), ("near80-budget-continue", "fresh", 2))
         self.assertIn(f"{R.RUN_N80} run --lanes 10", lines[-1])
 
     def test_cpu_hours_from_the_ledger(self):
         out = tmpdir(self)
-        for pid, kind, setting, group, sec in (("critic.near80.stall.s0", "critic", "near80", "exploratory", 7200),
-                                              ("critic.near80.stall.s10", "critic", "near80", "confirmatory", 3600),
-                                              ("critic.main.stall.s10", "critic", "main", "confirmatory", 1800)):
+        for pid, kind, group, sec in (("critic.main.stall.s0", "critic", "smoke", 7200),
+                                      (f"critic.main.stall.s{F0}", "critic", "fresh", 3600),
+                                      (f"policy.main.stall.s{F1}", "policy", "fresh", 1800)):
             n = LG.allocate_attempt(out, pid, mode="official")
             LG.write_usage(out, pid, n, sec, 0)
-            LG.finish_attempt(out, dict(phase_kind=kind, setting=setting, world="stall", seed=0, group=group), pid,
+            LG.finish_attempt(out, dict(phase_kind=kind, setting="main", world="stall", seed=0, group=group), pid,
                               n, done=True, stopped=False, exit_code=0)
         h = LG.cpu_hours(out, plumbing_seconds=360)
-        self.assertAlmostEqual(h["exploratory"], 2.0)
-        self.assertAlmostEqual(h["confirmatory_band"], 1.0)
-        self.assertAlmostEqual(h["confirmatory_main"], 0.5)
-        self.assertAlmostEqual(h["plumbing"], 0.1)
+        self.assertAlmostEqual(h["plumbing"], 2.1)
+        self.assertAlmostEqual(h["fresh"], 1.5)
+        self.assertEqual(LG.stage_of("critic", "main", "fresh"), "fresh")
+        self.assertEqual(LG.stage_of("look", "x", "smoke"), "plumbing")
 
 
 # --------------------------------------------------------------------------------------------- the ledger
@@ -618,23 +614,23 @@ class TestLedger(unittest.TestCase):
 
     def test_move_aside_never_deletes(self):
         d = tmpdir(self)
-        k = PH.parse_id("clone.near80.stall.s0")
+        k = PH.parse_id("clone.main.stall.s0")
         rels = PH.outputs(k)
-        (d / "learners/near80/stall/seed0").mkdir(parents=True)
-        (d / "learners/near80/stall/seed0/clone.msgpack").write_bytes(b"abc")
+        (d / "learners/main/stall/seed0").mkdir(parents=True)
+        (d / "learners/main/stall/seed0/clone.msgpack").write_bytes(b"abc")
         moved = LG.move_interrupted(PH.phase_id(k), d, "machine-wide: test", rels, stamp="20261015T000000Z")
-        self.assertEqual(moved, ["learners/near80/stall/seed0/clone.msgpack"])
-        self.assertFalse((d / "learners/near80/stall/seed0/clone.msgpack").exists())
-        dest = d / "interrupted" / PH.phase_id(k) / "20261015T000000Z" / "learners/near80/stall/seed0/clone.msgpack"
+        self.assertEqual(moved, ["learners/main/stall/seed0/clone.msgpack"])
+        self.assertFalse((d / "learners/main/stall/seed0/clone.msgpack").exists())
+        dest = d / "interrupted" / PH.phase_id(k) / "20261015T000000Z" / "learners/main/stall/seed0/clone.msgpack"
         self.assertEqual(dest.read_bytes(), b"abc")
         rec = LG.read_json_verified(d / "interrupted" / PH.phase_id(k) / "20261015T000000Z.json")
-        self.assertEqual(rec["files"], {"learners/near80/stall/seed0/clone.msgpack": LG.sha256_bytes(b"abc")})
+        self.assertEqual(rec["files"], {"learners/main/stall/seed0/clone.msgpack": LG.sha256_bytes(b"abc")})
         self.assertEqual(LG.move_interrupted(PH.phase_id(k), d, "x", rels), [])
 
     def test_peaks(self):
         out = tmpdir(self)
         for i, (kb, cls_done) in enumerate(((1000, True), (3000, True), (9000, False))):
-            pid = f"critic.near80.stall.s{i}"
+            pid = f"critic.main.stall.s{K.FRESH[i]}"
             n = LG.allocate_attempt(out, pid)
             LG.write_usage(out, pid, n, 1.0, 0 if cls_done else 1)
             u = LG.ledger_dir(out, pid) / f"{n}.usage.json"
@@ -713,7 +709,7 @@ class FakeRunner:
         self.fake.write_text(f"CODE = {str(HERE)!r}\n" + FAKE_PHASE)
         self.cfg = R.Cfg(mode="scratch", out=self.out, plan="smoke", lanes=lanes, cpus=sorted(os.sched_getaffinity(0)),
                          meminfo=self.d / "meminfo", poll=poll, python=PY, phase_main=self.fake,
-                         approval_fn=lambda: APPROVAL, r7=self.d / "r7")
+                         approval_fn=lambda: APPROVAL)
         self.keys = keys
         self.lines = []
 
@@ -734,23 +730,23 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         return [PH.parse_id(p) for p in pids]
 
     def test_done_and_dependencies(self):
-        keys = self.keys("data_main.main.stall.s0", "data_main.main.no_stall.s0", "data_band.band.stall.s0")
+        keys = self.keys("data_main.main.stall.s0", "data_main.main.no_stall.s0", "critic_full.x.stall.s0")
         fr = FakeRunner(self, keys, {})
         self.assertEqual(fr.run(), 0)
         for k in keys:
             self.assertEqual(PH.done(k, fr.out), "done")
         status = LG.read_json_verified(fr.out / "status.json")
         self.assertEqual(status["counts"], {"done": 3})
-        rec = fr.records("data_band.band.stall.s0")[1]
+        rec = fr.records("critic_full.x.stall.s0")[1]
         self.assertEqual(LG.classification(rec), "done")
         self.assertEqual((rec["phase_kind"], rec["setting"], rec["seed"], rec["group"]),
-                         ("data_band", "band", 0, "exploratory"))
+                         ("critic_full", "x", 0, "smoke"))
         lines = []
         R.cmd_status(fr.out, lines.append)
         self.assertTrue(any(line.startswith("counts: done 3") for line in lines))
 
     def test_machine_wide_reruns_and_files_move_aside(self):
-        k = "critic.near80.stall.s0"
+        k = "critic.main.stall.s0"
         keys = self.keys(k)
         fr = FakeRunner(self, keys, {k: ["term", "kill9partial", "done"]})
         self.assertEqual(fr.run(), 0)
@@ -762,8 +758,8 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         self.assertEqual(LG.read_json_verified(fr.out / PH.record_rel(keys[0]))["n"], 3)
 
     def test_phase_specific_three_then_alone_then_unfinished_then_retry(self):
-        k = "clone.near80.stall.s0"
-        other = "clone.near80.no_stall.s0"
+        k = "clone.main.stall.s0"
+        other = "clone.main.no_stall.s0"
         keys = self.keys(k, other)
         fr = FakeRunner(self, keys, {k: ["kill9", "kill9", "kill9", "kill9", "done"], other: ["sleep0.3"]})
         code = fr.run()
@@ -785,35 +781,35 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         self.assertEqual(PH.done(keys[0], fr.out), "done")
 
     def test_stop_is_never_rerun_and_skips_dependents(self):
-        keys = self.keys("critic.near80.stall.s0", "v6_band.near80.stall.s0", "critic_second.near80.stall.s0")
-        fr = FakeRunner(self, keys, {"critic.near80.stall.s0": ["stop", "done"]})
+        keys = self.keys("critic_second.main.stall.s0", "switch.main.stall.s0", "critic.main.stall.s0")
+        fr = FakeRunner(self, keys, {"critic_second.main.stall.s0": ["stop", "done"]})
         self.assertEqual(fr.run(), 0)
         self.assertEqual(PH.done(keys[0], fr.out), "stopped")
         status = LG.read_json_verified(fr.out / "status.json")
-        self.assertEqual(status["phases"]["v6_band.near80.stall.s0"]["state"], "skipped")
-        self.assertEqual(status["phases"]["critic_second.near80.stall.s0"]["state"], "done")
+        self.assertEqual(status["phases"]["switch.main.stall.s0"]["state"], "skipped")
+        self.assertEqual(status["phases"]["critic.main.stall.s0"]["state"], "done")
         self.assertEqual(fr.run(), 0)
-        self.assertEqual([s for s in fr.started() if s.startswith("critic.near80")], ["critic.near80.stall.s0.1"])
+        self.assertEqual([s for s in fr.started() if s.startswith("critic_second")], ["critic_second.main.stall.s0.1"])
 
     def test_refusal_and_failure_halt(self):
-        keys = self.keys("critic.near80.stall.s0", "critic.near80.stall.s1")
-        fr = FakeRunner(self, keys, {"critic.near80.stall.s0": ["refuse"], "critic.near80.stall.s1": ["sleep0.5"]},
+        keys = self.keys(f"critic.main.stall.s{F0}", f"critic.main.stall.s{F1}")
+        fr = FakeRunner(self, keys, {f"critic.main.stall.s{F0}": ["refuse"], f"critic.main.stall.s{F1}": ["sleep0.5"]},
                         lanes=1)
         self.assertEqual(fr.run(), 97)
-        self.assertEqual(fr.started(), ["critic.near80.stall.s0.1"])
-        fr2 = FakeRunner(self, keys, {"critic.near80.stall.s0": ["fail"], "critic.near80.stall.s1": ["sleep0.5"]},
+        self.assertEqual(fr.started(), [f"critic.main.stall.s{F0}.1"])
+        fr2 = FakeRunner(self, keys, {f"critic.main.stall.s{F0}": ["fail"], f"critic.main.stall.s{F1}": ["sleep0.5"]},
                          lanes=1)
         self.assertEqual(fr2.run(), 1)
         self.assertTrue(any("FAILED" in line for line in fr2.lines))
 
     def test_budget_pause(self):
-        keys = self.keys("critic.near80.stall.s0", "critic.near80.stall.s1")
+        keys = self.keys(f"critic.main.stall.s{F0}", f"critic.main.stall.s{F1}")
         fr = FakeRunner(self, keys, {})
-        fr.cfg.forecast = dict(K.FORECAST_CPU_HOURS, exploratory=0.0001)
-        pid = "fixed_checks.x.x.exploratory"
+        fr.cfg.forecast = dict(K.FORECAST_CPU_HOURS, fresh=0.0001)
+        pid = f"data_main.main.stall.s{F0}"
         n = LG.allocate_attempt(fr.out, pid, mode="scratch")
         LG.write_usage(fr.out, pid, n, 10.0, 0)
-        LG.finish_attempt(fr.out, dict(phase_kind="fixed_checks", group="exploratory"), pid, n, done=True,
+        LG.finish_attempt(fr.out, dict(phase_kind="data_main", group="fresh"), pid, n, done=True,
                           stopped=False, exit_code=0)
         code = fr.run(until_waiting=False)
         self.assertEqual(code, R.EXIT_PAUSED)
@@ -824,54 +820,51 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         self.assertEqual(code, R.EXIT_PAUSED)
         # the typed continuations lift the pause (each allows one more forecast of the stage)
         for _ in range(int(10.0 / 3600 / 0.0001) + 1):
-            self.assertEqual(R.cmd_budget_continue(fr.cfg, "exploratory", [].append, isatty=True, argv=["t"]), 0)
+            self.assertEqual(R.cmd_budget_continue(fr.cfg, "fresh", [].append, isatty=True, argv=["t"]), 0)
         self.assertEqual(fr.run(), 0)
         self.assertEqual(len(fr.started()), 2)
 
     def test_over_the_cap_notes_every_waiting_phase(self):
-        keys = self.keys("critic.near80.stall.s0")
+        keys = self.keys(f"critic.main.stall.s{F0}")
         fr = FakeRunner(self, keys, {})
         fr.cfg.cap = 0.0001
-        pid = "fixed_checks.x.x.exploratory"
+        pid = f"data_main.main.stall.s{F0}"
         n = LG.allocate_attempt(fr.out, pid, mode="scratch")
         LG.write_usage(fr.out, pid, n, 10.0, 0)
-        LG.finish_attempt(fr.out, dict(phase_kind="fixed_checks", group="exploratory"), pid, n, done=True,
+        LG.finish_attempt(fr.out, dict(phase_kind="data_main", group="fresh"), pid, n, done=True,
                           stopped=False, exit_code=0)
         self.assertEqual(fr.run(until_waiting=False), R.EXIT_PAUSED)
         status = LG.read_json_verified(fr.out / "status.json")
-        self.assertIn("beyond the cap", status["phases"]["critic.near80.stall.s0"]["note"])
+        self.assertIn("beyond the cap", status["phases"][f"critic.main.stall.s{F0}"]["note"])
         self.assertTrue(any(line.find("PAUSED (budget): paused: the run has used") >= 0 for line in fr.lines))
 
     def test_a_phase_that_can_never_fit_halts(self):
-        keys = self.keys("critic.near80.stall.s0")
+        keys = self.keys("critic.main.stall.s0")
         fr = FakeRunner(self, keys, {})
         (fr.d / "meminfo").write_text("MemTotal:       12582912 kB\nMemAvailable:   12000000 kB\n")
         self.assertEqual(fr.run(until_waiting=False), 1)
         self.assertEqual(fr.started(), [])
         self.assertTrue(any("can never start" in line for line in fr.lines))
 
-    def test_version7_running_holds_new_phases(self):
-        import threading
-        keys = self.keys("critic.near80.stall.s0")
+    def test_two_runners_share_an_output_root_by_seed(self):
+        """The per-seed entry: a runner with --seeds starts only its seeds' phases; another runner on the other seed
+        may hold the root at the same time (its own lock name)."""
+        keys = self.keys(f"data_main.main.stall.s{F0}", f"data_main.main.stall.s{F1}")
         fr = FakeRunner(self, keys, {})
-        (fr.d / "r7").mkdir()
-        box = {}
-        with open(fr.d / "r7" / "runner.lock", "a") as h:
-            fcntl.flock(h, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            th = threading.Thread(target=lambda: box.update(code=fr.run()))
-            th.start()
-            time.sleep(1.0)
-            self.assertEqual(fr.started(), [])
-            self.assertTrue(any("waiting: version 7 is running" in line for line in fr.lines))
-        th.join(60)
-        self.assertEqual(box.get("code"), 0)
-        self.assertEqual(len(fr.started()), 1)
+        fr.cfg.seeds, fr.cfg.tag = [F0], "s40"
+        self.assertEqual(fr.run(), 0)
+        self.assertEqual(fr.started(), [f"data_main.main.stall.s{F0}.1"])
+        self.assertTrue((fr.out / "status_s40.json").is_file())
+        self.assertTrue(R.lock_free(fr.out / "runner_s40.lock"))
+        fr.cfg.seeds, fr.cfg.tag = [F1], "s41"
+        self.assertEqual(fr.run(), 0)
+        self.assertEqual(len(fr.started()), 2)
 
     def test_safe_stop_one_ctrl_c(self):
         d = tmpdir(self)
         out = d / "out"
         (out / "locks").mkdir(parents=True)
-        pids = ["critic.near80.stall.s0", "critic.near80.stall.s1", "critic.near80.stall.s2"]
+        pids = [f"critic.main.stall.s{F0}", f"critic.main.stall.s{F1}", f"critic.main.stall.s{F2}"]
         (out / "behavior.json").write_text(json.dumps({p: ["sleep1.5"] for p in pids}))
         (d / "meminfo").write_text(BIG_MEM)
         fake = d / "fake_phase.py"
@@ -883,10 +876,10 @@ class TestRunnerWithFakePhases(unittest.TestCase):
             "import near80_runner as R, phases as PH\n"
             f"cfg = R.Cfg(mode='scratch', out={str(out)!r}, lanes=1, cpus=[{sorted(os.sched_getaffinity(0))[0]}], "
             f"meminfo={str(d / 'meminfo')!r}, poll=0.05, python={PY!r}, phase_main={str(fake)!r}, "
-            f"approval_fn=lambda: dict(prereg_sha256='a'*64), r7={str(d / 'r7')!r})\n"
+            f"approval_fn=lambda: dict(prereg_sha256='a'*64))\n"
             f"keys = [PH.parse_id(p) for p in {pids!r}]\n"
             "sys.exit(R.run_locked(cfg, keys, dict(prereg_sha256='a'*64)))\n")
-        p = subprocess.Popen([PY, str(driver)], cwd="/tmp", env=dict(TEST_ENV), stdout=subprocess.PIPE,
+        p = subprocess.Popen([PY, str(driver)], cwd=WORK, env=dict(TEST_ENV), stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, text=True)
         deadline = time.time() + 60
         while time.time() < deadline and not (out / "started").is_dir():
@@ -904,7 +897,7 @@ class TestRunnerWithFakePhases(unittest.TestCase):
         d = tmpdir(self)
         out = d / "out"
         (out / "locks").mkdir(parents=True)
-        pid = "critic.near80.stall.s0"
+        pid = f"critic.main.stall.s{F0}"
         (out / "behavior.json").write_text(json.dumps({pid: ["sleep30", "done"]}))
         (d / "meminfo").write_text(BIG_MEM)
         fake = d / "fake_phase.py"
@@ -916,10 +909,10 @@ class TestRunnerWithFakePhases(unittest.TestCase):
             "import near80_runner as R, phases as PH\n"
             f"cfg = R.Cfg(mode='scratch', out={str(out)!r}, lanes=1, cpus=[{sorted(os.sched_getaffinity(0))[0]}], "
             f"meminfo={str(d / 'meminfo')!r}, poll=0.05, python={PY!r}, phase_main={str(fake)!r}, "
-            f"approval_fn=lambda: dict(prereg_sha256='a'*64), r7={str(d / 'r7')!r}, stop_grace=5)\n"
+            f"approval_fn=lambda: dict(prereg_sha256='a'*64), stop_grace=5)\n"
             f"keys = [PH.parse_id({pid!r})]\n"
             "sys.exit(R.run_locked(cfg, keys, dict(prereg_sha256='a'*64)))\n")
-        p = subprocess.Popen([PY, str(driver)], cwd="/tmp", env=dict(TEST_ENV), stdout=subprocess.PIPE,
+        p = subprocess.Popen([PY, str(driver)], cwd=WORK, env=dict(TEST_ENV), stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, text=True)
         deadline = time.time() + 60
         while time.time() < deadline and not (out / "started").is_dir():
@@ -967,7 +960,7 @@ def fake_repro(differs=(), finished=True, calls=None):
 class TestPlumbing(unittest.TestCase):
     def cfg(self):
         out = tmpdir(self)
-        return R.Cfg(mode="scratch", out=out / "o", approval_fn=lambda: APPROVAL, r7=out / "r7"), out
+        return R.Cfg(mode="scratch", out=out / "o", approval_fn=lambda: APPROVAL), out
 
     def plumb(self, cfg, out, n, **kw):
         lines = []
@@ -998,7 +991,7 @@ class TestPlumbing(unittest.TestCase):
         rec = R.require_plumbing(cfg.out, APPROVAL)
         self.assertEqual(rec["peaks"]["policy"], 3 * 1024 * 1024)    # the reproduction's full-length peak
         self.assertEqual(rec["peaks"]["data_main"], int(math.ceil(2 * K.GIB / 1.25 / 1024)))   # the 2 GiB floor
-        self.assertAlmostEqual(rec["cpu_seconds"], 4 * 1.0 + 5.0 + 100.0)
+        self.assertAlmostEqual(rec["cpu_seconds"], 5 * 1.0 + 5.0 + 100.0)
         code, lines = self.plumb(cfg, out, 5, tests_fn=fake_tests(), smoke_fn=fake_smoke(), repro_fn=fake_repro())
         self.assertEqual(code, 97)                                   # passed: nothing to do
         self.assertIn("the plumbing has passed", lines[-1])
@@ -1030,15 +1023,15 @@ class TestPlumbing(unittest.TestCase):
         self.assertEqual(LG.read_json_verified(failed[0])["cause"], "interrupted (Ctrl-C)")
 
     def test_plumbing_peaks_and_official_measurements(self):
-        peaks = R.plumbing_peaks({"evaluate": 10, "data_band": 5 * 1024 * 1024, "critic": 7}, 4 * 1024 * 1024)
+        peaks = R.plumbing_peaks({"evaluate": 10, "data_main": 5 * 1024 * 1024, "critic": 7}, 4 * 1024 * 1024)
         floor = int(math.ceil(2 * K.GIB / 1.25 / 1024))
         self.assertEqual(peaks["evaluate"], floor)
-        self.assertEqual(peaks["data_band"], 5 * 1024 * 1024)
+        self.assertEqual(peaks["data_main"], 5 * 1024 * 1024)
         for kind in K.REPRO_PEAK_KINDS:
             self.assertEqual(peaks[kind], 4 * 1024 * 1024)
         self.assertGreaterEqual(R.reservation("evaluate", {"evaluate": floor * 1024}), 2 * K.GIB)
         out = tmpdir(self)
-        pid = "evaluate.near80.stall.s0"
+        pid = f"evaluate.main.stall.s{F0}"
         n = LG.allocate_attempt(out, pid)
         LG.write_usage(out, pid, n, 1.0, 0)
         u = LG.ledger_dir(out, pid) / f"{n}.usage.json"
@@ -1051,34 +1044,37 @@ class TestPlumbing(unittest.TestCase):
         self.assertEqual(got["evaluate"], 500 * 1024)                # an official measurement replaces the floor
         self.assertEqual(got["critic"], 4 * 1024 * 1024 * 1024)
 
-    def test_results_copy_records_only(self):
+    def test_results_copy_records_only_and_say_git_add_f(self):
         d = tmpdir(self)
         src, dest = d / "out", d / "n80"
-        LG.write_json_once(src / "eval/near80/stall/seed0/values.json", dict(kind="near80-values"))
+        LG.write_json_once(src / f"eval/main/stall/seed{F0}/values.json", dict(kind="near80-values"))
+        LG.write_json_once(src / f"data/main/stall/seed{F0}/data.json", dict(kind="near80-data-main"))
         LG.write_json_once(src / K.LAYOUT["status"], dict(kind="near80-runner-status",
                                                             phases={"a": dict(state="done")}))
         (src / "looks").mkdir(parents=True)
-        (src / "looks" / "exploratory.md").write_text("# look\n")
+        (src / "looks" / "fresh.md").write_text("# look\n")
         (src / "logs").mkdir()
-        (src / "logs" / "critic.near80.stall.s0.log").write_text("log\n")
-        (src / "learners/near80/stall/seed0").mkdir(parents=True)
-        (src / "learners/near80/stall/seed0/critic.msgpack").write_bytes(b"model")
-        (src / "data/near80/stall/seed0").mkdir(parents=True)
-        (src / "data/near80/stall/seed0/train.hdf5").write_bytes(b"rows")
+        (src / "logs" / f"critic.main.stall.s{F0}.log").write_text("log\n")
+        (src / f"learners/main/stall/seed{F0}").mkdir(parents=True)
+        (src / f"learners/main/stall/seed{F0}/critic.msgpack").write_bytes(b"model")
+        (src / f"data/main/stall/seed{F0}/train.hdf5").write_bytes(b"rows")
         (src / "locks").mkdir()
         (src / "locks" / "x.lock").write_text("")
         lines = []
         folder = R.make_results(src, dest, lines.append, stamp="20261016T000000Z")
-        files = sorted(str(q.relative_to(folder)) for q in folder.rglob("*") if q.is_file())
+        files = sorted(str(q.relative_to(folder)).replace(os.sep, "/") for q in folder.rglob("*") if q.is_file())
         self.assertEqual(files, ["RESULTS.json", "RESULTS.json.sha256", "SHA256SUMS",
-                                 "files/eval/near80/stall/seed0/values.json",
-                                 "files/eval/near80/stall/seed0/values.json.sha256",
-                                 "files/logs/critic.near80.stall.s0.txt", "files/looks/exploratory.md",
+                                 f"files/data/main/stall/seed{F0}/data.json",
+                                 f"files/data/main/stall/seed{F0}/data.json.sha256",
+                                 f"files/eval/main/stall/seed{F0}/values.json",
+                                 f"files/eval/main/stall/seed{F0}/values.json.sha256",
+                                 f"files/logs/critic.main.stall.s{F0}.txt", "files/looks/fresh.md",
                                  "files/status.json", "files/status.json.sha256"])
         for line in (folder / "SHA256SUMS").read_text().splitlines():
             sha, rel = line.split("  ", 1)
             self.assertEqual(LG.file_sha256(folder / rel), sha)
         self.assertTrue(LG.read_json_verified(folder / "RESULTS.json")["finished"])
+        self.assertTrue(any(line.strip().startswith("git add -f ") for line in lines), lines)   # .gitignore's data/
         self.assertTrue(any(f"pull --rebase origin {K.BRANCH}" in line for line in lines))
         with self.assertRaises(PH.Refused):
             R.make_results(src, dest, lines.append, stamp="20261016T000000Z")
@@ -1086,7 +1082,7 @@ class TestPlumbing(unittest.TestCase):
     def test_runfiles_plan(self):
         d = tmpdir(self)
         repo = d / "repo"
-        out = repo / "runs" / "shift_explore" / "near80"
+        out = repo / "runs" / "shift_explore" / "near80_v9"
         (out / "learners").mkdir(parents=True)
         (out / "learners" / "critic.msgpack").write_bytes(b"model")
         (out / "x.json").write_text("{}")
@@ -1096,11 +1092,12 @@ class TestPlumbing(unittest.TestCase):
         n = R.runfiles_plan(out, d / "plan", repo=repo)
         self.assertEqual(n, 2)
         names = (d / "plan" / "files.list").read_bytes().split(b"\0")
-        self.assertEqual(sorted(x for x in names if x), [b"runs/shift_explore/near80/learners/critic.msgpack",
-                                                          b"runs/shift_explore/near80/x.json"])
+        self.assertEqual(sorted(x for x in names if x), [b"runs/shift_explore/near80_v9/learners/critic.msgpack",
+                                                          b"runs/shift_explore/near80_v9/x.json"])
         env = (d / "plan" / "env.sh").read_text()
         self.assertIn(f"RUNFILES_BRANCH='{K.RUNFILES_BRANCH}'", env)
         self.assertIn(f"AUTHOR_EMAIL='{K.APPROVER_EMAIL}'", env)
+        self.assertEqual(K.RUNFILES_BRANCH, "claude/near80-v9-run-files")
 
     def test_stub_fixture_gets_its_own_memory(self):
         fx = tmpdir(self)
@@ -1148,12 +1145,20 @@ class TestRestatedCode(unittest.TestCase):
 
     def test_reference_layout(self):
         import learner_phases as LP
-        self.assertEqual(LP.reference_layout("near80", "stall"),
+        self.assertEqual(LP.reference_layout("main", "stall"),
                          [("none", "setting"), ("full_none", "full"), ("pad", "setting")])
         self.assertEqual(LP.reference_layout("main", "no_stall"), [("none", "setting"), ("pad", "setting")])
-        self.assertEqual(LP.saved_reference_names("random_rows", "stall"), ("none",))
+        self.assertEqual(LP.saved_reference_names("main", "stall"), ("none", "full_none"))
+        self.assertEqual(LP.saved_reference_names("main", "no_stall"), ("none",))
+        self.assertEqual(LP.height_rank([0.1, 0.5, 2.0], 1.0), 2)
+        self.assertEqual(LP.height_rank([0.1, 0.5, 2.0], 3.0), 1)
+        self.assertEqual(LP.height_rank([0.1, 0.5, 2.0], 0.0), 4)
+        self.assertIsNone(LP.height_rank([0.1], float("inf")))
+        self.assertIsNone(LP.height_rank([], 1.0))
 
-    def test_arm_row(self):
+    def test_arm_row_with_the_per_arm_refusal(self):
+        """The arm table of version 9: step 2's six arms by arm_table's rules, the five new arms by the mean
+        difference, and a refusal read per arm (never a stop for a BCA-dependent arm)."""
         import policy_phase as PP
         out = tmpdir(self)
 
@@ -1162,64 +1167,92 @@ class TestRestatedCode(unittest.TestCase):
                         groups=dict(n_full_throttle=50, n_rest=150, mean_full_throttle=gap + 0.1, mean_rest=0.1,
                                     q90_full_throttle=gap + 0.2, q90_rest=0.1), rank_test=dict(U=1.0, p=0.01))
 
-        def write(setting, seed, stall, no_stall):
+        def write(seed, stall, no_stall):
             for w, e in (("stall", stall), ("no_stall", no_stall)):
-                LG.write_json_once(out / K.LAYOUT["switch"].format(setting=setting, world=w, seed=seed),
+                LG.write_json_once(out / K.LAYOUT["switch"].format(setting="main", world=w, seed=seed),
                                    dict(kind="near80-switch", entry=e))
 
-        write("near80", 0, entry(True, 2.0), entry(False, 0.05, gap=0.02))
-        row = PP.arm_row("near80", 0, "stall", out)
-        self.assertEqual(row["arms"]["obca_k1"], dict(switch=True, h=2.0, k=1.0))
+        write(F0, entry(True, 2.0), entry(False, 0.05, gap=0.02))
+        row = PP.arm_row("main", F0, "stall", out)
+        self.assertEqual(row["arms"]["obca_k1"], dict(switch=True, h=2.0, k=1.0, refused=False, why=None))
+        self.assertEqual(row["arms"]["obca_k2"]["k"], 2.0)
         self.assertEqual(row["arms"]["meandiff_k1"]["switch"], True)
         self.assertAlmostEqual(row["arms"]["meandiff_k1"]["h"], 0.4)
-        self.assertEqual(row["arms"]["knee_ramp"], dict(switch=True, h=2.0, k=1.0, t_lo=K.KNEE32, t_up=0.98))
-        ns = PP.arm_row("near80", 0, "no_stall", out)
+        self.assertAlmostEqual(row["arms"]["meandiff_q90x1"]["h"], 0.5)          # the plain 90% gap
+        self.assertEqual((row["arms"]["meandiff_q90x1"]["k"], row["arms"]["meandiff_q90x2"]["k"]), (1.0, 2.0))
+        self.assertAlmostEqual(row["arms"]["meandiff_q90x2"]["h"], 0.5)          # k = 2 doubles it in the program
+        self.assertEqual(row["arms"]["meandiff_limit"]["kind"], "hinge")
+        self.assertEqual(row["arms"][K.NOISE_ARM], dict(switch=True, h=2.0, k=1.0, refused=False, why=None))
+        self.assertEqual((row["refused"], row["bca_refused"], row["meandiff_on"]), ([], False, True))
+        for a in K.NEW_ARMS:
+            self.assertIn(a, row["arms"])
+        ns = PP.arm_row("main", F0, "no_stall", out)
         self.assertEqual(ns["arms"]["obca_k1"]["h"], 0.0)
-        self.assertEqual(ns["arms"]["obca_forced"], dict(switch=True, h=2.0, k=1.0))
-        self.assertFalse(ns["arms"]["meandiff_k1"]["switch"])
-        # the stalling world's height is not finite: arm_table refuses (the always-on ramp) -> near-80 stops
-        write("near80", 1, entry(False, "inf"), entry(False, 0.05))
-        with self.assertRaises(PH.PhaseStop):
-            PP.arm_row("near80", 1, "no_stall", out)
-        # ... while the random-rows setting reads obca_k1 alone with arm_table's own rule for it
-        write("random_rows", 1, entry(False, "inf"), entry(False, 0.05))
-        rr = PP.arm_row("random_rows", 1, "no_stall", out)
-        self.assertEqual(rr["arms"]["obca_k1"], dict(switch=False, h=0.0, k=1.0))
-        self.assertIn("arm_table_refusal", rr["sources"])
-        write("random_rows", 2, entry(True, "inf"), entry(False, 0.05))
-        with self.assertRaises(PH.PhaseStop):
-            PP.arm_row("random_rows", 2, "stall", out)
+        self.assertEqual(ns["arms"]["obca_forced"], dict(switch=True, h=2.0, k=1.0, refused=False, why=None))
+        for a in ("meandiff_k1", "meandiff_q90x1", "meandiff_q90x2", "meandiff_limit"):
+            self.assertFalse(ns["arms"][a]["switch"])
+            self.assertEqual(ns["arms"][a]["h"], 0.0)
+        self.assertEqual(ns["arms"]["meandiff_limit"]["kind"], "ramp_h0")
+        # BCA on with an infinite height in the stalling world: the four BCA-dependent arms are refused, no stop; the
+        # twins and the other arms stand
+        write(F1, entry(True, "inf"), entry(False, 0.05))
+        row = PP.arm_row("main", F1, "stall", out)
+        self.assertEqual(row["refused"], sorted(K.BCA_DEPENDENT))
+        self.assertTrue(row["bca_refused"])
+        for a in K.BCA_DEPENDENT:
+            self.assertTrue(row["arms"][a]["refused"])
+            self.assertIsNone(row["arms"][a]["h"])
+        for a in K.TWIN_ARMS + ("fixed_gated", "conformal_k1", "meangap_k1", "meandiff_k1"):
+            self.assertFalse(row["arms"][a]["refused"], a)
+        ns = PP.arm_row("main", F1, "no_stall", out)
+        self.assertEqual(ns["refused"], ["obca_forced"])                      # the stalling world's height
+        self.assertFalse(ns["bca_refused"])
+        self.assertFalse(ns["arms"]["obca_k1"]["refused"])
+        # a refusal of an arm that does not depend on BCA's height is a plumbing stop
+        S = PP.load_step2()[0]
+        per = {f"stall/seed{F1}": entry(True, 2.0), f"no_stall/seed{F1}": entry(False, 0.05)}
+        real = PP.step2_arms
 
-    def test_ramp_programs_are_step2s(self):
-        """BCA's switched ramp and the plumbing check train in step 2's own batches in every setting and world
-        (step 2's train_policy.py: the stalling world runs w0_check alone, then RAMP_ARMS; the no-stall world runs
-        [w0_check] + RAMP_ARMS); the random-rows setting pads with copies; meandiff_k1 runs alone."""
+        def refuse_conformal(S_, per_, seed, world):
+            arms, sources, t_lo, t_up = real(S_, per_, seed, world)
+            arms["conformal_k1"].update(refused=True, why="test", h=None)
+            return arms, sources, t_lo, t_up
+        with unittest.mock.patch.object(PP, "step2_arms", refuse_conformal):
+            with self.assertRaises(PH.PhaseStop) as cm:
+                PP.arm_row_from("main", F1, "stall", per, S)
+        self.assertEqual(cm.exception.reason, PH.STOP_REASONS["check"])
+        # the layout's pad for a refused arm
+        self.assertEqual(PP.pad_name("obca_k1"), "pad_refused_obca_k1")
+
+    def test_ramp_programs_are_step2s_then_the_lone_calls(self):
+        """BCA's switched ramp and the plumbing check train in step 2's own batches (step 2's train_policy.py: the
+        stalling world runs w0_check alone, then RAMP_ARMS; the no-stall world runs [w0_check] + RAMP_ARMS); then the
+        lone calls in K.LONE_CALLS' order, each a program of one; meandiff_limit runs last (train_world)."""
         import policy_phase as PP
         src = (K.S2_DIR / "train_policy.py").read_text()
         self.assertIn("trained = runner.run([MC.ramp_arm(S.W0, 0.0, 0.0)], MC.log)", src)
         self.assertIn("arms = [MC.ramp_arm(S.W0, 0.0, 0.0)] + [MC.ramp_arm(n, row[\"arms\"][n][\"h\"], "
                       "row[\"arms\"][n][\"k\"])", src)
-        for setting in K.SETTINGS:
-            stall, no_stall = PP.ramp_layout(setting, "stall"), PP.ramp_layout(setting, "no_stall")
-            self.assertEqual(stall[0], (K.W0,))
-            self.assertEqual(len(stall[1]), 6)
-            self.assertEqual(stall[1][0], K.PRIMARY)
-            self.assertEqual(len(no_stall[0]), 7)
-            self.assertEqual(no_stall[0][:2], (K.W0, K.PRIMARY))
-            if setting != "random_rows":
-                self.assertEqual(stall[1], tuple(K.STEP2_RAMP_ARMS))
-                self.assertEqual(no_stall[0], (K.W0,) + tuple(K.STEP2_RAMP_ARMS))
-            else:
-                self.assertEqual(stall[1][1:], PP.PAD_RAMP_ARMS)
-            extra = [c for c in stall[2:]] + [c for c in no_stall[1:]]
-            self.assertEqual(extra, [("meandiff_k1",)] * 2 if setting == "near80" else [])
-        row = dict(arms={K.PRIMARY: dict(h=2.5, k=1.0)})
+        stall, no_stall = PP.ramp_layout("main", "stall"), PP.ramp_layout("main", "no_stall")
+        self.assertEqual(stall[0], (K.W0,))
+        self.assertEqual(stall[1], tuple(K.STEP2_RAMP_ARMS))
+        self.assertEqual(stall[1][0], K.PRIMARY)
+        self.assertEqual(no_stall[0], (K.W0,) + tuple(K.STEP2_RAMP_ARMS))
+        lone = [("meandiff_k1",), ("meandiff_q90x1",), ("meandiff_q90x2",), ("obca_k1_alone",)]
+        self.assertEqual(stall[2:], lone)
+        self.assertEqual(no_stall[1:], lone)
+        self.assertEqual(tuple(n for (n,) in lone), K.LONE_CALLS)
+        self.assertNotIn("meandiff_limit", [n for c in stall for n in c])
+        row = dict(arms={K.PRIMARY: dict(h=2.5, k=1.0), "meandiff_q90x2": dict(h=1.2, k=2.0),
+                         "obca_k2": dict(h=None, k=2.0, refused=True)})
 
         class MC:
             @staticmethod
             def ramp_arm(name, h, k):
                 return (name, h, k)
-        self.assertEqual(PP.layout_arm(MC, row, "pad_ramp_3"), ("pad_ramp_3", 2.5, 1.0))
+        self.assertEqual(PP.layout_arm(MC, row, K.PRIMARY), (K.PRIMARY, 2.5, 1.0))
+        self.assertEqual(PP.layout_arm(MC, row, "meandiff_q90x2"), ("meandiff_q90x2", 1.2, 2.0))
+        self.assertEqual(PP.layout_arm(MC, row, "obca_k2"), ("pad_refused_obca_k2", 0.0, 0.0))
         self.assertEqual(PP.layout_arm(MC, row, K.W0), (K.W0, 0.0, 0.0))
 
     def test_reproduction_runs_the_official_policy_function(self):
@@ -1266,8 +1299,6 @@ class TestRestatedCode(unittest.TestCase):
                     acts, detail = EP.reproduce_policy(run, "ctx", None, None, {w: {} for w in K.WORLDS})
                     self.assertEqual(acts, {w: None for w in K.WORLDS}, kind)
                     self.assertEqual(detail["stall"]["stopped"], PH.STOP_REASONS[kind])
-        # the raised stop ends the reproduction process with no verdict; the plumbing then writes the retryable
-        # failed_<utc>.json, never reproduction_differs.json (TestPlumbing's unfinished-reproduction case)
         self.assertEqual(set(EP.REPRO_RETRYABLE_STOPS), {"fingerprint", "training_file"})
 
     def test_reproduction_items(self):
@@ -1300,111 +1331,91 @@ def _phase(fx, pid, plan="seeds:0", extra=()):
     cmd = ["taskset", "-c", str(cpu), PY, str(HERE / "phase_main.py"), "--phase-id", pid, "--out", str(fx / "out"),
            "--mode", "stub", "--fixture", str(fx), "--plan", plan, "--steps", "40", "--chunk", "20", "--updates", "40",
            "--starts", "5"] + list(extra)
-    return subprocess.run(cmd, cwd="/tmp", env=phase_env(), stdin=subprocess.DEVNULL, capture_output=True, text=True,
+    return subprocess.run(cmd, cwd=WORK, env=phase_env(), stdin=subprocess.DEVNULL, capture_output=True, text=True,
                           timeout=900)
 
 
-@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs builder A's approval_check.py")
+@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs approval_check.py")
 class TestTrainingFileCheck(unittest.TestCase):
     def test_tampered_training_file_stops_and_skips(self):
         import h5py
         fx = _fixture(self)
-        for pid in ("data_main.main.stall.s0", "data_band.band.stall.s0"):
-            r = _phase(fx, pid)
-            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        rec = LG.read_json_verified(fx / "out" / K.LAYOUT["data_band"].format(world="stall", seed=0))
-        self.assertTrue(rec["train_files"]["near80"]["training_file_check"]["passed"])
-        path = fx / "out" / K.LAYOUT["train_file"].format(setting="near80", world="stall", seed=0)
+        r = _phase(fx, "data_main.main.stall.s0")
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        rec = LG.read_json_verified(fx / "out" / K.LAYOUT["data_main"].format(world="stall", seed=0))
+        self.assertTrue(rec["train_file"]["training_file_check"]["passed"])
+        self.assertTrue(rec["pooled_groups"]["defined"])                       # the outcome-free count, before training
+        self.assertIn("certify_chance", rec["pooled_groups"]["certification"])
+        path = fx / "out" / K.LAYOUT["train_file"].format(setting="main", world="stall", seed=0)
         with h5py.File(path, "r+") as f:
             a = f["actions"][()]
             a.view("uint8")[0] ^= 1                        # one byte of the commands
             f["actions"][...] = a
-        r = _phase(fx, "critic.near80.stall.s0")
+        r = _phase(fx, "critic.main.stall.s0")
         self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
-        k = PH.parse_id("critic.near80.stall.s0")
+        k = PH.parse_id("critic.main.stall.s0")
         stop = LG.read_json_verified(fx / "out" / PH.stop_rel(k))
         self.assertEqual(stop["reason"], PH.STOP_REASONS["training_file"])
         self.assertFalse(stop["detail"]["training_file_check"]["passed"])
         self.assertFalse((fx / "out" / PH.record_rel(k)).exists())
         self.assertEqual(PH.done(k, fx / "out"), "stopped")
         keys = PH.plan(spec="seeds:0")
-        for pid in ("switch.near80.stall.s0", "v6_band.near80.stall.s0", "reference_actors.near80.stall.s0",
-                    "policy.near80.stall.s0", "policy.near80.no_stall.s0", "evaluate.near80.stall.s0",
-                    "readouts.near80.stall.s0"):
-            st = PH.effective_state(PH.parse_id(pid), fx / "out", keys)
-            if pid.startswith("switch"):
-                continue
-            self.assertEqual(st, "skipped", pid)
-        r = _phase(fx, "critic.near80.stall.s0")                       # a stopped phase is never rerun
+        for pid in ("reference_actors.main.stall.s0", "policy.main.stall.s0", "policy.main.no_stall.s0",
+                    "evaluate.main.stall.s0"):
+            self.assertEqual(PH.effective_state(PH.parse_id(pid), fx / "out", keys), "skipped", pid)
+        self.assertEqual(PH.effective_state(PH.parse_id("critic_second.main.stall.s0"), fx / "out", keys), "missing")
+        r = _phase(fx, "critic.main.stall.s0")                       # a stopped phase is never rerun
         self.assertEqual(r.returncode, 97)
-        r = _phase(fx, "v6_band.near80.stall.s0")                      # its dependent: skipped, nothing generated
+        r = _phase(fx, "reference_actors.main.stall.s0")             # its dependent: skipped, nothing generated
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertEqual(PH.done(PH.parse_id("v6_band.near80.stall.s0"), fx / "out"), "skipped")
-        self.assertFalse((fx / "out" / "learners/near80/stall/seed0/v6_band.msgpack").exists())
+        self.assertEqual(PH.done(PH.parse_id("reference_actors.main.stall.s0"), fx / "out"), "skipped")
+        self.assertFalse((fx / "out" / "learners/main/stall/seed0/reference_actors.msgpack").exists())
 
     def test_tampered_prepared_hash_stops_switch(self):
         """BCA's switch reads the setting's prepared rows: the training-file check runs for it too, so a data record
         whose prepared hash differs from the rows the switch would read is a recorded stop."""
         fx = _fixture(self)
-        for pid in ("data_main.main.stall.s0", "data_band.band.stall.s0", "critic_second.near80.stall.s0"):
+        for pid in ("data_main.main.stall.s0", "critic_second.main.stall.s0"):
             r = _phase(fx, pid)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        p = fx / "out" / K.LAYOUT["data_band"].format(world="stall", seed=0)
+        p = fx / "out" / K.LAYOUT["data_main"].format(world="stall", seed=0)
         body = LG.read_json_verified(p)
-        body["prepared_sha256"]["near80"]["train"] = "0" * 64
+        body["prepared_sha256"]["train"] = "0" * 64
         p.unlink()
         (p.parent / (p.name + ".sha256")).unlink()
         LG.write_json_once(p, body)
-        r = _phase(fx, "switch.near80.stall.s0")
+        r = _phase(fx, "switch.main.stall.s0")
         self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
-        k = PH.parse_id("switch.near80.stall.s0")
+        k = PH.parse_id("switch.main.stall.s0")
         stop = LG.read_json_verified(fx / "out" / PH.stop_rel(k))
         self.assertEqual(stop["reason"], PH.STOP_REASONS["training_file"])
         self.assertFalse((fx / "out" / PH.record_rel(k)).exists())
 
     def test_every_context_checks_the_prepared_rows(self):
-        """settingdata.SettingContext.prepared compares the rows it serves with the data record's prepared_sha256
-        (data_band for the near-80 and random-rows settings, data_main for the main setting on seeds 10-14)."""
+        """settingdata.SettingContext.prepared compares the rows it serves with the data record's prepared_sha256 on
+        every seed (the smoke seed included)."""
         import types
         import settingdata as SD
         out = tmpdir(self)
         good = {k: f"{k}-sha" for k in SD.PREPARED_KEYS}
-        LG.write_json_once(out / K.LAYOUT["data_band"].format(world="stall", seed=1),
-                           dict(kind="near80-data-band", prepared_sha256=dict(near80=good, random_rows=good)))
-        LG.write_json_once(out / K.LAYOUT["data_main"].format(world="stall", seed=11),
+        LG.write_json_once(out / K.LAYOUT["data_main"].format(world="stall", seed=0),
+                           dict(kind="near80-data-main", prepared_sha256=dict(good)))
+        LG.write_json_once(out / K.LAYOUT["data_main"].format(world="stall", seed=F1),
                            dict(kind="near80-data-main", prepared_sha256=dict(good, train="other")))
 
-        def ctx(setting, seed, prep):
+        def ctx(seed, prep):
             c = SD.SettingContext.__new__(SD.SettingContext)
-            c.setting, c.rep, c.out_root = setting, seed, out
+            c.setting, c.rep, c.out_root = "main", seed, out
             c._prepared, c._prepared_checked = {"stall": prep}, set()
             return c
         prep = types.SimpleNamespace(sha256=dict(good))
-        self.assertIs(ctx("near80", 1, prep).prepared("stall"), prep)
-        self.assertIs(ctx("random_rows", 1, prep).prepared("stall"), prep)
-        self.assertIs(ctx("main", 1, prep).prepared("stall"), prep)          # the gate's seeds: its loader checks
+        self.assertIs(ctx(0, prep).prepared("stall"), prep)
         with self.assertRaises(PH.PhaseStop) as cm:
-            ctx("main", 11, prep).prepared("stall")
+            ctx(F1, prep).prepared("stall")
         self.assertEqual(cm.exception.reason, PH.STOP_REASONS["training_file"])
         with self.assertRaises(PH.PhaseStop):
-            ctx("near80", 1, types.SimpleNamespace(sha256=dict(good, bank="x"))).prepared("stall")
+            ctx(0, types.SimpleNamespace(sha256=dict(good, bank="x"))).prepared("stall")
         self.assertIn("switch", PH.TRAINING_ROW_KINDS)
-
-    def test_look_disallows_fresh_band_settings(self):
-        fx = _fixture(self)
-        out = fx / "out"
-        LG.write_json_once(out / K.LAYOUT["look"].format(group="exploratory"),
-                           dict(kind="near80-look-exploratory", mode="stub", prereg_sha256=None, group="exploratory",
-                                fresh_near80_allowed=False))
-        r = _phase(fx, "data_band.band.stall.s10", plan="seeds:0,10")
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        k = PH.parse_id("data_band.band.stall.s10")
-        self.assertEqual(PH.done(k, out), "skipped")
-        self.assertEqual(LG.read_json_verified(out / PH.skipped_rel(k))["reason"], PH.SKIP_LOOK)
-        self.assertFalse((out / "data" / "band").exists() or (out / "data" / "near80").exists())
-        r = _phase(fx, "data_main.main.stall.s10", plan="seeds:0,10")       # the main setting runs
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertEqual(PH.done(PH.parse_id("data_main.main.stall.s10"), out), "done")
 
 
 FRESH_READBACK = r"""
@@ -1425,27 +1436,23 @@ rec = json.loads(sys.stdin.read()) if len(sys.argv) > 5 else None
 sd = SD.FreshSeed(seed, world, rec) if rec is not None else SD.seed_data(seed, world, Path(fx) / "out")
 print(json.dumps(dict(seen=seen, rep=sd.rep, world=sd.world)))
 """
-RUN_SIZE_KEYS_V8 = ["chunk", "starts", "steps", "updates"]
+RUN_SIZE_KEYS = ["chunk", "starts", "steps", "updates"]
 
 
-@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs builder A's approval_check.py")
+@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs approval_check.py")
 class TestFreshSeedRecordRoundTrip(unittest.TestCase):
-    """Amendment 1. A fresh seed's data record is written through phase_main (the wrapper every runner phase goes
-    through) and read back by every later phase of that seed. Version 8's wrapper writes its run sizes over the
-    record's 'sizes'; FreshSeed handed those dictionary keys to dataset.generate, and every phase after data_main
-    failed on seeds 10-14 (desktop, 16 October 2026). The stub's fresh_log ignored its sizes, so the stub run never
-    saw it. Stub mode only: synthetic logs, nothing trained."""
+    """Amendment 1's lesson, kept in version 9. A fresh seed's data record is written through phase_main (the wrapper
+    every runner phase goes through) and read back by every later phase of that seed: the log sizes it was generated
+    with live under their own name (log_sizes), apart from the wrapper's run sizes (run_sizes). Stub mode only:
+    synthetic logs, nothing trained."""
 
     def setUp(self):
         self.fx = _fixture(self)
-        LG.write_json_once(self.fx / "out" / K.LAYOUT["look"].format(group="exploratory"),
-                           dict(kind="near80-look-exploratory", mode="stub", prereg_sha256=None, group="exploratory",
-                                fresh_near80_allowed=True))
 
     def readback(self, world="stall", record=None, ok=True):
-        r = subprocess.run([PY, "-c", FRESH_READBACK, str(HERE), str(self.fx), "10", world] +
+        r = subprocess.run([PY, "-c", FRESH_READBACK, str(HERE), str(self.fx), str(F0), world] +
                            (["record"] if record is not None else []),
-                           input=json.dumps(record) if record is not None else None, cwd="/tmp", env=phase_env(),
+                           input=json.dumps(record) if record is not None else None, cwd=WORK, env=phase_env(),
                            capture_output=True, text=True, timeout=900)
         if not ok:
             return None, r
@@ -1453,58 +1460,58 @@ class TestFreshSeedRecordRoundTrip(unittest.TestCase):
         return json.loads(r.stdout.strip().splitlines()[-1]), r
 
     def test_record_written_by_the_wrapper_reads_back(self):
-        r = _phase(self.fx, "data_main.main.stall.s10", plan="seeds:0,10")
+        r = _phase(self.fx, f"data_main.main.stall.s{F0}", plan=f"seeds:0,{F0}")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        rec = LG.read_json_verified(self.fx / "out" / K.LAYOUT["data_main"].format(world="stall", seed=10))
+        rec = LG.read_json_verified(self.fx / "out" / K.LAYOUT["data_main"].format(world="stall", seed=F0))
         self.assertEqual(rec["source"], "fresh")
-        self.assertEqual(sorted(rec["sizes"]), RUN_SIZE_KEYS_V8)      # version 8's wrapper, kept as written
+        self.assertEqual(rec["log_sizes"], [500, 50, 50])                   # the stub's fresh_settings
+        self.assertEqual(sorted(rec["run_sizes"]), RUN_SIZE_KEYS)            # the wrapper's, apart
+        self.assertTrue(rec["pooled_groups"]["defined"])
+        self.assertGreaterEqual(rec["pooled_groups"]["groups"]["n_full_throttle"], 29)
         got, _ = self.readback()
-        self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])  # the stub's fresh_settings: the log's sizes
-        for pid in ("critic_full.x.stall.s10", "critic.main.stall.s10", "critic_second.main.stall.s10",
-                    "clone.main.stall.s10"):                            # the phases that failed on the desktop
-            r = _phase(self.fx, pid, plan="seeds:0,10")
+        self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])
+        for pid in (f"critic_full.x.stall.s{F0}", f"critic.main.stall.s{F0}", f"critic_second.main.stall.s{F0}",
+                    f"clone.main.stall.s{F0}"):
+            r = _phase(self.fx, pid, plan=f"seeds:0,{F0}")
             self.assertEqual(r.returncode, 0, pid + "\n" + r.stdout + r.stderr)
             self.assertEqual(PH.done(PH.parse_id(pid), self.fx / "out"), "done", pid)
-        crit = LG.read_json_verified(self.fx / "out" / PH.record_rel(PH.parse_id("critic.main.stall.s10")))
+        crit = LG.read_json_verified(self.fx / "out" / PH.record_rel(PH.parse_id(f"critic.main.stall.s{F0}")))
         self.assertTrue(crit["training_file_check"]["passed"])
 
     def test_three_integers_are_used_and_anything_else_is_refused(self):
-        r = _phase(self.fx, "data_main.main.no_stall.s10", plan="seeds:0,10")
+        r = _phase(self.fx, f"data_main.main.no_stall.s{F0}", plan=f"seeds:0,{F0}")
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        rec = LG.read_json_verified(self.fx / "out" / K.LAYOUT["data_main"].format(world="no_stall", seed=10))
-        got, _ = self.readback("no_stall", dict(rec, sizes=[500, 50, 50]))
+        rec = LG.read_json_verified(self.fx / "out" / K.LAYOUT["data_main"].format(world="no_stall", seed=F0))
+        got, _ = self.readback("no_stall", dict(rec, log_sizes=[500, 50, 50]))
         self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])
-        got, _ = self.readback("no_stall", dict(rec, sizes=dict.fromkeys(RUN_SIZE_KEYS_V8)))   # the desktop's records
-        self.assertEqual(got["seen"], [[[500, 50, 50], 1.5, "float"]])
-        for bad in (dict(steps=None), dict(rec["sizes"], extra=1), dict(rec["sizes"], steps="40"),
-                    dict(rec["sizes"], steps=0), [500, 50], [500, 50, "50"], [500, 50, True], [0, 50, 50],
-                    [-1, 50, 50], None):
-            _, r2 = self.readback("no_stall", dict(rec, sizes=bad), ok=False)
+        for bad in (dict(steps=None), [500, 50], [500, 50, "50"], [500, 50, True], [0, 50, 50], [-1, 50, 50], None,
+                    dict.fromkeys(RUN_SIZE_KEYS)):
+            _, r2 = self.readback("no_stall", dict(rec, log_sizes=bad), ok=False)
             self.assertNotEqual(r2.returncode, 0, repr(bad))
-            self.assertIn("refused: the data record's sizes", r2.stderr, repr(bad))
+            self.assertIn("refused: the data record's log_sizes", r2.stderr, repr(bad))
 
     def test_the_stub_generator_refuses_what_dataset_generate_refuses(self):
         r = subprocess.run([PY, "-c", "import sys; sys.dont_write_bytecode = True; sys.path.insert(0, sys.argv[1]);"
                                       "import dataclasses, stubs\n"
                                       "spec = stubs._recorder_spec()\n"
-                                      "stubs.stub_fresh_log(10, 'stall', spec, (500, 50, 50), 1.5)\n"
+                                      f"stubs.stub_fresh_log({F0}, 'stall', spec, (500, 50, 50), 1.5)\n"
                                       "other = dataclasses.replace(spec, damping=spec.damping + 0.25)\n"
                                       "ok3 = (500, 50, 50)\n"
                                       "for sp, sizes, slope in ((spec, ('chunk', 'starts', 'steps', 'updates'), 1.5),\n"
                                       "                         (spec, (500, 50), 1.5), (spec, ok3, float('nan')),\n"
                                       "                         (spec, ok3, 1.6), (other, ok3, 1.5)):\n"
                                       "    try:\n"
-                                      "        stubs.stub_fresh_log(10, 'stall', sp, sizes, slope)\n"
+                                      f"        stubs.stub_fresh_log({F0}, 'stall', sp, sizes, slope)\n"
                                       "    except TypeError:\n"
                                       "        continue\n"
                                       "    raise SystemExit('accepted ' + repr((sp, sizes, slope)))\n"
                                       "print('ok')", str(HERE)],
-                           cwd="/tmp", env=phase_env(), capture_output=True, text=True, timeout=600)
+                           cwd=WORK, env=phase_env(), capture_output=True, text=True, timeout=600)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(r.stdout.strip().splitlines()[-1], "ok")
 
 
-@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs builder A's approval_check.py")
+@unittest.skipUnless((K.CODE / "approval_check.py").is_file(), "needs approval_check.py")
 class TestStep2Saved(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -1512,7 +1519,7 @@ class TestStep2Saved(unittest.TestCase):
         cls.d = Path(tempfile.mkdtemp(prefix="near80_test_step2_"))
         cls.fx = cls.d / "fx"
         AC.write_test_fixture(cls.fx)
-        r = subprocess.run([PY, str(HERE / "stubs.py"), "step2-fixture", str(cls.fx)], cwd="/tmp", env=phase_env(),
+        r = subprocess.run([PY, str(HERE / "stubs.py"), "step2-fixture", str(cls.fx)], cwd=WORK, env=phase_env(),
                            capture_output=True, text=True, timeout=900)
         if r.returncode != 0:
             raise RuntimeError(r.stdout + r.stderr)
@@ -1528,17 +1535,19 @@ class TestStep2Saved(unittest.TestCase):
 
     def check(self, fx):
         import evaluate_phase as EP
-        run = PH.Run(PH.make_key("evaluate", "main", "stall", 1), fx / "out", mode="stub", fixture=fx, starts=5)
-        return EP.check_step2_saved(run, 1, "stall")
+        run = PH.Run(PH.make_key("evaluate", "main", "stall", 0), fx / "out", mode="stub", fixture=fx, starts=5)
+        return EP.check_step2_saved(run, 0, "stall")
 
     def test_fixture_passes(self):
         lock, acts, lock_sha, vals = self.check(self.fx)
-        self.assertEqual(lock["seed"], 1)
-        self.assertEqual(LG.file_sha256(self.fx / "step2/policy/seed1/stall/lock.json"), lock_sha)
+        self.assertEqual(lock["seed"], 0)
+        self.assertEqual(LG.file_sha256(self.fx / "step2/policy/seed0/stall/lock.json"), lock_sha)
+        for a in K.NEW_ARMS:
+            self.assertIn(a, lock["arm_ids"])
 
     def test_changed_point(self):
         fx = self.copy()
-        p = fx / "step2/policy/seed1/stall/values.json"
+        p = fx / "step2/policy/seed0/stall/values.json"
         body = LG.read_json_verified(p)
         body["situations"]["strong_current"]["points"]["obca_k1"] += 1e-9
         p.unlink()
@@ -1550,15 +1559,15 @@ class TestStep2Saved(unittest.TestCase):
 
     def test_changed_lock_byte(self):
         fx = self.copy()
-        p = fx / "step2/policy/seed1/stall/lock.json"
-        p.write_text(p.read_text().replace('"seed": 1', '"seed":  1'))
+        p = fx / "step2/policy/seed0/stall/lock.json"
+        p.write_text(p.read_text().replace('"seed": 0', '"seed":  0'))
         with self.assertRaises(PH.PhaseStop) as cm:
             self.check(fx)
         self.assertEqual(cm.exception.reason, PH.STOP_REASONS["fingerprint"])
 
     def test_changed_actor(self):
         fx = self.copy()
-        p = fx / "step2/policy/seed1/stall/actors.msgpack"
+        p = fx / "step2/policy/seed0/stall/actors.msgpack"
         b = bytearray(p.read_bytes())
         b[-1] ^= 1
         p.write_bytes(bytes(b))
@@ -1569,13 +1578,11 @@ class TestStep2Saved(unittest.TestCase):
 
 # --------------------------------------------------------------------------------------------- the end-to-end stub run
 
-@unittest.skipUnless(partners_present(), "needs builder A's approval_check.py and builder C's pooled.py")
+@unittest.skipUnless(partners_present(), "needs approval_check.py and pooled.py")
 class TestStubEndToEnd(unittest.TestCase):
-    """Every phase kind of the plan on test fixtures, in stub mode: nothing is trained (the stand-ins count their
-    calls; the training functions are guards that raise and count their entries). Two runs: seed 0 (the exploratory
-    group, with C's real exploratory look), then seed 10 on a second fixture whose exploratory look is the first one
-    with only fresh_near80_allowed set to true (the stub's numbers carry no harm, so the real look stops the near-80
-    settings; this way the fresh-seed path of every setting and the confirmatory look run too)."""
+    """Every phase kind of the plan on a test fixture, in stub mode, on the plumbing's seed 0 (the smoke group):
+    nothing is trained (the stand-ins count their calls; the training functions are guards that raise and count
+    their entries). The fresh group's stub run, with a refusing seed, is test_v9.TestStubRefuse."""
 
     @classmethod
     def run_stub(cls, fx, seeds):
@@ -1584,7 +1591,7 @@ class TestStubEndToEnd(unittest.TestCase):
             env["NEAR80_STUB_PYTHONPATH"] = STUB_PATH
         lanes = str(min(4, len(os.sched_getaffinity(0))))
         return subprocess.run([PY, str(HERE / "near80_runner.py"), "stub", "--fixture", str(fx), "--lanes", lanes,
-                               "--seeds", seeds], cwd="/tmp", env=env, capture_output=True, text=True, timeout=3600)
+                               "--seeds", seeds], cwd=WORK, env=env, capture_output=True, text=True, timeout=3600)
 
     @classmethod
     def fixture(cls, name):
@@ -1598,113 +1605,106 @@ class TestStubEndToEnd(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.d = Path(tempfile.mkdtemp(prefix="near80_test_e2e_"))
-        cls.fx0, cls.fx10 = cls.fixture("fx0"), cls.fixture("fx10")
+        cls.fx0 = cls.fixture("fx0")
         cls.r0 = cls.run_stub(cls.fx0, "0")
-        look = LG.ok_record(cls.fx0 / "out" / K.LAYOUT["look"].format(group="exploratory"))
-        cls.look0 = look
-        if look is not None:
-            LG.write_json_once(cls.fx10 / "out" / K.LAYOUT["look"].format(group="exploratory"),
-                               dict(look, fresh_near80_allowed=True))
-            cls.r10 = cls.run_stub(cls.fx10, "10")
-        else:
-            cls.r10 = None
+        cls.look0 = LG.ok_record(cls.fx0 / "out" / K.LAYOUT["look"].format(group="smoke"))
 
     @classmethod
     def tearDownClass(cls):
         shutil.rmtree(cls.d, True)
 
-    def outs(self):
-        return (self.fx0 / "out", "0", self.r0), (self.fx10 / "out", "10", self.r10)
-
     def test_every_phase_kind_ran(self):
-        kinds = set()
-        for out, seeds, r in self.outs():
-            self.assertIsNotNone(r, "the exploratory look was not written")
-            self.assertEqual(r.returncode, 0, r.stdout[-4000:] + r.stderr[-4000:])
-            keys = PH.plan(spec="seeds:" + seeds)
-            not_done = {PH.phase_id(k): PH.done(k, out) for k in keys if PH.done(k, out) != "done"}
-            self.assertEqual(not_done, {})
-            kinds |= {k.kind for k in keys}
-        self.assertEqual(kinds, set(K.PHASE_KINDS))
-        for out, group in ((self.fx0 / "out", "exploratory"), (self.fx10 / "out", "confirmatory")):
-            self.assertTrue((out / K.LAYOUT["look"].format(group=group)).is_file())
-            self.assertTrue((out / K.LAYOUT["look_md"].format(group=group)).is_file())
-        self.assertEqual(self.look0["kind"], "near80-look-exploratory")
+        out, r = self.fx0 / "out", self.r0
+        self.assertEqual(r.returncode, 0, r.stdout[-4000:] + r.stderr[-4000:])
+        keys = PH.plan(spec="seeds:0")
+        not_done = {PH.phase_id(k): PH.done(k, out) for k in keys if PH.done(k, out) != "done"}
+        self.assertEqual(not_done, {})
+        self.assertEqual({k.kind for k in keys}, set(K.PHASE_KINDS))
+        self.assertTrue((out / K.LAYOUT["look"].format(group="smoke")).is_file())
+        self.assertTrue((out / K.LAYOUT["look_md"].format(group="smoke")).is_file())
+        self.assertIsNotNone(self.look0, "the smoke look was not written")
+        self.assertEqual(self.look0["kind"], "near80-v9-look-smoke")
+        self.assertEqual(self.look0["claims"]["c1"]["status"], "plumbing check, not a claim")
+        self.assertEqual(self.look0["outcomes"]["c2"], "not_read")              # one seed: fewer than 8 certified
 
     def test_records_are_stub_and_strict(self):
         out = self.fx0 / "out"
-        v = LG.read_json_verified(out / PH.record_rel(PH.parse_id("evaluate.near80.stall.s0")))
+        v = LG.read_json_verified(out / PH.record_rel(PH.parse_id("evaluate.main.stall.s0")))
         self.assertEqual((v["kind"], v["mode"], v["prereg_sha256"], v["source"]), ("near80-values", "stub", None,
                                                                                   "trained"))
-        self.assertEqual(set(v["arm_ids"]), set(K.ARMS["near80"]))
+        self.assertEqual(set(v["arm_ids"]), set(K.ARMS["main"]))
+        for a in K.TWIN_ARMS + (K.NOISE_ARM, "meandiff_k1", K.PRIMARY, "range_hinge"):
+            self.assertIsNotNone(v["arm_ids"][a], a)                        # every new arm was trained and scored
         for sit in K.SITUATIONS:
             self.assertEqual(set(v["situations"][sit]), {"points", "held70_points", "capped80_points", "unseen_gain",
                                                          "overshoot_loss", "past80_share", "zone_shares",
                                                          "lower_tail_points"})
-        m = LG.read_json_verified(out / PH.record_rel(PH.parse_id("evaluate.main.no_stall.s0")))
-        self.assertEqual(m["source"], "step2_saved")
-        self.assertEqual(m["step2_points_compared"], "equal to step 2's, exactly")
-        lock = LG.read_json_verified(out / K.LAYOUT["stage_lock"].format(group="exploratory"))
-        self.assertEqual(len(lock["step2_saved"]), 10)
-        pol = LG.read_json_verified(out / PH.record_rel(PH.parse_id("policy.near80.stall.s0")))
+        n = LG.read_json_verified(out / PH.record_rel(PH.parse_id("evaluate.main.no_stall.s0")))
+        self.assertIsNone(n["arm_ids"]["full_none"])
+        pol = LG.read_json_verified(out / PH.record_rel(PH.parse_id("policy.main.stall.s0")))
         self.assertTrue(all(c.get("passed") for c in pol["checks"].values() if isinstance(c, dict)))
         self.assertIn("stub: not run", pol["standin"]["error"])
         self.assertTrue(pol["matches"]["even_pull"]["matched"])
-        out10 = self.fx10 / "out"
-        sw = LG.read_json_verified(out10 / PH.record_rel(PH.parse_id("switch.near80.stall.s10")))
+        self.assertEqual(pol["refused_arms"], [])
+        self.assertEqual(pol["meandiff_limit_kind"], "hinge")
+        sw = LG.read_json_verified(out / PH.record_rel(PH.parse_id("switch.main.stall.s0")))
         self.assertTrue(sw["defined"])
-        main10 = LG.read_json_verified(out10 / PH.record_rel(PH.parse_id("data_main.main.stall.s10")))
-        self.assertEqual(main10["source"], "fresh")
-        self.assertTrue(main10["train_file"]["training_file_check"]["passed"])
-        crit = LG.read_json_verified(out10 / PH.record_rel(PH.parse_id("critic.main.no_stall.s10")))
+        self.assertFalse(sw["refused"])
+        self.assertEqual(sw["groups_rule"], "pooled")
+        self.assertEqual(len(sw["pooled"]["tail_scores_sorted"]), sw["groups"]["n_full_throttle"])
+        dm = LG.read_json_verified(out / PH.record_rel(PH.parse_id("data_main.main.stall.s0")))
+        self.assertEqual(dm["pooled_groups"]["groups"]["n_full_throttle"], sw["groups"]["n_full_throttle"])
+        self.assertEqual(dm["pooled_groups"]["groups"]["n_rest"], sw["groups"]["n_rest"])
+        crit = LG.read_json_verified(out / PH.record_rel(PH.parse_id("critic.main.no_stall.s0")))
         self.assertTrue(crit["training_file_check"]["passed"])
 
     def test_nothing_trained(self):
         calls, hits = {}, {}
-        for out, _, _ in self.outs():
-            for p in (out / "ledger").rglob("*.usage.json"):
-                u = LG.read_json_verified(p)
-                for k, v in (u.get("stub_calls") or {}).items():
-                    calls[k] = calls.get(k, 0) + v
-                for k, v in (u.get("stub_guard_hits") or {}).items():
-                    hits[k] = hits.get(k, 0) + v
+        out = self.fx0 / "out"
+        for p in (out / "ledger").rglob("*.usage.json"):
+            u = LG.read_json_verified(p)
+            for k, v in (u.get("stub_calls") or {}).items():
+                calls[k] = calls.get(k, 0) + v
+            for k, v in (u.get("stub_guard_hits") or {}).items():
+                hits[k] = hits.get(k, 0) + v
         self.assertEqual(hits, {})
         for name in ("fixed_critic", "clone", "actor_only_run", "run_ramp", "run_kind", "match_controls",
-                     "v6bca_fit", "v6bca_train_arm", "gate_seed", "fresh_log", "standin_matched"):
+                     "gate_seed", "standin_matched"):
             self.assertGreater(calls.get(name, 0), 0, name)
+        self.assertEqual(calls.get("fresh_log", 0), 0)                      # the smoke seed is the gate's
 
     def test_ramp_programs_in_the_stub_run(self):
-        """Every policy phase of the stub runs ran exactly the ramp programs of policy_phase.ramp_layout (step 2's
-        batches; knee_ramp on its own runner), and the random-rows copies were equal and never saved."""
+        """Every policy phase of the stub run ran exactly the ramp programs of policy_phase.ramp_layout (step 2's
+        batches, then the lone calls), and the hinge program for meandiff_limit when its switch was on."""
         import policy_phase as PP
-        seen = set()
-        for out, seeds, _ in self.outs():
-            for k in PH.plan(spec="seeds:" + seeds):
-                if k.kind != "policy" or PH.done(k, out) != "done":
-                    continue
-                pid = PH.phase_id(k)
-                usages = [LG.read_json_verified(q) for q in (out / "ledger" / pid).glob("*.usage.json")]
-                done = [u for u in usages if u.get("exit_code") == 0]
-                self.assertEqual(len(done), 1, pid)
-                got = [b for b in done[0]["stub_ramp_batches"] if b != ["knee_ramp"]]
-                self.assertEqual(got, [list(c) for c in PP.ramp_layout(k.setting, k.world)], pid)
-                lock = LG.read_json_verified(out / PH.record_rel(k))
-                self.assertEqual(lock["ramp_programs"], [list(c) for c in PP.ramp_layout(k.setting, k.world)])
-                if k.setting == "random_rows":
-                    self.assertTrue(lock["ramp_padding"]["equal"], pid)
-                    self.assertFalse(set(PP.PAD_RAMP_ARMS) & set(lock["names"]), pid)
-                seen.add((k.setting, k.world))
-        self.assertEqual(seen, {(st, w) for st in K.SETTINGS for w in K.WORLDS})
+        out = self.fx0 / "out"
+        for k in PH.plan(spec="seeds:0"):
+            if k.kind != "policy":
+                continue
+            pid = PH.phase_id(k)
+            usages = [LG.read_json_verified(q) for q in (out / "ledger" / pid).glob("*.usage.json")]
+            done = [u for u in usages if u.get("exit_code") == 0]
+            self.assertEqual(len(done), 1, pid)
+            got = [b for b in done[0]["stub_ramp_batches"] if b != ["meandiff_limit"]]
+            self.assertEqual(got, [list(c) for c in PP.ramp_layout(k.setting, k.world)], pid)
+            lock = LG.read_json_verified(out / PH.record_rel(k))
+            self.assertEqual(lock["ramp_programs"], [list(c) for c in PP.ramp_layout(k.setting, k.world)])
+            kinds = [kind for kind, names in done[0]["stub_kind_batches"] if "meandiff_limit" in names]
+            if lock["meandiff_limit_kind"] == "hinge":
+                self.assertEqual(kinds, ["hinge"], pid)
+            else:
+                self.assertEqual(kinds, [], pid)
+                self.assertIn(["meandiff_limit"], done[0]["stub_ramp_batches"])
 
     def test_no_bytecode_in_the_code_folder(self):
         self.assertFalse((HERE / "__pycache__").exists())
 
-    def test_reserved_seeds_never_appear(self):
-        for out, _, _ in self.outs():
-            for p in out.rglob("*"):
-                for s in K.RESERVED:
-                    self.assertNotIn(f".s{s}.", p.name)
-                    self.assertNotIn(f"seed{s}", p.name)
+    def test_used_seeds_never_appear(self):
+        out = self.fx0 / "out"
+        for p in out.rglob("*"):
+            for s in list(K.SPENT_SEEDS) + list(K.RESERVED_SEEDS):
+                self.assertNotIn(f".s{s}.", p.name)
+                self.assertNotIn(f"seed{s}", p.name)
 
 
 class TestCommands(unittest.TestCase):
@@ -1729,9 +1729,10 @@ class TestCommands(unittest.TestCase):
         self.assertIn("the gate's saved files for the reproduction check", R.default_checks(cfg, "plumbing"))
         self.assertNotIn("step 2's saved actors", R.default_checks(cfg, "selftest"))
         self.assertIn("code manifest and pins", R.default_checks(cfg, "selftest"))
-        for name in ("versions", "jax", "placement", "one processor per lane", "git identity",
-                     "version 7 not running", "output root writable", "gate data"):
+        for name in ("host", "versions", "jax", "placement", "one processor per lane", "git identity",
+                     "output root writable", "gate data", "room harness"):
             self.assertIn(name, R.default_checks(cfg, "run"))
+        self.assertNotIn("version 7 not running", R.default_checks(cfg, "run"))
 
     def test_plan_listing_reads_only(self):
         out = tmpdir(self)
@@ -1747,7 +1748,7 @@ class TestCommands(unittest.TestCase):
         fx.mkdir()
         (fx / K.TEST_MARKER).write_text(K.TEST_MARKER_TEXT)
         (fx / "out" / "locks").mkdir(parents=True)
-        pid = "critic.near80.stall.s0"
+        pid = "critic.main.stall.s0"
         with open(fx / "out" / "locks" / f"{pid}.lock", "a") as h:
             fcntl.flock(h, fcntl.LOCK_EX | fcntl.LOCK_NB)
             self.assertEqual(PM.main(["--phase-id", pid, "--out", str(fx / "out"), "--mode", "stub", "--fixture",
@@ -1757,9 +1758,9 @@ class TestCommands(unittest.TestCase):
     @unittest.skipUnless((K.CODE / "pooled.py").is_file(), "the looks (pooled.py) are not present")
     def test_report_refuses_a_damaged_record(self):
         out = tmpdir(self) / "o"
-        rel = out / K.LAYOUT["fixed"]
+        rel = out / K.LAYOUT["plumbing"]
         rel.parent.mkdir(parents=True)
-        rel.write_text('{"kind": "near80-fixed-checks"}')
+        rel.write_text('{"kind": "near80-plumbing"}')
         rel.with_name(rel.name + ".sha256").write_text("0" * 64 + f"  {rel.name}\n")
         lines = []
         self.assertEqual(R.cmd_report(out, lines.append), R.EXIT_REFUSED)

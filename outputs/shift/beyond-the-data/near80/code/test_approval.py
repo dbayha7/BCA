@@ -46,7 +46,8 @@ A_FILES = ("near80_constants.py", "near80lib.py", "facts_near80.py", "test_near8
 CLAIMS_REAL = (K.CODE / "claims_text.py").is_file()
 # The values DECISION.md fixes, as the freeze tests fix them (every test of a written prereg.json patches them in):
 OWNER_ANSWER = dict(text="accept the defaults", utc="2026-10-21T00:00:00Z", where="a test", choices="every default")
-MARKS_C2_FIXED = dict(net_margin=5.0, positive_seeds_min=4, multiplicity="all_three")
+MARKS_C2_FIXED = dict(K.MARKS_C2)          # DECISION.md's values (5.0, 8, 0.8, all_three)
+FACTS_KIND = "near80-v9-pre-approval-facts"
 WORK_DIR = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
 
 
@@ -177,8 +178,9 @@ def build_n80(repo, status=K.STATUS_FINAL, frozen_passed=True):
     msha = write_json_sidecar(n80 / K.MANIFEST_NAME, dict(kind=K.MANIFEST_KIND, label=K.LABEL, files=files,
                                                           repository_files=repo_files, history=[], reason="synthetic",
                                                           written="2026-10-15T20:00:00Z"))
-    counts = dict(kind="near80-v9-pooled-group-counts", seeds=[0, 1, 2, 3, 4], worlds=list(K.WORLDS),
-                  summary={"stall": {"n_full_throttle_min": 40}}, results=[])
+    counts = dict(kind=FACTS_KIND, seeds=[0, 1, 2, 3, 4], spent_seeds=list(K.SPENT_SEEDS), worlds=list(K.WORLDS),
+                  summary={"stall": {"n_full_throttle_min": 40}}, spent_summary={"kill_rule_passed": True},
+                  results=[], spent_results=[])
     fsha = write_json_sidecar(n80 / NP.FROZEN_REL, counts)
     if not frozen_passed:                                   # a frozen file that is not the pinned one
         fsha = "0" * 64
@@ -1554,7 +1556,7 @@ def real_draft_bytes():
     return kept[0].read_bytes()
 
 
-TODO_RE = __import__("re").compile(r"TODO\(DECISION\.md[^)]*\)")
+TODO_RE = __import__("re").compile(r"TODO\([^)]*\)")
 
 
 def finalized(text, name):
@@ -1613,16 +1615,23 @@ def fake_tests(fail=()):
     return fn
 
 
-def fake_facts(passed=True, seeds=None, worlds=None):
+def fake_facts(passed=True, seeds=None, worlds=None, kill_rule=True, spent=None):
     def fn(n80_root, out_path, log):
         seeds_ = list(seeds if seeds is not None else [0, 1, 2, 3, 4])
         worlds_ = list(worlds if worlds is not None else K.WORLDS)
+        spent_ = list(spent if spent is not None else K.SPENT_SEEDS)
         results = [dict(rep=s, world=w, defined=passed, groups=dict(n_full_throttle=40 + s, n_rest=4000) if passed
                         else None, certification=dict(reaches_min_rows=True) if passed else None,
                         version8_groups=dict(n_full_throttle=30 + s, n_rest=800) if passed else None)
                    for w in worlds_ for s in seeds_]
-        payload = dict(kind="near80-v9-pooled-group-counts", status=K.STATUS_LINE_FINAL, label=K.LABEL, seeds=seeds_,
+        spent_rows = [dict(seed=s, rep=s, world=w, defined=True, groups=dict(n_full_throttle=60, n_rest=42000),
+                           pooled=dict(calls=dict(bca=w == "stall", meandiff=w == "stall", bca_height=2.0)),
+                           recorded=dict(calls=dict(bca=w == "stall", meandiff=w == "stall", bca_height=2.5)),
+                           kill_rule=dict(bca=kill_rule, meandiff=True, passed=kill_rule))
+                      for w in worlds_ for s in spent_]
+        payload = dict(kind=FACTS_KIND, status=K.STATUS_LINE_FINAL, label=K.LABEL, seeds=seeds_, spent_seeds=spent_,
                        worlds=worlds_, results=results, summary={w: dict(seed_worlds=len(seeds_)) for w in worlds_},
+                       spent_results=spent_rows, spent_summary=dict(kill_rule_passed=kill_rule),
                        min_rows=K.CERT_MIN_ROWS, seconds=0.0)
         Path(out_path).write_text(json.dumps(payload, indent=1), encoding="utf8")
         fn.calls.append(Path(out_path))
@@ -1724,8 +1733,8 @@ class TestFreeze(FreezeBase):
         self.assertEqual(set(body["hosts"]), {"desktop", "cluster"})
         self.assertEqual(body["runner"]["phases"], list(K.PHASE_KINDS))
         self.assertEqual(body["runner"]["lanes_default"], K.DEFAULT_LANES)
-        self.assertEqual((body["runner"]["desktop_entry"], body["runner"]["cluster_entry"]),
-                         ("run_near80.sh", "run_near80_cluster.sh"))
+        self.assertEqual(body["runner"]["desktop_entry"], "run_near80.sh")
+        self.assertTrue(body["runner"]["cluster_entry"].startswith("none"))
         draft = json.loads(kept.read_text(encoding="utf8"))
         self.assertEqual(len(body["choices"]), len(draft["choices"]))
         for c, d in zip(body["choices"], draft["choices"]):
@@ -1738,9 +1747,15 @@ class TestFreeze(FreezeBase):
         self.assertEqual((body["seeds"]["fresh"], body["seeds"]["fresh_count"], body["seeds"]["plumbing"]),
                          (list(K.FRESH), len(K.FRESH), list(K.SMOKE_SEEDS)))
         self.assertEqual(body["arms"]["logical_ids"], {k: list(v) for k, v in K.ARMS.items()})
-        self.assertEqual(len(body["summary"]["claims"]), 2)
+        self.assertEqual(len(body["summary"]["claims"]), 3)
         self.assertTrue(body["summary"]["claims"][0].startswith("C1"))
         self.assertIn(f"margin {MARKS_C2_FIXED['net_margin']}", body["summary"]["claims"][1])
+        self.assertTrue(body["summary"]["claims"][2].startswith("C3"))
+        self.assertEqual(body["pass_marks"]["c3_mirror"]["net_margin"], K.MARKS_C3["net_margin"])
+        self.assertEqual(body["pass_marks"]["min_certified"], K.MIN_CERTIFIED)
+        self.assertEqual(body["pass_marks"]["c1_lead_rivals"], list(K.LEAD_RIVALS))
+        self.assertEqual(body["seeds"]["reserved_for_a_later_version"], list(K.RESERVED_SEEDS))
+        self.assertEqual(body["pooled_group_counts_frozen"]["path"], "pre_approval/pooled_facts_seeds0_4_spent10_14.json")
         self.assertTrue(body["summary"]["rules"][0].startswith("The refusal rule:"))
         self.assertEqual(body["version8_history"]["files"], list(K.V8_HISTORY_FILES))
         check = {k: v for k, v in body.items() if k not in ("draft", "claims_word_for_word", "files",
@@ -1841,35 +1856,43 @@ class TestFreeze(FreezeBase):
 
     def test_refuses_counts_that_are_not_usable(self):
         """The counts are reported, not a pass mark; but a record whose gap rule is undefined on a seed-world, or that
-        ran on other seeds or one world, cannot be frozen."""
+        ran on other seeds or one world, cannot be frozen; and the spent seeds' kill rule must pass on all 10
+        seed-worlds (section 8.1, check 5: a failure is a redraft, not a freeze)."""
         msg = self.refused("not usable", facts_fn=fake_facts(passed=False))
         self.assertIn("the gap rule is not defined or the groups are missing", msg)
         self.assertFalse((self.n80 / NP.FROZEN_REL).exists())
-        for why, facts in (("not 0-4", fake_facts(seeds=[0, 1])), ("not both", fake_facts(worlds=["stall"]))):
+        for why, facts in (("not 0-4", fake_facts(seeds=[0, 1])), ("not both", fake_facts(worlds=["stall"])),
+                           ("the kill rule did not pass", fake_facts(kill_rule=False)),
+                           ("the spent-seed facts ran on seeds", fake_facts(spent=[10, 11])),
+                           ("seed-worlds, not 10", fake_facts(spent=[10, 11, 12, 13, 14, 10]))):
             msha = AC.file_sha256(self.n80 / K.MANIFEST_NAME)
             FZ.facts_path(self.out, msha).unlink()                          # else the kept record is reused
             self.refused(why, facts_fn=facts)
         self.assertFalse((self.n80 / K.PREREG_NAME).exists())
+        self.assertIn("--spent-switch", FZ.FACTS_ARGS)
+        self.assertEqual(FZ.FACTS_ARGS[FZ.FACTS_ARGS.index("--spent-switch") + 1:FZ.FACTS_ARGS.index("--worlds")],
+                         tuple(str(s) for s in K.SPENT_SEEDS))
 
-    def test_refuses_while_a_placeholder_of_decision_md_remains(self):
-        """Step 0: the constants' placeholders (the seed count, C2's marks, the owner's answer), a TODO(DECISION.md)
-        mark in a document or the draft, or an unknown multiplicity rule; nothing is moved or written."""
+    def test_refuses_while_a_placeholder_remains(self):
+        """Step 0: the constants' one open item (the owner's answer), a TODO(...) mark in a document (the owner's
+        answer, the freeze's facts), or an unknown multiplicity rule; nothing is moved or written."""
         self.stack.close()                                                  # the constants as they are
         self.stack = contextlib.ExitStack()
         before = tree(self.n80)
-        msg = self.refused("placeholder not fixed (DECISION.md): seed_count")
-        self.assertIn("c2_net_margin", msg)
-        self.assertIn("owner_answer", msg)
+        msg = self.refused("placeholder not fixed: owner_answer")
+        self.assertNotIn("c2_net_margin", msg)                              # DECISION.md fixed the marks
         self.assertEqual(tree(self.n80), before)
         self.stack = enter_fixed(contextlib.ExitStack())                    # the constants fixed, the documents not
         rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_marks", final=False)
         before = tree(self.n80)
-        msg = self.refused("TODO(DECISION.md) mark")
+        msg = self.refused("TODO(...) mark")
         self.assertIn("PREREGISTRATION.md carries", msg)
-        self.assertIn("prereg_draft.json carries", msg)
+        self.assertIn("README.md carries", msg)
         self.assertIn("still says **DRAFT", msg)
         self.assertEqual(tree(self.n80), before)
+        with mock.patch.object(K, "FRESH", (40, 41, 50)):
+            self.assertIn("seeds (a reserved seed)", K.placeholders_present())
         rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_rule")
         with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, multiplicity="each_tenth")):
@@ -1955,10 +1978,12 @@ class TestFreezeOnTheRealFolder(unittest.TestCase):
         """Version 9 is a draft awaiting the owner: the constants' placeholders are open and the documents say DRAFT,
         so freeze.py refuses at step 0 and step 2 and writes nothing; the title is already final and the code folder
         holds only planned files."""
-        self.assertIn("seed_count", K.placeholders_present())
+        self.assertEqual(K.placeholders_present(), ["owner_answer"])
         found = FZ.placeholder_problems(K.N80)
-        self.assertTrue(any(p.startswith("placeholder not fixed (DECISION.md): seed_count") for p in found), found)
+        self.assertTrue(any(p.startswith("placeholder not fixed: owner_answer") for p in found), found)
         self.assertTrue(any(p.startswith("PREREGISTRATION.md carries") for p in found), found)
+        self.assertTrue(any(p.startswith("README.md carries") for p in found), found)
+        self.assertFalse(any(p.startswith("prereg_draft.json carries") for p in found), found)
         docs = FZ.document_problems(K.N80)
         self.assertEqual([p for p in docs if "line 1" in p], [])
         self.assertTrue(any("line 3 is not" in p for p in docs), docs)
@@ -2023,11 +2048,22 @@ class TestConstants(unittest.TestCase):
         self.assertTrue(set(K.REPORTED_ONLY) <= set(arms["reported_only"]))
         choices = {c["number"]: c["default"] for c in draft["choices"]}
         self.assertEqual(sorted(choices), list(range(1, len(choices) + 1)))
-        self.assertEqual(choices[8], K.DEFAULTS["name"])
-        self.assertEqual(choices[8], K.VERSION)
-        self.assertEqual(int(choices[7]), K.DEFAULTS["lanes"])
+        self.assertEqual(len(choices), 11)
+        self.assertEqual(int(choices[6]), K.DEFAULTS["lanes"])
         self.assertEqual(K.DEFAULTS["lanes"], K.DEFAULT_LANES)
-        self.assertIn(K.DEFAULTS["seeds"], choices[2])
+        self.assertIn(K.DEFAULTS["seeds"], choices[1])
+        self.assertIn("the desktop", choices[4])
+        self.assertEqual(draft["seeds"]["fresh_count"], len(K.FRESH))
+        self.assertEqual(draft["seeds"]["reserved_for_a_later_version"], list(K.RESERVED_SEEDS))
+        self.assertEqual(draft["seeds"]["spent_read_by_the_facts_only"], list(K.SPENT_SEEDS))
+        c3 = draft["pass_marks"]["c3_mirror"]
+        self.assertEqual((c3["net_margin"], c3["positive_seeds_max"]), (K.MARKS_C3["net_margin"],
+                                                                        K.MARKS_C3["positive_seeds_max"]))
+        self.assertEqual(draft["pass_marks"]["min_certified"], K.MIN_CERTIFIED)
+        self.assertEqual(c2["positive_needed_by_n"], {"10": 8, "9": 8, "8": 7})
+        self.assertEqual({int(n): K.c2_positive_needed(int(n)) for n in c2["positive_needed_by_n"]},
+                         {int(n): v for n, v in c2["positive_needed_by_n"].items()})
+        self.assertEqual(draft["files"]["pre_approval_facts"], NP.FROZEN_REL)
         self.assertEqual(draft["files"]["unit_tests"], list(K.TEST_FILES))
         self.assertEqual(set(draft["files"]["entries"]), set(K.TOP_FILES) - {"PREREGISTRATION.md", "README.md",
                                                                                "approve_local_near80.py"})
@@ -2101,16 +2137,28 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(K.BUDGET_STAGES, ("fresh",))
 
     def test_placeholders_of_decision_md(self):
-        left = K.placeholders_present()
-        for name in ("seed_count", "c2_net_margin", "c2_positive_seeds_min", "c2_multiplicity", "owner_answer"):
-            self.assertIn(name, left)
-        self.assertTrue(all(v.startswith(K.TODO) for v in K.PLACEHOLDERS.values()))
+        """DECISION.md fixed every value; the owner's answer is the one open item, and the freeze refuses on it."""
+        self.assertEqual(K.placeholders_present(), ["owner_answer"])
+        self.assertEqual(K.PLACEHOLDERS, {})
+        self.assertIsNone(K.OWNER_ANSWER)
+        self.assertEqual(K.FRESH, tuple(range(40, 50)))
+        self.assertEqual(K.RESERVED_SEEDS, tuple(range(50, 60)))
+        self.assertEqual(K.MARKS_C2, dict(net_margin=5.0, positive_seeds_min=8, positive_share=0.8,
+                                          multiplicity="all_three"))
+        self.assertEqual(K.MARKS_C3, dict(net_margin=-5.0, positive_seeds_max=1))
+        self.assertEqual(K.MIN_CERTIFIED, 8)
+        self.assertEqual(K.TWIN_ARMS, ("meandiff_q90x1", "meandiff_q90x2", "meandiff_limit"))
+        self.assertEqual(K.LEAD_RIVALS, K.WORLD_BLIND + ("range_hinge",))
         with enter_fixed(contextlib.ExitStack()):
             self.assertEqual(K.placeholders_present(), [])
             with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, multiplicity="x")):
                 self.assertEqual(K.placeholders_present(), ["c2_multiplicity (not one of the known rules)"])
             with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, net_margin=None)):
                 self.assertEqual(K.placeholders_present(), ["c2_net_margin"])
+            with mock.patch.object(K, "MARKS_C3", dict(K.MARKS_C3, positive_seeds_max=None)):
+                self.assertEqual(K.placeholders_present(), ["c3_positive_seeds_max"])
+            with mock.patch.object(K, "MIN_CERTIFIED", None):
+                self.assertEqual(K.placeholders_present(), ["min_certified"])
 
     def test_load_local_avoids_step_2s_modules(self):
         mod = K.load_local("near80_prereg")

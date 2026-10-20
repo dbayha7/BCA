@@ -226,9 +226,25 @@ class TestReadoutHelpers(unittest.TestCase):
 class TestGuardsAndSeeds(unittest.TestCase):
     def test_facts_seeds(self):
         self.assertEqual(N.check_seeds([0, 1, 2, 3, 4]), [0, 1, 2, 3, 4])
-        for bad in ([5], [10], [40], [99]):
+        for bad in ([5], [10], [40], [50], [99]):
             with self.assertRaises(N.Refused):
                 N.check_seeds(bad)
+        self.assertEqual(N.check_spent_seeds([10, 11, 12, 13, 14]), [10, 11, 12, 13, 14])
+        self.assertEqual(N.check_spent_seeds([]), [])
+        for bad in ([0], [5], [15], [40], [50], [99]):
+            with self.assertRaises(N.Refused):
+                N.check_spent_seeds(bad)
+
+    def test_certify_chance_is_exact(self):
+        """P(Binomial(1000, 0.9^n) <= 50): 0 up to 24 rows, 0.405 at 28, 0.700 at 29, 0.896 at 30, 0.976 at 31,
+        0.9995 at 33 (the preview's table, reproduced from the draws)."""
+        for n, want in ((10, 0.0), (24, 0.0001), (28, 0.405), (29, 0.700), (30, 0.896), (31, 0.976), (33, 0.9995),
+                        (40, 1.0)):
+            self.assertAlmostEqual(K.certify_chance(n), want, places=3, msg=n)
+        self.assertEqual(K.certify_chance(0), 0.0)
+        c = N.certification_expectation(29)
+        self.assertAlmostEqual(c["certify_chance"], 0.700, places=3)
+        self.assertEqual(K.c2_positive_needed(10), 8)
 
     def test_fresh_seeds_are_unused_by_every_registry(self):
         """The fresh seeds lie in the block 40-59, which no registry names: not 0-4, 5-9, 10-14, 15-19, the placement
@@ -321,6 +337,11 @@ class TestDraftJson(unittest.TestCase):
             self.assertEqual(d["pass_marks"]["c2_twins"]["net_margin"], K.MARKS_C2["net_margin"])
         else:
             self.assertEqual(d["status"], "draft")
+        self.assertEqual(d["pass_marks"]["c2_twins"]["net_margin"], K.MARKS_C2["net_margin"])
+        self.assertEqual(d["pass_marks"]["c2_twins"]["positive_share"], K.MARKS_C2["positive_share"])
+        self.assertEqual(d["pass_marks"]["c3_mirror"]["net_margin"], K.MARKS_C3["net_margin"])
+        self.assertEqual(d["pass_marks"]["min_certified"], K.MIN_CERTIFIED)
+        self.assertEqual(d["seeds"]["fresh_count"], len(K.FRESH))
 
     def test_choices_match_the_document(self):
         import re
@@ -355,12 +376,43 @@ class TestDraftJson(unittest.TestCase):
             bold = "**" + K.STATUS_LINE_DRAFT + "**"
             self.assertEqual(lines[2], bold)
             self.assertEqual(self.readme.split("\n")[2], bold)
-            self.assertIn("TODO(DECISION", self.doc)
-            self.assertTrue(K.placeholders_present())
+            self.assertIn("TODO(OWNER", self.doc)                  # the owner's answer is the open item
+            self.assertNotIn("TODO(DECISION", self.doc)            # DECISION.md fixed every value
+            self.assertEqual(K.placeholders_present(), ["owner_answer"])
         self.assertEqual(N.STATUS, K.STATUS_LINE_DRAFT)
 
 
 class TestFacts(Base):
+    def test_switch_calls_and_kill_rule(self):
+        """facts_near80.switch_calls_of restates step 2's and policy_phase's switch rules on a certificate entry; the
+        kill rule compares BCA's and the mean-difference switch's calls only."""
+        entry = dict(certificate=dict(on=True, height=2.5, q05=0.4, finite_share_tail=0.99, tail_certified=True),
+                     groups=dict(n_full_throttle=60, n_rest=42000, mean_full_throttle=0.6, mean_rest=0.0,
+                                 q90_full_throttle=1.2, q90_rest=-0.04), rank_test=dict(p=1e-6))
+        c = F.switch_calls_of(entry)
+        self.assertEqual((c["bca"], c["meandiff"], c["conformal"], c["rank"], c["bca_refused"]),
+                         (True, True, True, True, False))
+        self.assertAlmostEqual(c["plain_gap"], 1.24)
+        self.assertAlmostEqual(c["twice_plain_gap"], 2.48)
+        refused = dict(entry, certificate=dict(entry["certificate"], height="inf", tail_certified=False))
+        self.assertTrue(F.switch_calls_of(refused)["bca_refused"])
+        off = dict(entry, certificate=dict(on=False, height=0.1), groups=dict(entry["groups"], mean_full_throttle=0.05,
+                                                                            q90_full_throttle=0.05),
+                   rank_test=dict(p=0.3))
+        o = F.switch_calls_of(off)
+        self.assertEqual((o["bca"], o["meandiff"], o["conformal"], o["rank"]), (False, False, False, False))
+        kr = F.kill_rule(c, F.switch_calls_of(refused))
+        self.assertTrue(kr["passed"])                       # the same calls (on), whatever the heights
+        kr = F.kill_rule(o, c)
+        self.assertEqual((kr["bca"], kr["meandiff"], kr["passed"]), (False, False, False))
+        rows = [dict(seed=10, world="stall", kill_rule=dict(passed=True), pooled=dict(calls=c),
+                     recorded=dict(calls=F.switch_calls_of(refused))),
+                dict(seed=10, world="no_stall", kill_rule=dict(passed=True), pooled=dict(calls=o),
+                     recorded=dict(calls=o))]
+        sm = F.spent_summary(rows)
+        self.assertEqual((sm["seed_worlds"], sm["kill_rule_passed"], sm["bca_refused_recorded"],
+                          sm["bca_refused_pooled"], sm["meandiff_made_bcas_call_pooled"]), (2, True, 1, 0, 2))
+
     def test_seed_world_counts_record(self):
         rec = F.seed_world_counts(self.log, self.gap, "stall", self.rm, self.step1)
         self.assertEqual(rec["world"], "stall")

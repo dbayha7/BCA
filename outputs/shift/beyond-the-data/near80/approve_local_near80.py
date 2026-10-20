@@ -78,7 +78,7 @@ APPROVER_EMAIL = "35092758+dbayha7@users.noreply.github.com"
 APPROVER_NAME = "David Bayha"
 BRANCH = "claude/main-bca-connection-x4o46s"
 SCRIPT_NAME = "approve_local_near80.py"
-FROZEN_NAME = "pre_approval/pooled_group_counts_seeds0_4.json"
+FROZEN_NAME = "pre_approval/pooled_facts_seeds0_4_spent10_14.json"
 FROZEN_TOP = (PREREG_NAME, PREREG_NAME + ".sha256", MANIFEST_NAME, MANIFEST_NAME + ".sha256")
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
              "Approving it accepts every default of its section 16 and allows the runs it names, under its rules.")
@@ -434,10 +434,11 @@ def summary(info):
              "Seeds: {} fresh (the only ones that can carry a claim; {} seeds); seed {} for the plumbing only; every "
              "seed another study used is refused.".format(seeds.get("fresh"), seeds.get("fresh_count"),
                                                             seeds.get("plumbing")), "",
-             "The two claims (read only on the fresh seeds):", bullets(s.get("claims")), "",
+             "The three claims (read only on the fresh seeds):", bullets(s.get("claims")), "",
              "The rules:", bullets(s.get("rules")), "",
-             "The frozen code's outcome-free counts of the pooled groups on seeds 0-4 (before approval, nothing "
-             "trained): {}.".format(json.dumps(frozen.get("summary"))), "",
+             "The frozen code's pre-approval facts (nothing trained): the pooled groups' counts on seeds 0-4: {}; "
+             "the spent seeds 10-14 from version 8's recorded second critics: {}.".format(
+                 json.dumps(frozen.get("summary")), json.dumps(frozen.get("spent_summary"))), "",
              "Compute: {} CPU-hours per fresh seed; {} for the plumbing; the cap is {}.".format(
                  compute.get("per_fresh_seed"), compute.get("plumbing"), compute.get("budget_cap")), "",
              "Hosts: {}.".format("; ".join("{}: {}".format(k, v.get("entry")) for k, v in sorted(hosts.items()))), "",

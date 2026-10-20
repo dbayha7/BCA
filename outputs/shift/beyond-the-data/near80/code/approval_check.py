@@ -878,8 +878,9 @@ def approval_section(branch=K.BRANCH):
         "import_guard": ("every near-80 phase refuses without the import record on origin's branch; the import refuses "
                          "if the approval commit's author or committer is the session's own git identity or the "
                          "configured user.email of the machine running it, or is not the owner; the desktop runner "
-                         "and the cluster entry refuse if git's user.email there is the approver's or the cloud's"),
-        "hosts": "the desktop (run_near80.sh) or the cluster (run_near80_cluster.sh), the same frozen code and checks",
+                         "refuses if git's user.email there is the approver's or the cloud's"),
+        "hosts": ("the desktop (run_near80.sh); a cluster entry was drafted, never run, and is not part of version 9 "
+                  "(not in this folder, not in the manifest)"),
         "never": "no agent writes the approval file or makes that commit; no message counts as approval",
     }
 

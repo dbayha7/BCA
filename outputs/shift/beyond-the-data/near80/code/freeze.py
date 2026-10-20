@@ -25,9 +25,12 @@ open item:
   5. code_manifest.json (+ .sha256): every near-80 file and every repository file the code imports or executes; the
      earlier manifest (version 8's) is archived in code_manifest_history/ (a rerun with no change keeps it as it is).
   6. The five unit test files, each run alone from the work folder with the phases' environment; all must pass.
-  7. The frozen code's outcome-free counts of the pooled groups on seeds 0-4 (facts_near80.py, about 2 CPU-minutes,
-     nothing trained), written to runs/shift_explore/near80_v9/pre/pooled_group_counts_<first 16 of the manifest>.json
-     and copied to pre_approval/pooled_group_counts_seeds0_4.json (+ .sha256). Reported; no pass or fail.
+  7. The frozen code's pre-approval facts (facts_near80.py, about 10-15 CPU-minutes, nothing trained): the pooled
+     groups' outcome-free counts on seeds 0-4, and on the spent seeds 10-14 the pooled switch from version 8's
+     recorded second critics with the kill rule (BCA's and the mean-difference switch's pooled calls equal version
+     8's recorded calls on all 10 spent seed-worlds; otherwise the freeze refuses: a redraft). Written to
+     runs/shift_explore/near80_v9/pre/pooled_facts_<first 16 of the manifest>.json and copied to
+     pre_approval/pooled_facts_seeds0_4_spent10_14.json (+ .sha256).
   8. prereg.json (+ .sha256) from near80_prereg.build; prints the fingerprint and the next steps.
 """
 import sys
@@ -56,8 +59,11 @@ import ledger as LG  # noqa: E402
 TITLE = "# The main setting on fresh seeds: pre-registration (version 9, near-80 main)"
 BOLD_FINAL = "**FINAL, awaiting the owner's approval. Nothing has been trained.**"
 DRAFT_NAME = K.DRAFT_NAME
-FACTS_ARGS = ("--seeds", "0", "1", "2", "3", "4", "--worlds", "stall", "no_stall")
-FACTS_NAME = "pooled_group_counts_{prefix}.json"
+FACTS_ARGS = ("--seeds", "0", "1", "2", "3", "4", "--spent-switch", "10", "11", "12", "13", "14",
+              "--worlds", "stall", "no_stall")
+FACTS_NAME = "pooled_facts_{prefix}.json"
+FACTS_KIND = "near80-v9-pre-approval-facts"
+SPENT_SEED_WORLDS = 10
 TEST_TIMEOUT_S = 3 * 3600
 FACTS_TIMEOUT_S = 2 * 3600
 FILL_RULES_HEADING = "### 14.5"
@@ -422,27 +428,39 @@ def facts_path(out_root, manifest_sha256):
 
 
 def facts_problems(payload):
-    """The counts record is this version's, on seeds 0-4 and both worlds, with every seed-world counted."""
+    """The facts record is this version's: the counts on seeds 0-4 and both worlds with every seed-world counted,
+    and the spent-seed switch facts on seeds 10-14 and both worlds with the kill rule passed on all 10 (section 8.1,
+    check 5; a failure means a redraft, not a freeze)."""
     out = []
     if not isinstance(payload, dict):
-        return ["the counts record is not a JSON object"]
-    if payload.get("kind") != "near80-v9-pooled-group-counts":
-        out.append(f"the counts record is a {payload.get('kind')!r}, not the pooled-group counts")
+        return ["the facts record is not a JSON object"]
+    if payload.get("kind") != FACTS_KIND:
+        out.append(f"the facts record is a {payload.get('kind')!r}, not the pre-approval facts")
     if payload.get("seeds") != [0, 1, 2, 3, 4]:
         out.append(f"the counts ran on seeds {payload.get('seeds')}, not 0-4")
     if payload.get("worlds") != list(K.WORLDS):
-        out.append(f"the counts ran on worlds {payload.get('worlds')}, not both")
+        out.append(f"the facts ran on worlds {payload.get('worlds')}, not both")
     results = payload.get("results") or []
     if len(results) != 10:
         out.append(f"the counts hold {len(results)} seed-worlds, not 10")
     for r in results:
         if not isinstance(r, dict) or r.get("defined") is not True or not r.get("groups"):
             out.append(f"seed {r.get('rep')} ({r.get('world')}): the gap rule is not defined or the groups are missing")
+    if payload.get("spent_seeds") != list(K.SPENT_SEEDS):
+        out.append(f"the spent-seed facts ran on seeds {payload.get('spent_seeds')}, not {list(K.SPENT_SEEDS)}")
+    spent = payload.get("spent_results") or []
+    if len(spent) != SPENT_SEED_WORLDS:
+        out.append(f"the spent-seed facts hold {len(spent)} seed-worlds, not {SPENT_SEED_WORLDS}")
+    for r in spent:
+        kr = (r or {}).get("kill_rule") if isinstance(r, dict) else None
+        if not isinstance(kr, dict) or kr.get("passed") is not True:
+            out.append(f"spent seed {(r or {}).get('seed')} ({(r or {}).get('world')}): the kill rule did not pass "
+                       f"(the pooled calls differ from version 8's recorded calls; a redraft, not a freeze)")
     return out
 
 
 def copy_frozen(n80_root, raw):
-    """The counts record's bytes as pre_approval/pooled_group_counts_seeds0_4.json (+ .sha256). Returns the record."""
+    """The facts record's bytes as pre_approval/<K.COUNTS_FROZEN_NAME> (+ .sha256). Returns the record."""
     dst = Path(n80_root) / K.PRE_APPROVAL_DIR / K.COUNTS_FROZEN_NAME
     digest = _replace_json(dst, raw)
     if AC.file_sha256(dst) != digest or AC.sidecar_digest(dst) != digest:
@@ -494,8 +512,8 @@ def check(n80_root=K.N80, out_root=K.OUT, log=print):
         f"  5. write {K.MANIFEST_NAME} (+ .sha256): {len(K.TOP_FILES) + len(K.CODE_FILES)} near-80 files and the "
         f"repository files under {len(K.PIN_DIRS)} pinned folders\n"
         f"  6. run {', '.join(K.TEST_FILES)} from the work folder\n"
-        f"  7. run facts_near80.py {' '.join(FACTS_ARGS)} --out {out_root / 'pre'}/{FACTS_NAME} and copy it to "
-        f"{NP.FROZEN_REL} (+ .sha256)\n"
+        f"  7. run facts_near80.py {' '.join(FACTS_ARGS)} --out {out_root / 'pre'}/{FACTS_NAME} (nothing trained; "
+        f"the kill rule on the spent seeds must pass) and copy it to {NP.FROZEN_REL} (+ .sha256)\n"
         f"  8. write {K.PREREG_NAME} (+ .sha256) and print its fingerprint")
     if found:
         log("Problems (write would refuse):\n  - " + "\n  - ".join(found))
@@ -546,7 +564,7 @@ def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, 
         raise FreezeRefused(f"{src} is not JSON") from None
     found = facts_problems(payload)
     if found:
-        raise FreezeRefused("the frozen code's outcome-free counts on seeds 0-4 are not usable: " + "; ".join(found))
+        raise FreezeRefused("the frozen code's pre-approval facts are not usable: " + "; ".join(found))
     if manifest_files(n80_root) != manifest["files"] or repository_files(repo) != manifest["repository_files"]:
         raise FreezeRefused("a pinned file changed while the tests or the counts ran; run write again")
     facts_record = copy_frozen(n80_root, raw)

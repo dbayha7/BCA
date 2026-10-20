@@ -1508,9 +1508,10 @@ def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None):
         note="records only: no model (.msgpack), array (.npz) or training (.hdf5) file; those go to the run-files "
              "branch (push_runfiles_near80.sh). Logs are copied as .txt."))
     rel = dest.relative_to(K.ROOT) if LG.inside(dest, K.ROOT) else dest
-    out(f"results gathered: {dest} ({len(sums)} files). Commit and push them under your own name:")
+    out(f"results gathered: {dest} ({len(sums)} files). Commit and push them under your own name (-f: the "
+        f"repository's .gitignore hides data/ folders, which hold the data records):")
     out(f"  cd {K.ROOT}")
-    out(f"  git add {rel}")
+    out(f"  git add -f {rel}")
     out(f"  git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m \"Near-80 v9: results "
         f"{stamp}\"")
     out(f"  git push origin {K.BRANCH}")
