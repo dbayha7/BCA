@@ -1,0 +1,144 @@
+====================================================================================================
+PART A. Synthetic checks of the dose formula (calibration/dose.py:23-95); the truth is known
+====================================================================================================
+A1 [u = 1.0] dose in [1, 1.5) for every x = U/u up to 1e6: True; never above 1.5: True; dose(U = 0) = 1.0; largest gap to 1 + 0.5 U/(U+u): 9.20e-08 (allowed 2 float32 steps = 2.38e-07); float32 reaches exactly 1.5 from x = 5.59e+06 on -> PASS
+A1 [u = 0.157] dose in [1, 1.5) for every x = U/u up to 1e6: True; never above 1.5: True; dose(U = 0) = 1.0; largest gap to 1 + 0.5 U/(U+u): 9.20e-08 (allowed 2 float32 steps = 2.38e-07); float32 reaches exactly 1.5 from x = 5.59e+06 on -> PASS
+A1 landmarks: U = u gives 1.2500; U = 2u gives 1.3333; U = 10u gives 1.4545; U = 100u gives 1.4950; the limit is 1.5 (reached in float32 only from x of about 5.6 million on; the largest dose on record is 1.4997, x about 1,800)
+A2 100,000 sorted widths: 0 falls of the dose, the largest 0.00e+00 (one float32 step is 1.19e-07; the weighting test's M3 bar is 1e-6) -> PASS
+A3 reference not ready (before the first refresh): every width 0 and every dose 1: True -> PASS
+A4 threshold +infinity (refusal): standard rule dose 1 on every row, unsupported, inputs valid: True; per-row rule (learners_iw.py:681-682) dose 1.5 on every row: True -> PASS
+A5 per-row dose with R_i = R on every row equals frozen_level_dose byte for byte (dose, width, support): True; refused rows 0: True -> PASS
+A5b rows at four different thresholds (0.5R, R, 2R, 4R) each get the standard dose at their own threshold, bit for bit: True -> PASS
+A6 saturation. x = U/u = R * eta. The dose's slope in ln U is 0.5 x/(1+x)^2, at most 0.125 (at x = 1).
+    starting x (= R*eta)  dose   | factor on R:   x1.10   x1.20   x1.45   x1.76   x2.25   (the recorded threshold ratios: mild 1.08-1.26, strong 1.20-1.76, up to 2.25 on one seed)
+      1.0                 1.250  | change:        +0.012   +0.023   +0.046   +0.069   +0.096
+      2.0                 1.333  | change:        +0.010   +0.020   +0.038   +0.056   +0.076
+      2.5                 1.357  | change:        +0.010   +0.018   +0.035   +0.050   +0.067
+      4.0                 1.400  | change:        +0.007   +0.014   +0.026   +0.038   +0.050
+     10.0                 1.455  | change:        +0.004   +0.007   +0.013   +0.019   +0.024
+    Reading: near-80 and the weighting test have x about 1.6-2.5 (dose 1.31-1.36), so a 1.45x threshold moves the dose by about +0.04 (R2 recorded +0.039 on expert); CQL's x is larger (dose 1.35-1.49).
+A7 actor loss's cloning term: with every m_i = 1 it equals plain TD3+BC's (1.959833 vs 1.959834); with m in [1, 1.5) it is larger (2.440608) -> PASS
+====================================================================================================
+PART B1. Near-80 run (version 8): the dose at the HELD-OUT rows of its 20 recorded bands (R, u from v6_band.json; eta at the held-out rows from v6_bank_scores.npz; branch claude/near80-run-files)
+====================================================================================================
+band                       held-out       R       u eta mean U/u mean dose mean     min     max U_max check
+near80/stall/seed0              821  1.4692  0.1567   1.2026   1.7668    1.3189  1.3020  1.3557       equal
+near80/stall/seed1              814  1.5219  0.1542   1.2523   1.9060    1.3272  1.3076  1.3755       equal
+near80/stall/seed2              806  1.6148  0.1523   1.2444   2.0096    1.3333  1.3050  1.3701       equal
+near80/stall/seed3              826  1.3466  0.1437   1.2792   1.7226    1.3158  1.2947  1.3530       equal
+near80/stall/seed4              805  1.6075  0.1499   1.2121   1.9484    1.3300  1.3093  1.3625       equal
+near80/no_stall/seed0           823  1.5332  0.1495   1.2049   1.8474    1.3241  1.3075  1.3647       equal
+near80/no_stall/seed1           820  1.4138  0.1456   1.2690   1.7941    1.3205  1.2669  1.3772       equal
+near80/no_stall/seed2           814  1.7016  0.1449   1.2180   2.0725    1.3369  1.3208  1.3695       equal
+near80/no_stall/seed3           832  1.5402  0.1327   1.3116   2.0201    1.3340  1.3149  1.3687       equal
+near80/no_stall/seed4           808  1.5858  0.1337   1.2803   2.0303    1.3347  1.3171  1.3746       equal
+random_rows/stall/seed0         821  1.4035  0.1705   1.1410   1.6014    1.3071  1.0812  1.3434       equal
+random_rows/stall/seed1         814  1.4907  0.1621   1.1919   1.7768    1.3193  1.2484  1.3582       equal
+random_rows/stall/seed2         806  1.4372  0.1626   1.1713   1.6833    1.3131  1.1406  1.3649       equal
+random_rows/stall/seed3         826  1.6382  0.1533   1.2128   1.9867    1.3319  1.1099  1.3674       equal
+random_rows/stall/seed4         805  1.6058  0.1511   1.1997   1.9265    1.3286  1.2701  1.3774       equal
+random_rows/no_stall/seed0      823  1.4644  0.1559   1.2548   1.8377    1.3232  1.2878  1.3693       equal
+random_rows/no_stall/seed1      820  1.3647  0.1516   1.2292   1.6775    1.3127  1.2346  1.3518       equal
+random_rows/no_stall/seed2      814  1.5019  0.1433   1.2204   1.8329    1.3231  1.3057  1.3631       equal
+random_rows/no_stall/seed3      832  1.7091  0.1371   1.2639   2.1600    1.3414  1.3240  1.3812       equal
+random_rows/no_stall/seed4      808  1.5547  0.1404   1.2256   1.9054    1.3276  1.3125  1.3674       equal
+B1 summary: 20 bands, mean dose at the held-out rows 1.307 to 1.341 (average 1.325); every dose in [1, 1.5); U_max of each record equals R*u*max(eta) of its arrays: True -> PASS
+====================================================================================================
+PART B2. The same 20 bands read at the RECORDED TRAINING ROWS (the readout point of M7) by BCA's own frozen_level_dose in the pinned environment: data/M7_near80_training_dose.json
+====================================================================================================
+produced with Python 3.10.20, NumPy 2.2.6, JAX 0.6.2
+band                         rows       R dose mean      sd     min      p5     p95     max falls  max drop    cf gap refused   <=70%    >90%
+near80/stall/seed0          41056  1.4692    1.3187  0.0081  1.2259  1.3082  1.3337  1.3736    18  1.19e-07  1.03e-07       0  1.3187  1.3215
+near80/stall/seed1          40969  1.5219    1.3266  0.0102  1.2343  1.3133  1.3461  1.3858     8  1.19e-07  1.05e-07       0  1.3266  1.3358
+near80/stall/seed2          41071  1.6148    1.3336  0.0099  1.2071  1.3208  1.3516  1.3919    15  1.19e-07  1.05e-07       0  1.3336  1.3388
+near80/stall/seed3          41183  1.3466    1.3149  0.0100  1.1378  1.3023  1.3340  1.3713    23  1.19e-07  9.94e-08       0  1.3149  1.3265
+near80/stall/seed4          41190  1.6075    1.3294  0.0081  1.2922  1.3187  1.3445  1.3788    21  1.19e-07  9.74e-08       0  1.3294  1.3364
+near80/no_stall/seed0       41400  1.5332    1.3239  0.0074  1.2933  1.3137  1.3371  1.3744    23  1.19e-07  1.02e-07       0  1.3239  1.3243
+near80/no_stall/seed1       41283  1.4138    1.3206  0.0092  1.2067  1.3079  1.3367  1.3769    18  1.19e-07  9.87e-08       0  1.3206  1.3263
+near80/no_stall/seed2       41374  1.7016    1.3369  0.0078  1.2981  1.3266  1.3517  1.3879    27  1.19e-07  9.76e-08       0  1.3369  1.3420
+near80/no_stall/seed3       41451  1.5402    1.3338  0.0080  1.3089  1.3224  1.3483  1.3859    15  1.19e-07  1.00e-07       0  1.3338  1.3413
+near80/no_stall/seed4       41456  1.5858    1.3342  0.0073  1.2882  1.3239  1.3472  1.3778    37  1.19e-07  9.96e-08       0  1.3342  1.3354
+random_rows/stall/seed0     41056  1.4035    1.3071  0.0130  1.0407  1.2960  1.3234  1.3546    21  1.19e-07  9.53e-08       0  1.3072  1.2981
+random_rows/stall/seed1     40969  1.4907    1.3194  0.0101  1.1307  1.3084  1.3368  1.3729    10  1.19e-07  1.04e-07       0  1.3193  1.3259
+random_rows/stall/seed2     41071  1.4372    1.3134  0.0101  1.1685  1.3016  1.3312  1.3705    20  1.19e-07  9.61e-08       0  1.3132  1.3162
+random_rows/stall/seed3     41183  1.6382    1.3318  0.0103  1.0682  1.3203  1.3501  1.3863    20  1.19e-07  1.04e-07       0  1.3317  1.3429
+random_rows/stall/seed4     41190  1.6058    1.3284  0.0089  1.1817  1.3175  1.3446  1.3807    20  1.19e-07  9.82e-08       0  1.3283  1.3378
+random_rows/no_stall/seed0  41400  1.4644    1.3227  0.0106  1.1536  1.3093  1.3406  1.3871    20  1.19e-07  9.67e-08       0  1.3227  1.3204
+random_rows/no_stall/seed1  41283  1.3647    1.3128  0.0100  1.1671  1.3009  1.3301  1.3745    13  1.19e-07  9.81e-08       0  1.3127  1.3169
+random_rows/no_stall/seed2  41374  1.5019    1.3229  0.0079  1.3019  1.3120  1.3370  1.3820    27  1.19e-07  9.85e-08       0  1.3228  1.3338
+random_rows/no_stall/seed3  41451  1.7091    1.3411  0.0070  1.3176  1.3316  1.3542  1.3823    27  1.19e-07  1.01e-07       0  1.3411  1.3462
+random_rows/no_stall/seed4  41456  1.5547    1.3274  0.0073  1.3045  1.3175  1.3407  1.3827    10  1.19e-07  9.85e-08       0  1.3272  1.3325
+B2 summary: mean dose over the training rows 1.307 to 1.341 (average 1.325); every dose in [1, 1.5); largest fall as the width rises = one float32 step (1.19e-07); largest gap to the closed form 1.05e-07; refused rows 0; inputs valid on every band -> PASS
+    (the same three statistics the weighting test's mark M3 recorded: 1.19e-7, 1.04e-7, 0)
+B2 note: the job's flag normalisation_matches_record is False on 20 of 20 bands. Expected: the record's constants are the gate's normalization (the mean and spread of the states kept under the main test's removal), shared by the near80 and random_rows settings (near80/code/settingdata.py:7, 154), while the flag compared them with the mean of each setting's own training file (largest difference 5.6e-3; data/M7_near80_normalization_check.out). The readout used the record's constants, as the learner did.
+====================================================================================================
+PART B3. The weighting test (experiments/shift_iw, specification version 5, branch main): mark M3 (the dose's mechanics on 42,500-49,919 kept training rows per seed) and mark R2 (dose change under strong-shift weights)
+====================================================================================================
+quality           M3 max drop (5 seeds) max closed-form gap   rows   R2 dose change mean [95% interval] refused predicted return    R2    R1       I1
+random          pass           1.19e-07            1.07e-07  49919 +0.020 [+0.017, +0.024]                   0            -5.12  pass  fail  not run
+medium-replay   pass           1.19e-07            1.12e-07  48698 +0.018 [+0.007, +0.029]                   0            -3.37  pass  fail  not run
+medium          pass           1.19e-07            1.09e-07  47439 +0.029 [+0.022, +0.036]                   0            -4.58  pass  fail  not run
+medium-expert   pass           1.19e-07            1.08e-07  45301 +0.053 [+0.036, +0.071]                   0             0.92  fail  pass  not run
+expert          pass           1.19e-07            1.04e-07  42500 +0.039 [+0.025, +0.054]                   0             0.42  fail  pass  not run
+B3a mark M3 passes on all five qualities (largest fall one float32 step, 0 refused rows) -> PASS
+B3b mark R2 (pre-registered; bar: a predicted return change of at least 1.8 points in size, report.json thresholds.R2): the strong-shift weights move the mean dose by only +0.018 to +0.053. On medium-expert and expert, where the room check R1 passed, that predicted +0.92 and +0.42 points, so R2 failed; on random, medium-replay and medium R2 passed only because the predicted change was large and negative (-3.4 to -5.1: more pull lowers return there) while R1 failed. BCA's training arms (I1) require M1, R1 and R2 to pass and ran on no quality (run.py:19-21). The small dose change is the saturation of A6.
+B3c the dose over training (mean multiplier of the batch, every 5,000 updates, seed 0; first refresh at 10,000):
+quality / arm                before refresh after (mean) at 100,000    low   high
+random/unweighted                     1.000       1.3295     1.3434  1.318  1.343
+random/exact_strong                   1.000       1.3545     1.3559  1.337  1.364
+medium-replay/unweighted              1.000       1.3266     1.3362  1.317  1.337
+medium-replay/exact_strong            1.000       1.3534     1.3658  1.338  1.366
+medium/unweighted                     1.000       1.3266     1.3406  1.315  1.341
+medium/exact_strong                   1.000       1.3573     1.3706  1.341  1.372
+medium-expert/unweighted              1.000       1.3075     1.3162  1.293  1.327
+medium-expert/exact_strong            1.000       1.3678     1.3860  1.341  1.386
+expert/unweighted                     1.000       1.3092     1.3178  1.297  1.321
+expert/exact_strong                   1.000       1.3537     1.3666  1.327  1.368
+B3c before the first refresh the multiplier is exactly 1 (the host runs unchanged); afterwards 1.29-1.39 on every quality, the weighted arm 0.02-0.06 above the unweighted -> PASS
+B3d closed form on recorded quantiles (seed 0, last refresh): dose(p) = 1 + 0.5 R eta(p) / (R eta(p) + 1). The last two columns are means over 4,151 rows: the mean dose must be at most the closed form of the mean x (the dose is concave in x), and close to it
+quality              R  eta p5 eta p95 dose p5 rec  closed dose p95 rec  closed mean dose, rec rows cf(mean x)
+random          1.4923   1.115   1.784      1.3124  1.3124       1.3635  1.3635              1.3568     1.3572
+medium-replay   1.4128   1.095   1.778      1.3037  1.3037       1.3577  1.3577              1.3501     1.3505
+medium          1.4969   1.067   1.787      1.3074  1.3074       1.3640  1.3640              1.3590     1.3593
+medium-expert   1.3426   0.805   1.797      1.2597  1.2597       1.3535  1.3535              1.3408     1.3426
+expert          1.2862   1.142   1.611      1.2975  1.2975       1.3373  1.3373              1.3241     1.3266
+B3d the recorded dose quantiles equal the closed form of the recorded eta quantiles to 4 decimals (a monotone map carries quantiles to quantiles), and the recorded mean dose sits 0.0004-0.0025 below the closed form of the mean width, the direction concavity requires -> PASS
+====================================================================================================
+PART B4. The four-learner study (branch claude/shift-hosts, outputs/shift_hosts_v3/results.json; exploratory, seeds 0-4): the dose at the last refresh on kept training rows, standard against weighted (exact strong-shift weights), with the shuffled-weight placebo and the classifier-estimated weights
+====================================================================================================
+learner, quality           setup     R last (mean) dose mean     (seed range)    min    max refused change vs std  placebo estimated
+cql, medium                standard          1.877     1.357    (1.347-1.373)  1.009  1.451       0             -        -         -
+cql, medium                iw                1.868     1.495    (1.493-1.497)  1.293  1.500       0        +0.141   +0.002    +0.142
+rebrac, medium             standard          1.350     1.325    (1.299-1.354)  1.191  1.379       0             -        -         -
+rebrac, medium             iw                1.295     1.318    (1.278-1.348)  1.177  1.376       0        -0.005   +0.001    -0.005
+td3_bc, medium-expert      standard          2.120     1.363    (1.357-1.368)  1.277  1.407       0             -        -         -
+cql, medium-expert         standard          1.978     1.352    (1.336-1.385)  1.008  1.458       0             -        -         -
+cql, medium-expert         iw                2.032     1.489    (1.472-1.495)  1.072  1.499       0        +0.137   +0.006    +0.137
+B4 reading: every dose in [1, 1.5) and 0 refused rows (18 of 18 refreshes certified in every run); the standard dose is 1.33-1.36 for every learner and quality; the strong-shift weights raise CQL's dose by +0.125 to +0.156 on 10 of 10 seeds (to 1.47-1.50, nearly the cap), ReBRAC's by -0.022 to +0.003 (its critic did not learn), and shuffled weights change it by -0.008 to +0.017 (placebo). TD3+BC's weighted run and IQL were stopped by stop rule S7 and are not judged. -> PASS
+====================================================================================================
+PART B5. Stage 2 (lower-edge study, stall world, seeds 0-4): the dose the recorded widths imply, at recorded rows (set T4) and at the actor's own command on strong-current rollout states (set T3), uniform band against the classifier-weighted band (description only: stage 2 used the width in the lower edge, not as a dose)
+====================================================================================================
+seed       R       u | uniform: recorded rows actor, strong current | weighted: recorded rows actor, strong current
+   0  1.5188  0.1736 | dose 1.320 (U 0.310)   dose 1.310 (U 0.303) | dose 1.335 (U 0.361)    dose 1.414 (U 1.362)
+   1  1.4799  0.1682 | dose 1.314 (U 0.287)   dose 1.314 (U 0.316) | dose 1.384 (U 0.566)    dose 1.397 (U 0.891)
+   2  1.5137  0.1619 | dose 1.320 (U 0.289)   dose 1.334 (U 0.331) | dose 1.331 (U 0.320)    dose 1.384 (U 0.666)
+   3  1.5007  0.1522 | dose 1.322 (U 0.276)   dose 1.331 (U 0.311) | dose 1.308 (U 0.248)    dose 1.372 (U 0.668)
+   4  1.4703  0.1519 | dose 1.324 (U 0.281)   dose 1.348 (U 0.357) | dose 1.300 (U 0.229)    dose 1.360 (U 0.469)
+B5 reading: the uniform band gives the same dose (1.31-1.35) at recorded rows and at the actor's commands under strong current; the weighted band's width at the actor's commands is 1.3-4.5 times the uniform band's, but the dose it implies rises only to 1.36-1.41 (saturation).
+====================================================================================================
+SUMMARY
+  PASS A1 range+closed form (u=1.0)
+  PASS A1 range+closed form (u=0.157)
+  PASS A2 monotone up to one float32 step
+  PASS A3 not ready gives dose 1
+  PASS A4 refusal: standard 1, per-row 1.5
+  PASS A5 per-row with one R == standard, bit for bit
+  PASS A5b per-row uses each row's own threshold
+  PASS A6 saturation (description)
+  PASS A7 multiplier 1 == plain BC term
+  PASS B1 near-80 held-out rows: dose in range, U_max of the records reproduced
+  PASS B2 near-80 recorded training rows (pinned environment): M3 statistics reproduced on 20 bands
+  PASS B3 weighting test: M3 pass on 5 qualities; 1 before the first refresh; closed form on recorded quantiles
+  PASS B4 four-learner study: dose in range, 0 refused, weighting raises CQL's dose, placebo near 0
+  done B5 stage 2's recorded widths: the dose they imply at recorded rows and at the actor's commands (description only)
+  VERDICT M7: works with a caveat. The multiplier is computed exactly as specified, in [1, 1.5) on every recorded row (float32 reaches 1.5 only from x of about 5.6 million on), monotone in the width, 1 before the first refresh and on refused rows; but it saturates near 1.33 on every recorded host and data set, weights move it by only 0.02-0.15, and no study has shown that it raises return.
