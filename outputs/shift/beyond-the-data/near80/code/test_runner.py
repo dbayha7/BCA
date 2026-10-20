@@ -56,7 +56,7 @@ BIG_MEM = "MemTotal:       67108864 kB\nMemAvailable:   62914560 kB\n"
 # The owner's rule (20 October 2026): no test names a reserved fresh seed (40-59); the fresh GROUP's tests use the
 # synthetic labels K.TEST_LABELS, patched over FRESH for this process (setUpModule); every stub run uses seed 0.
 F0, F1, F2, F3, F4 = K.TEST_LABELS[:5]
-_FRESH_PATCH = mock.patch.object(K, "FRESH", K.TEST_LABELS)
+_FRESH_PATCH = unittest.mock.patch.object(K, "FRESH", K.TEST_LABELS)
 
 
 def setUpModule():
@@ -1515,14 +1515,14 @@ class TestFreshSeedRecordRoundTrip(unittest.TestCase):
         r = subprocess.run([PY, "-c", "import sys; sys.dont_write_bytecode = True; sys.path.insert(0, sys.argv[1]);"
                                       "import dataclasses, stubs\n"
                                       "spec = stubs._recorder_spec()\n"
-                                      f"stubs.stub_fresh_log({F0}, 'stall', spec, (500, 50, 50), 1.5)\n"
+                                      "stubs.stub_fresh_log(0, 'stall', spec, (500, 50, 50), 1.5)\n"
                                       "other = dataclasses.replace(spec, damping=spec.damping + 0.25)\n"
                                       "ok3 = (500, 50, 50)\n"
                                       "for sp, sizes, slope in ((spec, ('chunk', 'starts', 'steps', 'updates'), 1.5),\n"
                                       "                         (spec, (500, 50), 1.5), (spec, ok3, float('nan')),\n"
                                       "                         (spec, ok3, 1.6), (other, ok3, 1.5)):\n"
                                       "    try:\n"
-                                      f"        stubs.stub_fresh_log({F0}, 'stall', sp, sizes, slope)\n"
+                                      "        stubs.stub_fresh_log(0, 'stall', sp, sizes, slope)\n"
                                       "    except TypeError:\n"
                                       "        continue\n"
                                       "    raise SystemExit('accepted ' + repr((sp, sizes, slope)))\n"

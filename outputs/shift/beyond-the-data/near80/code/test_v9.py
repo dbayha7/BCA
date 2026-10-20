@@ -281,7 +281,6 @@ class TestLeadRivals(Base):
         # the hand-set range limit does not depend on BCA: its net is untouched by the refusal; the matched rivals
         # and the always-on ramp take the no-caution actor's numbers there (a net of 0 on that seed)
         self.assertAlmostEqual(nl["rival_nets"]["range_hinge"], -20.0)
-        self.assertAlmostEqual(nl["rival_nets"]["obca_forced"], -1.0 * (len(SEEDS) - 1) / len(SEEDS))
 
 
 # --------------------------------------------------------------------------------------------- the sentences

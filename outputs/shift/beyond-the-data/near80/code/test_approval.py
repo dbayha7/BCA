@@ -1885,13 +1885,14 @@ class TestFreeze(FreezeBase):
         msg = self.refused("placeholder not fixed: owner_answer")
         self.assertNotIn("c2_net_margin", msg)                              # DECISION.md fixed the marks
         self.assertEqual(tree(self.n80), before)
+        self.stack.close()                                                  # the owner's answer back in place
         self.stack = enter_fixed(contextlib.ExitStack())                    # the constants fixed, the documents not
         rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_marks", final=False)
         before = tree(self.n80)
         msg = self.refused("TODO(...) mark")
-        self.assertIn("PREREGISTRATION.md carries", msg)
-        self.assertIn("README.md carries", msg)
+        self.assertIn("PREREGISTRATION.md carries", msg)                   # the facts' marks (README has none now)
+        self.assertNotIn("README.md carries", msg)
         self.assertIn("still says **DRAFT", msg)
         self.assertEqual(tree(self.n80), before)
         with mock.patch.object(K, "FRESH", K.FRESH[:2] + (K.RESERVED_SEEDS[0],)):
@@ -2047,7 +2048,7 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(set(arms["primary"]), {K.PRIMARY})
         self.assertEqual(set(arms["twins_of_c2"]), set(K.TWIN_ARMS))
         self.assertEqual(set(arms["noise_floor_copy"]), {K.NOISE_ARM})
-        self.assertEqual(set(arms["world_blind_rivals"]), set(K.WORLD_BLIND))
+        self.assertEqual(set(arms["world_blind_rivals"]), set(K.LEAD_RIVALS))   # C1's rival set (9.2)
         self.assertTrue(set(K.REPORTED_ONLY) <= set(arms["reported_only"]))
         choices = {c["number"]: c["default"] for c in draft["choices"]}
         self.assertEqual(sorted(choices), list(range(1, len(choices) + 1)))
