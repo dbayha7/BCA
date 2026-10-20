@@ -223,11 +223,19 @@ SMOKE_SEEDS = (0,)                         # the plumbing's seed (a gate seed): 
 # arithmetic on synthetic records, the runner's fake phases) patch FRESH to these labels inside the test process: no
 # study uses them, no registry names them, and nothing is ever generated or trained on them.
 TEST_LABELS = tuple(range(1000, 1010))
+STUB_FRESH_ENV = "NEAR80_STUB_FRESH_LABELS"   # =1: FRESH is TEST_LABELS (the tests only; see below FRESH)
 SPENT_SEEDS = (10, 11, 12, 13, 14)         # version 8's fresh seeds: read by the pre-approval facts only (section 8.1)
 FRESH_SEED_BLOCK = (40, 59)                # the block version 9 draws its fresh seeds from, in order
 # DECISION.md 2.4: ten fresh seeds, 40-49; seeds 50-59 are reserved for a version 10 and refused by this one.
 FRESH = tuple(range(40, 50))
 RESERVED_SEEDS = tuple(range(50, 60))
+# The unit tests' fresh group: with NEAR80_STUB_FRESH_LABELS=1 in the environment FRESH is TEST_LABELS, so that no test
+# names or runs a reserved seed (the fake phases and the stub phases of the tests see the same labels as the test
+# process that wrote their fixture). Only the tests set it; near80_runner forwards it to phase processes in stub mode
+# only; the entries never set it. An official run cannot be moved by it: prereg.json pins FRESH, and every phase's
+# approval check (approval_check.check_constants) refuses a constants module whose FRESH differs from the pinned one.
+if os.environ.get(STUB_FRESH_ENV) == "1":
+    FRESH = TEST_LABELS
 GROUPS = ("smoke", "fresh")
 WORLDS = ("stall", "no_stall")
 WORLD_TAG = {"stall": 1, "no_stall": 2}    # step 1's tags; never end a tag list in 0
@@ -320,7 +328,7 @@ MARKS_C2 = dict(net_margin=5.0, positive_seeds_min=8, positive_share=0.8, multip
 MARKS_C3 = dict(net_margin=-5.0, positive_seeds_max=1)
 MIN_CERTIFIED = 8                          # C2 and C3 are read only when at least this many seeds certified
 MULTIPLICITY_RULES = ("all_three", "each_separately")
-DEFAULTS = dict(setting="main", seeds="ten fresh seeds, 40-49", pooled_groups=True,
+DEFAULTS = dict(setting="main", seeds="ten seeds, 40-49", pooled_groups=True,
                 refusal_rule="per arm: no caution in C1; the seed left out of C2 and C3",
                 noise_floor="obca_k1 trained alone", hosts="TD3+BC actor-only", lanes=10, name="version 9, near-80 main",
                 machine="the cluster (hpc.charlotte.edu, caslake nodes); the desktop as the fallback")

@@ -33,8 +33,14 @@ HERE = Path(__file__).resolve().parent
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
+# The owner's rule (20 October 2026): no test names or runs a reserved fresh seed (40-59). This file's fresh-group
+# tests (the plan, the fake phases, the per-seed runners, the fresh-seed record) use the synthetic labels
+# K.TEST_LABELS through NEAR80_STUB_FRESH_LABELS=1, set here before the constants load and passed to every phase
+# process the tests start (TEST_ENV; the runner forwards it in stub mode). Every stub run uses seed 0.
+os.environ["NEAR80_STUB_FRESH_LABELS"] = "1"
 import near80_constants as K  # noqa: E402
 
+assert K.FRESH == K.TEST_LABELS and K.STUB_FRESH_ENV == "NEAR80_STUB_FRESH_LABELS"
 ROOT = Path(K.ROOT)
 DESKTOP_ROOT = Path(K.DESKTOP_ROOT)
 if str(ROOT) not in sys.path:
@@ -47,24 +53,13 @@ import near80_runner as R  # noqa: E402
 
 PY = sys.executable
 TEST_ENV = {k: v for k, v in K.PHASE_ENV.items() if k != "PYTHONPYCACHEPREFIX"}   # as stub phases (Cfg.phase_env)
-for _name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS"):
+for _name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS", K.STUB_FRESH_ENV):
     if os.environ.get(_name):
         TEST_ENV[_name] = os.environ[_name]
 STUB_PATH = os.environ.get("NEAR80_STUB_PYTHONPATH")
 APPROVAL = dict(prereg_sha256="a" * 64, prefix="a" * 16, fixture=True)
 BIG_MEM = "MemTotal:       67108864 kB\nMemAvailable:   62914560 kB\n"
-# The owner's rule (20 October 2026): no test names a reserved fresh seed (40-59); the fresh GROUP's tests use the
-# synthetic labels K.TEST_LABELS, patched over FRESH for this process (setUpModule); every stub run uses seed 0.
-F0, F1, F2, F3, F4 = K.TEST_LABELS[:5]
-_FRESH_PATCH = unittest.mock.patch.object(K, "FRESH", K.TEST_LABELS)
-
-
-def setUpModule():
-    _FRESH_PATCH.start()
-
-
-def tearDownModule():
-    _FRESH_PATCH.stop()
+F0, F1, F2, F3, F4 = K.FRESH[:5]           # the synthetic labels (K.TEST_LABELS), never 40-59
 WORK = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
 
 
@@ -1566,17 +1561,9 @@ class TestStep2Saved(unittest.TestCase):
         for a in K.NEW_ARMS:
             self.assertIn(a, lock["arm_ids"])
 
-    def test_changed_point(self):
-        fx = self.copy()
-        p = fx / "step2/policy/seed0/stall/values.json"
-        body = LG.read_json_verified(p)
-        body["situations"]["strong_current"]["points"]["obca_k1"] += 1e-9
-        p.unlink()
-        (p.parent / (p.name + ".sha256")).unlink()
-        LG.write_json_once(p, body)
-        with self.assertRaises(PH.PhaseStop) as cm:
-            self.check(fx)
-        self.assertEqual(cm.exception.reason, PH.STOP_REASONS["fingerprint"])
+    # (version 8's test_changed_point is gone with its evaluate_step2_saved phase: version 9 reproduces step 2's
+    # actors bit for bit in the plumbing and never re-reads step 2's saved points; check_step2_saved checks the lock,
+    # the actors and the values' lock fingerprint, as test_changed_lock_byte and test_changed_actor say)
 
     def test_changed_lock_byte(self):
         fx = self.copy()

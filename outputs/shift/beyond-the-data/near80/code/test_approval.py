@@ -2001,7 +2001,8 @@ class TestFreezeOnTheRealFolder(unittest.TestCase):
         with self.assertRaises(FZ.FreezeRefused) as cm:
             FZ.write("a test", n80_root=K.N80, out_root=K.OUT, tests_fn=fake_tests(), facts_fn=fake_facts(),
                      claims_fn=fake_claims, log=quiet)
-        self.assertIn("placeholder not fixed", str(cm.exception))
+        self.assertNotIn("placeholder not fixed", str(cm.exception))     # the owner answered; the marks remain
+        self.assertIn("PREREGISTRATION.md carries", str(cm.exception))
         self.assertEqual(sorted(p.name for p in K.N80.iterdir()), before)
         self.assertFalse(K.OUT.exists())
 

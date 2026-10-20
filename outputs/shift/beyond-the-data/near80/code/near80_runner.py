@@ -295,6 +295,8 @@ class Cfg:
             for name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS", "SYSTEMROOT", "TEMP", "TMP"):
                 if os.environ.get(name):
                     env[name] = os.environ[name]
+        if self.mode == "stub" and os.environ.get(K.STUB_FRESH_ENV) == "1":
+            env[K.STUB_FRESH_ENV] = "1"                 # the tests' synthetic fresh labels (never an official run)
         elif K.HOST == "cluster":
             for name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS", "NEAR80_MEM_TOTAL_KB"):
                 if os.environ.get(name):
@@ -1178,6 +1180,12 @@ def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None, refuse=None):
     if LG.inside(fx, K.ROOT):
         out(f"refused: a test fixture must lie outside {K.ROOT}")
         return EXIT_REFUSED
+    if refuse:
+        allowed = {int(s) for s in seeds} if seeds else set(K.SMOKE_SEEDS) | set(K.FRESH)
+        bad = sorted(int(s) for s in refuse if int(s) not in allowed)
+        if bad:
+            out(f"refused: --refuse names seeds this stub run does not have: {bad}")
+            return EXIT_REFUSED
     try:
         if not (fx / K.TEST_MARKER).is_file():
             if fx.exists() and any(fx.iterdir()):
@@ -1187,11 +1195,6 @@ def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None, refuse=None):
             AC.write_test_fixture(fx)
         if refuse:
             import stubs
-            allowed = {int(s) for s in seeds} if seeds else set(K.SMOKE_SEEDS) | set(K.FRESH)
-            bad = sorted(int(s) for s in refuse if int(s) not in allowed)
-            if bad:
-                out(f"refused: --refuse names seeds this stub run does not have: {bad}")
-                return EXIT_REFUSED
             p = fx / stubs.STUB_FILE
             if not p.exists():
                 p.write_text(json.dumps(dict(refuse_seeds=[int(s) for s in refuse])), encoding="utf8")
