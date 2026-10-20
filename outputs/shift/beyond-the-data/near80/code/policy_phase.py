@@ -10,30 +10,34 @@ the room harness (H) and version 6's policy code (P). Restated here, because ste
 h0_check, strengths, save_and_lock, verify_lock.
 
 The arm table (arm_row_from). Both worlds' switch records (one certificate entry each, on the POOLED groups) give,
-through step2lib.arm_table's own rules, the six step-2 ramp arms; then the new arms:
-  meandiff_k1     the mean-difference switch with the ramp: on when mean(full throttle) - mean(rest) > 0.10; h = that
-                  difference; k = 1 (version 8's reported arm, now a trained twin of C2)
-  meandiff_limit  the mean-difference switch turning on the hand-set range limit: on -> the room's hinge at the
-                  recorded range with coefficient 1.0 (the range_hinge arm's own program, run alone); off -> the
-                  ramp with height 0 (checked equal to the no-caution actor)
+through step2lib.arm_table's own rules, the six step-2 ramp arms; then the new arms (PREREGISTRATION.md 5.3), every
+one switched by the mean difference: on when mean(full throttle) - mean(rest) > 0.10 (MEANDIFF_MARGIN):
+  meandiff_k1     h = the mean difference itself, k = 1 (version 8's reported arm; the bottom of the dose ladder)
+  meandiff_q90x1  twin 1: h = the plain 90%-quantile gap of the same two groups (split conformal's statistic), k = 1
+  meandiff_q90x2  twin 2: the same h, k = 2 (twice the plain gap)
+  meandiff_limit  twin 3: on -> the room's hinge at the recorded range with coefficient 1.0 (the range_hinge arm's
+                  own program, run alone); off -> the ramp with height 0 (checked equal to the no-caution actor)
   obca_k1_alone   BCA's switched ramp (obca_k1's switch and height) trained alone in a ramp program of one: the
-                  noise-floor copy (section 8.5)
-THE REFUSAL RULE (section 8.4). step2lib.arm_table refuses a switched-on arm whose height is not finite. Version 8
+                  noise floor's copy and C2's and C3's BCA side (section 9.1)
+The twins never refuse: they do not read BCA's height. A plain gap that is not positive while the switch is on gives
+a height of 0 (recorded in the row's 'why').
+THE REFUSAL RULE (section 5.4). step2lib.arm_table refuses a switched-on arm whose height is not finite. Version 8
 let that refusal stop the whole policy phase. Version 9 reads the refusal per arm: an arm whose switch is on with a
 height that is not finite is REFUSED (recorded, never trained, its actor missing); every other arm trains and is
 scored. The BCA-dependent arms are obca_k1, obca_k2 (BCA's height), obca_forced (the stalling world's BCA height, in
 both worlds) and obca_k1_alone. A refused arm's place in step 2's six-arm program is filled by a pad (the ramp with
 height 0, named pad_refused_<arm>, never saved or scored), so the other members keep step 2's batch size. With
 obca_k1 refused there is no strength to match: the matched rivals and the stand-in are unmatched (null), as in
-version 8 when BCA's switch stayed off. A seed where BCA refused fails every mark that needs BCA (C1 and C2), by the
-pre-set rule, and only those.
+version 8 when BCA's switch stayed off. The look reads a refused arm as the no-caution actor in C1 and leaves the
+seed out of C2 and C3 (pooled.py); nothing of the seed stops.
 
-Step 2's ramp programs (ramp_layout; PREREGISTRATION.md section 5.3 and 8.2): in the stalling world w0_check alone,
+Step 2's ramp programs (ramp_layout; PREREGISTRATION.md sections 5.5 and 8.2): in the stalling world w0_check alone,
 then the six step-2 ramp arms in one vmapped program with obca_k1 first; in the no-stall world one batch of seven,
-w0_check first and obca_k1 second. Then, in extra calls that leave those programs' bits unchanged: meandiff_k1
-alone, meandiff_limit alone (hinge or height-0 ramp) and obca_k1_alone alone. The reproduction check runs the same
-function on seed 0 with step 1's own switch entries and must give step 2's saved w0_check, obca_k1 and range_hinge
-actors bit for bit.
+w0_check first and obca_k1 second. Then, in extra calls that leave those programs' bits unchanged, the lone calls in
+the fixed order K.LONE_CALLS (meandiff_k1, meandiff_q90x1, meandiff_q90x2, obca_k1_alone, each a ramp program of
+one), then meandiff_limit (the hinge program, or a height-0 ramp). The reproduction check runs the same function on
+seed 0 with step 1's own switch entries and must give step 2's saved w0_check, obca_k1 and range_hinge actors bit for
+bit.
 Every height-0 ramp arm must reproduce the no-caution actor within W0_TOL (else a recorded stop). The lock (every
 actor's SHA-256) is written before any return, points or score of any trained arm is computed.
 """
@@ -222,6 +226,11 @@ def arm_row_from(setting, seed, world, per, S):
     gap_mean = float(sources["mean_gap"])
     on = bool(np.isfinite(gap_mean) and gap_mean > K.MEANDIFF_MARGIN)
     arms["meandiff_k1"] = dict(switch=on, h=gap_mean if on else 0.0, k=1.0, refused=False, why=None)
+    gap90 = float(sources["conformal_gap"])
+    h1 = max(gap90, 0.0) if np.isfinite(gap90) else 0.0
+    why90 = None if (not on or h1 > 0) else f"the plain 90% gap {gap90} was not positive; height 0"
+    arms["meandiff_q90x1"] = dict(switch=on, h=h1 if on else 0.0, k=1.0, refused=False, why=why90)
+    arms["meandiff_q90x2"] = dict(switch=on, h=h1 if on else 0.0, k=2.0, refused=False, why=why90)
     arms["meandiff_limit"] = dict(switch=on, h=1.0 if on else 0.0, k=1.0, refused=False, why=None,
                                   kind="hinge" if on else "ramp_h0")
     o = arms[K.PRIMARY]
@@ -231,7 +240,7 @@ def arm_row_from(setting, seed, world, per, S):
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="an arm that does not depend on BCA's height was "
                                                                "refused", refused=refused))
     return dict(t_lo=t_lo, t_up=t_up, arms=arms, sources=sources, refused=refused,
-                bca_refused=bool(K.PRIMARY in refused),
+                bca_refused=bool(K.PRIMARY in refused), meandiff_on=on,
                 rule="the refusal rule: a refused arm is left out; every other arm trains and is scored")
 
 
@@ -242,12 +251,12 @@ def ramp_names(setting):
 
 def ramp_layout(setting, world):
     """The vmapped ramp programs of the main RampRunner, in call order: [(arm names), ...]. Step 2's own layout:
-    stalling world [(w0_check,), (the six,)]; no-stall world [(w0_check, the six)]. Then the extra calls, each alone:
-    (meandiff_k1,), (obca_k1_alone,). meandiff_limit runs on the room's own hinge program or as a height-0 ramp
-    (train_world)."""
+    stalling world [(w0_check,), (the six,)]; no-stall world [(w0_check, the six)]. Then the lone calls, each alone,
+    in K.LONE_CALLS' order: (meandiff_k1,), (meandiff_q90x1,), (meandiff_q90x2,), (obca_k1_alone,). meandiff_limit
+    runs last, on the room's own hinge program or as a height-0 ramp (train_world)."""
     six = tuple(K.STEP2_RAMP_ARMS)
     calls = [(K.W0,), six] if world == "stall" else [(K.W0,) + six]
-    calls += [("meandiff_k1",), (K.NOISE_ARM,)]
+    calls += [(n,) for n in K.LONE_CALLS]
     return calls
 
 
@@ -388,12 +397,12 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
         rest = layout[1:]
     extra_seconds = {}
     t2 = time.perf_counter()
-    for call in rest:                                    # meandiff_k1 alone, then obca_k1_alone alone (if not refused)
+    for call in rest:                                    # the lone calls in K.LONE_CALLS' order (a refused one skipped)
         members = [n for n in call if not row["arms"][n].get("refused")]
         if members:
             trained.update(runner.run([layout_arm(MC, row, n) for n in members], MC.log))
     lim = row["arms"]["meandiff_limit"]
-    if lim.get("kind") == "hinge":                       # the hand-set range limit's own program, run alone
+    if lim.get("kind") == "hinge":                       # the hand-set range limit's own program, run alone, last
         trained.update(runner.run([H.RoomArm("meandiff_limit", "hinge", (1.0,))], MC.log))
     else:
         trained.update(runner.run([MC.ramp_arm("meandiff_limit", 0.0, 0.0)], MC.log))
@@ -404,7 +413,7 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
         padding = dict(arms=pads, why="the places of refused arms in step 2's six-arm program; never saved or scored")
         for n in pads:
             trained.pop(n)
-    zero = [n for n in names + ("meandiff_k1", "meandiff_limit", K.NOISE_ARM)
+    zero = [n for n in names + tuple(K.NEW_ARMS)
             if n in trained and row["arms"][n].get("h") == 0.0 and not (n == "meandiff_limit" and
                                                                         lim.get("kind") == "hinge")]
     checks["h0_reproduces_reference"] = h0_check(MC, trained, zero, ref, ref_name)
@@ -468,7 +477,7 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
                 MC.log(f"stand-in error: {error!r}")
     seconds["matching_and_standin"] = time.perf_counter() - t1
     S_, SR = strengths(MC, trained, s_actors, none, pg)
-    shape_arms = {n: (row["arms"][n]["h"], row["arms"][n]["k"]) for n in names if n in trained}
+    shape_arms = {n: (row["arms"][n]["h"], row["arms"][n]["k"]) for n in names + tuple(K.LONE_CALLS) if n in trained}
     shape = MC.info_only("ramp shape", lambda: MC.ramp_shape(pg, critic, none, seed, row["t_lo"], row["t_up"],
                                                             shape_arms))
     # ---- logical ids -> actor names

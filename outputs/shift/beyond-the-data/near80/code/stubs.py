@@ -62,7 +62,9 @@ KIND_BATCHES = []          # (kind, arm names) of every room program the phase r
 TAG_BASE = 9000
 N_SURVIVORS = 40          # survivors near full throttle outside the ball in the training split
 N_HELDOUT_TAIL = 12       # such rows in each held-out split (calibration, evaluation): the pooled groups' extra rows
-N_REFUSING = 4            # a refusing seed: too few full-throttle rows for BCA's certificate (0.9^n stays above 0.05)
+N_REFUSING = 12           # a refusing seed: enough full-throttle rows for the gap rule (at least 9) but too few for
+                          # BCA's certificate (0.9^12 = 0.28 of the draws are infinite, more than the 5% allowed), so
+                          # its switch is on with an infinite height: the refusal rule runs end to end
 SURVIVOR_REWARD = -5.0    # the survivors' recorded reward: the second critic over-predicts them, the switch is on
 STUB_STARTS = 5
 PATTERN = np.array([-1.0, -0.137, -0.585, -0.406])
@@ -383,7 +385,7 @@ def step2_results(fixture):
     return step2_root(fixture) / "results.json"
 
 
-STEP2_STALL_IDS = ("none", "clone", "full_none", "perfect_band", "range_hinge") + K.STEP2_RAMP_ARMS + \
+STEP2_STALL_IDS = ("none", "clone", "full_none", "perfect_band", "range_hinge") + K.STEP2_RAMP_ARMS + K.NEW_ARMS + \
     ("even_pull", "push_less", "random_1", "random_2", "standin")
 
 
