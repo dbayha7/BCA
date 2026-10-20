@@ -100,8 +100,9 @@ strong-current rollout states, T4 = recorded rows), per seed, from the recorded 
                  3 |              1.4731  0.5438  +0.9293 |      0.2589 |              0.8560  0.2925  +0.5635 | 0.2479
                  4 |              0.8160  0.3097  +0.5063 |      0.2435 |              0.5795  0.3158  +0.2637 | 0.2290
   Count (uniform): command minus cap on harmful pairs is +0.0003 to +0.0122 (10 seed-sets); the band at
-  shifted states (T3) is 0.92 to 1.18 times the band at IID states (T1). The false preference it had
-  to cancel was 0.63-0.89 (results-2026-10-13/README.md). Takeaway: flat, in every seed.
+  shifted states (T3) is 0.92 to 1.18 times the band at IID states (T1). The critic's over-preference
+  it had to cancel (Q1 gap minus true gap on harmful pairs) was 0.88-1.12 at training states and 2.81-2.88 in strong
+  current (modules/M9.md, table R2; data/M9/M9_r2.json, mean_over_pref_harmful). Takeaway: flat, in every seed.
   Weighted version at recorded (IID) rows, T4: [0.361, 0.566, 0.320, 0.248, 0.229] against uniform [0.310, 0.287, 0.289, 0.276, 0.281]: higher on 3 of 5 seeds,
   by construction (it adds a classifier term U_max softplus(log w - l*) to the uniform band; stage2/code/band.py).
 
@@ -190,6 +191,7 @@ Before = standard calibrate(scores); after = calibrate(scores, weights = 1, test
   table [1.0] and the per-step arm's coverage). Pre-registered mark W0 (labeled a unit check).
   Four-learner stop rule S2 (PRESPEC.md:474): IW with every weight 1 equals the standard run in every bit after the
   refresh, and R(1) equals the stored standard threshold in float32: passed for all four learners (the study ran on).
+  live near-80 version 6 near80 no_stall seed 0: recorded R 1.533197; weights of 1 -> 1.533197; equals recorded recompute True; explicit ones bit-equal True
   Recorded held-out scores (pinned environment, data/penalty_recompute.json): 30 of 30 banks reproduce the
   recorded threshold, and weights of 1 equal the unweighted call bit for bit on 30 of 30.
   Takeaway: with no shift and known weights the weighted penalty cannot differ from the standard one.
@@ -270,6 +272,7 @@ recorded (IID) training rows is therefore higher than the standard arm's. Before
       The recorded strong ratios (1.11-2.25 per seed) sit far above C and below D-up: most of the rise is the reweighting
       toward the high-current rows, where the critic's scores are larger; the smaller effective sample adds about
       +9% to the threshold (+0.01 in the dose: the four-learner shuffled placebo -0.008 to +0.017).
+      live near-80 version 6 near80 no_stall seed 0: B 1.0108, C strong mean 1.0713 [0.954, 1.247], D up 2.546, down 0.443
   Takeaway: the higher IW penalty under IID training rows is the declared shift, not a defect; it costs at most about 1 point.
 
 ==============================================================================================================
@@ -339,4 +342,4 @@ breaks their link to the rows.
   (6 of 10 above 0) against +0.125 to +0.156 with the real weights. Takeaway: the rise needs weights that
   point at rows where the critic's error is larger; the sample-size part alone is about 0.01 in the dose.
 
-wrote docs/bca_mechanics/data/penalty_cases.json
+wrote M:\docs\bca_mechanics\data\penalty_cases.json

@@ -568,6 +568,7 @@ def figure(path):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     blue, orange, green, verm, grey = "#0072B2", "#E69F00", "#009E73", "#D55E00", "#6E6E6E"
     fig, axes = plt.subplots(2, 2, figsize=(12.5, 9.2))
     fig.suptitle("Module M5: the threshold with refusal", fontsize=13, y=0.995)

@@ -495,6 +495,7 @@ def figure(bank_rows, train, r2, curves, hosts, s2):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     blue, orange, green, grey, purple = "#0072B2", "#D55E00", "#009E73", "#7F7F7F", "#CC79A7"
     fig, axes = plt.subplots(1, 3, figsize=(16.5, 5.4), gridspec_kw=dict(width_ratios=[1.0, 1.0, 1.3]))
     # (a) the curve, with the recorded widths drawn as a strip of counts along the bottom

@@ -420,6 +420,7 @@ def figure(pooled, room, rows_b, DEV):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     BLUE, ORANGE, GREEN, GRAY, INK = "#0072B2", "#E69F00", "#009E73", "#7F7F7F", "#222222"
     fig, axes = plt.subplots(1, 3, figsize=(16.5, 5.0))
     # Panel 1: pooled regret by rule, with the kill-rule bar.

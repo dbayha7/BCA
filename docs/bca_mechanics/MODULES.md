@@ -9,8 +9,29 @@ verdict.
 **Written on** 20 October 2026 from the code at commit 52914e4 of branch `claude/main-bca-connection-x4o46s` (paths below
 are relative to the repository root), plus branch `claude/shift-hosts` (the four-learner study) and branch `main` (the toy
 notebooks and the weighting test's records). Nothing was trained for this document. Every number is copied from a record
-in the repository, or printed by one of the two scripts in `docs/bca_mechanics/scripts/`; the record or script is named
-next to the number.
+in the repository, or printed by a script in `docs/bca_mechanics/scripts/` (named next to the number;
+`certificate_table.py` and `threshold_checks.py` for this page, `M<k>_*.py` and the `*.sh` job files for the module
+pages, `penalty_*.py` for the penalty page); the record or script is named next to the number.
+
+**Read this first (the order).** 1. This page: the map of the eleven modules, a verdict and one sentence each (ten
+minutes). 2. `PENALTY_EVIDENCE.md`: the answer to the two questions from the meeting (is the penalty right; is the
+weighting right). 3. One page per module, `modules/M1.md` to `modules/M11.md`: the checkable statement, the labeled
+pseudocode, a synthetic test with the truth known, a recomputation from the records, the figure, and what to say.
+Each page marks with `[CORRECTED]` and `[ADDED]` where it found this map imprecise; the section "Corrections found by
+the module pages" at the end of this page collects them, and the page is right where the two differ. 4. `figures/`:
+one figure per module and two for the penalty study. `scripts/`: the code that printed every number (`M<k>_test.py`
+per module, the pinned-environment job files `*.sh`, and the penalty scripts). `data/`: the scripts' outputs the pages
+quote. `README.md` lists every script with its command and environment; `index.html` is the same material as one
+page; `MEETING_BRIEF.md` is the one-page version for the meeting.
+
+**The result in four sentences.** BCA's arithmetic from the recorded rows to the band (M1-M6) works: every stored
+score, threshold and width reproduces bit for bit from the saved networks, the band covers about 90% of fresh rows
+from the recorded situations, and with weights of 1 the weighted band is the standard band exactly. The band's limits
+are structural, not bugs: it is a band on the critic's one-step target, it holds on average over rows, and where the
+data stop it is as wrong as the critic. The three uses that read the band's *width* (the dose M7, the toy penalty M8,
+the lower edge M9) do not change the actor where it matters, because the width is nearly flat across commands. The
+one use that works, the harm switch and the ramp (M10-M11), reads held-out *outcomes* of the full-throttle group with
+the same posterior; its weak point is a height that is undefined when that group holds fewer than about 29 rows.
 
 **The four verdict words.** works / works with a caveat / does not work / untested. After the verdict comes the one
 sentence to say to the advisor.
@@ -32,8 +53,9 @@ only*: what the code does; no claim about a result.
   remain. In the D4RL hosts the held-out rows are reserved from whole episodes, K rows per episode
   (`calibration/reference.py:49-121`; K in `configs/td3_bc.yaml`).
 - **A removal**: rows hidden from training and from the held-out calibration rows. *The ball*: the main test's
-  removal, the densest 15% of recorded commands. *The band* (near-80): also every command with a throttle from 70% to
-  90%. *Survivors*: full-throttle commands outside the ball that stay in training.
+  removal, the densest 15% of recorded commands. *The hidden throttle band* (the near-80 setting's extra removal):
+  every command with a throttle from 70% to 90%. *Survivors*: full-throttle commands outside the ball that stay in
+  training.
 - **The critic pair** Q1, Q2 and their **target copies** Q̄1, Q̄2: two value networks (256-256 ReLU,
   `algorithms/td3_bc.py:62-88`) trained by TD3+BC; the target copies trail them (Polyak factor 0.005). The **critic's
   value** is q = min(Q1, Q2).
@@ -64,6 +86,57 @@ only*: what the code does; no claim about a result.
   standard BCA and with weighted BCA); record `outputs/shift_hosts_v3/results.json` on that branch.
 - **The restructured BCA**: step 1 (the harm switch) and step 2 (the ramp), `outputs/shift/beyond-the-data/restructure/`;
   the near-80 run (version 8), `outputs/shift/beyond-the-data/near80/`, results folder `results-20261020T115246Z`.
+- **The host**: the offline reinforcement-learning algorithm BCA is attached to: TD3+BC in every ThrusterChain
+  study; TD3+BC, CQL, IQL and ReBRAC in the four-learner study. In the weighting test each seed has two hosts: the
+  *gapped host* (trained and calibrated after the ball's removal, the one its marks are judged on) and the *full host*
+  (no removal).
+- **The gate**: the main study's accepted data (its logs, its ball and its removals) and the checks they passed.
+  Later studies regenerate their logs through the gate's loader and reuse its fixed-controller critic ("the gate
+  critic") and its input scaling. (Not to be confused with the toy notebook's "gate rules" or with the harm switch,
+  which these pages never call a gate.)
+- **The studies on record**, in time order: the *main study* (`experiments/shift`: the ball removal; its data are
+  the gate); *stage 1 and stage 2* (`outputs/shift/beyond-the-data/stage1`, `stage2`: the lower edge, M9; stage 2's
+  pre-registration is "version 6", so "the version-6 band" and "the version-6 arm" mean stage 2's standard band and
+  lower-edge arm re-run inside the near-80 run); *step 1 and step 2* (`.../restructure`: the harm switch, M10, and
+  the ramp, M11); *the near-80 run* (version 8: steps 1 and 2 on three settings, seeds 0-4 and fresh seeds 10-14);
+  *the weighting test* (`experiments/shift_iw`, specification version 5); *the four-learner study*
+  (`experiments/shift_hosts`); *the channel check* (`outputs/shift_iw/explore/channel`: the band read at the
+  actor's own command instead of the recorded one); *the signal study* (`experiments/signal`: the dose on the D4RL
+  benchmark hosts and on a linear-quadratic control test bed); *the toy notebooks*.
+- **Settings** (what a study removes from the log): *main* (the ball), *near-80* (the ball plus the hidden throttle
+  band, 70-90%), *random rows* (the ball plus as many random rows as the hidden band holds; the control).
+- **Data qualities**: random, medium-replay, medium, medium-expert, expert: five recording controllers of rising
+  skill, named after D4RL's data sets, one log per seed each, used by the weighting test and the four-learner study.
+- **An arm**: one trained variant (for example "BCA's switched ramp", "no caution") evaluated under the same
+  conditions as its rivals. **The cloned actor**: the actor trained only to imitate the recorded commands, the
+  common starting point of every arm. **Strength**: how far a trained actor moved from the no-caution actor, the
+  root-mean-square change of the command over 5,000 held-out states; rivals are *matched* to BCA's strength before
+  returns are compared. **The hand-set range limit**: the rival that simply caps the throttle at the recorded range.
+  **The knee**: 80% throttle, where the stalling world's thruster push begins to fall.
+- **A posterior draw** (also called a Bayesian-bootstrap or Dirichlet draw): give every held-out score a random
+  weight from an Exponential(1) law and read the weighted 90% quantile; 1,000 such draws form BCA's posterior.
+  **λ_HPD** ("HPD" for highest posterior density): the 95%-credible quantile of the 1,000 draws. **The Bayesian
+  margin**: λ_HPD/λ̂ − 1, the price of the 95% credibility. "BQ-CP" is Snell and Griffiths' name for this posterior
+  with equal weights.
+- **Mark names** (pass/fail rules frozen before a run). The weighting test's marks: WT-M1 (coverage with no shift,
+  pooled in [0.89, 0.94]), WT-M2 (the width's rank correlation with the exact critic error, above 0), WT-M3 (dose
+  mechanics on real rows), W0 (weights of 1 give the standard threshold bit for bit), W1 (weighted coverage under a
+  shift in [0.89, 0.96]), W2 (unweighted coverage under the strong shift below 0.88), W3 (a weighted arm refuses every
+  step inside the ball; and the unweighted band covers less inside the ball than outside), W4 (estimated-weight
+  coverage within 0.02 of exact), R1 and R2 (the dose arm: enough room, and a predicted return change of at least
+  1.8 points), L1-L3 (the lower edge: the oracle penalty helps; the predicted return of BCA's version; BCA's own
+  arm), I1 (whether the training arms ran at all). The four-learner study's stop rules: S2 (weights of 1 equal
+  standard), S3 (the threshold reproduces from the held-out scores at every refresh), S7 (a float32 restatement
+  check). Step 1's go/no-go C1-C3; step 2's go marks G1-G3 and attribution rules A1-A3; the near-80 run's claims 1-4.
+  In these pages "module M1" and "mark WT-M1" are never the same thing; the records themselves call the weighting
+  test's marks M1, M2, M3.
+- **Points and return units**: points put the recording controller at 0 and the world's best scripted controller
+  at 100; a return unit is the simulator's raw return, about 7.6 return units per point in the weighting test's
+  worlds.
+- **The pinned environment**: Python 3.10.20, NumPy 2.2.6, JAX 0.6.2 on CPU, the versions the studies ran under;
+  needed whenever a recomputed number must equal a recorded one to the last bit, because the random streams depend
+  on them. `fold_in(key, n)` is JAX's way of deriving a fixed sub-key from a key. The *Polyak factor* 0.005 is the
+  rate at which the target copies trail the critic.
 
 ---
 
@@ -86,6 +159,22 @@ only*: what the code does; no claim about a result.
 M1 to M7 are BCA as the hosts run it (ALGORITHMS.md, Procedures B to D). M8 to M11 are the four ways the band or its
 parts have been *used*, each a module of its own. The harm switch (M10, M11) reuses M5 but not M2, M3 or M6: there is
 no error-size network in it.
+
+---
+
+## M0. The data (the step every module stands on)
+
+**What it is.** One recorded log per data seed (1,000 episodes of 100 steps, `experiments/shift/dataset.py`), split
+by episode into 500 training, 200 held-out calibration and 300 evaluation episodes; the held-out calibration rows are
+5 rows from each of the 200 calibration episodes; a setting's removal (the ball; in near-80 also the hidden throttle
+band) is taken out of the training and the held-out rows before anything is fitted.
+
+**Checked.** The module pages regenerate each log through the gate's own loader and compare the prepared rows' hashes
+with the band records: equal on 10 of 10 bands (`modules/M1.md` R1), 20 of 20 (`modules/M2.md` 5b, `M3.md` Part C,
+`M6.md` B2), and the survivors' SHA-256 on 30 of 30 certificates (`modules/M10.md` 5.2).
+
+**Verdict: works** (as a reproduction; description only). *Every page below starts from rows that are, hash for hash,
+the rows the studies recorded.*
 
 ---
 
@@ -112,7 +201,7 @@ the saved critic reproduces every downstream number (see M3).
 
 **Pseudocode** (`algorithms/td3_bc_bca.py:146-156`, 170-174):
 ```
-1  [M1.1 target noise]   eps = clip(Normal(0, 0.2^2), -0.5, 0.5), one draw per row from the pinned key
+1  [M1.1 target noise]   eps = clip(Normal(0, 0.2^2), -0.5, 0.5), one draw per row and per thruster from the pinned key
 2  [M1.2 next command]   a' = clip(target_actor(s') + eps, -1, 1)
 3  [M1.3 target]         y = r + 0.98 * (1 - d) * min(targetQ1(s', a'), targetQ2(s', a')); held constant
 4  [M1.4 critic value]   q = min(Q1(s, a), Q2(s, a)) at the RECORDED command a
@@ -161,7 +250,7 @@ coverage) on branch `claude/shift-hosts`.
 **Working as intended means.** (a) η is finite and positive at every row (checked at every fit, `td3_bc_bca.py:215`,
 and refresh, line 261); (b) the fit is accepted on every step; (c) on the held-out rows the share with |y − q| ≤ u·η
 is near 0.9, so the threshold R of M5 comes out near 1 or a little above; (d) η is larger where the critic's true
-error is larger (the weighting test's mark M2).
+error is larger (weighting-test mark WT-M2; the weighting test's marks M1-M3 are pass/fail rules, not modules M1-M3).
 
 **Pseudocode** (`algorithms/td3_bc_bca.py:159-231`; `calibration/network.py:16-31, 34-37, 44-46`):
 ```
@@ -182,15 +271,18 @@ refresh (`experiments/shift/learners.py:1253-1279`, `experiments/shift_iw/learne
 with a balance term (`bca_core.py:325-359`). *Scalar η* (`state_dep=False`, `network.py:28-30`): one number, not used
 by any ThrusterChain study.
 
-**Recorded.** `accepted_share` (1.0 in the near-80 version-6 bands, seed 0, both worlds), the unit, and η at every
-held-out row (`v6_bank_scores.npz` on branch `claude/near80-run-files`). The weighting test's mark M2 (expert): the
-width's rank correlation with the exact critic error, inside each tenth of the current range and after removing the
-effect of the float radius, is 0.063 on average (one-sided lower bound 0.018, so above 0;
-`outputs/shift_iw/v5/expert/report.json`, marks.M2, `given_float_radius_within_deciles`).
+**Recorded.** Every one of the 20,000 fit steps was accepted (`accepted_share` 1.0 in the near-80 version-6 bands,
+seed 0, both worlds), the unit, and η at every held-out row (`v6_bank_scores.npz` on branch `claude/near80-run-files`).
+Weighting-test mark WT-M2, expert quality: the rank correlation between the band's width and the critic's exact
+error, inside each tenth of the current range and after removing the float radius (the size of the boat's position
+and speed numbers), averages 0.063 (one-sided lower bound 0.018, so above 0; the record field is
+`marks.M2.given_float_radius_within_deciles` of `outputs/shift_iw/v5/expert/report.json`). The pass statistic itself
+(within current deciles, no float-radius adjustment) is 0.10-0.33 across the five qualities (`modules/M2.md` 5d).
 
-**Verdict: works with a caveat.** (Mechanics description only; the M2 mark pre-registered.) *The error-size network is
+**Verdict: works with a caveat.** (Mechanics description only; mark WT-M2 pre-registered.) *The error-size network is
 a learned, always-positive scale, fitted every update and accepted every step, but its link to the critic's true error
-is weak: rank correlation about 0.06 within current deciles, just above zero.*
+is weak: rank correlation 0.10-0.33 within current deciles across the five qualities (0.06-0.18 after removing the
+float radius), and on ThrusterChain it is nearly a constant.*
 
 ---
 
@@ -225,10 +317,13 @@ key, then calling M5 with the same random stream, reproduces the stored R, λ̂,
 **Variants.** None in the arithmetic. The group whose scores are taken differs by use: all held-out rows (M5-M7); the
 tail and rest groups of the harm switch use a different residual (M10).
 
-**Recorded.** The weighting test's mark W0 (bit-for-bit reproduction of the stored threshold from recomputed scores):
-pass in 5 of 5 seeds on all five qualities (`outputs/shift_iw/v5/*/report.json`, marks.W0). The four-learner study's
-stop rule S3 (the same check at every weighted refresh): passed (`outputs/shift_hosts_v3/results.json`, integrity.S3).
-The near-80 version-6 bands: `threshold_recomputed.equal: true` (seed 0, both worlds).
+**Recorded.** The weighting test's mark W0 (weights of 1 and a test mass of 1 reproduce the unweighted threshold bit
+for bit): pass in 5 of 5 seeds on all five qualities (`outputs/shift_iw/v5/*/report.json`, marks.W0). The bit-for-bit
+reproduction of the stored threshold from recomputed scores is a refusal gate built into the weighting test's code,
+not a mark (`modules/M3.md`, section 3). The four-learner study's stop rule S3 (that reproduction at every weighted
+refresh): passed, 288 refreshes checked, none not reproduced (`outputs/shift_hosts_v3/results.json`, integrity.S3).
+The near-80 version-6 bands: the recomputed threshold equals the stored one in all 10 seed-worlds (the record flag
+`threshold_recomputed.equal: true`).
 
 **Verdict: works.** (Description only; the reproduction checks pre-registered.) *The scores are a deterministic
 function of the saved networks and the refresh key, and they reproduce BCA's stored threshold bit for bit in every
@@ -255,7 +350,7 @@ a sample of observations from the training law and one from the test law. For th
 - Estimated: a logistic regression of "test sample vs training sample" on the 13-number observation, fitted by
   Newton's method with no penalty (`experiments/shift_iw/classifier.py:69-101`); ŵ(x) = exp(fitted log-odds(x))·n0/n1
   (`classifier.py:42-46`).
-- The test mass: *per step* (the method the owner chose): t = the step's own weight w(x); *single* (kept as a
+- The test mass: *per step* (the method the project chose): t = the step's own weight w(x); *single* (kept as a
   comparison): one t for every step, the mean of w over test-law steps outside the ball, by quadrature
   (`experiments/shift_iw/run.py:549-607`).
 - Effective size (Kish): n_eff = (Σ w)²/Σ w² (`coverage.py:94-97`); as a share of the held-out rows: 1, 0.724, 0.352
@@ -293,8 +388,10 @@ run twice: must be identical) and a shuffled-weights placebo (weights permuted a
 **Recorded** (`outputs/shift_iw/v5/expert/report.json`, branch `main`): W0 pass (5/5 seeds; the same on all five
 qualities). W4: fitted slope on c 0.099 ± 0.22 (exact 0), 2.25 ± 0.28 (exact 2), 4.22 ± 0.24 (exact 4); estimated
 minus exact coverage under the strong shift 0.0079; estimated minus unweighted with no shift 9.1e-5 (W4 pass). W3:
-refused inside 1.0, outside 0.0 in every seed (pass on four qualities; fail on medium-expert for a reason recorded in
-its report, not re-read here).
+refused inside 1.0, outside 0.0 in every seed (the refusal clause passed everywhere; W3's other clause, "the unweighted
+band covers less inside the ball than outside", failed on medium-expert, which is a statement about M6;
+`modules/M4.md`, section 3). The W4 slopes quoted are the expert quality's; over all five qualities the means are
+0.04-0.16, 2.19-2.25 and 4.21-4.28.
 
 **Verdict: works with a caveat.** (W0, W3, W4 pre-registered.) *With weights of 1 BCA is exactly standard BCA, and
 with the known shift the estimated weights recover the true slope within about 10%, but every weight used so far comes
@@ -346,7 +443,8 @@ the same law.
 5  [M5.5 credible]       lambda_HPD = the 950th smallest of the 1,000 crossings   (ceil(0.95 * 1000))
 6  [M5.6 threshold]      R = max(lambda_hat, lambda_HPD); R = +infinity means refusal ("cannot certify")
 7  [M5.7 store]          store R, lambda_hat, lambda_HPD, n_eff in float32 with eta_f and u_f; a finite R that
-                         overflows float32 is refused; an invalid refresh keeps the previous reference unchanged
+                         overflows float32 makes the refresh INVALID (not a refusal); an invalid refresh keeps the
+                         previous reference unchanged
 8  [M5.8 schedule]       co-training: refresh at update 10,000, then every 5,000, last at 95,000 of 100,000
                          (18 refreshes); on a frozen critic: 20,000 fit steps, then one refresh
 9  [M5.9 per-step table] with weights: R(t) at every t = 1.01^k from the smallest to the largest mass looked up,
@@ -364,11 +462,12 @@ variant: every 5,000 updates in co-training versus one refresh on a frozen criti
 BCA run records). Near-80 version-6 bands (seed 0): R = 1.469 (stalling world, 821 held-out rows, λ̂ = 1.363,
 λ_HPD = 1.469) and 1.533 (no-stall, 823 rows) (`.../learners/near80/{stall,no_stall}/seed0/v6_band.json`). The
 certificate's R_tail per group size follows rule (b) in all 40 recorded seed-worlds: finite for every n_tail ≥ 30,
-+infinity for every n_tail ≤ 28, and at n_tail = 29 two infinite and one finite (`scripts/certificate_table.py`;
-the table is in M10). Each band record of the weighting test stores whether its per-step table was monotone and
-whether the running maximum changed anything (`monotone`, `running_max_applied` in `tables`); those records live in
-the run folder `runs/shift_iw_v5`, which is not committed and was not re-read here; synthetic check 4 found R(t)
-monotone on a 402-point grid.
++infinity for every n_tail ≤ 28, and at n_tail = 29 one finite and two infinite, the two infinite ones being one
+random stream applied to two score vectors (`scripts/certificate_table.py`; the table is in M10; `modules/M5.md`,
+table R2). Each band record of the weighting test stores whether its per-step table never fell along the grid and
+whether the running maximum changed anything (the fields `monotone` and `running_max_applied` in `tables`); those
+records live in the run folder `runs/shift_iw_v5`, which is not committed and was not re-read here; synthetic check 4
+found R(t) monotone on a 402-point grid.
 
 **Synthetic checks** (`scripts/threshold_checks.py`, run with the repository's `calibration/wbcp.py`, NumPy 2.5.4):
 check 1, the share of random score sets with a finite R matched the binomial prediction at every n (for example 39.0%
@@ -382,7 +481,7 @@ random streams, while at 843 scores it moved by at most 2.1%.
 
 **Verdict: works.** (Unit-tested; W0 pre-registered; the synthetic checks are new.) *The threshold is the published
 weighted Bayesian conformal rule, it reproduces bit for bit, and it refuses exactly as the binomial arithmetic
-predicts: almost never below 26 held-out rows, always from 36 up, and by chance in between.*
+predicts: almost never at 24 or fewer held-out rows, always from 33 up, and by chance in between.*
 
 ---
 
@@ -404,7 +503,8 @@ refusal); `calibration/network.py:40-41` (hard_coverage); `experiments/shift_iw/
 U_max for a refused band `stage2/code/band.py:153-158`; the near-80 width readout `near80/code/v6bca.py:90-93`.
 
 **Working as intended means.** On fresh held-out rows from the same law as the calibration rows, the share covered is
-near 0.90 (the weighting test's bar [0.89, 0.94] pooled over seeds, each seed at least 0.86: mark M1). Under a shift,
+near 0.90 (the weighting test's bar [0.89, 0.94] pooled over seeds, each seed at least 0.86: weighting-test mark
+WT-M1, judged on test steps outside the removed ball). Under a shift,
 the unweighted band's coverage drops (W2: below 0.88) and the weighted band restores it (W1: in [0.89, 0.96]).
 
 **Pseudocode** (`calibration/dose.py:65-95`; `coverage.py:262-273, 290-303`):
@@ -421,15 +521,16 @@ the unweighted band's coverage drops (W2: below 0.88) and the weighted band rest
 threshold for every row (standard) or each row's own threshold R(w_i) (per-step); U_max in place of +infinity (stage 2,
 near-80); the largest finite threshold of the table in place of +infinity (the weighting test's lower edge).
 
-**Recorded** (`outputs/shift_iw/v5/expert/report.json`, branch `main`; the same marks pass on all five qualities,
-`outputs/shift_iw/v5/summary.json`): M1, no shift, unweighted: 0.914 (5 seeds, interval 0.896-0.932). W2, strong
+**Recorded** (`outputs/shift_iw/v5/expert/report.json`, branch `main`; marks WT-M1, W1 and W2 pass on all five
+qualities, `outputs/shift_iw/v5/summary.json`; W3 fails on medium-expert, see `modules/M6.md`): WT-M1, no shift,
+unweighted: 0.914 (5 seeds, interval 0.896-0.932). W2, strong
 shift, unweighted, outside the ball: 0.833 (interval 0.801-0.865; the bar is "below 0.88"). W1, per-step exact
 weights: 0.919 under the strong shift, 0.913 under the mild (single test mass: 0.912, 0.912). Inside the ball (the
 removed commands) the unweighted band covered only 0.769 under the strong shift and 0.808 under the mild (W3); the
 weighted arms refuse every such step. Synthetic check 6: R = 1.413 on 843 synthetic held-out rows gave coverage 0.921
 on 20,000 fresh rows.
 
-**Verdict: works with a caveat.** (M1, W1, W2 pre-registered.) *The band covers 90% of fresh rows from the same law
+**Verdict: works with a caveat.** (WT-M1, W1, W2 pre-registered.) *The band covers 90% of fresh rows from the same law
 and the weighted band keeps 90% under the known shift, but it is a band on the one-step target, not on the true value,
 it holds on average over rows, and where the training data are missing (inside the ball) it is too narrow by a tenth.*
 
@@ -444,9 +545,11 @@ the band is wide relative to the unit.
 **Outputs.** m_i per batch row, detached from every gradient.
 
 **Formula.** m_i = 1 + blend · U_i/(U_i + u_f), blend = 0.5. TD3+BC's actor loss every second update:
-−λ·mean_i Q1(s_i, π(s_i)) + mean_i m_i · mean_j (π(s_i)_j − a_ij)², λ = α/mean_i |Q1(s_i, π(s_i))| (held constant).
+−λ·mean_i Q1(s_i, π(s_i)) + mean_i m_i · mean_j (π(s_i)_j − a_ij)², λ = α/mean_i |Q1(s_i, π(s_i))| (detached from
+the gradient and recomputed at every actor update).
 
-**Constants.** blend 0.5 (so m < 1.5); α = 2.5 (D4RL hosts and the weighting test), 5.0 in the near-80 actor-only
+**Constants.** blend 0.5 (so m < 1.5 on every recorded row; float32 reaches exactly 1.5 only for widths about 5.6
+million times the unit, `modules/M7.md`); α = 2.5 (D4RL hosts and the weighting test), 5.0 in the near-80 actor-only
 runs; policy delay 2; the ratio is computed as a normalized fraction to avoid overflow (`dose.py:50-60`).
 
 **Where it lives.** `calibration/dose.py:23-62` (level_critic_dose; ratio at 59, dose at 60), 65-95
@@ -471,7 +574,7 @@ weights of 1 the per-row dose equals standard BCA's bit for bit.
 5  [M7.5 not ready]      before the first refresh m_i = 1
 6  [M7.6 use]            every 2nd update: loss = -lambda * mean_i Q1(s_i, pi(s_i))
                                                 + mean_i m_i * mean_j (pi(s_i)_j - a_ij)^2,
-                         lambda = alpha / mean_i |Q1(s_i, pi(s_i))| (held constant); m is detached
+                         lambda = alpha / mean_i |Q1(s_i, pi(s_i))| (detached, recomputed every actor update); m is detached
 7  [M7.7 per-row]        with weights: m_i uses the row's own threshold R(w_i) from the table (M5.9)
 ```
 
@@ -481,7 +584,8 @@ diagnostics of the main study ("flattened": every row the batch mean; "shuffled"
 (the same formula in a two-step world).
 
 **Recorded.**
-- Mechanics (`outputs/shift_iw/v5/expert/report.json` marks.M3, pass on all five qualities): over 42,500 kept training
+- Mechanics (weighting-test mark WT-M3; `outputs/shift_iw/v5/expert/report.json` marks.M3, pass on all five
+  qualities): over 42,500 kept training
   rows per seed, the largest fall of the dose as the width rises was 1.19e-7 (one float32 step; the bar 1e-6), the
   largest gap to the closed form 1.04e-7, refused rows 0. The bit-for-bit identities are tested in
   `test_learners_iw.py:494, 524` and were the four-learner study's stop rule S2 (passed).
@@ -500,9 +604,9 @@ diagnostics of the main study ("flattened": every row the batch mean; "shuffled"
 - Toy (`bca_channel_toy.ipynb`, branch `main`): A2 (this dose in a discrete host) had regret 0.38 against 0.12 for a
   rule that simply refuses thin data; shelved by its pre-written kill rule.
 
-**Verdict: works with a caveat.** (Mechanics M3, W0 pre-registered; effects exploratory.) *The dose is computed
+**Verdict: works with a caveat.** (Mechanics WT-M3, W0 pre-registered; effects exploratory.) *The dose is computed
 exactly as specified, stays in [1, 1.5) and is monotone in the width, but it saturates, so weighting moves it by only
-0.04-0.05 and no study has shown it raises return.*
+0.02-0.05 (TD3+BC; 0.14 for CQL) and no study has shown it raises return.*
 
 ---
 
@@ -517,7 +621,8 @@ takes the best remaining action.
 **Formula.** a* = argmax_a [q(t, c, a) − 1.0 · U(t, c, a)], U = r_t · scale(t, c, a), r_t the exact BCA threshold
 on all held-out scores of step t (survivors of the risky action included).
 
-**Constants.** Gain 1.0; α 0.1, β 0.95; the toy's per-cell scale (pooled residual SD, shrunk with 5 pseudo-rows).
+**Constants.** Gain 1.0; α 0.1, β 0.95; the toy's per-cell scale (each cell's own residual SD shrunk toward the
+step's pooled SD with 5 pseudo-rows, floor 0.05; the gap cell, which has no training rows, gets the pooled SD).
 
 **Where it lives.** `bca_channel_toy.ipynb` on branch `main`, cell 12 (the rule cell): `width = stack(r0*scale[0],
 r1*scale[1])`, `A1 = (q - GAIN*width).argmax(-1)`, `A2 = bc_policy(q, n, 1 + BLEND*width/(width + unit))` (lines
@@ -600,7 +705,8 @@ used for a claim); the near-80 "version-6" arm (uniform, k = 1, on the fixed-con
   weighted band's scale change) was −0.37 points on expert and +1.15 on medium-expert, below the 1.8 needed, so L3 is
   "not run" everywhere. The high-current rows' threshold ratio R(w)/R_u − 1 was +0.51 (expert) and +0.76
   (medium-expert) under the strong shift (marks.L2). The proxy check found check (e)'s part e4 failing on some seeds
-  for BCA's penalty (marks.L2.proxy_check).
+  for BCA's penalty, and a ratio of means of BCA's penalty to the exact one-step oracle's of 0.005-0.04, not near 1
+  (marks.L2.proxy_check; `modules/M9.md`, R2).
 - Near-80 (exploratory, seeds 0-4, `.../near80/results-20261020T115246Z/files/looks/exploratory.md`): in the near-80
   setting, strong current, stalling world, version 6's BCA (this module at k = 1) scored −13.0 points; the controller
   trained without caution scored −13.2; BCA's switched ramp (M11) 87.4. Its strength (how far it moved the actor:
@@ -608,8 +714,11 @@ used for a claim); the near-80 "version-6" arm (uniform, k = 1, on the fixed-con
   in every seed and both worlds, against 0.146-0.172 for the switched ramp in the stalling world and 0.14-0.16 for the
   hand-set range limit (`looks/exploratory.json`, reported.locks.near80.{stall,no_stall}.<seed>.strengths). In
   words: the lower edge left the actor where it was.
-- Stage 2's own run (version 6, the main setting) and its result letters are in
-  `outputs/shift/beyond-the-data/stage2_v7/` and `results-2026-10-13/`; not re-read for this document.
+- Stage 2's own run (version 6, the main setting): the arm that trained used the classifier-weighted band, not the
+  standard one, because the standard band failed the pre-registered detection marks (direction 0.50 / 0.73, size
+  0.0004); it scored 24.9 points pooled in strong current against −14.3 for no caution and 93.1 for the hand-set
+  range limit, and cost 14.8 points in the no-stall world (`modules/M9.md`, section 5;
+  `outputs/shift/beyond-the-data/results-2026-10-13/README.md` and `results-2026-10-14/`).
 
 **Verdict: does not work.** (Mechanics tested; effects exploratory, with the weighting test's marks pre-registered.)
 *The arithmetic is right and the same penalty driven by the exact error helps, but with BCA's band the penalty is too
@@ -646,8 +755,8 @@ rule), 216-221 (overestimate), 226-234 (pairwise quantile), 237-241 (posterior),
 (overestimates), 186-196 (groups), 199-236 (switch); step 1's `PRESPEC.md` sections "Scores" and "Certificate".
 
 **Working as intended means.** On in the stalling world and off in the no-stall world; shuffling the scores between
-the groups switches it off; the height is finite whenever the tail holds at least 36 rows (M5's rule) and may be
-infinite below that.
+the groups switches it off; the height is finite exactly as often as M5's group-size rule says: never at 24 or fewer
+tail rows, with probability 0.003 at 25 rising to 1.000 at 33 (`modules/M10.md`, section 3).
 
 **Pseudocode** (`step1lib.py:174-276`; `learner_phases.py:156-236`):
 ```
@@ -667,6 +776,7 @@ infinite below that.
 9   [M10.9 height]           h = R_tail - R_rest, each R = max(lambda_hat, lambda_HPD) of its group;
                              h = +infinity when the tail cannot be certified
 10  [M10.10 shuffle control] permute the pooled scores between the groups and recompute with the same streams
+                             (in step 1's record only; the near-80 run did not run it; modules/M10.md reruns it)
 ```
 
 **Variants.** Step 1's form (both groups get BCA's posterior; margin 0.10) versus the design's earlier form (the
@@ -790,8 +900,8 @@ weighted version gives a *higher* penalty with no shift, why. The records answer
    law was 0.10 ± 0.22 (exact 0), and coverage differed from the unweighted band by 9.1e-5 (W4, expert).
 3. *Under the known shift the weighted threshold rises, in the right direction.* The high-current rows' threshold
    ratio R(w)/R_u − 1 was +0.51 (expert) and +0.76 (medium-expert) under the strong shift; coverage went from 0.833
-   (unweighted) to 0.919 (weighted). The dose moved up by 0.04-0.05 (weighting test) and by about 0.14 (CQL,
-   four-learner, from 1.35 to 1.49).
+   (unweighted) to 0.919 (weighted). The dose moved up by 0.02-0.05 (weighting test, per-quality means +0.018 to
+   +0.053) and by about 0.14 (CQL, four-learner, from 1.35 to 1.49).
 4. *The dose saturates.* 1 + 0.5·U/(U + u) is 1.455 already at U = 10u, so whenever the band is wide relative to the
    unit the dose is near 1.5 and further widening does almost nothing. This is why weighting barely moves the dose
    (R2 failed) while the lower edge, which is linear in U, moves by 50-76% on the same rows.
@@ -811,14 +921,57 @@ weighted version gives a *higher* penalty with no shift, why. The records answer
 9. *The lower edge with BCA's band does nothing.* Version 6's BCA: −13.0 against −13.2 for no caution (near-80,
    seeds 0-4), strength 0.02 in every seed and world against 0.15-0.17 for the ramp; the same penalty with the exact
    error helps (L1 pass on expert, medium-expert).
-10. *An invalid refresh is silent.* `td3_bc_bca.py:271-272` keeps the previous reference and reports
-    `posterior_inputs_valid: false`; the count is `uncertified_refreshes` in BCA run records. None was recorded in the
-    weighting test's band records read here.
+10. *An invalid refresh is silent.* `td3_bc_bca.py:271-272` keeps the previous reference and reports that the
+    posterior's inputs were not valid (the record flag `posterior_inputs_valid: false`); the number of such refreshes
+    in a run is the record field `uncertified_refreshes`. None was recorded in the weighting test's band records read
+    here.
+
+---
+
+## Corrections found by the module pages (the pages are right where they differ from this map)
+
+- M1: the target noise is one draw per row *and per thruster*; at a live update the host's own target and BCA's use
+  different noise keys (identical under one key). (`modules/M1.md`, section 3.)
+- M2: the state normalization happens in the data pipeline, not in the network; η ≥ 0.01 and the floor is reached
+  at extreme inputs; the loss settles at about 0.87 coverage, not 0.90; the verdict's "about 0.06" was the expert
+  quality's float-radius-adjusted value, while the pass statistic is 0.10-0.33 across qualities (0.06-0.18 after
+  removing the float radius); replacing η by its average lowers held-out coverage by under one point. (`M2.md`,
+  sections 3, 5c and 5d.)
+- M3: the score line is `reference.py:175`; the weighting test's bit-for-bit score reproduction is a refusal gate in
+  its code, not mark W0 (W0 is the weights-of-1 check); `threshold_recomputed.equal` is true on all 10 near-80
+  seed-worlds, not only seed 0. (`M3.md`, section 3.)
+- M4: W3's refusal clause passed everywhere; the medium-expert failure is W3's other clause, "the unweighted band
+  covers less inside the removed ball than outside", which is about M6; the W4 slopes quoted are the expert
+  quality's; estimated no-shift weights moved the threshold by 5% or more on 2 of 25 seeds, not 1. (`M4.md`,
+  sections 3 and 5.)
+- M5: a finite R that overflows float32 makes the refresh *invalid* (previous reference kept), not refused; the
+  refusal zone is "never at 24 or fewer rows, by chance at 25-32, always from 33"; the two infinite 29-row
+  certificates share one random stream. (`M5.md`, sections 1, 3 and 5.)
+- M6: W3 fails on medium-expert, so "the same marks pass on all five qualities" holds for WT-M1, W1 and W2 only;
+  stage 2 and near-80 multiply (R·u)·η while `dose.py` computes R·(η·u): the same formula, up to 5 float32 steps
+  apart. (`M6.md`, section 3.)
+- M7: in float32 the dose reaches exactly 1.5 from U/u of about 5.6 million (never on record); λ is recomputed at
+  every actor update (detached, not held fixed); R2 failed on medium-expert and expert and passed with a large
+  negative prediction elsewhere; strong-shift weights move the dose by +0.02 to +0.05, not 0.04-0.05.
+  (`M7.md`, section 3.)
+- M8: the toy's scale is each cell's own residual SD shrunk toward the step's pooled SD, and the gap cell gets the
+  pooled SD; the rule changes decisions at every cell; the notebook uses the exact binomial threshold, not the
+  1,000-draw sampler. (`M8.md`, section 3.)
+- M9: stage 2's trained arm used the classifier-weighted band, not the standard one; the recorded proxy check gives
+  a ratio of 0.005-0.04, not "near 1". (`M9.md`, section 3.)
+- M10: the height is finite with probability 0.003 at 25 rows rising to 1.000 at 33, not "finite whenever at least
+  36"; the shuffle control exists only in step 1's record. (`M10.md`, section 3.)
+- M11: the arm table is built from both worlds' records, so an infinite stalling-world height also refuses that
+  seed's no-stall world; `meandiff_k1` and `knee_ramp` are near-80 arms. (`M11.md`, section 3.)
+
+The one-line statements above that this page itself quoted have been corrected in place (M1.1, M2's verdict, M5.7
+and M5's verdict, M6's recorded marks, M7's 0.02-0.05, M10's "working as intended").
 
 ---
 
 ## How to reproduce the numbers in this document
 
+- Every module page's scripts, with their commands and environments: `docs/bca_mechanics/README.md`.
 - `docs/bca_mechanics/scripts/certificate_table.py` (standard library): prints every certificate of the near-80 run
   and of step 1 with M5's expectation for its tail size, and the three recorded stops. Run from the repository root:
   `python docs/bca_mechanics/scripts/certificate_table.py`.
@@ -843,16 +996,18 @@ M1 residual; M2 error-size network and unit; M3 scores; M4 weights; M5 threshold
 the behavior-cloning term; M8 width penalty on critic values (toy); M9 lower edge; M10 harm switch certificate;
 M11 ramp height.
 
-| Module | Verdict | Evidence label |
-|---|---|---|
-| M1 residual | works | description only |
-| M2 error-size network and unit | works with a caveat | description; the M2 mark pre-registered |
-| M3 scores | works | description; W0 and S3 pre-registered |
-| M4 weights | works with a caveat | W0, W3, W4 pre-registered |
-| M5 threshold with refusal | works | unit tests; W0 pre-registered; synthetic checks new |
-| M6 band | works with a caveat | M1, W1, W2 pre-registered |
-| M7 dose | works with a caveat | M3 pre-registered; effects exploratory |
-| M8 width penalty (toy) | does not work | toy; kill rules written before the run |
-| M9 lower edge | does not work | mechanics tested; effects exploratory |
-| M10 harm switch certificate | works with a caveat | step 1 exploratory; near-80 seeds 10-14 pre-registered |
-| M11 ramp height | works with a caveat | step 2 exploratory; near-80 claim 4 pre-registered, failed by rule |
+| Module | Verdict | Evidence label | Page |
+|---|---|---|---|
+| M1 residual | works | description only | `modules/M1.md` |
+| M2 error-size network and unit | works with a caveat | description; mark WT-M2 pre-registered | `modules/M2.md` |
+| M3 scores | works | description; W0 and S3 pre-registered | `modules/M3.md` |
+| M4 weights | works with a caveat | W0, W3, W4 pre-registered | `modules/M4.md` |
+| M5 threshold with refusal | works | unit tests; W0 pre-registered; synthetic checks new | `modules/M5.md` |
+| M6 band | works with a caveat | WT-M1, W1, W2 pre-registered | `modules/M6.md` |
+| M7 dose | works with a caveat | WT-M3 pre-registered; effects exploratory | `modules/M7.md` |
+| M8 width penalty (toy) | does not work | toy; kill rules written before the run | `modules/M8.md` |
+| M9 lower edge | does not work | mechanics tested; effects exploratory | `modules/M9.md` |
+| M10 harm switch certificate | works with a caveat | step 1 exploratory; near-80 seeds 10-14 pre-registered | `modules/M10.md` |
+| M11 ramp height | works with a caveat | step 2 exploratory; near-80 claim 4 pre-registered, failed by rule | `modules/M11.md` |
+
+The penalty question (IID against shifted, standard against importance-weighted): `PENALTY_EVIDENCE.md`.

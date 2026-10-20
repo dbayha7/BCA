@@ -314,8 +314,9 @@ def case_3(inp, out):
     diffs = [r["T1_command_minus_cap_harmful"] for r in u] + [r["T3_command_minus_cap_harmful"] for r in u]
     shift_ratio = [r["T3_command_all"] / r["T1_command_all"] for r in u]
     print(f"  Count (uniform): command minus cap on harmful pairs is {min(diffs):+.4f} to {max(diffs):+.4f} (10 seed-sets); the band at")
-    print(f"  shifted states (T3) is {min(shift_ratio):.2f} to {max(shift_ratio):.2f} times the band at IID states (T1). The false preference it had")
-    print("  to cancel was 0.63-0.89 (results-2026-10-13/README.md). Takeaway: flat, in every seed.")
+    print(f"  shifted states (T3) is {min(shift_ratio):.2f} to {max(shift_ratio):.2f} times the band at IID states (T1). The critic's over-preference")
+    print("  it had to cancel (Q1 gap minus true gap on harmful pairs) was 0.88-1.12 at training states and 2.81-2.88 in strong")
+    print("  current (modules/M9.md, table R2; data/M9/M9_r2.json, mean_over_pref_harmful). Takeaway: flat, in every seed.")
     w = res["weighted"]
     print(f"  Weighted version at recorded (IID) rows, T4: {lst([r['T4_recorded_all'] for r in w], 3)} against uniform "
           f"{lst([r['T4_recorded_all'] for r in u], 3)}: higher on {sum(a['T4_recorded_all'] > b['T4_recorded_all'] for a, b in zip(w, u))} of 5 seeds,")

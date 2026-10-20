@@ -509,6 +509,7 @@ def figure(rows):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     from matplotlib.lines import Line2D
 
     BLUE, ORANGE, AQUA, INK, MUTED = "#2a78d6", "#eb6834", "#1baf7a", "#0b0b0b", "#52514e"

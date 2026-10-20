@@ -455,6 +455,7 @@ def figure(path, s4, s6, real):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     import matplotlib.ticker
     # Okabe-Ito colorblind-safe palette
     BLUE, ORANGE, GREEN, PURPLE, BLACK, SKY = "#0072B2", "#E69F00", "#009E73", "#CC79A7", "#000000", "#56B4E9"

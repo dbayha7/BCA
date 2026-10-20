@@ -564,6 +564,7 @@ def figure(table, pts, heights):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     # Okabe-Ito, colorblind-safe
     C = dict(blue="#0072B2", orange="#E69F00", green="#009E73", purple="#CC79A7", black="#000000", sky="#56B4E9", verm="#D55E00")
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12.5, 4.8))

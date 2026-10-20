@@ -494,6 +494,7 @@ def figure(results, rec, r2):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    plt.rcParams["svg.fonttype"] = "none"  # keep the figure's text as text, not outlines
     # the data-viz reference palette's first three categorical slots (validated for colorblind separation) and ink
     BLUE, ORANGE, GREEN, INK = "#2a78d6", "#eb6834", "#1baf7a", "#222222"
     GRAY = INK                                                   # the no-caution baseline is a reference mark, not a series hue
