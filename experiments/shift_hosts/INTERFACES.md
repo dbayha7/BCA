@@ -20,10 +20,12 @@ Contents: 1 ownership, 2 environments and running, 3 conventions, 4 seeds and ke
 prepared-data file, 7 `handoff`, 8 `gate` and `guard`, 9 `bca_core`, 10 the restated steps, 11 `iw`, 12 scoring-side
 files, 13 the run record, 14 `tests/madeup.py` and test conventions, 15 words, 16 run folders, lanes, the stage
 driver's files and command lines, 17 `results.json` and where each of its fields comes from (the export/runner
-mapping).
+mapping), 18 version 4's S7 supplement (`supplement.py`, its root, `state.json` `s7_results` and the keys it adds to
+`results.json`).
 
 This file was brought up to date with the code as built at the end of stage 0 (sections 3, 10, 13, 16 and 17); it is
-frozen with the code (it is in the code manifest).
+frozen with the code (it is in the code manifest). Version 4 (post hoc, PRESPEC.md section 21) adds section 18 and
+marks its changes in sections 16 and 17 "version 4".
 
 ---
 
@@ -47,8 +49,8 @@ copies them into WSL.
 | suite (later) | `tests/test_all_stage0.py` (card timing, the S0 summary and the code manifest draft) |
 
 Not in this table: `PRESPEC.md`, `prespec.json` and `approve_hosts.py` (written after the build, frozen before any
-run; `approve_hosts.py` writes the approval file of section 8, and only the user runs it). `run_tests.sh` sits in the
-staging folder beside the package and is not part of it.
+run; `approve_hosts.py` writes the approval file of section 8, and only the user runs it), and `supplement.py`, which
+version 4 added (section 18). `run_tests.sh` sits in the staging folder beside the package and is not part of it.
 
 ## 2. Environments and how to run
 
@@ -61,8 +63,9 @@ staging folder beside the package and is not part of it.
 
 - No process holds both a Unifloral network and the simulator; whatever needs both goes by file (`handoff.py`).
 - Modules that must import in both environments: `__init__.py`, `handoff.py`, `gate.py`, `guard.py`, `tests/__init__.py`,
-  `tests/madeup.py`, and (it needs JAX, flax, optax, scipy only) `bca_core.py`. Keep the package `__init__.py` empty of
-  imports.
+  `tests/madeup.py`, `supplement.py` (version 4: the standard library, `gate` and `handoff` at module level; `claims`,
+  `export` and `budget` inside the functions that use them), and (it needs JAX, flax, optax, scipy only) `bca_core.py`.
+  Keep the package `__init__.py` empty of imports.
 - Work from `/root/bca-hosts` (WSL, as root). `/root/bca-shift` is read-only. Never edit files inside
   `/root/bca-hosts`: edit the staging folder, then
   `MSYS_NO_PATHCONV=1 wsl -u root -- bash /mnt/c/Users/David/AppData/Local/Temp/claude/C--Users-David-dev-BCA/3bdab4f0-86ee-439c-a05a-34828d6b0a71/scratchpad/wf8/pkg/sync.sh`.
@@ -705,9 +708,11 @@ m.arrays()      # flat names for handoff.write
 
 ## 16. Run folders, lanes, the stage driver's files and command lines (runner.py, stages.py, band_readout.py)
 
-`<root>` is the stage driver's `--root`: `runs/shift_hosts` for the real study (`runner.RUNS`); the dry run defaults
-to `runs/shift_hosts/stage0/runner/dryrun`. `<label>` is the prepared file's quality label: the quality itself for real
-runs, `made-up-<quality>` in the dry run (`stages.Driver.card_job`).
+`<root>` is the stage driver's `--root`: for the real study `runs/shift_hosts` (`runner.RUNS`) up to version 3, and
+version 4's `runs/shift_hosts/supplement_v4` (`supplement.ROOT`, the default and the only real root; section 18); the
+dry run defaults to `runs/shift_hosts/stage0/runner/dryrun` and refuses both real roots and any folder inside the
+supplement's. `<label>` is the prepared file's quality label: the quality itself for real runs, `made-up-<quality>` in
+the dry run (`stages.Driver.card_job`).
 ```text
 <root>/data/<quality>/seed<k>.npz                      the dry run's made-up prepared files (real runs read
                                                        runs/shift_hosts/data/<quality>/seed<k>/prepared.npz, section 6)
@@ -727,23 +732,33 @@ runs, `made-up-<quality>` in the dry run (`stages.Driver.card_job`).
                                                        checked by its sidecar and by the SHA-256 coverage.json names
                                                        (arrays_npz_sha256), not by handoff.read
     lanes/s7-step<final>/states.npz, commands.npz, s7.json   S7's lane: seed 0's alone, standard and IW final actors
-                                                       and every stage-1 actor ({passed, s7_passed, closed_loop, ...})
+                                                       and every stage-1 actor ({passed, s7_passed, closed_loop, ...});
+                                                       version 4 (s7_all_seeds): every seed's (lane <run>/s7)
+    lanes/s7-step<half>/ (the same files)              version 4 (s7_half): S7 on the 50% actor (50,000 steps) of
+                                                       the same runs (lane <run>/s7-<half>); stages._lane_step reads
+                                                       the step from the folder name
 <root>/driver/status.json (+ sidecar)                  {schema "shift-hosts-driver-status-v1", mode "real" | "dry-run",
                                                        state, phase, pid, started_utc, updated_utc, concurrency, card,
                                                        lanes, counts, budget, decisions, checks {name: passed},
                                                        claim0_failures, accepted_s5, s7_stopped, stop, notes,
-                                                       last_events}
+                                                       last_events; version 4: s7_results (how many), supplement};
+                                                       version 4 drops nothing: counts.cards_dropped and
+                                                       counts.lanes_dropped stay 0
 <root>/driver/state.json (+ sidecar, + .prev)          {schema "shift-hosts-driver-state-v1", mode, config (learners,
-                                                       qualities, seeds, device, choice 19, schedule: a resume must
-                                                       match it), decisions {s6 (with stage1_records, decided_utc: a
-                                                       resume reuses it while stage 1's records are unchanged),
-                                                       concurrency}, checks, claim0_failures [{run, step, reason}],
-                                                       accepted_s5 [run ids], card_walls, s9_reference {signature
-                                                       (runner.env_signature), source}, lanes_done,
+                                                       qualities, seeds, device, choice 19, schedule; version 4: plan,
+                                                       s7_all_seeds, s7_half: a resume must match it), decisions {s6
+                                                       (with stage1_records, decided_utc: a resume reuses it while
+                                                       stage 1's records are unchanged), concurrency}, checks,
+                                                       claim0_failures [{run, step, reason}], accepted_s5 [run ids],
+                                                       card_walls, s9_reference {signature (runner.env_signature),
+                                                       source}, lanes_done,
                                                        s7_stopped [{quality, learner, scope "learner"|"iw", setup,
-                                                       run, stage, file, at_utc}] (version 3: a failed S7 check
-                                                       stops its learner, or only its IW setup, in that quality;
-                                                       stages.S7_SCOPE)}
+                                                       run, stage, file, at_utc; version 4: step, version 4}]
+                                                       (version 3: a failed S7 check stops its learner, or only its
+                                                       IW setup, in that quality; stages.S7_SCOPE; version 4: it is
+                                                       recorded once per run and scope and drops nothing; the key
+                                                       keeps its name), s7_results and supplement (version 4,
+                                                       section 18)}
     checks (each with passed)                          S2/<learner> (with uncertified_refreshes and, when a refresh
                                                        could not certify, its note), S8/<learner>, S4/<learner>,
                                                        S10/<learner>/<setup> (stage 1; readout true for choice 19's
@@ -753,15 +768,24 @@ runs, `made-up-<quality>` in the dry run (`stages.Driver.card_job`).
                                                        had a record), S4/<quality>/seed<k>/<learner>,
                                                        S4/<quality>/seed<k>/<learner>/room,
                                                        S7/<quality>/seed0/<learner>/<setup> (scoped_stop on a
-                                                       failed check; skipped for a run of a scope S7 stopped before
-                                                       it trained or before its lane ran), S9/<run id> (on failure)
+                                                       failed check; version 3: skipped for a run of a scope S7
+                                                       stopped before it trained or before its lane ran; version 4:
+                                                       every planned seed-0 run, none skipped; seeds 1-4 and the 50%
+                                                       actors write no check key, only s7_results), S9/<run id> (on
+                                                       failure)
 <root>/driver/driver.log                               "[<utc>] <message>" lines; "<run id>: S5 accepted by the operator
                                                        as the setup's outcome (--accept-s5)" (also state.json
-                                                       accepted_s5)
+                                                       accepted_s5); version 4: "version 4: stage-2 plan ...; S7 on
+                                                       ...", "S7 (version 4): <lane>: the float32 check failed (see its
+                                                       s7.json); recorded with its scope (<learner L | L's IW setup>
+                                                       on <quality>); nothing is dropped; no judged result changes
+                                                       (version 3's are carried), and the supplement's numbers are
+                                                       shown, never judged"
 <root>/driver/driver.lock                              flock held for the driver's life: one driver per root
 <root>/driver/STOP.json, STOP.txt (+ sidecar)          a halt {schema "shift-hosts-driver-stop-v1", mode, rule, reason,
                                                        at_utc, phase, run, budget, claim0_failures, s7_stopped,
-                                                       next_steps};
+                                                       next_steps}; version 4's STOP.txt adds a line with the number
+                                                       of S7 failures recorded so far and their runs;
                                                        --resume-after-stop moves them to STOP.json.<time>,
                                                        STOP.json.sha256.<time>, STOP.txt.<time>
 <root>/driver/ledger.json (+ .prev)                    budget.Ledger: mode, stage0, card intervals and processor
@@ -769,7 +793,8 @@ runs, `made-up-<quality>` in the dry run (`stages.Driver.card_job`).
                                                        heartbeat; recovered entries of runs that finished unwatched;
                                                        the driver's own time under kind "driver")
 <root>/driver/logs/<job>.log, nohup.out, STOP_REQUEST
-outputs/shift_hosts/results.json (+ sidecar)           export.py (section 17)
+outputs/shift_hosts/results.json (+ sidecar)           export.py (section 17); version 4: supplement.py export,
+                                                       version 3's file plus three keys (section 18)
 ```
 Stage 3's twins (section 3), when they exist, go under `<root>/stage3/` in the same layout.
 
@@ -780,14 +805,18 @@ environment). Everything that touches real data refuses without the user's termi
 python -m experiments.shift_hosts.stages start --stage0-card-hours <h> --stage0-processor-hours <h>  # detached
 python -m experiments.shift_hosts.stages run [--dry-run] [--root R] [--learners ...] [--qualities ...] [--seeds ...] \
     [--card-device cpu|gpu] [--card-cores 0 1] [--lane-cores 2 ... 9] [--choice19 learner=yes|no ...] \
-    [--accept-s5 RUN_ID ...] [--inject RUN_ID=unit0:<step>|nan:<step>] [--replace-incomplete RUN_ID ...] \
-    [--resume-after-stop] [--caps card,processor]
-# On real data the driver takes learners, qualities, seeds, choice 19 and the S9 signature from prespec.json and refuses
-# --dry-run roots, --root other than runs/shift_hosts, --learners/--qualities/--seeds/--choice19/--card-device that
-# differ from prespec.json, --caps, --inject, more than 2 card cores or 8 lanes; it requires S0 (gate.require_s0) and
-# stage 0's compute entry before it writes anything. A dry run never uses runs/shift_hosts.
-python -m experiments.shift_hosts.stages status [--root R | --dry-run]
-python -m experiments.shift_hosts.stages request-stop [--root R | --dry-run]
+    [--accept-s5 RUN_ID ...] [--inject RUN_ID=unit0:<step>|nan:<step>|s7fail] [--replace-incomplete RUN_ID ...] \
+    [--resume-after-stop] [--caps card,processor] [--supplement-plan PLAN.json] [--s7-all-seeds] [--s7-half]
+# On real data the driver takes learners, qualities, seeds, choice 19, the S9 signature and (version 4) the supplement
+# plan and S7 lanes from prespec.json, and refuses --dry-run roots, --root other than runs/shift_hosts/supplement_v4
+# (version 4; version 3's was runs/shift_hosts), --learners/--qualities/--seeds/--choice19/--card-device that differ
+# from prespec.json, --supplement-plan, --s7-all-seeds, --s7-half, --caps, --inject, more than 2 card cores or 8 lanes;
+# before it writes anything it requires S0 (gate.require_s0), stage 0's compute entry (version 4: in the supplement's
+# own ledger, so the first start names both hours) and, version 4, supplement.check_sources and an empty
+# supplement.code_unchanged. A dry run never uses runs/shift_hosts, runs/shift_hosts/supplement_v4 or a folder inside
+# it; without --supplement-plan (a {quality: {learner: [setups]}} file, supplement.check_plan) it trains the full grid.
+python -m experiments.shift_hosts.stages status [--root R | --dry-run]          # real default: version 4's root
+python -m experiments.shift_hosts.stages request-stop [--root R | --dry-run]    # real default: version 4's root
 # the lanes' scoring-environment steps (the driver starts these)
 python -m experiments.shift_hosts.stages lane score --actor A --out <run>/lanes/scores-step<T>.npz [--keep-viewer] [--made-up]
 python -m experiments.shift_hosts.stages lane transitions --actor A --prepared P --out-actor F --out-visited F
@@ -805,13 +834,16 @@ python -m experiments.shift_hosts.band_readout coverage --run-dir D [--step R] -
 python -m experiments.shift_hosts.band_readout viewer --run-dir D [--step T] --scores <run>/lanes/scores-step<T>.npz \
     --out <run>/lanes/viewer-step<T>.npz [--made-up-file F]
 # results.json (scoring environment)
-python -m experiments.shift_hosts.export [--out outputs/shift_hosts/results.json]
+python -m experiments.shift_hosts.export [--out outputs/shift_hosts/results.json]   # up to version 3; never under
+#   version 4: it would read version 3's root, leave out every record there under S1 and write an all-excluded build to
+#   outputs/shift_hosts/results.json (its code is version 3's, so it cannot refuse by itself; section 18)
+python -m experiments.shift_hosts.supplement export [--out outputs/shift_hosts/results.json]   # version 4 (section 18)
 ```
 Exit statuses: runner 0 complete (or skipped), 3 stopped by a stop rule (a stop before training prints the rule on
 its status line), 2 refused, 1 any other error; the driver 0 finished, 3 halted or interrupted (STOP.json written), 2
 refused, 1 error (STOP.json written too, after waiting up to an hour for the running children); a lane step 0 done,
 2 refused, 3 S7 failed (s7-check), 4 a non-finite return in its scores (score; the driver decides: Claim 0 outcome or
-S5), 1 error; band_readout 0, 2 refused, 1 error.
+S5), 1 error; band_readout 0, 2 refused, 1 error; supplement export 0 written, 2 refused (nothing written), 1 error.
 
 ## 17. `results.json` and where each of its fields comes from (export.py; the export/runner mapping)
 
@@ -841,7 +873,7 @@ run_id, the plan's schedule and the 50% step, env_signature, choice 19, the sche
 | S3; S9; S7 | `refreshes[*].s3_reproduced` (IW); `environment.import_record` through env_signature against `state.json` `s9_reference.signature` and the driver's `S9/<run>`; `lanes/s7-step<T>/s7.json` `s7_passed` (and `closed_loop.passed` for real runs), bound to the record's actor by `states.npz`'s meta |
 | S2, S6, S6b, S8 | the driver's `state.json` checks |
 | S5 | `state.json` `claim0_failures`, the accepted S5s, the records' stops |
-| S7's scopes (version 3) | `state.json` `s7_stopped`: per quality, a learner stopped (alone, standard or weights-of-1 actor failed) or only its IW setup (IW actor or its repeat failed); the driver drops that scope's later runs and lanes and goes on |
+| S7's scopes (version 3) | `state.json` `s7_stopped`: per quality, a learner stopped (alone, standard or weights-of-1 actor failed) or only its IW setup (IW actor or its repeat failed); the driver drops that scope's later runs and lanes and goes on. Version 4's supplement records the same entries (with the actor's step and version 4) and drops nothing; every lane's verdict is in `state.json` `s7_results` (section 18) |
 | S11 | each scores file's weighting-bank anchors (bottom, top) against start_banks.json |
 | S0 | not recorded here (stage 0's `runs/shift_hosts/stage0/SUMMARY.json`) |
 | the driver's halts | `STOP.json`; `STOP.json.<time>` with `STOP.json.sha256.<time>` (moved by --resume-after-stop) |
@@ -866,4 +898,197 @@ quality, learner, setup, seed, record and its SHA-256, run_id, kind, and each fi
 stopped scope's run that was never scored carries `s7_stopped`); `excluded` (folders left out, with the reason);
 `unscored` (complete runs without final scores; a stopped scope's carry `s7_stopped`); `halted_runs`. Made-up results are
 written only under `runs/shift_hosts/stage0/`; real ones to `outputs/shift_hosts/results.json` or under
-`runs/shift_hosts/`.
+`runs/shift_hosts/`. Version 4: version 3's file built this way is carried byte for byte, and
+`outputs/shift_hosts/results.json` is written by `supplement export` with exactly three keys added (section 18).
+
+## 18. Version 4's S7 supplement (`supplement.py`; PRESPEC.md section 21, post hoc)
+
+Every stage-2 run of every scope version 3's S7 check stopped is trained and scored in full under the supplement's own
+root and shown beside version 3's results, never judged. A failed S7 check there is recorded and drops nothing. Version
+3's `results.json` is carried byte for byte, and every file of version 3's approved code manifest but
+`supplement.CHANGEABLE` stays byte-identical (`claims.py`, `export.py`, `runner.py`, `evaluate.py`, `band_readout.py`,
+`gate.py`, `budget.py`, `approve_hosts.py` and every training and scoring file included), so nothing judged can move.
+`supplement.py` imports only the standard library, `gate` and `handoff` at module level, so the stage driver imports it
+in the training environment; `claims`, `export` and `budget` are imported inside the functions that use them (the export
+runs in the scoring environment).
+
+**The frozen block**, `prespec.json` `"supplement"` (`supplement.validate` refuses anything but exactly these keys and
+values that fit them; no agent and no code changes it):
+```text
+version, root   4 and "runs/shift_hosts/supplement_v4" (supplement.ROOT_REL; supplement.ROOT = gate.REPO / ROOT_REL)
+source          {fingerprint, approval_commit}: version 3's (supplement.V3); {state_sha256, ledger_sha256,
+                results_sha256}: version 3's runs/shift_hosts/driver/state.json, driver/ledger.json and
+                outputs/shift_hosts_v3/results.json (supplement.SOURCE_FILES)
+scopes          [{quality, learner, scope "learner" | "iw"}]: version 3's state.json "s7_stopped" as claims.s7_scopes
+                reads it (a stopped learner outranks a stopped IW setup)
+plan            {quality: {learner: [setups]}} = plan_of(scopes, choice 19): a learner scope sham_alone (choice-19
+                learners only), alone, standard, iw, room; an IW scope alone, standard, iw
+s7              {seeds [0] or every data seed, steps [100000] or [50000, 100000], setups ["alone", "standard", "iw"]}
+                -> s7_all_seeds (seeds != [0]) and s7_half (50000 in steps)
+```
+
+**Functions** (`S` is `experiments.shift_hosts.supplement`, as `stages.py` imports it; every refusal is a
+`gate.ApprovalError`):
+```python
+S.scopes_of(entries, qualities)           # {q: {L: "learner"|"iw"}} from a state.json's s7_stopped (claims.s7_scopes)
+S.scope_map(items, learners, qualities)   # the block's scopes list -> {q: {L: scope}}, every quality present
+S.plan_of(scopes, choice19, learners)     # the plan of the scopes; qualities without a scope left out
+S.check_plan(plan, learners, qualities, choice19)  # a plan as the driver uses it (also a dry run's --supplement-plan):
+                                          #   known names, each setup once, sham_alone only with choice 19, room only
+                                          #   beside alone; returns a plain copy
+S.run_ids(plan, seeds, learners, made_up) # {q: [stage-2 run ids]} in plan_units / unit_jobs order: sham-alone runs,
+                                          #   each seed's runs (learner order, then alone, standard, iw), room runs
+S.validate(block, learners, qualities, seeds, choice19)  # -> dict(plan, scopes, s7_all_seeds, s7_half)
+S.prespec_block(package)                  # prespec.json's "supplement" (refused when missing)
+S.provenance(block, plan)                 # state.json "supplement": {version, root, plan_sha256, v3, source}
+S.code_unchanged(manifest_now, package)   # [{path, change "changed"|"added"|"removed"}] outside CHANGEABLE, against
+                                          #   approval_fe9fb77b0851c75b.json's code_manifest (its sidecar checked);
+                                          #   empty: every other file, external code included, is version 3's
+S.check_sources(block, repo, package)     # stages.preflight, before a real start: version 3's state.json, ledger.json
+                                          #   and committed results.json by SHA-256 (runs/shift_hosts/results_v3.json
+                                          #   too when it exists); that results.json and version 3's approval file and
+                                          #   sidecar committed in HEAD as on disk; the approval's fingerprint and the
+                                          #   commit that last touched it (6f9ce2b); the scopes recomputed from
+                                          #   state.json's s7_stopped equal to the block's; returns what it checked
+S.read_carried(path, sha256)              # version 3's results.json: sidecar verified, SHA-256 equal to the block's
+S.judged_scope_failures(s7_results, scopes)  # the failed S7 checks on actors of scopes version 3 judged: a learner it
+                                          #   did not stop in that quality, or, where it stopped only the IW setup, an
+                                          #   actor outside it (claims.S7_SCOPE "learner": an IW scope's comparators)
+S.caveat_of(judged)                       # the one appended caveat: CAVEAT, plus a sentence naming those actors
+S.assert_judged_unchanged(results, v3, caveat=CAVEAT)  # without s7_shown, s7_supplement and the last caveat (which
+                                          #   must equal caveat, and caveat start with CAVEAT), results must equal v3
+                                          #   in canonical JSON (S.canonical: handoff.plain, sorted keys)
+S.reproduction(v4_root, v3_root, v3_fingerprint)  # R1, a readout that never raises (below)
+S.shown(q, col, plan_q, scopes_q, v3_q, r1, state, caveat)  # qualities.<q>.s7_shown (below)
+S.build(permission, *, frozen=None, root=S.ROOT, block=None, carried_path=None, v3_root=S.V3_ROOT, anchors=None)
+                                          # the whole results.json: export.resolve, read_driver, collect,
+                                          #   check_score_anchors and integrity over the supplement's root; version
+                                          #   3's file deep-copied; the three additions; assert_judged_unchanged
+S.main(argv)                              # python -m experiments.shift_hosts.supplement export [--out]:
+                                          #   gate.require_run_approval first, then build, then export.write
+```
+
+**Constants**: `VERSION` 4; `ROOT_REL`, `ROOT`; `V3_ROOT` (`runs/shift_hosts`, read only); `LABEL` "S7 failed: trained
+and scored in full, shown, not judged"; `CAVEAT` (the appended caveat, or its start, PRESPEC.md section 21.7); `V3`
+{version, fingerprint, approval_file, freeze_commit, approval_commit}; `SOURCE_FILES`; `RESULTS_V3_PREVIEW`
+(`runs/shift_hosts/results_v3.json`); `CHANGEABLE` (`stages.py`, `supplement.py`, `PRESPEC.md`, `INTERFACES.md`,
+`tests/test_stages.py`, `tests/test_claims.py`) and `ADDED` (`supplement.py`); `FINAL_STEP` 100,000 and `HALF_STEP`
+50,000 (`stages.frozen_config` checks them against `runner.NUM_UPDATES`); `SETUP_FIELDS` (what a shown setup summary
+keeps of `claims.summary`: the per-seed values with their mean and sd) and `PAIRED_FIELDS` (those plus se, lower and
+upper: a paired difference's one-sided 95% bounds, the owner's decision D5; never t or p_one_sided); `PAIRS` (the
+shown paired differences per scope kind); `PAIRED_BANKS` (none, mild, strong);
+`EARLIER_SPEND` (versions 1 and 2's spend, an "of which" already counted in version 3's ledger).
+
+**The stage driver with the block** (`stages.py`, version 4):
+- `Config` gains `plan` (None: the full grid, a dry run without `--supplement-plan`), `s7_all_seeds`, `s7_half` and
+  `supplement` (the frozen block, real mode); `frozen_config` fills them from `supplement.validate` and sets the root to
+  `supplement.ROOT`; `config_record` records the plan and both S7 settings, so a resume with others is refused.
+- `Driver.in_plan(quality, learner, setup)`: `plan_units` and `unit_jobs` (which lost its `every` parameter) keep only
+  planned runs, and a unit without one is skipped ("nothing to run: this unit has no supplement run (version 4)"). The
+  projected S7 lanes per run are 1, or 2 with `s7_half`, at seed 0 or every seed with `s7_all_seeds`.
+- `lanes_for`: an S7 lane on every stage-1 actor and, in stage 2, on the final alone, standard and IW actor at seed 0
+  (every seed with `s7_all_seeds`); with `s7_half` also on that run's 50% actor (`lanes/s7-step<half>`, label
+  `<run>/s7-<half>`). Every completed run gets its lanes.
+- `_verdict`: every verified `s7.json` is upserted into `state.json` `s7_results` (`_record_s7`); `s7_passed` false goes
+  to `s7_failed`, which records the entry once in `s7_stopped` (same five-field key as version 3: quality, learner,
+  scope, setup, run; the entry adds stage, file, step, version 4 and the time), logs it and returns without dropping or
+  halting. A setup with no scope still halts. An `s7.json` that does not verify or says neither halts.
+- `_lane_step_done`: exit 3 at the check's last step reads the verdict and halts unless this lane's own `s7_results`
+  entry says it failed; exit 3 at an earlier step halts. A lane that finishes with exit 0 has its `s7.json` read at
+  once (`_verdict`): recorded in `s7_results`, a failure through `s7_failed`, a file that does not verify halts, and a
+  file that says it failed halts too (the exit status and the file must agree either way). A resumed driver reads every
+  finished lane's file again (recorded, never halted for the exit status, which it no longer has).
+- `stage1_checks` and `s7_seed0_checks` (every planned seed-0 run): a failure is recorded with `scoped_stop`; a missing
+  or unverified record or result halts.
+- `seed_checks` keeps its fewer-than-two-runs guard; `room_checks` checks every room run (they come with their alone
+  runs).
+- `preflight` (real mode, before anything is written): the approval, `frozen_config`, `check_real_args`,
+  `gate.require_s0`, `supplement.check_sources`, an empty `supplement.code_unchanged(gate.code_manifest())`, and stage
+  0's entry in `<supplement root>/driver/ledger.json` (absent on the first start, so both stage-0 hours are named).
+  `check_real_args` refuses `--root` other than `supplement.ROOT`, `--supplement-plan`, `--s7-all-seeds` and
+  `--s7-half`.
+
+**The supplement's root and the files version 4 reads**:
+```text
+runs/shift_hosts/supplement_v4/                     supplement.ROOT: the real driver's default and only root
+    driver/state.json, status.json, driver.log, driver.lock, ledger.json (its own: decision D2), logs/, nohup.out,
+    STOP.json, STOP.txt, STOP_REQUEST                section 16's driver files
+    stage1/medium-expert/seed0/<learner>-<setup>/   stage 1, all 20 runs (section 16's run folders)
+    stage2/<quality>/seed<k>/<learner>-<setup>/     the plan's runs only, with lanes/s7-step100000/ and
+                                                    lanes/s7-step50000/ on every alone, standard and IW run
+runs/shift_hosts/{stage1,stage2,driver}/            version 3's (immutable, chattr +i): read only, never written;
+                                                    driver/state.json and ledger.json checked by SHA-256 before every
+                                                    start (and by a stage-0 test, read only), the ledger read again
+                                                    for the study-wide total; run records, actor manifests and S7
+                                                    files read for R1 only, whose readout (reproduction, each shown
+                                                    run's r1) feeds no shown score
+runs/shift_hosts/results_v3.json (+ sidecar)        version 3's export as built (git-ignored; checked when present)
+outputs/shift_hosts_v3/results.json (+ sidecar)     version 3's results.json, committed (a8f96da): the carried file
+outputs/shift_hosts/results.json (+ sidecar)        supplement export: version 3's file plus three additions
+```
+
+**`state.json` additions** (section 16): `config` gains `plan`, `s7_all_seeds` and `s7_half`; `s7_stopped` entries gain
+`step` (the actor's step, from the lane folder) and `version` 4; and two keys:
+```text
+s7_results  [{label (the lane: <run>/s7 or <run>/s7-<half>), run, quality, learner, setup, seed, step, s7_passed,
+              open_loop_passed, open_loop_max_abs {scored, tanh_mean}, closed_loop {"<readout>/<bank>": {max_points,
+              mean_points, max_return, passed}} (null without a closed loop: the dry run), file, sha256, at_utc}]
+            one entry per lane, upserted by label: a resumed driver reading the same file again adds nothing
+supplement  {version 4, root, plan_sha256 (supplement.sha256_of(plan)), v3 (supplement.V3), source (the block's)}
+            real mode only; version 3's s7_stopped entries are never copied in
+```
+`status.json` gains `s7_results` (how many) and `supplement`; `counts.cards_dropped` and `counts.lanes_dropped` stay 0.
+
+**What `results.json` gains** (`supplement.build`; every other key is version 3's, byte for byte):
+```text
+qualities.<q>.s7_shown      {label, caveat, post_hoc true, version 4, scopes {<learner>: {
+                              scope, label, setups_trained,
+                              setups {<setup>: {name, seeds, records [per seed: {seed, run_id, state, record_sha256,
+                                scores_sha256, scores_half_sha256, trained_under "version 4", v3_record_sha256, r1,
+                                r1_differs, v3_excluded}], final and half {<bank>: {J, points: {per_seed, n, nonfinite,
+                                missing, complete, mean, sd, seeds}}}}}   (a learner scope: every trained setup; an IW
+                                scope: iw only)
+                              comparators {<setup>: records}            (an IW scope's alone and standard runs)
+                              comparisons [{comparison, bank (none|mild|strong), field (J|points), per_seed, missing,
+                                summary {per_seed, n, nonfinite, missing, complete, mean, sd}}]
+                                (claims.paired; learner scope: standard - alone, iw - standard, iw - alone, room -
+                                alone, sham_alone - alone; IW scope: iw - standard, iw - alone)
+                              s7 [the scope's own s7_results entries + verified, bound_to_record: the planned stage-2
+                                actors and, on medium-expert, the learner's stage-1 actors; an IW scope's IW and
+                                stage 1's iw_repeat only]
+                              comparator_s7 [an IW scope's other S7 results, alone, standard and stage 1's alone,
+                                standard, iw_ones: version 3's judged runs; [] for a learner scope]
+                              v3 (version 3's s7_stopped.scopes entry), v4_entries (version 4's s7_stopped entries)
+                              writeup {quality, learner, claim "S7", status LABEL, title, idea, tested, happened, why,
+                                cite, markdown}}}}
+                            or {label, note} for a quality without a stopped scope
+s7_supplement               {version 4, label, caveat, post_hoc true,
+                              carried_from {version 3, path, sha256, fingerprint},
+                              built {utc, permission, frozen {fingerprint, prespec_sha256, code_manifest_sha256},
+                                code_sha256 (export.py's, claims.py's, handoff.py's and supplement.py's), root,
+                                driver {path, read, mode, files, why, problems}},
+                              block, plan, s7_settings {all_seeds, half_step}, planned_runs (run_ids),
+                              plan_check {planned, recorded, not_recorded, outside_the_plan},
+                              integrity (export.integrity over the supplement's root), s7_results, s7_stopped,
+                              s7_failures_in_judged_scopes (judged_scope_failures: label, run, quality, learner,
+                                setup, seed, step, file, sha256),
+                              driver_supplement (state.json "supplement"), reproduction (R1), runs, excluded,
+                              unscored, halted_runs, totals {card_seconds, processor_seconds},
+                              budget {caps, booking, ledgers {"version 4", "version 3"}, study_wide {totals: version
+                                3's ledger (which holds versions 1-2's sessions) plus version 4's, earlier: versions
+                                1-2's share, an "of which" not added again}}}
+caveats                     version 3's list, then caveat_of(s7_failures_in_judged_scopes) last: supplement.CAVEAT,
+                            and a sentence naming those actors when there are any (s7_shown's and s7_supplement's
+                            caveat field hold the same text)
+```
+No shown block carries a t, p-value, Holm entry, badge, verdict, mark, bar or window; only paired differences carry
+a standard error and one-sided 95% bounds (with a `bounds` note: "shown, not judged"), D5.
+
+**R1** (`supplement.reproduction`): for every `record.json` under the supplement's root, version 3's record of the same
+run id under `runs/shift_hosts` (one that names another fingerprint than version 3's is not compared: "missing" with a
+note), one entry per run: `run_id`, `result` ("equal", "differs", "missing" or "unreadable"), `differs` and
+`not_compared` (lists of fields), `v4_record_sha256`, `v3_record_sha256` and `note`. Compared: `hashes.initial`,
+`key_carry`, `params_10000` and `final`, the outcome, the refresh records without timing fields, every common snapshot
+actor's `actor_tree_sha256` (an actor file readable on neither side is listed under `not_compared`), and the common S7
+lanes' closed-loop largest and mean points. Identity, code and file SHA-256 values differ by design and are not
+compared. It never stops anything.

@@ -18,19 +18,25 @@ An experiment-local attachment (plan section 3.1) that changes none of the repos
   stops     A simulated S5 (BCA's unit set to 0 in one BCA run of seed 1): the driver halts, writes its stop report,
             launches nothing after it (no room reference); a restart over the report is refused; a restart with
             --resume-after-stop halts again on the same recorded stop (never retried); with --accept-s5 it finishes.
-            A simulated S6 (a tiny card cap): the driver halts after stage 1's projection. Version 3's S7 rule: an S7
-            failure injected on stage 1's TD3+BC standard actor and on seed 0's IQL IW actor stops TD3+BC and IQL's IW
-            setup on that quality only; stage 1 runs whole, the rest goes on, and the driver finishes.
+            A simulated S6 (a tiny card cap): the driver halts after stage 1's projection. Version 4's supplement
+            (PRESPEC.md section 21) end to end: a supplement-shaped plan (IQL's learner scope and TD3+BC's IW scope on
+            medium-expert, TD3+BC's learner scope on medium) with S7 on every seed's final and 50% actors, and S7
+            failures injected on stage 1's TD3+BC standard actor, seed 0's IQL alone actor and seed 1's TD3+BC IW
+            actor: every failure is recorded (version 4) and nothing is dropped; stage 1 runs whole, stage 2 trains
+            exactly the plan, the driver finishes, and a resume retrains nothing.
   refusal   Without the approval the driver refuses to start (real mode), writing nothing.
   review    The stage-0 review's fixes, in process on made-up folders: a failed S7 result is never skipped as done
-            on resume (version 3: it is its scope's stop; an s7.json that does not verify halts); S7's scopes, the
-            queues they drop and the units that leave them out; a halt starts no next lane step; a non-finite scored
-            return is a Claim 0
-            outcome (alone, room) or an S5 halt (BCA, unless accepted); a stop before training names its rule (S11);
-            modes, the recorded configuration and the per-root lock; the real-data options that would change a frozen
-            choice are refused; S6b on resume projects only runs without a record; an unexpected error writes the stop
-            report; the ledger's open entries, recovered runs, the driver's own time and the kept previous version;
-            the gate's manifest coverage, its bytecode refusal and stop rule S0's summary check.
+            on resume (version 4: it is recorded; an s7.json that does not verify halts); version 4's S7 rule (a failure
+            is recorded once and drops nothing, a lane of its scope goes on, the end-of-quality read, the exit-3
+            cross-check), its S7 lanes (every seed, final and 50% actors; lanes/s7-step50000 on real data) and the check
+            keys export.py reads, the frozen supplement plan's units (medium-expert 56 stage-2 runs, medium 42; stage 1
+            whole), its root and its own ledger; a halt starts no next lane step; a non-finite scored return is a Claim
+            0 outcome (alone, room) or an S5 halt (BCA, unless accepted); a stop before training names its rule (S11);
+            modes, the recorded configuration (version 4's plan included) and the per-root lock; the real-data options
+            that would change a frozen choice are refused (version 4's plan, S7 lanes and root included); S6b on resume
+            projects only runs without a record; an unexpected error writes the stop report; the ledger's open entries,
+            recovered runs, the driver's own time and the kept previous version; the gate's manifest coverage, its
+            bytecode refusal and stop rule S0's summary check.
 
 Run from /root/bca-hosts in /opt/bca-venv with the Dockerfile's variables, on the processor (cores 0-5):
   env D4RL_SUPPRESS_IMPORT_ERROR=1 MUJOCO_GL=osmesa PYOPENGL_PLATFORM=osmesa DISPLAY= \\
@@ -44,10 +50,14 @@ runs/shift_hosts/stage0/runner/test_stages/.
 import json
 import math
 import os
+import re
 import shutil
 import subprocess
 import sys
+import types
 import unittest
+from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
@@ -56,6 +66,7 @@ from experiments.shift_hosts import gate
 from experiments.shift_hosts import handoff as H
 from experiments.shift_hosts import runner as RN
 from experiments.shift_hosts import stages as ST
+from experiments.shift_hosts import supplement as S
 from experiments.shift_hosts import tests as T
 from experiments.shift_hosts import unifloral_import as UI
 
@@ -258,13 +269,40 @@ def fake_scores(path, finite):
     return path
 
 
+def plan_file(path, plan):
+    """A dry run's --supplement-plan file: version 4's stage-2 plan {quality: {learner: [setups]}}."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(plan), encoding="utf8")
+    return str(path)
+
+
+def made_up_record(steps, refresh_steps=(), snapshot_steps=None):
+    """Just enough of a complete run's record for lanes_for: its outer steps, refreshes, data path and snapshot actors
+    (/actors/<step>, never opened)."""
+    snaps = snapshot_steps or (steps // 2, steps)
+    return dict(outcome="complete", timings=dict(outer_steps=steps), refreshes=[dict(step=t) for t in refresh_steps],
+                data=dict(path="made-up/prepared.npz"),
+                snapshots={str(t): dict(actor=dict(path=f"/actors/{t}")) for t in snaps})
+
+
+def s7_lanes(lanes):
+    """(label, its folder under lanes/, the actor it checks) of each S7 lane."""
+    out = []
+    for lane in lanes:
+        if lane.kind == "s7":
+            check = lane.commands[-1][0]
+            out.append((lane.label, Path(lane.outputs[0]).parent.name, check[check.index("--actor") + 1]))
+    return out
+
+
 class DriverRulesTest(unittest.TestCase):
     """The stop-rule and bookkeeping fixes, in process on made-up folders (nothing trains, nothing is scored)."""
 
     def test_failed_s7_never_passes_on_resume(self):
         """A lane whose outputs verify is skipped on resume only after its own verdict: an s7.json that says
-        s7_passed false is never skipped as done (version 3: it stops its scope, recorded; a lane with no scope halts
-        as before); a passing one is skipped; one that does not verify halts."""
+        s7_passed false is never skipped as done (version 4: it is recorded in s7_stopped and s7_results, nothing is
+        dropped; a lane with no scope halts as before); a passing one is skipped; one that does not verify halts."""
         d = fresh("rules_s7")
         drv = ST.Driver(dry_cfg(d), None)
         bad, good = d / "run" / "lanes" / "s7-step1" / "s7.json", d / "good" / "s7.json"
@@ -280,7 +318,10 @@ class DriverRulesTest(unittest.TestCase):
         drv.lane_queue.append(bad_job)
         drv.pump()
         self.assertIsNone(drv.halt)
-        self.assertEqual([(e["learner"], e["scope"]) for e in drv.state["s7_stopped"]], [("td3_bc", "iw")])
+        self.assertEqual([(e["learner"], e["scope"], e["version"]) for e in drv.state["s7_stopped"]],
+                         [("td3_bc", "iw", 4)])
+        self.assertEqual([(r["label"], r["s7_passed"]) for r in drv.state["s7_results"]],
+                         [("x/s7-good", True), ("x/s7-bad", False)])
         self.assertEqual(drv.lanes, {})                       # nothing launched
         unscoped = ST.LaneJob("x/s7-bad", "s7", "medium-expert", [never], [str(bad)])
         drv.lane_queue.append(unscoped)
@@ -299,16 +340,20 @@ class DriverRulesTest(unittest.TestCase):
         self.assertEqual(drv2.halt["rule"], "S7")
         self.assertEqual(drv2.state["s7_stopped"], [])
 
-    def test_s7_scopes(self):
-        """Version 3's S7 rule (PRESPEC.md section 20): a failed check stops its learner (alone, standard,
-        weights-of-1 actor) or only its IW setup (IW actor, IW's repeat) in its quality, recorded once; the queued
-        stage-2 card runs and lanes of that scope are dropped (stage 1's never), the units planned later leave it out
-        (the other quality keeps it), and the driver does not halt. A lane whose check fails at its last step goes
-        the same way; exit 3 at an earlier step halts."""
-        d = fresh("rules_s7_scope")
+    def test_s7_failure_drops_nothing(self):
+        """Version 4's S7 rule (PRESPEC.md section 21): a failed check (here IQL's IW actor at the 50% step, and
+        TD3+BC's standard actor whose check exits 3 at its last step) is recorded once in s7_stopped, with its scope,
+        actor step and version 4, and in s7_results, and drops nothing: no halt, the queued card runs and lanes stay
+        queued (stage 2's and stage 1's), the dropped counts stay 0, no S7 check key is written for it, and the units
+        list exactly the supplement plan's runs (supplement.run_ids; the other quality's plan untouched). Exit 3 at an
+        earlier step still halts."""
+        d = fresh("rules_s7_v4")
         q = "medium-expert"
-        drv = ST.Driver(dry_cfg(d, "--learners", "td3_bc", "iql", "--qualities", "medium-expert", "medium", "--seeds",
-                                "0", "1"), None)
+        plan = {q: {"td3_bc": ["alone", "standard", "iw"], "iql": ["sham_alone", "alone", "standard", "iw", "room"]},
+                "medium": {"td3_bc": ["alone", "standard", "iw"]}}
+        drv = ST.Driver(dry_cfg(d, "--learners", "td3_bc", "iql", "--qualities", q, "medium", "--seeds", "0", "1",
+                                "--supplement-plan", plan_file(d / "plan.json", plan), "--s7-all-seeds", "--s7-half"),
+                        None)
         self.assertEqual(ST.S7_SCOPE, dict(alone="learner", standard="learner", iw_ones="learner", iw="iw",
                                            iw_repeat="iw"))
         seed1 = drv.unit_jobs(q, "seed1")
@@ -317,87 +362,116 @@ class DriverRulesTest(unittest.TestCase):
         s7_lane1 = ST.LaneJob(f"{stage1.label}/s7", "s7", q, [], [], run=stage1.label, setup="iw", learner="td3_bc")
         score = ST.LaneJob("s/score", "score", q, [], [], run=seed1[0].label, setup="alone", learner="td3_bc")
         drv.lane_queue.extend([s7_lane1, score])
+        cards = [j.label for j in drv.card_queue]
 
-        def failing(name):
-            p = d / name / "s7.json"
+        def failing(name, step):
+            p = d / name / "lanes" / f"s7-step{step}" / "s7.json"
             H.write_json(p, dict(passed=True, s7_passed=False))
             return str(p)
 
         iw0 = drv.card_job(q, 0, "iql", "iw", "stage2", 40, "seed0")
-        drv._verdict(ST.LaneJob(f"{iw0.label}/s7", "s7", q, [], [failing("iql_iw")], run=iw0.label, setup="iw",
-                                learner="iql"))
+        iw_lane = ST.LaneJob(f"{iw0.label}/s7-20", "s7", q, [], [failing("iql_iw", 20)], run=iw0.label, setup="iw",
+                             learner="iql")
+        drv._verdict(iw_lane)
         self.assertIsNone(drv.halt)
-        self.assertEqual([j.label for j in seed1 if j.result], [seed1[5].label])     # iql-iw of seed 1 only
-        self.assertEqual(seed1[5].result["status"], "dropped")
+        self.assertEqual([j.label for j in drv.card_queue], cards)              # IQL's seed-1 IW run stays queued
+        self.assertTrue(all(j.result is None for j in seed1))
+        self.assertEqual(list(drv.lane_queue), [s7_lane1, score])
         std = drv.card_job(q, 0, "td3_bc", "standard", "stage2", 40, "seed0")
         lane = ST.LaneJob(f"{std.label}/s7", "s7", q, [(["a"], "scoring"), (["b"], "training"), (["c"], "scoring")],
-                          [failing("td3_bc_std")], run=std.label, setup="standard", learner="td3_bc")
+                          [failing("td3_bc_std", 40)], run=std.label, setup="standard", learner="td3_bc")
         lane.step_index = 2                                   # the check itself, which exits 3 on a failure
         core = drv.free_lane.pop(0)
         drv._lane_step_done(lane, 3, 0.0, core, 0.0, 1.0)
         self.assertIsNone(drv.halt)
         self.assertEqual(lane.result, dict(status="complete", s7_passed=False))
         self.assertIn(core, drv.free_lane)
-        self.assertEqual([j.label for j in drv.card_queue],                        # IQL's alone and standard stay;
-                         [seed1[3].label, seed1[4].label, stage1.label])            # stage 1 is never dropped
-        self.assertEqual(list(drv.lane_queue), [s7_lane1])                         # TD3+BC's stage-2 lane dropped
-        self.assertEqual((drv.counts["cards_dropped"], drv.counts["lanes_dropped"]), (4, 1))
-        drv._verdict(ST.LaneJob(f"{std.label}/s7", "s7", q, [], [lane.outputs[0]], run=std.label, setup="standard",
-                                learner="td3_bc"))                                  # read again: recorded once
-        got = [(e["quality"], e["learner"], e["scope"], e["setup"], e["stage"]) for e in drv.state["s7_stopped"]]
-        self.assertEqual(got, [(q, "iql", "iw", "iw", "stage2"), (q, "td3_bc", "learner", "standard", "stage2")])
-        self.assertTrue(drv.s7_stopped(q, "td3_bc", "room") and drv.s7_stopped(q, "iql", "iw"))
-        self.assertFalse(drv.s7_stopped(q, "iql", "standard") or drv.s7_stopped("medium", "td3_bc", "alone"))
+        self.assertEqual([j.label for j in drv.card_queue], cards)              # TD3+BC's runs stay queued too
+        self.assertEqual(list(drv.lane_queue), [s7_lane1, score])
+        self.assertEqual((drv.counts["cards_dropped"], drv.counts["lanes_dropped"]), (0, 0))
+        for job in (iw_lane, lane):                                              # read again: recorded once
+            drv._verdict(job)
+        got = [(e["quality"], e["learner"], e["scope"], e["setup"], e["stage"], e["step"], e["version"])
+               for e in drv.state["s7_stopped"]]
+        self.assertEqual(got, [(q, "iql", "iw", "iw", "stage2", 20, 4), (q, "td3_bc", "learner", "standard", "stage2",
+                                                                        40, 4)])
+        self.assertEqual([(r["label"], r["seed"], r["step"], r["s7_passed"]) for r in drv.state["s7_results"]],
+                         [(iw_lane.label, 0, 20, False), (lane.label, 0, 40, False)])
+        self.assertEqual([k for k in drv.state["checks"] if k.startswith("S7")], [])
+        drv.status()
+        st = status_of(d)
+        self.assertEqual((st["s7_results"], st["counts"]["cards_dropped"], st["counts"]["lanes_dropped"]), (2, 0, 0))
+        want = S.run_ids(plan, drv.cfg.seeds, drv.cfg.learners, made_up=True)
+        for qq in (q, "medium"):                                                 # exactly the plan's runs
+            units = drv.plan_units(qq)
+            self.assertEqual([j.label for name, _ in units for j in drv.unit_jobs(qq, name)], want[qq], qq)
+            self.assertEqual(sum(len(us) for _, us in units), len(want[qq]), qq)
         units = dict(drv.plan_units(q))
-        self.assertEqual([(u["learner"], u["setup"]) for u in units["seed0"]], [("iql", "alone"), ("iql", "standard")])
+        self.assertEqual([(u["learner"], u["setup"]) for u in units["seed0"]],
+                         [(l, s) for l in ("td3_bc", "iql") for s in ST.STAGE2_SETUPS])
         self.assertEqual([u["learner"] for u in units["sham"]], ["iql"])
-        self.assertEqual({u["learner"] for u in units["room"]}, {"iql"})
-        for name, us in units.items():
-            self.assertEqual(len(drv.unit_jobs(q, name)), len(us), name)
-        self.assertEqual(len(drv.unit_jobs(q, "seed0", every=True)), 6)
-        self.assertEqual(len(dict(drv.plan_units("medium"))["seed0"]), 6)          # the other quality: untouched
+        self.assertEqual([u["learner"] for u in units["room"]], ["iql", "iql"])
+        other = dict(drv.plan_units("medium"))                                   # the other quality: its own plan
+        self.assertEqual([(u["learner"], u["setup"]) for u in other["seed1"]],
+                         [("td3_bc", s) for s in ST.STAGE2_SETUPS])
+        self.assertEqual((other["sham"], other["room"]), ([], []))
         early = ST.LaneJob("z/s7", "s7", q, [(["a"], "scoring"), (["b"], "training")], [str(d / "none.json")],
                            run="z", setup="alone", learner="iql")
         drv._lane_step_done(early, 3, 0.0, drv.free_lane.pop(0), 0.0, 1.0)         # exit 3 before the check: halt
         self.assertEqual(drv.halt["rule"], "S7")
 
     def test_s7_scope_branches(self):
-        """Version 3's S7 rule, the remaining branches: the end-of-quality read accounts for a stopped scope's runs that
-        never trained or whose lane never ran, records a failure once, and halts on an s7.json that exists but does not
-        verify; a running lane of a stopped scope starts no next step; a check that exits 3 while its s7.json says it
-        passed halts; a unit with nothing left to run is skipped, keeping an earlier S6b record; S4 is not computed
-        for a learner with fewer than two trained runs in a seed."""
+        """Version 4's S7 rule, the remaining branches: the end-of-quality read of seed 0's final actors records a
+        failure once (its check key names the scope) and halts on a planned run whose s7.json does not verify, that
+        has a record but no s7.json, or that has no record; a running lane of a scope whose check failed starts its
+        next step; a check that exits 3 while its s7.json says it passed halts; a unit with no supplement run is
+        skipped with version 4's note, keeping an earlier S6b record; S4 is not computed for a learner with fewer than
+        two runs in a seed."""
         q = "medium-expert"
         d = fresh("rules_s7_branches")
         drv = ST.Driver(dry_cfg(d), None)
-        alone, std, iw = drv.unit_jobs(q, "seed0", every=True)
-        for j in (alone, std):
+        alone, std, iw = drv.unit_jobs(q, "seed0")
+        for j in (alone, std, iw):
             H.write_json(j.run_dir / "record.json", dict(run_id=j.label, outcome="complete", timings=dict(outer_steps=40)))
-        s7_std = std.run_dir / "lanes" / "s7-step40" / "s7.json"
-        H.write_json(s7_std, dict(passed=True, s7_passed=False))
-        drv.s7_failed(q, "td3_bc", "standard", std.label, s7_std, f"{std.label}/s7")
+            H.write_json(j.run_dir / "lanes" / "s7-step40" / "s7.json", dict(passed=True, s7_passed=j is not std))
         drv.s7_seed0_checks(q)
+        drv.s7_seed0_checks(q)                                                  # read again (a resume)
         self.assertIsNone(drv.halt)
         c = drv.state["checks"]
-        self.assertIn("before its lane ran", c[f"S7/{q}/seed0/td3_bc/alone"]["note"])        # trained, no lane
+        self.assertEqual({s: c[f"S7/{q}/seed0/td3_bc/{s}"]["passed"] for s in ST.STAGE2_SETUPS},
+                         dict(alone=True, standard=False, iw=True))
         self.assertEqual(c[f"S7/{q}/seed0/td3_bc/standard"]["scoped_stop"], "learner")
-        self.assertIn("never trained", c[f"S7/{q}/seed0/td3_bc/iw"]["note"])
-        self.assertEqual(len(drv.state["s7_stopped"]), 1)                                     # recorded once
-        broken = alone.run_dir / "lanes" / "s7-step40" / "s7.json"
-        H.write_json(broken, dict(passed=True, s7_passed=True))
-        broken.write_text(broken.read_text() + " ")                                           # it no longer verifies
+        self.assertEqual([(e["run"], e["step"], e["version"]) for e in drv.state["s7_stopped"]], [(std.label, 40, 4)])
+        broken = iw.run_dir / "lanes" / "s7-step40" / "s7.json"
+        broken.write_text(broken.read_text() + " ")                             # it no longer verifies
         with self.assertRaises(ST.Halt):
             drv.s7_seed0_checks(q)
         self.assertEqual(drv.halt["rule"], "S7")
+        for name, missing, rule in (("rules_s7_branches_nos7", "s7.json", "S7"),
+                                    ("rules_s7_branches_norec", "record.json", "error")):
+            drv1 = ST.Driver(dry_cfg(fresh(name)), None)
+            for j in drv1.unit_jobs(q, "seed0"):
+                if not (j.setup == "standard" and missing == "record.json"):
+                    H.write_json(j.run_dir / "record.json", dict(run_id=j.label, outcome="complete",
+                                                                 timings=dict(outer_steps=40)))
+                if j.setup != "standard":
+                    H.write_json(j.run_dir / "lanes" / "s7-step40" / "s7.json", dict(passed=True, s7_passed=True))
+            with self.assertRaises(ST.Halt, msg=missing):
+                drv1.s7_seed0_checks(q)
+            self.assertEqual(drv1.halt["rule"], rule, missing)
+            self.assertIn(f"{q}/seed0/td3_bc-standard", drv1.halt["reason"])
 
         drv2 = ST.Driver(dry_cfg(fresh("rules_s7_branches2")), None)
-        drv2.s7_failed(q, "td3_bc", "iw", "stage2/x/seed0/td3_bc-iw", d / "x", "x/s7")          # td3_bc's IW setup
+        drv2.s7_failed(q, "td3_bc", "iw", iw.label, d / "x", "x/s7")              # td3_bc's IW setup failed S7
+        launched = []
+        drv2._launch_lane_step = lambda job, core: launched.append((job.label, job.step_index, core))
         nxt = ST.LaneJob("r/score-40", "viewer", q, [(["a"], "scoring"), (["b"], "training")], [str(d / "v")],
                          run=iw.label, setup="iw", learner="td3_bc")
         core = drv2.free_lane.pop(0)
         drv2._lane_step_done(nxt, 0, 0.0, core, 0.0, 1.0)
-        self.assertEqual((nxt.result["status"], drv2.lanes, drv2.counts["lanes_dropped"]), ("dropped", {}, 1))
-        self.assertIn(core, drv2.free_lane)
+        self.assertEqual(launched, [("r/score-40", 1, core)])                    # its next step starts
+        self.assertIsNone(nxt.result)
+        self.assertEqual(drv2.counts["lanes_dropped"], 0)
         good = d / "good" / "s7.json"
         H.write_json(good, dict(passed=True, s7_passed=True))
         odd = ST.LaneJob("s/s7", "s7", q, [(["a"], "scoring"), (["b"], "training"), (["c"], "scoring")], [str(good)],
@@ -407,49 +481,276 @@ class DriverRulesTest(unittest.TestCase):
         self.assertEqual(drv2.halt["rule"], "S7")
         self.assertIn("does not say it failed", drv2.halt["reason"])
 
-        drv3 = ST.Driver(dry_cfg(fresh("rules_s7_branches3")), None)
+        d3 = fresh("rules_s7_branches3")
+        drv3 = ST.Driver(dry_cfg(d3, "--qualities", q, "medium", "--supplement-plan",
+                                 plan_file(d3 / "plan.json", {"medium": {"td3_bc": ["alone", "standard", "iw"]}})),
+                         None)
         drv3.state["decisions"] = dict(concurrency=1, s6=dict(speeds={}, two_at_once=dict(gain=1.0)))
         drv3.run_cards = lambda jobs, conc: None
-        drv3.s7_failed(q, "td3_bc", "alone", alone.label, d / "y", "y/s7")                      # the only learner
-        kept = dict(quality=q, passed=True, note="made before the stop")
+        kept = dict(quality=q, passed=True, note="made before the plan was read")
         drv3.state["checks"][f"S6b/{q}/sham"] = kept
-        drv3.stage2(q)
+        drv3.stage2(q)                                                            # medium-expert: no supplement run
         self.assertIsNone(drv3.halt)
         self.assertEqual(drv3.state["checks"][f"S6b/{q}/sham"], kept)
         for name in ("seed0", "room"):
-            self.assertIn("nothing to run", drv3.state["checks"][f"S6b/{q}/{name}"]["note"])
-        H.write_json(alone.run_dir / "record.json", dict(run_id=alone.label, outcome="complete"))
-        std.result, iw.result = dict(status="dropped"), dict(status="dropped")
-        drv3.seed_checks(q, [alone, std, iw], "seed0")
-        self.assertTrue(drv3.state["checks"][f"S4/{q}/seed0/td3_bc"]["skipped"])
+            self.assertIn("no supplement run (version 4)", drv3.state["checks"][f"S6b/{q}/{name}"]["note"])
+        drv3.seed_checks(q, [alone], "seed0")                                     # one run of the learner this seed
+        res = drv3.state["checks"][f"S4/{q}/seed0/td3_bc"]
+        self.assertTrue(res["skipped"])
+        self.assertIn("version 4", res["note"])
         self.assertIsNone(drv3.halt)
 
     def test_s7_stopped_while_running(self):
-        """Version 3, in process: a stage-2 run whose scope S7 stopped while it trained finishes with no lanes, while a
-        run of a live scope still gets its lanes; the room checks skip a room job dropped when its learner was stopped
-        (it never trained, so it has no record) and check the live ones."""
+        """Version 4, in process: stage-2 runs whose scope's S7 check failed while they trained (TD3+BC's IW setup, then
+        the learner) still get their lanes when they finish; the room checks check every room job (version 3 skipped
+        one dropped with its learner; version 4 drops none)."""
         q = "medium-expert"
         d = fresh("rules_s7_running")
         drv = ST.Driver(dry_cfg(d, "--seeds", "0", "1"), None)
-        _, std, iw = drv.unit_jobs(q, "seed0", every=True)
+        _, std, iw = drv.unit_jobs(q, "seed0")
         drv.s7_failed(q, "td3_bc", "iw", iw.label, d / "x", "x/s7")                         # td3_bc's IW setup
+        drv.s7_failed(q, "td3_bc", "standard", std.label, d / "y", "y/s7")                  # and the learner
         drv._check_s9 = lambda job, rec: None                                                 # no frozen signature here
         drv.lanes_for = lambda job, rec: [f"{job.label}/lane"]
         for j in (std, iw):
             H.write_json(j.run_dir / "record.json", dict(run_id=j.label, outcome="complete", timings=dict(outer_steps=40)))
             drv._card_done(j, ST.RN.EXIT_COMPLETE, 1.0, 0.0, 2.0)
         self.assertIsNone(drv.halt)
-        self.assertEqual(list(drv.lane_queue), [f"{std.label}/lane"])
-        self.assertTrue(any(f"{iw.label}: no lanes, its scope was stopped by S7 while it ran" in e for e in drv.events))
+        self.assertEqual(list(drv.lane_queue), [f"{std.label}/lane", f"{iw.label}/lane"])
+        self.assertFalse(any("no lanes" in e for e in drv.events))
+        self.assertEqual((drv.counts["cards_dropped"], drv.counts["lanes_dropped"]), (0, 0))
         room0, room1 = drv.unit_jobs(q, "room")
         init = dict(initial=dict(agent_state=dict(all="same")), key_carry={})
-        alone0 = ST.RN.run_dir(drv.cfg.root, "stage2", room0.run_dir.parts[-3], 0, "td3_bc", "alone")
-        for path in (alone0, room0.run_dir):
-            H.write_json(path / "record.json", dict(outcome="complete", hashes=init))
-        room1.result = dict(status="dropped")
+        for j in (room0, room1):
+            alone_dir = ST.RN.run_dir(drv.cfg.root, "stage2", j.run_dir.parts[-3], j.rep, "td3_bc", "alone")
+            for path in (alone_dir, j.run_dir):
+                H.write_json(path / "record.json", dict(outcome="complete", hashes=init))
+        room1.result = dict(status="dropped")                 # a version-3 mark is no reason to skip it any more
         drv.room_checks(q, [room0, room1])
         self.assertIsNone(drv.halt)
-        self.assertEqual(sorted(k for k in drv.state["checks"] if k.endswith("/room")), [f"S4/{q}/seed0/td3_bc/room"])
+        self.assertEqual(sorted(k for k in drv.state["checks"] if k.endswith("/room")),
+                         [f"S4/{q}/seed0/td3_bc/room", f"S4/{q}/seed1/td3_bc/room"])
+
+    def test_s7_lanes_seeds_and_steps(self):
+        """Version 4 (decision D3): with --s7-all-seeds and --s7-half every seed's alone, standard and IW run gets two
+        S7 lanes, on its final actor (lanes/s7-step<final>, label <run>/s7) and on its 50% actor (lanes/s7-step<50%>,
+        label <run>/s7-<50%>), and the projections count both; sham-alone runs and room references get none, and stage
+        1 only its final actor's; without the options only seed 0's final actor is checked. On real data (prespec.json's
+        frozen block) the lanes are lanes/s7-step100000 and lanes/s7-step50000 under the supplement's root, with S7's
+        closed loop. Every lane's verdict goes to state.json s7_results when it ends (a pass, exit 0, as well as a
+        failure, exit 3; a finished lane whose s7.json does not verify halts, and so does exit 0 with an s7.json that
+        says it failed); check keys are written only for seed 0's final actors (and stage 1's), in the two shapes
+        export._s7_check_key reads."""
+        from experiments.shift_hosts import export as E
+
+        q = "medium-expert"
+        d = fresh("rules_s7_lanes")
+        plan = {q: {"iql": ["sham_alone", "alone", "standard", "iw", "room"]}}
+        drv = ST.Driver(dry_cfg(d, "--learners", "iql", "--seeds", "0", "1", "2", "3", "4", "--supplement-plan",
+                                plan_file(d / "plan.json", plan), "--s7-all-seeds", "--s7-half"), None)
+        rec = made_up_record(40, refresh_steps=(20, 30), snapshot_steps=(20, 30, 40))
+        checked = 0
+        for name, units in drv.plan_units(q):
+            for u, job in zip(units, drv.unit_jobs(q, name)):
+                got = s7_lanes(drv.lanes_for(job, rec))
+                if job.setup in ST.STAGE2_SETUPS:
+                    self.assertEqual(got, [(f"{job.label}/s7", "s7-step40", "/actors/40"),
+                                           (f"{job.label}/s7-20", "s7-step20", "/actors/20")], job.label)
+                    self.assertEqual(u["lanes"]["s7"], 2, job.label)
+                    checked += 1
+                else:
+                    self.assertEqual(got, [], job.label)
+                    self.assertNotIn("s7", u["lanes"], job.label)
+        self.assertEqual(checked, 3 * 5)
+        for lane in drv.lanes_for(drv.card_job(q, 3, "iql", "iw", "stage2", 40, "seed3"), rec):
+            if lane.kind == "s7":
+                self.assertEqual((lane.run, lane.setup, lane.learner),
+                                 (f"stage2/made-up-{q}/seed3/iql-iw", "iw", "iql"))
+                self.assertIn("--no-closed-loop", lane.commands[-1][0])         # a dry run rolls no policy out
+        one = drv.card_job(q, 0, "iql", "iw", "stage1", 30, "stage1")
+        self.assertEqual(s7_lanes(drv.lanes_for(one, made_up_record(30, snapshot_steps=(20, 30)))),
+                         [(f"{one.label}/s7", "s7-step30", "/actors/30")])           # stage 1: the final actor only
+        plain = ST.Driver(dry_cfg(fresh("rules_s7_lanes_plain"), "--seeds", "0", "1"), None)
+        for k, want in ((0, ["s7-step40"]), (1, [])):
+            job = plain.card_job(q, k, "td3_bc", "iw", "stage2", 40, f"seed{k}")
+            self.assertEqual([x[1] for x in s7_lanes(plain.lanes_for(job, rec))], want, k)
+            self.assertEqual([u["lanes"].get("s7") for u in dict(plain.plan_units(q))[f"seed{k}"]],
+                             [1, 1, 1] if k == 0 else [None, None, None])
+
+        frozen = ST.frozen_config()                                              # real data: prespec.json's block
+        cfg = ST.config_from(ST.parser().parse_args(["run"]), frozen)
+        self.assertEqual((cfg.steps, cfg.root, cfg.s7_all_seeds, cfg.s7_half), (100_000, S.ROOT, True, True))
+        stub = types.SimpleNamespace(cfg=cfg)
+        stub._s7_lane = types.MethodType(ST.Driver._s7_lane, stub)
+        real = made_up_record(cfg.steps, refresh_steps=(95_000,), snapshot_steps=(50_000, 95_000, 100_000))
+        for k in (0, 3):
+            job = ST.Driver.card_job(stub, q, k, "iql", "iw", "stage2", cfg.steps, f"seed{k}")
+            self.assertEqual(job.run_dir, S.ROOT / "stage2" / q / f"seed{k}" / "iql-iw")
+            lanes = ST.Driver.lanes_for(stub, job, real)
+            self.assertEqual(s7_lanes(lanes), [(f"{job.label}/s7", "s7-step100000", "/actors/100000"),
+                                               (f"{job.label}/s7-50000", "s7-step50000", "/actors/50000")])
+            for lane in lanes:
+                if lane.kind == "s7":
+                    self.assertEqual(Path(lane.outputs[0]).parents[1], S.ROOT / "stage2" / q / f"seed{k}" / "iql-iw" /
+                                     "lanes")
+                    self.assertNotIn("--no-closed-loop", lane.commands[-1][0])    # S7's closed loop runs
+        room = ST.Driver.card_job(stub, q, 2, "iql", "room", "stage2", cfg.steps, "room")
+        self.assertEqual(s7_lanes(ST.Driver.lanes_for(stub, room, real)), [])
+
+        iw3 = drv.card_job(q, 3, "iql", "iw", "stage2", 40, "seed3")             # verdicts at seed 3: s7_results only
+        lanes3 = [lane for lane in drv.lanes_for(iw3, rec) if lane.kind == "s7"]
+        for lane, ok in zip(lanes3, (True, False)):                               # the final actor passes, 50% fails
+            H.write_json(lane.outputs[0], dict(passed=True, s7_passed=ok, closed_loop=None))
+            lane.step_index = len(lane.commands) - 1                              # the check exits 0, or 3 on a failure
+            drv._lane_step_done(lane, 0 if ok else 3, 0.0, drv.free_lane.pop(0), 0.0, 1.0)
+            self.assertEqual(lane.result, dict(status="complete") if ok else dict(status="complete", s7_passed=False))
+        self.assertIsNone(drv.halt)
+        self.assertEqual([(r["label"], r["seed"], r["step"], r["s7_passed"]) for r in drv.state["s7_results"]],
+                         [(f"{iw3.label}/s7", 3, 40, True), (f"{iw3.label}/s7-20", 3, 20, False)])
+        self.assertEqual([(e["run"], e["scope"], e["step"], e["version"]) for e in drv.state["s7_stopped"]],
+                         [(iw3.label, "iw", 20, 4)])
+        self.assertEqual([k for k in drv.state["checks"] if k.startswith("S7")], [])
+        for j in drv.unit_jobs(q, "seed0"):
+            H.write_json(j.run_dir / "record.json", dict(run_id=j.label, outcome="complete", timings=dict(outer_steps=40)))
+            H.write_json(j.run_dir / "lanes" / "s7-step40" / "s7.json", dict(passed=True, s7_passed=True))
+        drv.s7_seed0_checks(q)
+        self.assertIsNone(drv.halt)
+        keys = sorted(k for k in drv.state["checks"] if k.startswith("S7"))
+        self.assertEqual(keys, sorted(f"S7/{q}/seed0/iql/{s}" for s in ST.STAGE2_SETUPS))
+        for k in keys:
+            self.assertEqual(E._s7_check_key(k), (q, "iql", k.rsplit("/", 1)[1]))
+        self.assertIsNone(E._s7_check_key(f"S7/{q}/seed3/iql/iw"))   # a seed-3 key: export could not place it
+        odd = ST.Driver(dry_cfg(fresh("rules_s7_lanes_odd"), "--seeds", "0", "1", "--s7-all-seeds"), None)
+        lane = [x for x in odd.lanes_for(odd.card_job(q, 1, "td3_bc", "alone", "stage2", 40, "seed1"), rec)
+                if x.kind == "s7"][0]
+        H.write_json(lane.outputs[0], dict(passed=True, s7_passed=True))
+        Path(lane.outputs[0]).write_text(Path(lane.outputs[0]).read_text() + " ")    # it no longer verifies
+        lane.step_index = len(lane.commands) - 1
+        odd._lane_step_done(lane, 0, 0.0, odd.free_lane.pop(0), 0.0, 1.0)            # exit 0, but no verified file
+        self.assertEqual(odd.halt["rule"], "S7")
+        self.assertIn("does not verify", odd.halt["reason"])
+        odd0 = ST.Driver(dry_cfg(fresh("rules_s7_lanes_odd0"), "--seeds", "0", "1", "--s7-all-seeds"), None)
+        lane = [x for x in odd0.lanes_for(odd0.card_job(q, 1, "td3_bc", "standard", "stage2", 40, "seed1"), rec)
+                if x.kind == "s7"][0]
+        H.write_json(lane.outputs[0], dict(passed=True, s7_passed=False))
+        lane.step_index = len(lane.commands) - 1
+        odd0._lane_step_done(lane, 0, 0.0, odd0.free_lane.pop(0), 0.0, 1.0)          # exit 0, but its file failed
+        self.assertEqual(odd0.halt["rule"], "S7")
+        self.assertIn("exited 0 but its s7.json says it failed", odd0.halt["reason"])
+        self.assertEqual([(r["label"], r["s7_passed"]) for r in odd0.state["s7_results"]], [(lane.label, False)])
+        READOUTS["s7_lanes"] = dict(real=s7_lanes(ST.Driver.lanes_for(stub, job, real)))
+
+    def test_supplement_plan_units(self):
+        """Version 4's frozen plan (prespec.json "supplement", supplement.validate through frozen_config): stage 2
+        lists exactly the plan's runs, in supplement.run_ids' order (medium-expert 56: ReBRAC's learner scope 20,
+        IQL's 21, TD3+BC's IW scope 15; medium 42: TD3+BC's and IQL's learner scopes, 21 each), with two S7 lanes
+        projected for every alone, standard and IW run; stage 1 still runs all 20 runs (every learner, five setups)."""
+        frozen = ST.frozen_config()
+        block = S.prespec_block()
+        self.assertEqual(frozen["plan"], block["plan"])
+        self.assertEqual(frozen["supplement"], block)
+        self.assertEqual({q: len(ids) for q, ids in S.run_ids(frozen["plan"], frozen["seeds"]).items()},
+                         {"medium-expert": 56, "medium": 42})
+        d = fresh("rules_plan_units")
+        cfg = ST.config_from(ST.parser().parse_args(["run", "--dry-run", "--root", str(d), "--supplement-plan",
+                                                     plan_file(d / "plan.json", frozen["plan"]), "--s7-all-seeds",
+                                                     "--s7-half"]))
+        self.assertEqual((cfg.learners, cfg.qualities, cfg.seeds), (RN.LEARNERS, RN.QUALITIES, ST.SEEDS))
+        drv = ST.Driver(cfg, None)
+        self.assertEqual((drv.state["config"]["plan"], drv.state["config"]["s7_all_seeds"],
+                          drv.state["config"]["s7_half"]), (frozen["plan"], True, True))
+        made = S.run_ids(frozen["plan"], cfg.seeds, cfg.learners, made_up=True)
+        per = {}
+        for q, want in (("medium-expert", 56), ("medium", 42)):
+            units = drv.plan_units(q)
+            labels = [j.label for name, _ in units for j in drv.unit_jobs(q, name)]
+            self.assertEqual(labels, made[q], q)
+            self.assertEqual(len(labels), want, q)
+            self.assertEqual(sum(len(us) for _, us in units), want, q)
+            for _, us in units:
+                for u in us:
+                    self.assertEqual(u["lanes"].get("s7"), 2 if u["setup"] in ST.STAGE2_SETUPS else None, u)
+            for rid in labels:
+                key = (q, rid.split("/")[3].split("-")[0])
+                per[key] = per.get(key, 0) + 1
+        self.assertEqual(per, {("medium-expert", "rebrac"): 20, ("medium-expert", "iql"): 21,
+                               ("medium-expert", "td3_bc"): 15, ("medium", "td3_bc"): 21, ("medium", "iql"): 21})
+        launched = []
+        drv.run_cards = lambda jobs, conc: launched.extend(jobs)                   # nothing is launched
+        drv.wait = lambda *a, **k: None
+        drv.stage1_checks = lambda jobs: None
+        drv.stage1()
+        self.assertEqual(len(launched), 20)
+        self.assertEqual(sorted((j.learner, j.setup) for j in launched),
+                         sorted((l, s) for l in RN.LEARNERS for s in ST.STAGE1_SINGLE + ST.STAGE1_PAIR))
+        self.assertEqual({(j.stage, j.rep) for j in launched}, {("stage1", 0)})
+        READOUTS["supplement_plan"] = dict(runs={q: len(v) for q, v in made.items()}, per_scope={
+            f"{q}/{l}": n for (q, l), n in per.items()}, stage1=len(launched))
+
+    def test_supplement_root_and_ledger(self):
+        """Version 4 writes only under runs/shift_hosts/supplement_v4 with its own driver files and ledger: the real
+        configuration's root is it (run folders and the runner's --out-root under it); a dry run refuses it, anything
+        inside it and version 3's runs/shift_hosts; a driver's ledger is <root>/driver/ledger.json; preflight reads the
+        supplement's own ledger, never version 3's runs/shift_hosts/driver/ledger.json (so the first start needs both
+        stage-0 hours although version 3's ledger holds its stage-0 entry), checks version 3's files against the frozen
+        block, and refuses a code change outside supplement.CHANGEABLE; status and request-stop default to the
+        supplement's root (a scratch folder stands in for it: nothing is written under runs/shift_hosts/supplement_v4
+        or version 3's folders)."""
+        self.assertEqual(S.ROOT, RN.RUNS / "supplement_v4")
+        self.assertEqual(S.ROOT_REL, "runs/shift_hosts/supplement_v4")
+        for bad in (RN.RUNS, S.ROOT, S.ROOT / "driver", S.ROOT / "stage2" / "x"):
+            with self.assertRaises(gate.ApprovalError, msg=str(bad)):
+                ST.config_from(ST.parser().parse_args(["run", "--dry-run", "--root", str(bad)]))
+        frozen = ST.frozen_config()
+        cfg = ST.config_from(ST.parser().parse_args(["run"]), frozen)
+        self.assertEqual(cfg.root, S.ROOT)
+        stub = types.SimpleNamespace(cfg=cfg)
+        for stage, steps in (("stage1", cfg.stage1_steps), ("stage2", cfg.steps)):
+            job = ST.Driver.card_job(stub, "medium", 0, "iql", "alone", stage, steps, stage)
+            self.assertEqual(job.run_dir, S.ROOT / stage / "medium" / "seed0" / "iql-alone")
+            self.assertEqual(job.argv[job.argv.index("--out-root") + 1], str(S.ROOT))
+        d = fresh("rules_root")
+        drv = ST.Driver(dry_cfg(d), None)
+        self.assertEqual((drv.dir, drv.ledger.path), (d / "driver", d / "driver" / "ledger.json"))
+
+        tmp = fresh("rules_preflight") / "supplement_v4"
+        read, sources = [], []
+        kept = B.read_json_kept
+
+        def spy(path, *a, **k):
+            read.append(Path(path))
+            return kept(path, *a, **k)
+
+        first = ST.parser().parse_args(["run"])
+        hours = ST.parser().parse_args(["run", "--stage0-card-hours", "0", "--stage0-processor-hours", "0"])
+        with mock.patch.object(gate, "require_run_approval", lambda purpose: "approval"), \
+                mock.patch.object(gate, "require_s0", lambda purpose: None), \
+                mock.patch.object(S, "check_sources", lambda block: sources.append(block)), \
+                mock.patch.object(S, "ROOT", tmp), mock.patch.object(B, "read_json_kept", spy):
+            with self.assertRaisesRegex(gate.ApprovalError, "first start names stage 0's compute"):
+                ST.preflight(first)                     # version 3's ledger, with its stage-0 entry, is not read
+            approval, fz = ST.preflight(hours)          # the real code manifest: supplement.code_unchanged is []
+            self.assertEqual((approval, fz["root"], fz["plan"]), ("approval", tmp, frozen["plan"]))
+            self.assertEqual(sources, [frozen["supplement"]] * 2)
+            led = B.Ledger(tmp / "driver" / "ledger.json", mode="real")
+            led.set_stage0(0.0, 0.0, "test: the supplement's own ledger, entered at its first start")
+            led.save()
+            ST.preflight(first)                         # now the supplement's own ledger holds stage 0
+            H.write_json(tmp / "driver" / "ledger.json", dict(led.body, mode="dry-run"))
+            with self.assertRaisesRegex(gate.ApprovalError, "not a real study's ledger"):
+                ST.preflight(first)
+            with mock.patch.object(S, "code_unchanged", lambda manifest: [dict(path="experiments/shift_hosts/"
+                                                                                    "export.py", change="changed")]):
+                with self.assertRaisesRegex(gate.ApprovalError, "may change only"):
+                    ST.preflight(hours)
+        self.assertTrue(read)
+        self.assertTrue(all(tmp in p.parents for p in read), read)
+        self.assertFalse([p for p in read if RN.RUNS / "driver" in (p, *p.parents)])
+        with mock.patch.object(S, "ROOT", tmp):        # status and request-stop default to the supplement's root
+            H.write_json(tmp / "driver" / "status.json", dict(schema=ST.STATUS_SCHEMA, state="made-up"))
+            self.assertEqual(ST.main(["status"]), 0)
+            self.assertEqual(ST.main(["request-stop"]), 0)
+            self.assertTrue((tmp / "driver" / "STOP_REQUEST").exists())
 
     def test_halt_launches_no_next_lane_step(self):
         """After a halt, a lane whose step finished does not start its next step (the module docstring's promise)."""
@@ -498,14 +799,23 @@ class DriverRulesTest(unittest.TestCase):
         self.assertIn("rows differ", drv.halt["reason"])
 
     def test_modes_configuration_and_lock(self):
-        """A dry run never uses the real root; a driver of the other mode, or a resume with another configuration, is
-        refused; one driver per root (the lock), and a refused second start leaves a pending STOP_REQUEST alone."""
-        with self.assertRaises(gate.ApprovalError):
-            ST.config_from(ST.parser().parse_args(["run", "--dry-run", "--root", str(RN.RUNS)]))
+        """A dry run never uses the real roots (version 3's and version 4's); a driver of the other mode, or a resume
+        with another configuration (version 4's plan and S7 lanes included), is refused; one driver per root (the
+        lock), and a refused second start leaves a pending STOP_REQUEST alone."""
+        for root in (RN.RUNS, S.ROOT, S.ROOT / "stage1"):
+            with self.assertRaises(gate.ApprovalError, msg=str(root)):
+                ST.config_from(ST.parser().parse_args(["run", "--dry-run", "--root", str(root)]))
         d = fresh("rules_modes")
         ST.Driver(dry_cfg(d), None)
         with self.assertRaises(gate.ApprovalError):                       # another configuration
             ST.Driver(dry_cfg(d, "--seeds", "0", "1"), None)
+        plan = plan_file(ROOT / "rules_modes.plan.json", {"medium-expert": {"td3_bc": ["alone", "standard", "iw"]}})
+        for more in (["--supplement-plan", plan], ["--s7-all-seeds"], ["--s7-half"]):
+            with self.assertRaises(gate.ApprovalError, msg=more):         # version 4: another plan or S7 lanes
+                ST.Driver(dry_cfg(d, *more), None)
+        with self.assertRaises(gate.ApprovalError):                       # a plan naming a learner not run
+            dry_cfg(d, "--supplement-plan", plan_file(ROOT / "rules_modes.bad.json",
+                                                      {"medium-expert": {"iql": ["alone", "standard", "iw"]}}))
         real = ST.config_from(ST.parser().parse_args(["run", "--root", str(d)]))
         with self.assertRaises(gate.ApprovalError):                       # a real driver on a dry run's files
             ST.Driver(real, None)
@@ -531,19 +841,51 @@ class DriverRulesTest(unittest.TestCase):
 
     def test_real_options_are_refused(self):
         """On real data the options that would change a frozen choice or limit are refused (prespec.json's values pass,
-        as no change)."""
+        as no change): version 4's --supplement-plan, --s7-all-seeds and --s7-half, and any --root but the supplement's
+        (version 3's runs/shift_hosts included). The real configuration takes the plan and the S7 lanes from
+        prespec.json's frozen block (frozen_config: supplement.validate), which refuses a block whose plan is not what
+        its scopes give, S7 steps other than the runner's final and 50% steps, or no block at all."""
         frozen = dict(learners=RN.LEARNERS, qualities=RN.QUALITIES, seeds=(0, 1, 2, 3, 4), choice19=dict(ST.CHOICE19),
-                      card_cores=[0, 1], lane_cores=list(range(2, 10)), s9_signature={k: None for k in RN.S9_KEYS})
+                      card_cores=[0, 1], lane_cores=list(range(2, 10)), s9_signature={k: None for k in RN.S9_KEYS},
+                      root=S.ROOT, plan={"medium": {"cql": ["alone", "standard", "iw"]}}, s7_all_seeds=True,
+                      s7_half=True, supplement=None)
         ok = ST.parser().parse_args(["run", "--seeds", "0", "1", "2", "3", "4", "--learners"] + list(RN.LEARNERS))
         ST.check_real_args(ok, frozen)
+        ST.check_real_args(ST.parser().parse_args(["run", "--root", str(S.ROOT)]), frozen)
         for more in (["--choice19", "td3_bc=no"], ["--learners", "cql"], ["--qualities", "medium"],
                      ["--seeds", "0"], ["--card-device", "cpu"], ["--root", str(ROOT)], ["--caps", "1,1"],
                      ["--card-cores", "0", "1", "2"], ["--lane-cores"] + [str(c) for c in range(2, 11)],
-                     ["--lane-cores", "1", "2"]):
+                     ["--lane-cores", "1", "2"], ["--root", str(RN.RUNS)], ["--supplement-plan", "plan.json"],
+                     ["--s7-all-seeds"], ["--s7-half"]):
             with self.assertRaises(gate.ApprovalError, msg=more):
                 ST.check_real_args(ST.parser().parse_args(["run"] + more), frozen)
         cfg = ST.config_from(ST.parser().parse_args(["run"]), dict(frozen, seeds=(0, 1)))
-        self.assertEqual((cfg.seeds, cfg.choice19, cfg.root), ((0, 1), ST.CHOICE19, RN.RUNS))
+        self.assertEqual((cfg.seeds, cfg.choice19, cfg.root), ((0, 1), ST.CHOICE19, S.ROOT))
+        self.assertEqual((cfg.plan, cfg.s7_all_seeds, cfg.s7_half), (frozen["plan"], True, True))
+        with self.assertRaises(gate.ApprovalError):                       # a plan file is a dry run's only
+            ST.config_from(ST.parser().parse_args(["run", "--supplement-plan", "plan.json"]), frozen)
+        real = ST.frozen_config()
+        block = S.prespec_block()
+        self.assertEqual((real["root"], real["plan"], real["s7_all_seeds"], real["s7_half"], real["supplement"]),
+                         (S.ROOT, block["plan"], True, True, block))
+        pre = json.loads((gate.PACKAGE / gate.PRESPEC_NAME).read_text(encoding="utf8"))
+        short = json.loads(json.dumps(block))
+        short["plan"]["medium"]["iql"].remove("room")                     # not what its scopes give
+        extra = json.loads(json.dumps(block))
+        extra["plan"]["medium"]["cql"] = ["alone", "standard", "iw"]      # a learner no scope names
+        quarter = json.loads(json.dumps(block))
+        quarter["s7"]["steps"] = [25_000, 100_000]
+        for name, body in (("plan without IQL's room references", dict(pre, supplement=short)),
+                           ("plan with CQL", dict(pre, supplement=extra)),
+                           ("S7 at 25,000 steps", dict(pre, supplement=quarter)),
+                           ("no supplement block", {k: v for k, v in pre.items() if k != "supplement"})):
+            pkg = fresh("rules_frozen") / "package"
+            pkg.mkdir(parents=True)
+            (pkg / gate.PRESPEC_NAME).write_text(json.dumps(body, indent=1) + "\n", encoding="utf8")
+            with self.assertRaises(gate.ApprovalError, msg=name):
+                ST.frozen_config(package=pkg)
+        (pkg / gate.PRESPEC_NAME).write_text(json.dumps(pre, indent=1) + "\n", encoding="utf8")
+        self.assertEqual(ST.frozen_config(package=pkg)["plan"], block["plan"])     # the unchanged copy passes
 
     def test_s6_and_s6b_on_resume(self):
         """A resume reuses stage 1's S6 decision while stage 1's records are unchanged, and projects S6b only for the
@@ -596,6 +938,8 @@ class DriverRulesTest(unittest.TestCase):
         stop = H.read_json(d / "driver" / "STOP.json")
         self.assertEqual(stop["rule"], "error")
         self.assertIn("made-up failure", stop["reason"])
+        self.assertIn("S7 failures recorded so far (version 4; nothing was dropped for them): 0",
+                      (d / "driver" / "STOP.txt").read_text(encoding="utf8"))
         self.assertEqual(H.read_json(d / "driver" / "status.json")["state"], "stopped")
 
 
@@ -718,6 +1062,13 @@ class DryRunTest(unittest.TestCase):
         self.assertEqual(len(s7), 20 + 2 * 12)
         for p in s7:
             self.assertTrue(H.read_json(p)["s7_passed"], str(p))
+        # version 4 without a plan: the full grid, S7 on seed 0's final actors only, every verdict in s7_results
+        self.assertEqual((state["config"]["plan"], state["config"]["s7_all_seeds"], state["config"]["s7_half"]),
+                         (None, False, False))
+        self.assertEqual(state["s7_stopped"], [])
+        self.assertEqual(sorted(r["file"] for r in state["s7_results"]), sorted(str(p) for p in s7))
+        self.assertTrue(all(r["s7_passed"] is True for r in state["s7_results"]))
+        self.assertEqual((st["counts"]["cards_dropped"], st["counts"]["lanes_dropped"]), (0, 0))
         cov = list(self.root.glob("stage2/*/seed*/*/lanes/coverage-step*/coverage.json"))
         self.assertEqual(len(cov), 2 * 2 * 8)
         dec = state["decisions"]
@@ -781,59 +1132,88 @@ class StopTest(unittest.TestCase):
         self.assertEqual(len(list(root.glob("stage2/*/seed*/td3_bc-room/record.json"))), 2)
         READOUTS["stop_s5"] = dict(rule=stop["rule"], reason=stop["reason"][:200])
 
-    def test_simulated_s7_stops_its_scope_only(self):
-        """Version 3's S7 rule end to end: an S7 failure injected on stage 1's TD3+BC standard actor stops TD3+BC on
-        medium-expert (its stage 1 still runs whole; none of its stage-2 runs trains), one on seed 0's IQL IW actor
-        stops IQL's IW setup (IQL's alone, standard, sham-alone and room runs go on through seed 1); the driver
-        finishes without a stop report."""
-        root = fresh("stop_s7")
+    def test_supplement_dry_run(self):
+        """Version 4 end to end (PRESPEC.md section 21): a dry run of a supplement-shaped plan (supplement.plan_of:
+        IQL's learner scope and TD3+BC's IW scope on medium-expert, TD3+BC's learner scope on medium) with S7 on every
+        seed's final and 50% actors, and S7 failures injected on stage 1's TD3+BC standard actor, seed 0's IQL alone
+        actor and seed 1's TD3+BC IW actor (both its lanes). The driver finishes without a stop report; stage 1 runs
+        whole (10 runs); stage 2 trains exactly the plan's runs (supplement.run_ids) and drops nothing; each failure is
+        recorded once in s7_stopped with version 4, every lane's verdict in s7_results (seeds 0 and 1, steps 20 and
+        40); check keys exist only for stage 1 and seed 0, in export's two shapes; the log says version 4. The same
+        command again retrains and records nothing new. test_claims builds the supplement's export over this root."""
+        from experiments.shift_hosts import export as E
+
+        root = fresh("supplement")
+        q = "medium-expert"
+        scopes = [dict(quality=q, learner="iql", scope="learner"), dict(quality=q, learner="td3_bc", scope="iw"),
+                  dict(quality="medium", learner="td3_bc", scope="learner")]
+        plan = S.plan_of(S.scope_map(scopes), ST.CHOICE19)
         s1 = "stage1/made-up-medium-expert/seed0/td3_bc-standard"
-        s2 = "stage2/made-up-medium-expert/seed0/iql-iw"
-        code, out = driver(["run", "--dry-run", "--root", str(root), "--learners", "td3_bc", "iql", "--qualities",
-                            "medium-expert", "--seeds", "0", "1", "--inject", f"{s1}={ST.S7_INJECT}",
-                            f"{s2}={ST.S7_INJECT}"])
+        s2 = "stage2/made-up-medium-expert/seed0/iql-alone"
+        s3 = "stage2/made-up-medium-expert/seed1/td3_bc-iw"
+        args = (["run", "--dry-run", "--root", str(root), "--learners", "td3_bc", "iql", "--seeds", "0", "1",
+                 "--supplement-plan", plan_file(ROOT / "supplement.plan.json", plan), "--s7-all-seeds", "--s7-half",
+                 "--inject"] + [f"{r}={ST.S7_INJECT}" for r in (s1, s2, s3)])
+        code, out = driver(args)
         self.assertEqual(code, 0, out[-4000:])
         self.assertFalse((root / "driver" / "STOP.json").exists())
         st, state = status_of(root), state_of(root)
         self.assertEqual((st["state"], st["stop"]), ("finished", None))
-        got = sorted((e["learner"], e["scope"], e["setup"], e["stage"], e["run"]) for e in state["s7_stopped"])
-        self.assertEqual(got, [("iql", "iw", "iw", "stage2", s2), ("td3_bc", "learner", "standard", "stage1", s1)])
+        self.assertEqual((st["counts"]["cards_dropped"], st["counts"]["lanes_dropped"]), (0, 0))
+        self.assertEqual(state["config"]["plan"], plan)
         self.assertEqual(len(list(root.glob("stage1/*/seed0/*/record.json"))), 10)          # stage 1 whole
-        self.assertTrue(H.read_json(root / s1 / "lanes" / "s7-step30" / "s7.json")["injected_failure"])
-        self.assertEqual(list(root.glob("stage2/*/seed*/td3_bc-*/record.json")), [])      # no TD3+BC in stage 2
-        for setup, n in (("alone", 2), ("standard", 2), ("room", 2), ("sham_alone", 1)):
-            self.assertEqual(len(list(root.glob(f"stage2/*/seed*/iql-{setup}/record.json"))), n, setup)
-        self.assertTrue((root / s2 / "record.json").exists())                             # it trained, then failed
+        want = S.run_ids(plan, (0, 1), ("td3_bc", "iql"), made_up=True)
+        planned = sorted(r for ids in want.values() for r in ids)
+        trained = sorted(p.parent.relative_to(root).as_posix() for p in root.glob("stage2/*/seed*/*/record.json"))
+        self.assertEqual(trained, planned)
+        self.assertEqual(len(trained), 15 + 9)
+        for p in root.glob("stage*/*/seed*/*/record.json"):
+            self.assertEqual(H.read_json(p)["outcome"], "complete", str(p))
+        stopped = sorted((e["learner"], e["scope"], e["setup"], e["stage"], e["run"], e["version"])
+                         for e in state["s7_stopped"])
+        self.assertEqual(stopped, sorted([("td3_bc", "learner", "standard", "stage1", s1, 4),
+                                          ("iql", "learner", "alone", "stage2", s2, 4),
+                                          ("td3_bc", "iw", "iw", "stage2", s3, 4)]))
+        for rid in planned:                             # S7 on the final and 50% actors of every alone, standard, IW
+            setup = rid.split("/")[3].partition("-")[2]
+            got = sorted(p.parent.name for p in (root / rid / "lanes").glob("s7-step*/s7.json"))
+            self.assertEqual(got, ["s7-step20", "s7-step40"] if setup in ST.STAGE2_SETUPS else [], rid)
+        results = {r["label"]: r for r in state["s7_results"]}
+        self.assertEqual(len(results), len(state["s7_results"]))                             # one entry per lane
+        self.assertEqual(len(results), 10 + 2 * 2 * (6 + 3))
+        self.assertEqual({(r["seed"], r["step"]) for r in state["s7_results"] if r["run"].startswith("stage2/")},
+                         {(0, 20), (0, 40), (1, 20), (1, 40)})
+        self.assertEqual(sorted(k for k, r in results.items() if r["s7_passed"] is not True),
+                         sorted([f"{s1}/s7", f"{s2}/s7", f"{s2}/s7-20", f"{s3}/s7", f"{s3}/s7-20"]))
+        for r in state["s7_results"]:
+            self.assertEqual(r["sha256"], H.sha256_file(r["file"]), r["label"])
+            self.assertEqual(H.read_json(r["file"])["s7_passed"], r["s7_passed"], r["label"])
         checks = state["checks"]
+        keys = [k for k in checks if k.startswith("S7/")]
+        self.assertEqual([k for k in keys if re.match(r"^S7/[^/]+/seed[1-9]/", k)], [])
+        self.assertTrue(all(E._s7_check_key(k) is not None for k in keys), keys)
+        self.assertEqual(sorted(k for k in keys if "/seed0/" in k),
+                         sorted(f"S7/{qq}/seed0/{l}/{s}" for qq, by in plan.items() for l, setups in by.items()
+                                for s in setups if s in ST.STAGE2_SETUPS))
         self.assertEqual(checks["S7/td3_bc/standard"]["scoped_stop"], "learner")
-        self.assertEqual(checks["S7/medium-expert/seed0/iql/iw"]["scoped_stop"], "iw")
-        self.assertTrue(checks["S7/medium-expert/seed0/td3_bc/alone"]["skipped"])
+        self.assertEqual(checks[f"S7/{q}/seed0/iql/alone"]["scoped_stop"], "learner")
         self.assertEqual([k for k, v in checks.items() if not v.get("passed") and not v.get("scoped_stop")], [])
         log = (root / "driver" / "driver.log").read_text(encoding="utf8")
-        self.assertIn("stopped by S7 (version 3): iql IW on medium-expert, td3_bc on medium-expert", log)
-        # IQL's seed-1 IW run: lanes run beside the card queue, so seed 0's IW check fails before it was queued (never
-        # planned), while queued (dropped), while it trained ("no lanes") or after it finished (its lanes ran first);
-        # each way is the rule, and the log says which
-        iw1 = "stage2/made-up-medium-expert/seed1/iql-iw"
-        lines = log.splitlines()
-        at = next(i for i, x in enumerate(lines) if f"S7 (version 3): {s2}/s7" in x)
-        done = [i for i, x in enumerate(lines) if f"card {iw1} exit" in x]
-        way = ("never planned" if not any(iw1 in x for x in lines) else
-               "dropped" if f"card {iw1} dropped" in log else
-               "no lanes" if f"{iw1}: no lanes" in log else
-               "finished before the stop" if done and done[0] < at else "unaccounted")
-        self.assertNotEqual(way, "unaccounted", log[-3000:])
-        n_before = len(state["s7_stopped"])
-        code, out = driver(["run", "--dry-run", "--root", str(root), "--learners", "td3_bc", "iql", "--qualities",
-                            "medium-expert", "--seeds", "0", "1", "--inject", f"{s1}={ST.S7_INJECT}",
-                            f"{s2}={ST.S7_INJECT}"])            # resumed: the scopes are read again, nothing retrains
+        self.assertIn(f"S7 (version 4): {s2}/s7", log)
+        self.assertIn("finished: every unit of every stage ran and no stop rule halted; S7 failures recorded under "
+                      "version 4 (nothing dropped; the supplement's numbers are shown, never judged): iql on "
+                      "medium-expert, td3_bc IW on medium-expert, td3_bc on medium-expert", log)
+        self.assertIsNone(re.search(r"card \S+ dropped", log))
+        before = state
+        code, out = driver(args)                        # resumed: nothing retrains, nothing new is recorded
         self.assertEqual(code, 0, out[-4000:])
-        again = state_of(root)
-        self.assertEqual(len(again["s7_stopped"]), n_before)
-        self.assertEqual(list(root.glob("stage2/*/seed*/td3_bc-*/record.json")), [])
-        st2 = status_of(root)
+        again, st2 = state_of(root), status_of(root)
         self.assertEqual((st2["state"], st2["counts"]["cards_done"]), ("finished", st2["counts"]["cards_skipped"]))
-        READOUTS["stop_s7"] = dict(s7_stopped=got, counts=st["counts"], iql_iw_seed1=way, resume=st2["counts"])
+        self.assertEqual(st2["counts"]["cards_done"], 10 + len(planned))
+        self.assertEqual(st2["counts"]["lanes_done"], 0)
+        self.assertEqual((again["s7_stopped"], again["s7_results"]), (before["s7_stopped"], before["s7_results"]))
+        READOUTS["supplement"] = dict(s7_stopped=stopped, s7_results=len(results), counts=st["counts"],
+                                      resume=st2["counts"])
 
     def test_simulated_s6_halts_after_stage1(self):
         """A card cap below stage 1's own use: S6's projection stops the driver before stage 2."""

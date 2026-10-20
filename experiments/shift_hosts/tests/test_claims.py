@@ -41,6 +41,19 @@ What is checked:
                stage-2 runs read, every field read or explained, the 12-row table filled with 5 seeds, Claims 0, 4a,
                4b, 1 and 2 judged, the driver's checks read; and when present test_stages' dry run (both qualities)
                and its accepted-S5 run (stop reports moved aside by --resume-after-stop)
+  supplement   version 4's S7 supplement (supplement.py; PRESPEC.md section 21, post hoc): every package file but
+               supplement.CHANGEABLE is version 3's approved bytes (claims.py, export.py, runner.py, evaluate.py,
+               band_readout.py, gate.py, approve_hosts.py and every training and scoring file, against the SHA-256
+               values of version 3's code manifest), and a one-byte change is found; prespec.json's frozen block, the
+               plan's run counts (learner scope 21 or 20, IW scope 15; medium-expert 56, medium 42) and order (the
+               driver's), and validate's refusals; check_sources (made-up files, and version 3's own files read only
+               when present); the export on made-up folders carries a made-up "version 3" results.json with every key
+               canonical-JSON equal and adds only qualities.<quality>.s7_shown, s7_supplement and one caveat (tampering,
+               a wrong carried file or SHA-256 refused), the shown block holds no t, p-value, bar, mark, badge, Holm
+               entry or verdict, integrity S7 reads "outcome" with seed-1 failures covered by version-4 entries, S1
+               fails on a version-3 record in the supplement's root; the same over test_stages' supplement dry run
+               (version 4's driver files) when present; R1 (reproduction) compares, ignores what differs by design and
+               never raises; claims.judge and the 12-row table ignore a stopped scope's runs (version 3's S7 scenarios)
   integration  (scoring environment only) a made-up actor (made-up parameters, never trained) scored by
                evaluate.score_actor is read by export.read_run, and these tests' scores writer matches evaluate's
                format; the package constants match evaluate's and actors_f32's; the real start banks' anchors;
@@ -66,8 +79,10 @@ import copy
 import hashlib
 import json
 import math
+import re
 import shutil
 import sys
+import types
 import unittest
 from pathlib import Path
 
@@ -80,6 +95,7 @@ from experiments.shift_hosts import export as E
 from experiments.shift_hosts import gate
 from experiments.shift_hosts import guard
 from experiments.shift_hosts import handoff as H
+from experiments.shift_hosts import supplement as S
 from experiments.shift_hosts import tests as T
 
 AREA = "claims"
@@ -1948,6 +1964,865 @@ class DryRun(unittest.TestCase):
         self.assertEqual((stop["rule"], stop["kind"], stop["accepted_by_operator"]), ("S5", "outcome", True))
 
 
+# ---------------------------------------------------------------------------------------------- version 4's supplement
+
+# Version 3's approved bytes of every package file version 4 may not change: the judging and export code, the gate, the
+# approval tool and every training and scoring file (their SHA-256 in approval_fe9fb77b0851c75b.json's code manifest,
+# equal to `git show 6f9ce2b:<file> | sha256sum`); supplement.code_unchanged checks the rest (tests, external code)
+V3_CODE = {f"experiments/shift_hosts/{name}": digest for name, digest in (
+    ("__init__.py", "7bca13c60e2625721cbfc582231216e2ac882d3f76abc8e53334b409ff79add1"),
+    ("actors_f32.py", "0b8a0d1006d3bbec13aa41157a258a76bc870f39056b155a5947e0a9c7010ba4"),
+    ("approve_hosts.py", "1129c254b9487e4efda2a365ac82a784ca6616618dedd7bb51abeac225da9f75"),
+    ("band_readout.py", "b59a80f2f90bcb518ba98a8b560c2219ea26fb7316cbfecdd8b940470e7b5f58"),
+    ("bca_core.py", "22ad8de8fce2028810a7867f8e969297183dbe15da18632f31beb3d2bc8284a8"),
+    ("budget.py", "9990be9c566aa20c82bb45ca4984393f338d463231ee3af8aef093af1a48ffc7"),
+    ("claims.py", "b1f7ba7a5206492b9bdcd923d9c5fa8bad739403da0ea152086f4a5cadc096e4"),
+    ("data_copy.py", "d4cef6063a9cf6ceea2992eae14ecc3dbe8f513ffa9da9eabe95785bce3213ed"),
+    ("evaluate.py", "5e7e42932203dfceebf99b5b17618fab14d1df75f34a1756b00144461e3da5ea"),
+    ("export.py", "9ecc3fe09cc76dabcf62a5cf159f82baa9872fac564f076438336c11eba049e2"),
+    ("gate.py", "922ac9201a98d115a2333a722d1473331f930a1ac034fc6d2c22dbfc3ef64fef"),
+    ("guard.py", "dbc67f11cf8130f36076a519c402a6a9f5a9d348518581ae743c2cbc8408eb00"),
+    ("handoff.py", "43a1c59f456a84b5e59c0923ff7eb377b5e8914886dc8eed3794502dcdb24914"),
+    ("iw.py", "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"),
+    ("policies.py", "085d663da118bd85040135571e1882e12fb9a55f76a030e44c12c4979ae27e7f"),
+    ("prepare.py", "ed124df60ad76282a6ebbad52877b8bd8f1eb9e851fcae94c3460eaabee81499"),
+    ("runner.py", "f4100b1d85001df753e6e9ed3af5b71b3b7b73b81f19052c47c847dc093a12c1"),
+    ("scoring_cache.py", "0dbba921ca4d90f26a476a8275cb7d751d8a3ffb8531598efc44dad96bce7bca"),
+    ("unifloral_cql_bca.py", "cc0022327f247a308407c87c2bdb42dc87abe68af7082580ea117bd887488819"),
+    ("unifloral_import.py", "2cad560d24a1ccfe0fc36fd0e7563d43d9c9cbca620a650615866a6c1f8950a4"),
+    ("unifloral_iql_bca.py", "084562a211d32dd5218edd38a0c2991a846d37852ee896207eda50bd33ed2120"),
+    ("unifloral_rebrac_bca.py", "f82fab09273debfaa4881a02c3b45103f5440722391ae694d7ecb828d3f46afc"),
+    ("unifloral_td3_bc_bca.py", "7fa5e0711c38d15952eedef8a781eea8132a230509206365db83ccba8a1b59cb"))}
+# prespec.json's "supplement" block exactly as version 4's build froze it (no later agent changes it)
+FROZEN_BLOCK = {
+    "version": 4, "root": "runs/shift_hosts/supplement_v4",
+    "source": {"fingerprint": "fe9fb77b0851c75b522c337fcb65c2a3d027de71ddfa50dcd6f3affc3bbd1c1c",
+               "approval_commit": "6f9ce2b51bf2907328477f4ffa96afff25522559",
+               "state_sha256": "e577472ffc68a18079c1cd4ae2f778315d506b6db47a23dad0e5c295fc21df11",
+               "ledger_sha256": "25ec5762ab14b1e9e47cf38346cb231908003a904618af385632d4c0a5ca7fbf",
+               "results_sha256": "73c3f12e07fac5d026381a7e2c50b01fc681442e3109c5a131e4d69d1d6ba48b"},
+    "scopes": [{"quality": "medium-expert", "learner": "rebrac", "scope": "learner"},
+               {"quality": "medium-expert", "learner": "iql", "scope": "learner"},
+               {"quality": "medium-expert", "learner": "td3_bc", "scope": "iw"},
+               {"quality": "medium", "learner": "td3_bc", "scope": "learner"},
+               {"quality": "medium", "learner": "iql", "scope": "learner"}],
+    "plan": {"medium-expert": {"rebrac": ["alone", "standard", "iw", "room"],
+                               "iql": ["sham_alone", "alone", "standard", "iw", "room"],
+                               "td3_bc": ["alone", "standard", "iw"]},
+             "medium": {"td3_bc": ["sham_alone", "alone", "standard", "iw", "room"],
+                        "iql": ["sham_alone", "alone", "standard", "iw", "room"]}},
+    "s7": {"seeds": [0, 1, 2, 3, 4], "steps": [50000, 100000], "setups": ["alone", "standard", "iw"]}}
+SUPPLEMENT_DRY = T.STAGE0 / "runner" / "test_stages" / "supplement"      # StopTest.test_supplement_dry_run's root
+# keys the shown block never holds: a test statistic, a p-value, a bar, a mark, a badge, a Holm entry or a verdict (a
+# paired difference's se and one-sided bounds are shown: the owner's decision D5)
+SHOWN_FORBIDDEN = {"t", "p", "p_one_sided", "p_values", "bar", "bars", "claim0_bar", "mark", "marks", "badge", "badges",
+                   "holm", "holm_adjusted_p", "adjusted", "families", "claims", "table", "verdict", "kill_rule",
+                   "window", "interval", "t_quantile_4df", "level"}
+AT = "2026-10-21T00:00:00+00:00"
+DROP = object()                 # SupplementPlanTest's marker for a key taken out of a block
+READOUTS_V4 = {}                # what the version-4 tests report in the result file (extra)
+
+
+def all_keys(x):
+    """Every dictionary key anywhere in x (nested dictionaries and lists)."""
+    if isinstance(x, dict):
+        for k, v in x.items():
+            yield k
+            yield from all_keys(v)
+    elif isinstance(x, list):
+        for v in x:
+            yield from all_keys(v)
+
+
+def made_up_block(scopes, results_sha256):
+    """A supplement block in prespec.json's shape for these scopes, carrying a made-up "version 3" results.json of this
+    SHA-256 (validate requires version 3's real fingerprint and approval commit; no real file is read)."""
+    return dict(version=S.VERSION, root=S.ROOT_REL,
+                source=dict(fingerprint=S.V3["fingerprint"], approval_commit=S.V3["approval_commit"],
+                            state_sha256=sha("made-up version 3 state.json"),
+                            ledger_sha256=sha("made-up version 3 ledger.json"), results_sha256=results_sha256),
+                scopes=[dict(e) for e in scopes], plan=S.plan_of(S.scope_map(scopes), E.CHOICE19),
+                s7=dict(seeds=list(C.SEEDS), steps=[S.HALF_STEP, S.FINAL_STEP], setups=list(S.S7_SETUPS)))
+
+
+def v4_entry(learner, scope, setup, run, step, quality="medium-expert"):
+    """A version-4 state.json "s7_stopped" entry as stages.Driver.s7_failed writes it (version and actor step added)."""
+    return dict(quality=quality, learner=learner, scope=scope, setup=setup, run=run, stage=run.split("/")[0],
+                file=f"runs/shift_hosts/supplement_v4/{run}/lanes/s7-step{step}/s7.json", step=step, version=4,
+                at_utc=AT)
+
+
+def strong_of(L, setup, seed):
+    """Made-up strong-mix returns as Fake.study gives them (TD3+BC's standard BCA gains GAIN)."""
+    base = BASE[seed]
+    std = base + (GAIN if L == "td3_bc" else NULL1)[seed]
+    return dict(alone=base, standard=std, iw=std + NULL2[seed], room=base - 1.0, sham_alone=base + 0.25)[setup]
+
+
+def supplement_root(root, plan, failing=(), q="medium-expert"):
+    """A made-up supplement root in the stage driver's layout (Fake): every run of the plan ({learner: [setups]}) at
+    seeds 0-4 (sham-alone at seed 0) with its scores and coverage files and, as version 4 writes them, S7 lanes on every
+    alone, standard and IW run's final and 50% actors (failing: the (learner, setup, seed) whose checks fail). Returns
+    (the Fake, the s7_results entries the driver would record)."""
+    f = Fake(root, frozen())
+    results = []
+    for L, setups in plan.items():
+        for s in setups:
+            for sd in E.SETUP_SEEDS[s]:
+                rec = f.run(q, L, s, sd, strong=strong_of(L, s, sd))
+                if s not in S.S7_SETUPS:
+                    continue
+                for step in (HALF, FINAL):
+                    folder = f.folder(q, L, s, sd)
+                    f.s7(folder, rec, step)
+                    path = folder / "lanes" / f"s7-step{step}" / "s7.json"
+                    ok = (L, s, sd) not in failing
+                    H.write_json(path, dict(learner=L, rows=4, passed=True, s7_passed=ok, closed_loop=None))
+                    results.append(dict(label=rec["run_id"] + ("/s7" if step == FINAL else f"/s7-{step}"),
+                                        run=rec["run_id"], quality=q, learner=L, setup=s, seed=sd, step=step,
+                                        s7_passed=ok, open_loop_passed=True, open_loop_max_abs={}, closed_loop=None,
+                                        file=str(path), sha256=E.sha256_file(path), at_utc=AT))
+    return f, results
+
+
+def supplement_driver(f, entries, results):
+    """The supplement driver's files: Fake.driver's, with version 4's s7_stopped entries and s7_results."""
+    f.driver(s7_stopped=entries)
+    path = f.root / "driver" / "state.json"
+    H.write_json(path, dict(H.read_json(path), s7_results=list(results)))
+
+
+def dry_frozen(root):
+    """A made-up build's identity for a dry-run root: the code manifest its records were trained under."""
+    first = H.read_json(next(iter(sorted(root.glob("stage2/*/seed*/*/record.json")))))
+    return E.Frozen(None, None, gate.code_manifest(), made_up=True,
+                    code_manifest_sha256=first["code"]["code_manifest_sha256"])
+
+
+def bind(cfg, folder, *names):
+    """Just enough of a stages.Driver for its own methods `names` (no driver files are written)."""
+    from experiments.shift_hosts import stages as ST
+
+    stub = types.SimpleNamespace(cfg=cfg, made_up_file=lambda quality, rep: Path(folder) / quality / f"seed{rep}.npz")
+    for name in names:
+        setattr(stub, name, types.MethodType(getattr(ST.Driver, name), stub))
+    return stub
+
+
+class CodeUnchangedTest(unittest.TestCase):
+    """Version 4 may change only supplement.CHANGEABLE (stages.py, test_stages.py, test_claims.py, PRESPEC.md and
+    INTERFACES.md) and add supplement.py: every other file of the code manifest, external code included, keeps version
+    3's approved bytes. So claims.py, export.py, runner.py, evaluate.py, band_readout.py, gate.py, approve_hosts.py and
+    every training and scoring file are version 3's, and no judged number can move through new code."""
+
+    def test_byte_identical_to_version_3(self):
+        """V3_CODE equals version 3's approved code manifest (approval_fe9fb77b0851c75b.json) and the bytes on disk;
+        supplement.code_unchanged finds no other difference; CHANGEABLE names none of V3_CODE's files; supplement.py
+        is the only file added."""
+        approval = gate.PACKAGE / S.V3["approval_file"]
+        self.assertTrue(approval.is_file(), f"{approval} (version 3's approval, committed at 6f9ce2b) is missing")
+        then = json.loads(approval.read_text(encoding="utf8"))
+        self.assertEqual(then["fingerprint"], S.V3["fingerprint"])
+        now = gate.code_manifest()
+        for rel, digest in V3_CODE.items():
+            self.assertEqual(then["code_manifest"][rel], digest, rel)       # version 3's approved bytes
+            self.assertEqual(gate.sha256_file(gate.REPO / rel), digest, rel)  # are the bytes on disk
+            self.assertEqual(now[rel], digest, rel)
+        self.assertEqual(S.code_unchanged(now), [])
+        self.assertFalse(set(V3_CODE) & set(S.CHANGEABLE))
+        self.assertEqual(sorted(set(now) - set(then["code_manifest"])), list(S.ADDED))
+        self.assertEqual(sorted(set(then["code_manifest"]) - set(now)), [])
+        changed = sorted(p for p, d in then["code_manifest"].items() if now[p] != d)
+        self.assertTrue(set(changed) <= set(S.CHANGEABLE), changed)
+        READOUTS_V4["changed_against_version_3"] = changed
+
+    def test_a_change_is_found(self):
+        """A one-byte change to export.py, a changed external file, an added or a removed file are found; changes
+        inside CHANGEABLE and supplement.py's presence or absence are not; version 3's approval must match its sidecar
+        and approve version 3's fingerprint."""
+        now = gate.code_manifest()
+        rel = "experiments/shift_hosts/export.py"
+        blob = bytearray((gate.REPO / rel).read_bytes())
+        blob[len(blob) // 2] ^= 1
+        self.assertEqual(S.code_unchanged(dict(now, **{rel: hashlib.sha256(bytes(blob)).hexdigest()})),
+                         [dict(path=rel, change="changed")])
+        ext = next(p for p in now if not p.startswith("experiments/shift_hosts/"))
+        self.assertEqual(S.code_unchanged(dict(now, **{ext: sha("an edited external file")})),
+                         [dict(path=ext, change="changed")])
+        new = "experiments/shift_hosts/extra.py"
+        self.assertEqual(S.code_unchanged(dict(now, **{new: sha("a new file")})), [dict(path=new, change="added")])
+        gone = "experiments/shift_hosts/claims.py"
+        self.assertEqual(S.code_unchanged({p: d for p, d in now.items() if p != gone}),
+                         [dict(path=gone, change="removed")])
+        self.assertEqual(S.code_unchanged(dict(now, **{p: sha("edited " + p) for p in S.CHANGEABLE})), [])
+        self.assertEqual(S.code_unchanged({p: d for p, d in now.items() if p not in S.ADDED}), [])
+        pkg = fresh("code_unchanged") / "package"
+        pkg.mkdir()
+        src = gate.PACKAGE / S.V3["approval_file"]
+        dup = pkg / src.name
+        shutil.copy2(src, dup)
+        shutil.copy2(gate.sidecar(src), gate.sidecar(dup))
+        self.assertEqual(S.code_unchanged(now, package=pkg), [])
+        dup.write_bytes(src.read_bytes() + b" ")                           # it no longer matches its sidecar
+        with self.assertRaises(gate.ApprovalError):
+            S.code_unchanged(now, package=pkg)
+        body = json.loads(src.read_text(encoding="utf8"))
+        dup.write_text(json.dumps(dict(body, fingerprint=sha("another version"))), encoding="utf8")
+        gate.sidecar(dup).write_text(f"{gate.sha256_file(dup)}  {dup.name}\n", encoding="utf8")
+        with self.assertRaises(gate.ApprovalError):                         # an approval of another version
+            S.code_unchanged(now, package=pkg)
+        dup.unlink()
+        with self.assertRaises(gate.ApprovalError):
+            S.code_unchanged(now, package=pkg)
+
+
+class SupplementPlanTest(unittest.TestCase):
+    """The frozen supplement block and its plan (supplement.py's module docstring)."""
+
+    def test_frozen_block(self):
+        """prespec.json holds exactly the frozen block (json.dumps(indent=1) and a final newline, LF only); it
+        validates to its own plan with S7 on every data seed and on the 50,000- and 100,000-step actors; its plan has
+        56 stage-2 runs on medium-expert and 42 on medium."""
+        self.assertEqual(S.prespec_block(), FROZEN_BLOCK)
+        text = (gate.PACKAGE / gate.PRESPEC_NAME).read_bytes().decode("utf8")
+        self.assertNotIn("\r", text)
+        self.assertEqual(text, json.dumps(json.loads(text), indent=1) + "\n")
+        v = S.validate(FROZEN_BLOCK, C.LEARNERS, C.QUALITIES, C.SEEDS, E.CHOICE19)
+        self.assertEqual((v["plan"], v["s7_all_seeds"], v["s7_half"]), (FROZEN_BLOCK["plan"], True, True))
+        self.assertEqual(v["scopes"], {"medium-expert": dict(rebrac="learner", iql="learner", td3_bc="iw"),
+                                       "medium": dict(td3_bc="learner", iql="learner")})
+        self.assertEqual({q: len(ids) for q, ids in S.run_ids(v["plan"], C.SEEDS).items()},
+                         {"medium-expert": 56, "medium": 42})
+        self.assertEqual((S.FINAL_STEP, S.HALF_STEP), (FINAL, HALF))
+        self.assertEqual(S.ROOT, gate.REPO / FROZEN_BLOCK["root"])
+
+    def test_scopes_and_counts(self):
+        """A learner scope trains 21 runs for a choice-19 learner (TD3+BC, IQL: sham-alone, alone, standard, IW and
+        room at seeds 0-4) and 20 for CQL and ReBRAC, an IW scope 15 (IW with alone and standard as comparators);
+        scopes_of reads s7_stopped entries as claims.s7_scopes does (a learner scope outranks an IW scope; each
+        quality its own)."""
+        for L in C.LEARNERS:
+            for scope, want in (("learner", 21 if E.CHOICE19[L] else 20), ("iw", 15)):
+                plan = S.plan_of({"medium": {L: scope}}, E.CHOICE19)
+                self.assertEqual(len(S.run_ids(plan, C.SEEDS)["medium"]), want, (L, scope))
+                self.assertEqual(plan["medium"][L], (["sham_alone"] if scope == "learner" and E.CHOICE19[L] else [])
+                                 + list(S.SCOPE_SETUPS[scope]))
+        e = [s7_entry("rebrac", "iw", "iw"), s7_entry("rebrac", "learner", "standard"), s7_entry("cql", "iw", "iw"),
+             s7_entry("iql", "learner", "alone", quality="medium", stage="stage2")]
+        got = S.scopes_of(e)
+        self.assertEqual(got, {"medium-expert": dict(rebrac="learner", cql="iw"), "medium": dict(iql="learner")})
+        for q in C.QUALITIES:
+            self.assertEqual(got[q], {L: v["scope"] for L, v in C.s7_scopes(e, q).items()})
+        self.assertEqual(S.scopes_of([]), {q: {} for q in C.QUALITIES})
+        plan = S.plan_of(got, E.CHOICE19)
+        self.assertEqual({q: len(ids) for q, ids in S.run_ids(plan, C.SEEDS).items()},
+                         {"medium-expert": 20 + 15, "medium": 21})
+
+    def test_run_ids_follow_the_driver(self):
+        """run_ids lists a plan's runs in the stage driver's own order (stages.Driver.plan_units and unit_jobs): the
+        sham-alone runs, each seed's runs (learner order, then alone, standard, IW), then the room references."""
+        from experiments.shift_hosts import stages as ST
+
+        plan = {"medium": {"iql": ["sham_alone", "alone", "standard", "iw", "room"],
+                           "td3_bc": ["alone", "standard", "iw"]}}
+        self.assertEqual(S.run_ids(plan, (0, 1), made_up=True)["medium"],
+                         ["stage2/made-up-medium/seed0/iql-sham_alone"]
+                         + [f"stage2/made-up-medium/seed{k}/{L}-{s}" for k in (0, 1) for L in ("td3_bc", "iql")
+                            for s in ("alone", "standard", "iw")]
+                         + [f"stage2/made-up-medium/seed{k}/iql-room" for k in (0, 1)])
+        self.assertEqual(S.run_ids(plan, (0,))["medium"][0], "stage2/medium/seed0/iql-sham_alone")
+        d = fresh("supplement_order")
+        pf = d / "plan.json"
+        pf.write_text(json.dumps(FROZEN_BLOCK["plan"]), encoding="utf8")
+        cfg = ST.config_from(ST.parser().parse_args(["run", "--dry-run", "--root", str(d / "root"),
+                                                     "--supplement-plan", str(pf)]))
+        stub = bind(cfg, d, "in_plan", "card_job", "plan_units", "unit_jobs")
+        made = S.run_ids(FROZEN_BLOCK["plan"], cfg.seeds, cfg.learners, made_up=True)
+        for q in C.QUALITIES:
+            self.assertEqual([j.label for name, _ in stub.plan_units(q) for j in stub.unit_jobs(q, name)], made[q], q)
+
+    def test_validate_refuses(self):
+        """validate refuses a block that is not exactly the frozen shape: other keys, version or root; another
+        fingerprint or approval commit; a malformed SHA-256; malformed, unknown or repeated scopes; a plan that is
+        not what its scopes give (a run left out or added, a sham-alone run without choice 19, room without alone);
+        S7 settings other than seed 0 or every seed, the final or the 50% and final steps, and alone, standard and
+        IW; a learner the code does not run."""
+        def bad(*changes):
+            """FROZEN_BLOCK with each (path, value) set, or that key taken out when value is DROP."""
+            b = copy.deepcopy(FROZEN_BLOCK)
+            for path, value in changes:
+                node = b
+                for k in path[:-1]:
+                    node = node[k]
+                if value is DROP:
+                    del node[path[-1]]
+                else:
+                    node[path[-1]] = value
+            return b
+
+        scopes, learner = FROZEN_BLOCK["scopes"], ["sham_alone", "alone", "standard", "iw", "room"]
+        cases = dict(
+            extra_key=dict(FROZEN_BLOCK, kind="s7-supplement"), missing_key=bad((("s7",), DROP)),
+            version=bad((("version",), 3)), root=bad((("root",), "runs/shift_hosts")),
+            source_key=bad((("source", "extra"), "x")), fingerprint=bad((("source", "fingerprint"), "0" * 64)),
+            commit=bad((("source", "approval_commit"), "bafd86f")), state_sha=bad((("source", "state_sha256"), "x")),
+            upper_sha=bad((("source", "results_sha256"), "A" * 64)), no_scopes=bad((("scopes",), [])),
+            scope_shape=bad((("scopes",), [dict(quality="medium", learner="iql")])),
+            unknown_learner=bad((("scopes",), scopes + [dict(quality="medium", learner="bc", scope="iw")])),
+            unknown_scope=bad((("scopes",), [dict(e, scope="setup") for e in scopes])),
+            unknown_quality=bad((("scopes",), [dict(e, quality="expert") for e in scopes])),
+            repeated=bad((("scopes",), scopes + scopes[:1])),
+            run_left_out=bad((("plan", "medium", "iql"), learner[:-1])),
+            run_added=bad((("plan", "medium", "cql"), ["alone", "standard", "iw"])),
+            sham_without_choice19=bad((("plan", "medium-expert", "rebrac"), learner)),
+            room_without_alone=bad((("plan", "medium", "iql"), ["sham_alone", "standard", "iw", "room"])),
+            unknown_setup=bad((("plan", "medium", "iql"), learner[:-1] + ["iw_ones"])),
+            s7_seeds=bad((("s7", "seeds"), [0, 1])), s7_seed1=bad((("s7", "seeds"), [1])),
+            s7_steps=bad((("s7", "steps"), [25000, 100000])), s7_order=bad((("s7", "steps"), [100000, 50000])),
+            s7_setups=bad((("s7", "setups"), ["alone", "standard", "iw", "room"])), s7_key=bad((("s7", "room"), True)))
+        for name, block in cases.items():
+            with self.assertRaises(gate.ApprovalError, msg=name):
+                S.validate(block, C.LEARNERS, C.QUALITIES, C.SEEDS, E.CHOICE19)
+        with self.assertRaises(gate.ApprovalError):                       # ReBRAC is not a learner of this code
+            S.validate(FROZEN_BLOCK, ("td3_bc", "cql", "iql"), C.QUALITIES, C.SEEDS, E.CHOICE19)
+        seed0 = bad((("s7", "seeds"), [0]), (("s7", "steps"), [100000]))
+        v = S.validate(seed0, C.LEARNERS, C.QUALITIES, C.SEEDS, E.CHOICE19)
+        self.assertEqual((v["s7_all_seeds"], v["s7_half"]), (False, False))
+
+    def test_check_sources(self):
+        """check_sources (before a real start) refuses version 3's files when one is missing, when its SHA-256 is not
+        the block's, when runs/shift_hosts/results_v3.json differs from the committed results.json, and when the
+        committed files are not in git HEAD as on disk (made-up files here; nothing real is read)."""
+        d = fresh("supplement_sources")
+        pkg = d / "package"
+        pkg.mkdir()
+        with self.assertRaisesRegex(gate.ApprovalError, "missing"):
+            S.check_sources(FROZEN_BLOCK, repo=d, package=pkg)
+        H.write_json(d / S.SOURCE_FILES["state_sha256"], dict(s7_stopped=[s7_entry("rebrac", "learner", "standard")]))
+        H.write_json(d / S.SOURCE_FILES["ledger_sha256"], dict(note="a made-up ledger"))
+        H.write_json(d / S.SOURCE_FILES["results_sha256"], dict(made_up=True, qualities={}, caveats=[]))
+        with self.assertRaisesRegex(gate.ApprovalError, "not the file the block names"):
+            S.check_sources(FROZEN_BLOCK, repo=d, package=pkg)
+        block = copy.deepcopy(FROZEN_BLOCK)
+        block["source"].update({k: gate.sha256_file(d / rel) for k, rel in S.SOURCE_FILES.items()})
+        H.write_json(d / S.RESULTS_V3_PREVIEW, dict(made_up=True, note="another preview"))
+        with self.assertRaisesRegex(gate.ApprovalError, "differs from version 3's committed results.json"):
+            S.check_sources(block, repo=d, package=pkg)
+        (d / S.RESULTS_V3_PREVIEW).unlink()
+        with self.assertRaisesRegex(gate.ApprovalError, "committed in git HEAD"):
+            S.check_sources(block, repo=d, package=pkg)
+
+    @unittest.skipUnless((gate.REPO / S.SOURCE_FILES["state_sha256"]).is_file(),
+                         "version 3's runs/shift_hosts/driver/state.json is not on this machine")
+    def test_check_sources_on_version_3s_files(self):
+        """Read only, as preflight does before a real start: version 3's driver/state.json, driver/ledger.json and
+        committed results.json have the frozen block's SHA-256 values (results_v3.json too, when present), the
+        committed results.json and version 3's approval are in git HEAD (approved at 6f9ce2b), and version 3's
+        s7_stopped gives exactly the block's scopes; a block naming other scopes is refused. Only SHA-256 values,
+        git and state.json's S7 entries are read (no return)."""
+        got = S.check_sources(FROZEN_BLOCK)
+        self.assertEqual(got["scopes"], S.scope_map(FROZEN_BLOCK["scopes"]))
+        self.assertEqual(got["approval"], dict(file=S.V3["approval_file"], commit=S.V3["approval_commit"],
+                                               fingerprint=S.V3["fingerprint"]))
+        other = copy.deepcopy(FROZEN_BLOCK)
+        other["scopes"] = other["scopes"][:-1]
+        with self.assertRaisesRegex(gate.ApprovalError, "scopes"):
+            S.check_sources(other)
+
+
+
+class SupplementBuildTest(unittest.TestCase):
+    """supplement.build on made-up folders (Fake): a made-up "version 3" results.json (export.build over a full study
+    whose driver recorded ReBRAC's learner scope and TD3+BC's IW setup as stopped by S7) is carried, and the
+    supplement's own root holds exactly those scopes' runs at seeds 0-4, with S7 on every alone, standard and IW run's
+    final and 50% actors (TD3+BC's IW actors at seed 1 fail, recorded by version-4 entries)."""
+
+    SCOPES = [dict(quality="medium-expert", learner="rebrac", scope="learner"),
+              dict(quality="medium-expert", learner="td3_bc", scope="iw")]
+
+    @classmethod
+    def setUpClass(cls):
+        cls.dir = fresh("supplement_build")
+        q = "medium-expert"
+        v3 = Fake(cls.dir / "v3", frozen())
+        v3.study(q, gains=dict(td3_bc=GAIN), driver=False)
+        v3.driver(s7_stopped=[s7_entry("rebrac", "learner", "standard"),
+                              s7_entry("td3_bc", "iw", "iw", stage="stage2")])
+        cls.carried = cls.dir / "v3_results.json"
+        E.write(made_up_build(cls.dir / "v3"), cls.carried)
+        cls.v3 = H.read_json(cls.carried)
+        cls.block = made_up_block(cls.SCOPES, gate.sha256_file(cls.carried))
+        cls.fake, results = supplement_root(cls.dir / "v4", cls.block["plan"][q], failing={("td3_bc", "iw", 1)})
+        cls.s7_results = results
+        cls.iw1 = cls.fake.run_id(q, "td3_bc", "iw", 1)
+        cls.entries = [v4_entry("rebrac", "learner", "standard", "stage1/medium-expert/seed0/rebrac-standard", 15_000),
+                       v4_entry("td3_bc", "iw", "iw", cls.iw1, HALF)]
+        supplement_driver(cls.fake, cls.entries, results)
+        cls.results = cls.build()
+
+    @classmethod
+    def build(cls, root=None, block=None, carried=None):
+        return S.build(guard.MADE_UP, frozen=frozen(), root=root or cls.dir / "v4", block=block or cls.block,
+                       carried_path=carried or cls.carried, v3_root=cls.dir / "v3", anchors=ANCHORS)
+
+    def test_only_the_allowed_keys_are_added(self):
+        """Every key of version 3's results.json is canonical-JSON equal in the result; the only additions are
+        qualities.<quality>.s7_shown, s7_supplement and one caveat (supplement.CAVEAT, last); the written file reads
+        back the same."""
+        r, v3 = self.results, self.v3
+        self.assertEqual(set(r) - set(v3), {"s7_supplement"})
+        for k in v3:
+            if k not in ("qualities", "caveats"):
+                self.assertEqual(S.canonical(r[k]), S.canonical(v3[k]), k)
+        self.assertEqual(r["caveats"], v3["caveats"] + [S.CAVEAT])
+        self.assertEqual(set(r["qualities"]), set(v3["qualities"]))
+        for q, body in v3["qualities"].items():
+            self.assertEqual(set(r["qualities"][q]) - set(body), {"s7_shown"}, q)
+            for k in body:
+                self.assertEqual(S.canonical(r["qualities"][q][k]), S.canonical(body[k]), (q, k))
+        S.assert_judged_unchanged(r, v3)
+        out = WORK / "supplement_build" / "results.json"
+        self.assertEqual(E.write(r, out), E.sha256_file(out))
+        S.assert_judged_unchanged(H.read_json(out), v3)
+        self.assertEqual(H.read_json(out)["s7_supplement"]["carried_from"],
+                         dict(version=3, path=E.rel(self.carried), sha256=gate.sha256_file(self.carried),
+                              fingerprint=S.V3["fingerprint"]))
+
+    def test_judged_keys_cannot_change(self):
+        """assert_judged_unchanged refuses any change to a version-3 key (a badge, a p-value, a table number, a key
+        taken out), any other added key, a caveat moved or missing, and a carried file that already holds a supplement
+        key; the build refuses such a carried file too."""
+        r, v3 = self.results, self.v3
+        me = "medium-expert"
+        drop = next(k for k in sorted(v3) if k not in ("qualities", "caveats"))
+        changes = dict(
+            badge=lambda x: x["qualities"][me]["claims"]["td3_bc"]["1"].update(badge=C.SHELVED),
+            p_value=lambda x: x["qualities"][me]["families"]["1"]["p_values"].update(td3_bc=0.5),
+            table=lambda x: x["qualities"][me]["table"][0]["strong"].update(mean=0.0),
+            taken_out=lambda x: x.pop(drop),
+            top_level=lambda x: x.update(shown_elsewhere=True),
+            in_a_quality=lambda x: x["qualities"]["medium"].update(s7_more={}),
+            caveat_moved=lambda x: x["caveats"].insert(0, x["caveats"].pop()),
+            caveat_missing=lambda x: x["caveats"].pop())
+        for name, change in changes.items():
+            x = copy.deepcopy(r)
+            change(x)
+            with self.assertRaises(gate.ApprovalError, msg=name):
+                S.assert_judged_unchanged(x, v3)
+        twice = dict(copy.deepcopy(v3), s7_supplement=dict(note="an earlier supplement"))
+        with self.assertRaises(gate.ApprovalError):
+            S.assert_judged_unchanged(dict(r), twice)
+        path = WORK / "supplement_build" / "carried_twice.json"
+        E.write(twice, path)
+        with self.assertRaisesRegex(gate.ApprovalError, "already holds a supplement key"):
+            self.build(block=made_up_block(self.SCOPES, gate.sha256_file(path)), carried=path)
+
+    def test_carried_file_must_be_version_3s(self):
+        """The build refuses a carried results.json whose SHA-256 is not the block's, one whose sidecar does not
+        match, and a block that does not validate; nothing is built."""
+        with self.assertRaisesRegex(gate.ApprovalError, "is not version 3's results.json"):
+            self.build(block=made_up_block(self.SCOPES, sha("another results.json")))
+        bad = WORK / "supplement_build" / "carried_bad.json"
+        shutil.copy2(self.carried, bad)
+        shutil.copy2(gate.sidecar(self.carried), gate.sidecar(bad))
+        bad.write_bytes(self.carried.read_bytes() + b"\n")                 # its sidecar no longer matches
+        with self.assertRaisesRegex(gate.ApprovalError, "does not verify"):
+            self.build(block=made_up_block(self.SCOPES, gate.sha256_file(bad)), carried=bad)
+        with self.assertRaises(gate.ApprovalError):
+            self.build(block=dict(self.block, root="runs/shift_hosts"))
+
+    def test_shown_block(self):
+        """qualities.medium-expert.s7_shown: label, caveat and post-hoc mark; per scope its setups (a learner scope
+        all of them, an IW scope IW only with alone and standard as comparators), per-seed values equal to the scores
+        files with their mean and sd, each run's provenance (trained under version 4, R1 equal to version 3's record,
+        version 3's exclusion), the paired differences (an IW scope's leave out standard - alone, version 3's judged
+        Claim 1), every S7 lane (seeds 0-4, 50% and final actors, verified and bound to its record) and a write-up in
+        the user's format; never a t, p-value, bar, mark, badge, Holm entry or verdict (nor in s7_supplement). medium,
+        with no scope, says so."""
+        q = "medium-expert"
+        sh = self.results["qualities"][q]["s7_shown"]
+        self.assertEqual((sh["label"], sh["caveat"], sh["post_hoc"], sh["version"]), (S.LABEL, S.CAVEAT, True, 4))
+        self.assertEqual(self.results["qualities"]["medium"]["s7_shown"],
+                         dict(label=S.LABEL, note="no scope stopped by S7 in this quality"))
+        for qq in C.QUALITIES:
+            self.assertEqual(set(all_keys(self.results["qualities"][qq]["s7_shown"])) & SHOWN_FORBIDDEN, set(), qq)
+        self.assertEqual(set(all_keys(self.results["s7_supplement"])) & {"badge", "badges", "bar", "bars", "holm",
+                                                                        "p_one_sided", "verdict", "kill_rule"}, set())
+        self.assertEqual(sorted(sh["scopes"]), ["rebrac", "td3_bc"])
+        rb, td = sh["scopes"]["rebrac"], sh["scopes"]["td3_bc"]
+        self.assertEqual((rb["scope"], td["scope"]), ("learner", "iw"))
+        self.assertEqual((rb["setups_trained"], td["setups_trained"]),
+                         (["alone", "standard", "iw", "room"], ["alone", "standard", "iw"]))
+        self.assertEqual((sorted(rb["setups"]), list(td["setups"])), (["alone", "iw", "room", "standard"], ["iw"]))
+        self.assertEqual((rb["comparators"], sorted(td["comparators"])), ({}, ["alone", "standard"]))
+        self.assertEqual(sorted({c["comparison"] for c in rb["comparisons"]}),
+                         sorted(["standard - alone", "iw - standard", "iw - alone", "room - alone"]))
+        self.assertEqual(sorted({c["comparison"] for c in td["comparisons"]}), ["iw - alone", "iw - standard"])
+        self.assertEqual(len(rb["comparisons"]), 4 * len(S.PAIRED_BANKS) * 2)
+        for c in rb["comparisons"] + td["comparisons"]:
+            self.assertEqual(set(c["summary"]), set(S.PAIRED_FIELDS))
+            sm = c["summary"]
+            if sm["complete"]:          # D5: claims.summary's one-sided 95% bounds, unchanged
+                self.assertAlmostEqual(sm["lower"], sm["mean"] - C.T95 * sm["se"], places=9)
+                self.assertAlmostEqual(sm["upper"], sm["mean"] + C.T95 * sm["se"], places=9)
+            self.assertIn("shown, not judged", c["bounds"])
+        for b in rb["setups"].values():     # a setup's own numbers carry no se or bound
+            self.assertEqual(set(b["final"]["strong"]["J"]) & {"se", "lower", "upper"}, set())
+        std = rb["setups"]["standard"]
+        want = [H.read_manifest(self.fake.folder(q, "rebrac", "standard", sd) / "lanes" / f"scores-step{FINAL}.npz")
+                ["meta"]["summaries"]["scored"]["strong"]["J_mean"] for sd in C.SEEDS]
+        J = std["final"]["strong"]["J"]
+        self.assertEqual((J["per_seed"], J["seeds"], J["complete"]), (want, list(C.SEEDS), True))
+        self.assertAlmostEqual(J["mean"], float(np.mean(want)), places=9)
+        self.assertEqual(std["half"]["strong"]["J"]["seeds"], list(C.SEEDS))
+        recs = std["records"]
+        self.assertEqual([(x["seed"], x["trained_under"], x["r1"]) for x in recs],
+                         [(sd, "version 4", "equal") for sd in C.SEEDS])
+        for x in recs:
+            folder = self.fake.folder(q, "rebrac", "standard", x["seed"])
+            self.assertEqual(x["record_sha256"], E.sha256_file(folder / "record.json"))
+            self.assertEqual(x["v3_record_sha256"], E.sha256_file(self.dir / "v3" / folder.relative_to(self.dir / "v4")
+                                                                  / "record.json"))
+            self.assertEqual(x["v3_excluded"]["why"], "excluded: stopped by S7")
+        lanes = sorted((x["setup"], x["seed"], x["step"], x["s7_passed"]) for x in td["s7"])
+        self.assertEqual(lanes, sorted(("iw", sd, t, sd != 1) for sd in C.SEEDS for t in (HALF, FINAL)))
+        comp = sorted((x["setup"], x["seed"], x["step"], x["s7_passed"]) for x in td["comparator_s7"])
+        self.assertEqual(comp, sorted((s, sd, t, True) for s in ("alone", "standard") for sd in C.SEEDS
+                                      for t in (HALF, FINAL)))         # version 3's judged runs, counted apart
+        self.assertEqual((len(rb["s7"]), rb["comparator_s7"]), (3 * 5 * 2, []))
+        self.assertTrue(all(x["verified"] and x["bound_to_record"] for x in td["s7"] + td["comparator_s7"] + rb["s7"]))
+        self.assertIn("S7 ran on 10 actors of this scope in the supplement and failed on 2", td["writeup"]["happened"])
+        self.assertIn("S7 ran on 20 actors and failed on 0.", td["writeup"]["happened"])
+        self.assertIn("S7 ran on 30 actors of this scope in the supplement and failed on 0.", rb["writeup"]["happened"])
+        self.assertNotIn("comparators", rb["writeup"]["happened"])
+        self.assertEqual(self.results["s7_supplement"]["s7_failures_in_judged_scopes"], [])
+        self.assertEqual((td["v4_entries"], rb["v4_entries"]), ([self.entries[1]], [self.entries[0]]))
+        self.assertEqual((td["v3"]["scope"], rb["v3"]["scope"]), ("iw", "learner"))
+        for L, scope in (("rebrac", rb), ("td3_bc", td)):
+            self.assertEqual((scope["label"], scope["writeup"]["status"], scope["writeup"]["claim"]),
+                             (S.LABEL, S.LABEL, "S7"))
+            md = scope["writeup"]["markdown"]
+            pos = [md.index(h) for h in ("**The idea:**", "**What we tested:**", "**What happened:**", "**Why:**")]
+            self.assertEqual(pos, sorted(pos))
+            self.assertIn(f"results.json:qualities.{q}.s7_shown.scopes.{L}", md)
+            self.assertIn("never judged", md)
+
+    def test_supplement_block_and_integrity(self):
+        """s7_supplement: the block, plan and S7 settings, the plan check (every planned run recorded, none outside),
+        the driver's version-4 entries and s7_results, R1 equal for every run, and integrity: S1 passes and S7 reads
+        "outcome", the seed-1 IW failures at both steps covered by a version-4 entry. A record of version 3's
+        fingerprint dropped into the supplement's root fails S1 (excluded); without the covering entry S7 fails;
+        neither moves a judged key."""
+        sup = self.results["s7_supplement"]
+        self.assertEqual((sup["version"], sup["label"], sup["post_hoc"], sup["block"]), (4, S.LABEL, True, self.block))
+        self.assertEqual(sup["s7_settings"], dict(all_seeds=True, half_step=True))
+        self.assertEqual(sup["plan_check"], dict(planned=35, recorded=35, not_recorded=[], outside_the_plan=[]))
+        self.assertEqual((sup["s7_stopped"], sup["s7_results"]), (self.entries, self.s7_results))
+        self.assertEqual(len(sup["reproduction"]), 35)
+        self.assertEqual({e["result"] for e in sup["reproduction"]}, {"equal"})
+        integ = sup["integrity"]
+        self.assertEqual((integ["S1"]["status"], integ["S7"]["status"]), ("passed", "outcome"))
+        bad = [x for x in integ["S7"]["export"]["details"]["results"] if not x["passed"]]
+        self.assertEqual(sorted((x["run_id"], x["step"]) for x in bad), [(self.iw1, HALF), (self.iw1, FINAL)])
+        self.assertTrue(all(x["stopped_scope"] for x in bad))
+        root = fresh("supplement_build_changed") / "v4"
+        shutil.copytree(self.dir / "v4", root)
+        Fake(root, frozen()).run("medium-expert", "cql", "alone", 0, fingerprint=S.V3["fingerprint"])
+        state = H.read_json(root / "driver" / "state.json")
+        H.write_json(root / "driver" / "state.json", dict(state, s7_stopped=self.entries[:1]))
+        r = self.build(root=root)                       # it builds: no judged key moved
+        integ = r["s7_supplement"]["integrity"]
+        self.assertEqual((integ["S1"]["status"], integ["S7"]["status"]), ("failed", "failed"))
+        why = {e["path"].split("/v4/")[-1]: e["reason"] for e in r["s7_supplement"]["excluded"]}
+        self.assertIn("stop rule S1", why["stage2/made-up-medium-expert/seed0/cql-alone"])
+        S.assert_judged_unchanged(r, self.v3)
+
+    def test_s7_failures_in_judged_scopes(self):
+        """S7 failures on actors of scopes version 3 judged (an IW scope's alone and standard comparators, stage 1's
+        actors of a learner version 3 judged, a learner of a quality where version 3 stopped nothing of it) are listed
+        (judged_scope_failures) and named in the one appended caveat (caveat_of, which starts with CAVEAT); failures in
+        the scopes version 3 stopped, and passing checks, are not. assert_judged_unchanged takes that caveat and
+        refuses another, or one that does not start with CAVEAT."""
+        me = "medium-expert"
+        scopes = {me: {"rebrac": "learner", "td3_bc": "iw"}, "medium": {}}
+
+        def lane(run, learner, setup, ok, q=me):
+            return dict(label=f"{run}/s7-{HALF}", run=run, quality=q, learner=learner, setup=setup, seed=None,
+                        step=HALF, s7_passed=ok, file=f"{run}/lanes/s7-step{HALF}/s7.json", sha256=sha(run))
+
+        rows = [lane(f"stage2/{me}/seed2/td3_bc-alone", "td3_bc", "alone", False),          # a comparator: judged
+                lane(f"stage2/{me}/seed1/td3_bc-iw", "td3_bc", "iw", False),                # the IW scope itself
+                lane(f"stage2/{me}/seed3/rebrac-standard", "rebrac", "standard", False),    # a learner scope
+                lane(f"stage1/{me}/seed0/td3_bc-iw_repeat", "td3_bc", "iw_repeat", False),  # IW's repeat: the scope
+                lane(f"stage1/{me}/seed0/cql-alone", "cql", "alone", False),                # a judged learner
+                lane(f"stage2/{me}/seed4/td3_bc-standard", "td3_bc", "standard", True),     # passed
+                lane("stage2/medium/seed1/td3_bc-alone", "td3_bc", "alone", False, q="medium")]
+        got = S.judged_scope_failures(rows, scopes)
+        self.assertEqual([e["run"] for e in got], [rows[0]["run"], rows[4]["run"], rows[6]["run"]])
+        self.assertEqual(set(got[0]), {"label", "run", "quality", "learner", "setup", "seed", "step", "file", "sha256"})
+        self.assertEqual(S.caveat_of([]), S.CAVEAT)
+        cav = S.caveat_of(got)
+        self.assertTrue(cav.startswith(S.CAVEAT + " S7 also failed in the supplement on 3 actor(s)"), cav)
+        for e in got:
+            self.assertIn(f"{e['run']} at {e['step']:,} steps", cav)
+        r = copy.deepcopy(self.results)
+        r["caveats"][-1] = cav
+        S.assert_judged_unchanged(r, self.v3, cav)
+        with self.assertRaisesRegex(gate.ApprovalError, "not the last caveat"):
+            S.assert_judged_unchanged(r, self.v3)
+        other = dict(r, caveats=self.v3["caveats"] + ["another caveat"])
+        with self.assertRaisesRegex(gate.ApprovalError, "does not start with"):
+            S.assert_judged_unchanged(other, self.v3, "another caveat")
+
+    def test_study_wide_budget(self):
+        """s7_supplement.budget: the study-wide totals are version 3's ledger (which already holds versions 1 and 2's
+        sessions) plus the supplement's own, each quality's card and processor hours counted once; versions 1 and 2's
+        spend is shown under "earlier" as an "of which", never added again."""
+        from experiments.shift_hosts import budget as B
+
+        d = fresh("supplement_budget")
+        made = {}
+        for name, card, proc in (("v3", (0.25, 0.5), (0.4, 0.7)), ("v4", (0.1, 0.0), (0.2, 0.3))):
+            led = B.Ledger(d / name / "driver" / "ledger.json", mode="dry-run")
+            for q, c, p in zip(C.QUALITIES, card, proc):
+                if c:
+                    led.add_card(q, f"{name}-{q}", f"session-{name}", 0.0, c * 3600.0)
+                led.add_processor(q, f"{name}-{q}", p * 3600.0, "card")
+            led.save()
+            made[name] = {q: led.totals(q) for q in C.QUALITIES}
+        out = S._ledgers(d / "v4", d / "v3", self.block, True)
+        self.assertEqual(out["ledgers"], {"version 4": made["v4"], "version 3": made["v3"]})
+        for q in C.QUALITIES:
+            want = {k: made["v3"][q][k] + made["v4"][q][k] for k in ("card_hours", "processor_hours")}
+            self.assertEqual(out["study_wide"]["totals"][q], dict(want, complete=True), q)
+        self.assertEqual(out["study_wide"]["earlier"], S.EARLIER_SPEND)
+        self.assertIn("not added again", S.EARLIER_SPEND["medium-expert"]["source"])
+
+    def test_main_refuses_today(self):
+        """python -m experiments.shift_hosts.supplement export asks the gate first and refuses today (version 4 has
+        no terminal approval); nothing is written."""
+        out = WORK / "supplement_build" / "should_not_exist.json"
+        self.assertEqual(S.main(["export", "--out", str(out)]), 2)
+        self.assertFalse(out.exists())
+        self.assertFalse(E.OUT.exists())
+
+
+class SupplementDryRunTest(unittest.TestCase):
+    """supplement.build over the stage driver's own supplement dry run (test_stages' StopTest.test_supplement_dry_run:
+    version 4's driver wrote every file; S7 failures injected), carrying a made-up "version 3" results.json that
+    export.build made from test_stages' plain dry run; both copied, with made-up scores files where the scoring lanes
+    write them. Skipped when test_stages' dry runs are not there."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.results = None
+        if not all((p / "driver" / "status.json").exists() for p in (SUPPLEMENT_DRY, DRY_RUNS["stages"])):
+            return
+        d = fresh("supplement_dryrun")
+        cls.roots = dict(v3=d / "v3", v4=d / "v4")
+        for name, src in (("v3", DRY_RUNS["stages"]), ("v4", SUPPLEMENT_DRY)):
+            copy_dry_run(src, cls.roots[name])
+            add_dry_scores(cls.roots[name])
+        cls.carried = d / "v3_results.json"
+        E.write(E.build(guard.MADE_UP, frozen=dry_frozen(cls.roots["v3"]), runs_root=cls.roots["v3"], anchors=ANCHORS,
+                        data_root=None, reference=False), cls.carried)
+        cls.v3 = H.read_json(cls.carried)
+        plan = H.read_json(cls.roots["v4"] / "driver" / "state.json")["config"]["plan"]
+        scopes = [dict(quality=q, learner=L, scope="learner" if "room" in setups else "iw")
+                  for q, by in plan.items() for L, setups in by.items()]
+        cls.block = made_up_block(scopes, gate.sha256_file(cls.carried))
+        cls.results = S.build(guard.MADE_UP, frozen=dry_frozen(cls.roots["v4"]), root=cls.roots["v4"],
+                              block=cls.block, carried_path=cls.carried, v3_root=cls.roots["v3"], anchors=ANCHORS)
+
+    def setUp(self):
+        if self.results is None:
+            self.skipTest(f"{SUPPLEMENT_DRY} or {DRY_RUNS['stages']} is missing (test_stages has not run)")
+
+    def test_supplement_over_the_drivers_files(self):
+        """Version 3's keys unchanged and only the allowed keys added; integrity S1 passes and S7 reads "outcome"
+        (every injected failure, stage 1's, seed 0's IQL alone actor at both steps and seed 1's TD3+BC IW actor at
+        both steps, covered by a version-4 entry); the driver's 46 S7 results (seeds 0 and 1, steps 20 and 40) are
+        carried; the plan check finds every run of seeds 0-1 and nothing outside the plan; R1 is equal for every run
+        both dry runs trained (bit for bit); the shown scopes are the plan's, with no forbidden key. Stage 1's TD3+BC
+        standard actor belongs to a scope version 3 judged (TD3+BC's IW setup is the stopped scope): its failure is
+        listed in s7_failures_in_judged_scopes, named in the appended caveat, and counted among the IW scope's
+        comparators, not its own S7 results."""
+        r, v3 = self.results, self.v3
+        sup = r["s7_supplement"]
+        s1 = "stage1/made-up-medium-expert/seed0/td3_bc-standard"
+        self.assertEqual([(e["run"], e["step"]) for e in sup["s7_failures_in_judged_scopes"]], [(s1, 30)])
+        self.assertEqual((r["caveats"][-1], sup["caveat"]), (S.caveat_of(sup["s7_failures_in_judged_scopes"]),) * 2)
+        self.assertIn(f"{s1} at 30 steps", r["caveats"][-1])
+        S.assert_judged_unchanged(r, v3, r["caveats"][-1])
+        self.assertEqual(set(r) - set(v3), {"s7_supplement"})
+        integ = sup["integrity"]
+        self.assertEqual((integ["S1"]["status"], integ["S7"]["status"]), ("passed", "outcome"))
+        s2 = "stage2/made-up-medium-expert/seed0/iql-alone"
+        s3 = "stage2/made-up-medium-expert/seed1/td3_bc-iw"
+        bad = [x for x in integ["S7"]["export"]["details"]["results"] if not x["passed"]]
+        self.assertEqual(sorted((x["run_id"], x["step"]) for x in bad),
+                         sorted([(s1, 30), (s2, 20), (s2, 40), (s3, 20), (s3, 40)]))
+        self.assertTrue(all(x["stopped_scope"] for x in bad))
+        self.assertTrue(sup["s7_stopped"] and all(e["version"] == 4 for e in sup["s7_stopped"]))
+        self.assertEqual(len(sup["s7_results"]), 46)
+        self.assertEqual({(x["seed"], x["step"]) for x in sup["s7_results"] if x["run"].startswith("stage2/")},
+                         {(0, 20), (0, 40), (1, 20), (1, 40)})
+        pc = sup["plan_check"]
+        self.assertEqual((pc["recorded"], pc["outside_the_plan"]), (24, []))
+        self.assertTrue(all(re.search(r"/seed[234]/", x) for x in pc["not_recorded"]), pc["not_recorded"])
+        tally = {}
+        for e in sup["reproduction"]:
+            tally[e["result"]] = tally.get(e["result"], 0) + 1
+        self.assertEqual(tally, dict(equal=10 + 24))
+        me = r["qualities"]["medium-expert"]["s7_shown"]["scopes"]
+        self.assertEqual({L: s["scope"] for L, s in me.items()}, dict(iql="learner", td3_bc="iw"))
+        self.assertEqual({L: s["scope"] for L, s in r["qualities"]["medium"]["s7_shown"]["scopes"].items()},
+                         dict(td3_bc="learner"))
+        steps = {(x["seed"], x["step"]) for x in me["iql"]["s7"] if x["run"].startswith("stage2/")}
+        self.assertEqual(steps, {(0, 20), (0, 40), (1, 20), (1, 40)})
+        self.assertTrue(all(x["verified"] and x["bound_to_record"] for x in me["iql"]["s7"]))
+        td = me["td3_bc"]
+        self.assertEqual({x["setup"] for x in td["s7"]}, {"iw", "iw_repeat"})
+        self.assertEqual({x["setup"] for x in td["comparator_s7"]}, {"alone", "standard", "iw_ones"})
+        self.assertEqual([x["run"] for x in td["comparator_s7"] if x["s7_passed"] is False], [s1])
+        self.assertIn("(s7_supplement.s7_failures_in_judged_scopes)", td["writeup"]["happened"])
+        self.assertEqual([x["label"] for x in me["iql"]["s7"] if x["run"].startswith("stage1/")],
+                         [x["label"] for x in sup["s7_results"] if x["run"].startswith("stage1/")
+                          and x["learner"] == "iql"])
+        self.assertEqual(len([x for x in me["iql"]["s7"] if x["run"].startswith("stage1/")]), 5)
+        medium = r["qualities"]["medium"]["s7_shown"]["scopes"]["td3_bc"]
+        self.assertEqual([x for x in medium["s7"] if x["run"].startswith("stage1/")], [])   # stage 1: medium-expert
+        for q in C.QUALITIES:
+            self.assertEqual(set(all_keys(r["qualities"][q]["s7_shown"])) & SHOWN_FORBIDDEN, set(), q)
+        out = WORK / "supplement_dryrun" / "results.json"
+        self.assertEqual(E.write(r, out), E.sha256_file(out))
+
+
+class ReproductionTest(unittest.TestCase):
+    def test_reproduction(self):
+        """R1 (supplement.reproduction), a readout that never raises: a supplement record equals version 3's record of
+        the same run id when its hashes (initial, key carries, params at 10,000, final), outcome, refreshes without
+        timings, snapshot actors' tree SHA-256 and S7 lanes' closed-loop points are equal; identity, code, timings and
+        file paths differ by design and are not compared; each difference is named; a run version 3 never trained,
+        or whose record names another fingerprint, is "missing" with a note; an unreadable record is "unreadable"."""
+        d = fresh("reproduction")
+        q = "medium-expert"
+        a, b = Fake(d / "v4", frozen()), Fake(d / "v3", frozen())
+        for f in (a, b):
+            for s in ("alone", "standard", "iw"):
+                f.run(q, "cql", s, 0)
+            for s in ("alone", "standard"):
+                f.run(q, "cql", s, 1)
+        a.run(q, "cql", "room", 0)                                          # version 3 never trained it
+        rid = lambda s, sd=0: a.run_id(q, "cql", s, sd)
+
+        def edit(f, s, sd, change):
+            path = f.folder(q, "cql", s, sd) / "record.json"
+            rec = H.read_json(path)
+            change(rec)
+            H.write_json(path, rec)
+
+        def tree(f, s, digest):
+            H.write(f.folder(q, "cql", s, 0) / "actors" / f"step{FINAL}.npz", dict(x=np.zeros(1, np.float32)),
+                    meta=dict(actor_tree_sha256=digest))
+
+        edit(a, "alone", 0, lambda r: (r["identity"].update(device="gpu"), r["code"].update(fingerprint=sha("v4")),
+                                       r["timings"].update(wall_seconds=1.0), r.update(identity_sha256=sha("x"))))
+        edit(a, "standard", 0, lambda r: r["refreshes"][0].update(seconds=9.0, table_seconds=3.0))
+        tree(a, "standard", sha("one tree"))
+        tree(b, "standard", sha("one tree"))
+        edit(a, "iw", 0, lambda r: r["hashes"]["final"].update(key=sha("another key")))
+        tree(a, "iw", sha("a tree"))
+        tree(b, "iw", sha("another tree"))
+        H.write_json(a.folder(q, "cql", "iw", 0) / "lanes" / f"s7-step{FINAL}" / "s7.json",
+                     dict(learner="cql", rows=4, passed=True, s7_passed=True, closed_loop={
+                         "scored/strong": dict(max_points=0.02, mean_points=0.001, passed=True), "passed": True}))
+        edit(a, "alone", 1, lambda r: r.update(outcome="stopped"))
+        edit(a, "standard", 1, lambda r: r["refreshes"][0].update(threshold=2.5))
+        got = {e["run_id"]: e for e in S.reproduction(d / "v4", d / "v3", None)}
+        self.assertEqual(sorted(got), sorted([rid("alone"), rid("standard"), rid("iw"), rid("room"), rid("alone", 1),
+                                              rid("standard", 1)]))
+        self.assertEqual((got[rid("alone")]["result"], got[rid("standard")]["result"]), ("equal", "equal"))
+        self.assertNotIn(f"actor_tree_sha256 at step {FINAL} (no readable actor file on either side)",
+                         got[rid("standard")]["not_compared"])
+        self.assertEqual((got[rid("iw")]["result"], got[rid("iw")]["differs"]),
+                         ("differs", ["hashes.final", f"actor_tree_sha256 at step {FINAL}",
+                                      f"S7 closed loop (s7-step{FINAL})"]))
+        self.assertEqual(got[rid("alone", 1)]["differs"], ["outcome"])
+        self.assertEqual(got[rid("standard", 1)]["differs"], ["refreshes"])
+        self.assertEqual((got[rid("room")]["result"], got[rid("room")]["note"]),
+                         ("missing", "version 3 has no record of this run"))
+        for e in got.values():
+            self.assertEqual(e["v4_record_sha256"], E.sha256_file(d / "v4" / e["run_id"] / "record.json"))
+        fp = S.reproduction(d / "v4", d / "v3", S.V3["fingerprint"])      # version 3's records here are made-up
+        self.assertEqual({e["result"] for e in fp if e["run_id"] != rid("room")}, {"missing"})
+        self.assertTrue(all("another fingerprint" in e["note"] for e in fp if e["run_id"] != rid("room")))
+        path = a.folder(q, "cql", "iw", 0) / "record.json"
+        path.write_text(path.read_text(encoding="utf8") + " ", encoding="utf8")     # it no longer verifies
+        broken = {e["run_id"]: e for e in S.reproduction(d / "v4", d / "v3", None)}[rid("iw")]
+        self.assertEqual(broken["result"], "unreadable")
+        self.assertEqual(S.reproduction(d / "nothing", d / "v3"), [])
+
+
+class InvarianceTest(unittest.TestCase):
+    """Version 4 never passes the supplement's runs to the judging code, and the judging code ignores a stopped
+    scope's runs anyway: for version 3's S7 scenarios (S7Scopes.test_learner_scope and test_iw_scope) claims.judge and
+    the 12-row table are byte-identical when every number of the stopped scope's runs changes, and when the scope's
+    extra scored runs (a supplement's) are added, only s7.excluded lists the added runs."""
+
+    @staticmethod
+    def text(judged, excluded=True):
+        j = H.plain(judged)
+        if not excluded:
+            j = dict(j, s7=dict(j["s7"], excluded=None))
+        return json.dumps(j, sort_keys=True)
+
+    def check(self, runs, entries, stopped, partial):
+        """stopped(learner, setup): whether a run belongs to the stopped scope; partial: version 3's runs of it."""
+        base = C.judge("medium-expert", runs, PLAN_ANCHORS["none"], s7_stopped=entries)
+        moved = copy.deepcopy(runs)
+        n = 0
+        for (L, s), seeds in moved.items():
+            if stopped(L, s):
+                for r in seeds.values():
+                    r["J"] = {b: v + 25.0 for b, v in r["J"].items()}
+                    r["points"] = {b: v - 7.0 for b, v in r["points"].items()}
+                    r["coverage"] = cov(0.10, 0.20)
+                    r["pointer"] = dict(change=0.9, extra=0.1) if r.get("pointer") else None
+                    n += 1
+        self.assertGreater(n, 0)
+        got = C.judge("medium-expert", moved, PLAN_ANCHORS["none"], s7_stopped=entries)
+        self.assertEqual(self.text(got), self.text(base))
+        self.assertEqual(C.phone_table(got, moved), C.phone_table(base, runs))
+        few = C.judge("medium-expert", partial, PLAN_ANCHORS["none"], s7_stopped=entries)
+        self.assertEqual(self.text(few, excluded=False), self.text(base, excluded=False))
+        self.assertEqual(C.phone_table(few, partial), C.phone_table(base, runs))
+        self.assertLess(len(few["s7"]["excluded"]), len(base["s7"]["excluded"]))
+        return base
+
+    def test_learner_scope(self):
+        """ReBRAC stopped by S7 (its standard actor): version 3 trained its seed 0 only, the supplement all five seeds
+        and the room references."""
+        runs = scenario(d1=dict(td3_bc=GAIN, rebrac=GAIN))
+        runs[("rebrac", "room")] = {s: mk({"strong": -201.0}, tag=f"rebrac room {s}") for s in C.SEEDS}
+        partial = copy.deepcopy(runs)
+        for s in C.CLAIM_SETUPS:
+            partial[("rebrac", s)] = {0: partial[("rebrac", s)][0]}
+        del partial[("rebrac", "room")]
+        base = self.check(runs, [s7_entry("rebrac", "learner", "standard")], lambda L, s: L == "rebrac", partial)
+        self.assertEqual(base["learners"]["td3_bc"]["1"]["badge"], C.PASSED)
+
+    def test_iw_scope(self):
+        """CQL's IW setup stopped by S7: version 3 trained its IW seed 0 only, the supplement all five seeds."""
+        runs = scenario(d1=dict(cql=GAIN), d2=dict(cql=GAIN, td3_bc=GAIN))
+        partial = copy.deepcopy(runs)
+        partial[("cql", "iw")] = {0: partial[("cql", "iw")][0]}
+        base = self.check(runs, [s7_entry("cql", "iw", "iw")], lambda L, s: (L, s) == ("cql", "iw"), partial)
+        self.assertEqual(base["learners"]["cql"]["1"]["badge"], C.PASSED)
+
+
+
+
 # ------------------------------------------------------------------------------------------------ the reference copy
 
 def wt_summary(values):
@@ -2176,6 +3051,7 @@ def _extra():
 
     return dict(numpy=np.__version__, scipy=scipy.__version__, scoring_environment=SCORING_ENV,
                 synthetic_only=True, dry_runs={k: str(v) for k, v in DRY_RUNS.items() if (v / "driver").exists()},
+                supplement=dict(READOUTS_V4, dry_run=str(SUPPLEMENT_DRY) if SUPPLEMENT_DRY.exists() else None),
                 note="claims and export on made-up numbers; no ThrusterChain outcome is read")
 
 

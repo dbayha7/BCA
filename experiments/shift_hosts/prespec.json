@@ -1,47 +1,68 @@
 {
  "kind": "shift-hosts-prespec",
- "version": 3,
- "title": "Unifloral hosts on ThrusterChain: pre-specification version 3 (post hoc)",
+ "version": 4,
+ "title": "Unifloral hosts on ThrusterChain: pre-specification version 4 (post hoc)",
  "drafted": "2026-10-20",
  "status": "frozen",
  "supersedes": {
-  "version": 2,
-  "freeze_commit": "00e405e",
-  "approval_commit": "d954bd5",
-  "fingerprint": "fbf6437d09275bba54f516964d82801be26d1478c6ce5585ee1b9dee260b3f38",
-  "prespec_sha256": "914999a9f7c88f10208261343f217ee7ef7b8d2eb09bdcc56620a63f4a5dcc73",
-  "approved_at_utc": "2026-10-19T23:19:04Z",
-  "stopped": "2026-10-20T00:01:10Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-standard)",
-  "records": "version 2's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v2/; they name version 2's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/",
+  "version": 3,
+  "relation": "version 4 adds a supplement after version 3; version 3's judged results stand, carried byte for byte (PRESPEC.md section 21)",
+  "freeze_commit": "bafd86f",
+  "approval_commit": "6f9ce2b",
+  "fingerprint": "fe9fb77b0851c75b522c337fcb65c2a3d027de71ddfa50dcd6f3affc3bbd1c1c",
+  "prespec_sha256": "87f442469207d4397019ec1d142a19d58584afb0b1fe8efda0eba6542ba92fee",
+  "approved_at_utc": "2026-10-20T05:47:10Z",
+  "started_utc": "2026-10-20T05:50:20Z",
+  "finished_utc": "2026-10-20T11:03:13Z",
+  "ended": "finished with no halt; S7 stopped ReBRAC, IQL and TD3+BC's IW setup on medium-expert and TD3+BC and IQL on medium (version 3's rule: those scopes are not judged, p = 1)",
+  "records": "kept in place under runs/shift_hosts/{stage1,stage2,driver}, never moved or written (immutable, chattr +i, since about 2026-10-20T11:47Z); version 4 reads its driver/state.json and driver/ledger.json (checked by SHA-256 before every start) and its run records, actor manifests and S7 files (R1's comparison only, which feeds no shown score); the ledger is read again for the study-wide total; they never count as version-4 results",
+  "state_sha256": "e577472ffc68a18079c1cd4ae2f778315d506b6db47a23dad0e5c295fc21df11",
+  "ledger_sha256": "25ec5762ab14b1e9e47cf38346cb231908003a904618af385632d4c0a5ca7fbf",
+  "results": {
+   "path": "outputs/shift_hosts_v3/results.json",
+   "sha256": "73c3f12e07fac5d026381a7e2c50b01fc681442e3109c5a131e4d69d1d6ba48b",
+   "built_utc": "2026-10-20T11:44:48Z",
+   "built_under": "version 3's approval and code (python -m experiments.shift_hosts.export --out runs/shift_hosts/results_v3.json, scoring environment); copied unread with its sidecar and committed as a8f96da (2026-10-20T11:45:45Z)",
+   "judged": "no Claim 1 or Claim 2 passed on either quality; the judged study ends after seeds 0-4 (study rule)"
+  },
   "previous": {
-   "version": 1,
-   "freeze_commit": "2e59db0",
-   "approval_commit": "608eefa",
-   "fingerprint": "8c5e8421922dccebe5b86f47b44c8d86def2dbdec7da84ba78ba2ba807728179",
-   "prespec_sha256": "c8ce9f98ea019be53b107bcb0ccc4a4e4feaae440a6b98364c4ec6e6a53f435b",
-   "approved_at_utc": "2026-10-16T16:29:12Z",
-   "stopped": "2026-10-16T17:12:14Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-alone)",
-   "records": "version 1's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v1/; they name version 1's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/"
+   "version": 2,
+   "freeze_commit": "00e405e",
+   "approval_commit": "d954bd5",
+   "fingerprint": "fbf6437d09275bba54f516964d82801be26d1478c6ce5585ee1b9dee260b3f38",
+   "prespec_sha256": "914999a9f7c88f10208261343f217ee7ef7b8d2eb09bdcc56620a63f4a5dcc73",
+   "approved_at_utc": "2026-10-19T23:19:04Z",
+   "stopped": "2026-10-20T00:01:10Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-standard)",
+   "records": "version 2's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v2/; they name version 2's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/",
+   "previous": {
+    "version": 1,
+    "freeze_commit": "2e59db0",
+    "approval_commit": "608eefa",
+    "fingerprint": "8c5e8421922dccebe5b86f47b44c8d86def2dbdec7da84ba78ba2ba807728179",
+    "prespec_sha256": "c8ce9f98ea019be53b107bcb0ccc4a4e4feaae440a6b98364c4ec6e6a53f435b",
+    "approved_at_utc": "2026-10-16T16:29:12Z",
+    "stopped": "2026-10-16T17:12:14Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-alone)",
+    "records": "version 1's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v1/; they name version 1's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/"
+   }
   }
  },
  "approval_summary": [
-  "Version 3, post hoc (PRESPEC.md section 20): version 2's stage 1 stopped on S7 (20 Oct; ReBRAC with standard BCA, big kicks, 0.132 points against 0.05). S7's limit stays 0.05; a failed check now stops only that learner (alone, standard or weights-of-1 actor) or its IW setup (IW actor) in that quality, and the driver goes on.",
-  "A learner stopped by S7 enters both Holm families with p = 1 (a stopped IW setup: Claim 2's); its claims read 'not judged: stopped by S7' and its runs are never used. Stage 1 still runs whole; every other stop rule halts.",
-  "This overrides part of your 19 Oct decision ('that quality is reported as stopped by S7'), on your answer of 20 Oct: 'no dont give up we need a result'. No return had been read; version 2's records are kept aside and never used; its stage-1 spend (0.22 card-h, 0.30 processor-h) stays counted.",
-  "Probe (20 Oct, laptop) on ReBRAC with standard BCA: bit for bit on 7 banks; readings 1, 2 and 3 passed (float32 rounding amplified by the closed loop). Its tail grew about tenfold from 10,000 to 15,000 steps: ReBRAC is expected to stop again; on medium it is checked afresh.",
-  "Version 2, post hoc (PRESPEC.md section 19): version 1's stage 1 stopped on S7 (16 Oct; ReBRAC alone, big kicks, 0.0114 points); S7's closed-loop limit is now 0.05 points per start, not 0.01. Nothing else in the rules changes; its consequences (section 19.7): stage 1 reruns in full, the stage-0 hygiene test accepts the committed package, results.json carries a post-hoc caveat.",
-  "In return units, 0.05 points is 0.635 per start on the strong mix: up to 35% of the 1.8 bar for one setup's seed-0 mean and up to 71% for a seed-0 delta (version 1: 7% and 14%); seeds 1-4 are never S7-checked; under version 2 no claim's number depended on the limit (section 19.5); under version 3 a failed check sets its scope's claims to not judged, p = 1.",
-  "No return had been read before the change. Version 1's run records, job logs and driver state are kept aside and never used; its ledger (its stage-1 spend, 0.28 card-h and 0.41 processor-h, stays counted) and its stop report stay in driver/, and results.json lists the stop as resumed by the operator.",
-  "Investigation (19 Oct, laptop): bit for bit on 7 banks; big kicks 1 start above 0.01, 0 above 0.05; reading 1 passed, reading 2 failed (10.3x growth at one step, limit 10x), reading 3 passed (7.38). Its preset verdict said do not freeze; you chose to freeze, disclosed as post hoc P2. Probe sha256 0b6e45d169e56670.",
-  "If a later start exceeds 0.05 points: the stop stands and S7 is never relaxed again (your decision, 19 Oct); version 3 makes it stop that learner or its IW setup, not the quality.",
+  "Version 4, post hoc (PRESPEC.md section 21): every stage-2 run of every scope version 3's S7 check stopped is trained and scored in full under runs/shift_hosts/supplement_v4 (stage 1 reruns whole), shown and never judged. A failed S7 check there is recorded and drops nothing. S7's limits are unchanged (1e-7; 0.05 points per start).",
+  "No judged result can move: version 3's results.json is carried byte for byte (sha256 73c3f12e07fac5d0) and claims.py, export.py and every training and scoring file are version 3's bytes, checked before the start. Version 3's stopped scopes stay not judged, p = 1.",
+  "Your words (20 Oct, 06:39 and 06:40 UTC): 'dont stop experiments, let them run in full so we can work from there towards solution'; 'same with IW BCA'. Your choices (answered 11:43 UTC): a supplement after v3; its own ledger; S7 on seeds 0-4 and the 50k-step actors; S5 on a BCA setup halts until traced.",
+  "Runs: medium-expert 56 (ReBRAC and IQL in full; TD3+BC's IW with its alone and standard), medium 42 (TD3+BC and IQL in full), stage 1's 20; about 3.9 card-h / 8.8 processor-h (high 7.8 / 17.6). Rule committed 11:45 UTC (2a8a477), before v3's results were opened (11:46 UTC); see section 21.4 for what was set after.",
+  "Version 3, post hoc (section 20): a failed S7 check stops only that learner or its IW setup in that quality (claims 'not judged', p = 1 in Holm's families); chosen after version 2's stop (ReBRAC with standard BCA, 0.132 points) on your answer 'no dont give up we need a result'; no return had been read.",
+  "Version 3 ran in full (20 Oct, 05:50-11:03 UTC, no halt): S7 stopped ReBRAC, IQL and TD3+BC's IW setup on medium-expert and TD3+BC and IQL on medium; no Claim 1 or 2 passed, so the judged study ends after seeds 0-4.",
+  "Version 2, post hoc (section 19): S7's closed-loop limit is 0.05 points per start, not 0.01 (0.635 return units on the strong mix); set after version 1's stop, before any return was read; the investigation's reading 2 missed its limit by 3% and you chose to freeze anyway (P2).",
+  "If a later start exceeds 0.05 points the stop stands and S7 is never relaxed again (your decision, 19 Oct); version 3 narrowed it to a learner or its IW setup; version 4 keeps it for judgment, not for training.",
   "12 setups per quality: TD3+BC, CQL, IQL and ReBRAC, each alone, with standard BCA and with IW BCA.",
   "Unifloral at f2dc127, its own defaults; discount 0.98; 100,000 outer steps; JAX 0.6.2 on the card.",
   "Data: the weighting test's logs, medium-expert and medium, gapped, data seeds 0-4 (hashes fixed).",
-  "Per quality: 60 setup runs, 20 room references, 2 sham-alone runs (TD3+BC, IQL); stage 1 first.",
-  "Caps: medium-expert 14 card-h / 21 processor-h (stages 1-2a); medium 12 / 16 (stage 2b).",
+  "Per quality: 60 setup runs, 20 room references, 2 sham-alone runs (TD3+BC, IQL); stage 1 first. Version 4 trains stage 1 and only the supplement's runs.",
+  "Caps: medium-expert 14 card-h / 21 processor-h (stages 1-2a); medium 12 / 16 (stage 2b). Version 4 books its own ledger under these numbers (D2).",
   "Stage 0 (building and testing, about 4.2 card-h / 17 processor-h) is booked separately, as you chose.",
   "Stage 3 only where Claim 1 or 2 passes, under a later version you approve, at most 4 / 6 per quality.",
-  "Stop rules S0-S11 with fixed thresholds; every stop but S7 halts the driver (S7 stops a learner or its IW setup, version 3); nothing is retried silently.",
+  "Stop rules S0-S11 with fixed thresholds; every stop but S7 halts the driver (version 3: S7 stops a learner or its IW setup; version 4's supplement records it and drops nothing); nothing is retried silently.",
   "Claims 0-6, kill rules fixed now: bar +1.8 return units, one-sided 95% bounds, Holm over 4 learners.",
   "Decisions: CQL's two programs; sham-alone for TD3+BC and IQL; NaN threshold stops, R = +inf refuses.",
   "Decisions: IQL keeps its learner part on learner-side validity; S9 compares with this environment.",
@@ -55,7 +76,8 @@
   "plan": "PLAN_UNIFLORAL.md (the approved plan; wf6/plan)",
   "plan_sha256": "c2cd916f39a9aeef506ee78bc58e21e9c5df6ad7bf3556d469ab70187e6149cb",
   "fix_log": "FIX_LOG.md (how the plan's three reviews changed it; wf6/plan)",
-  "fix_log_sha256": "3d95c01db8942be3fb91c86bfe0f17a05a82f292ac44d26812d034e5b84041d1"
+  "fix_log_sha256": "3d95c01db8942be3fb91c86bfe0f17a05a82f292ac44d26812d034e5b84041d1",
+  "version4_design": "outputs/shift_hosts_v4/DESIGN_DRAFT.md: version 4's design and the owner's decisions D1-D4, committed as 2a8a477 (2026-10-20T11:45:45Z) before version 3's results.json was opened"
  },
  "plan_sha256": "c2cd916f39a9aeef506ee78bc58e21e9c5df6ad7bf3556d469ab70187e6149cb",
  "unifloral_pin": {
@@ -799,7 +821,8 @@
    7,
    8,
    9
-  ]
+  ],
+  "stage2_supplement": "version 4 (post hoc, PRESPEC.md section 21): under runs/shift_hosts/supplement_v4, stage 1 whole (20 runs and its checks), then stage 2a (medium-expert) and stage 2b (medium) with only the frozen supplement plan's runs in the same unit order (sham-alone block, seeds 0-4, room block; units without a planned run are skipped); S7 lanes on the 100,000-step and 50,000-step actors of every planned alone, standard and IW run at seeds 0-4; a failed S7 check is recorded and drops nothing"
  },
  "driver_command": {
   "start": "env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-venv/bin/python -m experiments.shift_hosts.stages start --stage0-card-hours 0 --stage0-processor-hours 0",
@@ -819,13 +842,19 @@
    "--root",
    "--caps",
    "--inject",
-   "--dry-run"
+   "--dry-run",
+   "--supplement-plan",
+   "--s7-all-seeds",
+   "--s7-half"
   ],
   "version2_first_start": "env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-venv/bin/python -m experiments.shift_hosts.stages start --stage0-card-hours 0 --stage0-processor-hours 0 --resume-after-stop",
-  "version2_why": "the kept runs/shift_hosts/driver/ holds version 1's STOP.json, which only --resume-after-stop moves aside (an operator option allowed above); PRESPEC.md section 19.8, step 9"
+  "version2_why": "the kept runs/shift_hosts/driver/ holds version 1's STOP.json, which only --resume-after-stop moves aside (an operator option allowed above); PRESPEC.md section 19.8, step 9",
+  "version4_start": "env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-venv/bin/python -m experiments.shift_hosts.stages start --stage0-card-hours 0 --stage0-processor-hours 0",
+  "version4_why": "the root is the code's, runs/shift_hosts/supplement_v4 (supplement.ROOT; any other --root is refused); it holds no stop report, so --resume-after-stop is not needed, and its first start creates the supplement's own ledger with stage 0 entered as 0 and 0 (stage 0 and version 4's suite are booked separately); PRESPEC.md section 21.9, step 7",
+  "version4_export": "env -u LD_LIBRARY_PATH PYTHONDONTWRITEBYTECODE=1 OMP_NUM_THREADS=1 /opt/bca-shift-venv/bin/python -m experiments.shift_hosts.supplement export (after the last lane; writes outputs/shift_hosts/results.json: version 3's file plus the shown supplement, or refuses and writes nothing)"
  },
  "stop_rules": {
-  "meaning": "any stop but S7 halts the driver: nothing new launches, running children finish, driver/STOP.json and STOP.txt are written; nothing is retried silently; S5 on alone or room is that learner's Claim 0 outcome and the driver goes on; S5 on a BCA setup halts until traced; any change after approval needs a new version approved at the terminal; S7 (version 3, post hoc): a failed check stops its learner (alone, standard, iw_ones actor) or only its IW setup (iw, iw_repeat actor) in that quality, its later runs in that quality never train and its runs are never used, and the driver goes on; an S7 result that does not verify halts",
+  "meaning": "any stop but S7 halts the driver: nothing new launches, running children finish, driver/STOP.json and STOP.txt are written; nothing is retried silently; S5 on alone or room is that learner's Claim 0 outcome and the driver goes on; S5 on a BCA setup halts until traced; any change after approval needs a new version approved at the terminal; S7 (version 3, post hoc): a failed check stops its learner (alone, standard, iw_ones actor) or only its IW setup (iw, iw_repeat actor) in that quality, its later runs in that quality never train and its runs are never used, and the driver goes on; an S7 result that does not verify halts; version 4 (post hoc, PRESPEC.md section 21): in the supplement every run of a scope version 3's S7 stopped trains and is scored, shown and never judged, and a failed S7 check is recorded and drops nothing; every other stop halts as before (S5 on a BCA setup until traced)",
   "definitions": {
    "bit_for_bit": "equal tobytes() of every leaf of learner state, optimizer states, key carry and per-step outputs",
    "relative_difference": "max|a - b| / max|b| per leaf"
@@ -961,11 +990,11 @@
    "closed_loop_max_points": 0.05,
    "closed_loop_max_points_version1": 0.01,
    "changed": "version 2, post hoc (PRESPEC.md section 19; post_hoc_changes P1)",
-   "on": "every stage-1 actor and every seed-0 final actor of alone, standard and IW",
+   "on": "every stage-1 actor and every seed-0 final actor of alone, standard and IW; version 4 (PRESPEC.md section 21): in the supplement also the 100,000-step and 50,000-step actors of every planned alone, standard and IW run at seeds 0-4 (prespec supplement.s7; the owner's decision D3); only stage 1's and seed 0's final actors write check keys",
    "cql": "with the same declared noise",
    "stage0_test_h_adapter_vs_restatement": 1e-05,
-   "on_failure": "version 3: stops a scope in that quality, not the driver: the learner for an alone, standard or iw_ones actor; that learner's IW setup for an iw or iw_repeat actor (stages.S7_SCOPE); stage 1 always runs whole; a result that does not verify halts",
-   "on_failure_changed": "version 3, post hoc (PRESPEC.md section 20; post_hoc_changes P3); versions 1 and 2: any failure halted the driver"
+   "on_failure": "version 3: stops a scope in that quality, not the driver: the learner for an alone, standard or iw_ones actor; that learner's IW setup for an iw or iw_repeat actor (stages.S7_SCOPE); stage 1 always runs whole; a result that does not verify halts; version 4 (supplement): recorded in state.json s7_stopped (with its scope, the actor's step and version 4) and every lane's verdict in s7_results; no run or lane is dropped and nothing halts for it; the scope stays not judged with p = 1 (version 3's judgment, carried); a result that does not verify, or disagrees with its lane's exit status, halts",
+   "on_failure_changed": "version 3, post hoc (PRESPEC.md section 20; post_hoc_changes P3); versions 1 and 2: any failure halted the driver; version 4, post hoc (PRESPEC.md section 21; post_hoc_changes P4)"
   },
   "S8": {
    "rule": "the two identical 15,000-step IW runs of a learner (stage 1, seed 0) differ in any bit: final key, learner state, BCA state, per-step outputs, any refresh's threshold"
@@ -1082,7 +1111,7 @@
   ],
   "holm_membership": [
    "every learner stays in each family of its quality; a learner that fails Claim 0, has a non-finite return in either setup compared on any seed, or (Claim 2 only) fails Claim 4a or was stopped by S7 in that quality (version 3: a stopped learner in both families, a stopped IW setup in Claim 2's only) enters with p = 1",
-   "Claims 1 and 2 are judged only when all 5 seeds of all four learners (alone, standard, IW) of the quality are complete, else 'pending'; every other claim waits for the 5 seeds of its own inputs; a setup stopped by S7 (version 3) counts as complete, with p = 1, and its runs are never used",
+   "Claims 1 and 2 are judged only when all 5 seeds of all four learners (alone, standard, IW) of the quality are complete, else 'pending'; every other claim waits for the 5 seeds of its own inputs; a setup stopped by S7 (version 3) counts as complete, with p = 1, and its runs are never used in a claim (version 4, PRESPEC.md section 21: they are trained, scored and shown in the supplement, labeled, and still enter none)",
    "runs go seed by seed across learners, so a stop leaves complete seeds; no seed is ever dropped"
   ],
   "badges": [
@@ -1129,12 +1158,12 @@
   "medium-expert": {
    "card_hours": 14,
    "processor_hours": 21,
-   "covers": "stages 1 and 2a (stage 0 booked separately: budget_recost)"
+   "covers": "stages 1 and 2a (stage 0 booked separately: budget_recost); version 4: the supplement's stages 1 and 2a on its own ledger (decision D2, PRESPEC.md section 21.10)"
   },
   "medium": {
    "card_hours": 12,
    "processor_hours": 16,
-   "covers": "stage 2b (approved separately)"
+   "covers": "stage 2b (approved separately); version 4: the supplement's stage 2b on its own ledger (decision D2)"
   },
   "stage3_per_quality": {
    "card_hours": 4,
@@ -1145,7 +1174,8 @@
    "S6 (after stage 1)",
    "S6b (before each unit)"
   ],
-  "change": "a cap changes only with the user's approval"
+  "change": "a cap changes only with the user's approval",
+  "version4_booking": "decision D2 (the owner, 2026-10-20): the supplement books its spend on its own ledger, runs/shift_hosts/supplement_v4/driver/ledger.json, under the same cap numbers per quality; S6 and S6b read only that ledger; the study-wide total across versions 1-4 is disclosed (results.json s7_supplement.budget) and never checked against a cap"
  },
  "budget_recost": {
   "status": "final (PRESPEC.md section 13)",
@@ -1262,7 +1292,142 @@
    "hard_throttle_card_hours": 14.08,
    "note": "[central, high]; in the hard-throttle case S6 at the end of stage 1 (if stage 1 measures the throttled speeds; it projects medium too) or S6b between whole units (if the throttling starts later) would stop the study"
   },
-  "version2_stage0_suite": "stage-0 work, booked separately like stage 0 and not entered in the ledger; its measurement in runs/shift_hosts/stage0/SUMMARY.json"
+  "version2_stage0_suite": "stage-0 work, booked separately like stage 0 and not entered in the ledger; its measurement in runs/shift_hosts/stage0/SUMMARY.json",
+  "version3": {
+   "source": "version 3's runs/shift_hosts/driver/ledger.json (sha256 25ec5762ab14b1e9...), which also holds versions 1 and 2's stage 1",
+   "medium-expert": {
+    "card_hours": 2.2306,
+    "processor_hours": 4.4011,
+    "ledger_total_with_versions_1_2": {
+     "card_hours": 2.7244,
+     "processor_hours": 5.1112
+    }
+   },
+   "medium": {
+    "card_hours": 3.1452,
+    "processor_hours": 6.1899
+   },
+   "stage1": {
+    "card_hours": 0.2241,
+    "processor_hours": 0.3568
+   },
+   "card_runs": 107,
+   "wall_hours": 5.21
+  },
+  "version4": {
+   "booking": "the supplement's own ledger under the same cap numbers (decision D2)",
+   "pairs_are": "[central, high]",
+   "projection": {
+    "stage1": {
+     "card_hours": [
+      0.22,
+      0.45
+     ],
+     "processor_hours": [
+      0.36,
+      0.71
+     ]
+    },
+    "stage2a_medium_expert": {
+     "runs": 56,
+     "card_hours": [
+      2.28,
+      4.56
+     ],
+     "processor_hours": [
+      5.1,
+      10.2
+     ]
+    },
+    "stages1_2a_vs_cap_14_21": {
+     "card_hours": [
+      2.5,
+      5.0
+     ],
+     "processor_hours": [
+      5.5,
+      11.0
+     ]
+    },
+    "stage2b_medium_vs_cap_12_16": {
+     "runs": 42,
+     "card_hours": [
+      1.4,
+      2.8
+     ],
+     "processor_hours": [
+      3.3,
+      6.6
+     ]
+    },
+    "all": {
+     "runs": 118,
+     "card_hours": [
+      3.9,
+      7.8
+     ],
+     "processor_hours": [
+      8.8,
+      17.6
+     ]
+    }
+   },
+   "method": "central: version 3's measured wall time per run at two runs at once for the same learner, setup and quality (ReBRAC on medium-expert from its medium runs; IQL's IW at 1.11 times its standard and room references at 1.58 times their alone runs); card-hours 0.53 times the summed walls (version 3's ratio); processor-hours the summed walls plus version 3's measured lane costs; stage 1 as version 3 measured it; high: twice central; no return enters it",
+   "wall_hours": "about 4-5 at two runs at once",
+   "study_wide": {
+    "medium-expert": {
+     "versions_1_2": [
+      0.49,
+      0.71
+     ],
+     "version3": [
+      2.23,
+      4.4
+     ],
+     "version4_central": [
+      2.5,
+      5.5
+     ],
+     "all_central": [
+      5.2,
+      10.6
+     ],
+     "all_high": [
+      7.7,
+      16.1
+     ],
+     "cap": [
+      14,
+      21
+     ]
+    },
+    "medium": {
+     "version3": [
+      3.15,
+      6.19
+     ],
+     "version4_central": [
+      1.4,
+      3.3
+     ],
+     "all_central": [
+      4.5,
+      9.5
+     ],
+     "all_high": [
+      5.9,
+      12.8
+     ],
+     "cap": [
+      12,
+      16
+     ]
+    },
+    "pairs_are": "[card-hours, processor-hours]",
+    "note": "disclosed, never checked against a cap; stage 0 and the stage-0 suites of versions 2-4 are booked separately"
+   },
+   "lane_cost_bias": "budget.Ledger.lane_seconds (version 3's bytes) averages processor seconds per ledger entry and the driver writes one entry per lane step, so once a kind of lane has run, S6 and S6b project an S7 lane (3 steps) at about a third of its cost and a coverage or viewer lane (2 steps) at about half (version 3's ledger: S7 4.0 s per entry against 12.1 per lane, coverage 6.5 against 13.0, viewer 12.9 against 25.8); for version 4's 170 S7, 50 coverage and 10 viewer lanes about 0.5 processor-hours low in all (about 0.3 medium-expert, 0.2 medium); score lanes are not affected; budget.py cannot change in version 4 (PRESPEC.md section 21.10)"
+  }
  },
  "exploratory": {
   "label": "EXPLORATORY: seeds 0-4 of the weighting test's data, already seen by it; confirmation needs fresh data seeds 10-14 of its generator and a pre-registration approved at the user's terminal",
@@ -1401,6 +1566,135 @@
     "readings": "bit for bit on 7/7 banks; (i) passed, 1.11e-05 against 5.22e-05; (ii) passed, 0.98 decades; (iii) passed, 1.31; big kicks 1 start above 0.05, 2 above 0.02, 3 above 0.01; rebrac-iw (lane never ran) largest 0.0237; rebrac-standard at 10,000 steps 0.0140"
    },
    "expected": "ReBRAC with standard BCA fails S7 again in stage 1 (bit for bit, S8), so ReBRAC stops on medium-expert; on medium ReBRAC is checked at its seed-0 final actors"
+  },
+  {
+   "id": "P4",
+   "version": 4,
+   "plan": "6.1 (what a stop means: S7) and 6.2 (what enters a claim)",
+   "post_hoc": true,
+   "what": "a supplement after version 3, under its own root runs/shift_hosts/supplement_v4 (its own driver files and ledger), trains and scores in full every stage-2 run of every scope version 3's S7 check stopped (learner scope: sham alone for choice-19 learners, alone, standard and IW at seeds 0-4, room references 0-4; IW scope: IW at seeds 0-4 plus that learner's alone and standard at seeds 0-4 as comparators); stage 1 reruns whole; a failed S7 check there is recorded (state.json s7_stopped and s7_results) and drops nothing; S7 also runs on the 100,000- and 50,000-step actors of every planned alone, standard and IW run at seeds 0-4; the supplement is shown in results.json (qualities.<quality>.s7_shown, s7_supplement, one caveat) and never judged; version 3's results.json is carried byte for byte; S7's limits are unchanged",
+   "code": "stages.py (Driver.in_plan and the frozen plan in plan_units and unit_jobs; s7_failed records and drops nothing; _record_s7 and state.json s7_results; lanes_for's S7 lanes on every seed and on the 50% actor; the drops and skips removed from _card_done, _lane_step_done, seed_checks, room_checks and s7_seed0_checks; frozen_config, check_real_args and config_from with the supplement block; the dry-run options --supplement-plan, --s7-all-seeds and --s7-half; preflight's checks of version 3's files and code; the supplement root as the real default); supplement.py (new: the block's validation, check_sources, code_unchanged, R1 and the export); tests/test_stages.py and tests/test_claims.py; every other file of version 3's approved code manifest byte-identical (supplement.code_unchanged, checked before every real start)",
+   "why": "version 3's S7 checks stopped five scopes (largest per-start closed-loop difference, worst bank, limit 0.05 points; open loop bit for bit on each): medium-expert ReBRAC (stage1 rebrac-standard and its weights-of-1 actor, 15,000 steps, big kicks 0.13227), TD3+BC's IW setup (seed-0 IW, 100,000 steps, big kicks 0.28213), IQL (seed-0 alone, 100,000 steps, strong current 0.12213); medium TD3+BC (seed-0 alone, recorded 22.681, all 7 banks over the limit) and IQL (seed-0 alone, strong current 14.318, all 7 banks); their later runs in that quality were never trained or never scored (PRESPEC.md section 21.2), so the material for an S7 fix did not exist",
+   "evidence": {
+    "s7_json_sha256": {
+     "stage1/medium-expert/seed0/rebrac-standard/lanes/s7-step15000/s7.json": "b80802986abeda58ece54e7d67a90337687855b5b9ace7159cb0f47836aaf3fa",
+     "stage1/medium-expert/seed0/rebrac-iw_ones/lanes/s7-step15000/s7.json": "b80802986abeda58ece54e7d67a90337687855b5b9ace7159cb0f47836aaf3fa",
+     "stage2/medium-expert/seed0/td3_bc-iw/lanes/s7-step100000/s7.json": "f9640e0981f581f7178cdee86708ba4688bf51fe4e59caaa7a57332b576a7b32",
+     "stage2/medium-expert/seed0/iql-alone/lanes/s7-step100000/s7.json": "c522c7f2e14588be14897826d45a1a131a536040b9f42e49cdcfa56fea67b8ba",
+     "stage2/medium/seed0/td3_bc-alone/lanes/s7-step100000/s7.json": "addf4558cea80f3d634a8adb90a705266324178c1309caf34f43c8f36ab3b8cc",
+     "stage2/medium/seed0/iql-alone/lanes/s7-step100000/s7.json": "449826b41ec7fe65b9d53daa7d8dcf5f63f0434d7dc3f04463ff645c90afd23e"
+    },
+    "version3_state_sha256": "e577472ffc68a18079c1cd4ae2f778315d506b6db47a23dad0e5c295fc21df11"
+   },
+   "decided": "the owner, in chat, 2026-10-20: at 06:39:51Z, unprompted, 'dont stop experiments, let them run in full so we can work from there towards solution', and at 06:40:17Z 'same with IW BCA', having been shown S7's differences per checked actor and which scopes stopped (no return); the main session read it as a supplement after version 3, shown and never judged; at 07:37:31Z it asked four questions with options, one marked recommended each; the answers reached the session at 11:43:46Z: D1 'Supplement after v3 (Recommended)', D2 'Its own ledger (Recommended)', D3 'Yes, plus 50k-step actors' (the recommended option was seeds 0-4 without the 50,000-step actors), D4 'Halt until traced (Recommended)'; the owner's terminal approval is the decision that counts; D5, asked later in chat with two options ('Drop the bounds', marked recommended, and 'Keep the bounds'): at 2026-10-20T14:15:39Z the owner answered 'Keep the bounds', so the shown paired differences keep their standard error and one-sided 95% bounds, labeled shown, not judged",
+   "overrides": "PRESPEC.md 9.1's and 20.6's 'none of the stopped scope's later runs in that quality trains', 'its queued runs and lanes are dropped' and 'a run already training finishes and is never scored', for the supplement; 20.6's 'No run of a stopped scope enters any claim, mean or statistic', which becomes 'enters no claim; its means and paired differences are shown in the supplement, labeled'; and the training half of 19 October's 'the stop stands' (P1.if_exceeded_later, narrowed by P3)",
+   "still_holds": "'no later version relaxes S7 again' (the limits are word for word); version 3's judgment of the stopped scopes (not judged, p = 1 in Holm's families); 20 October's 'no dont give up we need a result' (P3); 'nothing is retried' and 'a recorded stop is never rerun' in the sense that version 3's records keep their verdicts and no outcome of version 4 can reverse a version-3 stop or change a judged key",
+   "chosen": "after the S7 failures were seen; the design and D1-D4 were committed (2a8a477, 2026-10-20T11:45:45Z) before version 3's results.json was opened (2026-10-20T11:46Z); the code and its text were written after the owner and the main session had read version 3's verdicts (about 11:50Z)",
+   "returns_read_before": "none before the rule was committed: S7 records, the driver's log, status and budget only; version 3's results.json was built at 11:44:48Z and committed unread (a8f96da); its verdicts were read at about 11:50Z, after the commit",
+   "set_after_results_read": [
+    "how an S7 failure in a scope version 3 judged is reported (the committed design: 'as a caveat on TD3+BC's claims'): a sentence naming each such actor in the one appended caveat, s7_supplement.s7_failures_in_judged_scopes, and an IW scope's comparators' S7 results listed and counted apart; the shown paired differences carry per-seed values, mean, sd, standard error and one-sided 95% bounds (D5)",
+    "the frozen block's shape (version, root, version 3's identity and SHA-256 values, scopes, plan, s7) in place of a listed run list and copied entries; scopes and plan as the committed design, recomputed from version 3's state.json before every start",
+    "carried_from inside s7_supplement, not a top-level key",
+    "the form of D3's 50,000-step lanes, a per-lane exit-status check (either way), the actor step in s7_stopped entries, R1's not_compared list",
+    "the budget projection (version 3's measured compute; no return)"
+   ],
+   "claims_affected": "none of the judged claims: every key of version 3's results.json is carried byte for byte and compared in canonical JSON before the export writes; claims.py, export.py and every training and scoring file are version 3's bytes; the supplement's numbers carry no bar, badge, Holm entry, p-value or kill rule",
+   "unchanged": "S7's limits (open loop 1e-7, closed loop 0.05 points on every start), every other stop rule, claim, mark and bar, the seeds, the caps' numbers, the settings, the Unifloral pins, the data, the scoring cache and version 3's records",
+   "expected": "R1 equal for the 41 runs version 3 also trained and version 3's six failures repeated bit for bit; many first-time S7 checks failing (seeds 1-4, the 50,000-step actors, IQL's standard and IW, ReBRAC's stage-2 actors on medium-expert); a failure on TD3+BC's medium-expert comparators at seeds 1-4 or at 50,000 steps is named in the appended caveat as a caveat on its claims and listed in s7_supplement.s7_failures_in_judged_scopes, no judged key changing (PRESPEC.md sections 21.7 and 21.8)"
   }
- ]
+ ],
+ "supplement": {
+  "version": 4,
+  "root": "runs/shift_hosts/supplement_v4",
+  "source": {
+   "fingerprint": "fe9fb77b0851c75b522c337fcb65c2a3d027de71ddfa50dcd6f3affc3bbd1c1c",
+   "approval_commit": "6f9ce2b51bf2907328477f4ffa96afff25522559",
+   "state_sha256": "e577472ffc68a18079c1cd4ae2f778315d506b6db47a23dad0e5c295fc21df11",
+   "ledger_sha256": "25ec5762ab14b1e9e47cf38346cb231908003a904618af385632d4c0a5ca7fbf",
+   "results_sha256": "73c3f12e07fac5d026381a7e2c50b01fc681442e3109c5a131e4d69d1d6ba48b"
+  },
+  "scopes": [
+   {
+    "quality": "medium-expert",
+    "learner": "rebrac",
+    "scope": "learner"
+   },
+   {
+    "quality": "medium-expert",
+    "learner": "iql",
+    "scope": "learner"
+   },
+   {
+    "quality": "medium-expert",
+    "learner": "td3_bc",
+    "scope": "iw"
+   },
+   {
+    "quality": "medium",
+    "learner": "td3_bc",
+    "scope": "learner"
+   },
+   {
+    "quality": "medium",
+    "learner": "iql",
+    "scope": "learner"
+   }
+  ],
+  "plan": {
+   "medium-expert": {
+    "rebrac": [
+     "alone",
+     "standard",
+     "iw",
+     "room"
+    ],
+    "iql": [
+     "sham_alone",
+     "alone",
+     "standard",
+     "iw",
+     "room"
+    ],
+    "td3_bc": [
+     "alone",
+     "standard",
+     "iw"
+    ]
+   },
+   "medium": {
+    "td3_bc": [
+     "sham_alone",
+     "alone",
+     "standard",
+     "iw",
+     "room"
+    ],
+    "iql": [
+     "sham_alone",
+     "alone",
+     "standard",
+     "iw",
+     "room"
+    ]
+   }
+  },
+  "s7": {
+   "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+   ],
+   "steps": [
+    50000,
+    100000
+   ],
+   "setups": [
+    "alone",
+    "standard",
+    "iw"
+   ]
+  }
+ }
 }
