@@ -58,6 +58,16 @@ partly by selection; needs seeds 10-14" (plan section 2.1).
 Badges: passed, shelved, flagged, pending, not judged, did not learn. A flag whose condition does not hold reads
 "passed" (the check passed; its verdict says "not flagged").
 
+Version 3 (PRESPEC.md section 20, post hoc): a failed float32 check (stop rule S7, limit unchanged at 0.05 points per
+start) stops a scope within its quality instead of the study. A failure on an alone, standard or weights-of-1 actor
+stops the learner: all its claims read "not judged" ("stopped by S7"), and it stays in both Holm families with p = 1. A
+failure on an IW actor (or IW's repeat) stops only its IW setup: the claims that compare the IW setup (2, 2c, 3, 4a, 4b,
+Claim 5's IW rows and Claim 6's Claim-2 part) read "not judged", it stays in Claim 2's family with p = 1, and its
+Claims 0, 1, 1c, 3b and Claim 5's standard rows are judged as usual. A stopped learner wins over a stopped IW setup.
+The runs of a stopped scope (trained before the stop) enter no claim, statistic or mean; they are listed as excluded.
+Claims 1 and 2 count a stopped scope as complete (with p = 1), so they wait only for the setups that still run. The
+driver's state.json "s7_stopped" entries (quality, learner, scope, setup, run, ...) come in through judge(s7_stopped=).
+
 Input (one quality): runs = {(learner, setup): {seed: run}}, where a missing seed is absent and run is a dict:
   state     "complete" (trained and scored) or "stopped" (a stop recorded as this run's outcome, plan section 6.1)
   finite    True when every return of the scored readout on all 7 banks is finite (False for a stopped run)
@@ -119,6 +129,12 @@ STOP_RULES = ("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S6b", "S7", "S8", "S9",
 READING_ORDER = ("0", "4a", "4b", "1", "1c", "2", "2c", "3", "3b", "5", "6")    # plan section 6.2, fixed now
 HOLM_CLAIMS = ("1", "2")
 FLAGS = ("1c", "2c", "3", "3b", "5")
+
+# Version 3's S7 scopes (module docstring; restated from stages.S7_SCOPE: the failing actor's setup -> what stops)
+S7_SCOPE = dict(alone="learner", standard="learner", iw_ones="learner", iw="iw", iw_repeat="iw")
+S7_IW_SETUPS = ("iw", "iw_flattened", "iw_shuffled", "iw_estimated")   # the runs a stopped IW setup leaves out
+S7_IW_CLAIMS = ("2", "2c", "3", "4a", "4b")    # the claims a stopped IW setup leaves unjudged (with 5's and 6's parts)
+S7_STOPPED = "stopped by S7"                   # a phone-view row's status and an S7 write-up's badge (not a claim badge)
 
 # plan section 6.2's table; a and b name the paired comparison a - b and bank its start bank
 CLAIMS = {
@@ -333,6 +349,61 @@ def claim0_bar(quality, anchor):
                 rule="the recording controller's no-shift points minus 10, rounded", anchor=dict(random=lo, top=hi))
 
 
+# ------------------------------------------------------------------------------------------------ S7's scopes (version 3)
+
+def s7_scopes(entries, quality):
+    """One quality's S7 stops from the driver's state.json "s7_stopped" entries -> {learner: dict(scope, runs,
+    entries)}. scope is "learner" when any entry stops the learner (it wins), else "iw". An entry without a known scope
+    takes it from its failing setup (S7_SCOPE); one with neither stops the learner, the stricter reading."""
+    out = {}
+    for e in entries or []:
+        if not isinstance(e, dict) or e.get("quality") != quality or e.get("learner") not in LEARNERS:
+            continue
+        scope = e.get("scope") if e.get("scope") in ("learner", "iw") else S7_SCOPE.get(e.get("setup"), "learner")
+        cur = out.setdefault(e["learner"], dict(scope=scope, runs=[], entries=[]))
+        if scope == "learner":
+            cur["scope"] = "learner"
+        if e.get("run") is not None and e["run"] not in cur["runs"]:
+            cur["runs"].append(e["run"])
+        cur["entries"].append(dict(e))
+    return out
+
+
+def s7_excluded(scopes, learner, setup):
+    """Whether this learner's runs of this setup are left out because S7 stopped their scope: every setup of a stopped
+    learner (its room references and sham-alone run included), the IW setups (stage 3's IW twins included) of a
+    stopped IW setup."""
+    sc = (scopes or {}).get(learner)
+    return sc is not None and (sc["scope"] == "learner" or setup in S7_IW_SETUPS)
+
+
+def s7_stops_claim(scopes, learner, cid):
+    """Whether S7 stopped this learner's claim: every claim of a stopped learner, the IW claims of a stopped IW setup."""
+    sc = (scopes or {}).get(learner)
+    return sc is not None and (sc["scope"] == "learner" or cid in S7_IW_CLAIMS)
+
+
+def s7_why(scopes, learner):
+    """The reason a stopped scope's claims read "not judged", naming the runs whose float32 check failed."""
+    sc = scopes[learner]
+    what = "the learner" if sc["scope"] == "learner" else "its IW setup"
+    return f"stopped by S7 (the float32 check failed on {', '.join(sc['runs']) or 'a run'}, so {what} stops in this " \
+           f"quality)"
+
+
+def without_s7_stopped(runs, scopes):
+    """runs without the runs of a scope S7 stopped -> (the runs kept, the runs left out as [dict(learner, setup, seed,
+    state, source, why)]). The left-out runs enter no claim, statistic or mean."""
+    kept, left = {}, []
+    for (L, setup), seeds in runs.items():
+        if s7_excluded(scopes, L, setup):
+            left += [dict(learner=L, setup=setup, seed=sd, state=r.get("state"), source=_source(r),
+                          why="excluded: stopped by S7") for sd, r in sorted(seeds.items())]
+        else:
+            kept[(L, setup)] = seeds
+    return kept, left
+
+
 # ------------------------------------------------------------------------------------------------ results
 
 def _result(cid, badge, verdict, reasons=(), labels=(), **details):
@@ -341,6 +412,14 @@ def _result(cid, badge, verdict, reasons=(), labels=(), **details):
                labels=list(labels), kill_rule=KILL_RULES[cid])
     out.update(details)
     return out
+
+
+def _s7_result(cid, scopes, learner, labels=(), **details):
+    """A claim S7 stopped (version 3): not judged, with the failing runs named; a Holm claim stays in its family with
+    p = 1."""
+    why = s7_why(scopes, learner)
+    tail = "; it stays in Holm's family with p = 1." if cid in HOLM_CLAIMS else "."
+    return _result(cid, NOT_JUDGED, f"Not judged: {why}{tail}", [why], labels, s7_stopped=True, **details)
 
 
 def _fmt(x, nd=2, sign=True):
@@ -451,15 +530,22 @@ def judge_coverage(runs, learner, claim0):
     return a, b
 
 
-def _family(cid, quality, runs, res, complete):
-    """Claim 1 or 2 for the four learners, with Holm's correction over its family (plan sections 5.5 and 6.2)."""
+def _family(cid, quality, runs, res, complete, scopes=None):
+    """Claim 1 or 2 for the four learners, with Holm's correction over its family (plan sections 5.5 and 6.2). A learner
+    whose claim S7 stopped (version 3, scopes) stays in the family with p = 1."""
     meta = CLAIMS[cid]
     deltas = {L: paired(runs, L, meta["a"], meta["b"], meta["bank"]) for L in LEARNERS}
+    stopped = [L for L in LEARNERS if s7_stops_claim(scopes, L, cid)]
     pvals, why_p1, waiting = {}, {}, []
     if not complete:
-        waiting.append("all 5 seeds of all four learners' alone, standard and IW setups")
+        waiting.append("all 5 seeds of all four learners' alone, standard and IW setups"
+                       + (" (but those S7 stopped)" if scopes else ""))
     for L in LEARNERS:
         s, why = deltas[L]["summary"], []
+        if L in stopped:
+            why_p1[L] = [s7_why(scopes, L)]
+            pvals[L] = 1.0
+            continue
         if res[L]["0"]["badge"] == PENDING and complete:
             waiting.append(f"{LEARNER_NAMES[L]}'s Claim 0")
         if res[L]["0"]["badge"] == DID_NOT_LEARN:
@@ -480,12 +566,17 @@ def _family(cid, quality, runs, res, complete):
     table = holm_table(pvals) if judged else []
     by_learner = {row["learner"]: row for row in table}
     family = dict(claim=cid, alpha=ALPHA, members=list(LEARNERS), judged=judged, waiting_for=waiting,
-                  p_values=pvals if judged else None, p_one_reasons=why_p1 if judged else None, holm=table)
+                  p_values=pvals if judged else None, p_one_reasons=why_p1 if judged else None, holm=table,
+                  s7_stopped=stopped)
     out = {}
     for L in LEARNERS:
         d, s, name = deltas[L], deltas[L]["summary"], LEARNER_NAMES[L]
         labels = [OVERLAP_LABEL] if cid == "2" else []
         details = dict(delta=d)
+        if L in stopped:
+            out[L] = _s7_result(cid, scopes, L, labels, family=dict(by_learner[L]) if judged else dict(p=1.0),
+                                **details)
+            continue
         if res[L]["0"]["badge"] == DID_NOT_LEARN:
             out[L] = _result(cid, NOT_JUDGED, "Not judged: the learner did not learn (Claim 0); it stays in Holm's "
                                               "family with p = 1.", ["the learner did not learn (Claim 0)"], labels,
@@ -550,9 +641,11 @@ def judge_flag(cid, runs, learner, claim0):
     return _result(cid, PASSED, text + ": not flagged.", [], labels, delta=d)
 
 
-def judge_claim5(runs, learner, claim0):
+def judge_claim5(runs, learner, claim0, stopped=(), why_stopped=None):
     """Claim 5: a BCA setup's F1 or F2 rate minus its learner alone's, per seed and bank, in percentage points;
-    flagged as harm where the mean is at least 2 percentage points (compared exactly on start counts) and L > 0."""
+    flagged as harm where the mean is at least 2 percentage points (compared exactly on start counts) and L > 0.
+    stopped: setups S7 stopped (version 3: "iw" for a stopped IW setup); they read "not judged" (why_stopped) and the
+    badge is read from the other setup's comparisons."""
     labels = [POINTER_LABEL]
     if claim0["badge"] == DID_NOT_LEARN:
         return _result("5", NOT_JUDGED, "Not judged: the learner did not learn (Claim 0).",
@@ -560,6 +653,9 @@ def judge_claim5(runs, learner, claim0):
     alone = runs.get((learner, "alone"), {})
     comparisons, by_setup = [], {}
     for setup in ("standard", "iw"):
+        if setup in stopped:
+            by_setup[setup] = NOT_JUDGED
+            continue
         other = runs.get((learner, setup), {})
         states = []
         for event in EVENTS:
@@ -589,9 +685,9 @@ def judge_claim5(runs, learner, claim0):
                 states.append(row["state"])
         by_setup[setup] = (FLAGGED if FLAGGED in states else PENDING if PENDING in states else
                            NOT_JUDGED if NOT_JUDGED in states else PASSED)
-    states = list(by_setup.values())
+    states = [b for s, b in by_setup.items() if s not in stopped]
     badge = (FLAGGED if FLAGGED in states else PENDING if PENDING in states else NOT_JUDGED if NOT_JUDGED in states
-             else PASSED)
+             else PASSED if states else NOT_JUDGED)
     hits = [c for c in comparisons if c["state"] == FLAGGED]
     reasons = [f"{SETUP_NAMES[c['setup']]} {c['event'].upper()} on {c['bank']}: {_fmt(c['mean_pp'])} percentage "
                f"points, lower bound {_fmt(c['lower_pp'])}" for c in hits]
@@ -600,7 +696,10 @@ def judge_claim5(runs, learner, claim0):
                        "with a lower bound above 0 on any of the 7 banks.",
                PENDING: "Waiting for the setups' 5 seeds.",
                NOT_JUDGED: "Not judged: a seed's run stopped or is not finite."}[badge]
-    return _result("5", badge, verdict, reasons, labels, by_setup=by_setup, comparisons=comparisons)
+    for setup in stopped:
+        verdict += f" {SETUP_NAMES[setup][0].upper() + SETUP_NAMES[setup][1:]} is not judged: {why_stopped}."
+    return _result("5", badge, verdict, reasons, labels, by_setup=by_setup, comparisons=comparisons,
+                   **({"s7_stopped_setups": list(stopped)} if stopped else {}))
 
 
 def judge_claim6(runs, learner, claim1, claim2):
@@ -611,7 +710,8 @@ def judge_claim6(runs, learner, claim1, claim2):
     for cid, parent, twins in (("1", claim1, (("standard", "standard_flattened"),)),
                                ("2", claim2, (("iw", "iw_flattened"), ("iw", "iw_shuffled")))):
         if parent["badge"] != PASSED:
-            parts[cid] = dict(badge=NOT_JUDGED, why=f"Claim {cid} did not pass", deltas=[])
+            why = parent["reasons"][0] if parent.get("s7_stopped") else f"Claim {cid} did not pass"
+            parts[cid] = dict(badge=NOT_JUDGED, why=why, deltas=[])
             continue
         deltas = [paired(runs, learner, a, b, STRONG) for a, b in twins]
         if any(d["missing"] for d in deltas):
@@ -674,42 +774,70 @@ def claim2_pointer(runs, learner, claim1_delta):
     return out
 
 
-def judge(quality, runs, anchor_none):
+def judge(quality, runs, anchor_none, s7_stopped=None):
     """Every claim of one quality (module docstring). runs: {(learner, setup): {seed: run}}; anchor_none: the
     no-shift bank's anchors dict(random=..., top=...) (start_banks.json "anchors" "none" "anchor"), or None while
-    unknown. Returns dict(schema, quality, claim0_bar, complete, families, learners={learner: {claim id: result}},
-    pointers, exploratory)."""
+    unknown; s7_stopped: the driver's state.json "s7_stopped" entries (version 3; any quality's, this quality's are
+    used), or None. Returns dict(schema, quality, claim0_bar, complete, families, learners={learner: {claim id:
+    result}}, pointers, exploratory, s7=dict(scopes, excluded))."""
     if quality not in QUALITIES:
         raise ValueError(f"unknown quality {quality!r}")
-    expected = [(L, s, sd) for L in LEARNERS for s in CLAIM_SETUPS for sd in SEEDS]
+    scopes = s7_scopes(s7_stopped, quality)
+    runs, excluded = without_s7_stopped(runs, scopes)
+    expected = [(L, s, sd) for L in LEARNERS for s in CLAIM_SETUPS for sd in SEEDS if not s7_excluded(scopes, L, s)]
     missing = [dict(learner=L, setup=s, seed=sd) for L, s, sd in expected if sd not in runs.get((L, s), {})]
     complete = not missing
     room_present = sum(1 for L in LEARNERS for sd in SEEDS if sd in runs.get((L, "room"), {}))
+    room_expected = sum(N_SEEDS for L in LEARNERS if not s7_excluded(scopes, L, "room"))
     res = {L: {} for L in LEARNERS}
     for L in LEARNERS:
-        res[L]["0"] = judge_claim0(quality, runs, L, anchor_none)
-        res[L]["4a"], res[L]["4b"] = judge_coverage(runs, L, res[L]["0"])
+        if s7_stops_claim(scopes, L, "0"):
+            res[L]["0"] = _s7_result("0", scopes, L, bar=claim0_bar(quality, anchor_none) if anchor_none else None)
+        else:
+            res[L]["0"] = judge_claim0(quality, runs, L, anchor_none)
+        if s7_stops_claim(scopes, L, "4a"):
+            res[L]["4a"], res[L]["4b"] = (_s7_result(c, scopes, L, [OVERLAP_LABEL], per_seed=[]) for c in ("4a", "4b"))
+        else:
+            res[L]["4a"], res[L]["4b"] = judge_coverage(runs, L, res[L]["0"])
     families = {}
     for cid in HOLM_CLAIMS:
-        families[cid], out = _family(cid, quality, runs, res, complete)
+        families[cid], out = _family(cid, quality, runs, res, complete, scopes)
         for L in LEARNERS:
             res[L][cid] = out[L]
     pointers = {}
     for L in LEARNERS:
         for cid in ("1c", "2c", "3", "3b"):
-            res[L][cid] = judge_flag(cid, runs, L, res[L]["0"])
-        res[L]["5"] = judge_claim5(runs, L, res[L]["0"])
-        res[L]["6"] = judge_claim6(runs, L, res[L]["1"], res[L]["2"])
-        pointers[L] = dict(claim2=claim2_pointer(runs, L, res[L]["1"]["delta"]))
+            if s7_stops_claim(scopes, L, cid):
+                meta = CLAIMS[cid]
+                labels = [POINTER_LABEL] + ([OVERLAP_LABEL] if "iw" in (meta["a"], meta["b"]) else [])
+                res[L][cid] = _s7_result(cid, scopes, L, labels,
+                                         delta=paired(runs, L, meta["a"], meta["b"], meta["bank"]))
+            else:
+                res[L][cid] = judge_flag(cid, runs, L, res[L]["0"])
+        if s7_stops_claim(scopes, L, "5"):
+            res[L]["5"] = _s7_result("5", scopes, L, [POINTER_LABEL], by_setup=dict(standard=NOT_JUDGED, iw=NOT_JUDGED),
+                                     comparisons=[])
+            res[L]["6"] = _s7_result("6", scopes, L, [POINTER_LABEL], parts={
+                c: dict(badge=NOT_JUDGED, why=s7_why(scopes, L), deltas=[]) for c in HOLM_CLAIMS})
+        else:
+            stopped = ("iw",) if L in scopes else ()
+            res[L]["5"] = judge_claim5(runs, L, res[L]["0"], stopped, s7_why(scopes, L) if stopped else None)
+            res[L]["6"] = judge_claim6(runs, L, res[L]["1"], res[L]["2"])
+        if s7_stops_claim(scopes, L, "2"):
+            pointers[L] = dict(claim2=dict(label=POINTER_LABEL, per_seed=[], value=None, why=s7_why(scopes, L)))
+        else:
+            pointers[L] = dict(claim2=claim2_pointer(runs, L, res[L]["1"]["delta"]))
         res[L] = {cid: res[L][cid] for cid in READING_ORDER}
     return dict(schema=SCHEMA, quality=quality, exploratory=True, label=EXPLORATORY_LABEL,
                 claim0_bar=claim0_bar(quality, anchor_none) if anchor_none is not None else None,
                 complete=dict(claim_setups=complete, missing=missing, room_references_present=room_present,
-                              room_references_expected=len(LEARNERS) * N_SEEDS,
-                              note=None if room_present == len(LEARNERS) * N_SEEDS else
+                              room_references_expected=room_expected,
+                              s7_not_expected=[dict(learner=L, setup=s) for L in LEARNERS for s in CLAIM_SETUPS
+                                               if s7_excluded(scopes, L, s)],
+                              note=None if room_present == room_expected else
                               "the room references run last; one that stops still fails its learner's Claim 0 "
-                              "(plan section 6.1), so Claims 0-2 can change until all 20 are complete"),
-                families=families, learners=res, pointers=pointers)
+                              f"(plan section 6.1), so Claims 0-2 can change until all {room_expected} are complete"),
+                families=families, learners=res, pointers=pointers, s7=dict(scopes=scopes, excluded=excluded))
 
 
 # ------------------------------------------------------------------------------------------------ views
@@ -721,7 +849,10 @@ def phone_table(judged, runs):
     """The phone view's 12 rows (plan section 9.1): learner, setup, the strong mix's return and Delta against the
     judged comparison (standard rows: against the learner alone, Claim 1; IW rows: against standard BCA, Claim 2), the
     no-shift return, and a badge per claim with the lower bound beside it and the Holm-adjusted p-value where the claim
-    is judged. Every per-seed number carries its run record's and scores file's SHA-256."""
+    is judged. Every per-seed number carries its run record's and scores file's SHA-256. A setup S7 stopped (version
+    3) reads status "stopped by S7" and shows none of its runs' numbers."""
+    scopes = (judged.get("s7") or {}).get("scopes") or {}
+    runs, _ = without_s7_stopped(runs, scopes)
     rows = []
     for L in LEARNERS:
         res = judged["learners"][L]
@@ -748,7 +879,8 @@ def phone_table(judged, runs):
                              holm_adjusted_p=fam.get("adjusted") if r["badge"] in (PASSED, SHELVED) else None,
                              badge=r["badge"], labels=r["labels"], per_seed=r["delta"]["per_seed"])
             rows.append(dict(learner=L, learner_name=LEARNER_NAMES[L], setup=setup, setup_name=SETUP_NAMES[setup],
-                             status=DID_NOT_LEARN if res["0"]["badge"] == DID_NOT_LEARN else None,
+                             status=(S7_STOPPED if s7_excluded(scopes, L, setup) else
+                                     DID_NOT_LEARN if res["0"]["badge"] == DID_NOT_LEARN else None),
                              strong=dict(mean=strong["summary"].get("mean"), per_seed=strong["per_seed"]),
                              none=dict(mean=none["summary"].get("mean"), per_seed=none["per_seed"]),
                              delta=delta, badges=badges))
@@ -770,7 +902,9 @@ def reading_order(judged, integrity=None):
 
 def study_rule(judged_by_quality):
     """Plan section 6.2's study rule: if Claims 1 and 2 are shelved for all four learners on every quality run, the
-    study ends after seeds 0-4, with no stage 3 and no confirmation. Returns dict(status, ends_after_seeds_0_4)."""
+    study ends after seeds 0-4, with no stage 3 and no confirmation. A claim that reads "not judged" (did not learn, or
+    stopped by S7 under version 3) counts as not passing, like a shelved one. Returns dict(status,
+    ends_after_seeds_0_4)."""
     if not judged_by_quality:
         return dict(status=PENDING, ends_after_seeds_0_4=None)
     badges = [j["learners"][L][c]["badge"] for j in judged_by_quality.values() for L in LEARNERS for c in HOLM_CLAIMS]
@@ -858,7 +992,8 @@ def writeups(judged):
     """The user's shelving format for every shelved claim and every "did not learn" (plan section 6.2, Write-ups):
     The idea / What we tested (and the kill rule) / What happened / Why. "Why" here is the rule that shelved it, read
     from the numbers; a causal explanation, if any, is added by whoever writes the results up. Each item has the
-    four parts, the result's path in results.json, and a Markdown rendering."""
+    four parts, the result's path in results.json, and a Markdown rendering. Under version 3 every scope S7 stopped
+    follows (s7_writeups)."""
     q, out = judged["quality"], []
     for L in LEARNERS:
         for cid in READING_ORDER:
@@ -881,4 +1016,41 @@ def writeups(judged):
                               for w in why])
             out.append(dict(quality=q, learner=L, claim=cid, badge=res["badge"], title=title, idea=idea,
                             tested=tested, happened=happened, why=why, cite=cite, markdown=md))
+    return out + s7_writeups(judged)
+
+
+def s7_writeups(judged):
+    """Version 3: every scope S7 stopped in this quality, in the same format (The idea / What we tested / What
+    happened / Why), with claim "S7" and badge "stopped by S7", citing results.json's
+    qualities.<quality>.s7_stopped.scopes.<learner>."""
+    q, out = judged["quality"], []
+    scopes = (judged.get("s7") or {}).get("scopes") or {}
+    for L in LEARNERS:
+        if L not in scopes:
+            continue
+        sc, name = scopes[L], LEARNER_NAMES[L]
+        cite = f"results.json:qualities.{q}.s7_stopped.scopes.{L}"
+        learner_scope = sc["scope"] == "learner"
+        idea = (f"The scores must measure {name}'s trained policy: the float64 scoring adapter and a float32 "
+                f"restatement of the trained network, each driving the simulator from the same start, should agree "
+                f"within 0.05 points on every start (S7, with version 2's post-hoc limit of 0.05 points "
+                f"(PRESPEC.md section 19)).")
+        tested = (f"S7 on every stage-1 actor and every seed-0 final actor of {name}'s alone, standard and IW setups, "
+                  f"on the 1,000 starts of each of the 7 banks. Version 3's rule (post hoc, PRESPEC.md section 20): a "
+                  f"failure on the alone, standard or weights-of-1 actor stops the learner in this quality; a failure "
+                  f"on an IW actor (or IW's repeat) stops its IW setup.")
+        happened = (f"The float32 check failed on {', '.join(sc['runs']) or 'a run'}, so "
+                    f"{'the learner' if learner_scope else 'its IW setup'} stopped on {q}. [{cite}]")
+        claims_out = "Claims 1 and 2" if learner_scope else "Claim 2"
+        why = [s7_why(scopes, L),
+               f"no claim of {'the learner' if learner_scope else 'the IW setup'} is judged on {q}, and it stays in "
+               f"Holm's family of {claims_out} with p = 1, so it never loosens the bar for the other learners",
+               "S7's limit is unchanged (0.05 points per start); its runs trained before the stop enter no claim, "
+               "statistic or mean"]
+        title = f"{name} on {q}: {'learner' if learner_scope else 'IW setup'} stopped by S7"
+        md = "\n".join([f"### {title}", "", f"- **The idea:** {idea}", f"- **What we tested:** {tested}",
+                        f"- **What happened:** {happened}", "- **Why:**"]
+                       + [f"  - {w[0].upper() + w[1:]}." for w in why])
+        out.append(dict(quality=q, learner=L, claim="S7", badge=S7_STOPPED, title=title, idea=idea, tested=tested,
+                        happened=happened, why=why, cite=cite, markdown=md))
     return out

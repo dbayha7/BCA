@@ -101,6 +101,12 @@ Where each thing comes from (the export/runner field mapping; INTERFACES.md sect
   stop rules          driver state.json checks (S2/<learner>, S4/..., S6, S6b/<quality>/<unit>, S8/<learner>,
                       S10/<learner>/<setup>, S9/<run> on failure), s9_reference, claim0_failures; STOP.json's rule;
                       this module's own checks (S1, S3, S4, S5, S7, S9, S10, S11)
+  S7's scopes         driver state.json s7_stopped (version 3: {quality, learner, scope "learner" | "iw", setup, run,
+                      stage, file, at_utc} per failed S7 check): passed to the claims (claims.judge), whose stopped
+                      scopes read "not judged" with p = 1 in Holm's families; their runs enter no claim, table or
+                      expanded-view number and are listed under qualities.<quality>.s7_stopped.excluded (a run that
+                      trained but was never scored too, and it carries "s7_stopped" under "unscored" and "runs"); a
+                      failed S7 check of a recorded scope is an outcome under integrity, any other fails S7
 Every run read is listed in results.json "runs" with each of its fields "read" or "not recorded: <why>".
 
 A stopped run is an outcome (passed to the claims as not finite) when it stopped by S5 on Unifloral's unchanged step
@@ -117,7 +123,8 @@ phone-view rows), expanded.<learner> (setups.<setup> with records and per-seed m
 snapshot, compute time, band readouts and coverage; pointers: IW against alone, the mild mix, room, the sham-alone
 drift of choice 19, Claim 2's pointer, the 50% snapshot's comparisons, paired standard errors over the starts, CQL's
 tanh-of-mean readout; readouts: ReBRAC's substituted next commands, whether IQL's Q and V are identical across its
-three runs), writeups (the user's shelving format), stage3_order; study_rule; reference_row; runs; excluded; unscored;
+three runs), writeups (the user's shelving format), stage3_order, totals (the card and processor seconds of every run read,
+scored or not), s7_stopped (version 3's stopped scopes and the runs they leave out); study_rule; reference_row; runs; excluded; unscored;
 halted_runs. Every per-seed array of a setup is in seed order and aligned with that setup's records list, which carries
 each seed's record and scores SHA-256; claim deltas carry them per seed.
 
@@ -168,6 +175,7 @@ COVERAGE_SETUPS = ("standard", "iw")                                  # the driv
 COVERAGE_PAIRS = ("recorded", "actor", "visited")                     # band_readout.GROUPS: the three kinds of pairs
 PAIR_FIELDS = ("steps", "coverage", "interval", "refused_share", "certified_coverage")   # band_readout.summarize
 S7_SETUPS = C.CLAIM_SETUPS                                            # S7 lanes on seed 0's final actors
+S7_NEVER_SCORED = "excluded: stopped by S7 (trained, never scored: the driver adds no lanes to a stopped scope)"
 READOUTS = dict(td3_bc=("scored",), iql=("scored",), rebrac=("scored",), cql=("scored", "tanh_mean"))  # actors_f32
 SCORED = "scored"
 SUMMARY_FIELDS = ("J_mean", "J_se", "points_mean", "points_se", "J_discounted_mean", "regret_mean",
@@ -233,6 +241,10 @@ CAVEATS = (
     "Post hoc: S7's closed-loop limit is pre-specification version 2's 0.05 points per start (version 1: 0.01), set "
     "after version 1's stage 1 stopped on it (ReBRAC alone, big kicks, 0.0114 points) and before any return was read "
     "(PRESPEC.md section 19).",
+    "Post hoc (pre-specification version 3, PRESPEC.md section 20): a failed S7 check no longer stops the study; it "
+    "stops that learner (an alone, standard or weights-of-1 actor) or only its IW setup (an IW actor) in that quality. "
+    "Such a learner's claims read 'not judged' and it stays in Holm's families with p = 1; S7's limit is unchanged at "
+    "0.05 points per start.",
 )
 
 
@@ -669,10 +681,12 @@ def read_run(folder, quality, learner, setup, seed, frozen, *, stage="stage2", a
 def collect(root, frozen, qualities=C.QUALITIES, accepted_s5=frozenset()):
     """Every run folder under root/stage2 and root/stage3 for the build's quality labels (module docstring) ->
     dict(runs={quality: {(learner, setup): {seed: run}}}, aux={quality: {(learner, setup, seed): aux}}, halts,
-    excluded, unscored, listed (every run read, with its fields), s7_stage1 (stage 1's S7 results))."""
+    excluded, unscored, unscored_aux={quality: {(learner, setup, seed): aux}} (the unscored runs' aux, for the totals
+    and S7's stopped scopes), listed (every run read, with its fields), s7_stage1 (stage 1's S7 results))."""
     root = Path(root)
     runs = {q: {} for q in qualities}
     aux = {q: {} for q in qualities}
+    unscored_aux = {q: {} for q in qualities}
     halts, excluded, unscored, listed, s7_stage1 = [], [], [], [], []
     for q in qualities:
         label = quality_label(q, frozen.made_up)
@@ -701,6 +715,7 @@ def collect(root, frozen, qualities=C.QUALITIES, accepted_s5=frozenset()):
                     listed.append(dict(key, run_id=a["run_id"], kind=got["kind"], fields=dict(a["fields"])))
                     if got["kind"] == "unscored":
                         unscored.append(key)
+                        unscored_aux[q][(learner, setup, seed)] = a
                         continue
                     aux[q][(learner, setup, seed)] = a
                     if got["kind"] == "halt":
@@ -717,8 +732,8 @@ def collect(root, frozen, qualities=C.QUALITIES, accepted_s5=frozenset()):
             for s in (read_s7(rdir, rec, frozen) if bad is None else
                       [dict(path=rel(rdir), passed=False, why=bad)]):
                 s7_stage1.append(dict(s, run_id=rec.get("run_id")))
-    return dict(runs=runs, aux=aux, halts=halts, excluded=excluded, unscored=unscored, listed=listed,
-                s7_stage1=s7_stage1)
+    return dict(runs=runs, aux=aux, halts=halts, excluded=excluded, unscored=unscored, unscored_aux=unscored_aux,
+                listed=listed, s7_stage1=s7_stage1)
 
 
 # ------------------------------------------------------------------------------------------------ the driver's files
@@ -737,12 +752,13 @@ def read_driver(root, frozen):
     or "dry-run" for a made-up build; otherwise nothing of the driver's is read), state.json (decisions, stop-rule
     checks, Claim 0 failures, the S9 reference), STOP.json (an active stop) and STOP.json.<time> (stops a resumed driver
     moved aside), and driver.log's accepted S5 lines (stages.Driver._card_done; state.json "accepted_s5" too if a later
-    driver writes it). Returns a dict; problems are listed, never raised."""
+    driver writes it), and state.json "s7_stopped" (version 3: the scopes a failed S7 check stopped; absent in an
+    older state, read as none). Returns a dict; problems are listed, never raised."""
     d = Path(root) / "driver"
     want = "dry-run" if frozen.made_up else "real"
     out = dict(path=rel(d), read=False, mode=None, state_of_driver=None, phase=None, updated_utc=None, files={},
                problems=[], checks={}, decisions={}, claim0_failures=[], s9_reference=None, stop=None,
-               resumed_stops=[], accepted_s5=[], accepted_s5_source=None, why=None)
+               resumed_stops=[], accepted_s5=[], accepted_s5_source=None, s7_stopped=[], why=None)
     if not d.is_dir():
         out["why"] = "the driver's folder does not exist"
         return out
@@ -770,6 +786,11 @@ def read_driver(root, frozen):
         if isinstance(state.get("accepted_s5"), list):
             accepted.update(str(x) for x in state["accepted_s5"])
             sources.append("state.json accepted_s5")
+        s7 = state.get("s7_stopped")
+        if s7 is not None:
+            if not isinstance(s7, list) or not all(isinstance(e, dict) for e in s7):
+                raise ValueError("s7_stopped is not a list of entries")
+            out["s7_stopped"] = [dict(e) for e in s7]
     except (H.HandoffError, OSError, ValueError) as error:
         out["problems"].append(f"state.json: {error}")
     if (d / "STOP.json").exists():
@@ -858,12 +879,53 @@ def choice19_of(drv):
     return out, {L: src.get(L, "export.CHOICE19") for L in out}
 
 
+def s7_covered(quality, learner, setup, scoped):
+    """Whether a failed S7 check of this learner's setup in this quality is one the driver recorded as a stopped scope
+    (version 3, state.json s7_stopped): an entry stopping the learner covers every setup, one stopping the IW setup
+    covers IW and its repeat (claims.S7_SCOPE)."""
+    return any(e.get("quality") == quality and e.get("learner") == learner
+               and (e.get("scope") == "learner" or (e.get("scope") == "iw" and C.S7_SCOPE.get(setup) == "iw"))
+               for e in scoped or [])
+
+
+def _s7_check_key(key):
+    """(quality, learner, setup) of a driver S7 check: S7/<learner>/<setup> (stage 1, run on medium-expert) or
+    S7/<quality>/seed0/<learner>/<setup>; None for any other shape."""
+    parts = key.split("/")
+    if len(parts) == 3:
+        return "medium-expert", parts[1], parts[2]
+    if len(parts) == 5 and parts[2] == "seed0":
+        return parts[1], parts[3], parts[4]
+    return None
+
+
+def _s7_run_key(run_id):
+    """(quality, learner, setup) of a run id "<stage>/<label>/seed<k>/<learner>-<setup>" (a made-up label names its
+    quality after "made-up-"); None for any other shape."""
+    parts = str(run_id or "").split("/")
+    if len(parts) != 4:
+        return None
+    learner, _, setup = parts[3].partition("-")
+    label = parts[1][len("made-up-"):] if parts[1].startswith("made-up-") else parts[1]
+    return label, learner, setup
+
+
 def driver_rule(rule, drv):
-    """The driver's own status of a stop rule from its state.json and stop reports (module docstring), or None."""
+    """The driver's own status of a stop rule from its state.json and stop reports (module docstring), or None. S7
+    (version 3): a failed check the driver recorded as a stopped scope (s7_stopped) is an outcome, any other failed
+    check fails the rule."""
     checks = drv.get("checks") or {}
     items = {k: v for k, v in checks.items() if isinstance(v, dict) and k.split("/")[0] == rule}
     entry = None
-    if rule == "S9":
+    if rule == "S7" and (items or drv.get("s7_stopped")):
+        scoped = drv.get("s7_stopped") or []
+        failed = sorted(k for k, v in items.items() if not v.get("passed"))
+        loose = [k for k in failed if not ((key := _s7_check_key(k)) and s7_covered(*key, scoped))]
+        entry = dict(status="failed" if loose else ("outcome" if scoped or failed else "passed"), checks=sorted(items),
+                     failed=failed, failed_without_a_stopped_scope=loose, s7_stopped=scoped,
+                     note="version 3: a failed S7 check stops that learner or its IW setup in that quality (an "
+                          "outcome); S7's limit is unchanged")
+    elif rule == "S9":
         ref = drv.get("s9_reference") or {}
         if items or ref:
             entry = dict(status="failed" if items else "passed", failed=sorted(items),
@@ -970,8 +1032,17 @@ def own_checks(collected, frozen, drv, anchors_checked, choice19):
                                   reference_source=(drv.get("s9_reference") or {}).get("source")))
     s7 = [dict(s, run_id=a["run_id"]) for by in collected["aux"].values() for a in by.values() for s in a["s7"]]
     s7 += collected.get("s7_stage1") or []
-    out["S7"] = dict(status=("not recorded" if not s7 else "failed" if any(not s.get("passed") for s in s7) else
-                             "passed"), details=dict(results=s7))
+    # version 3: a verified s7.json, bound to its record, that says the check failed, of a scope the driver recorded
+    # as stopped, is an outcome; any other failure (one not recorded, or a file that does not verify) fails S7
+    scoped = drv.get("s7_stopped") or []
+    for s in s7:
+        key = _s7_run_key(s.get("run_id"))
+        s["stopped_scope"] = bool(not s.get("passed") and s.get("bound_to_record") is True
+                                  and s.get("s7_passed") is not True and key is not None and s7_covered(*key, scoped))
+    bad = [s for s in s7 if not s.get("passed") and not s["stopped_scope"]]
+    out["S7"] = dict(status=("not recorded" if not s7 else "failed" if bad else
+                             "outcome" if any(s["stopped_scope"] for s in s7) else "passed"),
+                     details=dict(results=s7, s7_stopped=scoped))
     outcome_stops = [dict(quality=q, learner=L, setup=s, seed=sd, stop=r["stop"])
                      for q, by in collected["runs"].items() for (L, s), seeds in by.items() for sd, r in seeds.items()
                      if r["state"] == "stopped"]
@@ -1014,7 +1085,8 @@ def integrity(collected, frozen, drv, anchors_checked):
     out["driver"] = dict(read=drv["read"], mode=drv["mode"], state=drv["state_of_driver"], phase=drv["phase"],
                          why=drv["why"], problems=drv["problems"], files=drv["files"], choice19=choice19,
                          choice19_source=choice19_source, accepted_s5=drv["accepted_s5"],
-                         stop=drv.get("stop"), resumed_stops=drv.get("resumed_stops") or [])
+                         stop=drv.get("stop"), resumed_stops=drv.get("resumed_stops") or [],
+                         s7_stopped=drv.get("s7_stopped") or [])
     return out
 
 
@@ -1403,19 +1475,32 @@ def build(permission, *, frozen=None, runs_root=RUNS_ROOT, anchors=None, referen
     col = collect(runs_root, frozen, qualities, frozenset(drv["accepted_s5"]))
     checked = check_score_anchors(col, anchors["anchors"])
     integ = integrity(col, frozen, drv, checked)
-    by_q = {}
+    by_q, never_scored = {}, {}
     for q in qualities:
         runs, aux = col["runs"][q], col["aux"][q]
-        judged = C.judge(q, runs, anchors["anchors"]["none"])
+        judged = C.judge(q, runs, anchors["anchors"]["none"], s7_stopped=drv["s7_stopped"])
+        # version 3: the runs of a scope S7 stopped enter no claim, statistic or mean (the table and the expanded view
+        # included); they are listed under s7_stopped.excluded, those that trained but were never scored (the driver
+        # adds no lanes to a stopped scope) too, and their compute still counts in the totals
+        scopes = judged["s7"]["scopes"]
+        used, _ = C.without_s7_stopped(runs, scopes)
+        aux_used = {k: a for k, a in aux.items() if not C.s7_excluded(scopes, k[0], k[1])}
+        for (L, setup, seed) in sorted(col["unscored_aux"][q]):
+            if C.s7_excluded(scopes, L, setup):
+                never_scored[(q, L, setup, seed)] = S7_NEVER_SCORED
+                judged["s7"]["excluded"].append(dict(learner=L, setup=setup, seed=seed, state="complete", source=None,
+                                                     why=S7_NEVER_SCORED))
+        timed = list(aux.values()) + list(col["unscored_aux"][q].values())
         by_q[q] = dict(label=C.EXPLORATORY_LABEL, reading_order=C.reading_order(judged, integ),
                        claim0_bar=judged["claim0_bar"], complete=judged["complete"], families=judged["families"],
                        claims=judged["learners"], table=C.phone_table(judged, runs),
-                       expanded=expanded_view(q, runs, aux, judged, data_root),
+                       expanded=expanded_view(q, used, aux_used, judged, data_root),
                        writeups=C.writeups(judged), stage3_order=C.stage3_order(judged),
+                       s7_stopped=dict(judged["s7"], rule=CAVEATS[-1]),
                        totals=dict(card_seconds=float(sum((a["timings"] or {}).get("card_seconds") or 0.0
-                                                          for a in aux.values())),
+                                                          for a in timed)),
                                    processor_seconds=float(sum((a["timings"] or {}).get("processor_seconds") or 0.0
-                                                               for a in aux.values()))))
+                                                               for a in timed))))
         by_q[q]["_judged"] = judged
     study = C.study_rule({q: v.pop("_judged") for q, v in by_q.items()})
     if reference:
@@ -1432,14 +1517,18 @@ def build(permission, *, frozen=None, runs_root=RUNS_ROOT, anchors=None, referen
                                        code_manifest_sha256=frozen.manifest_sha256),
                            code_sha256=code_sha256(), runs_root=rel(runs_root),
                            driver=dict(path=drv["path"], read=drv["read"], mode=drv["mode"], files=drv["files"],
-                                       why=drv["why"], problems=drv["problems"]),
+                                       why=drv["why"], problems=drv["problems"], s7_stopped=drv["s7_stopped"]),
                            anchors=dict(path=anchors.get("path"), sha256=anchors.get("sha256"),
                                         weighting=anchors["anchors"],
                                         recording_points=anchors.get("recording_points")),
                            environment=dict(python=sys.version.split()[0], numpy=np.__version__)),
                 badges=list(C.BADGES), reading_order_rule=list(C.STOP_RULES) + list(C.READING_ORDER),
-                integrity=integ, qualities=by_q, study_rule=study, reference_row=ref, runs=col["listed"],
-                excluded=col["excluded"], unscored=col["unscored"],
+                integrity=integ, qualities=by_q, study_rule=study, reference_row=ref,
+                runs=[dict(r, s7_stopped=never_scored[k]) if k in never_scored else r
+                      for r in col["listed"] for k in [(r["quality"], r["learner"], r["setup"], r["seed"])]],
+                excluded=col["excluded"],
+                unscored=[dict(u, s7_stopped=never_scored[k]) if k in never_scored else u
+                          for u in col["unscored"] for k in [(u["quality"], u["learner"], u["setup"], u["seed"])]],
                 halted_runs=[dict(h, stop=h["stop"]) for h in col["halts"]])
 
 

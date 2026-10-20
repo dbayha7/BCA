@@ -731,28 +731,37 @@ runs, `made-up-<quality>` in the dry run (`stages.Driver.card_job`).
 <root>/driver/status.json (+ sidecar)                  {schema "shift-hosts-driver-status-v1", mode "real" | "dry-run",
                                                        state, phase, pid, started_utc, updated_utc, concurrency, card,
                                                        lanes, counts, budget, decisions, checks {name: passed},
-                                                       claim0_failures, accepted_s5, stop, notes, last_events}
+                                                       claim0_failures, accepted_s5, s7_stopped, stop, notes,
+                                                       last_events}
 <root>/driver/state.json (+ sidecar, + .prev)          {schema "shift-hosts-driver-state-v1", mode, config (learners,
                                                        qualities, seeds, device, choice 19, schedule: a resume must
                                                        match it), decisions {s6 (with stage1_records, decided_utc: a
                                                        resume reuses it while stage 1's records are unchanged),
                                                        concurrency}, checks, claim0_failures [{run, step, reason}],
                                                        accepted_s5 [run ids], card_walls, s9_reference {signature
-                                                       (runner.env_signature), source}, lanes_done}
+                                                       (runner.env_signature), source}, lanes_done,
+                                                       s7_stopped [{quality, learner, scope "learner"|"iw", setup,
+                                                       run, stage, file, at_utc}] (version 3: a failed S7 check
+                                                       stops its learner, or only its IW setup, in that quality;
+                                                       stages.S7_SCOPE)}
     checks (each with passed)                          S2/<learner> (with uncertified_refreshes and, when a refresh
                                                        could not certify, its note), S8/<learner>, S4/<learner>,
                                                        S10/<learner>/<setup> (stage 1; readout true for choice 19's
-                                                       learners), S7/<learner>/<setup> (every stage-1 actor), S6,
+                                                       learners), S7/<learner>/<setup> (every stage-1 actor;
+                                                       scoped_stop "learner"|"iw" on a failed check, version 3), S6,
                                                        S6b/<quality>/<unit> (skipped true when every run of the unit
                                                        had a record), S4/<quality>/seed<k>/<learner>,
                                                        S4/<quality>/seed<k>/<learner>/room,
-                                                       S7/<quality>/seed0/<learner>/<setup>, S9/<run id> (on failure)
+                                                       S7/<quality>/seed0/<learner>/<setup> (scoped_stop on a
+                                                       failed check; skipped for a run of a scope S7 stopped before
+                                                       it trained or before its lane ran), S9/<run id> (on failure)
 <root>/driver/driver.log                               "[<utc>] <message>" lines; "<run id>: S5 accepted by the operator
                                                        as the setup's outcome (--accept-s5)" (also state.json
                                                        accepted_s5)
 <root>/driver/driver.lock                              flock held for the driver's life: one driver per root
 <root>/driver/STOP.json, STOP.txt (+ sidecar)          a halt {schema "shift-hosts-driver-stop-v1", mode, rule, reason,
-                                                       at_utc, phase, run, budget, claim0_failures, next_steps};
+                                                       at_utc, phase, run, budget, claim0_failures, s7_stopped,
+                                                       next_steps};
                                                        --resume-after-stop moves them to STOP.json.<time>,
                                                        STOP.json.sha256.<time>, STOP.txt.<time>
 <root>/driver/ledger.json (+ .prev)                    budget.Ledger: mode, stage0, card intervals and processor
@@ -783,7 +792,7 @@ python -m experiments.shift_hosts.stages request-stop [--root R | --dry-run]
 python -m experiments.shift_hosts.stages lane score --actor A --out <run>/lanes/scores-step<T>.npz [--keep-viewer] [--made-up]
 python -m experiments.shift_hosts.stages lane transitions --actor A --prepared P --out-actor F --out-visited F
 python -m experiments.shift_hosts.stages lane s7-states --actor A --out states.npz [--made-up [--made-up-states F]]
-python -m experiments.shift_hosts.stages lane s7-check --states S --commands C --actor A --out s7.json [--no-closed-loop] [--made-up]
+python -m experiments.shift_hosts.stages lane s7-check --states S --commands C --actor A --out s7.json [--no-closed-loop] [--made-up [--inject-failure]]
 # one run (training environment; the driver starts these)
 python -m experiments.shift_hosts.runner run --learner L --setup S [--weights-one] --stage stage1|stage2 --out-root R \
     --device cpu|gpu --steps N (--quality Q --seed K | --made-up-file F [--num-updates N --eval-interval N \
@@ -832,6 +841,7 @@ run_id, the plan's schedule and the 50% step, env_signature, choice 19, the sche
 | S3; S9; S7 | `refreshes[*].s3_reproduced` (IW); `environment.import_record` through env_signature against `state.json` `s9_reference.signature` and the driver's `S9/<run>`; `lanes/s7-step<T>/s7.json` `s7_passed` (and `closed_loop.passed` for real runs), bound to the record's actor by `states.npz`'s meta |
 | S2, S6, S6b, S8 | the driver's `state.json` checks |
 | S5 | `state.json` `claim0_failures`, the accepted S5s, the records' stops |
+| S7's scopes (version 3) | `state.json` `s7_stopped`: per quality, a learner stopped (alone, standard or weights-of-1 actor failed) or only its IW setup (IW actor or its repeat failed); the driver drops that scope's later runs and lanes and goes on |
 | S11 | each scores file's weighting-bank anchors (bottom, top) against start_banks.json |
 | S0 | not recorded here (stage 0's `runs/shift_hosts/stage0/SUMMARY.json`) |
 | the driver's halts | `STOP.json`; `STOP.json.<time>` with `STOP.json.sha256.<time>` (moved by --resume-after-stop) |
@@ -843,12 +853,17 @@ run_id, the plan's schedule and the 50% step, env_signature, choice 19, the sche
 | the reference row | data_copy's verified copies of the weighting test's evaluation records and RESULTS.json (only under a verified approval, or a made-up copy in tests) |
 
 `results.json` (schema `shift-hosts-results-v1`): `label`, `exploratory`, `made_up`, `caveats`; `built` (time,
-permission, frozen identity, export's code SHA-256, the driver's files read, the anchors, the environment); `badges`,
-`reading_order_rule`; `integrity` (S0-S11: per rule the driver's status, export's own checks and the halts, the worst
-of them, and why when nothing records it; `unknown_stops`; `driver`); `qualities.<quality>` {label, reading_order,
-claim0_bar, complete, families, claims.<learner>.<claim>, table (the 12 rows), expanded.<learner> (setups, pointers,
-readouts), writeups, stage3_order, totals}; `study_rule`; `reference_row`; `runs` (every run read: quality, learner,
-setup, seed, record and its SHA-256, run_id, kind, and each field "read" or "not recorded: <why>"); `excluded` (folders
-left out, with the reason); `unscored` (complete runs without final scores); `halted_runs`. Made-up results are
+permission, frozen identity, export's code SHA-256, the driver's files read and its `s7_stopped`, the anchors, the
+environment); `badges`, `reading_order_rule`; `integrity` (S0-S11: per rule the driver's status, export's own checks
+and the halts, the worst of them, and why when nothing records it; S7 reads "outcome" when every failed check is
+covered by a scope the driver recorded and its `s7.json` verifies; `unknown_stops`; `driver`, with `s7_stopped`);
+`qualities.<quality>` {label, reading_order, claim0_bar, complete (with `s7_not_expected`: the setups a stopped scope
+leaves out), families (each with `s7_stopped`: the learners entered with p = 1), claims.<learner>.<claim>, table (the
+12 rows), expanded.<learner> (setups, pointers, readouts), writeups (an S7 write-up per stopped scope), stage3_order,
+totals (card and processor seconds of every run read, scored or not), s7_stopped {scopes, excluded (the runs left out,
+those that trained but were never scored included), rule}}; `study_rule`; `reference_row`; `runs` (every run read:
+quality, learner, setup, seed, record and its SHA-256, run_id, kind, and each field "read" or "not recorded: <why>"; a
+stopped scope's run that was never scored carries `s7_stopped`); `excluded` (folders left out, with the reason);
+`unscored` (complete runs without final scores; a stopped scope's carry `s7_stopped`); `halted_runs`. Made-up results are
 written only under `runs/shift_hosts/stage0/`; real ones to `outputs/shift_hosts/results.json` or under
 `runs/shift_hosts/`.

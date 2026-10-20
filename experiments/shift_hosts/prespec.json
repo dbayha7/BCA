@@ -1,25 +1,39 @@
 {
  "kind": "shift-hosts-prespec",
- "version": 2,
- "title": "Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc)",
- "drafted": "2026-10-17",
+ "version": 3,
+ "title": "Unifloral hosts on ThrusterChain: pre-specification version 3 (post hoc)",
+ "drafted": "2026-10-20",
  "status": "frozen",
  "supersedes": {
-  "version": 1,
-  "freeze_commit": "2e59db0",
-  "approval_commit": "608eefa",
-  "fingerprint": "8c5e8421922dccebe5b86f47b44c8d86def2dbdec7da84ba78ba2ba807728179",
-  "prespec_sha256": "c8ce9f98ea019be53b107bcb0ccc4a4e4feaae440a6b98364c4ec6e6a53f435b",
-  "approved_at_utc": "2026-10-16T16:29:12Z",
-  "stopped": "2026-10-16T17:12:14Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-alone)",
-  "records": "version 1's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v1/; they name version 1's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/"
+  "version": 2,
+  "freeze_commit": "00e405e",
+  "approval_commit": "d954bd5",
+  "fingerprint": "fbf6437d09275bba54f516964d82801be26d1478c6ce5585ee1b9dee260b3f38",
+  "prespec_sha256": "914999a9f7c88f10208261343f217ee7ef7b8d2eb09bdcc56620a63f4a5dcc73",
+  "approved_at_utc": "2026-10-19T23:19:04Z",
+  "stopped": "2026-10-20T00:01:10Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-standard)",
+  "records": "version 2's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v2/; they name version 2's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/",
+  "previous": {
+   "version": 1,
+   "freeze_commit": "2e59db0",
+   "approval_commit": "608eefa",
+   "fingerprint": "8c5e8421922dccebe5b86f47b44c8d86def2dbdec7da84ba78ba2ba807728179",
+   "prespec_sha256": "c8ce9f98ea019be53b107bcb0ccc4a4e4feaae440a6b98364c4ec6e6a53f435b",
+   "approved_at_utc": "2026-10-16T16:29:12Z",
+   "stopped": "2026-10-16T17:12:14Z, stage 1, stop rule S7 (stage1/medium-expert/seed0/rebrac-alone)",
+   "records": "version 1's run records (stage1/), job logs and driver state are kept unchanged under runs/shift_hosts_v1/; they name version 1's fingerprint and never count; its driver ledger and stop report stay in runs/shift_hosts/driver/"
+  }
  },
  "approval_summary": [
+  "Version 3, post hoc (PRESPEC.md section 20): version 2's stage 1 stopped on S7 (20 Oct; ReBRAC with standard BCA, big kicks, 0.132 points against 0.05). S7's limit stays 0.05; a failed check now stops only that learner (alone, standard or weights-of-1 actor) or its IW setup (IW actor) in that quality, and the driver goes on.",
+  "A learner stopped by S7 enters both Holm families with p = 1 (a stopped IW setup: Claim 2's); its claims read 'not judged: stopped by S7' and its runs are never used. Stage 1 still runs whole; every other stop rule halts.",
+  "This overrides part of your 19 Oct decision ('that quality is reported as stopped by S7'), on your answer of 20 Oct: 'no dont give up we need a result'. No return had been read; version 2's records are kept aside and never used; its stage-1 spend (0.22 card-h, 0.30 processor-h) stays counted.",
+  "Probe (20 Oct, laptop) on ReBRAC with standard BCA: bit for bit on 7 banks; readings 1, 2 and 3 passed (float32 rounding amplified by the closed loop). Its tail grew about tenfold from 10,000 to 15,000 steps: ReBRAC is expected to stop again; on medium it is checked afresh.",
   "Version 2, post hoc (PRESPEC.md section 19): version 1's stage 1 stopped on S7 (16 Oct; ReBRAC alone, big kicks, 0.0114 points); S7's closed-loop limit is now 0.05 points per start, not 0.01. Nothing else in the rules changes; its consequences (section 19.7): stage 1 reruns in full, the stage-0 hygiene test accepts the committed package, results.json carries a post-hoc caveat.",
-  "In return units, 0.05 points is 0.635 per start on the strong mix: up to 35% of the 1.8 bar for one setup's seed-0 mean and up to 71% for a seed-0 delta (version 1: 7% and 14%); seeds 1-4 are never S7-checked; no claim's number depends on the limit (section 19.5).",
+  "In return units, 0.05 points is 0.635 per start on the strong mix: up to 35% of the 1.8 bar for one setup's seed-0 mean and up to 71% for a seed-0 delta (version 1: 7% and 14%); seeds 1-4 are never S7-checked; under version 2 no claim's number depended on the limit (section 19.5); under version 3 a failed check sets its scope's claims to not judged, p = 1.",
   "No return had been read before the change. Version 1's run records, job logs and driver state are kept aside and never used; its ledger (its stage-1 spend, 0.28 card-h and 0.41 processor-h, stays counted) and its stop report stay in driver/, and results.json lists the stop as resumed by the operator.",
   "Investigation (19 Oct, laptop): bit for bit on 7 banks; big kicks 1 start above 0.01, 0 above 0.05; reading 1 passed, reading 2 failed (10.3x growth at one step, limit 10x), reading 3 passed (7.38). Its preset verdict said do not freeze; you chose to freeze, disclosed as post hoc P2. Probe sha256 0b6e45d169e56670.",
-  "If a later start exceeds 0.05 points: the stop stands, that quality is reported as stopped by S7, and S7 is never relaxed again (your decision, 19 Oct).",
+  "If a later start exceeds 0.05 points: the stop stands and S7 is never relaxed again (your decision, 19 Oct); version 3 makes it stop that learner or its IW setup, not the quality.",
   "12 setups per quality: TD3+BC, CQL, IQL and ReBRAC, each alone, with standard BCA and with IW BCA.",
   "Unifloral at f2dc127, its own defaults; discount 0.98; 100,000 outer steps; JAX 0.6.2 on the card.",
   "Data: the weighting test's logs, medium-expert and medium, gapped, data seeds 0-4 (hashes fixed).",
@@ -27,7 +41,7 @@
   "Caps: medium-expert 14 card-h / 21 processor-h (stages 1-2a); medium 12 / 16 (stage 2b).",
   "Stage 0 (building and testing, about 4.2 card-h / 17 processor-h) is booked separately, as you chose.",
   "Stage 3 only where Claim 1 or 2 passes, under a later version you approve, at most 4 / 6 per quality.",
-  "Stop rules S0-S11 with fixed thresholds; any stop halts the driver and nothing is retried silently.",
+  "Stop rules S0-S11 with fixed thresholds; every stop but S7 halts the driver (S7 stops a learner or its IW setup, version 3); nothing is retried silently.",
   "Claims 0-6, kill rules fixed now: bar +1.8 return units, one-sided 95% bounds, Holm over 4 learners.",
   "Decisions: CQL's two programs; sham-alone for TD3+BC and IQL; NaN threshold stops, R = +inf refuses.",
   "Decisions: IQL keeps its learner part on learner-side validity; S9 compares with this environment.",
@@ -708,7 +722,7 @@
   },
   "17": {
    "question": "Medium quality",
-   "value": "included, its own Holm families and cap; runs only if every stop rule passed through stage 2a"
+   "value": "included, its own Holm families and cap; runs only if every stop rule passed through stage 2a (version 3: a failed S7 check stops only its learner or IW setup, PRESPEC.md section 20.6)"
   },
   "18": {
    "question": "Holm family",
@@ -769,7 +783,7 @@
    "room-reference block (20 runs)"
   ],
   "stage2a_unit": "a seed is all 12 setups of every learner; S6b before each unit; S4 after every seed and after the room block",
-  "stage2b": "medium, the same, only after every stage-2a lane finished and every stop rule passed",
+  "stage2b": "medium, the same, only after every stage-2a lane finished and every stop rule passed; a scope stopped by S7 (version 3) is not a halt: it leaves that learner, or its IW setup, out of medium-expert only",
   "stage3": "not in this package: only where Claim 1 or 2 passes, under a later version approved at the terminal; order: Claim 2's flattened and shuffled twins in Holm order, then Claim 1's flattened twins in Holm order, then the estimated-weight arm; all 5 seeds or none",
   "where": "this laptop, WSL /root/bca-hosts, as root; card queue one run at a time (or two if stage 1 shows the gain); up to 8 processor lanes pinned with taskset; outputs under runs/shift_hosts/",
   "card_cores_default": [
@@ -811,7 +825,7 @@
   "version2_why": "the kept runs/shift_hosts/driver/ holds version 1's STOP.json, which only --resume-after-stop moves aside (an operator option allowed above); PRESPEC.md section 19.8, step 9"
  },
  "stop_rules": {
-  "meaning": "any stop halts the driver: nothing new launches, running children finish, driver/STOP.json and STOP.txt are written; nothing is retried silently; S5 on alone or room is that learner's Claim 0 outcome and the driver goes on; S5 on a BCA setup halts until traced; any change after approval needs a new version approved at the terminal",
+  "meaning": "any stop but S7 halts the driver: nothing new launches, running children finish, driver/STOP.json and STOP.txt are written; nothing is retried silently; S5 on alone or room is that learner's Claim 0 outcome and the driver goes on; S5 on a BCA setup halts until traced; any change after approval needs a new version approved at the terminal; S7 (version 3, post hoc): a failed check stops its learner (alone, standard, iw_ones actor) or only its IW setup (iw, iw_repeat actor) in that quality, its later runs in that quality never train and its runs are never used, and the driver goes on; an S7 result that does not verify halts",
   "definitions": {
    "bit_for_bit": "equal tobytes() of every leaf of learner state, optimizer states, key carry and per-step outputs",
    "relative_difference": "max|a - b| / max|b| per leaf"
@@ -949,7 +963,9 @@
    "changed": "version 2, post hoc (PRESPEC.md section 19; post_hoc_changes P1)",
    "on": "every stage-1 actor and every seed-0 final actor of alone, standard and IW",
    "cql": "with the same declared noise",
-   "stage0_test_h_adapter_vs_restatement": 1e-05
+   "stage0_test_h_adapter_vs_restatement": 1e-05,
+   "on_failure": "version 3: stops a scope in that quality, not the driver: the learner for an alone, standard or iw_ones actor; that learner's IW setup for an iw or iw_repeat actor (stages.S7_SCOPE); stage 1 always runs whole; a result that does not verify halts",
+   "on_failure_changed": "version 3, post hoc (PRESPEC.md section 20; post_hoc_changes P3); versions 1 and 2: any failure halted the driver"
   },
   "S8": {
    "rule": "the two identical 15,000-step IW runs of a learner (stage 1, seed 0) differ in any bit: final key, learner state, BCA state, per-step outputs, any refresh's threshold"
@@ -1065,8 +1081,8 @@
    "6"
   ],
   "holm_membership": [
-   "every learner stays in each family of its quality; a learner that fails Claim 0, has a non-finite return in either setup compared on any seed, or (Claim 2 only) fails Claim 4a enters with p = 1",
-   "Claims 1 and 2 are judged only when all 5 seeds of all four learners (alone, standard, IW) of the quality are complete, else 'pending'; every other claim waits for the 5 seeds of its own inputs",
+   "every learner stays in each family of its quality; a learner that fails Claim 0, has a non-finite return in either setup compared on any seed, or (Claim 2 only) fails Claim 4a or was stopped by S7 in that quality (version 3: a stopped learner in both families, a stopped IW setup in Claim 2's only) enters with p = 1",
+   "Claims 1 and 2 are judged only when all 5 seeds of all four learners (alone, standard, IW) of the quality are complete, else 'pending'; every other claim waits for the 5 seeds of its own inputs; a setup stopped by S7 (version 3) counts as complete, with p = 1, and its runs are never used",
    "runs go seed by seed across learners, so a stop leaves complete seeds; no seed is ever dropped"
   ],
   "badges": [
@@ -1086,7 +1102,7 @@
    "6"
   ],
   "claim2_pointer": "mean dose change from standard to IW thresholds over kept training rows at the last refresh, times Delta(standard - alone) / (mean standard dose - 1); IQL with its actor weights; never a gate",
-  "study_rule": "if Claims 1 and 2 are shelved for all four learners on every quality run, the study ends after seeds 0-4, with no stage 3 and no confirmation",
+  "study_rule": "if Claims 1 and 2 are shelved for all four learners on every quality run (a learner stopped by S7 counts as shelved here), the study ends after seeds 0-4, with no stage 3 and no confirmation",
   "writeups": "every shelved claim and every 'did not learn': The idea / What we tested (and the kill rule) / What happened / Why"
  },
  "statistics": {
@@ -1332,7 +1348,7 @@
    "decided": "the user, 2026-10-16T17:16:09Z, in chat, choosing the option the main session (Claude) proposed and marked recommended, 'Investigate, then version 2 (Recommended)'; the value 0.05 was the session's proposal; the question summarized the stop as 'ReBRAC: one start of 1,000 off by 0.0114 points vs the 0.01 limit'",
    "chosen": "after the failing value was seen (0.05 is 4.4 times 0.01139), before the investigation ran",
    "returns_read_before": "none: S7 records float32-against-float64 differences only, and stage 1 has no scoring lane",
-   "claims_affected": "no claim's number: claims read only the float64 adapter's scored returns, computed the same way under either limit; the limit decides whether the driver halts and S7's status, and bounds the scored float64 policies' faithfulness to the learners' float32 networks (strong mix 0.635 return units per start, up to 1.27 for a delta; seed-0 final actors only)",
+   "claims_affected": "no claim's number: claims read only the float64 adapter's scored returns, computed the same way under either limit; the limit decides whether the driver halts and S7's status, and bounds the scored float64 policies' faithfulness to the learners' float32 networks (strong mix 0.635 return units per start, up to 1.27 for a delta; seed-0 final actors only); version 3 (P3): a failed check also sets the stopped scope's claims to 'not judged' and its Holm p-value to 1, so the limit now decides those badges and p-values (never the other learners' bars)",
    "investigation": "PRESPEC.md section 19.6 (probe_s7.py outside the repository; differences only)",
    "consequences": [
     "stage 1 reruns in full (20 runs) under version 2's fingerprint",
@@ -1343,7 +1359,7 @@
    ],
    "unchanged": "everything else: every other threshold, claim, mark, bar, seed, cap and setting; S7's open-loop 1e-7",
    "risk": "0.05 is 4.4 times the one value seen, the largest of a heavy-tailed distribution, on 15,000-step actors; a later actor may exceed it (PRESPEC.md section 19.7), and S7 has no accept option",
-   "if_exceeded_later": "the stop stands: the driver halts, that quality is reported as stopped by S7, and no later version relaxes S7 again (the user, 2026-10-19 about 17:20 UTC, in chat, the option marked recommended)"
+   "if_exceeded_later": "the stop stands: the driver halts, that quality is reported as stopped by S7, and no later version relaxes S7 again (the user, 2026-10-19 about 17:20 UTC, in chat, the option marked recommended); narrowed by version 3 (P3): the stop stops that learner, or only its IW setup, in that quality, not the whole quality, and S7's limit stays 0.05"
   },
   {
    "id": "P2",
@@ -1361,6 +1377,30 @@
      "rebrac_alone_10000.txt": "628459433c002c9dc5506dd878f4c814389885298dc18c0d743105d60c338b94"
     }
    }
+  },
+  {
+   "id": "P3",
+   "version": 3,
+   "plan": "6.1 (what a stop means: S7) and 6.2 (Holm membership)",
+   "post_hoc": true,
+   "what": "a failed S7 check stops its learner (alone, standard or iw_ones actor) or only its IW setup (iw or iw_repeat actor) in that quality instead of halting the driver; a stopped learner's claims read not judged and it enters both Holm families with p = 1 (a stopped IW setup: Claim 2's family); a stopped scope's later runs in that quality never train and its runs are never used; stage 1 always runs whole; S7's limits unchanged",
+   "code": "stages.py: S7_SCOPE, Driver.s7_stopped, s7_failed, _drop_stopped, the S7 verdicts, plan_units and unit_jobs without stopped scopes, seed_checks and room_checks; claims.py and export.py: the S7-stopped scopes from state.json s7_stopped; export.CAVEATS; claims.s7_writeups (with section 19.10's label); export.py lists a stopped scope's runs that trained but were never scored as excluded and times every run read",
+   "why": "version 2's stage 1 stopped on S7: stage1/medium-expert/seed0/rebrac-standard, big kicks, largest per-start difference 0.13227 points (limit 0.05), mean 0.000215 over 1,000 starts; the other six banks at most 0.00036; the open loop bit for bit; every TD3+BC, CQL and IQL stage-1 actor at most 0.0003 points",
+   "decided": "the user, 2026-10-20 about 01:20 UTC, in chat, answering 'no dont give up we need a result' to a question offering this rule (marked recommended) or ending the study as pre-committed",
+   "overrides": "part of the user's decision of 19 October (P1.if_exceeded_later; PRESPEC.md 19.7): 'that quality is reported as stopped by S7' becomes 'that learner, or its IW setup, in that quality'; 'the stop stands' and 'no later version relaxes S7 again' still hold",
+   "chosen": "after the failing actor (ReBRAC with standard BCA) and the probe's readings were seen",
+   "returns_read_before": "none: S7 records float32-against-float64 differences only, stage 1 has no scoring lane, and the probe prints differences, ratios, counts and SHA-256 values only",
+   "claims_affected": "a stopped learner's claims are not judged and it enters Holm's families with p = 1, as a learner that did not learn does; the other learners' Holm steps and power are unchanged",
+   "investigation": {
+    "copy_sha256": "386f75d8490df7ac536b8e7338bb9a150ee8dac0bf4a95e83d93aff48575a354",
+    "outputs_sha256": {
+     "rebrac_standard.txt": "bc7db7bec90967857ff16e8c64fa376dadf6e6f6f4b13b0da162188986d7173e",
+     "rebrac_standard_10000.txt": "77d989b36afa2c44d9fcf3b97cd8f26a42ef050dd9df08808b798ceac9d4f036"
+    },
+    "ran": "2026-10-20T01:14:16Z to 01:17:47Z, laptop, processor, read-only",
+    "readings": "bit for bit on 7/7 banks; (i) passed, 1.11e-05 against 5.22e-05; (ii) passed, 0.98 decades; (iii) passed, 1.31; big kicks 1 start above 0.05, 2 above 0.02, 3 above 0.01; rebrac-iw (lane never ran) largest 0.0237; rebrac-standard at 10,000 steps 0.0140"
+   },
+   "expected": "ReBRAC with standard BCA fails S7 again in stage 1 (bit for bit, S8), so ReBRAC stops on medium-expert; on medium ReBRAC is checked at its seed-0 final actors"
   }
  ]
 }

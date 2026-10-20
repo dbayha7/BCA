@@ -1,4 +1,12 @@
-# Unifloral hosts on ThrusterChain: pre-specification version 2 (post hoc)
+# Unifloral hosts on ThrusterChain: pre-specification version 3 (post hoc)
+
+**Version 3 (post hoc).** Drafted 20 October 2026, after version 2's stage 1 stopped on stop rule S7 that night
+(ReBRAC with standard BCA, 0.132 points against the limit of 0.05). It changes what a failed S7 check stops, chosen
+after the failing actor was seen, so the change is post hoc: a failed check stops that learner, or only its IW setup,
+in that quality, and the driver goes on with the others. S7's limit stays 0.05 points, a stopped learner enters Holm's
+families with p = 1, and every other rule is unchanged. Version 2 was frozen at commit `00e405e` and approved at
+`d954bd5` (fingerprint `fbf6437d09275bba`). Section 20 is version 3's write-up; the rest is version 2's text, changed
+only where it states what an S7 stop does (sections 8, 9.1, 9.2, 10, 18 and 19.7) and in this header.
 
 **Version 2 (post hoc).** Drafted 17 October 2026, after version 1's stage 1 stopped on stop rule S7 on 16 October.
 It changes one rule after the start, with a value chosen after the failing value was seen, so the change is post hoc:
@@ -33,8 +41,8 @@ learning, and fixed, non-learned controllers were scored for the scoring cache.
   the approval files excluded) and of the repository code the package runs (section 9.2, S1). Every run on real data
   re-checks the fingerprint, so any later change to code, settings or rules is refused until a new version is approved.
 - Where this document and the plan differ, this document holds. Every difference is listed with its reason: the
-  decisions in section 7, the amendments in section 16, the readings in section 17 and version 2's post-hoc change in
-  section 19. Everything else is as the plan says.
+  decisions in section 7, the amendments in section 16, the readings in section 17 and the post-hoc changes of versions 2
+  and 3 in sections 19 and 20. Everything else is as the plan says.
 - All of it is exploratory (section 15). No claim from data seeds 0-4 is confirmatory.
 
 ---
@@ -364,7 +372,7 @@ card is bit for bit; a single program drifted 1.55e-4 relative after 60 steps at
 | 14 | CQL band | q = min of the 10 online critics; fit just before the critic loss with the updated actor, α and target critics and BCA's own draw; one dose per row for all 10 critics; the refresh uses the stored state |
 | 15 | IQL band | q = the target copy this step's advantage reads; refresh q = Polyak(stored target, stored critic, 0.005); fitter keys from BCA's stream |
 | 16 | IW refused rows | most caution: dose 1.5; IQL weight 1 on positive advantage |
-| 17 | Medium quality | included, approved separately, with its own Holm families and cap; it runs only if every stop rule passed through stage 2a |
+| 17 | Medium quality | included, approved separately, with its own Holm families and cap; it runs only if every stop rule passed through stage 2a (version 3: a failed S7 check there stops only its learner or IW setup on medium-expert, section 20.6) |
 | 18 | Holm family | the four learners per claim per quality; add-ons never join; every learner stays in |
 | 19 | If test (a2) matches only to rounding on the card | keep the pairing with the imported alone run; one seed-0 sham-alone run per affected learner and quality, reported beside the claims: TD3+BC and IQL yes, CQL and ReBRAC no (decision 2) |
 | 20 | Estimated-weight readout | at the last refresh only: one extra threshold table and its coverage |
@@ -404,7 +412,9 @@ These five were decided before this pre-specification, on the stage-0 results, w
   S6b runs before each of these units; S4 after every seed and after the room block. Beside the card queue, scoring
   lanes score every finished actor at 50% and 100%, compute every BCA run's coverage at its last refresh, keep the
   viewer's episodes for seed 0's final actors, and run S7 on every seed-0 final actor.
-- **Stage 2b** (medium): the same, only after every stage-2a lane has finished and every stop rule has passed.
+- **Stage 2b** (medium): the same, only after every stage-2a lane has finished and every stop rule has passed. A
+  scope stopped by S7 under version 3's rule (section 20) is not a halt: it leaves that learner, or its IW setup,
+  out of medium-expert only.
 - **Stage 3** (controls: flattened and shuffled twins, optional estimated-weight IW), only where Claim 1 or 2 passes. Its
   code is not in this package, so it runs only under a later pre-specification version that you approve at your
   terminal, within its cap (section 12), in the fixed order: Claim 2's flattened and shuffled twins learner by learner
@@ -444,6 +454,10 @@ driver's log records the learners, qualities, seeds, device, cores and choice 19
 - **S5 on a BCA setup** halts until it is traced. It stops the study only when traced to a defect in the new package's
   code. Otherwise it is that setup's outcome (recorded with the driver's `--accept-s5`): its return counts as not
   finite, and that learner's claim enters with p = 1.
+- **S7 stops a scope, not the study** (version 3, post hoc, section 20). A failed float32 check stops its learner in
+  that quality (an alone, standard or weights-of-1 actor) or only that learner's IW setup (an IW actor or IW's repeat).
+  None of the stopped scope's later runs in that quality trains, its scores are never used, and it enters Holm's
+  families with p = 1 (section 10). The driver goes on with everything else. An S7 result that does not verify halts.
 - **Any change to frozen code, settings or choices after your approval** makes a new, labeled pre-specification
   version. It runs only after you approve it with `approve_hosts.py` at your own terminal, never through a chat reply,
   never by an agent. Its write-up says whether any return had been read before the change. S1 enforces this.
@@ -463,7 +477,7 @@ per-step outputs. "Relative difference" of a leaf is max|a − b| / max|b|.
 | S5. Numbers | Any non-finite loss, metric, parameter, dose, weight or return; a NaN threshold (R = +∞ is a counted refusal, decision 3); a dose outside [1, 1.5] (ReBRAC: outside its [1, 2] check); any false per-step validity flag (section 5.3); a refresh failing BCA's own validity checks. A failed run is recorded, never silently retried; what follows is section 9.1. A non-finite scored return (any bank of a scores file) is that learner's Claim 0 outcome for an alone or room run, and halts the driver for a BCA setup unless accepted with `--accept-s5` |
 | S6. Compute | After stage 1: (a) stage 1's measured speeds, at the chosen number of runs sharing the card, project stages 1-2 of a quality, with its totals so far, above its approved cap; or (b) a learner alone's stage-1 time per outer step is more than twice its random-array reference (TD3+BC 0.6 ms, CQL 2.1, IQL 0.33, ReBRAC 1.6; both one run at a time, since stage 1 runs each learner alone by itself, so the limit is never scaled by a two-at-once slowdown). During stage 2: an alone run takes more than twice its stage-1 time per outer step at the chosen concurrency (the stage-1 time times the measured slowdown of a run sharing the card, when two run at once). A resumed driver reuses stage 1's S6 decision while stage 1's records are unchanged. Stop and re-cost |
 | S6b. Budget, as it runs | Before each unit of a quality (the sham-alone block, each seed, the room-reference block): the running totals plus the scoring work already queued plus the unit's projected cost would pass the quality's approved cap. The driver stops between whole units, never inside one; a resumed driver projects only the runs of a unit that have no record yet, and skips the check for a unit with nothing left to run. A card-hour is one hour of wall-clock time with at least one card run active (the union of card-run intervals on the monotonic clock, so two runs at once never count twice); a processor-hour is one hour of measured processor time (user plus system) summed over all processes, the driver's own included, which counts a card run's busy waiting as it really is. A child still running when its driver ended is counted to the driver's last heartbeat, and a run that finished unwatched is counted from its own record |
-| S7. Float32 check | Open loop, by file, on the processor: the float32 restatement in `actors_f32.py` and the learner's own float32 network disagree by more than 1e-7 on any saved state (CQL with the same ε). Closed loop, in the scoring environment: that restatement and the float64 scoring adapter disagree by more than 0.05 points on any start (CQL with the declared noise; version 2's post-hoc limit, section 19; version 1's was 0.01). Run on every stage-1 actor and on every seed-0 final actor of the alone, standard and IW setups; stage 1's checks and the end of each quality read every result again, and a resumed driver reads a finished lane's result before skipping it |
+| S7. Float32 check | Open loop, by file, on the processor: the float32 restatement in `actors_f32.py` and the learner's own float32 network disagree by more than 1e-7 on any saved state (CQL with the same ε). Closed loop, in the scoring environment: that restatement and the float64 scoring adapter disagree by more than 0.05 points on any start (CQL with the declared noise; version 2's post-hoc limit, section 19; version 1's was 0.01). Run on every stage-1 actor and on every seed-0 final actor of the alone, standard and IW setups; stage 1's checks and the end of each quality read every result again, and a resumed driver reads a finished lane's result before skipping it. A failure stops its learner (an alone, standard or weights-of-1 actor) or only that learner's IW setup (an IW actor or IW's repeat) in that quality, not the driver (version 3, post hoc, section 20) |
 | S8. Card repeatability | The two identical 15,000-step runs of a learner's IW setup (stage 1, seed 0) differ in any bit: final key, learner state, BCA state, any per-step output or any refresh's threshold |
 | S9. Recorded environment | A card run's environment signature (`stages.env_signature`: Python, executable, package versions, card name and driver, the recorded environment variables, `XLA_FLAGS` in effect, matrix precision, JAX's platforms, backend and devices, Unifloral's revision and manifest SHA-256) differs from `prespec.json`'s `environment.s9_signature` in any key either names. Checked by each real run before its first chunk and again on its record; the driver refuses to start without a complete signature |
 | S10. Equal before the first refresh | At outer step 10,000, just before the first refresh, a BCA setup's learner state (Unifloral's parameters and optimizer states) or key differs in any bit from its learner alone's (stage 1, seed 0, real data). For TD3+BC and IQL this is a readout, with the snapshots' leaf-by-leaf differences, not a stop (decision 2); for CQL and ReBRAC it stops |
@@ -506,9 +520,12 @@ Only these events may be called "harm".
 **Holm family membership, fixed now** (plan 6.2):
 1. Every learner stays in each family of its quality. A learner that fails Claim 0, has a non-finite return on any
    seed in either setup the claim compares (section 17: an IW failure does not touch Claim 1), or (Claim 2 only) fails
-   Claim 4a enters with p = 1. It fails and stays in, so it never loosens the bar for the others.
+   Claim 4a, or was stopped by S7 in that quality (version 3, section 20: a stopped learner in both families, a
+   stopped IW setup in Claim 2's only), enters with p = 1. It fails and stays in, so it never loosens the bar for
+   the others.
 2. Claims 1 and 2 are judged only when all 5 seeds of all four learners of that quality (alone, standard and IW) are
-   complete; until then they read "pending". A stop at the cap leaves them pending, never judged on fewer seeds. Every
+   complete; until then they read "pending". A setup stopped by S7 (version 3) counts as complete, with p = 1, and
+   its runs are never used. A stop at the cap leaves them pending, never judged on fewer seeds. Every
    other claim waits for the 5 seeds of its own inputs.
 3. Runs go seed by seed across learners (section 8), so a stop leaves complete seeds.
 
@@ -520,7 +537,8 @@ Flags and Claim 6 are not corrected for multiple comparisons: they are pointers,
 training rows at the last refresh, times Δ(standard − alone) / (mean standard dose − 1); for IQL the same with its actor
 weights (the change in BCA's weight, over BCA's weight minus Unifloral's). It uses outcomes, so it never gates.
 
-**Study rule.** If Claims 1 and 2 are shelved for all four learners on every quality run, the study ends after seeds
+**Study rule.** If Claims 1 and 2 are shelved for all four learners on every quality run (a learner stopped by S7
+counts as shelved here), the study ends after seeds
 0-4, with no stage 3 and no confirmation.
 
 **Write-ups.** Every shelved claim and every "did not learn" uses your format: The idea / What we tested (and the kill
@@ -788,9 +806,11 @@ left out; the build reports list them.
 **Claims.**
 - A run is "not finite" when it stopped as an outcome or any of its 7 banks' scored returns is not finite. For Holm,
   p = 1 applies only when one of the two setups compared in that claim is not finite on a seed (an IW failure does not
-  touch Claim 1).
+  touch Claim 1). Version 3 adds one case: a learner stopped by S7 in that quality, or for Claim 2 its stopped IW setup,
+  enters with p = 1 (section 20.6).
 - A room reference's S5 fails its learner's Claim 0 (plan 6.1), although plan 5.1 says room references change no
-  verdict. They run last, so Claims 0-2 can change until all 20 exist, and `results.json` says so.
+  verdict. They run last, so Claims 0-2 can change until all 20 exist (5 fewer for each learner S7 stopped, version 3),
+  and `results.json` says so.
 - Claim 5's 2-percentage-point bar is compared exactly on start counts; L comes from the per-seed percentage points.
 - Claim 6 reads "pending" for a passing claim until its stage-3 twins exist, and "not judged" where Claims 1 and 2 did
   not pass. Stage 3's setup names: standard flattened, IW flattened, IW shuffled, IW with estimated weights.
@@ -799,7 +819,7 @@ left out; the build reports list them.
 
 ## 18. What happens after approval
 
-For version 2, section 19.8 replaces steps 1-3 below; steps 4-7 stand.
+For version 2, section 19.8 replaced steps 1-3 below; for version 3, section 20.8 replaces them; steps 4-7 stand.
 
 1. **You approve at your terminal** (plan 10, item 15, with amendment A11). In a Windows terminal, one line at a time:
 
@@ -947,12 +967,15 @@ that investigation's result does not move it (section 19.6 says what happens if 
   through `policies.adapter`; sections 5.6 and 10). The float32 restatement appears only inside S7 (`evaluate.py:576,
   602`), and S7's closed-loop limit only in S7's own pass flag (`evaluate.py:606`). No claim's number (return, Δ,
   bound, p-value, Holm step, Claim 0 bar or badge) depends on the limit: each is computed the same way under either
-  limit.
+  limit. Version 3 changes this (section 20.6): a failed check now also sets the stopped scope's claims to "not
+  judged" and its Holm p-value to 1, so under version 3 the limit decides those badges and p-values; it never loosens
+  the other learners' bars (section 20.5).
 - **What it decides.** Whether the driver halts, as soon as any S7 lane fails (`stages.py:345-346, 946-952,
   989-990`): on the 20 stage-1 actors, and on each quality's 12 seed-0 final actors of the alone, standard and IW
   setups (`stages.py:876-879`); stage 1's checks and each quality's end read every result again (`stages.py:1043,
   1231-1250`).
-  Seeds 1-4 get no S7 lane. And S7's status in `results.json`.
+  Seeds 1-4 get no S7 lane. And S7's status in `results.json`. Under version 3 a failed check stops only its learner
+  or its IW setup in that quality, not the driver (section 20.6); the line numbers in this section are version 2's.
 - **The new limit in return units.** S7 is judged in points on each bank's own scale; the claims are judged in return
   units, with a bar of 1.8 on the mean of 5 seeds (section 10). Per start, 0.05 points is (version 1's 0.01 in
   brackets):
@@ -1108,13 +1131,15 @@ that investigation's result does not move it (section 19.6 says what happens if 
   faster than the network's scale: with every kernel scaled by 1, 1.25, 1.5, 2 and 3, big kicks' largest difference was
   0.00065, 0.0072, 0.13, 0.14 and 22.6 points, and 0, 0, 1, 3 and 32 of 1,000 starts exceeded 0.05 (the cloud
   calibration of section 19.6). So a later actor may exceed 0.05: one of ReBRAC's stage-1 BCA actors, or any seed-0
-  final actor. A failing S7 lane halts the driver as soon as it finishes (`stages.py:345-346, 989-990`), and S7 has no
-  accept option (section 8). Stage 2a runs the sham-alone block first and then seed 0 learner by learner
+  final actor. A failing S7 lane halts the driver as soon as it finishes (`stages.py:345-346, 989-990`; under version
+  3 it stops that learner or its IW setup instead, section 20.6), and S7 has no accept option (section 8). Stage 2a runs the sham-alone block first and then seed 0 learner by learner
   (`stages.py:1123-1145, 1173`; TD3+BC, CQL, IQL, ReBRAC, `runner.py:125`), so a stop on a ReBRAC seed-0 actor would
   come after the sham block's 2 runs and 9 seed-0 runs have trained, with their scoring lanes run or queued (scores
   files on disk, unread). The investigation's 10,000-step run shows whether the tail grew from 10,000 to 15,000 steps.
 - **If 0.05 is exceeded later.** Your decision (19 October 2026, about 17:20 UTC, in chat; the option marked recommended): **the stop stands.** The
   driver halts as for any stop, that quality is reported as stopped by S7, and no later version relaxes S7 again.
+  Version 3 (section 20, post hoc, 20 October) changes what that stop stops: the learner, or its IW setup, in that
+  quality instead of the whole quality. S7's limit stays 0.05.
 
 ### 19.8 The restart, in order
 
@@ -1204,11 +1229,147 @@ Version 2 replaces steps 1-3 of section 18 with these; steps 4-7 stand.
   `supersedes`, `post_hoc_changes`, S7's entry, and the version-2 notes under `driver_command` and `budget_recost`);
   before you type, `approve_hosts.py` shows the title and `approval_summary`, whose first lines state this change, what
   it can affect, the investigation's result and your decision on a later exceedance.
-- In `results.json`: its `caveats` list (`export.CAVEATS`, written at `export.py:1429`) states that S7's closed-loop
+- In `results.json`: its `caveats` list (`export.CAVEATS`, written by `export.build`) states that S7's closed-loop
   limit is version 2's post-hoc 0.05 points. It also records the approved fingerprint, which names this version, and
   with the kept driver folder it lists version 1's S7 stop under S7 as a stop resumed by the operator.
 - Every write-up that reports S7 calls it "S7, with version 2's post-hoc limit of 0.05 points (section 19)".
 - The study stays exploratory (section 15).
+
+## 20. Version 3: what a failed S7 check stops (post hoc)
+
+### 20.1 What version 2 ran
+
+- Version 2 was frozen at `00e405e` and approved at `d954bd5` (fingerprint `fbf6437d09275bba`, approved 19 October
+  23:19 UTC). You started the driver at 23:49:55 UTC with `--resume-after-stop`; version 1's stop report was moved
+  aside as `STOP.json.20261019T234955`.
+- Stage 1 trained 18 of its 20 runs in 12 minutes; ReBRAC's weights-of-1 and repeat runs had not started when the
+  driver halted. 17 S7 lanes ran. The open loop was bit for bit on every actor. The closed loop's largest per-start
+  difference was at most 0.0003 points on every TD3+BC, CQL and IQL actor (15 actors), 0.0114 for ReBRAC alone
+  (version 1's value, reproduced bit for bit, as section 19.7 expected) and 0.132 for ReBRAC with standard BCA.
+  ReBRAC's IW run trained, but its lane never ran.
+- Its spend: 0.2154 card-hours and 0.3011 processor-hours (the ledger's medium-expert totals, 0.4939 and 0.7101,
+  less version 1's 0.2785 and 0.4090).
+
+### 20.2 The stop
+
+- 20 October, 00:01:10 UTC: S7 on `stage1/medium-expert/seed0/rebrac-standard`. On big kicks the largest per-start
+  |points difference| was 0.13227 (limit 0.05) and the mean 0.000215 over 1,000 starts; the other six banks were at
+  most 0.00036. Under section 19.7's decision the stop stood: the driver halted, and medium-expert was stopped by S7.
+
+### 20.3 The investigation (shown; it decided nothing)
+
+- You chose "Probe ReBRAC first, decide later". Section 19.6's probe was copied outside the repository with four
+  exact edits: it accepts version 2's fingerprint, judges `rebrac-standard`, compares `rebrac-alone` and `rebrac-iw`,
+  and says "version 2" in one printed line. It ran on the laptop on 20 October from 01:14:16 to 01:17:47 UTC, on the
+  processor, reading only. SHA-256: the copy `386f75d8490df7ac536b8e7338bb9a150ee8dac0bf4a95e83d93aff48575a354`; its outputs `rebrac_standard.txt`
+  `bc7db7bec90967857ff16e8c64fa376dadf6e6f6f4b13b0da162188986d7173e` and `rebrac_standard_10000.txt`
+  `77d989b36afa2c44d9fcf3b97cd8f26a42ef050dd9df08808b798ceac9d4f036` (kept in `/root/s7probe/out/`, outside the repository).
+- By section 19.6's reading rules, applied to ReBRAC with standard BCA at 15,000 steps: the lane's numbers reproduced
+  bit for bit on all 7 banks; reading 1 passed (on big kicks the largest injected gap was 1.11e-05 against its bound of
+  5.22e-05; the highest share of a bound on any bank was 42%, on strong); reading 2 passed (0.98 decades at most, on
+  start 971); reading 3 passed (1.31). The verdict line read "consistent with float32 rounding amplified by the closed
+  loop: True". Big kicks: 1 start above 0.05 points, 2 above 0.02, 3 above 0.01 and 9 above 0.001.
+- Shown, not judged: ReBRAC's IW actor, whose lane never ran, had a largest big-kicks difference of 0.0237 (no start
+  above 0.05). ReBRAC with standard BCA at 10,000 steps had 0.0140, so its tail grew about tenfold from 10,000 to 15,000
+  steps.
+
+### 20.4 Your decision
+
+- Asked (20 October 2026, about 01:20 UTC, in chat) to choose between a version 3 in which a failed check stops only that learner or its IW setup, with
+  S7's limit unchanged (the option marked recommended), and ending the study as pre-committed, you answered: "no dont
+  give up we need a result". Version 3 is written on that answer; your terminal approval of it is the decision that
+  counts.
+- It overrides part of your decision of 19 October (section 19.7): "that quality is reported as stopped by S7" becomes
+  "that learner, or its IW setup, is reported as stopped by S7 in that quality". The rest of that decision holds. The
+  stop stands: nothing is retried, and a stopped actor's scores are never used. S7 is not relaxed: its limit stays 0.05
+  points on every start of every checked actor.
+
+### 20.5 What had and had not been seen
+
+- No return, points level or mean of any learned policy had been read. The S7 records hold float32-against-float64
+  differences only, stage 1 has no scoring lane, and the probe prints differences, ratios, counts and SHA-256 values
+  only. What had been seen: which actor failed and by how much (section 20.2), and the probe's readings (section 20.3).
+- So the rule was chosen knowing that it stops ReBRAC on medium-expert. It cannot favor a claim: a stopped learner
+  enters both Holm families with p = 1, the value of a learner that showed nothing, and it never loosens the bar for
+  the others (section 10).
+
+### 20.6 The change, exactly, and what stays
+
+- **The rule.** A failed S7 check (a verified `s7.json` that says `s7_passed` false) stops a scope within its quality,
+  not the driver:
+  - an alone, standard or weights-of-1 actor (the weights-of-1 actor equals standard's in every bit, S2) stops its
+    learner. None of its later runs in that quality trains: stage-2 setups, the sham-alone run, room references. Its
+    queued runs and lanes are dropped; a run already training finishes and is never scored or used.
+  - an IW actor, or IW's repeat (equal to IW, S8), stops that learner's IW setup only.
+  - Stage 1 always runs whole: all 20 runs and every check (S2, S4, S8, S10, S9, S6), so the checks of the package
+    itself are unchanged. S6's projection at the end of stage 1 leaves the stopped scopes' runs out.
+  - The qualities are separate: a stop on medium-expert stops nothing on medium, where that learner's seed-0 final
+    actors are checked in turn.
+  - An S7 result that does not verify, or says neither passed nor failed, still halts; so does every other stop rule.
+- **The claims.** A learner stopped by S7 in a quality: all its claims there read "not judged: stopped by S7", and it
+  enters both Holm families with p = 1. A stopped IW setup: the claims that use IW (2, 2c, 3, 4a, 4b, Claim 5's IW
+  comparison and Claim 6's Claim-2 part) read "not judged: stopped by S7", it enters Claim 2's family with p = 1, and
+  that learner's Claims 0, 1, 1c, 3b and Claim 5's standard comparison are judged as before. A stopped setup counts as
+  complete for Holm's rule 2, and a stopped learner counts as shelved for the study rule. No run of a stopped scope
+  enters any claim, mean or statistic.
+- **Code** (all in the code manifest, so the fingerprint changes): `stages.py` (`S7_SCOPE`; `Driver.s7_stopped`,
+  `s7_failed` and `_drop_stopped`; the S7 verdicts in `_verdict`, `_lane_step_done`, `stage1_checks` and
+  `s7_seed0_checks`; `plan_units` and `unit_jobs` leave a stopped scope out and are rebuilt at each unit's start;
+  `seed_checks` and `room_checks` skip runs that never trained; the status file and the stop report list
+  `s7_stopped`; a dry-run-only `--inject RUN_ID=s7fail` for the tests); `claims.py` (`S7_SCOPE`, asserted equal to
+  the driver's; `s7_scopes`, where a stopped learner outranks a stopped IW setup; `judge` leaves a stopped scope's runs
+  out before anything is judged and no longer waits for them; `_family` enters a stopped learner with p = 1;
+  `judge_claim5`, `judge_claim6`, `phone_table` and `writeups` name the stop, and each stopped scope gets an S7
+  write-up carrying section 19.10's label) and `export.py` (`read_driver` reads `state.json` `s7_stopped`; a failed S7
+  check counts as an outcome only where the driver recorded a scope covering it and its `s7.json` verifies, else S7
+  still fails; `results.json` lists the scopes and the runs left out, those that trained but were never scored
+  included, and its per-quality totals time every run read, scored or not); one
+  caveat in `export.CAVEATS`, so `results.json` states the rule; tests in `tests/test_stages.py` and `tests/test_claims.py`; `INTERFACES.md`; this document and
+  `prespec.json` (version, title, approval summary, S7, Holm membership, the study rule and the history of versions).
+- **Unchanged**: S7's limits (open loop 1e-7, closed loop 0.05 points), every other threshold, claim, mark and bar,
+  the seeds, the caps, the settings, the Unifloral pins, the data and the scoring cache, `approve_hosts.py`, `gate.py`
+  and the repository code outside the package. Earlier versions' approval files stay committed and unchanged.
+
+### 20.7 What to expect, stated now
+
+- Stage 1 runs again in full under version 3's fingerprint; version 2's records name another fingerprint and never
+  count. Card runs repeat bit for bit (S8), so ReBRAC with standard BCA is expected to fail S7 again with 0.132
+  points, and its weights-of-1 actor, equal to it (S2), likewise: ReBRAC stops on medium-expert. Stage 2a then runs
+  TD3+BC, CQL and IQL.
+- On medium, ReBRAC runs seed 0. If its seed-0 alone or standard final actor fails S7, which is likely as its tail
+  grew with training, ReBRAC stops on medium after seed 0 (a failure of its IW actor alone stops only its IW setup);
+  any run of the stopped scope that had started by then trains but is never scored or used, and `results.json` lists
+  it as excluded.
+- Any learner's seed-0 final actor (100,000 steps) may fail. TD3+BC's, CQL's and IQL's stage-1 actors sat about 150
+  times under the limit, but nothing has measured their tails at 100,000 steps. Each failure stops only that learner or
+  its IW setup.
+- With ReBRAC at p = 1, the other three learners face the same Holm steps as before (0.0125, 0.0167 and 0.025 for the
+  three smallest p-values), so section 11's power figures stand.
+
+### 20.8 The restart, in order
+
+1. Version 2's stage-1 records (`runs/shift_hosts/stage1/`), job logs (`driver/logs/`) and driver state
+   (`driver/state.json` and its kept copies) move unchanged to `runs/shift_hosts_v2/`. Its ledger and stop report stay
+   in `driver/`: the ledger keeps both versions' spend, and the next start moves the stop report aside.
+2. The stage-0 suite on version 3's bytes (S0).
+3. The pre-commit check, as for version 2, then the freeze commit ("Unifloral hosts: freeze pre-specification version
+   3 (fingerprint <first 16>)"), pushed.
+4. You approve at your terminal with section 18 step 1's commands, unchanged but for the new first 16 characters.
+5. The pre-start checks of section 18 step 2, without the suite.
+6. The start, by you, as for version 2 (section 19.8 step 9), with `--resume-after-stop`. Section 19.8's code line
+   numbers are version 2's: in version 3 the `--resume-after-stop` check is in `stages.command_run`, and stage 2a
+   follows once stage 1's checks pass, a failed S7 check stopping only its scope.
+
+### 20.9 Budget
+
+- Spent on medium-expert so far: 0.494 card-hours and 0.710 processor-hours (version 1's stage 1, 0.279 and 0.409;
+  version 2's, 0.215 and 0.301), counted against its caps of 14 and 21.
+- Stage 1 again: about 0.24 card-hours and 0.33 processor-hours (version 2's measured stage 1 plus ReBRAC's two runs
+  that had not started).
+- Stage 2a without ReBRAC costs less than section 13 projects: ReBRAC is about a third of the card time of a seed.
+- Section 19.9's caveat applies again: a stage-1 run that finishes while no driver watches it (a crash) finds an
+  earlier version's closed ledger interval under its label and is under-counted; the write-up then adds that run's own
+  recorded time.
 
 ## Words used here
 

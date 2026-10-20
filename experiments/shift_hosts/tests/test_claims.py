@@ -613,6 +613,168 @@ class Views(unittest.TestCase):
         self.assertEqual(order, [(L, "2") for L in first2] + [(L, "1") for L in first1] + [(L, "2") for L in first2])
 
 
+def s7_entry(learner, scope, setup, quality="medium-expert", stage="stage1", seed=0):
+    """A version-3 state.json "s7_stopped" entry as the driver writes it (stages.Driver.s7_failed)."""
+    label = quality if stage == "stage1" else f"made-up-{quality}"
+    run = f"{stage}/{label}/seed{seed}/{learner}-{setup}"
+    return dict(quality=quality, learner=learner, scope=scope, setup=setup, run=run, stage=stage,
+                file=f"runs/shift_hosts/{run}/lanes/s7-step15000/s7.json", at_utc="2026-10-20T00:01:10+00:00")
+
+
+class S7Scopes(unittest.TestCase):
+    """Version 3 (PRESPEC.md section 20, post hoc): a failed S7 check stops a learner or its IW setup in that quality;
+    the stopped scope's claims read not judged with p = 1 in Holm's families, its runs are left out, and the claims
+    wait only for the setups that still run."""
+
+    def test_scopes_from_entries(self):
+        """s7_scopes: a stopped learner wins over a stopped IW setup; another quality's entries and malformed ones are
+        ignored; a missing scope comes from the setup (S7_SCOPE), and with neither the learner stops; S7_SCOPE equals
+        the driver's."""
+        e = [s7_entry("rebrac", "iw", "iw"), s7_entry("rebrac", "learner", "standard"), s7_entry("cql", "iw", "iw"),
+             s7_entry("iql", "learner", "alone", quality="medium"), "not an entry",
+             dict(s7_entry("td3_bc", None, "iw_repeat"), scope=None), dict(s7_entry("td3_bc", None, "x"), scope=None,
+                                                                           learner="iql")]
+        sc = C.s7_scopes(e, "medium-expert")
+        self.assertEqual({L: v["scope"] for L, v in sc.items()},
+                         dict(rebrac="learner", cql="iw", td3_bc="iw", iql="learner"))
+        self.assertEqual(sc["rebrac"]["runs"], ["stage1/medium-expert/seed0/rebrac-iw",
+                                                "stage1/medium-expert/seed0/rebrac-standard"])
+        self.assertEqual(set(C.s7_scopes(e, "medium")), {"iql"})
+        self.assertEqual(C.s7_scopes(None, "medium"), {})
+        self.assertTrue(C.s7_excluded(sc, "rebrac", "room") and C.s7_excluded(sc, "cql", "iw")
+                        and C.s7_excluded(sc, "cql", "iw_shuffled"))
+        self.assertFalse(C.s7_excluded(sc, "cql", "standard") or C.s7_excluded(sc, "cql", "room"))
+        from experiments.shift_hosts import stages as ST
+        self.assertEqual(C.S7_SCOPE, ST.S7_SCOPE)
+
+    def test_no_entries_change_nothing(self):
+        """No entries (an older state), an empty list or another quality's entries give exactly the version-2
+        judgment: every claim, family, pointer and table row equal."""
+        runs = scenario(d1=dict(td3_bc=GAIN), d2=dict(cql=GAIN))
+        base = judge(runs)
+        for entries in (None, [], [s7_entry("rebrac", "learner", "standard", quality="medium")]):
+            got = C.judge("medium-expert", runs, PLAN_ANCHORS["none"], s7_stopped=entries)
+            self.assertEqual(json.dumps(H.plain(got), sort_keys=True), json.dumps(H.plain(base), sort_keys=True))
+            self.assertEqual(C.phone_table(got, runs), C.phone_table(base, runs))
+        self.assertEqual(base["s7"], dict(scopes={}, excluded=[]))
+
+    def test_learner_scope(self):
+        """ReBRAC stopped by S7 (its standard actor): all its claims read not judged with the failing run named, it
+        stays in both families with p = 1, the others keep the bars of four learners (TD3+BC's Claim 1 passes at
+        0.0125), its rows read 'stopped by S7' with no numbers, and its runs are listed as excluded."""
+        runs = scenario(d1=dict(td3_bc=GAIN, rebrac=GAIN))
+        runs[("rebrac", "room")] = {s: mk({"strong": -201.0}, tag=f"rebrac room {s}") for s in C.SEEDS}
+        runs[("rebrac", "alone")][2] = mk(state="stopped", tag="stopped after the scope")   # left out, never read
+        e = [s7_entry("rebrac", "learner", "standard")]
+        j = C.judge("medium-expert", runs, PLAN_ANCHORS["none"], s7_stopped=e)
+        res = j["learners"]["rebrac"]
+        for cid in C.READING_ORDER:
+            self.assertEqual(res[cid]["badge"], C.NOT_JUDGED, msg=cid)
+            self.assertIs(res[cid]["s7_stopped"], True)
+            self.assertIn("stopped by S7", res[cid]["verdict"])
+            self.assertIn("stage1/medium-expert/seed0/rebrac-standard", res[cid]["verdict"])
+        self.assertIn("p = 1", res["1"]["verdict"])
+        for cid in ("1", "2"):
+            fam = j["families"][cid]
+            self.assertTrue(fam["judged"])
+            self.assertEqual(fam["p_values"]["rebrac"], 1.0)
+            self.assertEqual(fam["s7_stopped"], ["rebrac"])
+            self.assertEqual(len(fam["holm"]), 4)
+            self.assertEqual([r["bar"] for r in fam["holm"]], [0.05 / 4, 0.05 / 3, 0.05 / 2, 0.05])
+            self.assertEqual(fam["holm"][-1]["learner"], "rebrac")
+            self.assertEqual(res[cid]["family"]["p"], 1.0)
+            self.assertEqual(res[cid]["delta"]["per_seed"], [])            # its runs never enter a statistic
+        self.assertEqual(j["learners"]["td3_bc"]["1"]["badge"], C.PASSED)
+        self.assertEqual(j["learners"]["td3_bc"]["1"]["family"]["bar"], 0.0125)
+        base = judge(scenario(d1=dict(td3_bc=GAIN), alone_none=dict(rebrac=[-420.0] * 5)))   # rebrac p = 1 there too
+        for cid in ("1", "2"):
+            self.assertEqual(j["families"][cid]["holm"], base["families"][cid]["holm"])
+        self.assertEqual(len(j["s7"]["excluded"]), 20)
+        self.assertEqual({x["why"] for x in j["s7"]["excluded"]}, {"excluded: stopped by S7"})
+        self.assertEqual(j["s7"]["scopes"]["rebrac"]["scope"], "learner")
+        self.assertEqual(j["complete"]["room_references_expected"], 15)
+        self.assertIn("until all 15 are complete", j["complete"]["note"])        # ReBRAC's 5 never run
+        rows = [r for r in C.phone_table(j, runs) if r["learner"] == "rebrac"]
+        self.assertEqual({r["status"] for r in rows}, {C.S7_STOPPED})
+        self.assertTrue(all(r["strong"]["per_seed"] == [] and r["strong"]["mean"] is None for r in rows))
+        self.assertIsNone(j["pointers"]["rebrac"]["claim2"]["value"])
+        self.assertEqual(C.stage3_order(j), [dict(learner="td3_bc", setups=["standard_flattened"], for_claim="1")])
+
+    def test_iw_scope(self):
+        """CQL's IW setup stopped by S7: Claims 2, 2c, 3, 4a and 4b read not judged and CQL enters Claim 2's family
+        with p = 1; its Claims 0, 1, 1c, 3b and Claim 5's standard rows are judged; Claim 6's Claim-2 part names S7;
+        only the IW row reads 'stopped by S7'."""
+        runs = scenario(d1=dict(cql=GAIN), d2=dict(cql=GAIN, td3_bc=GAIN),
+                        events={("cql", "standard"): {("f1", "big_waves"): 30}})
+        j = C.judge("medium-expert", runs, PLAN_ANCHORS["none"], s7_stopped=[s7_entry("cql", "iw", "iw")])
+        res = j["learners"]["cql"]
+        for cid in ("2", "2c", "3", "4a", "4b"):
+            self.assertEqual(res[cid]["badge"], C.NOT_JUDGED, msg=cid)
+            self.assertIn("its IW setup stops", res[cid]["verdict"])
+        self.assertEqual((res["0"]["badge"], res["1"]["badge"], res["1c"]["badge"], res["3b"]["badge"]),
+                         (C.PASSED, C.PASSED, C.PASSED, C.PASSED))
+        self.assertEqual(j["families"]["2"]["p_values"]["cql"], 1.0)
+        self.assertEqual(j["families"]["2"]["s7_stopped"], ["cql"])
+        self.assertEqual(j["families"]["1"]["s7_stopped"], [])
+        self.assertLess(j["families"]["1"]["p_values"]["cql"], 0.0125)
+        self.assertEqual(j["learners"]["td3_bc"]["2"]["badge"], C.PASSED)
+        self.assertEqual(res["5"]["by_setup"], dict(standard=C.FLAGGED, iw=C.NOT_JUDGED))
+        self.assertEqual(res["5"]["badge"], C.FLAGGED)
+        self.assertIn("IW BCA is not judged: stopped by S7", res["5"]["verdict"])
+        self.assertTrue(all(c["setup"] == "standard" for c in res["5"]["comparisons"]))
+        self.assertEqual(res["6"]["parts"]["2"]["badge"], C.NOT_JUDGED)
+        self.assertIn("stopped by S7", res["6"]["parts"]["2"]["why"])
+        self.assertEqual(res["6"]["parts"]["1"]["badge"], C.PENDING)                # Claim 1 passed: stage 3 waits
+        self.assertIn("stopped by S7", j["pointers"]["cql"]["claim2"]["why"])
+        status = {r["setup"]: r["status"] for r in C.phone_table(j, runs) if r["learner"] == "cql"}
+        self.assertEqual(status, dict(alone=None, standard=None, iw=C.S7_STOPPED))
+        self.assertEqual({(x["learner"], x["setup"]) for x in j["s7"]["excluded"]}, {("cql", "iw")})
+
+    def test_complete_with_a_stopped_scope(self):
+        """Claims 1 and 2 count a stopped scope as complete: with ReBRAC stopped after its seed 0 (its later seeds
+        never trained) and CQL's IW setup stopped after seed 1, both families are judged when the rest is complete;
+        without the entries they wait (pending)."""
+        runs = scenario(d1=dict(td3_bc=GAIN))
+        for s in (1, 2, 3, 4):
+            for setup in C.CLAIM_SETUPS:
+                del runs[("rebrac", setup)][s]
+        for s in (2, 3, 4):
+            del runs[("cql", "iw")][s]
+        self.assertEqual(set(badges(judge(runs), "1").values()), {C.PENDING})
+        e = [s7_entry("rebrac", "learner", "alone", stage="stage2"), s7_entry("cql", "iw", "iw", stage="stage2")]
+        j = C.judge("medium-expert", runs, PLAN_ANCHORS["none"], s7_stopped=e)
+        self.assertTrue(j["complete"]["claim_setups"])
+        self.assertEqual(j["complete"]["s7_not_expected"],
+                         [dict(learner="cql", setup="iw")] + [dict(learner="rebrac", setup=s) for s in C.CLAIM_SETUPS])
+        self.assertTrue(j["families"]["1"]["judged"] and j["families"]["2"]["judged"])
+        self.assertEqual(badges(j, "1"), dict(td3_bc=C.PASSED, cql=C.SHELVED, iql=C.SHELVED, rebrac=C.NOT_JUDGED))
+        self.assertEqual(badges(j, "2"), dict(td3_bc=C.SHELVED, cql=C.NOT_JUDGED, iql=C.SHELVED,
+                                              rebrac=C.NOT_JUDGED))
+        del runs[("iql", "standard")][4]                       # a scope S7 did not stop still has to be complete
+        j = C.judge("medium-expert", runs, PLAN_ANCHORS["none"], s7_stopped=e)
+        self.assertEqual(badges(j, "1"), dict(td3_bc=C.PENDING, cql=C.PENDING, iql=C.PENDING, rebrac=C.NOT_JUDGED))
+        self.assertEqual(j["complete"]["missing"], [dict(learner="iql", setup="standard", seed=4)])
+
+    def test_writeup_and_study_rule(self):
+        """A stopped scope gets an S7 write-up in the user's format citing results.json's s7_stopped; the study rule
+        counts it as not passing (all others shelved: the study ends; TD3+BC passing: it goes on)."""
+        e = [s7_entry("rebrac", "learner", "standard"), s7_entry("iql", "iw", "iw_repeat")]
+        j = C.judge("medium-expert", scenario(), PLAN_ANCHORS["none"], s7_stopped=e)
+        ws = [w for w in C.writeups(j) if w["claim"] == "S7"]
+        self.assertEqual([(w["learner"], w["badge"]) for w in ws], [("iql", C.S7_STOPPED), ("rebrac", C.S7_STOPPED)])
+        for w in ws:
+            md = w["markdown"]
+            pos = [md.index(h) for h in ("**The idea:**", "**What we tested:**", "**What happened:**", "**Why:**")]
+            self.assertEqual(pos, sorted(pos))
+            self.assertIn(f"results.json:qualities.medium-expert.s7_stopped.scopes.{w['learner']}", md)
+            self.assertIn("p = 1", md)
+            self.assertIn("S7, with version 2's post-hoc limit of 0.05 points", md)      # PRESPEC section 19.10
+        self.assertIn("IW setup stopped by S7", ws[0]["title"])
+        self.assertTrue(C.study_rule({"medium-expert": j})["ends_after_seeds_0_4"])
+        some = C.judge("medium-expert", scenario(d1=dict(td3_bc=GAIN)), PLAN_ANCHORS["none"], s7_stopped=e)
+        self.assertFalse(C.study_rule({"medium-expert": some})["ends_after_seeds_0_4"])
+
+
 # ------------------------------------------------------------------------------------------------ export
 
 PLAN_SCHEDULE = E.PLAN_SCHEDULE
@@ -889,10 +1051,12 @@ class Fake:
         H.write_json(d / "s7.json", dict(learner=rec["learner"], rows=4, passed=True, s7_passed=True,
                                          closed_loop=None if rec["data"]["made_up"] else dict(passed=True)))
 
-    def driver(self, *, mode="dry-run", checks=None, claim0=(), accepted=(), s9=True, stop=None, resumed=()):
+    def driver(self, *, mode="dry-run", checks=None, claim0=(), accepted=(), s9=True, stop=None, resumed=(),
+               s7_stopped=None):
         """The stage driver's files (stages.Driver): status.json, state.json, driver.log (accepted S5 lines), an active
         STOP.json and stop reports moved aside by --resume-after-stop (STOP.json.<time> with STOP.json.sha256.<time>);
-        resumed: [(stamp, body, sidecar ok)]."""
+        resumed: [(stamp, body, sidecar ok)]; s7_stopped: version 3's state.json entries (left out when None, as an
+        older driver's state)."""
         d = self.root / "driver"
         d.mkdir(parents=True, exist_ok=True)
         H.write_json(d / "status.json", dict(schema=E.STATUS_SCHEMA, mode=mode, state="finished", phase="finished",
@@ -906,9 +1070,12 @@ class Fake:
                                f"S10/{L}/iw": dict(passed=True, equal=True, readout=C.LEARNERS.index(L) in (0, 2))})
             checks.update({"S6": dict(passed=True), "S6b/medium-expert/seed0": dict(passed=True)})
         sig = E.env_signature(dict(environment=dict(import_record=FAKE_IMPORT_RECORD)))
-        H.write_json(d / "state.json", dict(schema=E.STATE_SCHEMA, decisions=dict(concurrency=1), checks=checks,
-                                            claim0_failures=list(claim0), card_walls={}, lanes_done=[],
-                                            s9_reference=dict(signature=sig, source="made-up") if s9 else None))
+        state = dict(schema=E.STATE_SCHEMA, decisions=dict(concurrency=1), checks=checks,
+                     claim0_failures=list(claim0), card_walls={}, lanes_done=[],
+                     s9_reference=dict(signature=sig, source="made-up") if s9 else None)
+        if s7_stopped is not None:
+            state["s7_stopped"] = list(s7_stopped)
+        H.write_json(d / "state.json", state)
         lines = ["[2026-10-16T00:00:00+00:00] driver starts (dry run): made-up"]
         lines += [f"[2026-10-16T00:30:00+00:00] {rid}: S5 accepted by the operator as the setup's outcome (--accept-s5)"
                   for rid in accepted]
@@ -1281,6 +1448,85 @@ class ExportRefusals(unittest.TestCase):
         self.assertIn("not a dry-run driver's status", r["integrity"]["driver"]["why"])
         self.assertEqual(r["integrity"]["S2"]["status"], "not recorded")
         self.assertEqual(len(r["runs"]), 1)
+
+    def test_s7_stopped_scopes(self):
+        """Version 3: the driver's state.json s7_stopped reaches the claims. ReBRAC stopped after its seed-0 standard
+        actor failed S7: its claims read not judged with p = 1, its runs enter no table or expanded-view number and are
+        listed as excluded (still listed under runs), S7 reads as an outcome, the caveat and the S7 write-up are in
+        results.json, and medium is untouched. A failed S7 check of a scope the driver did not record fails S7."""
+        q = "medium-expert"
+        f = self.fake
+        f.study(q, gains=dict(td3_bc=GAIN), driver=False)
+        d = f.folder(q, "rebrac", "standard", 0) / "lanes" / f"s7-step{FINAL}"
+        H.write_json(d / "s7.json", dict(learner="rebrac", rows=4, passed=True, s7_passed=False,
+                                         closed_loop=dict(passed=False)))
+        f.driver()                                              # an older driver: no s7_stopped key
+        r = self.build()
+        self.assertEqual(r["integrity"]["S7"]["status"], "failed")
+        self.assertEqual(r["qualities"][q]["claims"]["rebrac"]["0"]["badge"], C.PASSED)
+        self.assertEqual(r["built"]["driver"]["s7_stopped"], [])
+        entry = s7_entry("rebrac", "learner", "standard", stage="stage2")
+        self.assertEqual(entry["run"], f.run_id(q, "rebrac", "standard", 0))
+        checks = {"S7/medium-expert/seed0/rebrac/standard": dict(passed=False, file=entry["file"])}
+        f.driver(s7_stopped=[entry], checks=checks)
+        r = self.build()
+        me = r["qualities"][q]
+        self.assertEqual({c: me["claims"]["rebrac"][c]["badge"] for c in C.READING_ORDER},
+                         {c: C.NOT_JUDGED for c in C.READING_ORDER})
+        self.assertEqual((me["families"]["1"]["p_values"]["rebrac"], me["families"]["2"]["p_values"]["rebrac"]),
+                         (1.0, 1.0))
+        self.assertEqual(me["claims"]["td3_bc"]["1"]["badge"], C.PASSED)
+        self.assertEqual(me["claims"]["td3_bc"]["1"]["family"]["bar"], 0.0125)
+        rows = [x for x in me["table"] if x["learner"] == "rebrac"]
+        self.assertEqual({x["status"] for x in rows}, {C.S7_STOPPED})
+        self.assertTrue(all(x["strong"]["mean"] is None for x in rows))
+        self.assertEqual(me["expanded"]["rebrac"]["setups"], {})
+        self.assertIsNone(me["expanded"]["rebrac"]["pointers"]["room_minus_alone"]["strong"]["summary"]["mean"])
+        self.assertIsNotNone(me["expanded"]["td3_bc"]["setups"]["standard"]["metrics"]["strong"]["J_mean"]["mean"])
+        self.assertEqual(len(me["s7_stopped"]["excluded"]), 20)                 # alone, standard, IW and room x 5
+        self.assertEqual(r["unscored"], [])
+        self.assertEqual(me["s7_stopped"]["scopes"]["rebrac"]["runs"], [entry["run"]])
+        self.assertIn("version 3", me["s7_stopped"]["rule"])
+        self.assertEqual(len(r["runs"]), 60 + 20 + 2)                          # still read and listed
+        self.assertEqual(r["integrity"]["S7"]["status"], "outcome")
+        self.assertEqual(r["integrity"]["S7"]["driver"]["status"], "outcome")
+        stopped = [x for x in r["integrity"]["S7"]["export"]["details"]["results"] if x["stopped_scope"]]
+        self.assertEqual([x["run_id"] for x in stopped], [entry["run"]])
+        self.assertEqual(r["built"]["driver"]["s7_stopped"], [entry])
+        self.assertEqual(r["integrity"]["driver"]["s7_stopped"], [entry])
+        self.assertTrue(any("version 3" in c for c in r["caveats"]))
+        self.assertIn(("rebrac", "S7"), {(w["learner"], w["claim"]) for w in me["writeups"]})
+        self.assertEqual({r["qualities"]["medium"]["claims"][L]["0"]["badge"] for L in C.LEARNERS}, {C.PENDING})
+        # a run of the stopped scope that trained but was never scored (the driver adds it no lanes) is listed as
+        # excluded, tagged under unscored and runs, and its compute counts in the totals; an unscored run of a live
+        # scope is still plain unscored
+        card = me["totals"]["card_seconds"]
+        f.run(q, "rebrac", "iw", 1, scored=False)
+        f.run(q, "cql", "alone", 1, scored=False)
+        r = self.build()
+        me = r["qualities"][q]
+        self.assertEqual(len(me["s7_stopped"]["excluded"]), 20)
+        never = [x for x in me["s7_stopped"]["excluded"] if x["why"] == E.S7_NEVER_SCORED]
+        self.assertEqual([(x["learner"], x["setup"], x["seed"]) for x in never], [("rebrac", "iw", 1)])
+        self.assertEqual({(u["learner"], u["setup"], u["seed"]): u.get("s7_stopped") for u in r["unscored"]},
+                         {("rebrac", "iw", 1): E.S7_NEVER_SCORED, ("cql", "alone", 1): None})
+        listed = {(x["learner"], x["setup"], x["seed"]): x for x in r["runs"] if x["quality"] == q}
+        self.assertEqual(listed[("rebrac", "iw", 1)]["s7_stopped"], E.S7_NEVER_SCORED)
+        self.assertNotIn("s7_stopped", listed[("cql", "alone", 1)])
+        self.assertAlmostEqual(me["totals"]["card_seconds"], card, places=6)    # still timed, scored or not
+        self.assertEqual(me["claims"]["cql"]["0"]["badge"], C.PENDING)
+        f.run(q, "cql", "alone", 1)
+        f.run(q, "rebrac", "iw", 1)
+        # a recorded scope that does not cover the failure (TD3+BC's IW setup) leaves S7 failed
+        f.driver(s7_stopped=[s7_entry("td3_bc", "iw", "iw", stage="stage2")], checks=checks)
+        r = self.build()
+        self.assertEqual(r["integrity"]["S7"]["status"], "failed")
+        self.assertEqual(r["integrity"]["S7"]["driver"]["failed_without_a_stopped_scope"], list(checks))
+        me = r["qualities"][q]
+        self.assertEqual((me["claims"]["td3_bc"]["1"]["badge"], me["claims"]["td3_bc"]["2"]["badge"]),
+                         (C.PASSED, C.NOT_JUDGED))
+        self.assertEqual(me["families"]["2"]["p_values"]["td3_bc"], 1.0)
+        self.assertEqual(me["expanded"]["td3_bc"]["setups"].keys(), {"alone", "standard", "room", "sham_alone"})
 
     def test_real_record_rules(self):
         """read_run under a (stand-in) real identity: a real record of the plan's schedule scored under the approval

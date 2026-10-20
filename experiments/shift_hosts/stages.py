@@ -31,8 +31,12 @@ What it runs, in this order (plan 7.3-7.4; the task's stage-driver list):
 Stop rules (plan 6.1): S5 on a learner alone or a room reference is that learner's Claim 0 outcome, recorded, and the
 driver goes on; S5 on a BCA setup halts until it is traced (rerun with --accept-s5 RUN_ID if it is the setup's outcome,
 not a package defect); S1 (a refused run: the approval no longer matches the code; a run record of another fingerprint;
-the approval re-verified before every unit), S3, S11, S2, S4, S6, S6b, S7, S8, S9 and S10 (where it is not a readout)
-halt. S5 also covers a non-finite return: a scoring lane whose scores hold one exits 4 (EXIT_NONFINITE), and the driver
+the approval re-verified before every unit), S3, S11, S2, S4, S6, S6b, S8, S9 and S10 (where it is not a readout)
+halt. S7 (version 3, PRESPEC.md section 20, post hoc): a failed float32 check stops a scope within its quality instead
+of the driver. An alone, standard or weights-of-1 actor stops its learner, an IW actor (or IW's repeat) stops only that
+learner's IW setup (S7_SCOPE); state.json "s7_stopped" records it, that scope's queued stage-2 runs and lanes are
+dropped and its later units leave it out, and everything else goes on. Stage 1 still runs all 20 runs and every check.
+An s7.json that does not verify still halts. S5 also covers a non-finite return: a scoring lane whose scores hold one exits 4 (EXIT_NONFINITE), and the driver
 records it as that learner's Claim 0 outcome (alone, room) or halts (a BCA setup, unless accepted). A halt launches
 nothing new (not even the next step of a lane already running), lets running children finish, writes driver/STOP.json
 and driver/STOP.txt, and exits 3. An unexpected error or SIGTERM also writes the stop report, after waiting up to an hour
@@ -106,6 +110,10 @@ SEEDS = (0, 1, 2, 3, 4)
 STAGE1_SINGLE = ("alone", "standard", "iw")
 STAGE1_PAIR = ("iw_ones", "iw_repeat")
 STAGE2_SETUPS = ("alone", "standard", "iw")
+# Version 3's S7 rule (PRESPEC.md section 20): what a failed float32 check stops within its quality. The weights-of-1
+# actor equals standard's in every bit (S2) and IW's repeat equals IW's (S8), so each stops what its twin would.
+S7_SCOPE = dict(alone="learner", standard="learner", iw_ones="learner", iw="iw", iw_repeat="iw")
+S7_INJECT = "s7fail"   # dry run only: --inject RUN_ID=s7fail makes that run's S7 check fail (the tests of the rule)
 # Choice 19 (plan 4.4): learners whose test (a2) matched only to rounding on the card in stage 0 (TD3+BC: the logged
 # losses by 1-2 rounding units, state bit for bit; IQL: every leaf within 3.8e-7). CQL (with its pre-refresh program)
 # and ReBRAC were bit for bit. On real data prespec.json's choices.19.applies is used and must equal this; --choice19
@@ -299,10 +307,13 @@ def lane_main(argv):
     c.add_argument("--actor", required=True)
     c.add_argument("--out", required=True)
     c.add_argument("--no-closed-loop", action="store_true", help="dry run: no rollout of a learned policy")
+    c.add_argument("--inject-failure", action="store_true", help="dry run only: write a failed check (S7's tests)")
     for q in (s, t, o, c):
         q.add_argument("--made-up", action="store_true")
     a = p.parse_args(argv)
     permission = lane_permission(a.made_up, f"scoring lane {a.kind} of {getattr(a, 'actor', '')}")   # first
+    if getattr(a, "inject_failure", False) and not a.made_up:
+        raise gate.ApprovalError("an S7 failure is injected in dry runs only (--made-up)")
     from experiments.shift_hosts import evaluate as E
 
     if a.kind == "score":
@@ -341,6 +352,8 @@ def lane_main(argv):
     res = E.open_loop_compare(a.states, a.commands, a.actor)
     res["closed_loop"] = None if a.no_closed_loop else E.closed_loop_check(a.actor, permission)
     passed = bool(res["passed"]) and (res["closed_loop"] is None or bool(res["closed_loop"]["passed"]))
+    if a.inject_failure:
+        passed, res["injected_failure"] = False, True
     res["s7_passed"] = passed
     H.write_json(a.out, res)
     return 0 if passed else 3
@@ -377,6 +390,7 @@ class LaneJob:
     step_index: int = 0
     run: str = None         # the run id whose actor the lane reads
     setup: str = None       # that run's setup (S5's verdict on a non-finite return depends on it)
+    learner: str = None     # that run's learner (version 3's S7 rule stops a learner or its IW setup)
 
 
 @dataclass
@@ -453,8 +467,10 @@ class Driver:
             self.state["mode"] = self.mode
         else:
             self.state = dict(schema=STATE_SCHEMA, mode=self.mode, decisions={}, checks={}, claim0_failures=[],
-                              card_walls={}, s9_reference=None, lanes_done=[], accepted_s5=[], config=None)
+                              card_walls={}, s9_reference=None, lanes_done=[], accepted_s5=[], s7_stopped=[],
+                              config=None)
         self.state.setdefault("accepted_s5", [])
+        self.state.setdefault("s7_stopped", [])
         want = config_record(cfg)
         if self.state.get("config") is None:
             self.state["config"] = want
@@ -471,7 +487,8 @@ class Driver:
         self.events = deque(maxlen=30)
         self.phase = "starting"
         self.quality = "medium-expert"           # the quality the driver's own processor time is counted against
-        self.counts = dict(cards_done=0, cards_skipped=0, lanes_done=0, lanes_skipped=0)
+        self.counts = dict(cards_done=0, cards_skipped=0, lanes_done=0, lanes_skipped=0, cards_dropped=0,
+                           lanes_dropped=0)
         self.started_utc = utc_now()
         self._last_status = -math.inf
         self._last_beat = time.monotonic()
@@ -528,13 +545,63 @@ class Driver:
             counts=self.counts, budget=B.describe(self.ledger), decisions=self.state.get("decisions"),
             checks={k: v.get("passed") for k, v in self.state.get("checks", {}).items()},
             claim0_failures=self.state.get("claim0_failures"), accepted_s5=self.state.get("accepted_s5"),
-            stop=self.halt, notes=self.notes, last_events=list(self.events))
+            s7_stopped=self.state.get("s7_stopped"), stop=self.halt, notes=self.notes, last_events=list(self.events))
         H.write_json(self.dir / "status.json", body)
 
     def stop(self, rule, reason, **detail):
         if self.halt is None:
             self.halt = dict(rule=rule, reason=reason, at_utc=utc_now(), phase=self.phase, **H.plain(detail))
             self.log(f"STOP ({rule}): {reason}")
+
+    # -------------------------------------------------------------------------------------------- S7's scopes
+
+    def s7_stopped(self, quality, learner, setup):
+        """Version 3's S7 rule: whether a failed float32 check has stopped this setup of this learner in this quality.
+        A stopped learner covers every setup (its sham-alone run and room references included); a stopped IW setup
+        covers the IW setup only."""
+        return any(e["quality"] == quality and e["learner"] == learner and (e["scope"] == "learner" or setup == "iw")
+                   for e in self.state.get("s7_stopped", []))
+
+    def s7_failed(self, quality, learner, setup, run, file, label):
+        """Version 3's S7 rule (module docstring; PRESPEC.md section 20): the float32 check of `run`'s actor failed
+        (its verified s7.json says so). It stops that learner or only its IW setup in this quality (S7_SCOPE),
+        records it once in state.json s7_stopped, takes that scope's queued stage-2 runs and lanes off the queues, and
+        the driver goes on. S7's limit is unchanged; nothing is retried."""
+        scope = S7_SCOPE.get(setup)
+        if scope is None or learner not in LEARNERS:     # no scope for it: the old rule, a halt
+            return self.stop("S7", f"{label}: the float32 check failed (see its s7.json)", lane=label)
+        entry = dict(quality=quality, learner=learner, scope=scope, setup=setup, run=run)
+        if not any(all(e.get(k) == v for k, v in entry.items()) for e in self.state["s7_stopped"]):
+            self.state["s7_stopped"].append(dict(entry, stage=str(run).split("/")[0], file=str(file),
+                                                 at_utc=utc_now()))
+            self.save_state()
+            what = f"learner {learner}" if scope == "learner" else f"{learner}'s IW setup"
+            self.log(f"S7 (version 3): {label}: the float32 check failed (see its s7.json); {what} stops on {quality}, "
+                     "the others go on")
+        self._drop_stopped()
+        return None
+
+    def _drop_stopped(self):
+        """Take the queued stage-2 card runs and lanes of a scope S7 stopped off the queues (a dropped card run is marked,
+        so the unit waiting for it goes on). Running children finish; stage 1 always runs whole."""
+        cards = deque()
+        for j in self.card_queue:
+            if j.stage != "stage1" and self.s7_stopped(j.quality, j.learner, j.setup):
+                j.result = dict(status="dropped", reason="its scope was stopped by S7 (version 3)")
+                self.counts["cards_dropped"] += 1
+                self.log(f"card {j.label} dropped: its scope was stopped by S7")
+            else:
+                cards.append(j)
+        self.card_queue = cards
+        lanes = deque()
+        for job in self.lane_queue:
+            if (job.learner is not None and not str(job.run).startswith("stage1/")
+                    and self.s7_stopped(job.quality, job.learner, job.setup)):
+                job.result = dict(status="dropped", reason="its scope was stopped by S7 (version 3)")
+                self.counts["lanes_dropped"] += 1
+            else:
+                lanes.append(job)
+        self.lane_queue = lanes
 
     def verify_approval(self, where):
         """S1 before a unit (real mode): the approval must still verify from disk (gate.verify); else halt."""
@@ -703,7 +770,7 @@ class Driver:
         rid = RN.run_id(stage, label_q, rep, learner, setup)
         if rid in tuple(cfg.replace_incomplete or ()):
             argv.append("--replace-incomplete")         # only the runs the operator named
-        if rid in cfg.inject:
+        if rid in cfg.inject and cfg.inject[rid] != S7_INJECT:     # an S7 failure is the lane's, not the runner's
             argv += ["--inject-fault", cfg.inject[rid]]
         return CardJob(rid, quality, rep, learner, setup, stage, steps,
                        RN.run_dir(cfg.root, stage, label_q, rep, learner, setup), argv, unit)
@@ -797,6 +864,9 @@ class Driver:
         self._check_s9(job, rec)
         if job.stage != "stage1" and job.setup == "alone" and status != "skipped":
             self._check_s6_alone(job, rec)
+        if job.stage != "stage1" and self.s7_stopped(job.quality, job.learner, job.setup):
+            self.log(f"{job.label}: no lanes, its scope was stopped by S7 while it ran (version 3)")
+            return None
         if self.halt is None:
             for lane in self.lanes_for(job, rec):
                 self.lane_queue.append(lane)
@@ -876,7 +946,7 @@ class Driver:
         seed0 = job.rep == 0
         if job.stage == "stage1" or (seed0 and job.setup in STAGE2_SETUPS):
             lane = self._s7_lane(job, actor(final), lanes_dir / f"s7-step{final}", made)
-            lane.run, lane.setup = job.label, job.setup
+            lane.run, lane.setup, lane.learner = job.label, job.setup, job.learner
             out.append(lane)
         if job.stage == "stage1":
             return out
@@ -897,7 +967,7 @@ class Driver:
                                  "training"))
                     outputs.append(str(view))
                 out.append(LaneJob(f"{job.label}/score-{t}", "score" if len(cmds) == 1 else "viewer", job.quality,
-                                   cmds, outputs, run=job.label, setup=job.setup))
+                                   cmds, outputs, run=job.label, setup=job.setup, learner=job.learner))
         if bca:
             last = max(r["step"] for r in rec["refreshes"]) if rec.get("refreshes") else None
             if last is not None:
@@ -915,7 +985,7 @@ class Driver:
                 cmds.append(([TRAINING_PYTHON, "-m", "experiments.shift_hosts.band_readout", "coverage", "--run-dir",
                               str(job.run_dir), "--step", str(last), "--out", str(cov)] + extra, "training"))
                 out.append(LaneJob(f"{job.label}/coverage-{last}", "coverage", job.quality, cmds,
-                                   [str(cov / "coverage.json")], run=job.label, setup=job.setup))
+                                   [str(cov / "coverage.json")], run=job.label, setup=job.setup, learner=job.learner))
         return out
 
     def _s7_lane(self, job, actor, d, made):
@@ -928,6 +998,8 @@ class Driver:
                "--commands", str(commands), "--actor", actor, "--out", str(result)] + made
         if self.cfg.dry:
             chk.append("--no-closed-loop")
+            if self.cfg.inject.get(job.label) == S7_INJECT:
+                chk.append("--inject-failure")
         cmds = [(st, "scoring"),
                 ([TRAINING_PYTHON, "-m", "experiments.shift_hosts.runner", "s7-commands", "--states", str(states),
                   "--actor", actor, "--out", str(commands)], "training"),
@@ -940,7 +1012,8 @@ class Driver:
 
     def _verdict(self, job):
         """A lane's own verdict from its outputs, read when it finishes and again when a resumed driver finds it done:
-        S7 (s7.json must say s7_passed true) and S5's non-finite return (the scores' "scored" summaries must all be
+        S7 (s7.json must say s7_passed true; s7_passed false is version 3's scoped stop, s7_failed; a file that does
+        not verify, or says neither, halts) and S5's non-finite return (the scores' "scored" summaries must all be
         finite: for an alone or room run that is its learner's Claim 0 outcome, recorded; for a BCA setup it halts
         unless the run was accepted with --accept-s5)."""
         if job.kind == "s7":
@@ -948,8 +1021,10 @@ class Driver:
                 body = H.read_json(job.outputs[0])
             except (H.HandoffError, OSError, ValueError) as error:
                 return self.stop("S7", f"{job.label}: its s7.json does not verify ({error})", lane=job.label)
+            if body.get("s7_passed") is False:
+                return self.s7_failed(job.quality, job.learner, job.setup, job.run, job.outputs[0], job.label)
             if body.get("s7_passed") is not True:
-                return self.stop("S7", f"{job.label}: the float32 check failed (see its s7.json)", lane=job.label)
+                return self.stop("S7", f"{job.label}: its s7.json says neither passed nor failed", lane=job.label)
             return None
         if job.kind not in ("score", "viewer"):
             return None
@@ -986,6 +1061,16 @@ class Driver:
         if code != 0 and not (score_step and code == EXIT_NONFINITE):
             self.free_lane.append(core)
             job.result = dict(status="failed", exit=code, step=job.step_index)
+            if job.kind == "s7" and code == 3 and job.step_index == len(job.commands) - 1:
+                job.result = dict(status="complete", s7_passed=False)   # the check ran; its verdict is a failure
+                self.counts["lanes_done"] += 1
+                self.log(f"lane {job.label} done: the float32 check failed")
+                self._verdict(job)                      # its s7.json: version 3's scoped stop, or a halt
+                if self.halt is None and not any(e["run"] == job.run and e["setup"] == job.setup
+                                                 for e in self.state["s7_stopped"]):
+                    self.stop("S7", f"{job.label}: the check exited 3 but its s7.json does not say it failed",
+                              lane=job.label)       # the exit status and the file must agree
+                return None
             if job.kind == "s7" and code == 3:
                 return self.stop("S7", f"{job.label}: the float32 check failed (see its s7.json)", lane=job.label)
             return self.stop("lane", f"{job.label} failed at its step {job.step_index + 1} (exit {code}); nothing "
@@ -995,6 +1080,12 @@ class Driver:
         if self.halt is not None:                       # a halt launches nothing new, a lane's next step included
             self.free_lane.append(core)
             job.result = dict(status="halted", step=job.step_index)
+            return
+        if (job.step_index + 1 < len(job.commands) and job.learner is not None
+                and not str(job.run).startswith("stage1/") and self.s7_stopped(job.quality, job.learner, job.setup)):
+            self.free_lane.append(core)                 # version 3: its scope was stopped meanwhile; no next step
+            job.result = dict(status="dropped", step=job.step_index, reason="its scope was stopped by S7 (version 3)")
+            self.counts["lanes_dropped"] += 1
             return
         job.step_index += 1
         if job.step_index < len(job.commands):
@@ -1040,7 +1131,11 @@ class Driver:
             for s in ("standard", "iw", "iw_ones", "iw_repeat"):
                 checks[f"S10/{l}/{s}"] = check_s10(r["alone"], r[s], cfg.choice19.get(l, False))
             for s in STAGE1_SINGLE + STAGE1_PAIR:
-                checks[f"S7/{l}/{s}"] = s7_result(jobs[(l, s)].run_dir, r[s])
+                res = checks[f"S7/{l}/{s}"] = s7_result(jobs[(l, s)].run_dir, r[s])
+                if res.get("s7_passed") is False:       # version 3: a scoped stop (recorded again, once), no halt
+                    res["scoped_stop"] = S7_SCOPE[s]
+                    self.s7_failed(jobs[(l, s)].quality, l, s, jobs[(l, s)].label, res["file"],
+                                   f"{jobs[(l, s)].label}/s7")
         s8_ok = all(checks[f"S8/{l}"]["passed"] for l in cfg.learners)
         records = {j.label: H.sha256_file(j.run_dir / "record.json") for j in jobs.values()}
         saved = self.state["decisions"].get("s6")
@@ -1055,7 +1150,7 @@ class Driver:
         self.state["decisions"]["s6"] = s6
         self.state["decisions"]["concurrency"] = s6["concurrency"]
         self.save_state()
-        failed = [k for k, v in checks.items() if not v.get("passed")]
+        failed = [k for k, v in checks.items() if not v.get("passed") and not v.get("scoped_stop")]
         for k in failed:
             note = checks[k].get("note")
             self.stop(k.split("/")[0], f"stage 1 check {k} failed" + (f" ({note})" if note else ""), check=k,
@@ -1065,7 +1160,10 @@ class Driver:
             self.wait()
         readout = [l for l in cfg.learners if cfg.choice19.get(l)]
         s10 = f"readout for {', '.join(readout)}" if readout else "bit for bit"
-        self.log(f"stage 1 passed: S2, S4, S7, S8, S10 ({s10}), S6, S9; concurrency {s6['concurrency']}")
+        scoped = sorted({(e["learner"], e["scope"]) for e in self.state["s7_stopped"] if e["stage"] == "stage1"})
+        s7 = ("S7" if not scoped else "S7 (stopped by S7 on medium-expert: "
+              + ", ".join(l if sc == "learner" else f"{l}'s IW setup" for l, sc in scoped) + ")")
+        self.log(f"stage 1 passed: S2, S4, {s7}, S8, S10 ({s10}), S6, S9; concurrency {s6['concurrency']}")
 
     def _wall(self, job):
         w = self.state["card_walls"].get(job.label)
@@ -1122,19 +1220,22 @@ class Driver:
 
     def plan_units(self, quality):
         """[(unit name, [run dicts])] of a quality's stage 2 in the plan's order, for projections; each unit's runs are
-        in unit_jobs' order."""
+        in unit_jobs' order. The runs of a scope S7 stopped (version 3) are left out; the unit names stay."""
         cfg = self.cfg
         lanes_bca = dict(score=2, coverage=1)
         lanes_alone = dict(score=2)
         units = []
-        sham = [l for l in cfg.learners if cfg.choice19.get(l)]
-        if sham:
+        live = lambda l, s: not self.s7_stopped(quality, l, s)
+        if any(cfg.choice19.get(l) for l in cfg.learners):
             units.append(("sham", [dict(learner=l, setup="sham_alone", steps=cfg.steps, refreshes=0,
-                                        lanes=dict(score=2)) for l in sham]))
+                                        lanes=dict(score=2)) for l in cfg.learners
+                                   if cfg.choice19.get(l) and live(l, "sham_alone")]))
         for k in cfg.seeds:
             us = []
             for l in cfg.learners:
                 for s in STAGE2_SETUPS:
+                    if not live(l, s):
+                        continue
                     lanes = dict(lanes_bca if s != "alone" else lanes_alone)
                     if k == 0:
                         lanes["s7"] = 1
@@ -1144,23 +1245,27 @@ class Driver:
                                    refreshes=0 if s == "alone" else cfg.refreshes_per_run, lanes=lanes))
             units.append((f"seed{k}", us))
         units.append(("room", [dict(learner=l, setup="room", steps=cfg.steps, refreshes=0, lanes=dict(score=2))
-                               for k in cfg.seeds for l in cfg.learners]))
+                               for k in cfg.seeds for l in cfg.learners if live(l, "room")]))
         if cfg.dry:
             for _, us in units:
                 for u in us:
                     u["lanes"] = {k: v for k, v in u["lanes"].items() if k in ("s7", "coverage")}
         return units
 
-    def unit_jobs(self, quality, name):
+    def unit_jobs(self, quality, name, every=False):
+        """The card jobs of a unit, in plan_units' order; without the runs of a scope S7 stopped (version 3) unless
+        every=True (the end-of-quality S7 read, which accounts for every seed-0 run)."""
         cfg = self.cfg
+        live = lambda l, s: every or not self.s7_stopped(quality, l, s)
         if name == "sham":
             return [self.card_job(quality, 0, l, "sham_alone", "stage2", cfg.steps, name) for l in cfg.learners
-                    if cfg.choice19.get(l)]
+                    if cfg.choice19.get(l) and live(l, "sham_alone")]
         if name == "room":
             return [self.card_job(quality, k, l, "room", "stage2", cfg.steps, name) for k in cfg.seeds
-                    for l in cfg.learners]
+                    for l in cfg.learners if live(l, "room")]
         k = int(name[len("seed"):])
-        return [self.card_job(quality, k, l, s, "stage2", cfg.steps, name) for l in cfg.learners for s in STAGE2_SETUPS]
+        return [self.card_job(quality, k, l, s, "stage2", cfg.steps, name) for l in cfg.learners for s in STAGE2_SETUPS
+                if live(l, s)]
 
     def stage2(self, quality):
         cfg = self.cfg
@@ -1170,14 +1275,21 @@ class Driver:
         speeds = {tuple(k.split("/")): v for k, v in s6["speeds"].items()}
         conc = int(dec["concurrency"])
         gain = s6["two_at_once"]["gain"] if conc == 2 else 1.0
-        for name, units in self.plan_units(quality):
+        for name in [n for n, _ in self.plan_units(quality)]:
             self.phase = f"stage 2 {quality} {name}"
             self.verify_approval(f"{quality} {name}")
+            units = dict(self.plan_units(quality))[name]    # now: a scope S7 stopped meanwhile is left out (version 3)
             jobs = self.unit_jobs(quality, name)
             if len(jobs) != len(units):
                 raise AssertionError(f"{quality} {name}: {len(jobs)} jobs against {len(units)} planned runs")
             todo = [u for u, j in zip(units, jobs) if not self._has_record(j)]
-            if not todo:                            # a resume: every run of the unit already has its record
+            if not jobs:                            # version 3: every run of the unit belongs to a scope S7 stopped
+                self.state["checks"].setdefault(f"S6b/{quality}/{name}", dict(   # an earlier check stays as it was
+                    quality=quality, passed=True, skipped=True, runs_with_records=0,
+                    note="nothing to run: every run of this unit belongs to a scope stopped by S7 (version 3)"))
+                self.log(f"S6b before {quality} {name}: skipped, every run of the unit was stopped by S7")
+                self.save_state()
+            elif not todo:                          # a resume: every run of the unit already has its record
                 key = f"S6b/{quality}/{name}"
                 if key not in self.state["checks"]:     # else the check made before the unit ran stays as it was
                     self.state["checks"][key] = dict(
@@ -1204,8 +1316,16 @@ class Driver:
     def seed_checks(self, quality, jobs, name):
         by = {}
         for j in jobs:
+            if (j.result or {}).get("status") == "dropped":     # version 3: its scope was stopped by S7 before it ran
+                continue
             by.setdefault(j.learner, {})[j.setup] = read_record(j.run_dir)
         for l, r in by.items():
+            if len(r) < 2:                              # version 3: the rest of its seed was dropped (S7)
+                self.state["checks"][f"S4/{quality}/{name}/{l}"] = dict(
+                    passed=True, skipped=True, setups=sorted(r),
+                    note="fewer than two of the learner's runs trained this seed (the rest belonged to a scope "
+                         "stopped by S7, version 3): nothing to compare")
+                continue
             res = check_s4(r)
             self.state["checks"][f"S4/{quality}/{name}/{l}"] = res
             if not res["passed"]:
@@ -1217,6 +1337,8 @@ class Driver:
 
     def room_checks(self, quality, jobs):
         for j in jobs:
+            if (j.result or {}).get("status") == "dropped":     # version 3: its learner was stopped by S7 meanwhile
+                continue
             alone = RN.run_dir(self.cfg.root, "stage2", j.run_dir.parts[-3], j.rep, j.learner, "alone")
             res = check_s4(dict(alone=read_record(alone), room=read_record(j.run_dir)), key_setups=())
             res["passed"] = res["initial_equal"]
@@ -1229,19 +1351,33 @@ class Driver:
             self.wait()
 
     def s7_seed0_checks(self, quality):
-        """After a quality's last lane: every seed-0 final actor's S7 (alone, standard, IW) must have passed, so a
-        failure can never be forgotten by a resume (module docstring)."""
+        """After a quality's last lane: every seed-0 final actor's S7 (alone, standard, IW) is read again, so a failure
+        can never be forgotten by a resume (module docstring). Version 3: a failed check is its scope's stop (recorded
+        once, no halt); a run of a scope S7 stopped before it trained, or before its S7 lane ran, is accounted for as
+        such; any other missing or unverified result halts."""
         if 0 not in self.cfg.seeds:
             return
-        for j in self.unit_jobs(quality, "seed0"):
+        for j in self.unit_jobs(quality, "seed0", every=True):
+            key = f"S7/{quality}/seed0/{j.learner}/{j.setup}"
+            stopped = self.s7_stopped(quality, j.learner, j.setup)
             try:
                 rec = read_record(j.run_dir)
             except Exception as error:                  # noqa: BLE001
+                if stopped and not (j.run_dir / "record.json").exists():
+                    self.state["checks"][key] = dict(passed=True, skipped=True,
+                                                     note="never trained: its scope was stopped by S7 (version 3)")
+                    continue
                 self.stop("error", f"{j.label}: its record does not verify ({error})", run=j.label)
                 break
             res = s7_result(j.run_dir, rec)
-            self.state["checks"][f"S7/{quality}/seed0/{j.learner}/{j.setup}"] = res
-            if not res["passed"]:
+            self.state["checks"][key] = res
+            if res.get("s7_passed") is False:
+                res["scoped_stop"] = S7_SCOPE[j.setup]
+                self.s7_failed(quality, j.learner, j.setup, j.label, res["file"], f"{j.label}/s7")
+            elif not res["passed"] and stopped and not Path(res["file"]).exists():
+                res.update(skipped=True, note="no S7 result: its scope was stopped by S7 before its lane ran "
+                                              f"(version 3); {res.get('note')}")
+            elif not res["passed"]:
                 self.stop("S7", f"{j.label}: its S7 result did not pass ({res.get('note') or res.get('file')})",
                           run=j.label)
                 break
@@ -1302,13 +1438,20 @@ class Driver:
             signal.signal(signal.SIGTERM, previous)
         self.phase = "finished"
         self.save_ledger()
-        self.log("finished: every unit of every stage ran and every stop rule passed")
+        scoped = self.state.get("s7_stopped") or []
+        if scoped:
+            what = sorted({f"{e['learner']}{'' if e['scope'] == 'learner' else ' IW'} on {e['quality']}" for e in scoped})
+            self.log(f"finished: every unit of every stage ran and no stop rule halted; stopped by S7 (version 3): "
+                     f"{', '.join(what)}")
+        else:
+            self.log("finished: every unit of every stage ran and every stop rule passed")
         self.status("finished")
         return 0
 
     def write_stop(self):
         h = dict(self.halt or {}, schema=STOP_SCHEMA, mode=self.mode,
                  budget=B.describe(self.ledger), claim0_failures=self.state.get("claim0_failures"),
+                 s7_stopped=self.state.get("s7_stopped"),
                  next_steps=("Nothing was retried. Read the named log or record. A stop that needs a code fix waits "
                              "for a new pre-specification and the user's terminal approval (plan 6.1). An S5 on a BCA "
                              "setup that is not a package defect is that setup's outcome: rerun with --accept-s5 "
@@ -1492,7 +1635,8 @@ def add_run_args(r):
     r.add_argument("--lane-cores", nargs="+", type=int, help="up to 8 processor lanes")
     r.add_argument("--choice19", nargs="+", help="dry run only: learner=yes|no (test (a2) matched only to rounding)")
     r.add_argument("--accept-s5", nargs="+", help="run ids whose S5 the operator traced to the setup itself")
-    r.add_argument("--inject", nargs="+", help="dry run only: RUN_ID=unit0:<step> or RUN_ID=nan:<step>")
+    r.add_argument("--inject", nargs="+", help="dry run only: RUN_ID=unit0:<step>, RUN_ID=nan:<step> or "
+                                               f"RUN_ID={S7_INJECT} (that run's S7 check fails)")
     r.add_argument("--replace-incomplete", nargs="+", metavar="RUN_ID",
                    help="the runs (by run id) that died without a record and may start again")
     r.add_argument("--resume-after-stop", action="store_true")

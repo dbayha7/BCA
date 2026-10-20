@@ -18,10 +18,14 @@ An experiment-local attachment (plan section 3.1) that changes none of the repos
   stops     A simulated S5 (BCA's unit set to 0 in one BCA run of seed 1): the driver halts, writes its stop report,
             launches nothing after it (no room reference); a restart over the report is refused; a restart with
             --resume-after-stop halts again on the same recorded stop (never retried); with --accept-s5 it finishes.
-            A simulated S6 (a tiny card cap): the driver halts after stage 1's projection.
+            A simulated S6 (a tiny card cap): the driver halts after stage 1's projection. Version 3's S7 rule: an S7
+            failure injected on stage 1's TD3+BC standard actor and on seed 0's IQL IW actor stops TD3+BC and IQL's IW
+            setup on that quality only; stage 1 runs whole, the rest goes on, and the driver finishes.
   refusal   Without the approval the driver refuses to start (real mode), writing nothing.
-  review    The stage-0 review's fixes, in process on made-up folders: a failed S7 result halts a resumed driver
-            instead of being skipped as done; a halt starts no next lane step; a non-finite scored return is a Claim 0
+  review    The stage-0 review's fixes, in process on made-up folders: a failed S7 result is never skipped as done
+            on resume (version 3: it is its scope's stop; an s7.json that does not verify halts); S7's scopes, the
+            queues they drop and the units that leave them out; a halt starts no next lane step; a non-finite scored
+            return is a Claim 0
             outcome (alone, room) or an S5 halt (BCA, unless accepted); a stop before training names its rule (S11);
             modes, the recorded configuration and the per-root lock; the real-data options that would change a frozen
             choice are refused; S6b on resume projects only runs without a record; an unexpected error writes the stop
@@ -259,7 +263,8 @@ class DriverRulesTest(unittest.TestCase):
 
     def test_failed_s7_never_passes_on_resume(self):
         """A lane whose outputs verify is skipped on resume only after its own verdict: an s7.json that says
-        s7_passed false halts with S7 (it used to be skipped as done); a passing one is skipped."""
+        s7_passed false is never skipped as done (version 3: it stops its scope, recorded; a lane with no scope halts
+        as before); a passing one is skipped; one that does not verify halts."""
         d = fresh("rules_s7")
         drv = ST.Driver(dry_cfg(d), None)
         bad, good = d / "run" / "lanes" / "s7-step1" / "s7.json", d / "good" / "s7.json"
@@ -270,15 +275,181 @@ class DriverRulesTest(unittest.TestCase):
         drv.lane_queue.append(ok_job)
         drv.pump()
         self.assertEqual((ok_job.result, drv.halt, drv.lanes), (dict(status="skipped"), None, {}))
-        bad_job = ST.LaneJob("x/s7-bad", "s7", "medium-expert", [never], [str(bad)])
+        bad_job = ST.LaneJob("x/s7-bad", "s7", "medium-expert", [never], [str(bad)], run="x", setup="iw",
+                             learner="td3_bc")
         drv.lane_queue.append(bad_job)
         drv.pump()
-        self.assertEqual(drv.halt["rule"], "S7")
+        self.assertIsNone(drv.halt)
+        self.assertEqual([(e["learner"], e["scope"]) for e in drv.state["s7_stopped"]], [("td3_bc", "iw")])
         self.assertEqual(drv.lanes, {})                       # nothing launched
+        unscoped = ST.LaneJob("x/s7-bad", "s7", "medium-expert", [never], [str(bad)])
+        drv.lane_queue.append(unscoped)
+        drv.pump()
+        self.assertEqual(drv.halt["rule"], "S7")
         res = ST.s7_result(d / "run", dict(outcome="complete", timings=dict(outer_steps=1)))
         self.assertEqual((res["passed"], res["s7_passed"]), (False, False))   # stage 1's and seed 0's S7 checks
         self.assertFalse(ST.s7_result(d / "none", dict(outcome="complete", timings=dict(outer_steps=1)))["passed"])
         self.assertTrue(ST.s7_result(d / "none", dict(outcome="stopped", timings=dict(outer_steps=1)))["passed"])
+        broken = d / "broken" / "s7.json"
+        H.write_json(broken, dict(passed=False, s7_passed=False))
+        broken.write_text(broken.read_text() + " ")          # its sidecar no longer matches
+        drv2 = ST.Driver(dry_cfg(fresh("rules_s7b")), None)
+        drv2._verdict(ST.LaneJob("y/s7", "s7", "medium-expert", [never], [str(broken)], run="y", setup="standard",
+                                 learner="td3_bc"))
+        self.assertEqual(drv2.halt["rule"], "S7")
+        self.assertEqual(drv2.state["s7_stopped"], [])
+
+    def test_s7_scopes(self):
+        """Version 3's S7 rule (PRESPEC.md section 20): a failed check stops its learner (alone, standard,
+        weights-of-1 actor) or only its IW setup (IW actor, IW's repeat) in its quality, recorded once; the queued
+        stage-2 card runs and lanes of that scope are dropped (stage 1's never), the units planned later leave it out
+        (the other quality keeps it), and the driver does not halt. A lane whose check fails at its last step goes
+        the same way; exit 3 at an earlier step halts."""
+        d = fresh("rules_s7_scope")
+        q = "medium-expert"
+        drv = ST.Driver(dry_cfg(d, "--learners", "td3_bc", "iql", "--qualities", "medium-expert", "medium", "--seeds",
+                                "0", "1"), None)
+        self.assertEqual(ST.S7_SCOPE, dict(alone="learner", standard="learner", iw_ones="learner", iw="iw",
+                                           iw_repeat="iw"))
+        seed1 = drv.unit_jobs(q, "seed1")
+        stage1 = drv.card_job(q, 0, "td3_bc", "iw", "stage1", 30, "stage1")
+        drv.card_queue.extend(seed1 + [stage1])
+        s7_lane1 = ST.LaneJob(f"{stage1.label}/s7", "s7", q, [], [], run=stage1.label, setup="iw", learner="td3_bc")
+        score = ST.LaneJob("s/score", "score", q, [], [], run=seed1[0].label, setup="alone", learner="td3_bc")
+        drv.lane_queue.extend([s7_lane1, score])
+
+        def failing(name):
+            p = d / name / "s7.json"
+            H.write_json(p, dict(passed=True, s7_passed=False))
+            return str(p)
+
+        iw0 = drv.card_job(q, 0, "iql", "iw", "stage2", 40, "seed0")
+        drv._verdict(ST.LaneJob(f"{iw0.label}/s7", "s7", q, [], [failing("iql_iw")], run=iw0.label, setup="iw",
+                                learner="iql"))
+        self.assertIsNone(drv.halt)
+        self.assertEqual([j.label for j in seed1 if j.result], [seed1[5].label])     # iql-iw of seed 1 only
+        self.assertEqual(seed1[5].result["status"], "dropped")
+        std = drv.card_job(q, 0, "td3_bc", "standard", "stage2", 40, "seed0")
+        lane = ST.LaneJob(f"{std.label}/s7", "s7", q, [(["a"], "scoring"), (["b"], "training"), (["c"], "scoring")],
+                          [failing("td3_bc_std")], run=std.label, setup="standard", learner="td3_bc")
+        lane.step_index = 2                                   # the check itself, which exits 3 on a failure
+        core = drv.free_lane.pop(0)
+        drv._lane_step_done(lane, 3, 0.0, core, 0.0, 1.0)
+        self.assertIsNone(drv.halt)
+        self.assertEqual(lane.result, dict(status="complete", s7_passed=False))
+        self.assertIn(core, drv.free_lane)
+        self.assertEqual([j.label for j in drv.card_queue],                        # IQL's alone and standard stay;
+                         [seed1[3].label, seed1[4].label, stage1.label])            # stage 1 is never dropped
+        self.assertEqual(list(drv.lane_queue), [s7_lane1])                         # TD3+BC's stage-2 lane dropped
+        self.assertEqual((drv.counts["cards_dropped"], drv.counts["lanes_dropped"]), (4, 1))
+        drv._verdict(ST.LaneJob(f"{std.label}/s7", "s7", q, [], [lane.outputs[0]], run=std.label, setup="standard",
+                                learner="td3_bc"))                                  # read again: recorded once
+        got = [(e["quality"], e["learner"], e["scope"], e["setup"], e["stage"]) for e in drv.state["s7_stopped"]]
+        self.assertEqual(got, [(q, "iql", "iw", "iw", "stage2"), (q, "td3_bc", "learner", "standard", "stage2")])
+        self.assertTrue(drv.s7_stopped(q, "td3_bc", "room") and drv.s7_stopped(q, "iql", "iw"))
+        self.assertFalse(drv.s7_stopped(q, "iql", "standard") or drv.s7_stopped("medium", "td3_bc", "alone"))
+        units = dict(drv.plan_units(q))
+        self.assertEqual([(u["learner"], u["setup"]) for u in units["seed0"]], [("iql", "alone"), ("iql", "standard")])
+        self.assertEqual([u["learner"] for u in units["sham"]], ["iql"])
+        self.assertEqual({u["learner"] for u in units["room"]}, {"iql"})
+        for name, us in units.items():
+            self.assertEqual(len(drv.unit_jobs(q, name)), len(us), name)
+        self.assertEqual(len(drv.unit_jobs(q, "seed0", every=True)), 6)
+        self.assertEqual(len(dict(drv.plan_units("medium"))["seed0"]), 6)          # the other quality: untouched
+        early = ST.LaneJob("z/s7", "s7", q, [(["a"], "scoring"), (["b"], "training")], [str(d / "none.json")],
+                           run="z", setup="alone", learner="iql")
+        drv._lane_step_done(early, 3, 0.0, drv.free_lane.pop(0), 0.0, 1.0)         # exit 3 before the check: halt
+        self.assertEqual(drv.halt["rule"], "S7")
+
+    def test_s7_scope_branches(self):
+        """Version 3's S7 rule, the remaining branches: the end-of-quality read accounts for a stopped scope's runs that
+        never trained or whose lane never ran, records a failure once, and halts on an s7.json that exists but does not
+        verify; a running lane of a stopped scope starts no next step; a check that exits 3 while its s7.json says it
+        passed halts; a unit with nothing left to run is skipped, keeping an earlier S6b record; S4 is not computed
+        for a learner with fewer than two trained runs in a seed."""
+        q = "medium-expert"
+        d = fresh("rules_s7_branches")
+        drv = ST.Driver(dry_cfg(d), None)
+        alone, std, iw = drv.unit_jobs(q, "seed0", every=True)
+        for j in (alone, std):
+            H.write_json(j.run_dir / "record.json", dict(run_id=j.label, outcome="complete", timings=dict(outer_steps=40)))
+        s7_std = std.run_dir / "lanes" / "s7-step40" / "s7.json"
+        H.write_json(s7_std, dict(passed=True, s7_passed=False))
+        drv.s7_failed(q, "td3_bc", "standard", std.label, s7_std, f"{std.label}/s7")
+        drv.s7_seed0_checks(q)
+        self.assertIsNone(drv.halt)
+        c = drv.state["checks"]
+        self.assertIn("before its lane ran", c[f"S7/{q}/seed0/td3_bc/alone"]["note"])        # trained, no lane
+        self.assertEqual(c[f"S7/{q}/seed0/td3_bc/standard"]["scoped_stop"], "learner")
+        self.assertIn("never trained", c[f"S7/{q}/seed0/td3_bc/iw"]["note"])
+        self.assertEqual(len(drv.state["s7_stopped"]), 1)                                     # recorded once
+        broken = alone.run_dir / "lanes" / "s7-step40" / "s7.json"
+        H.write_json(broken, dict(passed=True, s7_passed=True))
+        broken.write_text(broken.read_text() + " ")                                           # it no longer verifies
+        with self.assertRaises(ST.Halt):
+            drv.s7_seed0_checks(q)
+        self.assertEqual(drv.halt["rule"], "S7")
+
+        drv2 = ST.Driver(dry_cfg(fresh("rules_s7_branches2")), None)
+        drv2.s7_failed(q, "td3_bc", "iw", "stage2/x/seed0/td3_bc-iw", d / "x", "x/s7")          # td3_bc's IW setup
+        nxt = ST.LaneJob("r/score-40", "viewer", q, [(["a"], "scoring"), (["b"], "training")], [str(d / "v")],
+                         run=iw.label, setup="iw", learner="td3_bc")
+        core = drv2.free_lane.pop(0)
+        drv2._lane_step_done(nxt, 0, 0.0, core, 0.0, 1.0)
+        self.assertEqual((nxt.result["status"], drv2.lanes, drv2.counts["lanes_dropped"]), ("dropped", {}, 1))
+        self.assertIn(core, drv2.free_lane)
+        good = d / "good" / "s7.json"
+        H.write_json(good, dict(passed=True, s7_passed=True))
+        odd = ST.LaneJob("s/s7", "s7", q, [(["a"], "scoring"), (["b"], "training"), (["c"], "scoring")], [str(good)],
+                         run=alone.label, setup="alone", learner="td3_bc")
+        odd.step_index = 2
+        drv2._lane_step_done(odd, 3, 0.0, drv2.free_lane.pop(0), 0.0, 1.0)
+        self.assertEqual(drv2.halt["rule"], "S7")
+        self.assertIn("does not say it failed", drv2.halt["reason"])
+
+        drv3 = ST.Driver(dry_cfg(fresh("rules_s7_branches3")), None)
+        drv3.state["decisions"] = dict(concurrency=1, s6=dict(speeds={}, two_at_once=dict(gain=1.0)))
+        drv3.run_cards = lambda jobs, conc: None
+        drv3.s7_failed(q, "td3_bc", "alone", alone.label, d / "y", "y/s7")                      # the only learner
+        kept = dict(quality=q, passed=True, note="made before the stop")
+        drv3.state["checks"][f"S6b/{q}/sham"] = kept
+        drv3.stage2(q)
+        self.assertIsNone(drv3.halt)
+        self.assertEqual(drv3.state["checks"][f"S6b/{q}/sham"], kept)
+        for name in ("seed0", "room"):
+            self.assertIn("nothing to run", drv3.state["checks"][f"S6b/{q}/{name}"]["note"])
+        H.write_json(alone.run_dir / "record.json", dict(run_id=alone.label, outcome="complete"))
+        std.result, iw.result = dict(status="dropped"), dict(status="dropped")
+        drv3.seed_checks(q, [alone, std, iw], "seed0")
+        self.assertTrue(drv3.state["checks"][f"S4/{q}/seed0/td3_bc"]["skipped"])
+        self.assertIsNone(drv3.halt)
+
+    def test_s7_stopped_while_running(self):
+        """Version 3, in process: a stage-2 run whose scope S7 stopped while it trained finishes with no lanes, while a
+        run of a live scope still gets its lanes; the room checks skip a room job dropped when its learner was stopped
+        (it never trained, so it has no record) and check the live ones."""
+        q = "medium-expert"
+        d = fresh("rules_s7_running")
+        drv = ST.Driver(dry_cfg(d, "--seeds", "0", "1"), None)
+        _, std, iw = drv.unit_jobs(q, "seed0", every=True)
+        drv.s7_failed(q, "td3_bc", "iw", iw.label, d / "x", "x/s7")                         # td3_bc's IW setup
+        drv._check_s9 = lambda job, rec: None                                                 # no frozen signature here
+        drv.lanes_for = lambda job, rec: [f"{job.label}/lane"]
+        for j in (std, iw):
+            H.write_json(j.run_dir / "record.json", dict(run_id=j.label, outcome="complete", timings=dict(outer_steps=40)))
+            drv._card_done(j, ST.RN.EXIT_COMPLETE, 1.0, 0.0, 2.0)
+        self.assertIsNone(drv.halt)
+        self.assertEqual(list(drv.lane_queue), [f"{std.label}/lane"])
+        self.assertTrue(any(f"{iw.label}: no lanes, its scope was stopped by S7 while it ran" in e for e in drv.events))
+        room0, room1 = drv.unit_jobs(q, "room")
+        init = dict(initial=dict(agent_state=dict(all="same")), key_carry={})
+        alone0 = ST.RN.run_dir(drv.cfg.root, "stage2", room0.run_dir.parts[-3], 0, "td3_bc", "alone")
+        for path in (alone0, room0.run_dir):
+            H.write_json(path / "record.json", dict(outcome="complete", hashes=init))
+        room1.result = dict(status="dropped")
+        drv.room_checks(q, [room0, room1])
+        self.assertIsNone(drv.halt)
+        self.assertEqual(sorted(k for k in drv.state["checks"] if k.endswith("/room")), [f"S4/{q}/seed0/td3_bc/room"])
 
     def test_halt_launches_no_next_lane_step(self):
         """After a halt, a lane whose step finished does not start its next step (the module docstring's promise)."""
@@ -609,6 +780,60 @@ class StopTest(unittest.TestCase):
         self.assertEqual(status_of(root)["state"], "finished")
         self.assertEqual(len(list(root.glob("stage2/*/seed*/td3_bc-room/record.json"))), 2)
         READOUTS["stop_s5"] = dict(rule=stop["rule"], reason=stop["reason"][:200])
+
+    def test_simulated_s7_stops_its_scope_only(self):
+        """Version 3's S7 rule end to end: an S7 failure injected on stage 1's TD3+BC standard actor stops TD3+BC on
+        medium-expert (its stage 1 still runs whole; none of its stage-2 runs trains), one on seed 0's IQL IW actor
+        stops IQL's IW setup (IQL's alone, standard, sham-alone and room runs go on through seed 1); the driver
+        finishes without a stop report."""
+        root = fresh("stop_s7")
+        s1 = "stage1/made-up-medium-expert/seed0/td3_bc-standard"
+        s2 = "stage2/made-up-medium-expert/seed0/iql-iw"
+        code, out = driver(["run", "--dry-run", "--root", str(root), "--learners", "td3_bc", "iql", "--qualities",
+                            "medium-expert", "--seeds", "0", "1", "--inject", f"{s1}={ST.S7_INJECT}",
+                            f"{s2}={ST.S7_INJECT}"])
+        self.assertEqual(code, 0, out[-4000:])
+        self.assertFalse((root / "driver" / "STOP.json").exists())
+        st, state = status_of(root), state_of(root)
+        self.assertEqual((st["state"], st["stop"]), ("finished", None))
+        got = sorted((e["learner"], e["scope"], e["setup"], e["stage"], e["run"]) for e in state["s7_stopped"])
+        self.assertEqual(got, [("iql", "iw", "iw", "stage2", s2), ("td3_bc", "learner", "standard", "stage1", s1)])
+        self.assertEqual(len(list(root.glob("stage1/*/seed0/*/record.json"))), 10)          # stage 1 whole
+        self.assertTrue(H.read_json(root / s1 / "lanes" / "s7-step30" / "s7.json")["injected_failure"])
+        self.assertEqual(list(root.glob("stage2/*/seed*/td3_bc-*/record.json")), [])      # no TD3+BC in stage 2
+        for setup, n in (("alone", 2), ("standard", 2), ("room", 2), ("sham_alone", 1)):
+            self.assertEqual(len(list(root.glob(f"stage2/*/seed*/iql-{setup}/record.json"))), n, setup)
+        self.assertTrue((root / s2 / "record.json").exists())                             # it trained, then failed
+        checks = state["checks"]
+        self.assertEqual(checks["S7/td3_bc/standard"]["scoped_stop"], "learner")
+        self.assertEqual(checks["S7/medium-expert/seed0/iql/iw"]["scoped_stop"], "iw")
+        self.assertTrue(checks["S7/medium-expert/seed0/td3_bc/alone"]["skipped"])
+        self.assertEqual([k for k, v in checks.items() if not v.get("passed") and not v.get("scoped_stop")], [])
+        log = (root / "driver" / "driver.log").read_text(encoding="utf8")
+        self.assertIn("stopped by S7 (version 3): iql IW on medium-expert, td3_bc on medium-expert", log)
+        # IQL's seed-1 IW run: lanes run beside the card queue, so seed 0's IW check fails before it was queued (never
+        # planned), while queued (dropped), while it trained ("no lanes") or after it finished (its lanes ran first);
+        # each way is the rule, and the log says which
+        iw1 = "stage2/made-up-medium-expert/seed1/iql-iw"
+        lines = log.splitlines()
+        at = next(i for i, x in enumerate(lines) if f"S7 (version 3): {s2}/s7" in x)
+        done = [i for i, x in enumerate(lines) if f"card {iw1} exit" in x]
+        way = ("never planned" if not any(iw1 in x for x in lines) else
+               "dropped" if f"card {iw1} dropped" in log else
+               "no lanes" if f"{iw1}: no lanes" in log else
+               "finished before the stop" if done and done[0] < at else "unaccounted")
+        self.assertNotEqual(way, "unaccounted", log[-3000:])
+        n_before = len(state["s7_stopped"])
+        code, out = driver(["run", "--dry-run", "--root", str(root), "--learners", "td3_bc", "iql", "--qualities",
+                            "medium-expert", "--seeds", "0", "1", "--inject", f"{s1}={ST.S7_INJECT}",
+                            f"{s2}={ST.S7_INJECT}"])            # resumed: the scopes are read again, nothing retrains
+        self.assertEqual(code, 0, out[-4000:])
+        again = state_of(root)
+        self.assertEqual(len(again["s7_stopped"]), n_before)
+        self.assertEqual(list(root.glob("stage2/*/seed*/td3_bc-*/record.json")), [])
+        st2 = status_of(root)
+        self.assertEqual((st2["state"], st2["counts"]["cards_done"]), ("finished", st2["counts"]["cards_skipped"]))
+        READOUTS["stop_s7"] = dict(s7_stopped=got, counts=st["counts"], iql_iw_seed1=way, resume=st2["counts"])
 
     def test_simulated_s6_halts_after_stage1(self):
         """A card cap below stage 1's own use: S6's projection stops the driver before stage 2."""
