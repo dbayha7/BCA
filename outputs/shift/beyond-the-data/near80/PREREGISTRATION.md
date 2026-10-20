@@ -5,11 +5,11 @@
 No learner, critic or actor has been trained for this version, and nothing has been frozen. This version was built by
 the session on 20 October 2026, after version 8's run on the Framework Desktop ended (19 October), after the check of
 its results (`../near80_results_check/REPORT.md`), and after `DECISION.md` (the same day, revised after three
-independent reviews) fixed every value below, and your answer to section 16 (20 October 2026, 18:29 UTC) is recorded
-in sections 0 and 16. One item stays open until the freeze and carries a bracketed mark the freeze step
-(`code/freeze.py`) refuses: the facts the frozen code computes before approval (section 4.2, with the redraft count
-of section 0). The freeze also refuses while the status line above says DRAFT. Version 8's files stay in this folder
-as history (section 18).
+independent reviews) fixed every value below, and your answers to section 16 (20 October 2026, 18:29 UTC, and on
+choice 9 at about 19:20 UTC) are recorded in sections 0 and 16. One item stays open until the freeze and carries a
+bracketed mark the freeze step (`code/freeze.py`) refuses: the facts the frozen code computes before approval
+(section 4.2, with the redraft count of section 0). The freeze also refuses while the status line above says DRAFT.
+Version 8's files stay in this folder as history (section 18).
 
 **The one question this answers:** on fresh seeds, in the main test's setting (the densest 15% of recorded commands
 removed), does BCA's switched ramp meet step 2's three marks once its two calibration groups are pooled over every
@@ -42,7 +42,13 @@ same groups would not?
   seed-worlds and in 10 of 10 under pooling;
 - `DECISION.md` of 20 October 2026, revised after a statistics review, a fairness review and a feasibility review
   (`REVISION_LOG.md`), which fixed the seeds, the claims, the margins and the refusal reading below;
-- your answer to section 16, given on 20 October 2026 at 18:29 UTC in the chat with the cloud assistant: "Accept the defaults and cluster", that is every default, with the university cluster as the run machine (choice 4) and the place results come from (choice 9) and the desktop kept as the fallback; recorded, with the time and the place, in `OWNER_ANSWER` of `code/near80_constants.py`.
+- your answer to section 16, given on 20 October 2026 at 18:29 UTC in the chat with the cloud assistant: "Accept the
+  defaults and cluster", that is every default, with the university cluster as the run machine (choice 4) and the
+  desktop kept as the fallback; and your second answer, at about 19:20 UTC in the same chat, on choice 9 (where
+  results are committed from), which the first answer had been read as giving to the cluster too: "committed from
+  desktop after copying over from cluster", that is the default, the desktop, after the results folder and the output
+  root are copied from the cluster over your own SSH session and checked by SHA-256 on the desktop (12.2, step 4).
+  Both are recorded, with their times and the place, in `OWNER_ANSWER` of `code/near80_constants.py`.
 
 **Not seen by anyone:** any learner trained with the pooled groups, and any number from seeds 40-49.
 
@@ -525,9 +531,10 @@ supersedes version 8 in place (choice 7); version 8's `prereg.json` moves to `pr
 amendment and results files stay, and its chain is checkable at commit `52914e4`. The branch is
 `claude/main-bca-connection-x4o46s`.
 
-**Approving accepts every choice of section 16 as recorded there** (the defaults, with the cluster for choices 4
-and 9 and the desktop as the fallback). Any other choice makes a new fingerprint. The approval itself is typed on
-the desktop, whatever machine runs; the cluster clone fetches the approved commit afterwards.
+**Approving accepts every choice of section 16 as recorded there** (the defaults, with the cluster as the run
+machine (choice 4) and the desktop as the fallback; the results copied from the cluster to the desktop and committed
+from there (choice 9, the default)). Any other choice makes a new fingerprint. The approval itself is typed on the
+desktop, whatever machine runs; the cluster clone fetches the approved commit afterwards.
 
 ---
 
@@ -559,11 +566,16 @@ nodes of 48 processors, whose OpenBLAS kernel is the desktop's):
    manifest checks as the desktop; the job's Slurm memory stands for the machine's in version 7's memory rule; one
    phase per allocated processor.
 3. `status`, `plan`, `report`, `retry`, `budget-continue` on the login node, as on the desktop.
-4. **Results:** `results` on the login node copies every record (no model file) into `near80/results-<utc>/` in the
-   clone and prints the `git add -f` and push commands; you commit and push them in your own SSH session under your
-   own identity, and `push_runfiles_near80.sh` (typed in that session: it needs a terminal and your GitHub sign-in)
-   pushes the run files to `claude/near80-v9-run-files`. If the login node cannot push, the two folders come back
-   to the desktop by `tar` over your SSH session and are committed there, exactly as version 8's were.
+4. **Results (your answer to choice 9: committed from the desktop after the copy from the cluster):** `results` on
+   the login node copies every record (no model file) into `near80/results-<utc>/` in the cluster clone with
+   `SHA256SUMS`, writes `OUTPUT_ROOT_SHA256SUMS` there (the SHA-256 of every file of the output root
+   `runs/shift_explore/near80_v9/`, model files included) and prints the steps that follow. Nothing is committed or
+   pushed from the login node. In your own SSH session you copy the results folder and the output root to the
+   desktop (`scp -r`, or `tar` over SSH) into the desktop clone's `near80/` and `runs/shift_explore/`, check both
+   lists there (`sha256sum -c`), and then, on the desktop, commit and push the results folder under your own
+   identity (`git add -f`; the data records sit under `data/` folders that `.gitignore` hides) and run
+   `push_runfiles_near80.sh` (it needs a terminal and your GitHub sign-in), which pushes the run files to
+   `claude/near80-v9-run-files`: exactly as version 8's records were committed.
 
 **What the entry provides that the desktop assumed:** a stand-in `HOME` under `/scratch/dbayha` (nothing is written
 under `/users`); the pinned Python environment rebuilt from the package's lock file with the same tool (uv 0.11.32,
@@ -587,8 +599,8 @@ the look; the plumbing's reproduction check (8.2) decides, and a difference ther
 
 1. **Done:** this document, its machine-readable twin (`prereg_draft.json`), the code and its tests, `DECISION.md`,
    the cluster entry and its test.
-2. **Done:** your answer to section 16 ("Accept the defaults and cluster", 20 October 2026, 18:29 UTC), recorded in
-   `OWNER_ANSWER`.
+2. **Done:** your answers to section 16 ("Accept the defaults and cluster", 20 October 2026, 18:29 UTC; on choice
+   9, "committed from desktop after copying over from cluster", about 19:20 UTC), recorded in `OWNER_ANSWER`.
 3. The session freezes (`code/freeze.py write`, inside WSL in the pinned environment): the draft into history, the
    manifest, the five unit test files, the facts of section 4.2 (the counts on seeds 0-4; the pooled switch on the
    spent seeds 10-14 from version 8's recorded second critics, with the kill rule; about 10-15 CPU-minutes, nothing
@@ -598,9 +610,10 @@ the look; the plumbing's reproduction check (8.2) decides, and a difference ther
    fallback (12.1), from step 5 again.
 6. The confirmatory stage on seeds 40-49 (about 1.7 hours of wall time on the cluster; about 5-5.5 on the desktop)
    and the look.
-7. Results committed with their fingerprints (`git add -f`: `.gitignore`'s `data/` line hides the data records) from
-   the login node in your own SSH session, or from the desktop; model files to the run-files branch
-   `claude/near80-v9-run-files`; the independent check.
+7. The results folder and the output root copied from the cluster to the desktop over your own SSH session and
+   checked by SHA-256 there (12.2, step 4); the results committed with their fingerprints from the desktop's clone
+   (`git add -f`: `.gitignore`'s `data/` line hides the data records); the model files to the run-files branch
+   `claude/near80-v9-run-files` from the desktop; the independent check.
 
 ---
 
@@ -885,17 +898,20 @@ The last sentence:
     the kill rule of 8.1; version 8's no-training checks read seeds 0-4 only.
 11. **The run machine is the university cluster** (12.2, your answer to choice 4): one Slurm job per fresh seed and
     a group job, the same frozen code, approval import and manifest checks; version 8 ran on the desktop, which
-    stays the fallback. Results come from the login node in your own SSH session (choice 9), the desktop as the
-    fallback.
+    stays the fallback. The results folder and the output root are copied from the cluster to the desktop over
+    your own SSH session, checked by SHA-256 there, and committed from the desktop's clone (choice 9, the default,
+    your second answer), as version 8's records were.
 
 ---
 
 ## 16. Choices (defaults, and what your answer takes)
 
 Your answer, 20 October 2026, 18:29 UTC, in the chat with the cloud assistant: **"Accept the defaults and cluster"**,
-recorded in `OWNER_ANSWER` of `code/near80_constants.py` with the time, the place and the choice taken for each
-number: every default, except that choice 4 (the machine) and choice 9 (where results come from) take the university
-cluster, with the desktop kept as the fallback.
+and, asked whether "cluster" also meant choice 9 (where results are committed from), your second answer in the same
+chat at about 19:20 UTC: **"committed from desktop after copying over from cluster"**. Both are recorded in
+`OWNER_ANSWER` of `code/near80_constants.py` with their times, the place and the choice taken for each number:
+every default, except that choice 4 (the machine) takes the university cluster, with the desktop kept as the
+fallback; choice 9 takes its default, the desktop, after the copy from the cluster.
 
 1. **The seed count and block.** Default: **ten seeds, 40-49**. Or five (40-44; one refusal then decides C1), fifteen
    or twenty (40-54 or 40-59; the cluster entry of 12.2 carries them in the same wall time; a version 10). Taken:
@@ -921,8 +937,10 @@ cluster, with the desktop kept as the fallback.
 8. **The twins' factors.** Default: **the plain 90% gap and twice it** (step 2's k = 1 and k = 2). Or a hand-set
    height of 3.0 for the far twin (on the recorded plateau; a number chosen after seeing seeds 0-4, labelled as such).
 9. **Where results are committed from.** Default: **the desktop**, as versions 6-8. Or the cluster's login node, in
-   your own SSH session under your own identity (12.2, step 4), the folders coming back to the desktop by `tar` if
-   the login node cannot push. **Taken: the cluster; the desktop is the fallback.**
+   your own SSH session under your own identity. **Taken: the default, the desktop** (your second answer, 20
+   October 2026, about 19:20 UTC: "committed from desktop after copying over from cluster"): the results folder and
+   the output root are copied from the cluster over your own SSH session, checked by SHA-256 on the desktop, and
+   committed and pushed from the desktop's clone (12.2, step 4); nothing is committed or pushed from the login node.
 10. **A fresh start bank per seed.** Default: **no**. The four fixed test start sets (`bank_starts`, one stream
     `[20261012, 2, 9]` for every seed) were pre-registered in version 6 and are the same for every arm, so they rig
     nothing; but every design number was chosen on them. Yes adds one fresh bank of 1,000 strong-current starts per
@@ -983,7 +1001,7 @@ return credit (L3 not shown)."
 | `run_near80.sh` | the desktop entry (the fallback) |
 | `run_near80_cluster.sh` | the cluster entry (12.2): the self-test on the login node, then `sbatch` jobs |
 | `near80_slurm_job.sh` | the job script the cluster entry submits (the pinned dependency path inside a user namespace, the job's memory, one runner per job) |
-| `push_runfiles_near80.sh` | pushes the run files (model files included) to the branch `claude/near80-v9-run-files`, from the desktop or from the login node |
+| `push_runfiles_near80.sh` | pushes the run files (model files included) to the branch `claude/near80-v9-run-files`, from the desktop (after the cluster's output root was copied there and checked, 12.2 step 4) |
 | `V9_BUILD_NOTES.md` | the build notes (every change, test, estimate and the items the freeze fills); not pinned |
 | `pre_approval/pooled_facts_seeds0_4_spent10_14.json` | the facts of section 4.2, written by the freeze (nothing trained) |
 | `code/` | the code: `near80_constants.py` (seeds 40-49, the pooled rule, the refusal rule, the twins, `MARKS_C2` 5.0 / ceil(0.8 n) / `all_three`, `MARKS_C3` -5.0 / at most 1, `MIN_CERTIFIED` 8), `near80lib.py` (`pooled_groups`, `pooled_count_record`, `certification_expectation` with the binomial chance), `facts_near80.py` (the counts on seeds 0-4 and the spent-seed switch facts), `learner_phases.py` (`switch_scores_pooled`; `switch_scores_step1` for the reproduction check), `policy_phase.py` (the per-arm refusal, the new arms, the programs run alone), `pooled.py` and `claims_text.py` (the look and section 14), the approval chain (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`, `phases.py`, `phase_main.py`, `settingdata.py`, `evaluate_phase.py`, `ledger.py`, `stubs.py`) and five unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`) |

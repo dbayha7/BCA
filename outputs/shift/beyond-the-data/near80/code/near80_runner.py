@@ -1503,10 +1503,29 @@ def _result_files(out_root):
     return files
 
 
-def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None):
+OUTPUT_ROOT_SUMS = "OUTPUT_ROOT_SHA256SUMS"      # written by 'results' on the cluster: every file of the output root
+
+
+def output_root_sums(src, repo=K.ROOT):
+    """'<sha256>  <path relative to the repository>' for every file of the output root (model files included; lock
+    and temporary files left out), so that a copy of the root on another machine can be checked with sha256sum -c
+    from the repository's root."""
+    src, repo = Path(src), Path(repo)
+    lines = []
+    for q in sorted(src.rglob("*")):
+        if not q.is_file() or q.is_symlink() or q.name.endswith(".lock") or ".tmp" in q.name:
+            continue
+        rel = q.relative_to(repo).as_posix() if LG.inside(q, repo) else q.as_posix()
+        lines.append(f"{LG.file_sha256(q)}  {rel}")
+    return lines
+
+
+def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None, host=K.HOST):
     """Copies every record of the output root (_result_files) into <dest_root>/results-<utc>/files/ with SHA256SUMS
     (every copied file's SHA-256) and RESULTS.json (+ .sha256), write-once. Reads OUT only; never recomputes a number.
-    Returns the folder."""
+    On the cluster (the owner's answer to choice 9) it also writes OUTPUT_ROOT_SHA256SUMS (every file of the output
+    root) and prints how to copy both folders to the desktop, check them there and commit from the desktop's clone;
+    on the desktop it prints the commit and push commands. Returns the folder."""
     src = Path(out_root)
     if not src.is_dir():
         raise PH.Refused(f"refused: {src} does not exist; there is nothing to gather")
@@ -1521,6 +1540,10 @@ def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None):
         shutil.copyfile(q, target)
         sums.append(f"{LG.file_sha256(target)}  files/{rel.as_posix()}")
     (dest / "SHA256SUMS").write_text("\n".join(sorted(sums, key=lambda x: x[66:])) + "\n", encoding="utf8")
+    root_sums = None
+    if host == "cluster":
+        root_sums = output_root_sums(src)
+        (dest / OUTPUT_ROOT_SUMS).write_text("\n".join(root_sums) + "\n", encoding="utf8")
     states = {}
     for p in sorted(src.glob("status*.json")):
         status = LG.ok_record(p) or {}
@@ -1536,15 +1559,35 @@ def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None):
         note="records only: no model (.msgpack), array (.npz) or training (.hdf5) file; those go to the run-files "
              "branch (push_runfiles_near80.sh). Logs are copied as .txt."))
     rel = dest.relative_to(K.ROOT) if LG.inside(dest, K.ROOT) else dest
+    commit = (f"  git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m \"Near-80 v9: "
+              f"results {stamp}\"")
+    rebase = (f"If the push is rejected: git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} pull "
+              f"--rebase origin {K.BRANCH}, then git push origin {K.BRANCH} again.")
+    if host == "cluster":
+        d_root, d_n80 = K.DESKTOP_ROOT, f"{K.DESKTOP_ROOT}/{K.N80_REL}"
+        out(f"results gathered: {dest} ({len(sums)} files); {OUTPUT_ROOT_SUMS} lists every file of {src} "
+            f"({len(root_sums)} files, model files included). Nothing is committed here (your answer to choice 9).")
+        out("In your own SSH session, from the desktop (inside Ubuntu as root), copy both folders over, check them, then "
+            "commit and push the results folder from the desktop's clone under your own name (-f: the repository's "
+            ".gitignore hides data/ folders, which hold the data records) and push the run files from there:")
+        out(f"  cd {d_root} && mkdir -p {d_root}/runs/shift_explore")
+        out(f"  scp -r <login node>:{dest} {d_n80}/")
+        out(f"  scp -r <login node>:{src} {d_root}/runs/shift_explore/")
+        out(f"  (cd {d_n80}/{dest.name} && sha256sum -c --quiet SHA256SUMS) && sha256sum -c --quiet "
+            f"{d_n80}/{dest.name}/{OUTPUT_ROOT_SUMS}")
+        out(f"  git add -f {K.N80_REL}/{dest.name}")
+        out(commit)
+        out(f"  git push origin {K.BRANCH}")
+        out(f"  sh {d_n80}/push_runfiles_near80.sh")
+        out(rebase)
+        return dest
     out(f"results gathered: {dest} ({len(sums)} files). Commit and push them under your own name (-f: the "
         f"repository's .gitignore hides data/ folders, which hold the data records):")
     out(f"  cd {K.ROOT}")
     out(f"  git add -f {rel}")
-    out(f"  git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m \"Near-80 v9: results "
-        f"{stamp}\"")
+    out(commit)
     out(f"  git push origin {K.BRANCH}")
-    out(f"If the push is rejected: git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} pull "
-        f"--rebase origin {K.BRANCH}, then git push origin {K.BRANCH} again.")
+    out(rebase)
     return dest
 
 

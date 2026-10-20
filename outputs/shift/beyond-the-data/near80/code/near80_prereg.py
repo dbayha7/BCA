@@ -95,16 +95,18 @@ def draft_words(x, path=""):
 
 def choices_taken(draft_choices):
     """The draft's list of section 16, each entry marked as taken (its default, or what OWNER_ANSWER['taken'] names
-    for that number: the owner's answer of 20 October 2026 takes the cluster for choices 4 and 9) and accepted at
-    the owner's time."""
+    for that number: the owner's answer of 20 October 2026 takes the cluster for choice 4) and accepted at the
+    owner's time (the second answer's time for the choices it settled: choice 9)."""
     if not K.OWNER_ANSWER:
         raise PreregProblem("OWNER_ANSWER is not fixed (DECISION.md): the choices cannot be marked as accepted")
     taken = dict(K.OWNER_ANSWER.get("taken") or {})
+    second = K.OWNER_ANSWER.get("second") or {}
+    settled_later = set(str(n) for n in (second.get("choices") or []))
     out = []
     for c in draft_choices:
         e = dict(c)
         e["taken"] = taken.pop(str(c["number"]), c["default"])
-        e["accepted"] = K.OWNER_ANSWER["utc"]
+        e["accepted"] = second["utc"] if str(c["number"]) in settled_later else K.OWNER_ANSWER["utc"]
         out.append(e)
     if taken:
         raise PreregProblem(f"OWNER_ANSWER names choices the draft does not have: {sorted(taken)}")

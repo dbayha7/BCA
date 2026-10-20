@@ -31,7 +31,8 @@ Version 9 is the same test with the cause fixed and nothing else moved:
 - **Two entries:** the university cluster hpc.charlotte.edu (`run_near80_cluster.sh` with `near80_slurm_job.sh`:
   one Slurm job per fresh seed and a group job for the lock, the evaluations and the look, the same frozen code and
   checks; its stub run finished all 19 phases there on 20 October) runs version 9 by your answer; the desktop
-  (`run_near80.sh`, as version 8) is the fallback.
+  (`run_near80.sh`, as version 8) is the fallback, and the place the results are copied to, checked and committed
+  from (your second answer).
 
 ## Fixed by DECISION.md on 20 October 2026
 
@@ -41,11 +42,15 @@ lanes; version 9 in place in `near80/`; the twins' factors 1 and 2; no second he
 retrain of seeds 0-4's second critics. `REVISION_LOG.md` beside `DECISION.md` records the three reviews that shaped
 these values.
 
-## Your answer (20 October 2026, 18:29 UTC, in the chat with the cloud assistant)
+## Your answers (20 October 2026, in the chat with the cloud assistant)
 
-"Accept the defaults and cluster": every default of section 16, with the university cluster as the run machine
-(choice 4) and the place results come from (choice 9), the desktop kept as the fallback. Recorded with its time and
-place in `OWNER_ANSWER` of `code/near80_constants.py`; `prereg.json` will carry it.
+At 18:29 UTC, "Accept the defaults and cluster": every default of section 16, with the university cluster as the run
+machine (choice 4) and the desktop kept as the fallback. Asked whether "cluster" also meant where results are
+committed from (choice 9), at about 19:20 UTC: "committed from desktop after copying over from cluster", that is the
+default, the desktop: the results folder and the output root are copied from the cluster to the desktop over your
+own SSH session, checked by SHA-256 there, and committed and pushed from the desktop's clone, as version 8's records
+were. Both are recorded with their times and place in `OWNER_ANSWER` of `code/near80_constants.py`; `prereg.json`
+will carry them.
 
 ## What is open (the freeze refuses while it remains)
 
@@ -86,10 +91,16 @@ desktop), `.../run_near80_cluster.sh` standing for `sh $NEAR80_ROOT/outputs/shif
    and the group job (16 processors) that waits for them: about 1.7 hours in all. `.../run_near80_cluster.sh status`
    shows what is happening; `scancel` of a job is a safe stop (the running phases finish), and the same `run` command
    continues afterwards.
-5. When the group job's log prints `Finished`: `.../run_near80_cluster.sh results`, then, in your own SSH session,
-   commit and push the results folder with the commands it prints (`git add -f`), and
-   `sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh` (it needs a terminal and your
-   GitHub sign-in). If the login node cannot push, bring the two folders to the desktop by `tar` and push from there.
+5. When the group job's log prints `Finished`: `.../run_near80_cluster.sh results` gathers the records into
+   `near80/results-<utc>/` with `SHA256SUMS` and writes `OUTPUT_ROOT_SHA256SUMS` (every file of
+   `runs/shift_explore/near80_v9/`, model files included), and prints the steps that follow. Nothing is committed
+   or pushed from the login node (your answer to choice 9). In your own SSH session, copy the results folder and the
+   output root to the desktop clone (`scp -r` or `tar` over SSH: `near80/results-<utc>/` into
+   `/home/user/bca/outputs/shift/beyond-the-data/near80/`, `near80_v9/` into `/home/user/bca/runs/shift_explore/`),
+   check both lists there (`sha256sum -c`), then on the desktop commit and push the results folder with the commands
+   it printed (`git add -f`) and run
+   `sh /home/user/bca/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh` (it needs a terminal and your
+   GitHub sign-in).
 
 ## How to run on the desktop (the fallback)
 

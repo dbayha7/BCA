@@ -71,8 +71,8 @@ PINS_REL = {
 
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
              "Approving it accepts every choice of its section 16 as it records them (the defaults; the university "
-             "cluster as the run machine and the place results come from, the desktop as the fallback) and allows "
-             "the runs it names, under its rules.")
+             "cluster as the run machine, the desktop as the fallback; the results copied from the cluster to the "
+             "desktop and committed from there) and allows the runs it names, under its rules.")
 
 _AUTHOR_RE = re.compile(r"\s*(\S.*?)\s*<([^<>\s]+@[^<>\s]+)>\s*")
 
@@ -878,9 +878,11 @@ def approval_section(branch=K.BRANCH):
         "approver_email": K.APPROVER_EMAIL,
         "branch": branch,
         "accepts_defaults": True,
-        "choices_taken": ("section 16 as prereg.json records them: every default, except the run machine (choice 4) "
-                          "and where results come from (choice 9), which are the university cluster with the "
-                          "desktop as the fallback (the owner's answer of 20 October 2026, 18:29 UTC)"),
+        "choices_taken": ("section 16 as prereg.json records them: every default, except the run machine (choice 4), "
+                          "which is the university cluster with the desktop as the fallback (the owner's answer of 20 "
+                          "October 2026, 18:29 UTC); results are committed from the desktop after the results folder "
+                          "and the output root are copied from the cluster over the owner's SSH session and checked by "
+                          "SHA-256 (choice 9, the default; the owner's second answer, 20 October 2026, about 19:20 UTC)"),
         "import_guard": ("every near-80 phase refuses without the import record on origin's branch; the import refuses "
                          "if the approval commit's author or committer is the session's own git identity or the "
                          "configured user.email of the machine running it, or is not the owner; the desktop runner "

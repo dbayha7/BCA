@@ -1,10 +1,13 @@
 #!/bin/sh
 # Near-80 (version 9, main setting): push the run files to their own branch (version 7's push_runfiles_v7.sh,
 # restated). DRAFT, not frozen.
-#   on the desktop (inside Ubuntu, as root, typed at the terminal, after the run printed "Finished" and the results
-#   were pushed):   sh /home/user/bca/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh
-#   on the cluster (a login node, never root, with NEAR80_HOST=cluster NEAR80_ROOT=... NEAR80_PYTHON=... set and the
-#   owner's GitHub sign-in):   sh $NEAR80_ROOT/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh
+#   on the desktop (inside Ubuntu, as root, typed at the terminal): after the cluster run, once the output root
+#   runs/shift_explore/near80_v9/ and the results folder have been copied from the cluster over your SSH session,
+#   checked by SHA-256 (the lists 'results' writes) and the results folder pushed from the desktop (your answer to
+#   choice 9: nothing is committed or pushed from the login node); after a desktop run, once "Finished" was printed
+#   and the results were pushed:   sh /home/user/bca/outputs/shift/beyond-the-data/near80/push_runfiles_near80.sh
+#   (on the cluster it would also run, on a login node, never root, with NEAR80_HOST=cluster NEAR80_ROOT=...
+#   NEAR80_PYTHON=... set and the owner's GitHub sign-in; that is not the plan.)
 # What it pushes: every file under runs/shift_explore/near80_v9/ (the records, the ledger, the logs, the moved files
 # of interrupted phases, and the model files: critics, cloned and trained actors), with a list of their fingerprints
 # (RUNFILES_SHA256SUMS). Left out: lock files, temporary files, and the training files (*.hdf5), whose fingerprints

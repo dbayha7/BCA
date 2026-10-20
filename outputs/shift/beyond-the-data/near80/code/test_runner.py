@@ -1092,8 +1092,29 @@ class TestPlumbing(unittest.TestCase):
         self.assertTrue(LG.read_json_verified(folder / "RESULTS.json")["finished"])
         self.assertTrue(any(line.strip().startswith("git add -f ") for line in lines), lines)   # .gitignore's data/
         self.assertTrue(any(f"pull --rebase origin {K.BRANCH}" in line for line in lines))
+        self.assertFalse(any("scp" in line for line in lines))
         with self.assertRaises(PH.Refused):
             R.make_results(src, dest, lines.append, stamp="20261016T000000Z")
+        # on the cluster (the owner's answer to choice 9): the output root's SHA-256 list is written beside the
+        # records and the owner is told to copy both folders to the desktop, check them, and commit there
+        lines = []
+        folder = R.make_results(src, d / "n80c", lines.append, stamp="20261016T000001Z", host="cluster")
+        listed = (folder / R.OUTPUT_ROOT_SUMS).read_text(encoding="utf8").splitlines()
+        self.assertEqual(len(listed), 10)                                      # every file but the lock
+        for line in listed:
+            sha, rel = line.split("  ", 1)
+            q = Path(rel) if Path(rel).is_absolute() else K.ROOT / rel
+            self.assertTrue(q.is_file(), rel)
+            self.assertEqual(LG.file_sha256(q), sha)
+        self.assertTrue(any("critic.msgpack" in line for line in listed))     # model files included
+        self.assertFalse(any(".lock" in line for line in listed))
+        text = "\n".join(lines)
+        self.assertIn("Nothing is committed here", text)
+        self.assertIn(f"scp -r <login node>:{src}", text)
+        self.assertIn(f"sha256sum -c --quiet {K.DESKTOP_ROOT}/{K.N80_REL}/{folder.name}/{R.OUTPUT_ROOT_SUMS}", text)
+        self.assertIn(f"git add -f {K.N80_REL}/{folder.name}", text)
+        self.assertIn("push_runfiles_near80.sh", text)
+        self.assertNotIn(f"cd {K.ROOT}\n", text)
 
     def test_runfiles_plan(self):
         d = tmpdir(self)

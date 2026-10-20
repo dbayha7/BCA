@@ -82,8 +82,8 @@ FROZEN_NAME = "pre_approval/pooled_facts_seeds0_4_spent10_14.json"
 FROZEN_TOP = (PREREG_NAME, PREREG_NAME + ".sha256", MANIFEST_NAME, MANIFEST_NAME + ".sha256")
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
              "Approving it accepts every choice of its section 16 as it records them (the defaults; the university "
-             "cluster as the run machine and the place results come from, the desktop as the fallback) and allows "
-             "the runs it names, under its rules.")
+             "cluster as the run machine, the desktop as the fallback; the results copied from the cluster to the "
+             "desktop and committed from there) and allows the runs it names, under its rules.")
 WIDTH = 100
 # Version 8's history (near80_constants.V8_HISTORY_FILES, V8_HISTORY_DIRS, V8_FROZEN_NAME; test_v9 checks they agree).
 V8_HISTORY_FILES = ("approval_near80_51e677ab76c8d2f7.json", "import_near80_51e677ab76c8d2f7.json", "amendment_1.json",
@@ -432,6 +432,10 @@ def summary(info):
              "Fingerprint (SHA-256) of prereg.json:", "", "    " + info["sha256"], "",
              "Your answer: \"{}\" ({}, {}): {}.".format(answer.get("text"), answer.get("utc"), answer.get("where"),
                                                        answer.get("choices")), "",
+             "Your second answer, on choice {} (where results are committed from): \"{}\" ({}, {}): {}.".format(
+                 ", ".join((answer.get("second") or {}).get("choices") or []), (answer.get("second") or {}).get("text"),
+                 (answer.get("second") or {}).get("utc"), (answer.get("second") or {}).get("where"),
+                 (answer.get("second") or {}).get("about")), "",
              "The defaults of section 16 that approving takes:", bullets(choices), "",
              "Seeds: {} fresh (the only ones that can carry a claim; {} seeds); seed {} for the plumbing only; every "
              "seed another study used is refused.".format(seeds.get("fresh"), seeds.get("fresh_count"),

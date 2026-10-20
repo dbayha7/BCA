@@ -13,7 +13,8 @@ to the world-blind rivals; C2: BCA's switched ramp beats each plain twin by 5 po
 
 Changing any value here changes the code manifest and so the fingerprint the owner approves. DECISION.md (20 October
 2026, after three reviews) fixed every value below, and OWNER_ANSWER records the owner's own words answering the
-choices of section 16 (the defaults, with the university cluster as the run machine and the place results come from).
+choices of section 16 (the defaults, with the university cluster as the run machine; the results copied back to the
+desktop and committed from there, the owner's second answer).
 
 Host profiles (section 12 of PREREGISTRATION.md): the cluster (hpc.charlotte.edu, Slurm, never root, a clone under
 /scratch/dbayha, the entry run_near80_cluster.sh with one job per fresh seed and a group job) runs version 9; the
@@ -123,12 +124,23 @@ APPROVER_NAME = "David Bayha"
 AGENT_EMAILS = ("noreply@anthropic.com",)
 # The owner's own words answering the choices of PREREGISTRATION.md section 16 (DECISION.md section 16, defaults
 # 1-11), with the time and the place they were said, and what each choice takes: every default, except that the run
-# machine (choice 4) and the place results come from (choice 9) are the university cluster, with the desktop kept as
-# the fallback. The freeze refuses while this is None; no agent writes it from anything but the owner's words.
+# machine (choice 4) is the university cluster, with the desktop kept as the fallback. The first answer ("and
+# cluster") had been read as taking the cluster for choice 9 too (where results are committed from); asked about it,
+# the owner gave the second answer below: the results folder and the run files are copied from the cluster to the
+# desktop over the owner's own SSH session, checked by SHA-256 there, and committed and pushed from the desktop's
+# clone, as version 8's records were; so choice 9 takes its default (the desktop). `taken` names the choices that
+# are not their default; `second["choices"]` the choices the second answer settled. The freeze refuses while this is
+# None; no agent writes it from anything but the owner's words.
 OWNER_ANSWER = dict(
     text="Accept the defaults and cluster",
     utc="2026-10-20T18:29:00Z",
     where="chat with the cloud assistant",
+    second=dict(text="committed from desktop after copying over from cluster",
+                utc="2026-10-20T19:20:00Z",
+                where="chat with the cloud assistant",
+                about="choice 9, where results are committed from: the desktop (the default), after the results and "
+                      "the run files are copied from the cluster over the owner's SSH session and checked by SHA-256",
+                choices=["9"]),
     choices=["1: ten seeds, 40-49 (the default)",
              "2: a refusal read per arm: no caution in C1, the seed left out of C2 and C3 (the default)",
              "3: no second held-out log (the default)",
@@ -138,13 +150,13 @@ OWNER_ANSWER = dict(
              "6: 10 lanes (the default; on the cluster 8 per seed job and 16 for the group job)",
              "7: version 9 in place in near80/ (the default)",
              "8: the plain 90% gap and twice it (the default)",
-             "9: results come from the cluster (the login node, in the owner's own SSH session); the desktop is the "
-             "fallback",
+             "9: results are committed from the desktop (the default; the second answer): the results folder and the "
+             "output root are copied from the cluster to the desktop over the owner's SSH session, checked by SHA-256 "
+             "on the desktop, and committed and pushed from the desktop's clone, as version 8's records were; the login "
+             "node pushes nothing",
              "10: no fresh start bank (the default)",
              "11: no retrain of seeds 0-4's second critics (the default)"],
-    taken={"4": "the university cluster hpc.charlotte.edu (run_near80_cluster.sh); the desktop entry is the fallback",
-           "9": "the cluster: results and run files committed from the login node in the owner's own SSH session "
-                "(run_near80_cluster.sh results, push_runfiles_near80.sh); the desktop is the fallback"},
+    taken={"4": "the university cluster hpc.charlotte.edu (run_near80_cluster.sh); the desktop entry is the fallback"},
 )
 
 # ------------------------------------------------------------------------------------------------ the approval files

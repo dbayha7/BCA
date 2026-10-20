@@ -55,9 +55,12 @@
 #      runs/shift_explore/room, runs/shift_explore/restructure/step2 and runs/shift_explore/stage2 (version 6's run
 #      folder, read by version 6's policy code), copied read-only from the desktop clone; the self-test checks them.
 #   8. the results and run files pushed from the desktop as the owner
-#                                             -> the same scripts on the login node in the owner's own SSH session
-#      (results: near80/results-<utc>/ on the main branch; run files: the branch claude/near80-v9-run-files); or the
-#      folders come back to the desktop by tar and are pushed from there.
+#                                             -> unchanged by the owner's answer to choice 9: 'results' on the login
+#      node gathers the records into near80/results-<utc>/ with SHA256SUMS and writes OUTPUT_ROOT_SHA256SUMS (every
+#      file of the output root, model files included); the owner copies the results folder and the output root to the
+#      desktop over their own SSH session, checks both lists there (sha256sum -c), and commits and pushes from the
+#      desktop's clone (results: near80/results-<utc>/ on the main branch; run files: push_runfiles_near80.sh on the
+#      desktop, the branch claude/near80-v9-run-files). Nothing is committed or pushed from the login node.
 set -u
 ACCOUNT=staruser
 PARTITION=Orion
@@ -206,6 +209,7 @@ JID=$(sb "$G_LANES" "$G_MEM" "$G_TIME" --parsable --job-name="$JOB_NAME-look" --
     --output="$LOGS/look-%j.out" "$JOB" group "$G_LANES") || exit 1
 echo "submitted the lock, evaluation and look job $JID (after jobs $DEPS). Watch $LOGS/; then on the login node:"
 echo "  sh $N80/run_near80_cluster.sh status"
-echo "  sh $N80/run_near80_cluster.sh results      (then, in your own SSH session, commit and push with the commands it prints)"
-echo "  sh $N80/push_runfiles_near80.sh            (in your own SSH session: it needs a terminal and your GitHub sign-in)"
+echo "  sh $N80/run_near80_cluster.sh results      (gathers the records and the SHA-256 lists; it prints how to copy the"
+echo "                                              results folder and the output root to the desktop over your SSH session,"
+echo "                                              check them there, and commit and push from the desktop: choice 9)"
 exit 0

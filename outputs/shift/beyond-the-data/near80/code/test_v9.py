@@ -435,8 +435,12 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertEqual(K.placeholders_present(), [])
         self.assertEqual(K.OWNER_ANSWER["text"], "Accept the defaults and cluster")
         self.assertEqual(K.OWNER_ANSWER["utc"], "2026-10-20T18:29:00Z")
-        self.assertEqual(sorted(K.OWNER_ANSWER["taken"]), ["4", "9"])
+        self.assertEqual(K.OWNER_ANSWER["second"]["text"], "committed from desktop after copying over from cluster")
+        self.assertEqual(K.OWNER_ANSWER["second"]["utc"], "2026-10-20T19:20:00Z")
+        self.assertEqual(K.OWNER_ANSWER["second"]["choices"], ["9"])
+        self.assertEqual(sorted(K.OWNER_ANSWER["taken"]), ["4"])         # choice 9 takes its default (the desktop)
         self.assertEqual(len(K.OWNER_ANSWER["choices"]), 11)
+        self.assertIn("committed from the desktop", K.OWNER_ANSWER["choices"][8])
         self.assertEqual(K.PLACEHOLDERS, {})
         self.assertEqual(K.CAP_CPU_HOURS, 55.0)
         self.assertEqual(K.FORECAST_CPU_HOURS_PER_SEED, 2.2)
@@ -479,19 +483,28 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertEqual(C["scratch"], K.CLUSTER_SCRATCH)
 
     def test_choices_taken_record_the_cluster(self):
-        """near80_prereg.choices_taken on the real draft: the defaults, except choices 4 and 9 (the cluster)."""
+        """near80_prereg.choices_taken on the real draft: the defaults, except choice 4 (the cluster); choice 9 (where
+        results are committed from) takes its default, the desktop, by the owner's second answer, whose time it
+        carries."""
         NPm = K.load_local("near80_prereg")
         draft = draft_payload()
         taken = NPm.choices_taken(draft["choices"])
         self.assertEqual(len(taken), 11)
         for c, d in zip(taken, draft["choices"]):
-            self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
-            if c["number"] in (4, 9):
+            if c["number"] == 4:
+                self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
                 self.assertIn("cluster", c["taken"])
                 self.assertIn("fallback", c["taken"])
                 self.assertNotEqual(c["taken"], d["default"])
-            else:
+            elif c["number"] == 9:
+                self.assertEqual(c["accepted"], K.OWNER_ANSWER["second"]["utc"])
                 self.assertEqual(c["taken"], d["default"])
+                self.assertEqual(c["taken"], "the desktop")
+                self.assertIn("copied", d["owner_took"])
+            else:
+                self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
+                self.assertEqual(c["taken"], d["default"])
+        self.assertIn("after copying over from cluster", draft["choices"][8]["owner_took"])
         with mock.patch.object(K, "OWNER_ANSWER", dict(K.OWNER_ANSWER, taken={"12": "x"})):
             with self.assertRaises(NPm.PreregProblem):
                 NPm.choices_taken(draft["choices"])
@@ -529,6 +542,10 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertNotIn("not part of version 9", readme)
         self.assertIn(K.OWNER_ANSWER["text"], doc)
         self.assertIn(K.OWNER_ANSWER["text"], readme)
+        self.assertIn(K.OWNER_ANSWER["second"]["text"], doc)
+        self.assertIn(K.OWNER_ANSWER["second"]["text"], readme)
+        self.assertNotIn("login node in your own SSH session", doc)      # the second answer: nothing is pushed there
+        self.assertNotIn("login node in your own SSH session", readme)
 
 
 # --------------------------------------------------------------------------------------------- edge cases of the look
