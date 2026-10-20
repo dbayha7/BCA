@@ -1,0 +1,345 @@
+"""Near-80 (version 9, DRAFT): stub mode. Every phase kind of the plan runs on a test fixture outside the repository,
+on synthetic logs, with every learner replaced by a stand-in that takes ZERO gradient steps. Nothing is trained, no
+recorded seed is generated or loaded, and the gate's pre-registration is not read.
+
+install(run) (called by phase_main in stub mode, before dispatch) replaces:
+  settingdata.gate_seed, fresh_settings, fresh_log, fresh_gap, anchors, gate_record_sha256 -> synthetic seeds
+      (synthetic_log: tag 9000 + the logical seed, the world's physics; the seeds of STUB_REFUSING_SEEDS get only
+      STUB_FEW_SURVIVORS survivors, so that BCA refuses there and the refusal rule runs) and synthetic_gap(); anchors
+      from facts_v9.anchors_for(world, bank_n=--starts); settingdata.gate_prereg, acceptance.load_seed and
+      dataset.generate -> functions that raise;
+  learners.fixed_critic -> the critic's initial parameters (the same key as fixed_critic), updates 0;
+  learners.clone -> the initial actor (learners.initial_actor);
+  learners.ActorOnly.run -> every arm returns the start actor;
+  machinery.RampRunner.run_ramp and the room's RoomRunner.run_kind -> every arm returns the start actor (a ramp arm with
+      a height above 0 returns the start actor plus 0.001 on every parameter, so that the strength-matching code path
+      runs; this is not a gradient step); run_ramp also records each program's arm names (RAMP_BATCHES), so that the
+      tests can check the batches are step 2's;
+  version 6's policy.match_controls -> the first ladder rung, chosen without training; machinery.standin_matched and
+      standin_locked -> raise 'stub: not run' (recorded as the stand-in's error); policy.standins_module -> None;
+  the training programs themselves (the gate's _fixed_step, _clone_loop, _actor_only_loop, actor_step, cotrain,
+      bca_cotrain, bca_band; the room's _room_loop and actor_step_w; step 2's _ramp_loop and actor_step_ramp) -> guards
+      that count the entry and raise.
+Every stand-in counts its calls (CALLS) and every guard its entries (GUARD_HITS); phase_main writes both into the
+attempt's usage record, and the end-to-end test asserts that no guard was entered.
+
+The synthetic logs are not built to pass the gate's checks: in stub mode the gate's checks are computed and recorded,
+but they fail no seed ('stub_note' in the data records).
+"""
+import sys
+
+sys.dont_write_bytecode = True
+
+import collections  # noqa: E402
+import types  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+HERE = Path(__file__).resolve().parent
+ROOT = Path("/home/user/bca")
+for _p in (str(HERE), str(ROOT)):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+import numpy as np  # noqa: E402
+
+import near80_constants as K  # noqa: E402
+import ledger as LG  # noqa: E402
+
+CALLS = collections.Counter()
+GUARD_HITS = collections.Counter()
+RAMP_BATCHES = []          # the arm names of every vmapped ramp program the phase ran (its batch), in call order
+TAG_BASE = 9000
+N_SURVIVORS = 60          # survivors near full throttle outside the ball: enough for BCA's posterior to certify
+STUB_REFUSING_SEEDS = (K.FRESH_POOL[1],)   # seed 36: too few survivors, so BCA refuses there (the refusal rule's stub path;
+#                                           36 is a confirmatory seed for every N_FRESH)
+STUB_FEW_SURVIVORS = 10
+SURVIVOR_REWARD = -5.0    # the survivors' recorded reward: the second critic over-predicts them, the switch is on
+STUB_STARTS = 5
+PATTERN = np.array([-1.0, -0.137, -0.585, -0.406])
+STUB_NOTE = ("stub mode: synthetic logs are not built to pass the gate's checks; the checks are recorded but fail no "
+             "seed")
+_INSTALLED = {}
+
+
+class StubViolation(RuntimeError):
+    """A training function was entered in stub mode."""
+
+
+# --------------------------------------------------------------------------------------------- synthetic data
+
+def synthetic_log(tag, world="stall", seed=7, sizes=(500, 50, 50), length=20, n_survivors=None):
+    """A small synthetic log with the gate's Log interface (test_near80.synthetic_log's pattern, in the given world):
+    normal driving capped below 80%, a full-throttle cluster (inside the ball), n_survivors (default: N_SURVIVORS, or
+    STUB_FEW_SURVIVORS for the logical seeds of STUB_REFUSING_SEEDS) survivors near full throttle outside the ball."""
+    if n_survivors is None:
+        n_survivors = STUB_FEW_SURVIVORS if int(tag) - TAG_BASE in STUB_REFUSING_SEEDS else N_SURVIVORS
+    from experiments.shift import dataset as DS
+    from experiments.shift import recorder as RC
+    from experiments.shift import thruster_chain as TC
+    rng = np.random.default_rng([int(seed), int(tag)])
+    E = int(sum(sizes))
+    n = E * length
+    mu = np.array([-0.55, -0.08, -0.35, -0.25])
+    a = 0.8 * np.tanh((mu + 0.45 * rng.standard_normal((n, 4))) / 0.8)
+    ft = rng.uniform(size=n) < 0.15
+    a[ft] = np.clip(PATTERN + 0.03 * rng.standard_normal((int(ft.sum()), 4)), -1, 1)
+    train_rows = np.arange(sizes[0] * length)
+    surv = rng.choice(train_rows[~ft[train_rows]], N_SURVIVORS, replace=False)[:int(n_survivors)]
+    a[surv] = np.array([-0.985, 0.4, 0.3, 0.3]) + 0.004 * rng.standard_normal((len(surv), 4))
+    a32 = a.astype(np.float32)
+    rewards = np.zeros(n, np.float32)
+    rewards[surv] = SURVIVOR_REWARD      # so that BCA's switch is on in the stub run and the matching path runs
+    x = 0.3 * rng.standard_normal((n, TC.DX))
+    x[:, TC.CURRENT] = rng.uniform(0.1, 0.7, n)
+    x[:, TC.WAVE1] = rng.uniform(-0.2, 0.3, n)
+    x2 = x + 0.01 * rng.standard_normal((n, TC.DX))
+    split = np.repeat(np.arange(3, dtype=np.int8), np.asarray(sizes) * length)
+    t = np.tile(np.arange(length, dtype=np.int32), E)
+    arrays = {
+        "observations": x.astype(np.float32), "actions": a32, "rewards": rewards,
+        "next_observations": x2.astype(np.float32), "terminals": np.zeros(n, bool), "timeouts": t == length - 1,
+        "infos/state": x.astype(np.float32).astype(np.float64), "infos/next_state": x2,
+        "infos/episode": np.repeat(np.arange(E, dtype=np.int32), length), "infos/t": t, "infos/split": split,
+        "infos/full_throttle_command": ft,
+    }
+    first = sizes[0]
+    offs = np.random.default_rng([int(seed) + 1, int(tag)]).integers(0, length, (sizes[1], 5))
+    bank = np.sort(np.unique(np.concatenate([(first + e) * length + np.unique(o) for e, o in enumerate(offs)])))
+    meta = dict(rep=int(tag), world=world, bank_rows=bank.tolist(), sizes=list(sizes), length=length,
+                physics=TC.world_physics(world).as_dict(), recorder=RC.DEFAULT_SPEC.as_dict(), stub=True)
+    return DS.Log(arrays, meta)
+
+
+def stub_fresh_log(seed, world, spec, sizes, slope):
+    """settingdata.fresh_log in stub mode (amendment 1): the synthetic log, built with the sizes it is given. Its
+    arguments are held to dataset.generate's contract (a RecorderSpec, three integer sizes, a finite slope), so a
+    caller that passes what the real generator would refuse fails here too; the recorder and the stall slope must be
+    the stub's fresh_settings() ones (the synthetic log does not depend on them, so a wrong one would go unseen)."""
+    from experiments.shift import recorder as RC
+    if not isinstance(spec, RC.RecorderSpec):
+        raise TypeError(f"fresh_log: spec is {type(spec).__name__}, not a RecorderSpec")
+    sz = tuple(sizes)
+    if len(sz) != 3 or not all(isinstance(v, (int, np.integer)) and not isinstance(v, bool) for v in sz):
+        raise TypeError(f"fresh_log: sizes {sizes!r} are not three integers (dataset.generate takes int(sum(sizes)))")
+    if not (isinstance(slope, (float, int)) and not isinstance(slope, bool) and np.isfinite(slope)):
+        raise TypeError(f"fresh_log: stall slope {slope!r} is not a finite number")
+    if spec != _recorder_spec() or float(slope) != 1.5:
+        raise TypeError(f"fresh_log: recorder or stall slope {slope!r} is not the stub's fresh_settings()")
+    return synthetic_log(TAG_BASE + int(seed), world, sizes=tuple(int(v) for v in sz))
+
+
+def synthetic_gap():
+    from experiments.shift import shift as SH
+    return SH.Gap(centre=tuple(float(v) for v in PATTERN), rho=0.3, mass=0.15, rule="base", q=0.15,
+                  competing_ratio=2.0, record_sha256="synthetic")
+
+
+def synthetic_seed(seed, world):
+    """A SeedData-like synthetic seed with a gate-like data record (logical seed -> tag 9000 + seed)."""
+    import settingdata as SD
+    from experiments.shift import acceptance as A
+    from experiments.shift import shift as SH
+    K.group_of(seed)
+    lg = synthetic_log(TAG_BASE + int(seed), world)
+    gap = synthetic_gap()
+    rg, rr = SH.make_removal(lg, "gap", gap), SH.make_removal(lg, "random", gap)
+    checks, ok = SD._ball_checks(lg, gap, rg, rr)
+    record = dict(log_sha256=lg.array_hashes(), gap=gap.as_dict(), removals={k: r.summary(lg) for k, r in
+                                                                           (("gap", rg), ("random", rr))},
+                  checks=checks, passed=True, stub=True)
+    if world == "stall":
+        _, marks = A.world_marks(lg, gap, lg.spec, lg.physics)
+        record["t1_t5"] = {k: True for k in marks}
+        record["t1_t5_on_synthetic_log"] = {k: bool(v) for k, v in marks.items()}
+    return SD.SeedView(seed, world, record, lg, gap, lg.spec, lg.physics)
+
+
+def stub_anchors(run, world):
+    import facts_v9 as F
+    return {s: dict(recording=r, top=t) for s, (r, t) in
+            F.anchors_for(world, bank_n=run.starts or STUB_STARTS).items()}
+
+
+# --------------------------------------------------------------------------------------------- stand-ins
+
+def _counted(name, fn):
+    def wrapper(*a, **kw):
+        CALLS[name] += 1
+        return fn(*a, **kw)
+    wrapper.__name__ = f"stub_{name}"
+    wrapper.__stub__ = name
+    return wrapper
+
+
+def _guard(name):
+    def guard(*a, **kw):
+        GUARD_HITS[name] += 1
+        raise StubViolation(f"stub mode: {name} was entered; it would take a gradient step")
+    guard.__stub_guard__ = name
+    return guard
+
+
+def _raiser(what):
+    def f(*a, **kw):
+        raise StubViolation(f"stub mode: {what} is not used")
+    return f
+
+
+def _initial_critic(rep, settings=None):
+    """The critic's initial parameters of learners.fixed_critic for data seed rep (no update)."""
+    import jax
+    import jax.numpy as jnp
+    from experiments.shift import learners as L
+    args = L.make_args(settings or L.LearnSettings(), rep)
+    rng = jax.random.fold_in(jax.random.PRNGKey(args.seed), L.KEY_TD3_INIT)
+    rng, _, kc = jax.random.split(rng, 3)
+    return L.CRITIC.init(kc, jnp.zeros(L.DX), jnp.zeros(L.DA))
+
+
+def stub_fixed_critic(prepared, controller, settings, rep, *, placebo=False, updates=None, out_dir=None, log=None):
+    from experiments.shift import learners as L
+    params = _initial_critic(rep, settings)
+    record = dict(kind="shift-fixed-critic", controller=controller, rep=int(rep), updates=0, final_update=0,
+                  initial_sha256=L.tree_sha256(params), critic_sha256=L.tree_sha256(params), failed=False, stub=True,
+                  data=prepared.describe())
+    if out_dir is not None:
+        record["file_sha256"] = L.save_tree(Path(out_dir) / "critic.msgpack", params)
+    return record, types.SimpleNamespace(critic=types.SimpleNamespace(params=params))
+
+
+def stub_clone(prepared, settings, rep, steps=None, *, chunk=5_000, log=None):
+    from experiments.shift import learners as L
+    params = L.initial_actor(settings, rep)
+    return params, dict(kind="shift-clone", rep=int(rep), steps=0, losses=[], failed=False, stub=True,
+                        actor_sha256=L.tree_sha256(params))
+
+
+def _stacked(params, n):
+    import jax
+    import jax.numpy as jnp
+    return jax.tree_util.tree_map(lambda x: jnp.broadcast_to(x, (n,) + jnp.shape(x)), params)
+
+
+def stub_actor_only_run(self, arms, critics, *, weighted=True, log=None):
+    from experiments.shift import learners as L
+    n = len(arms)
+    return _stacked(self.start_params, n), dict(history=[], chunk_metrics=[], metric_names=[], oracle_calls=0,
+                                                rows_sha256=self.rows_sha256,
+                                                start_sha256=L.tree_sha256(self.start_params), failed=[False] * n,
+                                                stub=True)
+
+
+def _offset(params, eps):
+    import jax
+    return jax.tree_util.tree_map(lambda x: x + np.asarray(eps, np.asarray(x).dtype), params)
+
+
+def _arm_out(params, arm):
+    return dict(params=params, finite=True, chunk_metrics=[], arm=arm.record(), seconds=0.0)
+
+
+def stub_run_kind(self, kind, arms, log_fn=None):
+    self.seconds[kind] = self.seconds.get(kind, 0.0)
+    return {a.name: _arm_out(self.start_params, a) for a in arms}
+
+
+def stub_run_ramp(self, arms, log_fn=None):
+    self.seconds["ramp"] = self.seconds.get("ramp", 0.0)
+    RAMP_BATCHES.append([a.name for a in arms])
+    out = {}
+    for a in arms:
+        h = float(a.coef[0]) * float(a.coef[1]) if len(a.coef) == 2 else 0.0
+        out[a.name] = _arm_out(_offset(self.start_params, 1e-3) if h > 0 else self.start_params, a)
+    return out
+
+
+def stub_run_bca(self, kind, arms, log_fn=None):
+    self.seconds[kind] = self.seconds.get(kind, 0.0)
+    return {a.name: dict(_arm_out(self.start_params, a), refits=None) for a in arms}
+
+
+def stub_match_controls(runner, trained, none, prepared, target, scale, families, log_fn=None):
+    out = {}
+    for f in families:
+        rungs = sorted(((v["arm"].get("knob"), k) for k, v in trained.items() if v["arm"].get("family") == f),
+                       key=lambda x: (x[0] is None, x[0]))
+        name = rungs[0][1] if rungs else None
+        out[f] = dict(record=dict(stub=True, knob=None if not rungs else rungs[0][0],
+                                  how="stub: the first ladder rung, chosen without training"),
+                      arm=name, matched=name is not None)
+    return out
+
+
+def stub_standin(*a, **kw):
+    raise RuntimeError("stub: not run")
+
+
+# --------------------------------------------------------------------------------------------- install
+
+LEARNER_GUARDS = ("_fixed_step", "_clone_loop", "_actor_only_loop", "actor_step", "cotrain", "bca_cotrain",
+                  "bca_band", "bca_train_step", "bca_update")
+NEEDS_STEP2 = ("policy", "evaluate", "lock")
+
+
+def install(run):
+    """Replace every learner entry point and data loader for one stub phase process (module docstring)."""
+    if _INSTALLED.get("done"):
+        return
+    import settingdata as SD
+    from experiments.shift import acceptance as A
+    from experiments.shift import dataset as DS
+    from experiments.shift import learners as L
+    SD.gate_seed = _counted("gate_seed", synthetic_seed)
+    SD.fresh_settings = _counted("fresh_settings", lambda: (_recorder_spec(), (500, 50, 50), 1.5))
+    SD.fresh_log = _counted("fresh_log", stub_fresh_log)
+    SD.fresh_gap = _counted("fresh_gap", lambda lg: (synthetic_gap(), dict(reason="stub", stub=True)))
+    SD.anchors = _counted("anchors", stub_anchors)
+    SD.gate_record_sha256 = lambda *a, **kw: None
+    SD.gate_prereg = _raiser("the gate's pre-registration")
+    SD.gate_critic = _counted("gate_critic", lambda sd, removal: _initial_critic(sd.rep))
+    SD.gate_clone = _counted("gate_clone", lambda seed, world: L.initial_actor(L.LearnSettings(), seed))
+    SD.gate_check2_actor = _counted("gate_check2_actor", lambda seed, name: L.initial_actor(L.LearnSettings(), seed))
+    A.load_seed = _raiser("acceptance.load_seed")
+    DS.generate = _raiser("dataset.generate")
+    L.fixed_critic = _counted("fixed_critic", stub_fixed_critic)
+    L.clone = _counted("clone", stub_clone)
+    L.ActorOnly.run = _counted("actor_only_run", stub_actor_only_run)
+    for name in LEARNER_GUARDS:
+        if hasattr(L, name):
+            setattr(L, name, _guard(f"learners.{name}"))
+    if run.key.kind in NEEDS_STEP2 or run.key.kind == "lock":
+        import policy_phase as PP
+        S, MC, _ = PP.load_step2(run)
+        MC.RampRunner.run_ramp = _counted("run_ramp", stub_run_ramp)
+        MC.H.RoomRunner.run_kind = _counted("run_kind", stub_run_kind)
+        MC.P.BCARunner.run_bca = _counted("run_bca", stub_run_bca)
+        MC.P.match_controls = _counted("match_controls", stub_match_controls)
+        MC.standin_matched = _counted("standin_matched", stub_standin)
+        MC.standin_locked = _counted("standin_locked", stub_standin)
+        MC.P.standins_module = _counted("standins_module", lambda prereg: None)
+        MC.best_standin = _counted("best_standin", lambda: "stub")
+        for mod, names in ((MC, ("_ramp_loop", "actor_step_ramp")), (MC.H, ("_room_loop", "actor_step_w")),
+                           (MC.P, ("_bca_loop", "actor_step_bca")), (MC.B, ("fit_band_arrays",))):
+            for name in names:
+                setattr(mod, name, _guard(f"{getattr(mod, '__name__', 'module')}.{name}"))
+    _INSTALLED["done"] = True
+
+
+def _recorder_spec():
+    from experiments.shift import recorder as RC
+    return RC.DEFAULT_SPEC
+
+
+def report():
+    """What phase_main writes into the attempt's usage record in stub mode."""
+    return dict(stub_calls=dict(CALLS), stub_guard_hits=dict(GUARD_HITS), stub_ramp_batches=list(RAMP_BATCHES))
+
+
+def main(argv=None):
+    print("stubs.py has no command line in version 9 (stub runs: near80_runner.py stub --fixture DIR)",
+          file=sys.stderr)
+    return K.EXIT_REFUSED
+
+
+if __name__ == "__main__":
+    sys.exit(main())

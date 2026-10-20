@@ -1,0 +1,181 @@
+{
+ "arms": {
+  "main": [
+   "none",
+   "clone",
+   "full_none",
+   "w0_check",
+   "obca_k1",
+   "obca_k2",
+   "obca_forced",
+   "fixed_gated",
+   "conformal_k1",
+   "meangap_k1",
+   "meandiff_k1",
+   "meandiff_limit",
+   "perfect_band",
+   "range_hinge",
+   "even_pull",
+   "push_less",
+   "random_1",
+   "random_2",
+   "standin"
+  ],
+  "plain_twins": {
+   "meandiff_k1": "switch on when mean(full-throttle overestimate) minus mean(rest) > 0.10; the ramp at that difference, k = 1; a program of its own",
+   "meandiff_limit": "the same switch turning on the hand-set range limit; switched off it is the no-caution actor; a hinge program of its own when on"
+  },
+  "programs": "step 2's own programs for BCA's switched ramp and the plumbing check; a refused arm's place keeps a height-0 copy, never saved or scored"
+ },
+ "choices": [
+  {
+   "alternatives": [
+    5,
+    10,
+    15
+   ],
+   "choice": "number of fresh seeds",
+   "default": "TODO(DECISION.md)",
+   "number": 1
+  },
+  {
+   "choice": "C2's margins, statistic, alpha, seeds-ahead rule, multiplicity and noise floor",
+   "default": "TODO(DECISION.md)",
+   "number": 2
+  },
+  {
+   "alternatives": [
+    "C2",
+    "C1_and_C2"
+   ],
+   "choice": "the decision rule",
+   "default": "TODO(DECISION.md)",
+   "number": 3
+  },
+  {
+   "choice": "lanes",
+   "default": 10,
+   "number": 4
+  }
+ ],
+ "claims": {
+  "C1": "step 2's three go marks in the main setting (version 8's claim 4), unchanged: net lead at least 10, keeps at most 3 lost, even pull beaten by at least 15",
+  "C2": "BCA's switched ramp beats each plain twin (split-conformal switch, mean-difference switch with the ramp, mean-difference switch with the hand-set range limit), paired by seed on the net across worlds",
+  "C2_alpha": "TODO(DECISION.md)",
+  "C2_margins": {
+   "conformal_k1": "TODO(DECISION.md)",
+   "meandiff_k1": "TODO(DECISION.md)",
+   "meandiff_limit": "TODO(DECISION.md)"
+  },
+  "C2_min_positive_seeds": "TODO(DECISION.md)",
+  "C2_multiplicity": "TODO(DECISION.md)",
+  "C2_noise_floor_max": "TODO(DECISION.md)",
+  "C2_statistic": "TODO(DECISION.md)",
+  "decision": "TODO(DECISION.md)"
+ },
+ "compute": {
+  "memory_rule": "version 7's, unchanged: a phase starts only if the reserved peaks of the running phases plus its own are at most WSL's MemTotal minus 8 GiB, and MemAvailable is at least its own reservation plus 8 GiB; an unmeasured phase kind reserves 7 GiB; a measured kind 1.25 x its measured peak; policy phases max(7 GiB, 2 x measured peak)",
+  "per_fresh_seed_cpu_hours": 1.6,
+  "plumbing_cpu_hours": 2.5,
+  "source": "version 8's ledger, main setting, seeds 11 and 14: 1.51-1.54 CPU-hours per seed",
+  "wall_time": {
+   "10": "about 5-5.5 hours plus the plumbing",
+   "15": "about 7.5-8 hours plus the plumbing",
+   "5": "about 3 hours plus 1-2.5 of plumbing"
+  }
+ },
+ "departures": [
+  "BCA's groups are pooled from every held-out recorded row outside the ball (version 8: survivors and the calibration bank only)",
+  "a refusal fails only the arms that need BCA (version 8: the whole actor phase of the seed stopped)",
+  "the plain twins are trained arms; C2 is new",
+  "the near-80 band, the random-rows control, version 6's band, the readouts and version 8's exploratory stop rules are removed",
+  "the data record's run sizes are read back under the key run_sizes (the cause of version 8's amendment 1)"
+ ],
+ "host": "TD3+BC, actor only (step 2's protocol): alpha 5.0, 20,000 actor steps in chunks of 4,000, 100,000 critic updates",
+ "kill_rules": {
+  "budget": "a stage past twice its forecast, or the run past the cap, pauses until budget-continue is typed",
+  "no_training": "the frozen code's no-training checks on seeds 0-4 (commands only) must all pass, or the design is redrafted",
+  "phase_stop": "a stopped phase is not rerun; every mark that needs it fails",
+  "reproduction": "the plumbing's reproduction on seed 0 must hold, or no result stands"
+ },
+ "kind": "near80v9-preregistration-draft",
+ "label": "Version 9, near-80 deciding test: the main setting on fresh seeds, BCA's two groups pooled from every held-out recorded row outside the ball",
+ "measures": "points per arm, world, seed and situation; the net across worlds (strong current); held-to-70%, capped-at-80% points and the share of steps past 80% (reported)",
+ "no_training_facts_seeds_0_4": "computed by freeze.py with the frozen code (code/facts_v9.py, commands only) and pinned in prereg.json",
+ "outcome_free_count": {
+  "check": "the switch phase must find exactly the counted sizes",
+  "rule": "the pooled full-throttle and rest groups counted per seed-world from commands alone in the data phase, before any training, beside BCA's certifiable bar of 36 rows; reported, never a stop"
+ },
+ "pooled_groups": {
+  "every_switch_arm": "reads the same two groups, scored once by the switch phase",
+  "full_throttle": "the survivors (kept training rows past t_lo) plus the held-out rows past t_lo",
+  "heldout": "every row of the calibration split and the evaluation split whose command lies outside the ball (the bank is part of the calibration split)",
+  "rest": "the held-out rows at or below t_lo",
+  "scored_tests": "no scored number reads these rows: every score is a rollout from the four fixed test start sets",
+  "unchanged": [
+   "the training rows",
+   "the test start sets",
+   "every rival's own rule",
+   "BCA's certificate (alpha 0.1, credibility 0.95, 1,000 draws, q05 above 0.10)"
+  ]
+ },
+ "question": "In the main test's setting, on seeds nobody has seen, with BCA's two groups built from every held-out recorded row outside the ball, does BCA's switched ramp still meet step 2's three marks (C1), and does it beat the plain rules that read the same groups (C2)?",
+ "refusal_rule": {
+  "obca_forced": "takes the stalling world's height in both worlds, so a stalling-world refusal fails it in both",
+  "rule": "when BCA refuses in a seed-world (switch on, height not finite), obca_k1, obca_k2, obca_forced and the matched rivals (standin, even_pull, push_less, random_1, random_2) fail that seed; every other arm trains and is scored; no whole seed is stopped for a refusal"
+ },
+ "request": "build now we need to keep pushing for good results. ASAP (20 October 2026, after version 8's claim 4 failed)",
+ "seeds": {
+  "exploratory": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "failed_seed": "a seed whose data or a needed phase failed, or where BCA refused, fails every mark that needs it; never replaced",
+  "generator": "main (master seed 20261012)",
+  "n_fresh": "TODO(DECISION.md)",
+  "pool": [
+   35,
+   36,
+   37,
+   38,
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45,
+   46,
+   47,
+   48,
+   49
+  ],
+  "refused": [
+   "5-9",
+   "10-14",
+   "15-34",
+   "100-119",
+   "900-909",
+   "the rest of 35-49"
+  ]
+ },
+ "settings": {
+  "main": "the main test's removal of the densest 15% of recorded commands (the ball) from training and from BCA's calibration bank; no other removal",
+  "removed": [
+   "the near-80 band",
+   "the random-rows control",
+   "version 6's band",
+   "the readouts"
+  ]
+ },
+ "situations": [
+  "recorded",
+  "strong_current",
+  "big_waves",
+  "big_kicks"
+ ],
+ "status": "draft"
+}
