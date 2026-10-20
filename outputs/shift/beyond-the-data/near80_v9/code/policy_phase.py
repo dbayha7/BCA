@@ -1,5 +1,4 @@
-"""Near-80 (version 9, DRAFT): the actor-training phases (step 2's actor-only protocol, restated for version 9), and
-the lock.
+"""Near-80 (version 9): the actor-training phases (step 2's actor-only protocol, restated for version 9), and the lock.
 
 Step 2's code is imported, never edited: step2lib (after step2lib.verify_manifest() passes and step 2's code
 manifest has the SHA-256 prereg.json pins) and machinery (which executes version 6's code and step 1's library from
@@ -12,31 +11,33 @@ every seed but 0-4 and reads only the gate's saved artifacts) or write only unde
 train_no_stall (one function, train_world), locked_controls, reference, h0_check, strengths, save_and_lock,
 verify_lock. They take a settingdata.SettingContext and write under version 9's output root.
 
-The arm table (arm_row_from; PREREGISTRATION.md section 5). step2lib.arm_table's own rule for the six step-2 ramp
-arms, on the switch records of both worlds (BCA's two POOLED groups), restated so that a refusal fails only the arms
-that read it (the refusal rule, section 8): an arm switched on with a height that is not finite, or with a negative
-height, is REFUSED (it is not trained and fails that seed-world); step2lib.arm_table is still called, and when it
-does not refuse, the restated table must equal it exactly (a built-in check). Then the plain twins, which read the
-same pooled groups: meandiff_k1 (switch: mean full-throttle overestimate minus mean rest > 0.10; the ramp at that
-difference) and meandiff_limit (the same switch turning on the hand-set range limit; switched off it is the no-caution
-actor).
+The arm table is arms_v9.arm_table (PREREGISTRATION.md sections 3.3 and 5): step 2's rule with version 9's refusal
+rule (a refusal marks arms, never raises), the textbook split-conformal switch in conformal_k1's slot, the dose arms
+and the computed plain switch with the hand-set limit. step2lib.arm_table is still called, and when it does not
+refuse, the restated rule must equal it on the arms they share (a built-in check).
 
 Step 2's ramp programs (ramp_layout; sections 5 and 8.2). machinery.RampRunner compiles one vmapped program per
 number of ramp arms, and a member's bits depend on that number, so BCA's switched ramp and the plumbing check run in
 exactly step 2's programs: in the stalling world w0_check alone, then a batch of six ramp arms with obca_k1 first; in
 the no-stall world one batch of seven, w0_check first and obca_k1 second. A refused arm's place in its batch is kept
-by a height-0 copy (refused_pad_<arm>), never saved or scored, so every other arm trains in the program it would have
-had without the refusal. meandiff_k1 trains in a program of its own; meandiff_limit, when switched on, in a hinge
-program of its own (reported against range_hinge, the same rule).
-  stalling world: w0_check alone first (version 6's check (b)); the six step-2 ramp arms; perfect_band; range_hinge;
-      the controls' ladders and version 6's matcher blind to obca_k1's strength; the stand-in matched; meandiff_k1;
-      meandiff_limit. When BCA refused there, nothing can be matched (no strength to match): the matched rivals
-      fail that seed-world (section 8); every other arm is trained and scored.
-  no-stall world: step 2's no-stall arm set (w0_check and the six step-2 ramp arms in one program, perfect_band,
-      range_hinge) plus meandiff_k1 and meandiff_limit; the controls and the stand-in at the stalling world's locked
-      coefficients.
-Every height-0 ramp arm must reproduce the no-caution actor within W0_TOL (else a recorded stop). The lock (every
-actor's SHA-256) is written before any return, points or score of any trained arm is computed.
+by a height-0 pad (refused_pad_<arm>), checked equal to no caution (the height-0 check) and never saved or scored, so
+every other arm trains in the program it would have had without the refusal. The two dose arms train together in a
+program of their own, after step 2's programs, and only in a world where the plain switch is on; where it is off they
+are the no-caution actor by definition and never enter the height-0 check.
+  stalling world: w0_check alone first (version 6's check (b)); the six; perfect_band; range_hinge; the controls'
+      ladders and version 6's matcher blind to obca_k1's strength; the stand-in matched; the dose arms where on. When
+      obca_k1 is refused there, nothing can be matched (no target): the matched rivals are unmatched (BCA's own).
+  no-stall world: w0_check and the six in one program, perfect_band, range_hinge, the dose arms where on; the controls
+      and the stand-in at the stalling world's locked coefficients (absent when the stalling world has none).
+Every height-0 ramp arm and every pad must reproduce the no-caution actor within W0_TOL (else a recorded stop). The
+lock (every actor's SHA-256, every computed arm's source, every unmatched rival's reason) is written before any
+return, points or score of any trained arm is computed.
+
+Why a matched rival is unmatched (unmatched_reason, read by the look): 'bca_refused' (obca_k1 refused: no target),
+'bca_switch_off' (BCA's switch is off where full throttle stalls: no target), 'bca_not_finite' (BCA's own actor is not
+finite), 'bca_no_positive_strength' (BCA's switched ramp has no positive strength to match: no target), all BCA's own;
+'rival_side' (the matcher could not match although BCA's strength is positive, a rival network that is not finite, or
+an error inside the stand-in), not BCA's.
 """
 import sys
 
@@ -53,6 +54,7 @@ if str(HERE) not in sys.path:
 import numpy as np  # noqa: E402
 
 import near80_constants as K  # noqa: E402
+import arms_v9 as AV  # noqa: E402
 import ledger as LG  # noqa: E402
 import phases as PH  # noqa: E402
 import settingdata as SD  # noqa: E402
@@ -114,71 +116,30 @@ def arm_row(setting, seed, world, out_root, S=None):
 
 
 def restated_table(S, per, seed, rule=K.ARM_RULE):
-    """step2lib.arm_table's rule for one seed in both worlds (its docstring), restated so that it never refuses: an
-    arm switched on with a height that is not finite, or with a negative height, is marked refused (with the reason
-    arm_table would give) instead. {world: row}. An entry that cannot be read is a recorded stop."""
-    rule = {**dict(fixed_height=1.0, conformal_margin=0.10, rank_p=0.05), **(rule or {})}
-    out = {}
+    """arms_v9.arm_table: {world: row}. An entry that cannot be read is a recorded stop."""
     try:
-        stall_h = S.num(per[f"stall/seed{int(seed)}"]["certificate"]["height"])
-        for w in K.WORLDS:
-            key = f"{w}/seed{int(seed)}"
-            e = per[key]
-            c, g, rt = e["certificate"], e["groups"], e["rank_test"]
-            on_bca, h_bca = bool(c["on"]), S.num(c["height"])
-            gap90 = S.num(g["q90_full_throttle"]) - S.num(g["q90_rest"])
-            on_conf = bool(gap90 > float(rule["conformal_margin"]))
-            p_rank = S.num(rt["p"])
-            on_rank = bool(p_rank < float(rule["rank_p"]))
-            meangap = S.num(g["mean_full_throttle"]) - S.num(g["mean_rest"])
-            arms = dict(
-                obca_k1=dict(switch=on_bca, h=h_bca if on_bca else 0.0, k=1.0),
-                obca_k2=dict(switch=on_bca, h=h_bca if on_bca else 0.0, k=2.0),
-                obca_forced=dict(switch=True, h=stall_h, k=1.0),
-                fixed_gated=dict(switch=on_bca, h=float(rule["fixed_height"]) if on_bca else 0.0, k=1.0),
-                conformal_k1=dict(switch=on_conf, h=gap90 if on_conf else 0.0, k=1.0),
-                meangap_k1=dict(switch=on_rank, h=max(meangap, 0.0) if on_rank else 0.0, k=1.0))
-            for name, a in arms.items():
-                a["refused"], a["refused_reason"] = False, None
-                if a["switch"] and not math.isfinite(a["h"]):
-                    a["refused"] = True
-                    a["refused_reason"] = (f"refused: {key}: arm {name} is switched on but its height {a['h']} is not "
-                                           f"finite (BCA could not certify the full-throttle group)")
-                elif a["h"] < 0:
-                    a["refused"] = True
-                    a["refused_reason"] = f"refused: {key}: arm {name} has a negative height {a['h']}"
-            out[w] = dict(t_lo=S.num(e["t_lo"]), t_up=S.num(e["t_up"]), arms=arms,
-                          sources=dict(bca_on=on_bca, bca_height=h_bca, stall_bca_height=stall_h, conformal_gap=gap90,
-                                       plain_gap_information_only=S.num(c.get("plain_gap", "nan")), rank_p=p_rank,
-                                       mean_gap=meangap))
-    except (KeyError, TypeError, ValueError) as error:
+        return AV.arm_table(per, seed, rule)
+    except AV.TableError as error:
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the switch records cannot be read",
-                                                          error=repr(error))) from None
-    return out
+                                                          error=str(error))) from None
 
 
 def same_as_step2(row, s2row):
-    """True when the restated row's six step-2 arms, t_lo and t_up equal step2lib.arm_table's exactly."""
-    if (row["t_lo"], row["t_up"]) != (s2row["t_lo"], s2row["t_up"]):
-        return False
-    for name in K.STEP2_RAMP_ARMS:
-        a, b = row["arms"][name], s2row["arms"][name]
-        if (bool(a["switch"]), float(a["h"]), float(a["k"])) != (bool(b["switch"]), float(b["h"]), float(b["k"])):
-            return False
-    return True
+    return AV.same_as_step2(row, s2row)
 
 
 def arm_row_from(setting, seed, world, per, S):
-    """arm_row on the switch entries {'<world>/seed<k>': entry} of both worlds (the reproduction check passes the
-    entries it computed): the restated step-2 table (refusals marked, never raised), checked against step2lib's own
-    arm_table when that does not refuse, then the plain twins on the same groups. row['refused']: the arms refused in
-    this world; row['bca_refused']: BCA's switched ramp itself was refused here (its matched rivals then cannot be
-    matched)."""
+    """arm_row on the switch entries {'<world>/seed<k>': entry} of both worlds: the restated table (refusals marked,
+    never raised), checked against step2lib's own arm_table when that does not refuse. row['refused']: the arms
+    refused in this world; row['bca_refused']: BCA's switched ramp itself was refused here."""
     if setting != "main":
         raise PH.Refused(f"refused: {setting!r} is not a setting of version 9")
-    row = restated_table(S, per, seed)[world]
+    table = restated_table(S, per, seed)
+    row = table[world]
+    s2per = {k: {kk: v for kk, v in e.items() if kk in ("t_lo", "t_up", "certificate", "groups", "rank_test")}
+             for k, e in per.items()}
     try:
-        s2row = S.arm_table({"per_seed_world": per}, seeds=[int(seed)], rule=K.ARM_RULE)[world][int(seed)]
+        s2row = S.arm_table({"per_seed_world": s2per}, seeds=[int(seed)], rule=K.ARM_RULE)[world][int(seed)]
         refusal = None
     except (SystemExit, ValueError, TypeError, KeyError) as error:
         s2row, refusal = None, str(error)
@@ -186,37 +147,45 @@ def arm_row_from(setting, seed, world, per, S):
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the restated arm table differs from step2lib.arm_table",
                                                           restated=row, step2=s2row))
     row["arm_table_refusal"] = refusal
-    if refusal is not None and not any(a["refused"] for w_row in restated_table(S, per, seed).values()
-                                       for a in w_row["arms"].values()):
+    if refusal is not None and not any(a.get("refused") for w_row in table.values() for a in w_row["arms"].values()):
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="step2lib.arm_table refused for a reason the restated "
                                                                "table does not see", error=refusal))
-    gap_mean = float(row["sources"]["mean_gap"])
-    on = bool(np.isfinite(gap_mean) and gap_mean > K.MEANDIFF_MARGIN)
-    row["arms"]["meandiff_k1"] = dict(switch=on, h=gap_mean if on else 0.0, k=1.0, refused=False, refused_reason=None)
-    row["arms"]["meandiff_limit"] = dict(switch=on, caution="range_hinge", coef=1.0 if on else 0.0, refused=False,
-                                         refused_reason=None)
-    row["refused"] = sorted(n for n, a in row["arms"].items() if a.get("refused"))
-    row["bca_refused"] = bool(row["arms"][K.PRIMARY]["refused"])
+    row["refusal_events"] = AV.refusal_events(table)
     return row
+
+
+def step2_row_from(seed, world, per):
+    """Step 2's own row (arms_v9.step2_table): the plumbing's reproduction trains it."""
+    try:
+        return AV.step2_table(per, seed)[world]
+    except AV.TableError as error:
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="step 2's own arm table", error=str(error))) from None
 
 
 def refused_pad(name):
     return f"refused_pad_{name}"
 
 
-def ramp_names(setting):
-    """The ramp arms that are kept and scored (on the setting's own ramp, t_lo to t_up), when not refused."""
-    return K.STEP2_RAMP_ARMS + ("meandiff_k1",)
+def ramp_names(setting, row=None):
+    """The ramp arms that are trained, kept and scored (on the setting's own ramp, t_lo to t_up), when not refused:
+    the six of step 2's program (the row's own, splitconf_k1 in conformal_k1's slot unless the row is step 2's own
+    table) and, where the plain switch is on, the dose arms."""
+    six = tuple((row or {}).get("the_six") or K.STEP2_RAMP_ARMS)
+    dose = K.DOSE_ARMS if (row or {}).get("dose_on") else ()
+    refused = set((row or {}).get("refused") or [])
+    return tuple(n for n in six + dose if n not in refused)
 
 
 def ramp_layout(setting, world, row=None):
     """The vmapped ramp programs of the main RampRunner, in call order: [(arm names), ...]. Step 2's own layout
-    (module docstring): stalling world [(w0_check,), (the six,)]; no-stall world [(w0_check, the six)]; then
-    meandiff_k1 alone. With a row, a refused arm's place holds its height-0 pad (refused_pad_<arm>)."""
-    refused = set((row or {}).get("refused") or [])
-    six = tuple(refused_pad(n) if n in refused else n for n in K.STEP2_RAMP_ARMS)
+    (module docstring): stalling world [(w0_check,), (the six,)]; no-stall world [(w0_check, the six)]; then the two
+    dose arms together where the plain switch is on. With a row, a refused arm's place holds its height-0 pad."""
+    row = row or {}
+    refused = set(row.get("refused") or [])
+    six = tuple(refused_pad(n) if n in refused else n for n in (row.get("the_six") or K.STEP2_RAMP_ARMS))
     calls = [(K.W0,), six] if world == "stall" else [(K.W0,) + six]
-    calls.append(("meandiff_k1",))
+    if row.get("dose_on"):
+        calls.append(tuple(K.DOSE_ARMS))
     return calls
 
 

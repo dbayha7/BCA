@@ -1,4 +1,4 @@
-"""Near-80 (version 9, DRAFT): the learner phases. Each calls the gate's own learner code, unchanged, on the main
+"""Near-80 (version 9): the learner phases. Each calls the gate's own learner code, unchanged, on the main
 setting's prepared rows; only what the build spec (section 5.6) lists is restated.
 
   critic            learners.fixed_critic(prepared, 'stall_aware', learn, seed) (the gate's call in
@@ -11,12 +11,15 @@ setting's prepared rows; only what the build spec (section 5.6) lists is restate
                     that is not defined is not a stop: the record says defined: false and the switch is off.
   switch            step 1's scoring (restructure/step1/evaluate.py) on BCA's two POOLED groups (version 9, section 3):
                     one-sided overestimates, under the second critic, of the survivors and of every held-out recorded
-                    row outside the ball (the whole calibration split and the whole evaluation split, split at t_lo;
-                    near80lib.pooled_groups); BCA's certificate (step1lib.certificate, margin 0.10, the same rng tags),
-                    the rank test and the group summaries, which every switch arm reads. Also recorded: the groups'
-                    sources and distinct episodes, the one-row-per-episode variant (reported only) and the bank-only
-                    groups of version 8 (reported only). The arm table row is computed later, inside the policy
-                    phase.
+                    row and top-up row outside the ball (the whole calibration split, the whole evaluation split and
+                    the data record's top-up blocks, regenerated and checked, split at t_lo; near80lib.pooled_groups);
+                    BCA's certificate (step1lib.certificate, margin 0.10, the same rng tags), the rank test, the group
+                    summaries, the textbook split-conformal quantiles and the mean difference, which every switch arm
+                    reads. Also recorded (reported only, no arm reads them): the groups by source and their distinct
+                    episodes, step 2's uncorrected split-conformal gap, the exact Wilks twin, the one-row-per-episode
+                    variant of every switch (one row per episode chosen uniformly, default_rng([20261020, 9901, seed,
+                    world, 1 or 2])) and the bank-only groups of version 8. The arm table row is computed later,
+                    inside the policy phase (arms_v9.arm_table).
   clone             learners.clone(prepared, learn, seed).
   reference_actors  learners.ActorOnly(prepared, clone, learn, seed, alpha=5).run(arms, critics, weighted=False), with
                     the gate's check-2 layout so that the reproduction check can be bit for bit: stalling world
@@ -116,9 +119,16 @@ def second_removal(setting, sd, pg, gr):
     return SH.Removal(rm.kind + "_minus_survivors", removed, rm.bank_removed.copy(), sd.gap), surv
 
 
-def second_checks(prep, pg, surv):
-    """Step 1's training-data checks of the second critic."""
+def second_checks(prep, pg, surv, sd=None):
+    """Step 1's training-data checks of the second critic, and version 9's: no held-out or top-up row in its training
+    rows (top-up rows are never log rows, so the log's held-out rows decide it)."""
+    extra = {}
+    if sd is not None:
+        h = N.heldout_rows(sd.log, sd.gap, K.HELDOUT_SPLITS)
+        extra["no_heldout_or_topup_row_in_training"] = bool(len(np.intersect1d(h, prep.rows)) == 0
+                                                            and int(np.max(prep.rows, initial=-1)) < sd.log.n_rows)
     return dict(
+        extra,
         rows=bool(prep.n == pg.n - len(surv)),
         no_survivor_in_training=bool(not np.isin(surv, prep.rows).any()),
         bank_unchanged=bool(np.array_equal(prep.bank_rows, pg.bank_rows)),
@@ -143,7 +153,7 @@ def critic_second(run, ctx):
     sd = ctx.seed(k.world)
     rm2, surv = second_removal(k.setting, sd, pg, gr)
     prep = L.prepare(sd.log, rm2, sd.norm(), ctx.learn)
-    checks = second_checks(prep, pg, surv)
+    checks = second_checks(prep, pg, surv, sd)
     if not all(checks.values()):
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the second critic's training-data checks",
                                                           checks=checks), checks)
@@ -181,10 +191,12 @@ def undefined_entry(gr):
     """The arm-table entry of a world whose gap rule is not defined: the switch is off, nothing is certified."""
     nan = "nan"
     return dict(t_lo=gr.get("t_lo"), t_up=gr.get("t_up"),
-                certificate=dict(on=False, height=nan, q05=None, reason="the gap rule is not defined"),
+                certificate=dict(on=False, height=nan, q05=None, R_tail=nan, reason="the gap rule is not defined"),
                 groups=dict(n_full_throttle=0, n_rest=0, mean_full_throttle=nan, mean_rest=nan, q90_full_throttle=nan,
                             q90_rest=nan),
-                rank_test=dict(U=None, p=nan))
+                rank_test=dict(U=None, p=nan),
+                split_conformal=dict(on=False, gap=nan, height=0.0, q_tail=nan, q_rest=nan),
+                mean_difference=dict(on=False, gap=nan))
 
 
 def bank_switch_scores(critic2, pg, gr, gamma):
@@ -201,37 +213,39 @@ def bank_switch_scores(critic2, pg, gr, gamma):
     return np.concatenate([s_tr, s_bk[bank_ft]]), s_bk[~bank_ft]
 
 
-def pooled_rows(sd, pg, gr):
-    """(tail rows, rest rows, survivors): BCA's two pooled groups as log rows (near80lib.pooled_groups): the
-    survivors, then every held-out row outside the ball past t_lo; every held-out row outside the ball at or below
-    t_lo."""
+def pooled_rows(lg, gap, pg, gr):
+    """(tail rows, rest rows, survivors): BCA's two pooled groups as rows of the groups' view lg (the log, or the log
+    and its top-up blocks; near80lib.pooled_groups): the survivors, then every held-out and top-up row outside the
+    ball past t_lo; every held-out and top-up row outside the ball at or below t_lo."""
     surv = np.asarray(pg.rows[gr["tail"]], np.int64)
-    tail, rest = N.pooled_groups(sd.log, sd.gap, surv, gr["t_lo"], K.HELDOUT_SPLITS)
+    tail, rest = N.pooled_groups(lg, gap, surv, gr["t_lo"], K.HELDOUT_SPLITS)
     return tail, rest, surv
 
 
-def switch_scores(critic2, sd, pg, gr, gamma):
+def switch_scores(critic2, lg, gap, pg, gr, gamma):
     """(tail, rest, rows): the second critic's one-sided overestimates of BCA's two pooled groups (pooled_rows), all
     held out from the second critic, scored with the same overestimates, the same stall-aware controller and the
     gate's normalization; rows = (tail rows, rest rows, survivors). The survivors are scored from the prepared training
-    transitions (as step 1 and version 8 did); every other row from learners' own transition builder on the log."""
-    tail_rows, rest_rows, surv = pooled_rows(sd, pg, gr)
+    transitions (as step 1 and version 8 did); every other row from learners' own transition builder on the view."""
+    tail_rows, rest_rows, surv = pooled_rows(lg, gap, pg, gr)
     fixed = L.FixedController(K.CONTROLLER, pg.physics, pg.obs_mean, pg.obs_std)
     surv_idx = np.flatnonzero(gr["tail"])
     s_sv = overestimates(critic2, pg.train, fixed, gamma, rows=surv_idx)
     held_tail = tail_rows[len(surv):]
-    tr_t = L._transition(sd.log, held_tail, pg.obs_mean, pg.obs_std)
-    tr_r = L._transition(sd.log, rest_rows, pg.obs_mean, pg.obs_std)
+    tr_t = L._transition(lg, held_tail, pg.obs_mean, pg.obs_std)
+    tr_r = L._transition(lg, rest_rows, pg.obs_mean, pg.obs_std)
     s_t = overestimates(critic2, tr_t, fixed, gamma) if len(held_tail) else np.zeros(0)
     s_r = overestimates(critic2, tr_r, fixed, gamma) if len(rest_rows) else np.zeros(0)
     return np.concatenate([s_sv, s_t]), np.asarray(s_r, np.float64), (tail_rows, rest_rows, surv)
 
 
-def certificate_entry(tail, rest, seed, world, gr):
+def certificate_entry(tail, rest, seed, world, gr, plain=True):
     """Step 1's certificate, rank test and groups for one seed-world, as step 1's results record them (non-finite
-    numbers as the strings 'inf', '-inf', 'nan', which step2lib.num reads)."""
+    numbers as the strings 'inf', '-inf', 'nan', which step2lib.num reads); with plain, version 9's plain switches on
+    the same two groups: the textbook split conformal (with step 2's uncorrected gap) and the mean difference."""
     S1 = step1lib()
     tags = [*K.CERT_TAG_HEAD, int(seed), K.WORLD_TAG[world]]
+    tail, rest = np.asarray(tail, np.float64), np.asarray(rest, np.float64)
     cert = S1.certificate(tail, rest, tags, K.CERT)
     rank = S1.rank_test(tail, rest)
     groups = dict(n_full_throttle=int(len(tail)), n_rest=int(len(rest)),
@@ -239,7 +253,20 @@ def certificate_entry(tail, rest, seed, world, gr):
                   mean_rest=float(rest.mean()) if len(rest) else float("nan"),
                   q90_full_throttle=float(np.quantile(tail, 0.9, method="inverted_cdf")) if len(tail) else float("nan"),
                   q90_rest=float(np.quantile(rest, 0.9, method="inverted_cdf")) if len(rest) else float("nan"))
-    return S1.jsonable(dict(t_lo=gr["t_lo"], t_up=gr["t_up"], certificate=cert, groups=groups, rank_test=rank))
+    out = dict(t_lo=gr["t_lo"], t_up=gr["t_up"], certificate=cert, groups=groups, rank_test=rank)
+    if plain:
+        out["split_conformal"] = N.split_conformal(tail, rest, K.ARM_RULE["conformal_margin"],
+                                                   K.SPLIT_CONFORMAL["level"])
+        out["mean_difference"] = N.mean_difference(tail, rest, K.MEANDIFF_MARGIN)
+    return S1.jsonable(out)
+
+
+def reported_entry(tail, rest, seed, world, gr):
+    """A reported-only entry (the one-row-per-episode variant): every switch's call and height, no arm reads it."""
+    e = certificate_entry(tail, rest, seed, world, gr)
+    e["wilks"] = step1lib().jsonable(N.wilks_twin(tail, rest, K.CERT["margin"], K.WILKS["level"],
+                                                  K.WILKS["confidence"]))
+    return e
 
 
 def num(x):
@@ -251,15 +278,8 @@ def num(x):
 
 
 def refused(cert):
-    """BCA refused: its switch is on but its tail threshold, and so its height, is not finite (section 8)."""
-    return bool(cert.get("on") and not np.isfinite(num(cert.get("height"))))
-
-
-def heldout_record(ctx, world):
-    """The data record's outcome-free count and held-out rows' fingerprint for this seed-world (data_main writes
-    them before any learner is trained)."""
-    rec = SD.data_main_record(ctx.out_root, ctx.rep, world)
-    return rec.get("group_count") or {}, rec.get("heldout_rows_sha256")
+    """BCA refused: its switch is on but its tail threshold R_tail, and so its height, is not finite (section 3.3)."""
+    return bool(cert.get("on") and not np.isfinite(num(cert.get("R_tail", cert.get("height")))))
 
 
 def switch(run, ctx):
@@ -275,42 +295,63 @@ def switch(run, ctx):
         entry = step1lib().jsonable(undefined_entry(gr))
         return dict(base, t_lo=gr["t_lo"], t_up=gr["t_up"], defined=False, n_survivors=0,
                     certificate=entry["certificate"], rank_test=entry["rank_test"], groups=entry["groups"],
-                    entry=entry)
+                    entry=entry, bca_refused=False, gap_rule_undefined=True)
     surv = np.asarray(pg.rows[gr["tail"]], np.int64)
     if step1lib().array_sha256(surv) != rec2.get("survivors_sha256"):
         raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the survivors differ from the second critic's"))
     critic2 = SD.load_tree_checked(d / "critic_second.msgpack", L.critic_template(), rec2["file_sha256"])
     sd = ctx.seed(k.world)
-    count, held_sha = heldout_record(ctx, k.world)
-    if N.rows_sha256(N.heldout_rows(sd.log, sd.gap, K.HELDOUT_SPLITS)) != held_sha:
+    lg, drec = ctx.heldout_view(k.world)
+    count = drec.get("group_count") or {}
+    h = N.heldout_rows(lg, sd.gap, K.HELDOUT_SPLITS)
+    rows_sha, tr_sha = SD.heldout_fingerprints(sd, lg, h)
+    if rows_sha != drec.get("heldout_rows_sha256"):
         raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the held-out rows differ from the data record's"))
-    tail, rest, (tail_rows, rest_rows, surv_rows) = switch_scores(critic2, sd, pg, gr, ctx.learn.gamma)
-    checks = N.group_checks(sd.log, sd.gap, pg.rows, surv_rows, tail_rows, rest_rows, gr["t_lo"], K.HELDOUT_SPLITS)
+    if tr_sha != drec.get("heldout_transitions_sha256"):
+        raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the held-out transitions differ from the data "
+                                                                     "record's"))
+    tail, rest, (tail_rows, rest_rows, surv_rows) = switch_scores(critic2, lg, sd.gap, pg, gr, ctx.learn.gamma)
+    checks = N.group_checks(lg, sd.gap, pg.rows, surv_rows, tail_rows, rest_rows, gr["t_lo"], K.HELDOUT_SPLITS)
     checks["counts_equal_the_outcome_free_count"] = bool(len(tail) == count.get("n_tail")
                                                          and len(rest) == count.get("n_rest"))
     checks["passed"] = bool(checks["passed"] and checks["counts_equal_the_outcome_free_count"])
     if not checks["passed"]:
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="BCA's two pooled groups", checks=checks), checks)
     entry = certificate_entry(tail, rest, k.seed, k.world, gr)
-    one = (N.one_per_episode(sd.log, tail_rows), N.one_per_episode(sd.log, rest_rows))
-    one_entry = certificate_entry(tail[one[0]], rest[one[1]], k.seed, k.world, gr)
+    wilks = step1lib().jsonable(N.wilks_twin(tail, rest, K.CERT["margin"], K.WILKS["level"], K.WILKS["confidence"]))
+    wt = K.WORLD_TAG[k.world]
+    one = (N.one_per_episode(lg, tail_rows, [*K.ONE_PER_EPISODE_TAG_HEAD, k.seed, wt, 1]),
+           N.one_per_episode(lg, rest_rows, [*K.ONE_PER_EPISODE_TAG_HEAD, k.seed, wt, 2]))
+    one_entry = reported_entry(tail[one[0]], rest[one[1]], k.seed, k.world, gr)
     bt, br = bank_switch_scores(critic2, pg, gr, ctx.learn.gamma)
-    bank_entry = certificate_entry(bt, br, k.seed, k.world, gr)
+    bank_entry = certificate_entry(bt, br, k.seed, k.world, gr, plain=False)
+    src = dict(tail=N.group_sources(lg, tail_rows, surv_rows), rest=N.group_sources(lg, rest_rows, surv_rows))
+    cert = entry["certificate"]
     return dict(base, t_lo=gr["t_lo"], t_up=gr["t_up"], defined=True, n_survivors=int(len(surv)),
-                certificate=entry["certificate"], rank_test=entry["rank_test"], groups=entry["groups"], entry=entry,
-                group_sources=dict(tail=N.group_sources(sd.log, tail_rows, surv_rows),
-                                   rest=N.group_sources(sd.log, rest_rows, surv_rows)),
-                group_checks=checks, outcome_free_count=dict(n_tail=count.get("n_tail"), n_rest=count.get("n_rest"),
-                                                             certifiable=count.get("certifiable"),
-                                                             below_bar=count.get("below_bar")),
-                bca_refused=refused(entry["certificate"]),
-                reported_only=dict(one_row_per_episode=dict(certificate=one_entry["certificate"],
-                                                            groups=one_entry["groups"],
-                                                            rank_test=one_entry["rank_test"]),
-                                   bank_only=dict(certificate=bank_entry["certificate"], groups=bank_entry["groups"],
-                                                  rank_test=bank_entry["rank_test"]),
-                                   note="no arm reads these: the pooled groups above are BCA's evidence"),
-                heldout_rows_sha256=held_sha, critic_second_sha256=rec2["file_sha256"], gamma=float(ctx.learn.gamma))
+                certificate=cert, rank_test=entry["rank_test"], groups=entry["groups"], entry=entry,
+                split_conformal=entry["split_conformal"], mean_difference=entry["mean_difference"],
+                group_sources=src, group_checks=checks,
+                outcome_free_count=dict(n_tail=count.get("n_tail"), n_rest=count.get("n_rest"),
+                                        certifiable=count.get("certifiable"), below_bar=count.get("below_bar"),
+                                        recorded=count.get("recorded"), topup_blocks=len(lg.blocks) if hasattr(
+                                            lg, "blocks") else 0),
+                bca_refused=refused(cert),
+                reported_only=dict(
+                    wilks=dict(wilks, bca_R_tail=cert.get("R_tail"), bca_R_rest=cert.get("R_rest"),
+                               R_tail_equals_wilks_upper=bool(num(cert.get("R_tail")) == num(wilks.get(
+                                   "upper_tail")))),
+                    one_row_per_episode=dict(rule="one row per episode, chosen uniformly with default_rng([20261020, "
+                                                  "9901, seed, world, 1 or 2])", n_tail=int(len(one[0])),
+                                             n_rest=int(len(one[1])), certificate=one_entry["certificate"],
+                                             groups=one_entry["groups"], rank_test=one_entry["rank_test"],
+                                             split_conformal=one_entry["split_conformal"],
+                                             mean_difference=one_entry["mean_difference"], wilks=one_entry["wilks"]),
+                    distinct_episode_share_tail=src["tail"].get("distinct_share"),
+                    bank_only=dict(certificate=bank_entry["certificate"], groups=bank_entry["groups"],
+                                   rank_test=bank_entry["rank_test"]),
+                    note="no arm reads these: the pooled groups above are BCA's evidence"),
+                heldout_rows_sha256=rows_sha, heldout_transitions_sha256=tr_sha,
+                critic_second_sha256=rec2["file_sha256"], gamma=float(ctx.learn.gamma))
 
 
 # --------------------------------------------------------------------------------------------- actors

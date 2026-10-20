@@ -1,12 +1,15 @@
-"""Near-80 (version 9, DRAFT): the main setting's data, the fresh data of version 9's seeds, the training files, the
-outcome-free count of BCA's two pooled groups, and the setting contexts every learner, actor-training and evaluation
-phase reads.
+"""Near-80 (version 9): the main setting's data, the fresh data of version 9's seeds, the training files, the
+outcome-free count of BCA's two pooled groups with the held-out top-up, and the setting contexts every learner,
+actor-training and evaluation phase reads.
 
 The one setting (PREREGISTRATION.md section 3): 'main' is the main test's removal (the ball; shift.make_removal(log,
 'gap', gap)), with the gate's normalization (the ball-kept training rows' states), as step 1 did for its second
 critic. BCA's two groups are pooled from every held-out recorded row outside the ball (near80lib.pooled_groups); the
-data phase counts them from the commands alone before any learner is trained (near80lib.outcome_free_count) and
-records the held-out rows' fingerprint, which the switch phase checks.
+data phase counts them from the commands alone before any learner is trained (near80lib.outcome_free_count), tops the
+full-throttle group up to 36 rows with held-out blocks of new episodes when it is smaller (topup.py; blocks of 100
+episodes, at most 10, each world its own number), and records the count by source, the blocks' array SHA-256, the
+held-out rows' and transitions' fingerprints and the new data checks (section 8.1), which the switch phase checks. A
+fresh seed that fails a data check is a failed seed (not BCA's; never replaced).
 
 Seed 0 (the plumbing only) comes from the gate (acceptance.load_seed regenerates its log and checks it against the
 gate's data record). The confirmatory seeds are new: fresh_seed_data restates version 6's fresh.make_fresh_data
@@ -164,6 +167,13 @@ def _ball_checks(lg, gap, rg, rr):
                   leak_counter_finds_every_bank_gap_row=bool(SH.leak_count(bank, lg, gap) == int(rg.bank_removed.sum())),
                   evaluation_split_untouched=bool(not rg.removed[lg.split_rows("evaluation")].any()))
     return checks, ball_checks_passed(checks)
+
+
+def topup_block(seed, world, spec, slope, k):
+    """Top-up block k of a seed-world (topup.make_block: the gate's environment, streams [20261012, seed, 61 / 62, k];
+    the stub replaces it with a synthetic block)."""
+    import topup as TU
+    return TU.make_block(seed, world, spec, slope, k)
 
 
 def ball_checks_passed(checks):
@@ -348,19 +358,65 @@ def check_training_file(run, setting, sd, learn):
 
 # --------------------------------------------------------------------------------------------- the data phases
 
-def group_count(sd, rec):
-    """The outcome-free count of BCA's two pooled groups (section 8.1, reported; commands only, before any learner is
-    trained), the held-out rows' fingerprint the switch phase checks, and the group checks (a failure there is a
-    coding error: a recorded stop). Fills rec['group_count'] and rec['heldout_rows_sha256']."""
+def topup_plan(run, sd):
+    """(make, target, cap) of the top-up (section 3.2). The plumbing's smoke (scratch, seed 0, --smoke-force) forces
+    exactly one block whatever the count, so that every top-up code path runs once (section 8.2)."""
+    make = lambda k: topup_block(sd.rep, sd.world, sd.spec, float(sd.physics.stall_slope), k)
+    if getattr(run, "smoke_force", False):
+        return make, 10 ** 9, 1
+    return make, K.CERTIFIABLE_MIN, int(K.TOPUP["cap"])
+
+
+def heldout_fingerprints(sd, lg, rows):
+    """(rows SHA-256, transitions SHA-256) of the held-out rows H of the groups' view: the rows, and their transitions
+    as learners._transition builds them with the gate's normalization (what the switch phase scores)."""
+    mean, std = (np.asarray(v, np.float32) for v in sd.norm())
+    tr = L._transition(lg, rows, mean, std)
+    return N.rows_sha256(rows), L.tree_sha256(tr)
+
+
+def group_count(run, sd, rec):
+    """The outcome-free count of BCA's two pooled groups with the top-up (section 3.2, reported; commands only, before
+    any learner is trained), the held-out rows' and transitions' fingerprints the switch phase checks, and the new
+    data checks of section 8.1. Fills rec['group_count'], rec['topup'], rec['heldout_rows_sha256'],
+    rec['heldout_transitions_sha256'] and rec['data_checks_v9']; returns the failed-seed reason or None. A failed group
+    construction check is a coding error: a recorded stop."""
     step1 = N.load_step1lib()
     kept = sd.removals["gap"].kept_train_rows(sd.log)
-    count = N.outcome_free_count(sd.log, sd.gap, kept, step1, K.GAP_RULE)
+    count, blocks = N.outcome_free_count(sd.log, sd.gap, kept, step1, K.GAP_RULE, topup=topup_plan(run, sd))
+    lg = N.view(sd.log, blocks)
+    h = N.heldout_rows(lg, sd.gap, K.HELDOUT_SPLITS)
     rec["group_count"] = count
-    rec["heldout_rows_sha256"] = N.rows_sha256(N.heldout_rows(sd.log, sd.gap, K.HELDOUT_SPLITS))
+    rec["topup"] = dict(count.get("topup") or {}, tags=dict(master=K.TOPUP["master"], starts_and_noise=K.TOPUP[
+        "tag_starts"], coin=K.TOPUP["tag_coin"]), forced_in_smoke=bool(getattr(run, "smoke_force", False)))
+    rec["heldout_rows_sha256"], rec["heldout_transitions_sha256"] = heldout_fingerprints(sd, lg, h)
     if count["defined"] and not count["group_checks"]["passed"]:
         raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="BCA's two pooled groups hold a row they must not "
                                                                "hold", group_checks=count["group_checks"]))
-    return count
+    checks = dict(heldout=count.get("heldout_checks"))
+    if count["defined"]:
+        checks["count_unchanged_when_outcomes_scrambled"] = N.count_scramble_check(
+            sd.log, sd.gap, kept, step1, K.GAP_RULE, blocks, count, [*K.COUNT_SCRAMBLE_TAG, sd.rep, K.WORLD_TAG[
+                sd.world]])
+        again = [topup_block(sd.rep, sd.world, sd.spec, float(sd.physics.stall_slope), b["k"]) for b in blocks]
+        import topup as TU
+        bad = TU.check_blocks(again, TU.summary(blocks))
+        checks["topup_blocks_reproduce"] = dict(passed=not bad, problems=bad, blocks=len(blocks))
+    rec["data_checks_v9"] = checks
+    failed = [k for k, v in checks.items() if isinstance(v, dict) and v.get("passed") is False]
+    return ("the new data checks failed: " + ", ".join(failed)) if failed else None
+
+
+def topup_blocks(sd, rec):
+    """The data record's top-up blocks of a seed-world, regenerated and checked against the record's array SHA-256
+    (a difference is a recorded stop: a saved input whose fingerprint does not match)."""
+    import topup as TU
+    want = (rec.get("topup") or {}).get("blocks") or []
+    blocks = [topup_block(sd.rep, sd.world, sd.spec, float(sd.physics.stall_slope), int(b["k"])) for b in want]
+    bad = TU.check_blocks(blocks, want)
+    if bad:
+        raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the top-up blocks", problems=bad))
+    return blocks
 
 
 def data_main(run):
@@ -383,7 +439,9 @@ def data_main(run):
                    gate_world_marks=None if marks is None else {k: bool(v) for k, v in marks.items()},
                    passed_gate_checks=passed, gate_record_sha256=None if run.stub else gate_record_sha256(seed, world),
                    seed_failed_reason=None if passed else "the gate's data checks failed on this seed")
-        group_count(sd, rec)
+        why = group_count(run, sd, rec)
+        if why and not rec["seed_failed_reason"]:
+            rec["seed_failed_reason"] = why
         return rec
     fields, sd = fresh_seed_data(seed, world, run.out_root)
     rec.update(fields)
@@ -394,7 +452,10 @@ def data_main(run):
                    seed_failed_reason=None, passed_gate_checks=True)
     if sd is not None and rec["passed_gate_checks"]:
         learn = learn_settings(run)
-        group_count(sd, rec)                     # before any learner is trained: commands only
+        why = group_count(run, sd, rec)          # before any learner is trained: commands only
+        if why:
+            rec.update(passed_gate_checks=False, seed_failed_reason=why)
+            return rec
         rec["train_file"] = write_training_file("main", sd, run.out_root)
         if not rec["train_file"]["training_file_check"]["passed"]:
             raise PH.PhaseStop(PH.STOP_REASONS["training_file"], rec["train_file"])
@@ -419,7 +480,34 @@ def fresh_path_check(run):
     rec = dict(fields)
     rec.update(kind="near80v9-data-main", seed=0, world=key.world, group=key.group, train_file=None,
                prepared_sha256=None, fresh_path_reproduces_gate=dict(same, passed=bool(all(same.values()))))
+    if sd is not None:
+        why = group_count(run, sd, rec)          # the fresh path's count and top-up, read back by read_back_fresh
+        rec["fresh_path_data_checks"] = why
     return rec
+
+
+def read_back_fresh(out_root, seed, world):
+    """Plumbing check (c), section 8.2: a fresh-path data record, written through the phase wrapper, read back the way
+    every later phase reads a fresh seed's record (FreshSeed: the regenerated log's hashes, the ball and both
+    removals; the record's own sizes, never the wrapper's), with its top-up blocks regenerated and checked and its
+    held-out fingerprints recomputed. Returns a dict with 'passed'."""
+    rec = data_main_record(out_root, seed, world)
+    out = dict(seed=int(seed), world=world)
+    try:
+        sd = FreshSeed(seed, world, rec)
+        blocks = topup_blocks(sd, rec)
+        lg = N.view(sd.log, blocks)
+        h = N.heldout_rows(lg, sd.gap, K.HELDOUT_SPLITS)
+        rows_sha, tr_sha = heldout_fingerprints(sd, lg, h)
+        out.update(log_and_removals=True, topup_blocks=len(blocks),
+                   heldout_rows_equal=bool(rows_sha == rec.get("heldout_rows_sha256")),
+                   heldout_transitions_equal=bool(tr_sha == rec.get("heldout_transitions_sha256")),
+                   sizes=list(fresh_record_sizes(rec)), wrapper_keys_kept_apart=bool("run_sizes" in rec))
+    except (PH.Refused, PH.PhaseStop) as error:
+        out.update(log_and_removals=False, error=str(error))
+    out["passed"] = bool(out.get("log_and_removals") and out.get("heldout_rows_equal")
+                         and out.get("heldout_transitions_equal") and out.get("wrapper_keys_kept_apart"))
+    return out
 
 
 def _as_json(x):
@@ -552,6 +640,13 @@ class SettingContext:
 
     def switch_record(self, world):
         return load_record(learner_dir(self.out_root, self.setting, world, self.rep) / "switch.json")
+
+    def heldout_view(self, world):
+        """(the groups' view of this seed-world: the log and its top-up blocks, regenerated and checked against the
+        data record; the data record). The switch phase reads it; no scoring phase does."""
+        rec = data_main_record(self.out_root, self.rep, world)
+        sd = self.seed(world)
+        return N.view(sd.log, topup_blocks(sd, rec)), rec
 
 
 class _LazySeeds(dict):
