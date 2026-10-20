@@ -24,10 +24,11 @@ What it does, in order. If any step fails, it prints "Refused." with the reason,
          counts on seeds 0-4 and the spent-seed switch facts on 10-14; nothing trained) are the ones prereg.json pins;
        - the draft the final version was built from (prereg_history/prereg_draft_<first 16>.json) is the one pinned;
        - the folder and its code/ hold no other file: only the files the manifest lists, prereg.json,
-         code_manifest.json (each with its .sha256), this fingerprint's own approval and import records, and version
+         code_manifest.json (each with its .sha256), this fingerprint's own approval and import records, version
          8's history (its approval and import records, its amendment_1.json, each with its .sha256; its
-         pre_approval/ file; its results folder; its superseded prereg.json in prereg_history/); no __pycache__ and no
-         other folder holding Python files.
+         pre_approval/ file; its results folder; its superseded prereg.json in prereg_history/), the build notes and
+         the decision/ folder (history; the only folder besides code/ allowed to hold Python files: the two
+         calculation scripts it keeps); no __pycache__ and no other folder holding Python files.
   2. Refuses if an approval of this fingerprint is already there (it never overwrites one).
   3. Refuses unless standard input is a terminal: you type the answer yourself; nothing may be piped in.
   4. Shows a summary: the fingerprint, your answer accepting the defaults, the defaults taken, the seeds, the two
@@ -92,6 +93,7 @@ V8_HISTORY_FILES = ("approval_near80_51e677ab76c8d2f7.json", "import_near80_51e6
 V8_HISTORY_DIRS = ("results-20261020T115246Z",)
 V8_FROZEN = "pre_approval/no_training_checks_seeds0_4.json"
 V9_NOTES = "V9_BUILD_NOTES.md"
+V9_DECISION_DIR = "decision"          # the session's decision files, kept as history (near80_constants.V9_DECISION_DIR)
 # Amendments of version 9 (approval_check.py's names, restated; test_v9 checks they agree).
 AMENDMENT_NAME = "amendment_v9_1.json"
 AMENDMENT_KIND = "near80-amendment"
@@ -145,7 +147,8 @@ def unlisted_files(folder, files, prefix, extra=()):
     """Step 1's last check: every entry of the folder and of its code/ that is neither a file the manifest lists, one
     of the four frozen files at the top, this fingerprint's own approval or import record (with .sha256), version 8's
     history, nor the build notes; any __pycache__; any other folder holding a .py file (version 8's results folder
-    holds none). Returns the problems (empty when none)."""
+    holds none; the decision/ folder, history like the build notes, holds the two calculation scripts and is allowed
+    by name: nothing puts it on Python's path). Returns the problems (empty when none)."""
     allowed = set(f for f in files if "/" not in f) | set(FROZEN_TOP) | set(extra) | {V9_NOTES}
     for name in (APPROVAL_NAME.format(prefix), IMPORT_NAME.format(prefix)):
         allowed.update((name, name + ".sha256"))
@@ -157,7 +160,7 @@ def unlisted_files(folder, files, prefix, extra=()):
         if name == "__pycache__":
             out.append("{} exists (compiled Python bytecode); remove it".format(name))
         elif os.path.isdir(path) and not os.path.islink(path):
-            if name == "code":
+            if name in ("code", V9_DECISION_DIR):
                 continue
             for root, dirs, names in os.walk(path):
                 if any(n.endswith(".py") or n.endswith(".pyc") for n in names) or "__pycache__" in dirs:

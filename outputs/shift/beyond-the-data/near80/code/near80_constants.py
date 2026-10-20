@@ -193,6 +193,9 @@ V8_HISTORY_FILES = ("approval_near80_51e677ab76c8d2f7.json", "import_near80_51e6
 V8_HISTORY_DIRS = ("results-20261020T115246Z",)
 V8_FROZEN_NAME = "no_training_checks_seeds0_4.json"
 V9_NOTES = "V9_BUILD_NOTES.md"
+# The session's decision files (DECISION.md and its revision log, the credit and power calculations, the preview),
+# kept as history beside the package; unpinned like the build notes, allowed by the approval script, read by nothing.
+V9_DECISION_DIR = "decision"
 
 # Files the code manifest lists, relative to N80 (code/ is listed by name; freeze refuses any other file there).
 TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "run_near80_cluster.sh",

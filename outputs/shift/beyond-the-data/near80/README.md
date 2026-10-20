@@ -24,13 +24,15 @@ Version 9 is the same test with the cause fixed and nothing else moved:
   stops.
 - **Four new trained arms** reading the same groups: the mean-difference switch with the plain 90% gap, with twice
   that gap, turning on the hand-set range limit (the three plain twins), and BCA's switched ramp trained alone.
-- **Three claims:** C1 = version 8's claim 4 marks, unchanged (the hand-set range limit joins the world-blind
-  rivals); C2 = BCA's switched ramp beats each plain twin by 5.0 points on the net across worlds, paired by seed, in
+- **Three claims:** C1 = version 8's claim 4 marks, unchanged (the hand-set range limit joins the rules that cannot
+  switch themselves off, against which BCA's lead is measured); C2 = BCA's switched ramp beats each plain twin by 5.0
+  points on the net across worlds (gain where full throttle stalls minus loss where it helps), paired by seed, in
   at least ceil(0.8 n) of the n certified seeds (8 of 10), all three twins; C3 = the mirror, a twin beats BCA by 5.0
   points with BCA ahead in at most 1 seed, one claim per twin. C2 and C3 need at least 8 certified seeds.
 - **Two entries:** the university cluster hpc.charlotte.edu (`run_near80_cluster.sh` with `near80_slurm_job.sh`:
   one Slurm job per fresh seed and a group job for the lock, the evaluations and the look, the same frozen code and
-  checks; its stub run finished all 19 phases there on 20 October) runs version 9 by your answer; the desktop
+  checks; its stub run finished all 19 phases there on 20 October, on a synthetic fixture; the label seed 40 was
+  used once, before the seed-0 rule; nothing of that seed was generated) runs version 9 by your answer; the desktop
   (`run_near80.sh`, as version 8) is the fallback, and the place the results are copied to, checked and committed
   from (your second answer).
 
@@ -132,6 +134,8 @@ version 8's README; `retry <phase>`, `budget-continue fresh` and `report` are th
   `ledger.py`, `stubs.py`), the look (`pooled.py`, `claims_text.py`), the constants (`near80_constants.py`) and five
   unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`).
 - `V9_BUILD_NOTES.md`: every change, test, estimate and open item of this build (not pinned).
+- `decision/`: copies of the session's decision files (`DECISION.md`, whose verdict table is PREREGISTRATION.md
+  section 14.6, `REVISION_LOG.md`, `credit.md`, the power calculations, `PREVIEW.md`), kept as history (not pinned).
 - Version 8's history: its approval and import records, `amendment_1.json`, `pre_approval/`,
   `results-20261020T115246Z/`, and (after the freeze) `prereg_history/prereg_superseded_51e677ab76c8d2f7.json` and
   `code_manifest_history/code_manifest_v6.json`.

@@ -404,6 +404,7 @@ class TestConstantsAgree(unittest.TestCase):
         self.assertEqual(AL.V8_HISTORY_DIRS, K.V8_HISTORY_DIRS)
         self.assertEqual(AL.V8_FROZEN, K.PRE_APPROVAL_DIR + "/" + K.V8_FROZEN_NAME)
         self.assertEqual(AL.V9_NOTES, K.V9_NOTES)
+        self.assertEqual(AL.V9_DECISION_DIR, K.V9_DECISION_DIR)
         self.assertEqual(AL.FROZEN_NAME, K.PRE_APPROVAL_DIR + "/" + K.COUNTS_FROZEN_NAME)
         self.assertEqual(AL.FROZEN_NAME, "pre_approval/pooled_facts_seeds0_4_spent10_14.json")
         self.assertEqual(AL.CHECK_TESTS, K.TEST_FILES)

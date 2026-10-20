@@ -24,6 +24,11 @@ same groups would not?
 - Seeds 0-4 are seen by everything. Version 9 uses seed 0 for its plumbing only (nothing on it is a claim).
 - Seeds 40-49 are fresh. Only they can carry a claim. Nobody has generated, loaded or looked at them. Seeds 50-59 are
   reserved for a later version and are refused by this one.
+- One stub run on 20 October 2026 (the cluster entry's smoke, `V9_BUILD_NOTES.md` section 4) ran on a synthetic
+  fixture under the label seed 40 before the rule that every stub uses seed 0: it generated nothing from the
+  generator's seed 40, read no log of it and trained nothing; every stub since uses seed 0. The same smoke read five
+  pinned `runs/` folders of the desktop clone (the gate's data, the room harness, step 2's saved actors, version 6's
+  run folder), none of which holds a fresh seed.
 - Seeds 10-14 are spent (version 8's fresh seeds). This version reads them once, before approval, with version 8's
   recorded second critics (section 8.1, check 5; nothing trained). Seeds 5-9 belong to version 6/7; 15-19 stay named
   for version 8's fallback; 20-34 belong to the placement design; 100-119 and 900-909 to the gate and stage 0. This
@@ -41,7 +46,9 @@ same groups would not?
   score; a plain mean-difference test with the same 0.10 margin makes BCA's on/off call in all 40 recorded
   seed-worlds and in 10 of 10 under pooling;
 - `DECISION.md` of 20 October 2026, revised after a statistics review, a fairness review and a feasibility review
-  (`REVISION_LOG.md`), which fixed the seeds, the claims, the margins and the refusal reading below;
+  (`REVISION_LOG.md`), which fixed the seeds, the claims, the margins and the refusal reading below; both are kept,
+  unpinned, under `decision/` in this folder with the credit and power calculations and the preview they rest on
+  (section 18), and its verdict table is copied word for word into section 14.6;
 - your answer to section 16, given on 20 October 2026 at 18:29 UTC in the chat with the cloud assistant: "Accept the
   defaults and cluster", that is every default, with the university cluster as the run machine (choice 4) and the
   desktop kept as the fallback; and your second answer, at about 19:20 UTC in the same chat, on choice 9 (where
@@ -154,7 +161,9 @@ survivors, the calibration rows, the evaluation rows), with the exact chance tha
 height (the chance that at most 50 of 1,000 draws are infinite, each infinite with chance 0.9 to the power of the
 size: 0% up to 24 rows, 40% at 28, 70% at 29, 90% at 30, 98% at 31, about 100% from 33), before any learner of that
 seed trains (`near80lib.pooled_count_record`). No seed is skipped or replaced on its count. The look prints the
-count per seed (section 14.3).
+count per seed (section 14.3). The same phase records the pooled groups' leak checks (`near80lib.leak_checks`) and
+stops the seed-world when one fails, or when the gap rule is undefined or its lower end lies outside [0.78, 0.80]
+(`near80lib.gap_rule_problem`; section 8.1, checks 3 and 4).
 
 ### 3.3 Where it applies, and what it does not change
 
@@ -293,7 +302,8 @@ or scored, so the other members keep step 2's batch size. The seed is never repl
 **In C1's marks**, a refused arm's numbers are **the no-caution actor's** in that seed-world, and the controls matched
 to BCA's strength (the matched range limit, the matched even pull, the two matched random surfaces) are matched to
 zero strength, which is also the no-caution actor's numbers. Nothing is "not available", so no mark fails by a
-missing number; the refusal's cost enters the pooled means as it would enter a deployment. (The literal reading of an
+missing number; the refusal's cost enters the pooled means as it would enter a deployment (for the keeps mark a
+refused seed enters at 0, which is no cost; the lead and even-pull marks carry the cost). (The literal reading of an
 infinite height as an infinite penalty, a hard clip at the data's edge which the hand-set range limit approximates,
 is not used: it would reward refusing, since the range limit scored 93.1 against BCA's 88.6 in the stalling world on
 seeds 0-4; it is reported as a composite only.)
@@ -301,8 +311,10 @@ seeds 0-4; it is reported as a composite only.)
 **In C2 and C3**, a seed where BCA refused in either world is left out: the twin claims are read on the certified
 seeds (at least 8), with the sign thresholds of section 9.3 for their number. The refusal is named in C2's sentence.
 A refused seed enters no twin difference, because the no-caution actor against a twin would be a difference of about
--100 and would decide the claim by itself. Reading them on the certified seeds is not outcome selection: a refusal
-depends on the group's size and on BCA's random draws, both written before any arm trains.
+-100 and would decide the claim by itself. Reading them on the certified seeds is not outcome selection: it is
+selection on the group's size and BCA's draws, both written before any arm trains, never on a return; a seed with a
+small group is also a seed where BCA's height is its top order statistic, so the certified seeds may differ in the
+height ratio, which the dose ladder reports.
 
 **What a refusal is expected to do** (an expectation, not a rule; C1 is read from its marks only): resampling the
 seven recorded main-setting seeds, the pooled lead over the best world-blind rival with ten seeds is about 26 with no
@@ -429,7 +441,9 @@ that needs it, and its sentence says so.
   training noise). C2 and C3 read `obca_k1_alone` as BCA's side, the same training mode as the twins; the differences
   against the batch-trained `obca_k1` are reported beside them. At least 8 certified seeds; otherwise C2 and C3 are
   not read. When no certified seed is left to read the noise floor, it cannot be read, and C2 and C3 are written as
-  their other rules say. C1 has no validity condition beyond the checks of 8.1.
+  their other rules say. The two conditions above (the harm and the past-80 share) are version 8's and step 2's,
+  kept unchanged for every claim; `DECISION.md`'s appendix 9.1 said C1 had no validity condition while its 14.1
+  carried the "Validity fails" sentence; this document keeps the condition (departure 15.12).
 
 ### 9.2 C1: step 2 confirmed in the main setting (version 8's claim 4 marks, unchanged)
 
@@ -483,8 +497,10 @@ same differences against the batch-trained `obca_k1`.
   (spread 5) or 0.79 (spread 10); 5 points: 0.48 (0.31 at spread 10); 3 points: 0.10; 0: 0.001 (0.028 at spread 10,
   0.044 at 15); the main-setting BCA-conformal spread on seeds 0-4 (5.6, sd 1.9): 0.84. A true twin edge of 10 is
   read "T ahead" with 0.98 (spread 5) or 0.51 (spread 10); the composite's recorded 4.5-point edge (sd 5.2) with
-  0.27, "tie" 0.73; 3.2 points with 0.09. So the test finds a 10-point edge either way, finds a 5-point edge about
-  half the time, and invents one with chance at most about 0.03 per twin.
+  0.27, "tie" 0.73; 3.2 points with 0.09. A true twin edge of 5 points reads "T ahead" with 0.38 (against 0.48 for
+  the same edge on BCA's side): the price of C3's stricter sign count, chosen because three twins give three chances
+  (the family rate above). So the test finds a 10-point edge either way, finds a 5-point edge about half the time,
+  and invents one with chance at most about 0.03 per twin.
 - **Power of the conjunction (C2 as a whole, shared BCA side):** three true 5-point edges: 0.23 (spread 5) or 0.09
   (spread 10); three true 10-point edges: 0.99 or 0.56; the predicted pattern (6, 0, -3.5): 0.00. C2 is a demanding
   claim by design: it credits BCA's height only when it beats a plain height on both sides of it and the range limit.
@@ -524,7 +540,7 @@ same differences against the batch-trained `obca_k1`.
 The route of versions 6, 7 and 8, on the Framework Desktop, inside Ubuntu as root, from `/home/user/bca`:
 `python3 -I outputs/shift/beyond-the-data/near80/approve_local_near80.py --check`, then the same without `--check`.
 The script checks every file against the code manifest, refuses any file the manifest does not list other than
-version 8's history (section 18) and the build notes, refuses a draft, and asks you to type the first 16 characters
+version 8's history (section 18), the build notes and the `decision/` folder, refuses a draft, and asks you to type the first 16 characters
 of `prereg.json`'s fingerprint. The session imports your approval (`code/import_approval.py import`) and pushes the
 import record. Every phase refuses without it. The folder is `outputs/shift/beyond-the-data/near80/`: version 9
 supersedes version 8 in place (choice 7); version 8's `prereg.json` moves to `prereg_history/`, its approval, import,
@@ -700,10 +716,11 @@ of the code; not a claim:".
 > does not. In strong current it gained [X] points over no caution where full throttle stalls (the full-log controller
 > gained [H]) and lost [W] where full throttle helps: a net of [NET], [D] more than the best rule that cannot switch
 > itself off ([R]). It stayed within 3 points of no caution or better in the other three situations, and beat the
-> matched even pull by [E]. It set a height on [K] of the [NSEEDS] seeds and refused on [F]; where it refused, its
-> switched ramp, the ramp at twice its height, the always-on ramp and its noise-floor copy count as the controller
-> trained without caution. Where full throttle stalls and its switch was on, its controller is the same as the
-> always-on ramp's, so that gain comes from where the ramp starts and from its height, not from the switch."
+> matched even pull by [E]. It set a height on [K] of the [NSEEDS] seeds and refused on [F] (a refused seed's
+> switched ramp, the ramp at twice its height, the always-on ramp and its noise-floor copy count there as the
+> controller trained without caution; section 14.4 names each refusal). Where full throttle stalls and its switch was
+> on, its controller is the same as the always-on ramp's, so that gain comes from where the ramp starts and from its
+> height, not from the switch."
 
 **Any mark fails:**
 > "On fresh seeds [SEEDS], in the main setting with BCA's two groups pooled over every held-out row outside the ball,
@@ -748,7 +765,8 @@ needed)".
 > [D1] points (positive in [K1] of [NC] seeds), twice that gap by [D2] ([K2] of [NC]) and the hand-set range limit by
 > [D3] ([K3] of [NC]); at least 5.0 points and [KMIN] of [NC] seeds were required for each. Something in BCA's height,
 > beyond a plain switch and a plain height on either side of it, earned return here. The plain mean-difference switch
-> made BCA's on/off call in [A] of 20 seed-worlds, so nothing is credited to the switch."
+> made BCA's on/off call in [A] of 20 seed-worlds; where it did, the comparison is of heights alone, and nothing is
+> credited to the switch."
 
 **Fails:**
 > "On the [NC] fresh seeds where BCA set its height, BCA's switched ramp did not beat every plain twin by the pre-set
@@ -831,8 +849,10 @@ The last sentence:
   [N8MIN], [N8MAX], [n] and [s] are whole numbers. [SEEDS] is the seeds' range, "40-49". [KMIN] = ceil(0.8 NC).
   [LBT] (and [LB1]-[LB3]) is the one-sided 95% lower bound of the mean of d, Student t on the certified seeds.
 - A number that cannot be computed, because a seed failed, a phase stopped or an arm is missing, is written "not
-  available". A mark that needs it fails. A refused seed-world's BCA-dependent arms and the controls matched to BCA
-  are not missing in C1: they take the no-caution actor's numbers (section 5.4).
+  available"; the seed fails every mark that needs it, and its own clause tells it: a missing BCA or twin number on a
+  seed that did not refuse fails that seed for every claim, so C1 reads "no reading" even when only a twin's number
+  is missing; a matched rival that could not be matched fails C1's marks only. A refused seed-world's BCA-dependent
+  arms and the controls matched to BCA are not missing in C1: they take the no-caution actor's numbers (section 5.4).
 - [R] (and [RC]) is written as "the always-on ramp", "the matched range limit", "the matched even pull", "the first
   matched random surface", "the second matched random surface" or "the hand-set range limit"; ties go to the first in
   the order of section 9.2. [twin] is "the mean-difference switch with the plain 90% gap", "the mean-difference switch
@@ -870,6 +890,27 @@ The last sentence:
 - Marks and conditions are decided on the unrounded numbers, so a sentence can show 5.0 next to a mark of at least 5
   that was missed.
 
+### 14.6 The verdict the project states for each outcome
+
+`decision/DECISION.md` section 3, copied here word for word so that the verdicts sit inside the fingerprint, with one
+row added at the end for the validity conditions of 9.1. The brackets of this table ([s], [phase], [description],
+[d], [lb], [k], [n], [T], [F], [mark], [x]) are the write-up's own places for the look's numbers and sentences,
+filled by hand from sections 14.1-14.4; the code fills nothing here. "Section 1" in the first and the last row is
+`DECISION.md`'s section 1, the project's verdict on BCA as it stood before this test.
+
+| outcome | the verdict about BCA, stated as such | what the project does next |
+|---|---|---|
+| **No reading**: the reproduction differs, a pre-approval check fails, or on a fresh seed a gate data check fails or a phase stops (C1 then fails by the pre-set rule, and its sentence says a stop decided it) | "No reading. The verdict of section 1 stands unchanged." With a stop: "C1 failed by the pre-set rule because seed [s]'s [phase] stopped; this is not a reading of BCA's return. On the seeds that ran, the marks read [description]." | Fix the cause (an exception is retried after an amendment, a pre-set stop is final); the touched seeds are written down as spent; a version 10 on seeds 50-59 if needed. |
+| **C1 passes, 0-1 refusals, C2 passes** | "BCA works on ThrusterChain, pre-registered: its switched ramp raised return on fresh seeds without pre-set harm (L1), and its height beat a plain height on both sides of it and the hand-set range limit by at least 5 points (L2 and the height's part of L3). The switch's credit remains unshown: the plain switch made the same call." | Write it up as the project's first pre-registered BCA return result. Next questions, in order: the weights under a known shift (the placement design's module W), other hosts (CQL, IQL, ReBRAC: no ThrusterChain return exists). |
+| **C1 passes, 0-1 refusals, C2 fails, no C3** (the predicted pattern, whether BCA is ahead of plain x1 or tied with it) | "BCA works as a conformal harm switch on ThrusterChain (L1, pre-registered). It was not shown to beat a plain switch with a plain height of either size, or the hand-set range limit, by 5 points (per twin: mean [d], one-sided 95% lower bound [lb], ahead in [k] of [n]). No credit beyond a plain rule is shown (L2 not shown, L3 not shown)." If BCA was ahead of plain x1 only, the sentence adds: "Its gain over the plain height was matched by twice that height and by the range limit: a dose, not a calibration." | State the working method as "read held-out outcomes against a fixed margin; apply an ample penalty at the data's edge"; BCA is one instance of it. Stop attribution work on ThrusterChain. The only open BCA-specific question is the weights under a known shift (module W), which this test bed cannot ask. A smaller margin would be a new claim, not a rerun. |
+| **C1 passes, 0-1 refusals, C3 holds for some twin** | "L1 shown, L2 contradicted at the pre-registered level: a rule with no BCA in it ([T]) beat BCA's switched ramp by at least 5 points on fresh seeds (mean [d], positive in [k] of [n]). On ThrusterChain the recommended method is that rule." | The report names the rule; BCA's parts are dropped on this test bed; the name BCA is not attached to the recommended method. |
+| **C1 passes with 2 or more refusals** (the marks pass even with those seeds charged as no caution) | "BCA works where it can act (L1 at the pre-set marks, with [F] of 10 seeds charged as no caution) but cannot be deployed on logs of this size as built: even reading every held-out row, its evidence rule refused on [F] of 10 fresh seeds." C2 and C3 read on the certified seeds as above. | A declared non-BCA fallback becomes part of the method (a method change; a version 10 with the fallback as the primary) before any deployment claim. |
+| **C1 fails, 0-1 refusals, a mark missed on the numbers** | "L1 contradicted at the pre-registered level: step 2's exploratory result did not reproduce on fresh seeds; the [mark] mark failed by [x]. On the certified seeds alone the marks read [description]. 'BCA works' is not supported on ThrusterChain." | Close the ThrusterChain return claims for BCA. The C2 and C3 readings are description. The hosts version 3 result (TD3+BC medium-expert +6.54 return units, lower bound +1.40, p 0.0267, Holm 0.1069, shelved; the same record flags harm: standard BCA raised F2 on recorded conditions by +6.84 percentage points, lower bound +5.76, big waves +6.60, big kicks +2.22) stays the only positive BCA-as-built return effect on record, on another test bed, carrying its own harm flag, and is pursued only if the owner chooses. |
+| **C1 fails with 2 or more refusals** | "BCA as built cannot be deployed on logs of this size: even reading every held-out row, its evidence rule refused on [F] of 10 fresh seeds, and with those seeds charged as no caution the [mark] mark failed by [x]. Where it acted its marks read [description], description only." | Either a declared non-BCA fallback becomes part of the method (version 10 with the fallback as the primary) or the ThrusterChain line closes. The C2 and C3 readings are description. |
+| **C1 fails, C2 passes** | "No 'works' claim: BCA was the best of the rules tested by at least 5 points, but it did not reach the pre-set bar on fresh seeds. The bar or the pipeline failed, not BCA relative to its rivals." | Report which mark failed (lead, keeps the gain, even pull) and by how much; no claim; a version 10 only if the failed mark is a plumbing-like artefact (for example matching) rather than return. |
+| **C2 and C3 dropped** (noise floor above 5) **or not read** (fewer than 8 certified seeds) | C1 read as usual. "C2 and C3 were not read: [training noise exceeds their margin / only [n] seeds certified]." | The per-twin differences are reported; a larger batch or more seeds would be a version 10 choice; L2 and L3 stay "not shown". |
+| **Validity fails** (the harm below 30 points or the past-80 share below 25%, section 9.1; the sentence of 14.1 "Validity fails" is written, and C2 and C3 are not written) | "No reading. The verdict of section 1 stands unchanged." | The test bed produced no harm to guard against, so it supports no conclusion about BCA either way; a version 10 only with a setting that does (the main setting produced 98.9 points of harm on seeds 0-4). |
+
 ---
 
 ## 15. Departures from version 8, fixed now
@@ -901,6 +942,11 @@ The last sentence:
     stays the fallback. The results folder and the output root are copied from the cluster to the desktop over
     your own SSH session, checked by SHA-256 there, and committed from the desktop's clone (choice 9, the default,
     your second answer), as version 8's records were.
+12. **The harm and past-80 validity conditions of version 8 are kept for every claim** (9.1). `DECISION.md` left
+    them out of its appendix 9.1 ("C1 has no validity condition beyond the checks of 8.1") and kept them in its 14.1
+    (the "Validity fails" sentence); this document keeps the condition, which binds no side (a test bed that
+    produces no harm supports no conclusion either way) and cannot bind on the record (harm 98.9, per seed 95-103;
+    past-80 share 73%).
 
 ---
 
@@ -1003,8 +1049,9 @@ return credit (L3 not shown)."
 | `near80_slurm_job.sh` | the job script the cluster entry submits (the pinned dependency path inside a user namespace, the job's memory, one runner per job) |
 | `push_runfiles_near80.sh` | pushes the run files (model files included) to the branch `claude/near80-v9-run-files`, from the desktop (after the cluster's output root was copied there and checked, 12.2 step 4) |
 | `V9_BUILD_NOTES.md` | the build notes (every change, test, estimate and the items the freeze fills); not pinned |
+| `decision/` | copies of the session's decision files, kept as history, not pinned (the approval script and the freeze allow the folder as they allow the build notes; nothing reads it): `DECISION.md` (its section 3 is section 14.6 above) and `REVISION_LOG.md`, `credit.md`, `c3_rule.py` / `.out` and `review_stats_calc.py` / `.out` (the power and credit calculations behind sections 9 and 17), `PREVIEW.md` (the preview of 3.5), and a `README.md` naming them |
 | `pre_approval/pooled_facts_seeds0_4_spent10_14.json` | the facts of section 4.2, written by the freeze (nothing trained) |
-| `code/` | the code: `near80_constants.py` (seeds 40-49, the pooled rule, the refusal rule, the twins, `MARKS_C2` 5.0 / ceil(0.8 n) / `all_three`, `MARKS_C3` -5.0 / at most 1, `MIN_CERTIFIED` 8), `near80lib.py` (`pooled_groups`, `pooled_count_record`, `certification_expectation` with the binomial chance), `facts_near80.py` (the counts on seeds 0-4 and the spent-seed switch facts), `learner_phases.py` (`switch_scores_pooled`; `switch_scores_step1` for the reproduction check), `policy_phase.py` (the per-arm refusal, the new arms, the programs run alone), `pooled.py` and `claims_text.py` (the look and section 14), the approval chain (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`, `phases.py`, `phase_main.py`, `settingdata.py`, `evaluate_phase.py`, `ledger.py`, `stubs.py`) and five unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`) |
+| `code/` | the code: `near80_constants.py` (seeds 40-49, the pooled rule, the refusal rule, the twins, `MARKS_C2` 5.0 / ceil(0.8 n) / `all_three`, `MARKS_C3` -5.0 / at most 1, `MIN_CERTIFIED` 8, `T_LO_RANGE`), `near80lib.py` (`pooled_groups` with `leak_checks`, `pooled_count_record`, `gap_rule_problem`, `certification_expectation` with the binomial chance), `facts_near80.py` (the counts on seeds 0-4 and the spent-seed switch facts), `learner_phases.py` (`switch_scores_pooled`; `switch_scores_step1` for the reproduction check), `policy_phase.py` (the per-arm refusal, the new arms, the programs run alone), `pooled.py` and `claims_text.py` (the look and section 14), the approval chain (`approval_check.py`, `import_approval.py`, `near80_prereg.py`, `freeze.py`), the runner (`near80_runner.py`, `phases.py`, `phase_main.py`, `settingdata.py`, `evaluate_phase.py`, `ledger.py`, `stubs.py`) and five unit test files (`test_near80.py`, `test_approval.py`, `test_runner.py`, `test_pooled.py`, `test_v9.py`). `near80_constants.py` honours a test-only environment variable (`NEAR80_STUB_FRESH_LABELS`) that swaps the fresh seeds for the labels 1000-1009 inside the unit tests; every official phase refuses a constants module whose seeds differ from the pinned ones. |
 
 **Version 8's history, kept unchanged:** `prereg_history/prereg_superseded_51e677ab76c8d2f7.json` (its approved
 `prereg.json`, moved there by the freeze), `code_manifest_history/code_manifest_v6.json` (its manifest),

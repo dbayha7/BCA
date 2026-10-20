@@ -384,14 +384,19 @@ class TestDraftJson(unittest.TestCase):
             self.assertEqual(t.strip().rstrip(".").lower(), c["choice"].lower(), n)
 
     def test_document_brackets_are_defined(self):
+        """Every capitalised bracket the code-filled sentences use (sections 14.1-14.5) is in the bracket table;
+        section 14.6 (the project's verdict table, copied from DECISION.md and filled by hand) is not the code's."""
         import re
         sec = self.doc[self.doc.index("## 14."):self.doc.index("## 15.")]
-        table = sec[:sec.index("**Always attached:**")]
+        self.assertIn("### 14.6 ", sec)
+        code_part = sec[:sec.index("### 14.6 ")]
+        table = code_part[:code_part.index("**Always attached:**")]
         defined = set()
         for row in re.findall(r"^\| ([^|]+) \|", table, flags=re.M):
             defined.update(x.strip() for x in re.split(r",| and ", row) if x.strip())
-        used = set(re.findall(r"\[([A-Z][A-Za-z0-9]*)\]", sec[len(table):]))
+        used = set(re.findall(r"\[([A-Z][A-Za-z0-9]*)\]", code_part[len(table):]))
         self.assertTrue(used <= defined, used - defined)
+        self.assertIn("No reading. The verdict of section 1 stands unchanged.", sec[len(code_part):])
 
     def test_documents_status_lines(self):
         """The document's own status line (line 3) says which state the folder is in: a draft carries the draft line

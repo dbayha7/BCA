@@ -343,6 +343,9 @@ class TestApproveLocal(Isolated):
         for d in K.V8_HISTORY_DIRS:
             (self.n80 / d / "files").mkdir(parents=True)
             (self.n80 / d / "RESULTS.json").write_text("{}")
+        (self.n80 / K.V9_DECISION_DIR).mkdir()                   # the decision files, scripts included, are history
+        (self.n80 / K.V9_DECISION_DIR / "DECISION.md").write_text("# decision\n")
+        (self.n80 / K.V9_DECISION_DIR / "c3_rule.py").write_text("x = 1\n")
         code, text = self.run_al(args=["--check"], stdin=NotTty())
         self.assertEqual(code, 0, text)
         (self.n80 / "approval_near80_amendment1_ffffffffffffffff.json").write_text("{}")
