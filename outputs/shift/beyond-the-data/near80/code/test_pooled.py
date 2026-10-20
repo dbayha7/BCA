@@ -513,8 +513,9 @@ class TestRefusal(Base):
         sub = look["reported"]["substituted"][str(SEEDS[1])]
         self.assertEqual(set(sub["stall"]), set(K.BCA_DEPENDENT) | set(P.MATCHED_RIVALS))
         self.assertEqual(set(sub["no_stall"]), {"obca_forced"} | set(P.MATCHED_RIVALS))
-        self.assertEqual(set(sub["no_stall"]), set(K.BCA_DEPENDENT) | set(P.MATCHED_RIVALS))
-        self.assertEqual(self.texts(look)[1], expect("c1.pass", **dict(PASS1, X="27.0", W="0.9", NET="26.1", D="26.1",
+        # W: BCA's own no-stall loss of 1 on every seed (the refused seed's included); NET 27.0 - 1.0; the best rival
+        # nets 0 (the matched even pull, substituted on the refused seed in both worlds), so the lead is 26.0
+        self.assertEqual(self.texts(look)[1], expect("c1.pass", **dict(PASS1, X="27.0", W="1.0", NET="26.0", D="26.0",
                                                                       E="22.5", K=str(len(SEEDS) - 1), F="1")))
         # C2 and C3 on the certified seeds (the sign threshold ceil(0.8 x 9) = 8)
         self.assertEqual(look["marks"]["c2"]["certified"], [s for s in SEEDS if s != SEEDS[1]])
@@ -740,8 +741,10 @@ class TestReported(Base):
         comp = rep["composites"]
         # BCA's switch turning on the range limit: stall on -> range_hinge 50 - 50 = 0; no-stall off -> none: net 0
         self.assertAlmostEqual(comp["bca_switch_range_limit"]["net"], 0.0)
-        # refusal means the range limit: BCA where it set a height (29), the range limit (-20) on the refused seed
-        self.assertAlmostEqual(comp["refusal_means_range_limit"]["net"], (29.0 * (len(SEEDS) - 1) - 20.0) / len(SEEDS))
+        # refusal means the range limit, read per seed-world: BCA where it set a height (29 on nine seeds; on the
+        # refused seed its no-stall world, where it stood: a loss of 1), the range limit where it refused (the
+        # stalling world of that seed: 50 - 50 = 0): a net of -1 on the refused seed
+        self.assertAlmostEqual(comp["refusal_means_range_limit"]["net"], (29.0 * (len(SEEDS) - 1) - 1.0) / len(SEEDS))
         tw = rep["twins"][TWIN1]
         self.assertEqual(tw["against_batch"]["bca"], K.PRIMARY)
         self.assertAlmostEqual(tw["against_batch"]["mean"], 13.0)
