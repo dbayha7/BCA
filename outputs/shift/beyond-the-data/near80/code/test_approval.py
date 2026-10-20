@@ -44,10 +44,45 @@ AGENT = "Claude <noreply@anthropic.com>"
 A_FILES = ("near80_constants.py", "near80lib.py", "facts_near80.py", "test_near80.py", "approval_check.py",
            "import_approval.py", "near80_prereg.py", "freeze.py", "test_approval.py")
 CLAIMS_REAL = (K.CODE / "claims_text.py").is_file()
+# The values DECISION.md fixes, as the freeze tests fix them (every test of a written prereg.json patches them in):
+OWNER_ANSWER = dict(text="accept the defaults", utc="2026-10-21T00:00:00Z", where="a test", choices="every default")
+MARKS_C2_FIXED = dict(net_margin=5.0, positive_seeds_min=4, multiplicity="all_three")
+WORK_DIR = "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
+
+
+def fixed_decision():
+    """A context that fixes every placeholder of DECISION.md in near80_constants (the freeze refuses otherwise)."""
+    return contextlib.ExitStack()
+
+
+def enter_fixed(stack):
+    stack.enter_context(mock.patch.object(K, "PLACEHOLDERS", {}))
+    stack.enter_context(mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED)))
+    stack.enter_context(mock.patch.object(K, "OWNER_ANSWER", dict(OWNER_ANSWER)))
+    return stack
 
 
 def quiet(*_a, **_k):
     return None
+
+
+def rmtree(path, ignore_errors=False):
+    """shutil.rmtree that also removes read-only files (git's objects on Windows)."""
+    import stat
+
+    def onexc(fn, p, exc):
+        try:
+            os.chmod(p, stat.S_IWRITE)
+            fn(p)
+        except OSError:
+            if not ignore_errors:
+                raise
+    if not Path(path).exists():
+        return
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=onexc)
+    else:
+        shutil.rmtree(path, onerror=lambda fn, p, info: onexc(fn, p, info[1]))
 
 
 def load_path(name, path):
@@ -113,7 +148,7 @@ def git(cwd, *args, committer=None, author=None, check=True):
 
 # ============================================================================================ a synthetic folder
 
-DOC = (f"# Hiding the commands near 80%: pre-registration (version 8, near-80)\n\n**{K.STATUS_LINE_FINAL}**\n\n"
+DOC = (f"# The main setting on fresh seeds: pre-registration (version 9, near-80 main)\n\n**{K.STATUS_LINE_FINAL}**\n\n"
        "A synthetic document for a test.\n")
 
 
@@ -142,11 +177,12 @@ def build_n80(repo, status=K.STATUS_FINAL, frozen_passed=True):
     msha = write_json_sidecar(n80 / K.MANIFEST_NAME, dict(kind=K.MANIFEST_KIND, label=K.LABEL, files=files,
                                                           repository_files=repo_files, history=[], reason="synthetic",
                                                           written="2026-10-15T20:00:00Z"))
-    nt = dict(rules=[dict(rule="check 1: the band is really missing (leak check)", passed=frozen_passed)],
-              not_run=[], passed=frozen_passed)
-    fsha = write_json_sidecar(n80 / NP.FROZEN_REL, dict(seeds=list(K.EXPLORATORY), worlds=list(K.WORLDS),
-                                                        no_training_checks=nt))
-    draft = b'{"kind": "near80-preregistration-draft", "status": "draft"}\n'
+    counts = dict(kind="near80-v9-pooled-group-counts", seeds=[0, 1, 2, 3, 4], worlds=list(K.WORLDS),
+                  summary={"stall": {"n_full_throttle_min": 40}}, results=[])
+    fsha = write_json_sidecar(n80 / NP.FROZEN_REL, counts)
+    if not frozen_passed:                                   # a frozen file that is not the pinned one
+        fsha = "0" * 64
+    draft = b'{"kind": "near80-preregistration-draft", "status": "draft", "version": "%s"}\n' % K.VERSION.encode()
     dsha = AC.sha256_bytes(draft)
     dname = K.DRAFT_HISTORY_NAME.format(prefix=dsha[:16])
     (n80 / K.HISTORY_DIR).mkdir(exist_ok=True)
@@ -155,19 +191,20 @@ def build_n80(repo, status=K.STATUS_FINAL, frozen_passed=True):
     pins = AC.current_pins(repo)
     pins["repository_files_count"] = len(repo_files)
     prereg = dict(kind=K.PREREG_KIND, version=K.VERSION, label=K.LABEL, status=status,
-                  status_line=K.STATUS_LINE_FINAL, approvable=True, missing=[], owner_answer=K.OWNER_ANSWER,
+                  status_line=K.STATUS_LINE_FINAL, approvable=True, missing=[], owner_answer=OWNER_ANSWER,
                   constants=AC.canonical_constants(), claims_word_for_word=None,
                   code=dict(code_manifest=K.MANIFEST_NAME, code_manifest_sha256=msha, files=files), pins=pins,
-                  no_training_checks_frozen=dict(path=NP.FROZEN_REL, sha256=fsha, passed=frozen_passed, rules=1,
-                                                 not_run=[], code_manifest_sha256=msha),
+                  pooled_group_counts_frozen=dict(path=NP.FROZEN_REL, sha256=fsha, seeds=[0, 1, 2, 3, 4],
+                                                  worlds=list(K.WORLDS), summary=counts["summary"],
+                                                  code_manifest_sha256=msha),
                   draft=dict(path=f"{K.HISTORY_DIR}/{dname}", sha256=dsha), approval=AC.approval_section(),
-                  choices=[dict(number=1, choice="which thrusters", default="any thruster", taken="any thruster",
-                                accepted=K.OWNER_ANSWER["utc"])],
-                  seeds=dict(exploratory=list(K.EXPLORATORY), confirmatory=list(K.CONFIRMATORY),
-                             refused_always=list(K.RESERVED)),
-                  settings={"near80": {"role": "primary"}}, compute=dict(total="about 28-40", budget_cap=50),
-                  summary=dict(claims=["claim one", "claim two", "claim three", "claim four"],
-                               stop_rules=["harm", "rival"]))
+                  choices=[dict(number=1, choice="the setting", default="the main setting only",
+                                taken="the main setting only", accepted=OWNER_ANSWER["utc"])],
+                  seeds=dict(fresh=list(K.FRESH), fresh_count=len(K.FRESH), plumbing=list(K.SMOKE_SEEDS)),
+                  setting={"main": {"role": "the only setting"}},
+                  compute=dict(per_fresh_seed="about 2.2", plumbing="about 2.5", budget_cap=K.CAP_CPU_HOURS),
+                  hosts=dict(desktop=dict(entry="run_near80.sh")),
+                  summary=dict(claims=["C1", "C2"], rules=["the refusal rule", "the noise floor"]))
     write_json_sidecar(n80 / K.PREREG_NAME, prereg)
     return AC.load_prereg(AC.ApprovalConfig(n80_root=n80, repo=repo))
 
@@ -187,7 +224,7 @@ class Isolated(unittest.TestCase):
 
     def tearDown(self):
         self._env.stop()
-        shutil.rmtree(self.tmp, ignore_errors=True)
+        rmtree(self.tmp, ignore_errors=True)
 
 
 # ============================================================================================ approve_local_near80.py
@@ -234,11 +271,11 @@ class TestApproveLocal(Isolated):
         self.assertEqual(body["statement"], AC.STATEMENT.format(version=K.VERSION, sha=self.prereg.sha256))
         self.assertIn(self.prereg.sha256, text)
         self.assertIn(f"git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m "
-                      f"\"Near-80: approve version 8 {self.prereg.prefix}\"", text)
+                      f"\"Near-80: approve version 9 {self.prereg.prefix}\"", text)
         self.assertIn(f"git push origin {K.BRANCH}", text)
         self.assertIn(K.IMPORT_NAME.format(prefix=self.prereg.prefix), text)
         self.assertIn("accept the defaults", text)
-        self.assertIn("all passed", text)
+        self.assertIn("n_full_throttle_min", text)
         self.refused("already exists")                                   # never overwrites
 
     def test_check_writes_nothing(self):
@@ -266,7 +303,9 @@ class TestApproveLocal(Isolated):
 
     def test_refuses_a_changed_prereg(self):
         p = self.n80 / K.PREREG_NAME
-        p.write_bytes(p.read_bytes().replace(b'"near80"', b'"near-80"'))
+        changed = p.read_bytes().replace(b'"version 9,', b'"version  9,')
+        self.assertNotEqual(changed, p.read_bytes())
+        p.write_bytes(changed)
         self.refused("fingerprint file")
 
     def test_refuses_a_changed_manifest_file(self):
@@ -282,14 +321,29 @@ class TestApproveLocal(Isolated):
         (self.repo / "experiments" / "shift" / "thing.py").write_text("y = 3\n")
         self.refused("experiments/shift/thing.py differs")
 
-    def test_refuses_a_missing_frozen_no_training_file(self):
+    def test_refuses_a_missing_frozen_counts_file(self):
         (self.n80 / NP.FROZEN_REL).unlink()
         self.refused(f"{NP.FROZEN_REL} is missing")
 
-    def test_refuses_failed_frozen_checks(self):
-        shutil.rmtree(self.repo)
+    def test_refuses_a_frozen_counts_file_that_is_not_the_pinned_one(self):
+        rmtree(self.repo)
         self.prereg = build_n80(self.repo, frozen_passed=False)
-        self.refused("did not all pass")
+        self.refused("is not the one prereg.json pins")
+
+    def test_version8_history_is_allowed_and_a_stranger_is_not(self):
+        """Version 8's approval chain, amendment and frozen file stay in the folder; the script allows exactly them."""
+        for name in K.V8_HISTORY_FILES:
+            (self.n80 / name).write_text("{}")
+            (self.n80 / (name + ".sha256")).write_text("0" * 64 + f"  {name}\n")
+        (self.n80 / K.PRE_APPROVAL_DIR / K.V8_FROZEN_NAME).write_text("{}")
+        (self.n80 / K.V9_NOTES).write_text("# notes\n")
+        for d in K.V8_HISTORY_DIRS:
+            (self.n80 / d / "files").mkdir(parents=True)
+            (self.n80 / d / "RESULTS.json").write_text("{}")
+        code, text = self.run_al(args=["--check"], stdin=NotTty())
+        self.assertEqual(code, 0, text)
+        (self.n80 / "approval_near80_amendment1_ffffffffffffffff.json").write_text("{}")
+        self.refused("is not a file of this pre-registration", args=["--check"], stdin=NotTty())
 
     def test_refuses_a_changed_history_draft(self):
         d = next(p for p in (self.n80 / K.HISTORY_DIR).glob("prereg_draft_*.json") if p.suffix == ".json")
@@ -322,7 +376,7 @@ class TestApproveLocal(Isolated):
             top = self.n80 / rel.split("/")[0] if "/" in rel and not rel.startswith("code/") else p
             if rel.startswith("code/__pycache__"):
                 top = self.n80 / "code" / "__pycache__"
-            shutil.rmtree(top) if top.is_dir() else top.unlink()
+            rmtree(top) if top.is_dir() else top.unlink()
         for name in (AC.import_name(self.prereg.prefix), AC.import_name(self.prereg.prefix) + ".sha256"):
             (self.n80 / name).write_text("{}")
         code, text = self.run_al(args=["--check"], stdin=NotTty())
@@ -336,7 +390,9 @@ class TestApproveLocal(Isolated):
 
     def test_constants_equal_the_codes(self):
         self.assertEqual(AL.FOLDER_POSIX, K.N80_REL)
-        self.assertEqual(AL.REPO, str(K.ROOT))
+        self.assertEqual(AL.REPO, K.DESKTOP_ROOT)                        # the owner's own machine
+        if K.HOST == "desktop":
+            self.assertEqual(AL.REPO, str(K.ROOT))
         self.assertEqual((AL.PREREG_NAME, AL.MANIFEST_NAME), (K.PREREG_NAME, K.MANIFEST_NAME))
         self.assertEqual(AL.APPROVAL_NAME.format("p"), K.APPROVAL_NAME.format(prefix="p"))
         self.assertEqual(AL.IMPORT_NAME.format("p"), K.IMPORT_NAME.format(prefix="p"))
@@ -346,6 +402,12 @@ class TestApproveLocal(Isolated):
                          (K.APPROVER_EMAIL, K.APPROVER_NAME, K.BRANCH, K.PREFIX_LEN))
         self.assertEqual(AL.FROZEN_NAME, NP.FROZEN_REL)
         self.assertEqual(AL.STATEMENT, AC.STATEMENT)
+        self.assertEqual(AL.VERSION, K.VERSION)
+        self.assertEqual(AL.V8_HISTORY_FILES, K.V8_HISTORY_FILES)
+        self.assertEqual(AL.V8_HISTORY_DIRS, K.V8_HISTORY_DIRS)
+        self.assertEqual(AL.V8_FROZEN, K.PRE_APPROVAL_DIR + "/" + K.V8_FROZEN_NAME)
+        self.assertEqual(AL.V9_NOTES, K.V9_NOTES)
+        self.assertEqual(AL.CHECK_TESTS, K.TEST_FILES)
 
     def test_standard_library_only(self):
         """It imports nothing from code/ and only standard-library modules, and the system Python can parse it."""
@@ -369,7 +431,7 @@ class TestApproveLocal(Isolated):
         it never writes."""
         system = shutil.which("python3", path="/usr/bin:/bin") or sys.executable
         before = sorted(p.name for p in K.N80.iterdir())
-        done = subprocess.run([system, "-I", str(K.N80 / "approve_local_near80.py"), "--check"], cwd="/tmp",
+        done = subprocess.run([system, "-I", str(K.N80 / "approve_local_near80.py"), "--check"], cwd=WORK_DIR,
                               stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=300)
         text = (done.stdout + done.stderr).decode()
         self.assertIn(done.returncode, (0, 2), text)
@@ -417,7 +479,7 @@ class ChainBase(Isolated):
         if approve:
             self.owner_approves()
         rels = [f"{K.N80_REL}/{self.aname}", f"{K.N80_REL}/{self.aname}.sha256"]
-        c = self.commit(committer, f"Near-80: approve version 8 {self.prereg.prefix}", *rels, author=author)
+        c = self.commit(committer, f"Near-80: approve version 9 {self.prereg.prefix}", *rels, author=author)
         if push:
             self.push()
         return c
@@ -615,7 +677,7 @@ class TestRequireApproval(ChainBase):
             with self.subTest(tamper=name):
                 tamper()
                 self.refuses(why)
-                shutil.rmtree(self.repo)
+                rmtree(self.repo)
                 shutil.copytree(snapshot, self.repo, symlinks=True)
                 AC.require_approval(self.cfg)
 
@@ -963,7 +1025,7 @@ class TestAmendmentFixture(Isolated):
             ("a statement without both fingerprints",
              lambda fx: write_test_amendment(fx, good(fx), approval=dict(statement="I approve amendment 1.")),
              "its statement does not name both fingerprints"),
-            ("an amendment_2.json", another_amendment_file, "only amendment 1 is known to this code"),
+            ("an amendment_2.json", another_amendment_file, f"only {AC.AMENDMENT_NAME} is known to this code"),
             ("a delta that is a list", malformed("delta", [1]), "its parent, files or delta are not of the expected"),
             ("a parent that is a list", malformed("parent", [1]), "its parent, files or delta are not of the expected"),
             ("a changed map that is a list", malformed("changed", [1], in_delta=True),
@@ -1006,7 +1068,7 @@ class TestAmendmentFixture(Isolated):
         rewrite_amendment(fx, lambda b: b.__setitem__("delta", [1]))
         lines = []
         IA.show(cfg, log=lines.append)                                       # a malformed one is named, not raised
-        self.assertIn("Amendment 1: refused: amendment_1.json does not amend", "\n".join(lines))
+        self.assertIn(f"Amendment (version 9): refused: {AC.AMENDMENT_NAME} does not amend", "\n".join(lines))
 
     def test_desktop_check_problems(self):
         """The import's rules for a result file of the desktop check (the same as approve_local_near80's)."""
@@ -1024,15 +1086,15 @@ class TestAmendmentFixture(Isolated):
         cases = [(dict(kind="x"), "it is not a result of the desktop check"),
                  (dict(mode="stub"), "it did not run in official mode"),
                  (dict(passed=False), "it did not pass"),
-                 (dict(amendment_sha256="f" * 64), "it checked another version of amendment_1.json"),
+                 (dict(amendment_sha256="f" * 64), f"it checked another version of {AC.AMENDMENT_NAME}"),
                  (dict(check_sha256=dict(TEST_CHECK_SHA, py="3" * 64)), "made by another check"),
                  (dict(check_sha256=None), "made by another check"),
-                 (dict(unit_tests=None), "it did not run and pass the four unit test files"),
-                 (dict(unit_tests={}), "it did not run and pass the four unit test files"),
-                 (dict(unit_tests={n: 0 for n in K.TEST_FILES[:3]}), "the four unit test files"),
+                 (dict(unit_tests=None), "it did not run and pass the five unit test files"),
+                 (dict(unit_tests={}), "it did not run and pass the five unit test files"),
+                 (dict(unit_tests={n: 0 for n in K.TEST_FILES[:3]}), "the five unit test files"),
                  (dict(unit_tests=dict({n: 0 for n in K.TEST_FILES}, **{K.TEST_FILES[-1]: 1})),
-                  "the four unit test files"),
-                 (dict(unit_tests={n: False for n in K.TEST_FILES}), "the four unit test files")]
+                  "the five unit test files"),
+                 (dict(unit_tests={n: False for n in K.TEST_FILES}), "the five unit test files")]
         for fields, why in cases:
             with self.subTest(fields=sorted(fields)):
                 self.assertIn(why, "; ".join(AC.desktop_check_problems(result(**fields), amendment)))
@@ -1102,11 +1164,11 @@ class TestAmendmentChain(ChainBase):
             code = AL.main([], folder=str(self.n80), script_path=str(self.n80 / "approve_local_near80.py"),
                            stdin=Tty(), input_fn=lambda _: self.a16, repo=str(self.repo))
         self.assertEqual(code, 0, out.getvalue())
-        self.assertIn(f"Near-80: approve amendment 1 {self.a16}", out.getvalue())
+        self.assertIn(f"Near-80: approve version 9 amendment 1 {self.a16}", out.getvalue())
         if not commit:
             return None
         rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256", check, check + ".sha256"]
-        c = self.commit(committer, f"Near-80: approve amendment 1 {self.a16}", *rels, author=author)
+        c = self.commit(committer, f"Near-80: approve version 9 amendment 1 {self.a16}", *rels, author=author)
         self.push()
         return c
 
@@ -1182,9 +1244,9 @@ class TestAmendmentChain(ChainBase):
         body["amendment_sha256"] = "f" * 64
         write_json_sidecar(p, body)
         rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256"]
-        self.commit(APPROVER, f"Near-80: approve amendment 1 {self.a16}", *rels)
+        self.commit(APPROVER, f"Near-80: approve version 9 amendment 1 {self.a16}", *rels)
         self.push()
-        self.amendment_import_refused("approves another version of amendment_1.json")
+        self.amendment_import_refused(f"approves another version of {AC.AMENDMENT_NAME}")
 
     def test_refuses_a_commit_whose_tree_holds_another_amended_file(self):
         self.owner_approves_amendment(commit=False)
@@ -1200,7 +1262,7 @@ class TestAmendmentChain(ChainBase):
     def test_refuses_an_owner_commit_without_the_desktop_check(self):
         self.owner_approves_amendment(commit=False)
         rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256"]   # the result file is left out
-        self.commit(APPROVER, f"Near-80: approve amendment 1 {self.a16}", *rels)
+        self.commit(APPROVER, f"Near-80: approve version 9 amendment 1 {self.a16}", *rels)
         self.push()
         self.amendment_import_refused("does not hold the passing desktop check")
         self.require_refused("no import record")
@@ -1215,9 +1277,9 @@ class TestAmendmentChain(ChainBase):
         body["desktop_checks"] = {crel: AC.file_sha256(self.n80.parent / other)}  # as if the script had named it
         write_json_sidecar(p, body)
         rels = [f"{K.N80_REL}/{self.a_name}", f"{K.N80_REL}/{self.a_name}.sha256", crel, crel + ".sha256"]
-        self.commit(APPROVER, f"Near-80: approve amendment 1 {self.a16}", *rels)
+        self.commit(APPROVER, f"Near-80: approve version 9 amendment 1 {self.a16}", *rels)
         self.push()
-        self.amendment_import_refused("made by another check than the one amendment_1.json names")
+        self.amendment_import_refused(f"made by another check than the one {AC.AMENDMENT_NAME} names")
 
     def test_refuses_a_change_after_approval(self):
         self.owner_approves_amendment()
@@ -1315,7 +1377,7 @@ class TestApproveLocalAmendment(Isolated):
         rel = f"{K.N80_REL}/{self.a_name}"
         self.assertIn(f"git add {rel} {rel}.sha256 {AL.CHECK_POSIX}/desktop_check_*", text)
         self.assertIn(f"git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m "
-                      f"\"Near-80: approve amendment 1 {self.a16}\"", text)
+                      f"\"Near-80: approve version 9 amendment 1 {self.a16}\"", text)
         self.assertIn(AC.AMEND_IMPORT_NAME.format(prefix=self.a16), text)
         self.refused("already exists")                                     # never overwrites
 
@@ -1325,28 +1387,19 @@ class TestApproveLocalAmendment(Isolated):
         self.assertEqual(code, 0, text)
         flat = " ".join(text.split())
         self.assertIn("Nothing was asked and nothing was written", flat)
-        self.assertIn("Near-80 (version 8): amendment 1", flat)
+        self.assertIn("Near-80 (version 9): amendment 1", flat)
         for rel, (old, new) in self.body["delta"]["changed"].items():
             self.assertIn(f"{rel}: {old[:16]} -> {new[:16]}", flat)
         self.assertIn(f"appended to; the first {self.n} bytes are the approved text", flat)
         self.assertIn(self.asha, flat)
-        self.assertIn("PREREGISTRATION.md, section 19", flat)
-        self.assertIn("The 1 phases that failed and run again as attempt 2 (their failed attempt 1 stays in the ledger "
-                      "and counts toward the budget):", flat)
-        self.assertNotIn("clears", flat)
-        self.assertIn(f"passed: {Path(self.check_rel).name} (official mode, this amendment_1.json, that code; the four "
-                      f"unit test files ran and passed)", flat)
-        self.assertIn(f"its code, as amendment_1.json names it: check_amendment1.py {'1' * 16}, check_amendment1.sh "
+        self.assertIn("PREREGISTRATION.md, its amendment section", flat)
+        self.assertIn("What does not change: - prereg.json", flat)
+        self.assertIn("Kept, and what runs after your approval is imported: - the failed phases", flat)
+        self.assertIn("Why it cannot change a result: the hash chain", flat)
+        self.assertIn(f"passed: {Path(self.check_rel).name}", flat)
+        self.assertIn(f"its code, as the amendment names it: check_amendment1.py {'1' * 16}, check_amendment1.sh "
                       f"{'2' * 16}", flat)
-        self.assertIn("Approving also confirms the item of section 19.6 that is marked for you: to your knowledge "
-                      "nobody, you included, opened a record or log of the exploratory stage that holds a score or a "
-                      "learner number", flat)
-        self.assertIn("looks/exploratory.json and looks/exploratory.md; the records of seeds 0-4 under learners/, "
-                      "policy/, eval/, readouts/ and stops/; and the logs of seeds 0-4's phases under logs/", flat)
-        self.assertIn("If anyone did, press Enter to stop and tell the session who opened which files (name the files "
-                      "only; do not say what they showed); it states it in section 19.6 and gives you a new "
-                      "fingerprint.", flat)
-        self.assertLess(flat.index("Before you type:"), flat.index("Fingerprint (SHA-256) of amendment_1.json:"))
+        self.assertLess(flat.index("What changes"), flat.index(f"Fingerprint (SHA-256) of {AC.AMENDMENT_NAME}:"))
         self.assertEqual(tree(self.n80), before)
 
     def test_refuses_without_a_passing_desktop_check(self):
@@ -1356,7 +1409,7 @@ class TestApproveLocalAmendment(Isolated):
                     ("a changed result file", "edit"),
                     ("no unit tests (--no-tests)", dict(unit_tests={}, tests_run=False)),
                     ("no unit_tests field", dict(unit_tests=None)),
-                    ("three of the four unit test files", dict(unit_tests={n: 0 for n in K.TEST_FILES[:3]})),
+                    ("three of the five unit test files", dict(unit_tests={n: 0 for n in K.TEST_FILES[:3]})),
                     ("a failing unit test file", dict(unit_tests=dict({n: 0 for n in K.TEST_FILES},
                                                                       **{K.TEST_FILES[0]: 1}))),
                     ("exit codes that are booleans", dict(unit_tests={n: False for n in K.TEST_FILES})),
@@ -1396,7 +1449,7 @@ class TestApproveLocalAmendment(Isolated):
         p = self.n80 / AC.AMENDMENT_NAME
         p.write_bytes(deep)
         Path(str(p) + ".sha256").write_text(f"{AC.sha256_bytes(deep)}  {p.name}\n", encoding="utf8")
-        self.refused("amendment_1.json is not readable JSON", args=["--check"], stdin=NotTty())
+        self.refused(f"{AC.AMENDMENT_NAME} is not readable JSON", args=["--check"], stdin=NotTty())
 
     def test_refuses_a_malformed_amendment(self):
         good = json.loads(json.dumps(self.body))
@@ -1408,12 +1461,12 @@ class TestApproveLocalAmendment(Isolated):
                 self.body = json.loads(json.dumps(good))
                 (self.body["delta"] if in_delta else self.body)[key] = value
                 self.write_amendment()
-                self.refused("amendment_1.json is malformed", args=["--check"], stdin=NotTty())
+                self.refused(f"{AC.AMENDMENT_NAME} is malformed", args=["--check"], stdin=NotTty())
 
     def test_refuses_an_amendment_of_another_study(self):
         self.body["label"] = "another"
         self.write_amendment()
-        self.refused("amendment_1.json names another study", args=["--check"], stdin=NotTty())
+        self.refused(f"{AC.AMENDMENT_NAME} names another study", args=["--check"], stdin=NotTty())
 
     def test_refuses_an_amendment_that_names_no_check_code(self):
         del self.body["desktop_check"]
@@ -1432,7 +1485,7 @@ class TestApproveLocalAmendment(Isolated):
                 self.body = json.loads(json.dumps(good))
                 self.body["delta"].update(change)
                 self.write_amendment()
-                self.refused("amendment 1 adds and removes no file", args=["--check"], stdin=NotTty())
+                self.refused("adds and removes no file", args=["--check"], stdin=NotTty())
 
     def test_refuses_a_wrong_typed_prefix(self):
         self.refused("do not match", typed="0" * 16)
@@ -1454,11 +1507,11 @@ class TestApproveLocalAmendment(Isolated):
 
     def test_refuses_another_parent_import_record(self):
         write_json_sidecar(self.n80 / self.p_import, {"kind": K.IMPORT_KIND, "prereg_sha256": "f" * 64})
-        self.refused(f"{self.p_import} is not the one amendment_1.json names", args=["--check"], stdin=NotTty())
+        self.refused(f"{self.p_import} is not the one {AC.AMENDMENT_NAME} names", args=["--check"], stdin=NotTty())
 
     def test_refuses_a_changed_amendment_sidecar(self):
-        (self.n80 / (AC.AMENDMENT_NAME + ".sha256")).write_text("0" * 64 + "  amendment_1.json\n", encoding="utf8")
-        self.refused("amendment_1.json does not match its fingerprint file", args=["--check"], stdin=NotTty())
+        (self.n80 / (AC.AMENDMENT_NAME + ".sha256")).write_text(f"{'0' * 64}  {AC.AMENDMENT_NAME}\n", encoding="utf8")
+        self.refused(f"{AC.AMENDMENT_NAME} does not match its fingerprint file", args=["--check"], stdin=NotTty())
 
     def test_refuses_an_unnamed_change(self):
         (self.n80 / "README.md").write_text("changed\n", encoding="utf8")
@@ -1501,21 +1554,54 @@ def real_draft_bytes():
     return kept[0].read_bytes()
 
 
-def make_n80_copy(dst, claims_real=False):
-    """A temporary copy of the near-80 folder for the freeze: the real documents, the real draft and A's code; the
-    other builders' files as stubs (claims_text.py real when asked)."""
+TODO_RE = __import__("re").compile(r"TODO\(DECISION\.md[^)]*\)")
+
+
+def finalized(text, name):
+    """A document or draft as DECISION.md and the freeze-time edit would leave it: the final status line, every
+    TODO(DECISION.md) mark replaced by a value, no 'this draft'."""
+    text = text.replace(f"**{K.STATUS_LINE_DRAFT}**", f"**{K.STATUS_LINE_FINAL}**", 1)
+    text = TODO_RE.sub("5", text)
+    text = text.replace("This draft", "This version").replace("this draft", "this version")
+    return text
+
+
+def final_code(src):
+    """A copied code file with the DRAFT mark of its first docstring line removed (the freeze-time edit of the
+    documents' and the code's marks, done on the copy only)."""
+    lines = src.split("\n")
+    head = __import__("re").sub(r"DRAFT,\s+not\s+frozen", "frozen (a test copy)", "\n".join(lines[:3]))
+    return "\n".join(head.split("\n") + lines[3:])
+
+
+def make_n80_copy(dst, claims_real=False, final=True, previous=False):
+    """A temporary copy of the near-80 folder for the freeze: the real documents and draft (finalized, unless
+    final=False), A's code and the top-level scripts; the other builders' files as stubs (claims_text.py real when
+    asked). previous=True also puts a synthetic version 8 prereg.json at the top (the freeze supersedes it)."""
     dst = Path(dst)
     (dst / "code").mkdir(parents=True)
-    for name in ("PREREGISTRATION.md", "README.md", "approve_local_near80.py"):
-        shutil.copyfile(K.N80 / name, dst / name)
-    (dst / "run_near80.sh").write_text("#!/bin/sh\n# a stub for a freeze test\n", encoding="utf8")
-    (dst / "push_runfiles_near80.sh").write_text("#!/bin/sh\n# a stub for a freeze test\n", encoding="utf8")
-    (dst / "prereg_draft.json").write_bytes(real_draft_bytes())
+    for name in ("PREREGISTRATION.md", "README.md"):
+        text = (K.N80 / name).read_text(encoding="utf8")
+        (dst / name).write_text(finalized(text, name) if final else text, encoding="utf8")
+    shutil.copyfile(K.N80 / "approve_local_near80.py", dst / "approve_local_near80.py")
+    for name in K.TOP_FILES:
+        if not (dst / name).exists():
+            (dst / name).write_text("#!/bin/sh\n# a stub for a freeze test\n", encoding="utf8")
+    draft = real_draft_bytes().decode("utf8")
+    (dst / "prereg_draft.json").write_text(finalized(draft, "draft") if final else draft, encoding="utf8")
     for name in K.CODE_FILES:
         if name in A_FILES or (claims_real and name == "claims_text.py"):
-            shutil.copyfile(K.CODE / name, dst / "code" / name)
+            src = (K.CODE / name).read_text(encoding="utf8")
+            (dst / "code" / name).write_text(final_code(src) if final else src, encoding="utf8")
         else:
             (dst / "code" / name).write_text(f'"""A stub of {name} for a freeze test."""\n', encoding="utf8")
+    if previous:
+        body = dict(kind=K.PREREG_KIND, version=K.PREVIOUS_VERSION, label="version 8 (synthetic)", status="final",
+                    synthetic=True)
+        write_json_sidecar(dst / K.PREREG_NAME, body)
+        write_json_sidecar(dst / K.MANIFEST_NAME, dict(kind=K.MANIFEST_KIND, label="version 8 (synthetic)",
+                                                       files={"a": "b"}, repository_files={}, history=[],
+                                                       reason="version 8 (synthetic)"))
     return dst
 
 
@@ -1527,16 +1613,17 @@ def fake_tests(fail=()):
     return fn
 
 
-def fake_facts(passed=True, seeds=None):
+def fake_facts(passed=True, seeds=None, worlds=None):
     def fn(n80_root, out_path, log):
-        rules = [dict(rule="check 1: the band is really missing (leak check)", scope="stall/seed0", value=True,
-                      threshold="all checks pass", passed=True, seen_on_0_4="pass"),
-                 dict(rule="check 2: the evaluation split keeps band rows", scope="stall/seed0",
-                      value=1051 if passed else 120, threshold=">= 300", passed=passed, seen_on_0_4="775-1,072")]
-        payload = dict(status=K.STATUS_LINE_FINAL, label="EXPLORATORY no-training facts, seeds 0-4",
-                       band=dict(lo=K.BAND_LO, hi=K.BAND_HI, scope=K.BAND_SCOPE),
-                       seeds=list(seeds or K.EXPLORATORY), worlds=list(K.WORLDS), results=[], fixed_banks={},
-                       anchors={}, no_training_checks=dict(rules=rules, not_run=[], passed=passed), seconds=0.0)
+        seeds_ = list(seeds if seeds is not None else [0, 1, 2, 3, 4])
+        worlds_ = list(worlds if worlds is not None else K.WORLDS)
+        results = [dict(rep=s, world=w, defined=passed, groups=dict(n_full_throttle=40 + s, n_rest=4000) if passed
+                        else None, certification=dict(reaches_min_rows=True) if passed else None,
+                        version8_groups=dict(n_full_throttle=30 + s, n_rest=800) if passed else None)
+                   for w in worlds_ for s in seeds_]
+        payload = dict(kind="near80-v9-pooled-group-counts", status=K.STATUS_LINE_FINAL, label=K.LABEL, seeds=seeds_,
+                       worlds=worlds_, results=results, summary={w: dict(seed_worlds=len(seeds_)) for w in worlds_},
+                       min_rows=K.CERT_MIN_ROWS, seconds=0.0)
         Path(out_path).write_text(json.dumps(payload, indent=1), encoding="utf8")
         fn.calls.append(Path(out_path))
     fn.calls = []
@@ -1544,7 +1631,7 @@ def fake_facts(passed=True, seeds=None):
 
 
 def fake_claims(text):
-    return {"source": "PREREGISTRATION.md section 14", "synthetic": True, "length": len(text)}
+    return {"source": "PREREGISTRATION.md section 14", "synthetic": True, "length": len(text), "todo_marks": []}
 
 
 class FreezeBase(unittest.TestCase):
@@ -1552,13 +1639,15 @@ class FreezeBase(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="near80_test_freeze_"))
         self.n80 = make_n80_copy(self.tmp / "near80")
         self.out = self.tmp / "out"
+        self.stack = enter_fixed(contextlib.ExitStack())
 
     def tearDown(self):
-        shutil.rmtree(self.tmp, ignore_errors=True)
+        self.stack.close()
+        rmtree(self.tmp, ignore_errors=True)
 
     def write(self, **kw):
         args = dict(n80_root=self.n80, out_root=self.out, repo=K.ROOT, tests_fn=fake_tests(), facts_fn=fake_facts(),
-                    claims_fn=fake_claims, sentence_fn=lambda rules: "STOP SENTENCE", log=quiet)
+                    claims_fn=fake_claims, log=quiet)
         args.update(kw)
         return FZ.write("a freeze test", **args)
 
@@ -1573,7 +1662,7 @@ class FreezeBase(unittest.TestCase):
 
 class TestFreeze(FreezeBase):
     def test_write(self):
-        draft_sha = AC.sha256_bytes(real_draft_bytes())
+        draft_sha = AC.file_sha256(self.n80 / "prereg_draft.json")
         facts = fake_facts()
         body = self.write(facts_fn=facts)
         # step 4: the draft moved into history with a sidecar
@@ -1584,16 +1673,16 @@ class TestFreeze(FreezeBase):
         # step 5: the manifest lists exactly the planned files
         man = AC.read_json_verified(self.n80 / K.MANIFEST_NAME)
         self.assertEqual(set(man["files"]), set(K.TOP_FILES) | {"code/" + n for n in K.CODE_FILES})
-        self.assertEqual(man["kind"], K.MANIFEST_KIND)
+        self.assertEqual((man["kind"], man["version"], man["history"]), (K.MANIFEST_KIND, K.VERSION, []))
         self.assertTrue(set(K.PIN_FILES) <= set(man["repository_files"]))
         self.assertFalse(any("__pycache__" in r for r in man["repository_files"]))
         self.assertTrue(all(any(r.startswith(d + "/") for d in K.PIN_DIRS) or r in K.PIN_FILES
                             for r in man["repository_files"]))
         self.assertTrue(all(Path(r).suffix in K.PIN_SUFFIXES for r in man["repository_files"]))
         self.assertIn("outputs/shift/beyond-the-data/stage2/code/stage2_common.py", man["repository_files"])
-        # step 7: the facts ran once, under this manifest's name, and were copied
+        # step 7: the counts ran once, under this manifest's name, and were copied
         msha = AC.file_sha256(self.n80 / K.MANIFEST_NAME)
-        self.assertEqual(facts.calls, [self.out / "pre" / f"no_training_checks_{msha[:16]}.json"])
+        self.assertEqual(facts.calls, [self.out / "pre" / FZ.FACTS_NAME.format(prefix=msha[:16])])
         frozen = self.n80 / NP.FROZEN_REL
         self.assertEqual(frozen.read_bytes(), facts.calls[0].read_bytes())
         self.assertEqual(AC.sidecar_digest(frozen), AC.file_sha256(frozen))
@@ -1601,47 +1690,64 @@ class TestFreeze(FreezeBase):
         on_disk = AC.read_json_verified(self.n80 / K.PREREG_NAME)
         self.assertEqual(on_disk, body)
         for key in ("kind", "version", "label", "status", "status_line", "approvable", "missing", "owner_answer",
-                    "draft", "choices", "constants", "claims_word_for_word", "code", "pins",
-                    "no_training_checks_frozen", "approval", "runner") + NP.CONTENT_KEYS:
+                    "supersedes", "draft", "choices", "constants", "claims_word_for_word", "code", "pins",
+                    "pooled_group_counts_frozen", "approval", "hosts", "runner", "summary", "version8_history",
+                    "files") + NP.CONTENT_KEYS:
             self.assertIn(key, body)
-        self.assertEqual(body["kind"], K.PREREG_KIND)
+        self.assertEqual((body["kind"], body["version"], body["supersedes"]),
+                         (K.PREREG_KIND, K.VERSION, K.PREVIOUS_VERSION))
         self.assertEqual(body["status"], K.STATUS_FINAL)
         self.assertEqual(body["status_line"], K.STATUS_LINE_FINAL)
         self.assertEqual((body["approvable"], body["missing"]), (True, []))
-        self.assertEqual(body["owner_answer"], K.OWNER_ANSWER)
+        self.assertEqual(body["owner_answer"], OWNER_ANSWER)
         self.assertEqual(body["draft"]["path"], f"{K.HISTORY_DIR}/{kept.name}")
         self.assertEqual(body["draft"]["sha256"], draft_sha)
         self.assertEqual(body["constants"], AC.canonical_constants())
-        self.assertEqual(body["claims_word_for_word"], fake_claims((self.n80 / "PREREGISTRATION.md").read_text()))
+        self.assertEqual(body["constants"]["MARKS_C2"], MARKS_C2_FIXED)
+        self.assertEqual(body["constants"]["PLACEHOLDERS"], {})
+        self.assertEqual(body["claims_word_for_word"],
+                         fake_claims((self.n80 / "PREREGISTRATION.md").read_text(encoding="utf8")))
         self.assertEqual(body["code"], {"code_manifest": K.MANIFEST_NAME, "code_manifest_sha256": msha,
                                         "files": man["files"]})
         self.assertEqual(set(body["pins"]), set(AC.PINS_REL) | {"repository_files_count"})
         self.assertEqual(body["pins"]["v6_stage2_common_sha256"], AC.V6_STAGE2_COMMON_SHA256)
         self.assertEqual(body["pins"]["repository_files_count"], len(man["repository_files"]))
-        self.assertEqual(body["no_training_checks_frozen"],
-                         {"path": NP.FROZEN_REL, "sha256": AC.file_sha256(frozen), "passed": True, "rules": 2,
-                          "not_run": [], "code_manifest_sha256": msha})
+        self.assertEqual(body["pooled_group_counts_frozen"],
+                         {"path": NP.FROZEN_REL, "sha256": AC.file_sha256(frozen), "seeds": [0, 1, 2, 3, 4],
+                          "worlds": list(K.WORLDS), "summary": {w: {"seed_worlds": 5} for w in K.WORLDS},
+                          "code_manifest_sha256": msha, "role": "reported; outcome-free; no mark reads it"})
         self.assertEqual(body["approval"]["approver_email"], K.APPROVER_EMAIL)
         self.assertEqual(body["approval"]["branch"], K.BRANCH)
         self.assertIs(body["approval"]["local_terminal_allowed"], True)
         self.assertIs(body["approval"]["accepts_defaults"], True)
+        self.assertIn("cluster", body["approval"]["hosts"])
+        self.assertEqual(set(body["hosts"]), {"desktop", "cluster"})
         self.assertEqual(body["runner"]["phases"], list(K.PHASE_KINDS))
-        self.assertEqual(body["runner"]["lanes_default"], 10)
-        draft = json.loads(real_draft_bytes())
+        self.assertEqual(body["runner"]["lanes_default"], K.DEFAULT_LANES)
+        self.assertEqual((body["runner"]["desktop_entry"], body["runner"]["cluster_entry"]),
+                         ("run_near80.sh", "run_near80_cluster.sh"))
+        draft = json.loads(kept.read_text(encoding="utf8"))
         self.assertEqual(len(body["choices"]), len(draft["choices"]))
         for c, d in zip(body["choices"], draft["choices"]):
             self.assertEqual(c["taken"], d["default"])
-            self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
-        # the arm names of the code, and no draft wording
+            self.assertEqual(c["accepted"], OWNER_ANSWER["utc"])
+        # the marks DECISION.md fixed, the seeds, the arm names of the code, the summary, and no draft wording
+        for k, v in MARKS_C2_FIXED.items():
+            self.assertEqual(body["pass_marks"]["c2_twins"][k], v)
+        self.assertEqual(body["pass_marks"]["c2_twins"]["twins"], list(K.TWIN_ARMS))
+        self.assertEqual((body["seeds"]["fresh"], body["seeds"]["fresh_count"], body["seeds"]["plumbing"]),
+                         (list(K.FRESH), len(K.FRESH), list(K.SMOKE_SEEDS)))
         self.assertEqual(body["arms"]["logical_ids"], {k: list(v) for k, v in K.ARMS.items()})
-        text = json.dumps({k: v for k, v in body.items() if k != "draft"})
-        for old in NP.ARM_RENAMES:
-            self.assertNotIn(old, text)
-        rivals = body["arms"]["near80_both_worlds"]["world_blind_rivals"]
-        self.assertTrue({"random_1", "random_2", "standin", "even_pull", "obca_forced"} <= set(rivals))
-        self.assertIn("range_hinge", body["arms"]["near80_both_worlds"]["reported"])
-        self.assertEqual(NP.draft_words({k: v for k, v in body.items() if k not in ("draft", "claims_word_for_word")}),
-                         [])
+        self.assertEqual(len(body["summary"]["claims"]), 2)
+        self.assertTrue(body["summary"]["claims"][0].startswith("C1"))
+        self.assertIn(f"margin {MARKS_C2_FIXED['net_margin']}", body["summary"]["claims"][1])
+        self.assertTrue(body["summary"]["rules"][0].startswith("The refusal rule:"))
+        self.assertEqual(body["version8_history"]["files"], list(K.V8_HISTORY_FILES))
+        check = {k: v for k, v in body.items() if k not in ("draft", "claims_word_for_word", "files",
+                                                             "version8_history")}
+        check["constants"] = {k: v for k, v in check["constants"].items() if k not in NP.DRAFT_STATE_CONSTANTS}
+        self.assertEqual(NP.draft_words(check), [])
+        self.assertEqual(NP.todo_marks({k: v for k, v in body.items() if k != "constants"}), [])
         # the approval chain and the owner's script accept it
         cfg = AC.ApprovalConfig(n80_root=self.n80, repo=K.ROOT)
         prereg = AC.load_prereg(cfg)
@@ -1666,23 +1772,23 @@ class TestFreeze(FreezeBase):
         self.refused("**DRAFT")
         self.assertEqual(tree(self.n80), before)                           # nothing moved, nothing written
         cases = {
-            "title": lambda t: t.replace("# Hiding the commands near 80%: pre-registration", "# A title", 1),
+            "title": lambda t: t.replace(FZ.TITLE, "# A title", 1),
             "this draft": lambda t: t + "\nSee this draft.\n",
-            "14.6": lambda t: t.replace("### 14.6 How the code fills in the sentences", "### How", 1),
+            "14.5": lambda t: t.replace("### 14.5 How the code fills in the sentences", "### How", 1),
         }
         for name, change in cases.items():
             with self.subTest(case=name):
-                shutil.rmtree(self.n80)
+                rmtree(self.n80)
                 self.n80 = make_n80_copy(self.tmp / f"near80_{name.replace(' ', '_')}")
                 p = self.n80 / "PREREGISTRATION.md"
                 p.write_text(change(p.read_text()))
                 self.refused()
-        shutil.rmtree(self.n80)
+        rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_readme")
         p = self.n80 / "README.md"
         p.write_text(p.read_text().replace(f"**{K.STATUS_LINE_FINAL}**", "**DRAFT.**"))
         self.refused("README.md")
-        shutil.rmtree(self.n80)
+        rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_code")
         (self.n80 / "code" / "pooled.py").write_text('"""DRAFT looks."""\n')
         self.refused("DRAFT in its first docstring line")
@@ -1693,14 +1799,14 @@ class TestFreeze(FreezeBase):
                            ("import", lambda: (self.n80 / "import_near80_0123456789abcdef.json").write_text("{}")),
                            ("output", lambda: (self.out / "data").mkdir(parents=True))):
             with self.subTest(case=name):
-                shutil.rmtree(self.n80)
-                shutil.rmtree(self.out, ignore_errors=True)
+                rmtree(self.n80)
+                rmtree(self.out, ignore_errors=True)
                 self.n80 = make_n80_copy(self.tmp / f"near80_{name}")
                 make()
                 with self.assertRaises(FZ.FreezeRefused):
                     self.write()
                 self.assertTrue((self.n80 / "prereg_draft.json").exists())
-        shutil.rmtree(self.out, ignore_errors=True)
+        rmtree(self.out, ignore_errors=True)
         (self.out / "pre").mkdir(parents=True)                              # pre/ alone is allowed
         self.assertEqual(FZ.existing_problems(make_n80_copy(self.tmp / "near80_pre"), self.out), [])
 
@@ -1733,36 +1839,91 @@ class TestFreeze(FreezeBase):
         self.assertEqual(AC.file_sha256(archived), man1)
         self.assertEqual(AC.sidecar_digest(archived), man1)
 
-    def test_refuses_failing_no_training_checks(self):
-        sentences = []
-
-        def sentence(rules):
-            sentences.append(rules)
-            return "STOP SENTENCE"
-        msg = self.refused("STOP SENTENCE", facts_fn=fake_facts(passed=False), sentence_fn=sentence)
-        self.assertIn("check 2: the evaluation split keeps band rows", msg)
-        self.assertEqual(sentences[0][1]["passed"], False)
+    def test_refuses_counts_that_are_not_usable(self):
+        """The counts are reported, not a pass mark; but a record whose gap rule is undefined on a seed-world, or that
+        ran on other seeds or one world, cannot be frozen."""
+        msg = self.refused("not usable", facts_fn=fake_facts(passed=False))
+        self.assertIn("the gap rule is not defined or the groups are missing", msg)
         self.assertFalse((self.n80 / NP.FROZEN_REL).exists())
+        for why, facts in (("not 0-4", fake_facts(seeds=[0, 1])), ("not both", fake_facts(worlds=["stall"]))):
+            msha = AC.file_sha256(self.n80 / K.MANIFEST_NAME)
+            FZ.facts_path(self.out, msha).unlink()                          # else the kept record is reused
+            self.refused(why, facts_fn=facts)
+        self.assertFalse((self.n80 / K.PREREG_NAME).exists())
 
-    def test_refuses_facts_on_other_seeds(self):
-        self.refused("not 0-4", facts_fn=fake_facts(seeds=[0, 1]))
+    def test_refuses_while_a_placeholder_of_decision_md_remains(self):
+        """Step 0: the constants' placeholders (the seed count, C2's marks, the owner's answer), a TODO(DECISION.md)
+        mark in a document or the draft, or an unknown multiplicity rule; nothing is moved or written."""
+        self.stack.close()                                                  # the constants as they are
+        self.stack = contextlib.ExitStack()
+        before = tree(self.n80)
+        msg = self.refused("placeholder not fixed (DECISION.md): seed_count")
+        self.assertIn("c2_net_margin", msg)
+        self.assertIn("owner_answer", msg)
+        self.assertEqual(tree(self.n80), before)
+        self.stack = enter_fixed(contextlib.ExitStack())                    # the constants fixed, the documents not
+        rmtree(self.n80)
+        self.n80 = make_n80_copy(self.tmp / "near80_marks", final=False)
+        before = tree(self.n80)
+        msg = self.refused("TODO(DECISION.md) mark")
+        self.assertIn("PREREGISTRATION.md carries", msg)
+        self.assertIn("prereg_draft.json carries", msg)
+        self.assertIn("still says **DRAFT", msg)
+        self.assertEqual(tree(self.n80), before)
+        rmtree(self.n80)
+        self.n80 = make_n80_copy(self.tmp / "near80_rule")
+        with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, multiplicity="each_tenth")):
+            self.refused("c2_multiplicity (not one of the known rules)")
+        with mock.patch.object(K, "FRESH", (40, 41, 60)):
+            self.refused("seeds (outside the block)")
+        lines = []
+        FZ.check(self.n80, self.out, log=lines.append)
+        self.assertIn("0. refuse while any DECISION.md placeholder remains (0 now)", lines[0])
 
-    def test_default_sentence_names_the_first_failed_rule(self):
-        rules = [dict(rule="check 1: x", passed=True, value=1, threshold="t"),
-                 dict(rule="check 3: the band is the planned size", passed=False, value=0.071, threshold="0.01-0.06")]
-        text = FZ.default_sentence(rules)
-        self.assertTrue(text.startswith("On seeds 0-4, before any training, the near-80 data failed "), text)
-        self.assertIn("Nothing was trained.", text)
+    def test_supersedes_a_previous_versions_prereg(self):
+        """Step 1: version 8's prereg.json (approved and run) is moved into prereg_history/ as
+        prereg_superseded_<first 16>.json with its sidecar, its manifest is archived, and the new prereg.json names
+        what it supersedes; a prereg.json of this version is never moved."""
+        rmtree(self.n80)
+        self.n80 = make_n80_copy(self.tmp / "near80_prev", previous=True)
+        old = self.n80 / K.PREREG_NAME
+        old_sha = AC.file_sha256(old)
+        man_old = AC.file_sha256(self.n80 / K.MANIFEST_NAME)
+        lines = []
+        FZ.check(self.n80, self.out, log=lines.append)
+        self.assertIn(f"1. move {K.PREREG_NAME} of {K.PREVIOUS_VERSION} into {K.HISTORY_DIR}/", lines[0])
+        body = self.write()
+        kept = self.n80 / K.HISTORY_DIR / K.SUPERSEDED_NAME.format(prefix=old_sha[:16])
+        self.assertEqual(AC.file_sha256(kept), old_sha)
+        self.assertEqual(AC.sidecar_digest(kept), old_sha)
+        self.assertEqual(json.loads(kept.read_text(encoding="utf8"))["version"], K.PREVIOUS_VERSION)
+        self.assertEqual(AC.read_json_verified(old)["version"], K.VERSION)
+        self.assertEqual(body["supersedes"], K.PREVIOUS_VERSION)
+        man = AC.read_json_verified(self.n80 / K.MANIFEST_NAME)
+        self.assertEqual(man["history"][0]["sha256"], man_old)
+        self.assertEqual(AC.file_sha256(self.n80 / K.MANIFEST_HISTORY_DIR / "code_manifest_v1.json"), man_old)
+        with self.assertRaises(FZ.FreezeRefused) as cm:
+            self.write()
+        self.assertIn("exists already", str(cm.exception))
+        # a previous prereg.json whose sidecar does not match is not moved
+        rmtree(self.n80)
+        self.n80 = make_n80_copy(self.tmp / "near80_prev2", previous=True)
+        (self.n80 / (K.PREREG_NAME + ".sha256")).write_text("0" * 64 + f"  {K.PREREG_NAME}\n", encoding="utf8")
+        before = tree(self.n80)
+        with self.assertRaises(FZ.FreezeRefused) as cm:
+            self.write()
+        self.assertIn("differs from its sidecar", str(cm.exception))
+        self.assertEqual(tree(self.n80), before)
 
     def test_facts_from_needs_this_manifests_name(self):
-        wrong = self.tmp / "no_training_checks_0000000000000000.json"
+        wrong = self.tmp / "pooled_group_counts_0000000000000000.json"
         wrong.write_text("{}")
         self.refused("does not carry this manifest's first 16 characters", facts_from=wrong)
 
     def test_reuses_facts_already_written_under_this_manifest(self):
         self.refused("unit tests failed", tests_fn=fake_tests(fail=("test_near80.py",)))
         msha = AC.file_sha256(self.n80 / K.MANIFEST_NAME)
-        path = self.out / "pre" / f"no_training_checks_{msha[:16]}.json"
+        path = self.out / "pre" / FZ.FACTS_NAME.format(prefix=msha[:16])
         path.parent.mkdir(parents=True)
         fake_facts()(self.n80, path, quiet)
         facts = fake_facts()
@@ -1780,7 +1941,7 @@ class TestFreeze(FreezeBase):
 
     @unittest.skipUnless(CLAIMS_REAL, "code/claims_text.py is not written yet (builder C)")
     def test_claims_word_for_word(self):
-        shutil.rmtree(self.n80)
+        rmtree(self.n80)
         self.n80 = make_n80_copy(self.tmp / "near80_claims", claims_real=True)
         body = self.write(claims_fn=None)
         mod = NP.load_claims_text(self.n80 / "code")
@@ -1790,12 +1951,30 @@ class TestFreeze(FreezeBase):
 
 
 class TestFreezeOnTheRealFolder(unittest.TestCase):
-    def test_the_real_documents_and_code_pass_steps_2_and_3_checks(self):
-        """The real documents are final; the real code folder holds only planned files (some may still be missing
-        while the three parts are built)."""
-        self.assertEqual(FZ.document_problems(K.N80), [])
-        problems = [p for p in FZ.code_folder_problems(K.N80) if not p.endswith(" is missing")]
-        self.assertEqual(problems, [])
+    def test_the_real_folder_is_a_draft_the_freeze_refuses(self):
+        """Version 9 is a draft awaiting the owner: the constants' placeholders are open and the documents say DRAFT,
+        so freeze.py refuses at step 0 and step 2 and writes nothing; the title is already final and the code folder
+        holds only planned files."""
+        self.assertIn("seed_count", K.placeholders_present())
+        found = FZ.placeholder_problems(K.N80)
+        self.assertTrue(any(p.startswith("placeholder not fixed (DECISION.md): seed_count") for p in found), found)
+        self.assertTrue(any(p.startswith("PREREGISTRATION.md carries") for p in found), found)
+        docs = FZ.document_problems(K.N80)
+        self.assertEqual([p for p in docs if "line 1" in p], [])
+        self.assertTrue(any("line 3 is not" in p for p in docs), docs)
+        self.assertTrue(any("still says **DRAFT" in p for p in docs), docs)
+        code_problems = [p for p in FZ.code_folder_problems(K.N80) if not p.endswith(" is missing")]
+        self.assertEqual(code_problems, [])
+        before = sorted(p.name for p in K.N80.iterdir())
+        lines = []
+        self.assertTrue(FZ.check(K.N80, K.OUT, log=lines.append))
+        self.assertIn("Problems (write would refuse)", lines[1])
+        with self.assertRaises(FZ.FreezeRefused) as cm:
+            FZ.write("a test", n80_root=K.N80, out_root=K.OUT, tests_fn=fake_tests(), facts_fn=fake_facts(),
+                     claims_fn=fake_claims, log=quiet)
+        self.assertIn("placeholder not fixed", str(cm.exception))
+        self.assertEqual(sorted(p.name for p in K.N80.iterdir()), before)
+        self.assertFalse(K.OUT.exists())
 
 
 # ============================================================================================ near80_constants
@@ -1809,38 +1988,49 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(K.KNEE32, TC.KNEE)
         self.assertEqual(K.CAP, 0.8)
         self.assertEqual(K.HOLD, N.HOLD)
-        self.assertEqual((N.BAND_LO, N.BAND_HI, N.SCOPE), (K.BAND_LO, K.BAND_HI, K.BAND_SCOPE))
-        self.assertEqual((N.EXPLORATORY_SEEDS, N.CONFIRMATORY_SEEDS, N.RESERVED_SEEDS),
-                         (K.EXPLORATORY, K.CONFIRMATORY, K.RESERVED))
+        self.assertEqual((N.FRESH_SEEDS, N.SMOKE_SEEDS, N.POOLED_SPLITS), (K.FRESH, K.SMOKE_SEEDS, K.POOLED_SPLITS))
         self.assertEqual(tuple(TC.SITUATIONS), K.SITUATIONS)
-        self.assertEqual(N.NO_TRAINING, dict(
-            eval_band_rows_min=300, extra_share_min=0.01, extra_share_max=0.06, full_throttle_removed_min=0.99,
-            kept_past80_share_max=0.002, identical_rule_min=0.998, region_kept_min=0.35, region_band_share_min=0.10,
-            gap_lo_min=0.695, gap_lo_max=0.70, bank_min=500, stall_aware_band_share_min=0.50, hold_loss_min=15.0,
-            data_edge_loss_min=10.0))
         draft = json.loads(real_draft_bytes())
-        self.assertEqual(draft["kill_rules"]["no_training_checks"]["thresholds"], N.NO_TRAINING)
-        self.assertEqual((draft["band"]["lo"], draft["band"]["hi"], draft["band"]["scope"]),
-                         (K.BAND_LO, K.BAND_HI, K.BAND_SCOPE))
-        self.assertEqual(draft["seeds"]["exploratory"], list(K.EXPLORATORY))
-        self.assertEqual(draft["seeds"]["confirmatory"], list(K.CONFIRMATORY))
-        self.assertEqual(draft["seeds"]["refused_always"], list(K.RESERVED))
-        self.assertEqual(draft["measures"]["hold_level"], K.HOLD)
+        self.assertEqual((draft["kind"], draft["status"], draft["version"], draft["label"]),
+                         (NP.DRAFT_KIND, "draft", K.VERSION, K.LABEL))
+        self.assertEqual(draft["seeds"]["fresh"], list(K.FRESH))
+        self.assertEqual(draft["seeds"]["fresh_block"], list(K.FRESH_SEED_BLOCK))
+        self.assertEqual(draft["seeds"]["plumbing"], list(K.SMOKE_SEEDS))
+        for block in draft["seeds"]["used_by_other_studies"]:
+            lo, hi = (int(x) for x in block.split("-"))
+            self.assertTrue(set(range(lo, hi + 1)) <= K.USED_SEEDS, block)
         self.assertEqual(draft["situations"]["worlds"], list(K.WORLDS))
         self.assertEqual(draft["situations"]["scored"], K.SCORED)
         self.assertEqual(set(draft["situations"]["test_start_sets"]), set(K.SITUATIONS))
-        self.assertEqual(draft["compute"]["budget_cap"], K.CAP_CPU_HOURS)
         self.assertEqual(draft["compute"]["lanes_default"], K.DEFAULT_LANES)
-        self.assertEqual(draft["label"], K.LABEL)
+        self.assertEqual(draft["pooled_groups"]["splits"], list(K.POOLED_SPLITS))
+        c1 = draft["pass_marks"]["c1_version8_claim4"]
+        self.assertIn(f"+ {K.MARKS['net_lead_margin']:g}", c1["net_lead"])
+        self.assertIn(f">= {K.MARKS['keeps_floor']:g}", c1["keeps_the_gain"])
+        self.assertIn(f">= {K.MARKS['even_pull_margin']:g}", c1["beats_even_pull"])
+        c2 = draft["pass_marks"]["c2_twins"]
+        self.assertEqual(c2["twins"], list(K.TWIN_ARMS))
+        for k, v in K.MARKS_C2.items():      # a placeholder in the code is a TODO mark in the draft, and the other way
+            self.assertEqual(v is None, str(c2[k]).startswith("TODO(DECISION.md"), k)
+        self.assertIn(f">= {K.MARKS['harm_min']:g}", draft["validity"]["claims"])
+        self.assertIn(f">= {K.MARKS['past80_min'] * 100:g}%", draft["validity"]["claims"])
+        self.assertIn(f"<= {K.MARKS['noise_floor_max']:g}", draft["kill_rules"]["noise_floor"]["rule"])
+        arms = draft["arms"]["main_both_worlds"]
+        self.assertEqual(set(arms["primary"]), {K.PRIMARY})
+        self.assertEqual(set(arms["twins_of_c2"]), set(K.TWIN_ARMS))
+        self.assertEqual(set(arms["noise_floor_copy"]), {K.NOISE_ARM})
+        self.assertEqual(set(arms["world_blind_rivals"]), set(K.WORLD_BLIND))
+        self.assertTrue(set(K.REPORTED_ONLY) <= set(arms["reported_only"]))
         choices = {c["number"]: c["default"] for c in draft["choices"]}
-        self.assertEqual(choices[2], list(K.DEFAULTS["band"]))
-        self.assertEqual(choices[5], K.DEFAULTS["region_floor"])
-        self.assertEqual(choices[13], K.DEFAULTS["lanes"])
-        self.assertEqual(choices[14], K.DEFAULTS["name"])
-        self.assertEqual(choices[14], K.VERSION)
-        self.assertEqual(choices[15], K.DEFAULTS["claim2_marks"])
-        self.assertEqual(choices[9], K.DEFAULTS["after_poor_bca"])
-        self.assertEqual(N.NO_TRAINING["region_kept_min"], K.DEFAULTS["region_floor"])
+        self.assertEqual(sorted(choices), list(range(1, len(choices) + 1)))
+        self.assertEqual(choices[8], K.DEFAULTS["name"])
+        self.assertEqual(choices[8], K.VERSION)
+        self.assertEqual(int(choices[7]), K.DEFAULTS["lanes"])
+        self.assertEqual(K.DEFAULTS["lanes"], K.DEFAULT_LANES)
+        self.assertIn(K.DEFAULTS["seeds"], choices[2])
+        self.assertEqual(draft["files"]["unit_tests"], list(K.TEST_FILES))
+        self.assertEqual(set(draft["files"]["entries"]), set(K.TOP_FILES) - {"PREREGISTRATION.md", "README.md",
+                                                                               "approve_local_near80.py"})
 
     def test_values_equal_step_1_and_step_2(self):
         s1 = json.loads((K.S1_DIR / "prespec.json").read_text())
@@ -1851,40 +2041,76 @@ class TestConstants(unittest.TestCase):
         self.assertEqual({k: s2["arms"]["rule"][k] for k in K.ARM_RULE}, K.ARM_RULE)
         self.assertEqual(set(s2["arms"]["rule"]), set(K.ARM_RULE))
         self.assertEqual(tuple(s2["arms"]["definitions"]), K.STEP2_RAMP_ARMS)
-        self.assertEqual(list(s2["seeds"]), list(K.EXPLORATORY))
+        self.assertEqual(list(s2["seeds"]), [0, 1, 2, 3, 4])
+        self.assertTrue(set(s2["seeds"]) <= K.USED_SEEDS)
         p = s2["protocol"]
         self.assertEqual((p["alpha"], p["actor_steps"], p["chunk"]), (K.ALPHA, K.ACTOR_STEPS, K.CHUNK))
+        self.assertEqual(K.MEANDIFF_MARGIN, 0.10)
+        self.assertEqual(K.MEANDIFF_MARGIN, K.ARM_RULE["conformal_margin"])
         v7 = load_path("near80_test_v7_common", K.V7_DIR / "code" / "v7_common.py")
-        self.assertEqual(v7.PHASE_ENV, {k: v for k, v in K.PHASE_ENV.items() if k != "PYTHONPYCACHEPREFIX"})
+        for k, v in v7.PHASE_ENV.items():
+            if k not in ("PATH", "HOME", "PYTHONPATH"):
+                self.assertEqual(K.PHASE_ENV.get(k), v, k)
+        if K.HOST == "desktop":
+            self.assertEqual(v7.PHASE_ENV, {k: v for k, v in K.PHASE_ENV.items() if k != "PYTHONPYCACHEPREFIX"})
+            self.assertEqual(v7.PYTHON, K.PYTHON)
+        self.assertEqual(v7.PYTHON, K.HOST_PROFILES["desktop"]["python"])
         self.assertEqual(K.PHASE_ENV["PYTHONPYCACHEPREFIX"], K.PYCACHE_PREFIX)
         self.assertFalse(Path(K.PYCACHE_PREFIX).exists())
-        self.assertEqual(v7.PYTHON, K.PYTHON)
         self.assertEqual(v7.APPROVER_EMAIL, K.APPROVER_EMAIL)
         self.assertEqual(v7.BRANCH, K.BRANCH)
         self.assertEqual(v7.W0_TOL, K.W0_TOL)
-        self.assertEqual(v7.SCRATCH, K.SCRATCH)
-        self.assertEqual(v7.R7, K.V7_R7)
 
     def test_layout_and_helpers(self):
-        self.assertEqual(K.path("/r", "values", setting="near80", world="stall", seed=3),
-                         Path("/r/eval/near80/stall/seed3/values.json"))
-        self.assertEqual(K.phase_id("policy", "near80", "stall", seed=3), "policy.near80.stall.s3")
-        self.assertEqual(K.phase_id("lock", group="exploratory"), "lock.x.x.exploratory")
-        self.assertEqual(K.group_of(2), "exploratory")
-        self.assertEqual(K.group_of(12), "confirmatory")
-        for s in (5, 9, 15, -1):
+        self.assertEqual(K.path("/r", "values", setting="main", world="stall", seed=3),
+                         Path("/r/eval/main/stall/seed3/values.json"))
+        self.assertEqual(K.phase_id("policy", "main", "stall", seed=3), "policy.main.stall.s3")
+        self.assertEqual(K.phase_id("lock", group="fresh"), "lock.x.x.fresh")
+        self.assertEqual(K.group_of(0), "smoke")
+        for s in K.FRESH:
+            self.assertEqual(K.group_of(s), "fresh")
+        for s in (1, 5, 10, 12, 20, 34, 60, 100, 900, -1):
             with self.assertRaises(ValueError):
                 K.group_of(s)
+        self.assertFalse(set(K.FRESH) & K.USED_SEEDS)
+        self.assertTrue(all(K.FRESH_SEED_BLOCK[0] <= s <= K.FRESH_SEED_BLOCK[1] for s in K.FRESH))
+        self.assertFalse(set(range(K.FRESH_SEED_BLOCK[0], K.FRESH_SEED_BLOCK[1] + 1)) & K.USED_SEEDS)
+        self.assertTrue(set(K.SMOKE_SEEDS) <= K.USED_SEEDS)
         d = AC.canonical_constants()
-        self.assertEqual(d["ARMS"]["random_rows"], list(K.ARMS["random_rows"]))
-        self.assertEqual(d["ROOT"], str(K.ROOT))
+        self.assertEqual(d["ARMS"]["main"], list(K.ARMS["main"]))
+        self.assertEqual(d["FRESH"], list(K.FRESH))
+        for name in K.HOST_DEPENDENT:
+            self.assertNotIn(name, d)
         self.assertTrue(set(K.TEST_FILES) <= set(K.CODE_FILES))
+        self.assertIn("test_v9.py", K.TEST_FILES)
         self.assertEqual(len(set(K.CODE_FILES)), len(K.CODE_FILES))
-        self.assertTrue(set(K.STEP2_RAMP_ARMS) | set(K.NEW_RAMP_ARMS) <= set(K.ARMS["near80"]))
-        self.assertEqual(set(K.ARM_PLAIN), set(K.ARMS["near80"]))
+        self.assertTrue(set(K.STEP2_RAMP_ARMS) | set(K.NEW_ARMS) | set(K.TWIN_ARMS) | set(K.BCA_DEPENDENT)
+                        <= set(K.ARMS["main"]))
+        self.assertIn(K.NOISE_ARM, K.BCA_DEPENDENT)
+        self.assertIn(K.PRIMARY, K.BCA_DEPENDENT)
+        self.assertFalse(set(K.TWIN_ARMS) & set(K.BCA_DEPENDENT))
+        self.assertEqual(set(K.ARM_PLAIN), set(K.ARMS["main"]))
         self.assertEqual(set(K.PHASE_PLAIN), set(K.PHASE_KINDS))
+        self.assertEqual(K.SETTINGS, ("main",))
         self.assertEqual(K.APPROVAL_NAME.format(prefix="p"), "approval_near80_p.json")
         self.assertEqual(K.N80, K.ROOT / K.N80_REL)
+        self.assertFalse(set(K.V8_HISTORY_FILES) & set(K.TOP_FILES))
+        self.assertNotIn(K.V9_NOTES, K.TOP_FILES)
+        self.assertEqual(K.CAP_CPU_HOURS, round(2.5 * K.FORECAST_CPU_HOURS_PER_SEED * len(K.FRESH), 1))
+        self.assertEqual(K.FORECAST_CPU_HOURS["fresh"], K.FORECAST_CPU_HOURS_PER_SEED * len(K.FRESH))
+        self.assertEqual(K.BUDGET_STAGES, ("fresh",))
+
+    def test_placeholders_of_decision_md(self):
+        left = K.placeholders_present()
+        for name in ("seed_count", "c2_net_margin", "c2_positive_seeds_min", "c2_multiplicity", "owner_answer"):
+            self.assertIn(name, left)
+        self.assertTrue(all(v.startswith(K.TODO) for v in K.PLACEHOLDERS.values()))
+        with enter_fixed(contextlib.ExitStack()):
+            self.assertEqual(K.placeholders_present(), [])
+            with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, multiplicity="x")):
+                self.assertEqual(K.placeholders_present(), ["c2_multiplicity (not one of the known rules)"])
+            with mock.patch.object(K, "MARKS_C2", dict(MARKS_C2_FIXED, net_margin=None)):
+                self.assertEqual(K.placeholders_present(), ["c2_net_margin"])
 
     def test_load_local_avoids_step_2s_modules(self):
         mod = K.load_local("near80_prereg")

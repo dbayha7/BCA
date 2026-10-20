@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Near-80 (version 8): approve the final pre-registration at a terminal on YOUR OWN machine (PREREGISTRATION.md
-section 11).
+"""Near-80 (version 9, main setting): approve the final pre-registration at a terminal on YOUR OWN machine
+(PREREGISTRATION.md section 11). DRAFT, not frozen: this script refuses until freeze.py has written prereg.json.
 
 Run it yourself, on the Framework Desktop, inside Ubuntu as root (wsl -d Ubuntu-24.04 -u root; the repository at
 /home/user/bca with version 7's restored runs/, which the code manifest pins), typing:
@@ -15,42 +15,32 @@ no stray file there (a json.py, say) can run before the checks below.
 
 What it does, in order. If any step fails, it prints "Refused." with the reason, writes nothing and exits with 2.
   1. Checks the committed files in outputs/shift/beyond-the-data/near80/:
-       - prereg.json matches its fingerprint file prereg.json.sha256, is the near-80 pre-registration, is FINAL
-         ("final, awaiting approval"; a draft cannot be approved), misses nothing, and offers approval from your own
-         terminal with your GitHub address;
+       - prereg.json matches its fingerprint file prereg.json.sha256, is the near-80 pre-registration of version 9,
+         is FINAL ("final, awaiting approval"; a draft cannot be approved), misses nothing, and offers approval from
+         your own terminal with your GitHub address;
        - code_manifest.json is the manifest prereg.json pins and matches its own fingerprint file; every file it lists
          (this script included) has the fingerprint it records; every repository file it pins is unchanged;
-       - the frozen code's no-training checks on seeds 0-4 (pre_approval/no_training_checks_seeds0_4.json) are the
-         ones prereg.json pins, and they passed;
+       - the frozen code's outcome-free counts on seeds 0-4 (pre_approval/pooled_group_counts_seeds0_4.json) are the
+         ones prereg.json pins;
        - the draft the final version was built from (prereg_history/prereg_draft_<first 16>.json) is the one pinned;
        - the folder and its code/ hold no other file: only the files the manifest lists, prereg.json,
-         code_manifest.json (each with its .sha256) and this fingerprint's own approval and import records; no
-         __pycache__ and no other folder holding Python files.
+         code_manifest.json (each with its .sha256), this fingerprint's own approval and import records, and version
+         8's history (its approval and import records, its amendment_1.json, each with its .sha256; its
+         pre_approval/ file; its results folder; its superseded prereg.json in prereg_history/); no __pycache__ and no
+         other folder holding Python files.
   2. Refuses if an approval of this fingerprint is already there (it never overwrites one).
   3. Refuses unless standard input is a terminal: you type the answer yourself; nothing may be piped in.
-  4. Shows a summary: the fingerprint, your answer accepting the defaults, the defaults taken, the seeds, the three
-     settings, the four claims, the stop rules, the no-training result, the compute forecast and cap.
+  4. Shows a summary: the fingerprint, your answer accepting the defaults, the defaults taken, the seeds, the two
+     claims, the rules, the frozen counts, the compute forecast and cap, the hosts.
   5. Asks you to type the fingerprint's first 16 characters.
   6. Writes approval_near80_<first 16 characters>.json and its .sha256 file in that folder, once, reads them back,
      and prints the git commands to commit and push them under your own name. Nothing runs until the session has
      imported your approval and pushed its import record (import_near80_<first 16 characters>.json).
 
-Amendment 1 (PREREGISTRATION.md section 19). When amendment_1.json sits next to prereg.json, the script runs in
-amendment mode. Step 1 then also checks:
-  - amendment_1.json matches its .sha256 file, is well formed, and amends THIS prereg.json (the same study) and its
-    code manifest;
-  - the files that differ from the approved code manifest are exactly the ones it names, with their fingerprints
-    before and after; a document is only appended to; no file is added or removed; code/near80_constants.py never
-    changes;
-  - your approval of prereg.json and its import record are in place;
-  - every file has the fingerprint amendment_1.json lists.
-Step 2 also refuses unless the desktop check (near80_amendment1/check_amendment1.sh) has written a result file next to
-this folder that matches its .sha256 file, ran in official mode on THIS amendment_1.json with the check code that
-amendment_1.json names (the SHA-256 of check_amendment1.py and check_amendment1.sh), ran the four unit test files and
-passed; --check only reports it. Step 4 shows each changed file, the check code and the desktop check's passing
-result files. Step 5 asks for the first 16 characters of amendment_1.json's fingerprint. Step 6 writes
-approval_near80_amendment1_<first 16 characters>.json (+ .sha256), which names the desktop check's passing result
-files, and its git commands add them; the session's import refuses unless your commit holds each of them.
+An amendment (amendment_v9_1.json beside prereg.json) puts the script in amendment mode, as version 8's amendment 1
+did: the files that differ from the approved code manifest must be exactly the ones it names, documents are only
+appended to, no file is added or removed, code/near80_constants.py never changes, your approval of prereg.json and
+its import record must be in place, and the desktop check (near80_amendment1/check_amendment1.sh) must have passed.
 
 Standard library only (Python 3.8 or later); it imports nothing from code/. It asks git, read-only, for the current
 commit and branch.
@@ -82,21 +72,29 @@ IMPORT_NAME = "import_near80_{}.json"
 KIND = "near80-local-approval"
 MODE = "local-terminal"
 PREREG_KIND = "near80-preregistration"
+VERSION = "version 9, near-80 main"
 STATUS_FINAL = "final, awaiting approval"
 APPROVER_EMAIL = "35092758+dbayha7@users.noreply.github.com"
 APPROVER_NAME = "David Bayha"
 BRANCH = "claude/main-bca-connection-x4o46s"
 SCRIPT_NAME = "approve_local_near80.py"
-FROZEN_NAME = "pre_approval/no_training_checks_seeds0_4.json"
+FROZEN_NAME = "pre_approval/pooled_group_counts_seeds0_4.json"
 FROZEN_TOP = (PREREG_NAME, PREREG_NAME + ".sha256", MANIFEST_NAME, MANIFEST_NAME + ".sha256")
 STATEMENT = ("I approve the near-80 pre-registration ({version}) whose SHA-256 is {sha}, and only that exact file. "
              "Approving it accepts every default of its section 16 and allows the runs it names, under its rules.")
 WIDTH = 100
-# Amendment 1 (PREREGISTRATION.md section 19): approval_check.py's names, restated (test_approval checks they agree).
-AMENDMENT_NAME = "amendment_1.json"
+# Version 8's history (near80_constants.V8_HISTORY_FILES, V8_HISTORY_DIRS, V8_FROZEN_NAME; test_v9 checks they agree).
+V8_HISTORY_FILES = ("approval_near80_51e677ab76c8d2f7.json", "import_near80_51e677ab76c8d2f7.json", "amendment_1.json",
+                    "approval_near80_amendment1_52fe05b92900290b.json",
+                    "import_near80_amendment1_52fe05b92900290b.json")
+V8_HISTORY_DIRS = ("results-20261020T115246Z",)
+V8_FROZEN = "pre_approval/no_training_checks_seeds0_4.json"
+V9_NOTES = "V9_BUILD_NOTES.md"
+# Amendments of version 9 (approval_check.py's names, restated; test_v9 checks they agree).
+AMENDMENT_NAME = "amendment_v9_1.json"
 AMENDMENT_KIND = "near80-amendment"
-AMEND_APPROVAL_NAME = "approval_near80_amendment1_{}.json"
-AMEND_IMPORT_NAME = "import_near80_amendment1_{}.json"
+AMEND_APPROVAL_NAME = "approval_near80_v9_amendment1_{}.json"
+AMEND_IMPORT_NAME = "import_near80_v9_amendment1_{}.json"
 AMEND_KIND = "near80-local-amendment-approval"
 AMEND_STATEMENT = ("I approve amendment 1 (SHA-256 {sha}) to the near-80 pre-registration {parent}. It changes only "
                    "the files it lists; every rule, mark, threshold and sentence of that pre-registration is "
@@ -104,7 +102,7 @@ AMEND_STATEMENT = ("I approve amendment 1 (SHA-256 {sha}) to the near-80 pre-reg
 NEVER_AMENDED = ("code/near80_constants.py",)
 CHECK_POSIX = "outputs/shift/beyond-the-data/near80_amendment1"     # the desktop check and its result files
 CHECK_KIND = "near80-amendment1-desktop-check"
-CHECK_TESTS = ("test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py")   # near80_constants.TEST_FILES
+CHECK_TESTS = ("test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py", "test_v9.py")
 
 
 class Refused(Exception):
@@ -143,11 +141,13 @@ def load_json(data, name):
 
 def unlisted_files(folder, files, prefix, extra=()):
     """Step 1's last check: every entry of the folder and of its code/ that is neither a file the manifest lists, one
-    of the four frozen files at the top (prereg.json, code_manifest.json, each with its .sha256), nor this
-    fingerprint's own approval or import record (with .sha256); any __pycache__; any other folder holding a .py file.
-    Returns the problems (empty when none)."""
-    allowed = set(f for f in files if "/" not in f) | set(FROZEN_TOP) | set(extra)
+    of the four frozen files at the top, this fingerprint's own approval or import record (with .sha256), version 8's
+    history, nor the build notes; any __pycache__; any other folder holding a .py file (version 8's results folder
+    holds none). Returns the problems (empty when none)."""
+    allowed = set(f for f in files if "/" not in f) | set(FROZEN_TOP) | set(extra) | {V9_NOTES}
     for name in (APPROVAL_NAME.format(prefix), IMPORT_NAME.format(prefix)):
+        allowed.update((name, name + ".sha256"))
+    for name in V8_HISTORY_FILES:
         allowed.update((name, name + ".sha256"))
     out = []
     for name in sorted(os.listdir(folder)):
@@ -174,15 +174,14 @@ def unlisted_files(folder, files, prefix, extra=()):
 
 
 def delta_problems(parent_files, amendment, folder):
-    """approval_check.delta_problems, restated (standard library only): [] when the amendment's files are the parent
-    manifest's files changed exactly as its delta says, documents only appended to, near80_constants.py unchanged."""
+    """approval_check.delta_problems, restated (standard library only)."""
     files = amendment.get("files") or {}
     delta = amendment.get("delta") or {}
     changed, added = delta.get("changed") or {}, delta.get("added") or {}
     removed, appended = list(delta.get("removed") or []), delta.get("appended") or {}
     out = []
     if added or removed:
-        out.append("amendment 1 adds and removes no file (near80_constants.CODE_FILES cannot change)")
+        out.append("an amendment adds and removes no file (near80_constants.CODE_FILES cannot change)")
     if set(files) != (set(parent_files) - set(removed)) | set(added):
         out.append("its file list is not the parent's with the delta's additions and removals")
     out += ["{} is removed but the parent does not list it".format(r) for r in removed if r not in parent_files]
@@ -215,11 +214,6 @@ def _str_map(m, value_ok):
 
 
 def amendment_shape_ok(body):
-    """approval_check.amendment_shape_ok, restated: parent {...}; files {path: SHA-256}; delta {changed {path: [old,
-    new]}, added {path: SHA-256}, removed [path], appended {path: {...}}} (an absent or empty part counts as empty).
-    It also checks the fields only this script reads, to show them in step 4 (approval_check never reads them):
-    cleared_failures, unchanged and runs are lists of text, title and why_no_result_changes are text, desktop_check
-    is {name: SHA-256}; each may be absent."""
     if not (all(body.get(k) is None or (isinstance(body[k], list) and all(isinstance(x, str) for x in body[k]))
                 for k in ("cleared_failures", "unchanged", "runs"))
             and all(body.get(k) is None or isinstance(body[k], str) for k in ("title", "why_no_result_changes"))
@@ -239,10 +233,6 @@ def amendment_shape_ok(body):
 
 
 def desktop_checks(folder, amendment, amendment_sha):
-    """The desktop check's result files (CHECK_POSIX/desktop_check_<utc>.json, next to this folder) that match their
-    .sha256 file, ran in official mode on THIS amendment_1.json with the check code it names ('desktop_check': the
-    SHA-256 of check_amendment1.py and check_amendment1.sh), ran the four unit test files and passed: {file name:
-    SHA-256}. approval_check.desktop_check_problems, restated."""
     want = amendment.get("desktop_check")
     d = os.path.join(os.path.dirname(os.path.abspath(folder)), CHECK_POSIX.rsplit("/", 1)[-1])
     good = {}
@@ -267,8 +257,6 @@ def desktop_checks(folder, amendment, amendment_sha):
 
 
 def load_amendment(folder, prereg_sha, manifest_sha, label):
-    """amendment_1.json (+ .sha256): (body, SHA-256). Raises Refused unless it is amendment 1 of THIS prereg.json (the
-    same study: prereg.json's label)."""
     path = os.path.join(folder, AMENDMENT_NAME)
     if not os.path.isfile(path):
         raise Refused("{} is missing.".format(AMENDMENT_NAME))
@@ -278,7 +266,7 @@ def load_amendment(folder, prereg_sha, manifest_sha, label):
         raise Refused("{} does not match its fingerprint file (it was changed).".format(AMENDMENT_NAME))
     body = load_json(raw, AMENDMENT_NAME)
     if not isinstance(body, dict) or body.get("kind") != AMENDMENT_KIND or body.get("number") != 1:
-        raise Refused("{} is not near-80's amendment 1.".format(AMENDMENT_NAME))
+        raise Refused("{} is not near-80's amendment 1 of version 9.".format(AMENDMENT_NAME))
     if body.get("label") != label:
         raise Refused("{} names another study.".format(AMENDMENT_NAME))
     if not amendment_shape_ok(body):
@@ -293,12 +281,12 @@ def load_amendment(folder, prereg_sha, manifest_sha, label):
 
 
 def check_folder(folder=None, script_path=None, repo=REPO, amend=False):
-    """Step 1. Returns what the rest needs; raises Refused on any mismatch. amend: amendment 1's mode (the files are
-    checked against amendment_1.json's list, after the delta check, and the parent must be approved and imported)."""
+    """Step 1. Returns what the rest needs; raises Refused on any mismatch."""
     folder = folder or os.path.join(repo, *FOLDER_POSIX.split("/"))
     prereg_path = os.path.join(folder, PREREG_NAME)
     if not os.path.isfile(prereg_path):
-        raise Refused("No near-80 pre-registration at {}. Pull the branch first.".format(prereg_path))
+        raise Refused("No near-80 pre-registration at {}. Pull the branch first (or the freeze has not run: this "
+                      "version is a draft).".format(prereg_path))
     raw = read_bytes(prereg_path)
     digest = sha256_bytes(raw)
     if sidecar_digest(prereg_path) != digest:
@@ -306,6 +294,9 @@ def check_folder(folder=None, script_path=None, repo=REPO, amend=False):
     prereg = load_json(raw, PREREG_NAME)
     if not isinstance(prereg, dict) or prereg.get("kind") != PREREG_KIND:
         raise Refused("prereg.json is not the near-80 pre-registration.")
+    if prereg.get("version") != VERSION:
+        raise Refused("prereg.json is {!r}, not {!r}: this script approves version 9 only.".format(
+            prereg.get("version"), VERSION))
     if prereg.get("status") != STATUS_FINAL:
         raise Refused("prereg.json is not final (its status is {!r}), so it cannot be approved.".format(
             prereg.get("status")))
@@ -368,7 +359,7 @@ def check_folder(folder=None, script_path=None, repo=REPO, amend=False):
             missing_runs = missing_runs or rel.startswith("runs/")
         elif file_sha256(path) != repo_files[rel]:
             bad.append("{} differs".format(rel))
-    frozen = prereg.get("no_training_checks_frozen") or {}
+    frozen = prereg.get("pooled_group_counts_frozen") or {}
     fpath = os.path.join(folder, *str(frozen.get("path") or FROZEN_NAME).split("/"))
     if frozen.get("path") != FROZEN_NAME:
         bad.append("prereg.json does not pin {}".format(FROZEN_NAME))
@@ -382,12 +373,6 @@ def check_folder(folder=None, script_path=None, repo=REPO, amend=False):
             side = None
         if fsha != frozen.get("sha256") or side != fsha:
             bad.append("{} is not the one prereg.json pins, or differs from its fingerprint file".format(FROZEN_NAME))
-        else:
-            body = load_json(read_bytes(fpath), FROZEN_NAME)
-            checks = body.get("no_training_checks") if isinstance(body, dict) else None
-            if (frozen.get("passed") is not True or not isinstance(checks, dict) or checks.get("passed") is not True
-                    or checks.get("not_run") != []):
-                bad.append("the frozen code's no-training checks on seeds 0-4 did not all pass")
     draft = prereg.get("draft") or {}
     dsha = draft.get("sha256")
     drel = str(draft.get("path") or "")
@@ -433,12 +418,12 @@ def summary(info):
     s = p.get("summary") or {}
     answer = p.get("owner_answer") or {}
     seeds = p.get("seeds") or {}
-    frozen = p.get("no_training_checks_frozen") or {}
+    frozen = p.get("pooled_group_counts_frozen") or {}
     compute = p.get("compute") or {}
+    hosts = p.get("hosts") or {}
     choices = ["{}. {}: {}".format(c.get("number"), c.get("choice"), json.dumps(c.get("taken")))
                for c in p.get("choices") or []]
-    settings = ["{}: {}".format(k, (v or {}).get("role")) for k, v in sorted((p.get("settings") or {}).items())]
-    parts = ["", "Near-80 (version 8): hiding the commands near 80%", wrap(p.get("label", "")),
+    parts = ["", "Near-80 (version 9, main setting): the main setting on fresh seeds", wrap(p.get("label", "")),
              "  File: {}/{}".format(FOLDER_POSIX, PREREG_NAME),
              "  Checked: it matches its fingerprint file; the code manifest, all {} pinned near-80 files and all {} "
              "pinned repository files match.".format(info["n_files"], info["n_repo_files"]), "",
@@ -446,21 +431,21 @@ def summary(info):
              "Your answer: \"{}\" ({}, {}): {}.".format(answer.get("text"), answer.get("utc"), answer.get("where"),
                                                        answer.get("choices")), "",
              "The defaults of section 16 that approving takes:", bullets(choices), "",
-             "Seeds: {} exploratory (seen); {} fresh (the only ones that can carry a claim); {} refused always.".format(
-                 seeds.get("exploratory"), seeds.get("confirmatory"), seeds.get("refused_always")), "",
-             "The three settings of the data:", bullets(settings), "",
-             "The four claims (read only on seeds 10-14):", bullets(s.get("claims")), "",
-             "The stop rules on seeds 0-4:", bullets(s.get("stop_rules")), "",
-             "The frozen code's no-training checks on seeds 0-4 (before approval, nothing trained): {} rules, "
-             "{}.".format(frozen.get("rules"), "all passed" if frozen.get("passed") is True else "NOT ALL PASSED"), "",
-             "Compute: {} CPU-hours forecast in all; the cap for the whole version is {} CPU-hours.".format(
-                 compute.get("total"), compute.get("budget_cap")), "",
+             "Seeds: {} fresh (the only ones that can carry a claim; {} seeds); seed {} for the plumbing only; every "
+             "seed another study used is refused.".format(seeds.get("fresh"), seeds.get("fresh_count"),
+                                                            seeds.get("plumbing")), "",
+             "The two claims (read only on the fresh seeds):", bullets(s.get("claims")), "",
+             "The rules:", bullets(s.get("rules")), "",
+             "The frozen code's outcome-free counts of the pooled groups on seeds 0-4 (before approval, nothing "
+             "trained): {}.".format(json.dumps(frozen.get("summary"))), "",
+             "Compute: {} CPU-hours per fresh seed; {} for the plumbing; the cap is {}.".format(
+                 compute.get("per_fresh_seed"), compute.get("plumbing"), compute.get("budget_cap")), "",
+             "Hosts: {}.".format("; ".join("{}: {}".format(k, v.get("entry")) for k, v in sorted(hosts.items()))), "",
              "Read it first: {}/PREREGISTRATION.md".format(FOLDER_POSIX), ""]
     return "\n".join(parts)
 
 
 def summary_amendment(info):
-    """Step 4's text for amendment 1."""
     a = info["amendment"]
     delta = a.get("delta") or {}
     check = a.get("desktop_check") or {}
@@ -469,7 +454,7 @@ def summary_amendment(info):
                                                                      rel, {}).get("parent_bytes"))
                if rel in (delta.get("appended") or {}) else "")
                for rel, (old, new) in sorted((delta.get("changed") or {}).items())]
-    parts = ["", "Near-80 (version 8): amendment 1", wrap(a.get("title", "")),
+    parts = ["", "Near-80 (version 9): amendment 1", wrap(a.get("title", "")),
              "  Amends: prereg.json {} (your approval of {} and its import record are in place).".format(
                  info["sha256"], info["sha256"][:PREFIX_LEN]),
              "  Checked: prereg.json, code_manifest.json and all {} pinned repository files are unchanged; every other "
@@ -477,27 +462,14 @@ def summary_amendment(info):
              "What changes (SHA-256, first 16 characters, before -> after):", bullets(changed), "",
              "What does not change:", bullets(a.get("unchanged")), "",
              "Kept, and what runs after your approval is imported:", bullets(a.get("runs")), "",
-             "The {} phases that failed and run again as attempt 2 (their failed attempt 1 stays in the ledger and "
-             "counts toward the budget):".format(len(a.get("cleared_failures") or [])),
-             bullets(a.get("cleared_failures")), "",
              "Why it cannot change a result:", wrap(a.get("why_no_result_changes", "")), "",
              "The desktop check of this amendment ({}/check_amendment1.sh):".format(CHECK_POSIX),
-             bullets(["its code, as amendment_1.json names it: check_amendment1.py {}, check_amendment1.sh {}".format(
+             bullets(["its code, as the amendment names it: check_amendment1.py {}, check_amendment1.sh {}".format(
                  str(check.get("py"))[:PREFIX_LEN], str(check.get("sh"))[:PREFIX_LEN])]
-                 + (["passed: {} (official mode, this amendment_1.json, that code; the four unit test files ran and "
-                     "passed)".format(n) for n in sorted(info.get("desktop_checks") or {})]
-                    or ["none has passed yet; run it before you approve (approving refuses until one has passed, with "
-                        "the four unit test files)"])), "",
-             "Before you type:",
-             wrap("Approving also confirms the item of section 19.6 that is marked for you: to your knowledge nobody, "
-                  "you included, opened a record or log of the exploratory stage that holds a score or a learner "
-                  "number (under runs/shift_explore/near80/: looks/exploratory.json and looks/exploratory.md; the "
-                  "records of seeds 0-4 under learners/, policy/, eval/, readouts/ and stops/; and the logs of seeds "
-                  "0-4's phases under logs/) or read such a number from one. If anyone did, press Enter to stop and "
-                  "tell the session who opened which files (name the files only; do not say what they showed); it "
-                  "states it in section 19.6 and gives you a new fingerprint."), "",
-             "Fingerprint (SHA-256) of amendment_1.json:", "", "    " + info["amendment_sha256"], "",
-             "Read it first: {}/PREREGISTRATION.md, section 19".format(FOLDER_POSIX), ""]
+                 + (["passed: {}".format(n) for n in sorted(info.get("desktop_checks") or {})]
+                    or ["none has passed yet; run it before you approve"])), "",
+             "Fingerprint (SHA-256) of {}:".format(AMENDMENT_NAME), "", "    " + info["amendment_sha256"], "",
+             "Read it first: {}/PREREGISTRATION.md, its amendment section".format(FOLDER_POSIX), ""]
     return "\n".join(parts)
 
 
@@ -580,10 +552,10 @@ def main(argv=None, folder=None, script_path=None, stdin=None, input_fn=input, r
             raise Refused("{} already exists: this fingerprint is approved already. An approval is never "
                           "overwritten.".format(name))
         if amend and not info["desktop_checks"]:
-            raise Refused("No desktop check of this amendment has passed. Run {}/check_amendment1.sh first "
-                          "(PREREGISTRATION.md section 19.9): its result file must match its .sha256 file, say it ran "
-                          "in official mode and passed, and name amendment_1.json's fingerprint {}.".format(
-                              CHECK_POSIX, info["amendment_sha256"][:PREFIX_LEN]))
+            raise Refused("No desktop check of this amendment has passed. Run {}/check_amendment1.sh first: its "
+                          "result file must match its .sha256 file, say it ran in official mode and passed, and name "
+                          "{}'s fingerprint {}.".format(CHECK_POSIX, AMENDMENT_NAME,
+                                                        info["amendment_sha256"][:PREFIX_LEN]))
         if not (hasattr(stdin, "isatty") and stdin.isatty()):
             raise Refused("Standard input is not a terminal. Run this yourself in a terminal window; do not pipe or "
                           "redirect anything into it.")
@@ -630,12 +602,12 @@ def main(argv=None, folder=None, script_path=None, stdin=None, input_fn=input, r
         "", "Approval written:", "  " + rel, "  " + rel + ".sha256", "",
         ("It covers amendment 1 with fingerprint {} only, on top of the pre-registration {}.".format(
             info["amendment_sha256"], info["sha256"]) if amend else
-         "It covers the near-80 pre-registration with fingerprint {} only.".format(info["sha256"])), "",
+         "It covers the near-80 pre-registration (version 9) with fingerprint {} only.".format(info["sha256"])), "",
         "Now commit and push it under your own name, from {}, with these exact commands:".format(repo), "",
         ("    git add {0} {0}.sha256 {1}/desktop_check_*".format(rel, CHECK_POSIX) if amend else
          "    git add {0} {0}.sha256".format(rel)),
         "    git -c user.name=\"{}\" -c user.email={} commit -m \"Near-80: approve {} {}\"".format(
-            APPROVER_NAME, APPROVER_EMAIL, "amendment 1" if amend else "version 8", prefix),
+            APPROVER_NAME, APPROVER_EMAIL, "version 9 amendment 1" if amend else "version 9", prefix),
         "    git push origin {}".format(branch), "",
         "If the push is rejected (\"fetch first\" or \"non-fast-forward\": the session pushed something meanwhile), type:",
         "", "    git -c user.name=\"{}\" -c user.email={} pull --rebase origin {}".format(

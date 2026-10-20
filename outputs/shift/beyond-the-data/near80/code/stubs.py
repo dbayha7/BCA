@@ -1,64 +1,74 @@
-"""Near-80 (version 8): stub mode. Every phase kind of the plan runs on a test fixture outside the repository, on
-synthetic logs, with every learner replaced by a stand-in that takes ZERO gradient steps. Nothing is trained, no band
-is fitted, no recorded seed is generated or loaded, and the gate's pre-registration is not read.
+"""Near-80 (version 9, main setting): stub mode. Every phase kind of the plan runs on a test fixture outside the
+repository, on synthetic logs, with every learner replaced by a stand-in that takes ZERO gradient steps. Nothing is
+trained, no recorded seed is generated or loaded, and the gate's pre-registration is not read. DRAFT, not frozen.
 
 install(run) (called by phase_main in stub mode, before dispatch) replaces:
   settingdata.gate_seed, fresh_settings, fresh_log, fresh_gap, anchors, gate_record_sha256 -> synthetic seeds
-      (synthetic_log: the pattern of test_near80.synthetic_log, tag 9000 + the logical seed, the world's physics) and
-      synthetic_gap(); anchors from facts_near80.anchors_for(world, bank_n=--starts); settingdata.gate_prereg,
-      acceptance.load_seed and dataset.generate -> functions that raise;
+      (synthetic_log: tag 9000 + the logical seed, the world's physics) and synthetic_gap(); anchors from
+      facts_near80.anchors_for(world, bank_n=--starts); settingdata.gate_prereg, acceptance.load_seed and
+      dataset.generate -> functions that raise;
   learners.fixed_critic -> the critic's initial parameters (the same key as fixed_critic), updates 0;
   learners.clone -> the initial actor (learners.initial_actor);
   learners.ActorOnly.run -> every arm returns the start actor;
-  machinery.RampRunner.run_ramp, the room's RoomRunner.run_kind and version 6's BCARunner.run_bca -> every arm returns
-      the start actor (a ramp arm with a height above 0 returns the start actor plus 0.001 on every parameter, so that
-      the strength-matching code path runs; this is not a gradient step); run_ramp also records each program's arm
+  machinery.RampRunner.run_ramp and the room's RoomRunner.run_kind -> every arm returns the start actor (a ramp arm
+      with a height above 0, or a hinge arm, returns the start actor plus 0.001 on every parameter, so that the
+      strength-matching code path runs; this is not a gradient step); run_ramp also records each program's arm
       names (RAMP_BATCHES), so that the tests can check the batches are step 2's;
   version 6's policy.match_controls -> the first ladder rung, chosen without training; machinery.standin_matched and
       standin_locked -> raise 'stub: not run' (recorded as the stand-in's error); policy.standins_module -> None;
-  v6bca.fit, v6bca.train_arm -> an untrained band (version 6's band_template, stub: true) and the start actor;
   the training programs themselves (the gate's _fixed_step, _clone_loop, _actor_only_loop, actor_step, cotrain,
       bca_cotrain, bca_band; the room's _room_loop and actor_step_w; step 2's _ramp_loop and actor_step_ramp; version
       6's _bca_loop, actor_step_bca and band.fit_band_arrays) -> guards that count the entry and raise.
 Every stand-in counts its calls (CALLS) and every guard its entries (GUARD_HITS); phase_main writes both into the
 attempt's usage record, and the end-to-end test asserts that no guard was entered.
 
-Step 2's saved actors are replaced by make_step2_fixture(DIR): synthetic lock.json / actors.msgpack / values.json of
-seeds 0-4 built from initial actors, and a synthetic step-2 results file equal to them; evaluate_step2_saved reads
-these in stub mode.
+The synthetic log's survivors: N_SURVIVORS rows near full throttle outside the ball in the training split, and
+N_HELDOUT_TAIL such rows in each held-out split, with reward SURVIVOR_REWARD so that the second critic (the initial
+critic here) over-predicts them and the switch is on. A fixture may ask for a refusing seed (REFUSE_SEEDS, through
+the fixture's stub.json): its synthetic log gets only a few full-throttle rows, so BCA's certificate is on with an
+infinite height and the refusal rule runs end to end.
 
-The synthetic logs do not pass the no-training checks (they are not built to): in stub mode the rules are computed
-and recorded, but they neither fail a seed nor halt the run ('stub_note' in the data records).
+Step 2's saved actors are replaced by make_step2_fixture(DIR): synthetic lock.json / actors.msgpack / values.json of
+seed 0 (both worlds) built from initial actors; the reproduction check is never run in stub mode (it is a scratch
+check), so the fixture only has to exist for the self-test's file checks.
 """
 import sys
 
 sys.dont_write_bytecode = True
 
 import collections  # noqa: E402
+import json  # noqa: E402
 import types  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-ROOT = Path("/home/user/bca")
-for _p in (str(HERE), str(ROOT)):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+import near80_constants as K  # noqa: E402
+
+ROOT = Path(K.ROOT)
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import numpy as np  # noqa: E402
 
-import near80_constants as K  # noqa: E402
 import ledger as LG  # noqa: E402
 
 CALLS = collections.Counter()
 GUARD_HITS = collections.Counter()
 RAMP_BATCHES = []          # the arm names of every vmapped ramp program the phase ran (its batch), in call order
+KIND_BATCHES = []          # (kind, arm names) of every room program the phase ran
 TAG_BASE = 9000
-N_SURVIVORS = 60          # survivors near full throttle outside the ball: enough for BCA's posterior to certify
+N_SURVIVORS = 40          # survivors near full throttle outside the ball in the training split
+N_HELDOUT_TAIL = 12       # such rows in each held-out split (calibration, evaluation): the pooled groups' extra rows
+N_REFUSING = 4            # a refusing seed: too few full-throttle rows for BCA's certificate (0.9^n stays above 0.05)
 SURVIVOR_REWARD = -5.0    # the survivors' recorded reward: the second critic over-predicts them, the switch is on
 STUB_STARTS = 5
 PATTERN = np.array([-1.0, -0.137, -0.585, -0.406])
-STUB_NOTE = ("stub mode: synthetic logs are not built to pass the no-training checks; the rules are recorded but fail "
-             "no seed and halt nothing")
+STUB_NOTE = ("stub mode: synthetic logs are not built to pass the gate's checks; the checks are recorded but fail no "
+             "seed and halt nothing")
+STUB_FILE = "stub.json"    # a fixture's choices: {"refuse_seeds": [seeds whose synthetic log makes BCA refuse]}
 _INSTALLED = {}
 
 
@@ -66,12 +76,24 @@ class StubViolation(RuntimeError):
     """A training function was entered in stub mode."""
 
 
+def fixture_choices(fixture):
+    try:
+        return json.loads((Path(fixture) / STUB_FILE).read_text(encoding="utf8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def refuse_seeds(fixture):
+    return [int(s) for s in (fixture_choices(fixture).get("refuse_seeds") or [])]
+
+
 # --------------------------------------------------------------------------------------------- synthetic data
 
-def synthetic_log(tag, world="stall", seed=7, sizes=(500, 50, 50), length=20):
-    """A small synthetic log with the gate's Log interface (test_near80.synthetic_log's pattern, in the given world):
-    normal driving capped below 80%, a full-throttle cluster (inside the ball), 60 survivors near full throttle
-    outside the ball, and a few rows on and around the band's edges."""
+def synthetic_log(tag, world="stall", seed=7, sizes=(500, 50, 50), length=20, n_survivors=N_SURVIVORS,
+                  n_heldout_tail=N_HELDOUT_TAIL):
+    """A small synthetic log with the gate's Log interface: normal driving capped below 80%, a full-throttle cluster
+    (inside the ball), survivors near full throttle outside the ball in every split, and a few rows on and around the
+    band's edges."""
     from experiments.shift import dataset as DS
     from experiments.shift import recorder as RC
     from experiments.shift import thruster_chain as TC
@@ -82,12 +104,20 @@ def synthetic_log(tag, world="stall", seed=7, sizes=(500, 50, 50), length=20):
     a = 0.8 * np.tanh((mu + 0.45 * rng.standard_normal((n, 4))) / 0.8)
     ft = rng.uniform(size=n) < 0.15
     a[ft] = np.clip(PATTERN + 0.03 * rng.standard_normal((int(ft.sum()), 4)), -1, 1)
-    train_rows = np.arange(sizes[0] * length)
-    surv = rng.choice(train_rows[~ft[train_rows]], N_SURVIVORS, replace=False)
-    a[surv] = np.array([-0.985, 0.4, 0.3, 0.3]) + 0.004 * rng.standard_normal((N_SURVIVORS, 4))
-    a32 = a.astype(np.float32)
     rewards = np.zeros(n, np.float32)
-    rewards[surv] = SURVIVOR_REWARD      # so that BCA's switch is on in the stub run and the matching path runs
+    bounds = np.cumsum([0] + [s * length for s in sizes])
+    counts = (n_survivors, n_heldout_tail, n_heldout_tail)
+    surv_all = []
+    for i, (lo, hi) in enumerate(zip(bounds[:-1], bounds[1:])):
+        rows = np.arange(lo, hi)
+        k = min(int(counts[i]), int((~ft[rows]).sum()))
+        if k <= 0:
+            continue
+        surv = rng.choice(rows[~ft[rows]], k, replace=False)
+        a[surv] = np.array([-0.985, 0.4, 0.3, 0.3]) + 0.004 * rng.standard_normal((k, 4))
+        rewards[surv] = SURVIVOR_REWARD
+        surv_all.append(surv)
+    a32 = a.astype(np.float32)
     x = 0.3 * rng.standard_normal((n, TC.DX))
     x[:, TC.CURRENT] = rng.uniform(0.1, 0.7, n)
     x[:, TC.WAVE1] = rng.uniform(-0.2, 0.3, n)
@@ -109,11 +139,17 @@ def synthetic_log(tag, world="stall", seed=7, sizes=(500, 50, 50), length=20):
     return DS.Log(arrays, meta)
 
 
-def stub_fresh_log(seed, world, spec, sizes, slope):
-    """settingdata.fresh_log in stub mode (amendment 1): the synthetic log, built with the sizes it is given. Its
-    arguments are held to dataset.generate's contract (a RecorderSpec, three integer sizes, a finite slope), so a
-    caller that passes what the real generator would refuse fails here too; the recorder and the stall slope must be
-    the stub's fresh_settings() ones (the synthetic log does not depend on them, so a wrong one would go unseen)."""
+def _counts_for(seed, fixture):
+    if fixture is not None and int(seed) in refuse_seeds(fixture):
+        return dict(n_survivors=N_REFUSING, n_heldout_tail=0)
+    return dict(n_survivors=N_SURVIVORS, n_heldout_tail=N_HELDOUT_TAIL)
+
+
+def stub_fresh_log(seed, world, spec, sizes, slope, fixture=None):
+    """settingdata.fresh_log in stub mode: the synthetic log, built with the sizes it is given. Its arguments are held
+    to dataset.generate's contract (a RecorderSpec, three integer sizes, a finite slope), so a caller that passes what
+    the real generator would refuse fails here too; the recorder and the stall slope must be the stub's
+    fresh_settings() ones."""
     from experiments.shift import recorder as RC
     if not isinstance(spec, RC.RecorderSpec):
         raise TypeError(f"fresh_log: spec is {type(spec).__name__}, not a RecorderSpec")
@@ -124,7 +160,7 @@ def stub_fresh_log(seed, world, spec, sizes, slope):
         raise TypeError(f"fresh_log: stall slope {slope!r} is not a finite number")
     if spec != _recorder_spec() or float(slope) != 1.5:
         raise TypeError(f"fresh_log: recorder or stall slope {slope!r} is not the stub's fresh_settings()")
-    return synthetic_log(TAG_BASE + int(seed), world, sizes=tuple(int(v) for v in sz))
+    return synthetic_log(TAG_BASE + int(seed), world, sizes=tuple(int(v) for v in sz), **_counts_for(seed, fixture))
 
 
 def synthetic_gap():
@@ -133,13 +169,13 @@ def synthetic_gap():
                   competing_ratio=2.0, record_sha256="synthetic")
 
 
-def synthetic_seed(seed, world):
+def synthetic_seed(seed, world, fixture=None):
     """A SeedData-like synthetic seed with a gate-like data record (logical seed -> tag 9000 + seed)."""
     import settingdata as SD
     from experiments.shift import acceptance as A
     from experiments.shift import shift as SH
     K.group_of(seed)
-    lg = synthetic_log(TAG_BASE + int(seed), world)
+    lg = synthetic_log(TAG_BASE + int(seed), world, **_counts_for(seed, fixture))
     gap = synthetic_gap()
     rg, rr = SH.make_removal(lg, "gap", gap), SH.make_removal(lg, "random", gap)
     checks, ok = SD._ball_checks(lg, gap, rg, rr)
@@ -239,7 +275,13 @@ def _arm_out(params, arm):
 
 def stub_run_kind(self, kind, arms, log_fn=None):
     self.seconds[kind] = self.seconds.get(kind, 0.0)
-    return {a.name: _arm_out(self.start_params, a) for a in arms}
+    KIND_BATCHES.append((kind, [a.name for a in arms]))
+    out = {}
+    for a in arms:
+        moved = kind == "hinge" or (kind == "plain" and float(getattr(a, "pull", 1.0)) != 1.0) or \
+            kind in ("push_less", "random", "band")
+        out[a.name] = _arm_out(_offset(self.start_params, 1e-3) if moved else self.start_params, a)
+    return out
 
 
 def stub_run_ramp(self, arms, log_fn=None):
@@ -250,11 +292,6 @@ def stub_run_ramp(self, arms, log_fn=None):
         h = float(a.coef[0]) * float(a.coef[1]) if len(a.coef) == 2 else 0.0
         out[a.name] = _arm_out(_offset(self.start_params, 1e-3) if h > 0 else self.start_params, a)
     return out
-
-
-def stub_run_bca(self, kind, arms, log_fn=None):
-    self.seconds[kind] = self.seconds.get(kind, 0.0)
-    return {a.name: dict(_arm_out(self.start_params, a), refits=None) for a in arms}
 
 
 def stub_match_controls(runner, trained, none, prepared, target, scale, families, log_fn=None):
@@ -273,26 +310,11 @@ def stub_standin(*a, **kw):
     raise RuntimeError("stub: not run")
 
 
-def stub_v6_fit(prep, critic, seed, world, learn, steps=None, log=None):
-    import v6bca
-    band = v6bca.band_template()
-    rec = dict(kind="near80-v6-band", seed=int(seed), world=world, critic="fixed", weighted=False, steps=0,
-               stub=True, failed=False, uniform=dict(R=1.0, R_c=1.0, U_max=1.0, unit=1.0, certified=True,
-                                                     bank_rows=int(len(prep.bank_rows))))
-    return band, rec, dict(scores=np.zeros(len(prep.bank_rows)), eta=np.ones(len(prep.bank_rows)))
-
-
-def stub_v6_train_arm(pg, clone, critic, learn, seed, band, cfg, shared, steps, chunk, log=None):
-    import v6bca
-    arm = types.SimpleNamespace(record=lambda: dict(name=v6bca.V6_ARM, kind="bca_u", coef=list(v6bca.V6_COEF)))
-    return _arm_out(clone, arm), None
-
-
 # --------------------------------------------------------------------------------------------- install
 
 LEARNER_GUARDS = ("_fixed_step", "_clone_loop", "_actor_only_loop", "actor_step", "cotrain", "bca_cotrain",
                   "bca_band", "bca_train_step", "bca_update")
-NEEDS_STEP2 = ("policy", "v6_band", "readouts", "evaluate", "lock")
+NEEDS_STEP2 = ("policy", "evaluate", "lock")
 
 
 def install(run):
@@ -303,9 +325,11 @@ def install(run):
     from experiments.shift import acceptance as A
     from experiments.shift import dataset as DS
     from experiments.shift import learners as L
-    SD.gate_seed = _counted("gate_seed", synthetic_seed)
+    fixture = run.fixture
+    SD.gate_seed = _counted("gate_seed", lambda seed, world: synthetic_seed(seed, world, fixture))
     SD.fresh_settings = _counted("fresh_settings", lambda: (_recorder_spec(), (500, 50, 50), 1.5))
-    SD.fresh_log = _counted("fresh_log", stub_fresh_log)
+    SD.fresh_log = _counted("fresh_log", lambda s, w, spec, sizes, slope: stub_fresh_log(s, w, spec, sizes, slope,
+                                                                                           fixture))
     SD.fresh_gap = _counted("fresh_gap", lambda lg: (synthetic_gap(), dict(reason="stub", stub=True)))
     SD.anchors = _counted("anchors", stub_anchors)
     SD.gate_record_sha256 = lambda *a, **kw: None
@@ -321,12 +345,11 @@ def install(run):
     for name in LEARNER_GUARDS:
         if hasattr(L, name):
             setattr(L, name, _guard(f"learners.{name}"))
-    if run.key.kind in NEEDS_STEP2 or run.key.kind == "lock":
+    if run.key.kind in NEEDS_STEP2:
         import policy_phase as PP
         S, MC, _ = PP.load_step2(run)
         MC.RampRunner.run_ramp = _counted("run_ramp", stub_run_ramp)
         MC.H.RoomRunner.run_kind = _counted("run_kind", stub_run_kind)
-        MC.P.BCARunner.run_bca = _counted("run_bca", stub_run_bca)
         MC.P.match_controls = _counted("match_controls", stub_match_controls)
         MC.standin_matched = _counted("standin_matched", stub_standin)
         MC.standin_locked = _counted("standin_locked", stub_standin)
@@ -336,9 +359,6 @@ def install(run):
                            (MC.P, ("_bca_loop", "actor_step_bca")), (MC.B, ("fit_band_arrays",))):
             for name in names:
                 setattr(mod, name, _guard(f"{getattr(mod, '__name__', 'module')}.{name}"))
-        import v6bca
-        v6bca.fit = _counted("v6bca_fit", stub_v6_fit)
-        v6bca.train_arm = _counted("v6bca_train_arm", stub_v6_train_arm)
     _INSTALLED["done"] = True
 
 
@@ -349,7 +369,8 @@ def _recorder_spec():
 
 def report():
     """What phase_main writes into the attempt's usage record in stub mode."""
-    return dict(stub_calls=dict(CALLS), stub_guard_hits=dict(GUARD_HITS), stub_ramp_batches=list(RAMP_BATCHES))
+    return dict(stub_calls=dict(CALLS), stub_guard_hits=dict(GUARD_HITS), stub_ramp_batches=list(RAMP_BATCHES),
+                stub_kind_batches=[list(b) for b in KIND_BATCHES])
 
 
 # --------------------------------------------------------------------------------------------- step 2's fixture
@@ -381,10 +402,10 @@ def step2_names(world):
     return ids
 
 
-def make_step2_fixture(fixture, starts=STUB_STARTS):
-    """Synthetic step-2 saved files for seeds 0-4 (both worlds) under DIR/step2/ and the matching results file:
-    every actor is the initial actor of its seed; the values are its evaluation on the synthetic main-setting data,
-    computed exactly as evaluate_phase computes them, so the step-2 checks pass on the fixture."""
+def make_step2_fixture(fixture, starts=STUB_STARTS, seeds=K.SMOKE_SEEDS):
+    """Synthetic step-2 saved files for seed 0 (both worlds) under DIR/step2/ and a matching results file: every actor
+    is the initial actor of its seed; the values are its evaluation on the synthetic main-setting data, computed as
+    evaluate_phase computes them."""
     import settingdata as SD
     import policy_phase as PP
     import phases as PH
@@ -402,9 +423,9 @@ def make_step2_fixture(fixture, starts=STUB_STARTS):
     learn = L.LearnSettings()
     cfg = types.SimpleNamespace(bank_size=int(starts))
     points = {w: {} for w in K.WORLDS}
-    for s in K.EXPLORATORY:
+    for s in seeds:
         for w in K.WORLDS:
-            sd = synthetic_seed(s, w)
+            sd = synthetic_seed(s, w, fixture)
             prep = SD.prepared("main", sd, learn)
             actor = L.initial_actor(learn, s)
             ev = A._evaluate(actor, prep, stub_anchors(run, w), cfg)
@@ -431,7 +452,7 @@ def make_step2_fixture(fixture, starts=STUB_STARTS):
                 row = points[w].setdefault(logical, {sit: dict(per_seed=[]) for sit in TC.SITUATIONS})
                 for sit in TC.SITUATIONS:
                     row[sit]["per_seed"].append(None if name is None else sits[sit]["points"][name])
-    res = dict(kind="step2-results-stub", mode="official", seeds=list(K.EXPLORATORY), points=points, stub=True)
+    res = dict(kind="step2-results-stub", mode="official", seeds=list(seeds), points=points, stub=True)
     LG.write_json_once(step2_results(fixture), res)
     return res
 
@@ -445,7 +466,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     fx = Path(a.fixture).resolve()
     if LG.inside(fx, ROOT):
-        print("refused: a test fixture must lie outside /home/user/bca", file=sys.stderr)
+        print(f"refused: a test fixture must lie outside {ROOT}", file=sys.stderr)
         return K.EXIT_REFUSED
     if not (fx / K.TEST_MARKER).is_file():
         print(f"refused: {fx} is not a near-80 test fixture (no {K.TEST_MARKER})", file=sys.stderr)

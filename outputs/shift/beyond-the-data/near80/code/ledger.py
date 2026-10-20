@@ -1,7 +1,8 @@
-"""Near-80 (version 8): strict JSON records, the attempt ledger, peak memory, interruption classes and the moving
-aside of an interrupted phase's files (version 7's rules, restated with near-80 names).
+"""Near-80 (version 9, main setting): strict JSON records, the attempt ledger, peak memory, interruption classes and
+the moving aside of an interrupted phase's files (version 7's rules, restated with near-80 names). DRAFT, not frozen.
 
-Standard library only, so that the runner can read the ledger without numpy or JAX.
+Standard library only, so that the runner can read the ledger without numpy or JAX. The file locks use fcntl where
+it exists (the desktop, the cluster) and msvcrt otherwise (the unit tests on Windows); official runs need fcntl.
 
 Records. Every JSON any near-80 code writes is json.dumps(plain(payload), indent=1, sort_keys=True,
 allow_nan=False) encoded as UTF-8 (non-finite floats become null), written once (os.O_CREAT | os.O_EXCL) with a
@@ -34,10 +35,78 @@ import json  # noqa: E402
 import math  # noqa: E402
 import os  # noqa: E402
 import re  # noqa: E402
+import tempfile  # noqa: E402
 import time  # noqa: E402
 from pathlib import Path  # noqa: E402
 
+try:
+    import fcntl  # noqa: E402
+except ImportError:                                   # Windows (the unit tests only)
+    fcntl = None
+    import msvcrt  # noqa: E402
+
 ATTEMPT_KIND = "near80-attempt"
+HAS_FCNTL = fcntl is not None
+
+
+# --------------------------------------------------------------------------------------------- portable pieces
+
+class LockHeld(OSError):
+    """Another process holds the lock."""
+
+
+def lock_exclusive(handle):
+    """A non-blocking exclusive lock on an open file; LockHeld when another process holds it."""
+    try:
+        if HAS_FCNTL:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        else:
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+    except OSError as error:
+        raise LockHeld(str(error)) from None
+
+
+def unlock(handle):
+    try:
+        if HAS_FCNTL:
+            fcntl.flock(handle, fcntl.LOCK_UN)
+        else:
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+    except OSError:
+        pass
+
+
+def lock_free(path):
+    """True when no process holds the lock on path (a missing file is free)."""
+    p = Path(path)
+    if not p.exists():
+        return True
+    try:
+        handle = open(p, "a+")
+    except OSError:
+        return True
+    try:
+        lock_exclusive(handle)
+        unlock(handle)
+        return True
+    except LockHeld:
+        return False
+    finally:
+        handle.close()
+
+
+def cpu_affinity():
+    """The processors this process may use: sched_getaffinity where it exists, else every processor."""
+    if hasattr(os, "sched_getaffinity"):
+        return sorted(os.sched_getaffinity(0))
+    return list(range(os.cpu_count() or 1))
+
+
+def work_dir():
+    """The folder phase processes start in: /tmp where it exists, else the system's temporary folder."""
+    return "/tmp" if os.path.isdir("/tmp") else tempfile.gettempdir()
 MOVED_KIND = "near80-moved-aside"
 EXIT_REFUSED, EXIT_STOP = 97, 2
 MEMORY_PATTERNS = ("MemoryError", "RESOURCE_EXHAUSTED", "out of memory")
@@ -104,7 +173,7 @@ def sidecar_digest(path):
 
 
 def _write_excl(path, data):
-    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o644)
     try:
         view = memoryview(data)
         while view:
@@ -261,7 +330,7 @@ def append_signal(out_root, phase_id, n, sig, why):
     d = ledger_dir(out_root, phase_id)
     d.mkdir(parents=True, exist_ok=True)
     line = json.dumps(dict(signal=int(sig), why=str(why), utc=utc()), sort_keys=True)
-    fd = os.open(str(d / f"{n}.signals"), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+    fd = os.open(str(d / f"{n}.signals"), os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_BINARY", 0), 0o644)
     try:
         os.write(fd, (line + "\n").encode("utf8"))
     finally:
@@ -461,14 +530,9 @@ def measured_peaks(out_root, extra=None):
 
 
 def stage_of(phase_kind, setting, group):
-    """The budget stage of a phase: 'exploratory', 'confirmatory_band' (the near-80 and random-rows settings on
-    seeds 10-14) or 'confirmatory_main' (the main setting on seeds 10-14, the full-log critic, the confirmatory lock
-    and look)."""
-    if group == "exploratory":
-        return "exploratory"
-    if setting in ("near80", "random_rows", "band"):
-        return "confirmatory_band"
-    return "confirmatory_main"
+    """The budget stage of a phase: 'fresh' (the fresh seeds' phases and the fresh group's lock and look, the only
+    stage of the official plan) or 'plumbing' (the smoke seed's phases and its group: scratch and stub runs)."""
+    return "fresh" if group == "fresh" else "plumbing"
 
 
 def cpu_hours(out_root, plumbing_seconds=None):

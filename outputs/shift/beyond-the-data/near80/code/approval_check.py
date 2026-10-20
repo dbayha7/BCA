@@ -1,8 +1,11 @@
-"""Near-80 (version 8): the one approval check every phase calls, the git identity refusal, and the test fixture.
+"""Near-80 (version 9, main setting): the one approval check every phase calls, the git identity refusal, and the
+test fixture. DRAFT, not frozen.
 
-FINAL, awaiting the owner's approval. Nothing here trains, fits or reads a result. Standard library only, except that
-the git rules are version 6's own (outputs/shift/beyond-the-data/stage2/code/stage2_common.py), executed from its
-verified bytes under the module name 'near80_v6_stage2_common' and called, never copied.
+Nothing here trains, fits or reads a result. Standard library only, except that the git rules are version 6's own
+(outputs/shift/beyond-the-data/stage2/code/stage2_common.py), executed from its verified bytes under the module name
+'near80_v6_stage2_common' and called, never copied. Version 8's approval chain (its approval and import records, its
+amendment_1.json and their sidecars; near80_constants.V8_HISTORY_FILES) stays in the folder as history: this code
+never reads it as an approval of version 9, and the folder checks allow exactly those files.
 
 What it checks (require_approval, in this order):
   1. prereg.json: matches its '.sha256' sidecar; kind "near80-preregistration"; status "final, awaiting approval";
@@ -144,7 +147,7 @@ def write_once(path, data):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
-        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o644)
     except FileExistsError:
         raise ApprovalRefused(f"{path} exists; it is written once") from None
     with os.fdopen(fd, "wb") as handle:
@@ -343,10 +346,10 @@ def check_code(prereg, cfg=None):
         if d.exists():
             # Python would import bytecode found there (when its recorded source time and size match) before any
             # hash check could see it, so verified source could be replaced at run time by unverified bytecode.
-            bad.append(f"{d.relative_to(root)} exists; remove it (the phases run with PYTHONDONTWRITEBYTECODE=1)")
+            bad.append(f"{d.relative_to(root).as_posix()} exists; remove it (the phases run with PYTHONDONTWRITEBYTECODE=1)")
     if code_dir.is_dir():
         for p in sorted(code_dir.rglob("*.pyc")):
-            bad.append(f"{p.relative_to(root)} is compiled bytecode; remove it")
+            bad.append(f"{p.relative_to(root).as_posix()} is compiled bytecode; remove it")
         for p in sorted(code_dir.iterdir()):
             if p.name != "__pycache__" and f"code/{p.name}" not in files:
                 bad.append(f"code/{p.name} is not in the manifest")
@@ -471,13 +474,14 @@ def load_v6_common(repo=K.ROOT):
 # A labeled post-hoc change of the pinned code (PREREGISTRATION.md section 19), approved by the owner at their own
 # terminal on top of the approved prereg.json, which never changes. Its names live here, not in near80_constants.py:
 # check_constants compares every upper-case name there with prereg.json's 'constants'.
-AMENDMENT_NAME = "amendment_1.json"
+AMENDMENT_NAME = "amendment_v9_1.json"           # version 8's amendment_1.json is history (V8_HISTORY_FILES)
 AMENDMENT_KIND = "near80-amendment"
 AMENDMENT_NUMBER = 1
 AMEND_LOCAL_KIND = "near80-local-amendment-approval"
 AMEND_IMPORT_KIND = "near80-amendment-import-record"
-AMEND_APPROVAL_NAME = "approval_near80_amendment1_{prefix}.json"
-AMEND_IMPORT_NAME = "import_near80_amendment1_{prefix}.json"
+AMEND_APPROVAL_NAME = "approval_near80_v9_amendment1_{prefix}.json"
+AMEND_IMPORT_NAME = "import_near80_v9_amendment1_{prefix}.json"
+HISTORY_NAMES = tuple(K.V8_HISTORY_FILES) + tuple(n + ".sha256" for n in K.V8_HISTORY_FILES)
 AMEND_STATEMENT = ("I approve amendment 1 (SHA-256 {sha}) to the near-80 pre-registration {parent}. It changes only "
                    "the files it lists; every rule, mark, threshold and sentence of that pre-registration is "
                    "unchanged.")
@@ -512,10 +516,11 @@ def load_amendment(prereg, cfg=None):
     prereg.json and the code manifest it pins; no other amendment file may be present."""
     cfg = cfg or ApprovalConfig()
     root = Path(cfg.n80_root)
-    others = sorted(p.name for p in root.glob("amendment_*") if p.name not in (AMENDMENT_NAME,
-                                                                             AMENDMENT_NAME + ".sha256"))
+    others = sorted(p.name for p in root.glob("amendment_*")
+                    if p.name not in (AMENDMENT_NAME, AMENDMENT_NAME + ".sha256") and p.name not in HISTORY_NAMES)
     if others:
-        raise ApprovalRefused(f"only amendment 1 is known to this code; the folder also holds {others}")
+        raise ApprovalRefused(f"only {AMENDMENT_NAME} is known to this code (version 8's amendment_1.json is history); "
+                              f"the folder also holds {others}")
     path = root / AMENDMENT_NAME
     if not path.exists() and not Path(str(path) + ".sha256").exists():
         return None
@@ -619,7 +624,7 @@ def check_local_amendment_approval(raw, prereg, amendment):
         (body.get("label") == K.LABEL, "it names another study"),
         (body.get("amendment_path") == K.N80_REL + "/" + AMENDMENT_NAME, "it names another amendment file"),
         (body.get("amendment_number") == AMENDMENT_NUMBER, "it approves another amendment"),
-        (body.get("amendment_sha256") == amendment.sha256, "it approves another version of amendment_1.json"),
+        (body.get("amendment_sha256") == amendment.sha256, f"it approves another version of {AMENDMENT_NAME}"),
         (body.get("parent_prereg_sha256") == prereg.sha256, "it amends another prereg.json"),
         (body.get("typed") == amendment.prefix, "the typed characters are not exactly the first 16 of the fingerprint"),
         (body.get("stdin_isatty") is True, "it was not typed at a terminal"),
@@ -639,7 +644,7 @@ def check_local_amendment_approval(raw, prereg, amendment):
 
 def desktop_check_problems(raw, amendment):
     """[] when raw is a result file of the desktop check that passed in official mode on THIS amendment_1.json, with
-    the check code amendment_1.json names ('desktop_check') and the four unit test files run and passed; otherwise the
+    the check code amendment_1.json names ('desktop_check') and the five unit test files run and passed; otherwise the
     problems. approve_local_near80.desktop_checks applies the same rules before the owner approves."""
     try:
         body = json.loads(bytes(raw).decode("utf8"))
@@ -653,12 +658,12 @@ def desktop_check_problems(raw, amendment):
         (body.get("kind") == AMEND_CHECK_KIND, f"it is not a result of the desktop check ({AMEND_CHECK_KIND})"),
         (body.get("mode") == "official", "it did not run in official mode"),
         (body.get("passed") is True, "it did not pass"),
-        (body.get("amendment_sha256") == amendment.sha256, "it checked another version of amendment_1.json"),
+        (body.get("amendment_sha256") == amendment.sha256, f"it checked another version of {AMENDMENT_NAME}"),
         (isinstance(want, dict) and bool(want) and body.get("check_sha256") == want,
-         "it was made by another check than the one amendment_1.json names"),
+         f"it was made by another check than the one {AMENDMENT_NAME} names"),
         (isinstance(tests, dict) and sorted(tests) == sorted(K.TEST_FILES)
          and all(type(v) is int and v == 0 for v in tests.values()),
-         "it did not run and pass the four unit test files"),
+         "it did not run and pass the five unit test files"),
     ]
     return [why for ok, why in checks if not ok]
 
@@ -873,7 +878,8 @@ def approval_section(branch=K.BRANCH):
         "import_guard": ("every near-80 phase refuses without the import record on origin's branch; the import refuses "
                          "if the approval commit's author or committer is the session's own git identity or the "
                          "configured user.email of the machine running it, or is not the owner; the desktop runner "
-                         "refuses if a git identity is set there"),
+                         "and the cluster entry refuse if git's user.email there is the approver's or the cloud's"),
+        "hosts": "the desktop (run_near80.sh) or the cluster (run_near80_cluster.sh), the same frozen code and checks",
         "never": "no agent writes the approval file or makes that commit; no message counts as approval",
     }
 

@@ -1,23 +1,27 @@
-"""Near-80 (version 8): the learner phases. Each calls the gate's own learner code, unchanged, on one setting's
-prepared rows; only what the build spec (section 5.6) lists is restated.
+"""Near-80 (version 9, main setting): the learner phases. Each calls the gate's own learner code, unchanged, on the
+main setting's prepared rows; only what the build notes list is restated. DRAFT, not frozen.
 
   critic            learners.fixed_critic(prepared, 'stall_aware', learn, seed) (the gate's call in
                     acceptance.get_critic): 100,000 updates, then frozen.
-  critic_full       the same on learners.prepare(log, removals['none'], the gate's normalization) of the stalling world,
-                    seeds 10-14 (seeds 0-4 read the gate's full-log critic through its loader).
-  critic_second     step 1's construction (restructure/step1/train_critics.py): step 1's gap rule on the setting's kept
-                    commands, the survivors removed as well, the same data checks, learners.fixed_critic. Restated
-                    because step 1's script refuses other seeds and checks its design's expected counts. A gap rule
-                    that is not defined is not a stop: the record says defined: false and the switch is off.
-  switch            step 1's scoring (restructure/step1/evaluate.py): one-sided overestimates of the survivors and the
-                    bank under the second critic, BCA's certificate (step1lib.certificate, margin 0.10), the rank test
-                    and the group summaries. The arm table row is computed later, inside the policy phase.
+  critic_full       the same on learners.prepare(log, removals['none'], the gate's normalization) of the stalling world.
+  critic_second     step 1's construction (restructure/step1/train_critics.py): step 1's gap rule on the ball-kept
+                    training commands, the survivors removed as well, the same data checks, learners.fixed_critic.
+                    Unchanged from version 8: the second critic still sees no full-throttle command. A gap rule that
+                    is not defined is not a stop: the record says defined: false and the switch is off.
+  switch            step 1's scoring (restructure/step1/evaluate.py) on the POOLED groups (the refusal fix, section
+                    3): one-sided overestimates of the second critic on the survivors and on every held-out row
+                    outside the ball (the calibration and evaluation splits), the full-throttle group t > t_lo and the
+                    rest t <= t_lo; BCA's certificate (step1lib.certificate, margin 0.10), the rank test and the group
+                    summaries. One record per world; every switch arm reads it (policy_phase.arm_row_from). A
+                    certificate that is on with a height that is not finite is RECORDED here (refused: true); it is
+                    not a stop: the policy phase trains every arm that does not depend on BCA's height (section 8.4).
+                    switch_scores_step1 (version 8's groups: the survivors and the bank) is kept for the plumbing's
+                    reproduction check against step 1's results only.
   clone             learners.clone(prepared, learn, seed).
   reference_actors  learners.ActorOnly(prepared, clone, learn, seed, alpha=5).run(arms, critics, weighted=False), with
                     the gate's check-2 layout so that the reproduction check can be bit for bit: stalling world
                     [none: setting critic, full_none: full-log critic, pad: setting critic]; no-stall world [none,
-                    pad]. The pads are discarded. The random-rows setting saves 'none' only.
-  v6_band           version 6's band (v6bca.fit); a failure is recorded, not a stop.
+                    pad]. The pads are discarded.
 A learner that fails (non-finite) is a recorded stop (phases.PhaseStop).
 """
 import sys
@@ -155,7 +159,8 @@ def critic_second(run, ctx):
 
 def overestimates(critic, tr, fixed, gamma, rows=None, noise=None):
     """One-sided overestimates at the transitions tr (runtime Transition, normalised) [rows]: noiseless c(o') or, with
-    noise (draws, n, 4), the mean over draws of min_h Q(o', clip(c(o') + noise, -1, 1))."""
+    noise (draws, n, 4), the mean over draws of min_h Q(o', clip(c(o') + noise, -1, 1)). Step 1's own function,
+    restated."""
     import jax.numpy as jnp
     S = step1lib()
     obs, act, rew, nxt, done = (np.asarray(x) for x in (tr.obs, tr.action, tr.reward, tr.next_obs, tr.done))
@@ -183,9 +188,16 @@ def undefined_entry(gr):
                 rank_test=dict(U=None, p=nan))
 
 
-def switch_scores(critic2, pg, gr, gamma):
-    """(tail, rest): the second critic's one-sided overestimates of the full-throttle group (the survivors and the
-    bank rows past t_lo) and of the rest (the bank rows at or below t_lo); all held out from the second critic."""
+def heldout_transitions(sd, pg, rows):
+    """The held-out rows as the gate normalises transitions (learners._transition, the function prepare uses for the
+    training and bank rows): float32 observations normalised with the setting's mean and std."""
+    return L._transition(sd.log, np.asarray(rows, np.int64), pg.obs_mean, pg.obs_std)
+
+
+def switch_scores_step1(critic2, pg, gr, gamma):
+    """Version 8's groups (step 1's): (tail, rest) = the second critic's one-sided overestimates of the survivors
+    and the bank rows past t_lo, and of the bank rows at or below t_lo. Used by the plumbing's reproduction check
+    only, to compare with step 1's results; the official switch reads the pooled groups."""
     S1 = step1lib()
     surv_idx = np.flatnonzero(gr["tail"])
     fixed = L.FixedController(K.CONTROLLER, pg.physics, pg.obs_mean, pg.obs_std)
@@ -194,6 +206,28 @@ def switch_scores(critic2, pg, gr, gamma):
     s_tr = overestimates(critic2, pg.train, fixed, gamma, rows=surv_idx)
     s_bk = overestimates(critic2, pg.bank, fixed, gamma)
     return np.concatenate([s_tr, s_bk[bank_ft]]), s_bk[~bank_ft]
+
+
+def switch_scores_pooled(critic2, sd, pg, gr, gamma):
+    """The pooled groups (section 3; near80lib.pooled_groups): (tail, rest, detail). tail = the second critic's
+    one-sided overestimates of the survivors (training rows held out from it) and of every held-out row outside the
+    ball with t > t_lo; rest = the held-out rows with t <= t_lo. Every row is held out from the second critic."""
+    g = N.pooled_groups(sd.log, sd.gap, SD.removal("main", sd), gr["t_lo"], step1lib())
+    surv_idx = np.flatnonzero(gr["tail"])
+    if not np.array_equal(np.asarray(pg.rows[surv_idx], np.int64), g["survivors"]):
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the survivors of the gap rule differ from the pooled "
+                                                               "groups' survivors"))
+    fixed = L.FixedController(K.CONTROLLER, pg.physics, pg.obs_mean, pg.obs_std)
+    s_surv = overestimates(critic2, pg.train, fixed, gamma, rows=surv_idx)
+    held = np.concatenate([g["heldout_tail"], g["heldout_rest"]])
+    s_held = overestimates(critic2, heldout_transitions(sd, pg, held), fixed, gamma)
+    n_t = len(g["heldout_tail"])
+    tail = np.concatenate([s_surv, s_held[:n_t]])
+    rest = s_held[n_t:]
+    detail = {k: v for k, v in g.items() if not isinstance(v, np.ndarray)}
+    detail.update(scores_tail_sha256=LG.sha256_bytes(np.ascontiguousarray(tail).tobytes()),
+                  scores_rest_sha256=LG.sha256_bytes(np.ascontiguousarray(rest).tobytes()))
+    return tail, rest, detail
 
 
 def certificate_entry(tail, rest, seed, world, gr):
@@ -211,29 +245,51 @@ def certificate_entry(tail, rest, seed, world, gr):
     return S1.jsonable(dict(t_lo=gr["t_lo"], t_up=gr["t_up"], certificate=cert, groups=groups, rank_test=rank))
 
 
+def refusal_of(entry):
+    """(refused, why): BCA's certificate is on but its height is not finite (the full-throttle group was not
+    certified). Recorded in the switch record; the policy phase then leaves the BCA-dependent arms out."""
+    c = (entry or {}).get("certificate") or {}
+    on = bool(c.get("on"))
+    h = c.get("height")
+    finite = isinstance(h, (int, float)) and not isinstance(h, bool) and np.isfinite(h)
+    if on and not finite:
+        return True, (f"BCA's switch is on but its height is not finite ({h}): the full-throttle group of "
+                      f"{(entry.get('groups') or {}).get('n_full_throttle')} rows was not certified")
+    return False, None
+
+
 def switch(run, ctx):
     k = run.key
     d = _learner_dir(run)
     rec2 = SD.load_record(d / "critic_second.json")
     pg = ctx.prepared(k.world)
     gr = gap_rule_of(pg)
-    base = dict(kind="near80-switch", setting=k.setting, world=k.world, seed=k.seed)
+    base = dict(kind="near80-switch", setting=k.setting, world=k.world, seed=k.seed, groups_rule="pooled",
+                pooled_splits=list(K.POOLED_SPLITS))
     if bool(gr["defined"]) != bool(rec2.get("defined")):
         raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the gap rule differs from the second critic's"))
     if not gr["defined"]:
         entry = step1lib().jsonable(undefined_entry(gr))
         return dict(base, t_lo=gr["t_lo"], t_up=gr["t_up"], defined=False, n_survivors=0,
                     certificate=entry["certificate"], rank_test=entry["rank_test"], groups=entry["groups"],
-                    entry=entry)
+                    entry=entry, refused=False, refusal=None, pooled=None)
     surv = np.asarray(pg.rows[gr["tail"]], np.int64)
     if step1lib().array_sha256(surv) != rec2.get("survivors_sha256"):
         raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what="the survivors differ from the second critic's"))
     critic2 = SD.load_tree_checked(d / "critic_second.msgpack", L.critic_template(), rec2["file_sha256"])
-    tail, rest = switch_scores(critic2, pg, gr, ctx.learn.gamma)
+    sd = ctx.seed(k.world)
+    tail, rest, pooled = switch_scores_pooled(critic2, sd, pg, gr, ctx.learn.gamma)
     entry = certificate_entry(tail, rest, k.seed, k.world, gr)
+    refused, why = refusal_of(entry)
+    counted = (SD.data_main_record(run.out_root, k.seed, k.world).get("pooled_groups") or {}).get("groups") or {}
+    if counted and (counted.get("n_full_throttle"), counted.get("n_rest")) != (len(tail), len(rest)):
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the pooled groups differ from the data record's "
+                                                               "outcome-free count", counted=counted,
+                                                          scored=dict(n_full_throttle=len(tail), n_rest=len(rest))))
     return dict(base, t_lo=gr["t_lo"], t_up=gr["t_up"], defined=True, n_survivors=int(len(surv)),
                 certificate=entry["certificate"], rank_test=entry["rank_test"], groups=entry["groups"], entry=entry,
-                critic_second_sha256=rec2["file_sha256"], gamma=float(ctx.learn.gamma))
+                critic_second_sha256=rec2["file_sha256"], gamma=float(ctx.learn.gamma), pooled=pooled,
+                refused=bool(refused), refusal=why)
 
 
 # --------------------------------------------------------------------------------------------- actors
@@ -256,14 +312,12 @@ def clone(run, ctx):
 def reference_layout(setting, world):
     """[(arm name, critic name)] of the reference actors' one vmapped program (the gate's check-2 layout)."""
     if world == "stall":
-        if setting in ("near80", "main"):
-            return [("none", "setting"), ("full_none", "full"), ("pad", "setting")]
-        return [("none", "setting"), ("pad", "setting"), ("pad_2", "setting")]
+        return [("none", "setting"), ("full_none", "full"), ("pad", "setting")]
     return [("none", "setting"), ("pad", "setting")]
 
 
 def saved_reference_names(setting, world):
-    return ("none", "full_none") if (world == "stall" and setting in ("near80", "main")) else ("none",)
+    return ("none", "full_none") if world == "stall" else ("none",)
 
 
 def reference_actors(run, ctx):
@@ -297,36 +351,5 @@ def reference_actors(run, ctx):
                 start_sha256=info.get("start_sha256"))
 
 
-def v6_band(run, ctx):
-    import v6bca
-    k = run.key
-    pg = ctx.prepared(k.world)
-    band, rec, extras = v6bca.fit(pg, ctx.critic(k.world), k.seed, k.world, ctx.learn, steps=run.steps, log=run.log)
-    rec = dict(rec, kind="near80-v6-band", setting=k.setting, world=k.world, seed=k.seed)
-    if band is None:
-        rec.update(band_file_sha256=None)
-        return rec
-    d = _learner_dir(run)
-    rec["band_file_sha256"] = save_tree_once(d / "v6_band.msgpack", band)
-    if extras is not None:
-        import io
-        buf = io.BytesIO()
-        np.savez(buf, scores=extras["scores"], eta=extras["eta"])
-        rec["bank_scores_file_sha256"] = LG.write_bytes_once(d / "v6_bank_scores.npz", buf.getvalue())
-        rec["bank_scores_sha256"] = LG.sha256_bytes(np.ascontiguousarray(extras["scores"]).tobytes())
-    return rec
-
-
-def load_v6_band(out_root, setting, world, seed):
-    """(Band or None, record) of a v6_band phase; None when the fit failed (the arm is then missing)."""
-    import v6bca
-    d = SD.learner_dir(out_root, setting, world, seed)
-    rec = SD.load_record(d / "v6_band.json")
-    if rec.get("failed"):
-        return None, rec
-    band = SD.load_tree_checked(d / "v6_band.msgpack", v6bca.band_template(), rec["band_file_sha256"])
-    return band, rec
-
-
 DISPATCH = dict(critic=critic, critic_full=critic_full, critic_second=critic_second, switch=switch, clone=clone,
-                reference_actors=reference_actors, v6_band=v6_band)
+                reference_actors=reference_actors)

@@ -1,0 +1,175 @@
+{
+ "kind": "near80-preregistration-draft",
+ "status": "draft",
+ "status_line": "DRAFT, not frozen, awaiting the owner. Nothing has been trained.",
+ "version": "version 9, near-80 main",
+ "label": "Version 9, near-80 main: the main test's setting on fresh seeds, with BCA's two groups pooled over every held-out row outside the removal ball",
+ "approvable": false,
+ "approvable_note": "a draft; freeze.py write builds prereg.json from it once DECISION.md has fixed every TODO(DECISION.md) item",
+ "request": {
+  "from": "version 8's outcome (19 October 2026): claim 4 failed by the pre-set rule because BCA's held-out full-throttle group had 19, 22 and 18 rows on fresh seeds 10, 12 and 13, its certificate did not certify it, and the approved code stopped the whole actor phase of those seeds",
+  "job": "version 9 of the near-80 package: the main setting only, on fresh seeds never used by any study of this generator, with the refusal fix (BCA's two groups pooled over every held-out row outside the removal ball), the outcome-free count, the refusal rule, the two mean-difference arms as real trained arms, two claims, a cluster entry"
+ },
+ "question": "On fresh seeds, in the main test's setting, does BCA's switched ramp meet step 2's three marks once its two calibration groups are pooled over every held-out row, and does its switch and height earn anything that a plain switch reading the same groups would not?",
+ "setting": {
+  "main": {"ball": true, "band": false, "role": "the only setting (version 6's main test, step 2's setting)"},
+  "left_out": ["version 8's near-80 band setting", "version 8's random-rows setting", "version 6's BCA arm", "the band readouts"]
+ },
+ "pooled_groups": {
+  "rule": "the removal ball first, bit for bit (shift.make_removal(log, 'gap', gap)); t_lo from step 1's gap rule on the ball-kept training commands; the held-out rows are every row of the calibration split and of the evaluation split whose command is outside the ball; the full-throttle group is the training-split survivors (ball-kept rows with throttle index above t_lo) together with the held-out rows with throttle index above t_lo; the rest is the held-out rows at or below t_lo",
+  "splits": ["calibration", "evaluation"],
+  "second_critic": "unchanged: trained on the ball-kept training rows minus the survivors (it has seen no full-throttle command); every scored row is held out from it",
+  "every_switch_reads_them": true,
+  "unchanged": ["the training rows and the training file", "the test start sets", "every rival's own rule", "step 2's ramp programs"],
+  "no_scored_test_reads_them": "the four fixed test start sets are rollouts; the matched rivals' strength uses the evaluation split's states as step 2 did",
+  "version8_groups": "the survivors and the calibration bank (a subset of the pooled groups: the bank is part of the calibration split)",
+  "code": ["near80lib.pooled_groups", "learner_phases.switch_scores_pooled", "policy_phase.arm_row_from"]
+ },
+ "outcome_free_count": {
+  "when": "in the data phase of each seed-world, before any training",
+  "what": "the full-throttle group's size, the rest's size, the survivors, whether the group reaches 29 rows (0.9^29 < 0.05: the smallest size BCA's certificate can certify), and version 8's groups' sizes for scale",
+  "reads": "commands and split labels only; no reward, no critic",
+  "role": "reported (section 14.3); no mark reads it; it fails no seed",
+  "code": "near80lib.pooled_count_record"
+ },
+ "refusal_rule": {
+  "refused": "BCA's certificate is on with a height that is not finite, in either world of a seed",
+  "then": "the policy phase leaves out the arms that depend on BCA's height (obca_k1, obca_k2, obca_forced, obca_k1_alone) and trains and scores every other arm; the matched rivals and the stand-in of that seed are unmatched (no strength to match); nothing of the seed stops",
+  "marks": "the seed fails every mark that needs BCA (C1's three marks and C2's), and only those; its own clause in section 14 says so",
+  "version8": "stopped the whole actor phase (step2lib.arm_table's refusal)",
+  "pads": "a refused arm's place in step 2's six-arm program is filled by a height-0 pad, never saved or scored, so the other members keep step 2's batch size"
+ },
+ "host": {
+  "name": "TD3+BC",
+  "protocol": "step 2's actor-only protocol: frozen fixed-controller critic (100,000 updates, learners.fixed_critic), actor from the cloned actor, alpha 5, 20,000 steps in 4,000-step chunks, the gate's fixed batch stream",
+  "others": "not in this version"
+ },
+ "arms": {
+  "main_both_worlds": {
+   "primary": {"obca_k1": "BCA's switched ramp, k = 1 (C1 and C2)"},
+   "plumbing_check": {"w0_check": "ramp with height 0 and k = 0 must equal the no-caution actor within 1e-5"},
+   "twins_of_c2": {
+    "conformal_k1": "the split-conformal switch (step 2's): on when q90(full throttle) - q90(rest) > 0.10, height that gap",
+    "meandiff_k1": "the mean-difference switch with the ramp: on when mean(full throttle) - mean(rest) > 0.10, height that difference, k = 1",
+    "meandiff_limit": "the mean-difference switch turning on the hand-set range limit: on -> the room's hinge at the recorded range (coefficient 1.0, its own program, run alone); off -> the ramp with height 0 (checked equal to the no-caution actor)"
+   },
+   "noise_floor_copy": {"obca_k1_alone": "BCA's switched ramp with BCA's own switch and height, trained alone in a ramp program of one"},
+   "reported_only": ["obca_k2", "fixed_gated", "meangap_k1", "obca_k1_alone", "push_less", "range_hinge"],
+   "world_blind_rivals": ["obca_forced", "standin", "even_pull", "random_1", "random_2"],
+   "references": ["perfect_band", "none", "clone", "full_none"]
+  },
+  "matching": "blind to returns, to obca_k1's stalling-world strength, version 6's ladders and matcher; no-stall world at the stalling world's locked settings",
+  "one_program": "BCA's switched ramp and the plumbing check train in step 2's own batches (stalling world: the plumbing check alone, then the six step-2 ramp arms with obca_k1 first; no-stall world: one batch of seven, the plumbing check first); then meandiff_k1 alone, meandiff_limit alone (a hinge or a height-0 ramp) and obca_k1_alone alone, in calls that leave those programs' bits unchanged"
+ },
+ "fixed_references": ["recording controller", "stall-aware controller (100 points, stalling world)", "rising-thrust controller (100 points, no-stall world)"],
+ "situations": {
+  "name": "test start sets (not the calibration bank)",
+  "test_start_sets": ["recorded", "big_kicks", "big_waves", "strong_current"],
+  "starts_per_set": 1000,
+  "steps": 100,
+  "worlds": ["stall", "no_stall"],
+  "scored": "strong_current",
+  "note": "the four pinned test start sets; nothing recorded there, nothing removed there"
+ },
+ "seeds": {
+  "fresh_block": [40, 59],
+  "fresh": [40, 41, 42, 43, 44],
+  "fresh_count": "TODO(DECISION.md: the number of fresh seeds, 5, 10, 15 or 20); the list above is the first five of the block",
+  "plumbing": [0],
+  "used_by_other_studies": {"0-4": "seen by everything", "5-9": "version 6/7", "10-14": "version 8", "15-19": "version 8's fallback block", "20-34": "the placement test's registry (seed_registry.json on claude/placement-test-design)", "100-119": "the gate's confirmation seeds", "900-909": "stage 0"},
+  "failed_seed": "a fresh seed that fails the gate's data checks or whose learner fails fails every mark; a refused seed fails the marks that need BCA; never replaced"
+ },
+ "measures": {
+  "points": "exact 100-step returns on the full test start sets, both worlds, every situation",
+  "net_across_worlds": "step 2's: gain over none in the stalling world minus loss to none in the no-stall world",
+  "paired_twin_difference": "per seed: BCA's net across worlds minus the twin's; pooled; seeds positive",
+  "noise_floor": "|BCA's switched ramp minus the same ramp trained alone|, pooled, stalling world, strong current",
+  "certificate": "switch, height, 5% bound, ramp ends, group sizes, the refusal",
+  "unseen_throttle_readout": "points as trained minus points held to 70% (carried over; reported only)",
+  "overshoot_readout": "points capped at 80% minus points as trained (carried over; reported only)",
+  "zone_shares": "per situation: share of steps with every thruster below 0.70, some thruster in [0.70, 0.80] and none past 0.80, some thruster past 0.80",
+  "lower_tail": "mean return of the worst 100 of 1,000 starts",
+  "strengths_and_matches": "as step 2",
+  "resources": "time and peak memory per phase"
+ },
+ "kill_rules": {
+  "gate_checks": "on each fresh seed: the ball found, its leak checks, the five world checks in the stalling world; a failure is a failed seed (never replaced)",
+  "plumbing_after_approval": ["unit tests (five files)", "a 40-step smoke run of every phase kind on seed 0 (scratch)", "the fresh-seed code path on seed 0 reproduces the gate's record and reads back", "the reproduction check: bit for bit on seed 0, both worlds, the gate's critic, cloned actor and no-caution actor, step 1's second critic and certificate on version 8's groups, and, through the official policy function given step 1's entries, step 2's saved plumbing-check, switched-ramp and hand-set range-limit actors; the pooled certificate reported beside it"],
+  "plumbing_retry": "only a reproduction difference is final (plumbing/reproduction_differs.json); any other plumbing failure is recorded (plumbing/failed_<utc>.json) and may be retried once its cause is fixed",
+  "plumbing_stops": "the height-0 check, a non-finite network, a saved input whose fingerprint does not match, a training file that fails its check; written once, never rerun; every mark that needs it fails",
+  "refusal": "not a stop: the refusal rule (section 8.4)",
+  "noise_floor": {"rule": "pooled over the fresh seeds that neither failed nor refused, stalling world, strong current: |obca_k1 - obca_k1_alone| <= 5", "on_fail": "C2 is dropped and only reported", "cannot_be_read": "when no seed is left, or a number is missing: C2 is written as its other rules say and the noise floor is reported as not read"},
+  "no_early_stop_on_an_outcome": true
+ },
+ "validity": {
+  "claims": "the harm >= 30 (full-log actor minus no caution) and no caution past 80% on >= 25% of strong-current steps, pooled over the seeds that did not fail; a refused seed's numbers count (they do not depend on BCA)",
+  "seen_on_seeds_0_4_main_setting": "98.9 points and 73.2%"
+ },
+ "pass_marks": {
+  "pooled": "the mean over the fresh seeds of each seed's paired difference; every seed needed; a failed, stopped or refused seed fails every mark that needs it",
+  "c1_version8_claim4": {
+   "net_lead": "BCA's net across worlds >= the best world-blind rival's net + 10",
+   "keeps_the_gain": "stalling world: BCA minus none >= -3 in recorded conditions, big waves and big kicks",
+   "beats_even_pull": "stalling world, strong current: BCA minus the matched even pull >= 15"
+  },
+  "c2_twins": {
+   "number": "per twin, paired by seed: BCA's net across worlds minus the twin's, pooled, and the seeds where it is positive",
+   "net_margin": "TODO(DECISION.md: C2's margin in points)",
+   "positive_seeds_min": "TODO(DECISION.md: C2's least number of seeds with a positive paired difference)",
+   "multiplicity": "TODO(DECISION.md: 'all_three' or 'each_separately')",
+   "twins": ["conformal_k1", "meandiff_k1", "meandiff_limit"],
+   "read_from": "MARKS_C2 in code/near80_constants.py (the freeze refuses while any is None)"
+  }
+ },
+ "compute": {
+  "unit": "CPU-hours (one processor busy for one hour)",
+  "per_fresh_seed": "about 2.2 (version 8's ledger of the main setting: about 1.8, plus three ramp calls alone, one hinge and the pooled scores)",
+  "plumbing": "about 2.5",
+  "total": "about 13-14 for 5 seeds, 24-25 for 10, 35-36 for 15, 46-47 for 20 (the plumbing included)",
+  "desktop_wall_time": "about 6-7 hours for 5 seeds, 11-13 for 10, 16-19 for 15, 21-25 for 20 (at most 2 policy phases at once)",
+  "cluster_wall_time": "about 2.5 hours (the plumbing, one job) plus about 1.5 hours (one job per seed, in parallel) for any count up to 20",
+  "budget_cap": "2.5 times the forecast (2.2 CPU-hours per seed times the seed count)",
+  "guard": "a stage that uses more than twice its forecast pauses and reports; the plumbing never pauses; a pause lasts until the owner types budget-continue fresh",
+  "machine_desktop": "Framework Desktop (AMD Ryzen AI MAX+ 395, 16 cores), Ubuntu 24.04 in WSL with 24 GB, CPU only",
+  "machine_cluster": "hpc.charlotte.edu, Slurm, account staruser, partition Orion, 48-CPU nodes, 30-day limit, /scratch/dbayha",
+  "lanes_default": 10,
+  "memory_rule": "version 7's, unchanged on the desktop: a phase starts only if the reserved peaks of the running phases plus its own are at most MemTotal minus 8 GiB, and MemAvailable is at least its own reservation plus 8 GiB; an unmeasured phase kind reserves 7 GiB; a measured kind 1.25 x its measured peak; policy phases max(7 GiB, 2 x measured peak); on the cluster the job's Slurm memory stands for MemTotal"
+ },
+ "departures": [
+  "one setting, the main setting",
+  "BCA's two groups pooled over every held-out recorded row outside the ball",
+  "the refusal rule: BCA refusing fails the seed for the BCA-dependent arms only; nothing stops",
+  "the outcome-free count of the pooled groups, recorded before any training",
+  "two new trained arms (the twins of C2) and the noise-floor copy",
+  "fresh seeds from an unused block (40-59), the count fixed by DECISION.md",
+  "no exploratory stage, no exploratory look, no stop rules on seeds 0-4; seed 0 serves the plumbing only",
+  "the noise floor adapted to the training program's batch",
+  "a cluster entry beside the desktop entry"
+ ],
+ "facts_from_version_8": {
+  "source": "results-20261020T115246Z and near80_results_check/REPORT.md",
+  "fresh_seeds_10_14_main_stall": {"n_full_throttle": [19, 53, 22, 18, 30], "finite_share": [0.879, 0.997, 0.903, 0.85, 0.964], "certified": [false, true, false, false, true], "switch_on": [true, true, true, true, true]},
+  "seeds_0_4_main_stall_n_full_throttle": [35, 47, 59, 43, 47],
+  "switch_call_right_in": "10 of 10 fresh seed-worlds"
+ },
+ "choices": [
+  {"number": 1, "choice": "the setting", "default": "the main setting only", "alternatives": ["the near-80 band as well (version 8's claims 1-3 on fresh seeds; about +2.5 CPU-hours per seed)"]},
+  {"number": 2, "choice": "the seeds", "default": "the first N of the block 40-59, N fixed by DECISION.md", "alternatives": ["another unused block"]},
+  {"number": 3, "choice": "the pooled groups", "default": "every held-out row outside the ball (the calibration and evaluation splits)", "alternatives": ["the calibration split alone"]},
+  {"number": 4, "choice": "the refusal rule", "default": "the BCA-dependent arms only fail; every other arm trains", "alternatives": ["version 8's stop"]},
+  {"number": 5, "choice": "the noise floor", "default": "BCA's switched ramp trained alone, at most 5 points", "alternatives": ["none"]},
+  {"number": 6, "choice": "hosts", "default": "TD3+BC, actor-only", "alternatives": []},
+  {"number": 7, "choice": "lanes", "default": "10", "alternatives": ["1 to 16"]},
+  {"number": 8, "choice": "the name", "default": "version 9, near-80 main", "alternatives": []},
+  {"number": 9, "choice": "where it runs", "default": "the desktop", "alternatives": ["the cluster (hpc.charlotte.edu)"]}
+ ],
+ "files": {
+  "documents": ["PREREGISTRATION.md", "README.md"],
+  "draft": "prereg_draft.json",
+  "code_manifest": "code_manifest.json",
+  "unit_tests": ["test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py", "test_v9.py"],
+  "approval_script": "approve_local_near80.py",
+  "entries": ["run_near80.sh", "run_near80_cluster.sh", "near80_slurm_job.sh", "push_runfiles_near80.sh"],
+  "outputs": "runs/shift_explore/near80_v9/ (write-once); committed copies in near80/results-*/"
+ }
+}

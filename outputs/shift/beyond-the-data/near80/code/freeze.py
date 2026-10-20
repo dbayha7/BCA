@@ -1,28 +1,33 @@
-"""Near-80 (version 8): freeze the final version (prereg.json, its code manifest and the frozen no-training checks).
+"""Near-80 (version 9, main setting): freeze the final version (prereg.json, its code manifest and the frozen
+outcome-free counts). DRAFT, not frozen.
 
-FINAL, awaiting the owner's approval. Nothing here trains a learner, fits a BCA band or reads a result. The main
-session runs it once, after the three parts of the code are integrated:
+Nothing here trains a learner or reads a result. The main session runs it once, after DECISION.md has fixed every
+open item:
 
   python freeze.py check                                 prints what 'write' would do and every problem; writes nothing
   python freeze.py write --reason TEXT [--facts-from PATH]
 
 'write', in order (any problem stops it before the next step):
-  1. Refuses if prereg.json, any approval_near80_*.json or import_near80_*.json exists, or any official output under
-     runs/shift_explore/near80/ other than pre/.
+  0. Refuses while any placeholder of DECISION.md remains: near80_constants.placeholders_present() (the seed count,
+     C2's margins and multiplicity rule, the owner's answer), a "TODO(DECISION" mark or "**DRAFT" in the documents or
+     the draft.
+  1. Supersedes the previous final version: a prereg.json of another version (version 8's, approved and run) is
+     moved, with its sidecar, into prereg_history/prereg_superseded_<first 16 of its SHA-256>.json (the version
+     process of version 8's re-freezes). Refuses if a prereg.json of THIS version exists, if an approval or import
+     record of a fingerprint that is not version 8's history exists, or if any official output exists under
+     runs/shift_explore/near80_v9/ other than pre/.
   2. The documents are final: PREREGISTRATION.md's title and status line, README.md's status line, no "**DRAFT" and no
-     "this draft" in either, a section 14.6; no file under code/ says DRAFT in its first docstring line.
+     "this draft" in either, a section 14.5; no file under code/ says DRAFT in its first docstring line.
   3. The code folder holds exactly the planned files (near80_constants.CODE_FILES), no __pycache__, and the top-level
-     files (near80_constants.TOP_FILES: the documents, run_near80.sh, push_runfiles_near80.sh and
-     approve_local_near80.py) exist.
+     files (near80_constants.TOP_FILES) exist.
   4. prereg_draft.json is renamed into prereg_history/prereg_draft_<first 16 of its SHA-256>.json with a sidecar (a
-     rerun checks it there instead).
-  5. code_manifest.json (+ .sha256): every near-80 file and every repository file the code imports or executes; an
-     earlier manifest is archived in code_manifest_history/ (a rerun with no change keeps it as it is).
-  6. The four unit test files, each run alone from /tmp with the phases' environment; all must pass.
-  7. The frozen code's no-training checks on seeds 0-4 (facts_near80.py --rollouts, about 5 CPU-minutes, nothing
-     trained), written to runs/shift_explore/near80/pre/no_training_checks_<first 16 of the manifest>.json and copied
-     to pre_approval/no_training_checks_seeds0_4.json (+ .sha256). A failure stops the freeze with section 14.5's
-     sentence: no approval is asked and the design is redrafted.
+     rerun checks it there instead; version 8's draft stays beside it).
+  5. code_manifest.json (+ .sha256): every near-80 file and every repository file the code imports or executes; the
+     earlier manifest (version 8's) is archived in code_manifest_history/ (a rerun with no change keeps it as it is).
+  6. The five unit test files, each run alone from the work folder with the phases' environment; all must pass.
+  7. The frozen code's outcome-free counts of the pooled groups on seeds 0-4 (facts_near80.py, about 2 CPU-minutes,
+     nothing trained), written to runs/shift_explore/near80_v9/pre/pooled_group_counts_<first 16 of the manifest>.json
+     and copied to pre_approval/pooled_group_counts_seeds0_4.json (+ .sha256). Reported; no pass or fail.
   8. prereg.json (+ .sha256) from near80_prereg.build; prints the fingerprint and the next steps.
 """
 import sys
@@ -45,32 +50,79 @@ if str(HERE) not in sys.path:
 import approval_check as AC  # noqa: E402
 import near80_constants as K  # noqa: E402
 import near80_prereg as NP  # noqa: E402
+import ledger as LG  # noqa: E402
 
-TITLE = "# Hiding the commands near 80%: pre-registration (version 8, near-80)"
+TITLE = "# The main setting on fresh seeds: pre-registration (version 9, near-80 main)"
 BOLD_FINAL = "**FINAL, awaiting the owner's approval. Nothing has been trained.**"
-DRAFT_NAME = "prereg_draft.json"
-FACTS_ARGS = ("--rollouts", "--seeds", "0", "1", "2", "3", "4", "--worlds", "stall", "no_stall")
-FACTS_NAME = "no_training_checks_{prefix}.json"
+DRAFT_NAME = K.DRAFT_NAME
+FACTS_ARGS = ("--seeds", "0", "1", "2", "3", "4", "--worlds", "stall", "no_stall")
+FACTS_NAME = "pooled_group_counts_{prefix}.json"
 TEST_TIMEOUT_S = 3 * 3600
-FACTS_TIMEOUT_S = 4 * 3600
+FACTS_TIMEOUT_S = 2 * 3600
+FILL_RULES_HEADING = "### 14.5"
 
 
 class FreezeRefused(Exception):
     """A freeze step refused; what was written before it stays (nothing official is written before step 8)."""
 
 
+# --------------------------------------------------------------------------------------------- step 0: placeholders
+
+def placeholder_problems(n80_root):
+    """Step 0: every open item of DECISION.md, in the constants and in the documents."""
+    out = [f"placeholder not fixed (DECISION.md): {name}" for name in K.placeholders_present()]
+    for name in ("PREREGISTRATION.md", "README.md", DRAFT_NAME):
+        p = Path(n80_root) / name
+        if p.is_file():
+            text = p.read_text(encoding="utf8")
+            n = text.count("TODO(DECISION")
+            if n:
+                out.append(f"{name} carries {n} TODO(DECISION.md) mark{'s' if n != 1 else ''}")
+    hist = Path(n80_root) / K.HISTORY_DIR
+    if hist.is_dir():
+        for p in sorted(hist.glob(K.DRAFT_HISTORY_NAME.format(prefix="*"))):
+            if p.suffix == ".json" and "TODO(DECISION" in p.read_text(encoding="utf8"):
+                try:
+                    if json.loads(p.read_text(encoding="utf8")).get("version") == K.VERSION:
+                        out.append(f"{K.HISTORY_DIR}/{p.name} carries TODO(DECISION.md) marks")
+                except ValueError:
+                    pass
+    return out
+
+
 # --------------------------------------------------------------------------------------------- steps 1-3: checks
 
+def history_prefixes():
+    """The fingerprints' first 16 characters of version 8's approval chain (kept as history)."""
+    return {K.V8_PREFIX, K.V8_AMENDMENT_PREFIX}
+
+
+def previous_prereg(n80_root):
+    """('none' | 'mine' | 'previous', payload or None): what prereg.json at the top holds."""
+    p = Path(n80_root) / K.PREREG_NAME
+    if not p.exists():
+        return "none", None
+    try:
+        body = json.loads(p.read_bytes().decode("utf8"))
+    except (UnicodeDecodeError, ValueError):
+        raise FreezeRefused(f"{K.PREREG_NAME} is not JSON") from None
+    if not isinstance(body, dict) or body.get("kind") != K.PREREG_KIND:
+        raise FreezeRefused(f"{K.PREREG_NAME} is not a near-80 pre-registration")
+    return ("mine" if body.get("version") == K.VERSION else "previous"), body
+
+
 def existing_problems(n80_root, out_root):
-    """Step 1: nothing approved, imported or run yet."""
+    """Step 1: nothing of this version approved, imported or run yet; a previous version's prereg.json is only moved."""
     n80_root, out_root = Path(n80_root), Path(out_root)
     out = []
-    for name in (K.PREREG_NAME, K.PREREG_NAME + ".sha256"):
-        if (n80_root / name).exists():
-            out.append(f"{name} exists already (the final version is written once)")
-    for pattern in ("approval_near80_*", "import_near80_*"):
+    state, _ = previous_prereg(n80_root)
+    if state == "mine":
+        out.append(f"{K.PREREG_NAME} of {K.VERSION} exists already (the final version is written once)")
+    for pattern in ("approval_near80_*.json", "import_near80_*.json"):
         for p in sorted(n80_root.glob(pattern)):
-            out.append(f"{p.name} exists (an approval or import record freezes the code)")
+            if p.name in K.V8_HISTORY_FILES:
+                continue
+            out.append(f"{p.name} exists (an approval or import record of another fingerprint than version 8's history)")
     if out_root.exists():
         others = sorted(p.name for p in out_root.iterdir() if p.name != "pre")
         if others:
@@ -114,8 +166,8 @@ def document_problems(n80_root):
             out.append(f"{p.name} still says **DRAFT")
         if "this draft" in text.lower():
             out.append(f"{p.name} still says 'this draft'")
-    if not any(line.startswith("### 14.6") for line in dl):
-        out.append("PREREGISTRATION.md has no section 14.6")
+    if not any(line.startswith(FILL_RULES_HEADING) for line in dl):
+        out.append(f"PREREGISTRATION.md has no section {FILL_RULES_HEADING[4:]}")
     code = n80_root / "code"
     if code.is_dir():
         for p in sorted(code.glob("*.py")):
@@ -128,7 +180,7 @@ def document_problems(n80_root):
 
 
 def code_folder_problems(n80_root):
-    """Step 3: exactly the planned code files, no __pycache__, both top-level scripts."""
+    """Step 3: exactly the planned code files, no __pycache__, every top-level file."""
     n80_root = Path(n80_root)
     out = []
     code = n80_root / "code"
@@ -148,6 +200,34 @@ def code_folder_problems(n80_root):
     return out
 
 
+# --------------------------------------------------------------------------------------------- step 1: supersede
+
+def supersede_previous(n80_root, log=print):
+    """Step 1: a prereg.json of another version is moved (os.rename, with its sidecar) into prereg_history/ as
+    prereg_superseded_<first 16 of its SHA-256>.json. Returns the relative path or None."""
+    n80_root = Path(n80_root)
+    state, body = previous_prereg(n80_root)
+    if state != "previous":
+        return None
+    src = n80_root / K.PREREG_NAME
+    sha = AC.file_sha256(src)
+    side = Path(str(src) + ".sha256")
+    if AC.sidecar_digest(src) != sha:
+        raise FreezeRefused(f"{K.PREREG_NAME} ({body.get('version')}) differs from its sidecar; nothing moved")
+    hist = n80_root / K.HISTORY_DIR
+    dst = hist / K.SUPERSEDED_NAME.format(prefix=sha[:K.PREFIX_LEN])
+    dside = Path(str(dst) + ".sha256")
+    if dst.exists() or dside.exists():
+        raise FreezeRefused(f"{dst} exists already")
+    hist.mkdir(parents=True, exist_ok=True)
+    os.rename(src, dst)
+    os.rename(side, dside)
+    if AC.file_sha256(dst) != sha or AC.sidecar_digest(dst) != sha:
+        raise FreezeRefused(f"{dst} did not keep its bytes in the move")
+    log(f"superseded {body.get('version')}: {K.PREREG_NAME} -> {K.HISTORY_DIR}/{dst.name} (+ .sha256)")
+    return f"{K.HISTORY_DIR}/{dst.name}"
+
+
 # --------------------------------------------------------------------------------------------- step 4: the draft
 
 def draft_state(n80_root):
@@ -155,8 +235,16 @@ def draft_state(n80_root):
     n80_root = Path(n80_root)
     top = n80_root / DRAFT_NAME
     hist = n80_root / K.HISTORY_DIR
-    kept = sorted(p for p in hist.glob(K.DRAFT_HISTORY_NAME.format(prefix="*")) if p.suffix == ".json") \
-        if hist.is_dir() else []
+    kept = []
+    if hist.is_dir():
+        for p in sorted(hist.glob(K.DRAFT_HISTORY_NAME.format(prefix="*"))):
+            if p.suffix != ".json":
+                continue
+            try:
+                if json.loads(p.read_text(encoding="utf8")).get("version") == K.VERSION:
+                    kept.append(p)
+            except ValueError:
+                continue
     if top.exists() and kept:
         raise FreezeRefused(f"both {DRAFT_NAME} and {[p.name for p in kept]} exist; exactly one draft is kept")
     if top.exists():
@@ -165,11 +253,12 @@ def draft_state(n80_root):
             body = json.loads(raw.decode("utf8"))
         except (UnicodeDecodeError, ValueError):
             raise FreezeRefused(f"{DRAFT_NAME} is not JSON") from None
-        if body.get("kind") != NP.DRAFT_KIND or body.get("status") != "draft":
-            raise FreezeRefused(f"{DRAFT_NAME} is not the near-80 draft")
+        if body.get("kind") != NP.DRAFT_KIND or body.get("status") != "draft" or body.get("version") != K.VERSION:
+            raise FreezeRefused(f"{DRAFT_NAME} is not the {K.VERSION} draft")
         return "move", top, AC.sha256_bytes(raw)
     if len(kept) != 1:
-        raise FreezeRefused(f"no draft to freeze: {DRAFT_NAME} is missing and {hist} holds {len(kept)} drafts")
+        raise FreezeRefused(f"no draft to freeze: {DRAFT_NAME} is missing and {hist} holds {len(kept)} drafts of "
+                            f"{K.VERSION}")
     try:
         NP.find_draft(n80_root)
     except (NP.PreregProblem, AC.ApprovalRefused) as error:
@@ -200,7 +289,7 @@ def move_draft(n80_root, log=print):
 # --------------------------------------------------------------------------------------------- step 5: the manifest
 
 def manifest_files(n80_root):
-    """Every near-80 file the manifest lists: the four top-level files and code/<every planned file>."""
+    """Every near-80 file the manifest lists: the top-level files and code/<every planned file>."""
     n80_root = Path(n80_root)
     files = {}
     for rel in list(K.TOP_FILES) + ["code/" + n for n in K.CODE_FILES]:
@@ -257,23 +346,25 @@ def write_manifest(n80_root, reason, repo=K.ROOT, log=print):
     history = []
     if path.exists():
         old = AC.read_json_verified(path, K.MANIFEST_NAME)
-        if old.get("files") == files and old.get("repository_files") == repo_files:
+        if old.get("files") == files and old.get("repository_files") == repo_files and old.get("label") == K.LABEL:
             log(f"{K.MANIFEST_NAME} is unchanged ({AC.file_sha256(path)[:16]}); kept")
             return AC.file_sha256(path), old
         hist = n80_root / K.MANIFEST_HISTORY_DIR
         n = len(old.get("history") or []) + 1
         dst = hist / f"code_manifest_v{n}.json"
-        if dst.exists():
-            raise FreezeRefused(f"{dst} exists already")
+        while dst.exists():
+            n += 1
+            dst = hist / f"code_manifest_v{n}.json"
         hist.mkdir(parents=True, exist_ok=True)
         old_sha = AC.file_sha256(path)
         shutil.copyfile(path, dst)
         AC.write_once(Path(str(dst) + ".sha256"), f"{old_sha}  {dst.name}\n".encode("utf8"))
         history = list(old.get("history") or []) + [dict(version=n, sha256=old_sha, reason=old.get("reason"),
+                                                         label=old.get("label"),
                                                          archived=f"{K.MANIFEST_HISTORY_DIR}/{dst.name}")]
-        log(f"archived the earlier manifest as {K.MANIFEST_HISTORY_DIR}/{dst.name}")
-    body = dict(kind=K.MANIFEST_KIND, label=K.LABEL, files=files, repository_files=repo_files, reason=reason,
-                history=history, written=AC.utc_now(),
+        log(f"archived the earlier manifest ({old.get('label', '')[:40]}...) as {K.MANIFEST_HISTORY_DIR}/{dst.name}")
+    body = dict(kind=K.MANIFEST_KIND, label=K.LABEL, version=K.VERSION, files=files, repository_files=repo_files,
+                reason=reason, history=history, written=AC.utc_now(),
                 rule=("every near-80 phase, the import and the owner's approval script refuse unless each file here "
                       "has this SHA-256 and this manifest's SHA-256 is the one prereg.json pins"))
     digest = _replace_json(path, body)
@@ -283,14 +374,20 @@ def write_manifest(n80_root, reason, repo=K.ROOT, log=print):
 
 # --------------------------------------------------------------------------------------------- steps 6-7
 
+def _clean(env, cmd):
+    return ["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + cmd if os.name == "posix" else cmd
+
+
 def run_unit_tests(n80_root, log=print):
-    """Step 6: each test file alone, from /tmp, with the phases' environment. Returns {name: exit status}."""
+    """Step 6: each test file alone, from the work folder, with the phases' environment. Returns {name: exit status}."""
     results = {}
+    env = dict(K.PHASE_ENV)
     for name in K.TEST_FILES:
-        cmd = [K.PYTHON, str(Path(n80_root) / "code" / name)]
+        cmd = _clean(env, [K.PYTHON, str(Path(n80_root) / "code" / name)])
         try:
-            done = subprocess.run(cmd, cwd="/tmp", env=dict(K.PHASE_ENV), stdin=subprocess.DEVNULL,
-                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=TEST_TIMEOUT_S)
+            done = subprocess.run(cmd, cwd=LG.work_dir(), env=None if os.name == "posix" else env,
+                                  stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                  timeout=TEST_TIMEOUT_S)
         except (OSError, subprocess.SubprocessError) as error:
             log(f"{name}: could not run ({error})")
             results[name] = None
@@ -304,11 +401,13 @@ def run_unit_tests(n80_root, log=print):
 
 
 def run_facts(n80_root, out_path, log=print):
-    """Step 7: facts_near80.py --rollouts on seeds 0-4, both worlds, with the frozen code (nothing trained)."""
-    cmd = [K.PYTHON, str(Path(n80_root) / "code" / "facts_near80.py"), *FACTS_ARGS, "--out", str(out_path)]
+    """Step 7: facts_near80.py on seeds 0-4, both worlds, with the frozen code (nothing trained)."""
+    cmd = _clean(dict(K.PHASE_ENV), [K.PYTHON, str(Path(n80_root) / "code" / "facts_near80.py"), *FACTS_ARGS, "--out",
+                                     str(out_path)])
     log("running: " + " ".join(cmd))
-    done = subprocess.run(cmd, cwd="/tmp", env=dict(K.PHASE_ENV), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT, timeout=FACTS_TIMEOUT_S)
+    done = subprocess.run(cmd, cwd=LG.work_dir(), env=None if os.name == "posix" else dict(K.PHASE_ENV),
+                          stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                          timeout=FACTS_TIMEOUT_S)
     log(done.stdout.decode("utf8", "replace").strip())
     if done.returncode != 0:
         raise FreezeRefused(f"facts_near80.py exited with {done.returncode}")
@@ -319,43 +418,28 @@ def facts_path(out_root, manifest_sha256):
 
 
 def facts_problems(payload):
-    """The facts record is the default design's, on seeds 0-4 and both worlds, with every rule run and passed."""
+    """The counts record is this version's, on seeds 0-4 and both worlds, with every seed-world counted."""
     out = []
     if not isinstance(payload, dict):
-        return ["the facts record is not a JSON object"]
-    nt = payload.get("no_training_checks") or {}
-    if payload.get("seeds") != list(K.EXPLORATORY):
-        out.append(f"the facts ran on seeds {payload.get('seeds')}, not 0-4")
+        return ["the counts record is not a JSON object"]
+    if payload.get("kind") != "near80-v9-pooled-group-counts":
+        out.append(f"the counts record is a {payload.get('kind')!r}, not the pooled-group counts")
+    if payload.get("seeds") != [0, 1, 2, 3, 4]:
+        out.append(f"the counts ran on seeds {payload.get('seeds')}, not 0-4")
     if payload.get("worlds") != list(K.WORLDS):
-        out.append(f"the facts ran on worlds {payload.get('worlds')}, not both")
-    band = payload.get("band") or {}
-    if (band.get("lo"), band.get("hi"), band.get("scope")) != (K.BAND_LO, K.BAND_HI, K.BAND_SCOPE):
-        out.append(f"the facts ran on another band ({band})")
-    if nt.get("not_run") != []:
-        out.append(f"no-training checks not run: {nt.get('not_run')}")
-    if nt.get("passed") is not True:
-        failed = [r.get("rule") + f" ({r.get('scope')})" for r in nt.get("rules") or [] if not r.get("passed")]
-        out.append(f"no-training checks failed: {failed}")
+        out.append(f"the counts ran on worlds {payload.get('worlds')}, not both")
+    results = payload.get("results") or []
+    if len(results) != 10:
+        out.append(f"the counts hold {len(results)} seed-worlds, not 10")
+    for r in results:
+        if not isinstance(r, dict) or r.get("defined") is not True or not r.get("groups"):
+            out.append(f"seed {r.get('rep')} ({r.get('world')}): the gap rule is not defined or the groups are missing")
     return out
 
 
-def default_sentence(rules):
-    """Section 14.5's no-training stop sentence, through C's pooled.halt_sentence_no_training (a plain fallback
-    names the first failed rule if the looks' code cannot be loaded)."""
-    try:
-        return K.load_local("pooled").halt_sentence_no_training(rules)
-    except Exception:  # noqa: BLE001 - the fallback below still names the failed check
-        first = next((r for r in rules if not r.get("passed")), None)
-        if first is None:
-            return "On seeds 0-4, before any training, a no-training check was not run. Nothing was trained."
-        return (f"On seeds 0-4, before any training, the near-80 data failed {first.get('rule')} "
-                f"({first.get('value')}; needed {first.get('threshold')}). The design was redrafted. Nothing was "
-                f"trained.")
-
-
 def copy_frozen(n80_root, raw):
-    """The facts record's bytes as pre_approval/no_training_checks_seeds0_4.json (+ .sha256). Returns the record."""
-    dst = Path(n80_root) / K.PRE_APPROVAL_DIR / K.NO_TRAINING_FROZEN_NAME
+    """The counts record's bytes as pre_approval/pooled_group_counts_seeds0_4.json (+ .sha256). Returns the record."""
+    dst = Path(n80_root) / K.PRE_APPROVAL_DIR / K.COUNTS_FROZEN_NAME
     digest = _replace_json(dst, raw)
     if AC.file_sha256(dst) != digest or AC.sidecar_digest(dst) != digest:
         raise FreezeRefused(f"{dst} did not read back as written")
@@ -375,8 +459,9 @@ def _load_approve_local(n80_root):
 
 
 def problems(n80_root=K.N80, out_root=K.OUT, claims_fn=None):
-    """Every problem steps 1-4 would refuse on, and whether the claims can be extracted."""
-    out = existing_problems(n80_root, out_root) + document_problems(n80_root) + code_folder_problems(n80_root)
+    """Every problem steps 0-4 would refuse on, and whether the claims can be extracted."""
+    out = (placeholder_problems(n80_root) + existing_problems(n80_root, out_root) + document_problems(n80_root)
+           + code_folder_problems(n80_root))
     try:
         draft_state(n80_root)
     except FreezeRefused as error:
@@ -396,13 +481,15 @@ def check(n80_root=K.N80, out_root=K.OUT, log=print):
                       if state == "move" else f"keep {K.HISTORY_DIR}/{path.name} (checked)")
     except FreezeRefused:
         draft_line = "(no draft to freeze)"
+    prev, body = previous_prereg(n80_root)
     log("freeze.py write would:\n"
-        f"  1-3. check that nothing is approved or run yet, the documents are final and code/ holds exactly "
-        f"{len(K.CODE_FILES)} planned files\n"
+        f"  0. refuse while any DECISION.md placeholder remains ({len(K.placeholders_present())} now)\n"
+        f"  1. {'move ' + K.PREREG_NAME + ' of ' + str(body.get('version')) + ' into ' + K.HISTORY_DIR + '/' if prev == 'previous' else 'check that nothing of this version is approved or run yet'}\n"
+        f"  2-3. check that the documents are final and code/ holds exactly {len(K.CODE_FILES)} planned files\n"
         f"  4. {draft_line}\n"
         f"  5. write {K.MANIFEST_NAME} (+ .sha256): {len(K.TOP_FILES) + len(K.CODE_FILES)} near-80 files and the "
         f"repository files under {len(K.PIN_DIRS)} pinned folders\n"
-        f"  6. run {', '.join(K.TEST_FILES)} from /tmp\n"
+        f"  6. run {', '.join(K.TEST_FILES)} from the work folder\n"
         f"  7. run facts_near80.py {' '.join(FACTS_ARGS)} --out {out_root / 'pre'}/{FACTS_NAME} and copy it to "
         f"{NP.FROZEN_REL} (+ .sha256)\n"
         f"  8. write {K.PREREG_NAME} (+ .sha256) and print its fingerprint")
@@ -414,7 +501,7 @@ def check(n80_root=K.N80, out_root=K.OUT, log=print):
 
 
 def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, tests_fn=None, facts_fn=None,
-          claims_fn=None, sentence_fn=None, log=print):
+          claims_fn=None, log=print):
     """'freeze.py write' (module docstring). tests_fn(n80_root, log) -> {name: exit status} and
     facts_fn(n80_root, out_path, log) (writes out_path) replace steps 6 and 7 in tests only. Returns prereg.json's
     payload."""
@@ -427,6 +514,7 @@ def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, 
     if claims_fn is None:
         claims_fn = NP.load_claims_text(n80_root / "code").extract_section14
     claims_fn((n80_root / "PREREGISTRATION.md").read_text(encoding="utf8"))      # refuses early if section 14 is off
+    supersede_previous(n80_root, log)
     move_draft(n80_root, log)
     msha, manifest = write_manifest(n80_root, reason, repo, log)
     results = (tests_fn or run_unit_tests)(n80_root, log)
@@ -454,13 +542,9 @@ def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, 
         raise FreezeRefused(f"{src} is not JSON") from None
     found = facts_problems(payload)
     if found:
-        rules = (payload.get("no_training_checks") or {}).get("rules") or [] if isinstance(payload, dict) else []
-        sentence = (sentence_fn or default_sentence)(rules)
-        log(sentence)
-        raise FreezeRefused("the frozen code's no-training checks on seeds 0-4 did not pass, so no approval is asked: "
-                            + "; ".join(found) + "\n" + sentence)
+        raise FreezeRefused("the frozen code's outcome-free counts on seeds 0-4 are not usable: " + "; ".join(found))
     if manifest_files(n80_root) != manifest["files"] or repository_files(repo) != manifest["repository_files"]:
-        raise FreezeRefused("a pinned file changed while the tests or the no-training checks ran; run write again")
+        raise FreezeRefused("a pinned file changed while the tests or the counts ran; run write again")
     facts_record = copy_frozen(n80_root, raw)
     body = NP.build(n80_root, msha, manifest, facts_record, repo=repo, claims_fn=claims_fn)
     digest = AC.write_json_once(n80_root / K.PREREG_NAME, body)
@@ -477,8 +561,8 @@ def write(reason, facts_from=None, n80_root=K.N80, out_root=K.OUT, repo=K.ROOT, 
     log(f"wrote {n80_root / K.PREREG_NAME} (final, awaiting approval)\n  SHA-256: {digest}\n"
         f"  first 16 characters: {prefix}\n"
         "Next: commit and push prereg.json, code_manifest.json (each with its .sha256), prereg_history/, "
-        "pre_approval/, the code and the documents. Then tell the owner the fingerprint and the command of "
-        "section 11:\n"
+        "code_manifest_history/, pre_approval/, the code and the documents. Then tell the owner the fingerprint and "
+        "the command of section 11:\n"
         f"  python3 -I {K.N80_REL}/approve_local_near80.py --check\n  python3 -I {K.N80_REL}/approve_local_near80.py\n"
         f"Nothing trains before {K.IMPORT_NAME.format(prefix=prefix)} is pushed.")
     return body

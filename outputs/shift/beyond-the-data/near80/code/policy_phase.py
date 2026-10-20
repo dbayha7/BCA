@@ -1,33 +1,39 @@
-"""Near-80 (version 8): the actor-training phases (step 2's actor-only protocol, restated for near-80), and the lock.
+"""Near-80 (version 9, main setting): the actor-training phases (step 2's actor-only protocol, restated), the arm
+table with the refusal rule, the two new arms, the noise-floor copy, and the lock. DRAFT, not frozen.
 
 Step 2's code is imported, never edited: step2lib (after step2lib.verify_manifest() passes and step 2's code
 manifest has the SHA-256 prereg.json pins) and machinery (which executes version 6's code and step 1's library from
 verified bytes and refuses otherwise). Reused unchanged from machinery: RampRunner, ramp_arm, gap_rule_check,
 check_imports, best_standin, v6_prereg, standin_matched, standin_locked, ramp_shape, info_only, log; and through it
-the room harness (H: ProgramConfig, build_shared, random_surface_params, RoomArm, RoomRunner, family_arm, the ladders,
-max_param_diff, region_strength, MAIN_BAND) and version 6's policy code (P: room_scales, match_controls, strengths_of,
-arms_record, standins_module, MATCHED). Restated here, because step 2's versions call machinery.context (which refuses
-every seed but 0-4 and reads only the gate's saved artifacts) or write only under step 2's folder: train_stall,
-train_no_stall (one function, train_world), locked_controls, reference, h0_check, strengths, save_and_lock,
-verify_lock. They take a settingdata.SettingContext and write under the near-80 output root.
+the room harness (H) and version 6's policy code (P). Restated here, because step 2's versions call machinery.context
+(which refuses every seed but 0-4) or write only under step 2's folder: train_world, locked_controls, reference,
+h0_check, strengths, save_and_lock, verify_lock.
 
-Step 2's ramp programs in every setting (ramp_layout; PREREGISTRATION.md sections 5.3 and 8.2). machinery.RampRunner
-compiles one vmapped program per number of ramp arms, and a member's bits depend on that number, so BCA's switched ramp
-and the plumbing check run in exactly step 2's programs in every setting and world: in the stalling world w0_check
-alone, then a batch of six ramp arms with obca_k1 first; in the no-stall world one batch of seven, w0_check first and
-obca_k1 second. The band costs, the noise floor and the reproduction check then compare actors from one program.
-  near-80, stalling world: w0_check alone first (version 6's check (b)); the six step-2 ramp arms in one vmapped
-      program at the setting's t_lo, t_up; meandiff_k1 in a program of its own; knee_ramp in a second RampRunner
-      starting at the stall (KNEE32); perfect_band; range_hinge; knee_limit (the hinge with its limits at -+KNEE32);
-      the controls' ladders and version 6's matcher blind to obca_k1's strength; the stand-in matched; version6_bca
-      (version 6's paired lower edge, k = 1, on this setting's version-6 band).
-  near-80, no-stall world: step 2's no-stall arm set (w0_check and the six step-2 ramp arms in one program) plus
-      meandiff_k1 (a program of its own), knee_ramp, knee_limit and version6_bca; the controls and the stand-in at the
-      stalling world's locked coefficients.
-  random rows, both worlds: w0_check, obca_k1 and range_hinge only; references none and clone; unmatched. obca_k1
-      trains in step 2's six-arm batch, the other five places filled with copies of it (pad_ramp_1 .. pad_ramp_5, its
-      own switch and height); the copies are checked equal to it, recorded, and never saved or scored.
-  main setting, seeds 10-14: exactly step 2's train_stall / train_no_stall arm sets and programs.
+The arm table (arm_row_from). Both worlds' switch records (one certificate entry each, on the POOLED groups) give,
+through step2lib.arm_table's own rules, the six step-2 ramp arms; then the new arms:
+  meandiff_k1     the mean-difference switch with the ramp: on when mean(full throttle) - mean(rest) > 0.10; h = that
+                  difference; k = 1 (version 8's reported arm, now a trained twin of C2)
+  meandiff_limit  the mean-difference switch turning on the hand-set range limit: on -> the room's hinge at the
+                  recorded range with coefficient 1.0 (the range_hinge arm's own program, run alone); off -> the
+                  ramp with height 0 (checked equal to the no-caution actor)
+  obca_k1_alone   BCA's switched ramp (obca_k1's switch and height) trained alone in a ramp program of one: the
+                  noise-floor copy (section 8.5)
+THE REFUSAL RULE (section 8.4). step2lib.arm_table refuses a switched-on arm whose height is not finite. Version 8
+let that refusal stop the whole policy phase. Version 9 reads the refusal per arm: an arm whose switch is on with a
+height that is not finite is REFUSED (recorded, never trained, its actor missing); every other arm trains and is
+scored. The BCA-dependent arms are obca_k1, obca_k2 (BCA's height), obca_forced (the stalling world's BCA height, in
+both worlds) and obca_k1_alone. A refused arm's place in step 2's six-arm program is filled by a pad (the ramp with
+height 0, named pad_refused_<arm>, never saved or scored), so the other members keep step 2's batch size. With
+obca_k1 refused there is no strength to match: the matched rivals and the stand-in are unmatched (null), as in
+version 8 when BCA's switch stayed off. A seed where BCA refused fails every mark that needs BCA (C1 and C2), by the
+pre-set rule, and only those.
+
+Step 2's ramp programs (ramp_layout; PREREGISTRATION.md section 5.3 and 8.2): in the stalling world w0_check alone,
+then the six step-2 ramp arms in one vmapped program with obca_k1 first; in the no-stall world one batch of seven,
+w0_check first and obca_k1 second. Then, in extra calls that leave those programs' bits unchanged: meandiff_k1
+alone, meandiff_limit alone (hinge or height-0 ramp) and obca_k1_alone alone. The reproduction check runs the same
+function on seed 0 with step 1's own switch entries and must give step 2's saved w0_check, obca_k1 and range_hinge
+actors bit for bit.
 Every height-0 ramp arm must reproduce the no-caution actor within W0_TOL (else a recorded stop). The lock (every
 actor's SHA-256) is written before any return, points or score of any trained arm is computed.
 """
@@ -58,13 +64,16 @@ _STEP2 = {}
 
 def load_step2(run=None):
     """(step2lib, machinery, facts): step2lib after verify_manifest() passes, then machinery. In official and scratch
-    mode step 2's code manifest and prespec must have the SHA-256 that prereg.json pins."""
+    mode step 2's code manifest and prespec must have the SHA-256 that prereg.json pins. step2lib's hard-coded
+    repository root is set to this host's before machinery reads it (the cluster and the tests run elsewhere)."""
     if "S" not in _STEP2:
         if str(K.S2_DIR) not in sys.path:
             sys.path.insert(0, str(K.S2_DIR))
         import step2lib as S
+        S.ROOT = Path(K.ROOT)
         man, man_sha = S.verify_manifest()
         spec, spec_sha = S.load_prespec()
+        rebase_pinned_libraries(S, spec)
         import machinery as MC
         _STEP2.update(S=S, MC=MC, facts=dict(code_manifest_sha256=man_sha, prespec_sha256=spec_sha))
     S, MC, facts = _STEP2["S"], _STEP2["MC"], _STEP2["facts"]
@@ -77,6 +86,59 @@ def load_step2(run=None):
             if want is not None and want != got:
                 raise PH.Refused(f"refused: step 2's {pin[3:]} is {got[:16]}..., prereg.json pins {want[:16]}...")
     return S, MC, facts
+
+
+def _rebase(value, old, new):
+    import dataclasses
+    if isinstance(value, Path):
+        try:
+            rel = value.relative_to(old)
+        except ValueError:
+            return value
+        return new / rel
+    if isinstance(value, tuple):
+        return tuple(_rebase(v, old, new) for v in value)
+    if isinstance(value, list):
+        return [_rebase(v, old, new) for v in value]
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        for f in dataclasses.fields(value):
+            try:
+                object.__setattr__(value, f.name, _rebase(getattr(value, f.name), old, new))
+            except (AttributeError, TypeError):
+                pass
+        return value
+    return value
+
+
+def rebase_module(mod, old, new):
+    """Every path of a module computed from its hard-coded repository root `old` (version 6's stage2_common.py and
+    step 1's step1lib.py write ROOT = /home/user/bca) rebased onto this host's root `new`. The bytes executed are
+    still the pinned ones (step2lib.exec_verified checked them); only where they point changes."""
+    old, new = Path(old), Path(new)
+    for k, v in list(vars(mod).items()):
+        if k.startswith("__"):
+            continue
+        nv = _rebase(v, old, new)
+        if nv is not v:
+            setattr(mod, k, nv)
+    return mod
+
+
+def rebase_pinned_libraries(S, spec):
+    """On a host other than the desktop (the cluster, the tests): execute version 6's stage2_common.py and step 1's
+    step1lib.py from their verified bytes under the names machinery will ask for (step2lib.exec_verified returns a
+    module already loaded under its name when its SHA-256 is the pinned one), with their paths rebased onto K.ROOT,
+    so that machinery, policy.py and the room harness read this host's clone. On the desktop nothing is done."""
+    if Path(K.ROOT) == Path(K.DESKTOP_ROOT):
+        return None
+    inputs = spec["inputs"]
+    v6 = inputs["v6_code"]
+    old, new = Path(K.DESKTOP_ROOT), Path(K.ROOT)
+    C = S.exec_verified("stage2_common", new / v6["dir"] / "stage2_common.py", v6["sha256"]["stage2_common.py"])
+    rebase_module(C, old, new)
+    S1 = S.exec_verified("step1lib", new / inputs["step1lib"]["path"], inputs["step1lib"]["sha256"])
+    rebase_module(S1, old, new)
+    return C, S1
 
 
 def sizes(run):
@@ -95,11 +157,9 @@ def policy_dir(out_root, setting, world, seed):
 # --------------------------------------------------------------------------------------------- the arm table
 
 def arm_row(setting, seed, world, out_root, S=None):
-    """The arm-table row of one setting, seed and world: step2lib.arm_table on a step-1-like record built from BOTH
-    worlds' switch records (obca_forced uses the stalling world's height), then the new arms: meandiff_k1 (switch:
-    mean full-throttle overestimate minus mean rest > 0.10; height that difference) and, in the near-80 setting,
-    knee_ramp (obca_k1's switch and height, ramp from KNEE32 to the setting's t_up). arm_table's refusals (a switched-on
-    arm with a non-finite height, a negative height) and a missing gap rule are recorded stops."""
+    """The arm-table row of one seed and world: step2lib.arm_table's rules on a step-1-like record built from BOTH
+    worlds' switch records (obca_forced uses the stalling world's height), applied per arm with the refusal rule,
+    then the new arms."""
     S = S or load_step2()[0]
     per = {}
     for w in K.WORLDS:
@@ -108,78 +168,101 @@ def arm_row(setting, seed, world, out_root, S=None):
     return arm_row_from(setting, seed, world, per, S)
 
 
+def _finite(x):
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and np.isfinite(x)
+
+
+def step2_arms(S, per, seed, world):
+    """step2lib.arm_table's six arms from the entries of both worlds, computed arm by arm with arm_table's own
+    rules, so that one refused arm does not hide the others. Returns (arms {name: {switch, h, k, refused, why}},
+    sources, t_lo, t_up)."""
+    e = per[f"{world}/seed{int(seed)}"]
+    stall = per[f"stall/seed{int(seed)}"]
+    rule = dict(K.ARM_RULE)
+    c, g, rt = e["certificate"], e["groups"], e["rank_test"]
+    on_bca, h_bca = bool(c["on"]), S.num(c["height"])
+    stall_h = S.num(stall["certificate"]["height"])
+    gap90 = S.num(g["q90_full_throttle"]) - S.num(g["q90_rest"])
+    on_conf = bool(gap90 > float(rule["conformal_margin"]))
+    p = S.num(rt["p"])
+    on_rank = bool(p < float(rule["rank_p"]))
+    meangap = S.num(g["mean_full_throttle"]) - S.num(g["mean_rest"])
+    arms = dict(
+        obca_k1=dict(switch=on_bca, h=h_bca if on_bca else 0.0, k=1.0),
+        obca_k2=dict(switch=on_bca, h=h_bca if on_bca else 0.0, k=2.0),
+        obca_forced=dict(switch=True, h=stall_h, k=1.0),
+        fixed_gated=dict(switch=on_bca, h=float(rule["fixed_height"]) if on_bca else 0.0, k=1.0),
+        conformal_k1=dict(switch=on_conf, h=gap90 if on_conf else 0.0, k=1.0),
+        meangap_k1=dict(switch=on_rank, h=max(meangap, 0.0) if on_rank else 0.0, k=1.0))
+    for name, a in arms.items():
+        a["refused"], a["why"] = False, None
+        if a["switch"] and not np.isfinite(a["h"]):
+            a["refused"] = True
+            a["why"] = (f"switched on but its height {a['h']} is not finite (the full-throttle group was not "
+                        f"certified)")
+            a["h"] = None
+        elif a["h"] < 0:
+            a["refused"], a["why"], a["h"] = True, f"a negative height {a['h']}", None
+    sources = dict(bca_on=on_bca, bca_height=h_bca, stall_bca_height=stall_h, conformal_gap=gap90,
+                   plain_gap_information_only=S.num(c.get("plain_gap", "nan")), rank_p=p, mean_gap=meangap,
+                   n_full_throttle=g.get("n_full_throttle"), n_rest=g.get("n_rest"))
+    return arms, sources, S.num(e["t_lo"]), S.num(e["t_up"])
+
+
 def arm_row_from(setting, seed, world, per, S):
     """arm_row on the switch entries {'<world>/seed<k>': entry} of both worlds (the reproduction check passes the
-    entries it computed)."""
+    entries it computed). Every arm is recorded; a refused one carries refused: true and h None."""
     try:
-        row = S.arm_table({"per_seed_world": per}, seeds=[int(seed)], rule=K.ARM_RULE)[world][int(seed)]
-    except (SystemExit, ValueError, TypeError, KeyError) as error:
-        if setting != "random_rows":
-            raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the arm table cannot be built from the switches",
-                                                              error=str(error))) from None
-        row = primary_row(S, per[f"{world}/seed{int(seed)}"], str(error))
-    gap_mean = float(row["sources"]["mean_gap"])
+        arms, sources, t_lo, t_up = step2_arms(S, per, seed, world)
+    except (ValueError, TypeError, KeyError) as error:
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the arm table cannot be read from the switches",
+                                                          error=str(error))) from None
+    if not (np.isfinite(t_lo) and np.isfinite(t_up)):
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the gap rule's ends are not finite"))
+    gap_mean = float(sources["mean_gap"])
     on = bool(np.isfinite(gap_mean) and gap_mean > K.MEANDIFF_MARGIN)
-    row["arms"]["meandiff_k1"] = dict(switch=on, h=gap_mean if on else 0.0, k=1.0)
-    if setting == "near80":
-        o = row["arms"][K.PRIMARY]
-        row["arms"]["knee_ramp"] = dict(switch=o["switch"], h=o["h"], k=1.0, t_lo=K.KNEE32, t_up=row["t_up"])
-    return row
-
-
-def primary_row(S, entry, why):
-    """The random-rows setting trains BCA's switched ramp only. When step2lib.arm_table refuses because of an arm the
-    random-rows setting does not train (for example the always-on ramp, whose height is the stalling world's), the
-    row of obca_k1 alone is read from the same entry with arm_table's own rule for obca_k1: switch = the certificate's
-    'on', height = its height when on, else 0, k = 1; switched on with a height that is not finite is a stop."""
-    try:
-        c = entry["certificate"]
-        on, h = bool(c["on"]), S.num(c["height"])
-        t_lo, t_up = S.num(entry["t_lo"]), S.num(entry["t_up"])
-    except (KeyError, ValueError, TypeError) as error:
-        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="the switch cannot be read", error=str(error))) from None
-    if on and not np.isfinite(h):
-        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="BCA's switch is on but its height is not finite",
-                                                          error=why))
-    g = entry.get("groups") or {}
-    try:
-        gap = S.num(g.get("mean_full_throttle")) - S.num(g.get("mean_rest"))
-    except ValueError:
-        gap = float("nan")
-    return dict(t_lo=t_lo, t_up=t_up, arms={K.PRIMARY: dict(switch=on, h=h if on else 0.0, k=1.0)},
-                sources=dict(bca_on=on, bca_height=h, mean_gap=gap, arm_table_refusal=why))
-
-
-PAD_RAMP_ARMS = tuple(f"pad_ramp_{i}" for i in range(1, len(K.STEP2_RAMP_ARMS)))
+    arms["meandiff_k1"] = dict(switch=on, h=gap_mean if on else 0.0, k=1.0, refused=False, why=None)
+    arms["meandiff_limit"] = dict(switch=on, h=1.0 if on else 0.0, k=1.0, refused=False, why=None,
+                                  kind="hinge" if on else "ramp_h0")
+    o = arms[K.PRIMARY]
+    arms[K.NOISE_ARM] = dict(switch=o["switch"], h=o["h"], k=1.0, refused=o["refused"], why=o["why"])
+    refused = sorted(n for n, a in arms.items() if a["refused"])
+    if any(n not in K.BCA_DEPENDENT for n in refused):
+        raise PH.PhaseStop(PH.STOP_REASONS["check"], dict(what="an arm that does not depend on BCA's height was "
+                                                               "refused", refused=refused))
+    return dict(t_lo=t_lo, t_up=t_up, arms=arms, sources=sources, refused=refused,
+                bca_refused=bool(K.PRIMARY in refused),
+                rule="the refusal rule: a refused arm is left out; every other arm trains and is scored")
 
 
 def ramp_names(setting):
-    """The setting's ramp arms that are kept and scored (on the setting's own ramp, t_lo to t_up)."""
-    if setting == "random_rows":
-        return (K.PRIMARY,)
-    if setting == "near80":
-        return K.STEP2_RAMP_ARMS + ("meandiff_k1",)
+    """The ramp arms of step 2's programs that are kept and scored."""
     return K.STEP2_RAMP_ARMS
 
 
 def ramp_layout(setting, world):
-    """The vmapped ramp programs of the setting's main RampRunner, in call order: [(arm names), ...]. Step 2's own
-    layout in every setting (module docstring): stalling world [(w0_check,), (the six,)]; no-stall world
-    [(w0_check, the six)]. The random-rows setting's six places are obca_k1 and its five copies; the near-80
-    setting's meandiff_k1 runs last, alone. (knee_ramp runs on a RampRunner of its own.)"""
-    six = (K.PRIMARY,) + PAD_RAMP_ARMS if setting == "random_rows" else tuple(K.STEP2_RAMP_ARMS)
+    """The vmapped ramp programs of the main RampRunner, in call order: [(arm names), ...]. Step 2's own layout:
+    stalling world [(w0_check,), (the six,)]; no-stall world [(w0_check, the six)]. Then the extra calls, each alone:
+    (meandiff_k1,), (obca_k1_alone,). meandiff_limit runs on the room's own hinge program or as a height-0 ramp
+    (train_world)."""
+    six = tuple(K.STEP2_RAMP_ARMS)
     calls = [(K.W0,), six] if world == "stall" else [(K.W0,) + six]
-    if setting == "near80":
-        calls.append(("meandiff_k1",))
+    calls += [("meandiff_k1",), (K.NOISE_ARM,)]
     return calls
 
 
+def pad_name(name):
+    return f"pad_refused_{name}"
+
+
 def layout_arm(MC, row, name):
-    """The ramp arm of a name of ramp_layout (a pad copies obca_k1's height and k; w0_check is height 0, k 0)."""
+    """The ramp arm of a name of ramp_layout (w0_check is height 0, k 0; a refused arm's place is a height-0 pad)."""
     if name == K.W0:
         return MC.ramp_arm(K.W0, 0.0, 0.0)
-    src = K.PRIMARY if name in PAD_RAMP_ARMS else name
-    return MC.ramp_arm(name, row["arms"][src]["h"], row["arms"][src]["k"])
+    a = row["arms"][name]
+    if a.get("refused"):
+        return MC.ramp_arm(pad_name(name), 0.0, 0.0)
+    return MC.ramp_arm(name, a["h"], a["k"])
 
 
 # --------------------------------------------------------------------------------------------- restated helpers
@@ -237,14 +320,6 @@ def locked_controls(MC, stall_lock):
     return arms, info
 
 
-def knee_shared(shared):
-    """The room's shared arrays with the hinge's limits moved to the stall: lo = -KNEE32, hi = +KNEE32 on every
-    thruster (float32)."""
-    import jax.numpy as jnp
-    return dict(shared, lo=jnp.asarray(np.full(4, -K.KNEE32), jnp.float32),
-                hi=jnp.asarray(np.full(4, K.KNEE32), jnp.float32))
-
-
 def stop(run, payload, reason, checks=None):
     raise PH.PhaseStop(reason, dict(payload, checks=checks), checks)
 
@@ -252,23 +327,24 @@ def stop(run, payload, reason, checks=None):
 # --------------------------------------------------------------------------------------------- one world
 
 def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
-    """Every arm of one setting, seed and world (module docstring); returns the lock payload (without the actor
-    hashes, which save_and_lock adds)."""
+    """Every arm of the main setting for one seed and world (module docstring); returns the lock payload (without
+    the actor hashes, which save_and_lock adds)."""
     t_start = time.perf_counter()
     H, L, P = MC.H, MC.L, MC.P
     key = run.key
     setting, world, seed = key.setting, key.world, int(key.seed)
     steps, chunk, full = sizes(run)
-    matched = setting in ("near80", "main")
-    near80 = setting == "near80"
+    refused = list(row.get("refused") or [])
+    bca_refused = bool(row.get("bca_refused"))
     base = dict(setting=setting, world=world, seed=seed, group=key.group, mode=run.mode, steps=steps, chunk=chunk,
-                full_length=full, arm_table=row, stall_lock_sha256=stall_lock_sha)
+                full_length=full, arm_table=row, stall_lock_sha256=stall_lock_sha, refused_arms=refused,
+                bca_refused=bca_refused)
     t0 = time.perf_counter()
     pg = ctx.prepared(world)
     critic = ctx.critic(world)
     clone = ctx.clone(world)
     none = ctx.none(world)
-    full_none = ctx.full_none() if (world == "stall" and matched) else None
+    full_none = ctx.full_none() if world == "stall" else None
     checks = dict(gap_rule=MC.gap_rule_check(pg, row))
     if not checks["gap_rule"]["passed"]:
         stop(run, base, "step 1's gap rule gives another t_lo or t_up on this data", checks)
@@ -277,8 +353,7 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
     cfg = H.ProgramConfig() if world == "stall" else H.ProgramConfig(physics=pg.physics, next_command="stall_aware")
     shared, sinfo = H.build_shared(pg, critic, seed, cfg=cfg, need_harm=False, log_fn=MC.log)
     nets = {j: H.random_surface_params(seed, j) for j in (1, 2)}
-    g, scale = (P.room_scales(pg, critic, shared, clone, seed, cfg, nets) if (world == "stall" and matched)
-                else (None, None))
+    g, scale = P.room_scales(pg, critic, shared, clone, seed, cfg, nets) if world == "stall" else (None, None)
     seconds["shared_and_scales"] = time.perf_counter() - t1
     runner = MC.RampRunner(pg, clone, critic, ctx.learn, seed, cfg=cfg, shared=shared,
                            random_nets={j: nets[j][0] for j in (1, 2)}, steps=steps, chunk=chunk,
@@ -296,69 +371,42 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
         if not checks["b_w0"]["passed"]:
             stop(run, base, PH.STOP_REASONS["height0"], checks)
         arms = [layout_arm(MC, row, n) for n in layout[1]]                         # step 2's six-arm program
-        if matched:
-            arms += [H.RoomArm("perfect_band", "band", H.MAIN_BAND), H.RoomArm("range_hinge", "hinge", (1.0,))]
-            arms += [H.family_arm("even_pull", nu, scale) for nu in H.EVEN_LADDER]
-            arms += [H.family_arm(f, k, scale) for f in ("push_less", "random_1", "random_2") for k in H.SLOPE_LADDER]
-        else:
-            arms += [H.RoomArm("range_hinge", "hinge", (1.0,))]
+        arms += [H.RoomArm("perfect_band", "band", H.MAIN_BAND), H.RoomArm("range_hinge", "hinge", (1.0,))]
+        arms += [H.family_arm("even_pull", nu, scale) for nu in H.EVEN_LADDER]
+        arms += [H.family_arm(f, k, scale) for f in ("push_less", "random_1", "random_2") for k in H.SLOPE_LADDER]
         trained.update(runner.run(arms, MC.log))
         rest = layout[2:]
     else:
-        locked, locked_info = locked_controls(MC, stall_lock) if matched else ([], {})
+        locked, locked_info = locked_controls(MC, stall_lock)
         arms = [layout_arm(MC, row, n) for n in layout[0]]                         # step 2's seven-arm program
-        if matched:
-            arms += [H.RoomArm("perfect_band", "band", H.MAIN_BAND), H.RoomArm("range_hinge", "hinge", (1.0,))] + locked
-        else:
-            arms += [H.RoomArm("range_hinge", "hinge", (1.0,))]
+        arms += [H.RoomArm("perfect_band", "band", H.MAIN_BAND), H.RoomArm("range_hinge", "hinge", (1.0,))] + locked
         trained = runner.run(arms, MC.log)
         ref, ref_name = reference(MC, runner, trained, none, full)
         w0 = H.max_param_diff(trained[K.W0]["params"], ref)
         checks["b_w0"] = dict(max_abs_diff=w0, tol=MC.W0_TOL, reference=ref_name,
                               passed=bool(trained[K.W0]["finite"] and w0 <= MC.W0_TOL))
         rest = layout[1:]
-    for call in rest:                                                              # meandiff_k1 alone (near-80)
-        trained.update(runner.run([layout_arm(MC, row, n) for n in call], MC.log))
-    padding = None
-    if any(n in trained for n in PAD_RAMP_ARMS):
-        same = {n: float(H.max_param_diff(trained[n]["params"], trained[K.PRIMARY]["params"])) for n in PAD_RAMP_ARMS}
-        padding = dict(arms=list(PAD_RAMP_ARMS), copies_of=K.PRIMARY, max_abs_diff=same,
-                       equal=bool(all(v == 0.0 for v in same.values())),
-                       why="the other five places of step 2's six-arm program; never saved or scored")
-        for n in PAD_RAMP_ARMS:
-            trained.pop(n)
     extra_seconds = {}
-    if near80:
-        kr = row["arms"]["knee_ramp"]
-        if not float(row["t_up"]) > K.KNEE32:
-            stop(run, base, "the ramp started at the stall has no length: t_up is not above 80%", checks)
-        t2 = time.perf_counter()
-        knee_runner = MC.RampRunner(pg, clone, critic, ctx.learn, seed, cfg=cfg, shared=shared,
-                                    random_nets={j: nets[j][0] for j in (1, 2)}, steps=steps, chunk=chunk,
-                                    t_lo=K.KNEE32, t_up=row["t_up"])
-        trained.update(knee_runner.run([MC.ramp_arm("knee_ramp", kr["h"], kr["k"])], MC.log))
-        limit_runner = H.RoomRunner(pg, clone, critic, ctx.learn, seed, cfg=cfg, shared=knee_shared(shared),
-                                    random_nets={j: nets[j][0] for j in (1, 2)}, steps=steps, chunk=chunk)
-        trained.update(limit_runner.run([H.RoomArm("knee_limit", "hinge", (1.0,))], MC.log))
-        extra_seconds.update(knee=time.perf_counter() - t2, knee_by_kind=knee_runner.seconds,
-                             limit_by_kind=limit_runner.seconds)
-        t2 = time.perf_counter()
-        v6 = dict(arm=None, band_failed=None)
-        band, brec = _load_v6_band(run, setting, world, seed)
-        v6["band_failed"] = bool(band is None)
-        if band is not None:
-            import v6bca
-            got, _ = v6bca.train_arm(pg, clone, critic, ctx.learn, seed, band, cfg, shared, steps, chunk, MC.log)
-            trained[v6bca.V6_ARM] = got
-            v6["arm"] = v6bca.V6_ARM if got["finite"] else None
-        else:
-            v6["reason"] = brec.get("reason")
-        extra_seconds["version6_bca"] = time.perf_counter() - t2
+    t2 = time.perf_counter()
+    for call in rest:                                    # meandiff_k1 alone, then obca_k1_alone alone (if not refused)
+        members = [n for n in call if not row["arms"][n].get("refused")]
+        if members:
+            trained.update(runner.run([layout_arm(MC, row, n) for n in members], MC.log))
+    lim = row["arms"]["meandiff_limit"]
+    if lim.get("kind") == "hinge":                       # the hand-set range limit's own program, run alone
+        trained.update(runner.run([H.RoomArm("meandiff_limit", "hinge", (1.0,))], MC.log))
     else:
-        v6 = None
-    zero = [n for n in names if row["arms"][n]["h"] == 0.0]
-    if near80 and row["arms"]["knee_ramp"]["h"] == 0.0:
-        zero.append("knee_ramp")
+        trained.update(runner.run([MC.ramp_arm("meandiff_limit", 0.0, 0.0)], MC.log))
+    extra_seconds["new_arms"] = time.perf_counter() - t2
+    padding = None
+    pads = [n for n in trained if n.startswith("pad_refused_")]
+    if pads:
+        padding = dict(arms=pads, why="the places of refused arms in step 2's six-arm program; never saved or scored")
+        for n in pads:
+            trained.pop(n)
+    zero = [n for n in names + ("meandiff_k1", "meandiff_limit", K.NOISE_ARM)
+            if n in trained and row["arms"][n].get("h") == 0.0 and not (n == "meandiff_limit" and
+                                                                        lim.get("kind") == "hinge")]
     checks["h0_reproduces_reference"] = h0_check(MC, trained, zero, ref, ref_name)
     if not (checks["b_w0"]["passed"] and checks["h0_reproduces_reference"]["passed"]):
         stop(run, base, PH.STOP_REASONS["height0"], checks)
@@ -367,14 +415,17 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
     t1 = time.perf_counter()
     matches, standin, s_actors, s_record = None, None, {}, {}
     target = None
-    if matched and world == "stall":
-        target = float(L.strength(trained[K.PRIMARY]["params"], none, pg.eval_obs)) if trained[K.PRIMARY]["finite"] \
-            else float("nan")
+    if world == "stall":
+        if K.PRIMARY in trained and trained[K.PRIMARY]["finite"]:
+            target = float(L.strength(trained[K.PRIMARY]["params"], none, pg.eval_obs))
+        else:
+            target = float("nan")
         if np.isfinite(target) and target > 0:
             matches = P.match_controls(runner, trained, none, pg, target, scale, P.MATCHED, MC.log)
         else:
-            matches = {f: dict(record=None, arm=None, matched=False,
-                               reason="obca_k1 failed or has no positive strength") for f in P.MATCHED}
+            why = ("BCA refused on this seed: no strength to match" if bca_refused
+                   else "obca_k1 failed or has no positive strength")
+            matches = {f: dict(record=None, arm=None, matched=False, reason=why) for f in P.MATCHED}
         best = MC.best_standin()
         standin = dict(family=best, matched=False, arm=None)
         if np.isfinite(target) and target > 0:
@@ -395,7 +446,10 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
             except Exception as error:   # a rival that cannot run fails every measure that needs it (counts against BCA)
                 standin.update(error=repr(error))
                 MC.log(f"stand-in error: {error!r}")
-    elif matched:
+        else:
+            standin["reason"] = "BCA refused on this seed: no strength to match" if bca_refused else \
+                "obca_k1 failed or has no positive strength"
+    else:
         st = (stall_lock or {}).get("standin") or {}
         standin = dict(family=st.get("family"), coefficient=st.get("coefficient"), stall_arm=st.get("arm"), arm=None)
         if standin["coefficient"] is not None:
@@ -414,9 +468,9 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
                 MC.log(f"stand-in error: {error!r}")
     seconds["matching_and_standin"] = time.perf_counter() - t1
     S_, SR = strengths(MC, trained, s_actors, none, pg)
-    shape = MC.info_only("ramp shape", lambda: MC.ramp_shape(
-        pg, critic, none, seed, row["t_lo"], row["t_up"], {n: (row["arms"][n]["h"], row["arms"][n]["k"])
-                                                          for n in names}))
+    shape_arms = {n: (row["arms"][n]["h"], row["arms"][n]["k"]) for n in names if n in trained}
+    shape = MC.info_only("ramp shape", lambda: MC.ramp_shape(pg, critic, none, seed, row["t_lo"], row["t_up"],
+                                                            shape_arms))
     # ---- logical ids -> actor names
     ids = {}
     for logical in K.ARMS[setting]:
@@ -431,8 +485,6 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
                 ids[logical] = locked_info[logical]["name"] if (locked_info.get(logical) or {}).get("locked") else None
         elif logical == "standin":
             ids[logical] = (standin or {}).get("arm")
-        elif logical == "version6_bca":
-            ids[logical] = (v6 or {}).get("arm")
         else:
             ids[logical] = logical if logical in trained else None
     actors = {k: v["params"] for k, v in trained.items()}
@@ -449,19 +501,15 @@ def train_world(run, ctx, S, MC, row, stall_lock=None, stall_lock_sha=None):
                    arms=dict(P.arms_record(trained), **s_record), strengths=S_, region_strengths=SR,
                    target_strength=target, matches=matches,
                    matched_names=None if matches is None else {f: m["arm"] for f, m in matches.items()},
-                   locked_controls=locked_info or None, standin=standin, version6_bca=v6, arm_ids=ids,
+                   locked_controls=locked_info or None, standin=standin, arm_ids=ids,
                    scored_names=scored, finite={k: finite[k] for k in scored},
                    slope_rms=g, coefficient_per_knob=scale, random_surface_seeds={j: nets[j][1] for j in (1, 2)},
                    shared=sinfo, ramp_shape=shape, chunk_seconds=runner.chunk_seconds,
                    ramp_programs=[list(c) for c in layout], ramp_padding=padding,
+                   meandiff_limit_kind=lim.get("kind"),
                    seconds=dict(seconds, extra=extra_seconds, by_kind=runner.seconds,
                                 total=time.perf_counter() - t_start))
     return payload, actors
-
-
-def _load_v6_band(run, setting, world, seed):
-    import learner_phases as LP
-    return LP.load_v6_band(run.out_root, setting, world, seed)
 
 
 # --------------------------------------------------------------------------------------------- lock
@@ -520,7 +568,8 @@ def verify_lock(run, setting, seed, world, steps):
 # --------------------------------------------------------------------------------------------- the phase
 
 def run_policy(run, ctx):
-    """The policy phase: the arm row, then train_world, then the lock payload (phase_main writes lock.json)."""
+    """The policy phase: the arm row (with the refusal rule), then train_world, then the lock payload (phase_main
+    writes lock.json)."""
     S, MC, s2 = load_step2(run)
     k = run.key
     steps, _, _ = sizes(run)
@@ -546,38 +595,10 @@ def step2_saved_root(run):
     return K.S2_OUT
 
 
-def verify_step2_saved_locks(run, seeds=K.EXPLORATORY):
-    """Step 2's saved locks of seeds 0-4 (both worlds), read-only: each lock's sidecar, step2lib.lock_problems with
-    step 2's own prespec and code manifest, and every actor's SHA-256. Returns {world/seed<k>: hashes}."""
-    S, MC, s2 = load_step2(run)
-    root = step2_saved_root(run)
-    out = {}
-    for s in seeds:
-        for w in K.WORLDS:
-            d = Path(root) / "policy" / f"seed{s}" / w
-            try:
-                lock = LG.read_json_verified(d / "lock.json")
-            except LG.RecordError as error:
-                raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what=f"step 2's lock {d}",
-                                                                        error=str(error))) from None
-            problems = S.lock_problems(lock, s2["prespec_sha256"], s2["code_manifest_sha256"], s, w, True,
-                                       K.ACTOR_STEPS)
-            if problems:
-                raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what=f"step 2's lock {d}", problems=problems))
-            acts = SD.load_tree_checked(d / lock["actors_file"], {k: MC.L.actor_template() for k in lock["names"]},
-                                        lock["actors_file_sha256"])
-            bad = [k for k in lock["names"] if MC.L.tree_sha256(acts[k]) != lock["actor_sha256"][k]]
-            if bad:
-                raise PH.PhaseStop(PH.STOP_REASONS["fingerprint"], dict(what=f"step 2's actors {d}", actors=bad))
-            out[f"{w}/seed{s}"] = dict(lock_sha256=LG.file_sha256(d / "lock.json"),
-                                       actors_file_sha256=lock["actors_file_sha256"])
-    return out
-
-
 def stage_lock(run):
     """The lock phase (kind near80-stage-lock): every policy phase of the group with its lock's SHA-256, its stop's
-    SHA-256 or its skip reason, and (exploratory) step 2's saved locks of seeds 0-4 verified. Written before any
-    evaluation of the group; evaluate and readouts refuse unless it lists their lock's SHA-256."""
+    SHA-256 or its skip reason. Written before any evaluation of the group; evaluate refuses unless it lists the
+    lock's SHA-256."""
     group = run.key.group
     keys = PH.plan(spec=run.plan)
     locks = {}
@@ -597,7 +618,4 @@ def stage_lock(run):
                 raise PH.Refused(f"refused: {pid} is not finished; the lock waits for every policy phase")
             rec = LG.ok_record(Path(run.out_root) / PH.skipped_rel(k)) or {}
             locks[pid] = dict(skipped=rec.get("reason") or why)
-    rec = dict(kind="near80-stage-lock", group=group, locks=locks, plan=run.plan)
-    if group == "exploratory":
-        rec["step2_saved"] = verify_step2_saved_locks(run, K.EXPLORATORY)
-    return rec
+    return dict(kind="near80-stage-lock", group=group, locks=locks, plan=run.plan)

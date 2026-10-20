@@ -1,29 +1,26 @@
-"""Near-80 (version 8): the phase table. Every phase the runner may start, its key and id, what it needs, when it is
-admitted, when it is done, stopped or skipped, the files it writes, and its plain name.
+"""Near-80 (version 9, main setting): the phase table. Every phase the runner may start, its key and id, what it
+needs, when it is admitted, when it is done, stopped or skipped, the files it writes, and its plain name. DRAFT, not
+frozen.
 
 Standard library only (with near80_constants and ledger), so the runner, the phase process and the tests read the same
 table without loading numpy or JAX.
 
 A phase key is PhaseKey(kind, setting, world, seed, group); setting and world may be 'x', seed may be None. The id
-is near80_constants.phase_id(...), for example 'policy.near80.stall.s3', 'lock.x.x.exploratory'. The data phase of
-the two band settings uses the setting token 'band' (it builds the near-80 and the random-rows data together).
+is near80_constants.phase_id(...), for example 'policy.main.stall.s40', 'lock.x.x.fresh'. The only setting is 'main'.
 
-The table (PREREGISTRATION.md sections 8 and 10; the build spec, section 5.2):
-  fixed_checks       no seed (exploratory group)        approval only
-  data_main          main, seeds 0-4 and 10-14           10-14: the exploratory look
-  data_band          band, seeds 0-4 and 10-14           data_main of the same seed and world; 10-14: the look must
-                                                         allow the near-80 settings
-  critic, critic_second, switch, clone, reference_actors, policy
-                     near80 and random_rows on 0-4; main, near80 and random_rows on 10-14
-  critic_full        stalling world, seeds 10-14 (seeds 0-4 reuse the gate's full-log critic, checked)
-  v6_band, readouts  near80 and random_rows, every seed
-  evaluate           main, near80 and random_rows, every seed (main on 0-4: step 2's saved actors, retrained never)
+The table (PREREGISTRATION.md sections 8 and 10):
+  data_main          main, both worlds, every seed of the group (the fresh seeds; the plumbing's seed 0 in scratch and
+                     stub runs): the log, the ball, the gate's checks, the training file and the outcome-free count
+                     of the pooled groups
+  critic, critic_second, switch, clone, reference_actors, policy      main, both worlds, every seed
+  critic_full        stalling world, every seed
   lock               per group, after every policy of the group
-  look_exploratory, look_confirmatory   after every evaluation and readout of their group
-Every need must be done; a stopped or skipped need makes the phase skipped (the lock and the looks run after their
-needs are done, stopped or skipped). A seed whose main data failed the gate's checks is failed for every setting;
-a seed whose band data failed checks 1-8 is failed for the near-80 and random-rows settings only. A failed seed is
-never replaced.
+  evaluate           main, both worlds, every seed, after the group's lock
+  look               per group, after every evaluation of the group
+Every need must be done; a stopped or skipped need makes the phase skipped (the lock and the look run after their
+needs are done, stopped or skipped). A seed whose main data failed the gate's checks is a failed seed (never
+replaced). BCA refusing on a seed (its certificate's height not finite) is NOT a stop: the policy phase trains and
+scores every arm that does not depend on BCA's height (the refusal rule, section 8.4).
 """
 import sys
 
@@ -41,20 +38,18 @@ import ledger as LG  # noqa: E402
 
 PhaseKey = namedtuple("PhaseKey", "kind setting world seed group")
 
-SKIP_LOOK = "stopped before the fresh seeds by the exploratory stop rules"
-BAND_SETTINGS = ("near80", "random_rows")
 LEARNER_KINDS = ("critic", "critic_second", "switch", "clone", "reference_actors", "policy")
-TRAINING_ROW_KINDS = ("critic", "critic_second", "switch", "clone", "reference_actors", "v6_band", "policy")
-LENIENT_KINDS = ("lock", "look_exploratory", "look_confirmatory")     # run after needs done, stopped or skipped
-GROUP_KINDS = ("fixed_checks", "lock", "look_exploratory", "look_confirmatory")
+TRAINING_ROW_KINDS = ("critic", "critic_second", "switch", "clone", "reference_actors", "policy")
+LENIENT_KINDS = ("lock", "look")                    # run after needs done, stopped or skipped
+GROUP_KINDS = ("lock", "look")
 FINAL = ("done", "stopped", "skipped")
-SKIPPED_REL = "skipped/{phase_id}.json"            # this module's own record of a skip decided by rule
+SKIPPED_REL = "skipped/{phase_id}.json"             # this module's own record of a skip decided by rule
 PLANS = ("full", "smoke")                           # or 'seeds:<a>,<b>,...' (a stub run on fewer seeds)
 SMOKE_SEED = 0
 
 
 class Refused(Exception):
-    """A key outside the table, a reserved seed, or a phase that may not start; the message starts with 'refused: '."""
+    """A key outside the table, a used seed, or a phase that may not start; the message starts with 'refused: '."""
 
 
 class PhaseStop(Exception):
@@ -137,8 +132,6 @@ def parse_id(pid):
     seed, group = None, None
     if tail.startswith("s") and tail[1:].isdigit():
         seed = int(tail[1:])
-        if seed in K.RESERVED:
-            raise Refused(f"refused: seed {seed} belongs to version 6/7 (5-9); no near-80 phase touches it")
         try:
             group = K.group_of(seed)
         except ValueError as error:
@@ -151,45 +144,30 @@ def parse_id(pid):
 
 
 def settings_for(kind, seed):
-    s = int(seed)
-    if kind in LEARNER_KINDS:
-        return BAND_SETTINGS if s in K.EXPLORATORY else ("main",) + BAND_SETTINGS
-    if kind in ("v6_band", "readouts"):
-        return BAND_SETTINGS
-    if kind == "evaluate":
-        return ("main",) + BAND_SETTINGS
-    if kind == "data_main":
+    if kind in LEARNER_KINDS or kind in ("evaluate", "data_main"):
         return ("main",)
-    if kind == "data_band":
-        return ("band",)
     if kind == "critic_full":
         return ("x",)
     return ()
 
 
-def table_keys(seeds=None, groups=K.GROUPS):
-    """Every key of the full table, in the order of section 5.2 (kind by kind; within a kind: seed, setting,
-    world)."""
-    seeds = list(K.EXPLORATORY + K.CONFIRMATORY) if seeds is None else [int(s) for s in seeds]
+def group_seeds(group):
+    return list(K.SMOKE_SEEDS if group == "smoke" else K.FRESH)
+
+
+def table_keys(seeds=None, groups=("fresh",)):
+    """Every key of the table for the given seeds (default: the groups' seeds), in the order of the kinds (kind by
+    kind; within a kind: seed, world)."""
+    seeds = [s for g in groups for s in group_seeds(g)] if seeds is None else [int(s) for s in seeds]
     seeds = [s for s in seeds if K.group_of(s) in groups]
     out = []
     for kind in K.PHASE_KINDS:
-        if kind == "fixed_checks":
-            if "exploratory" in groups:
-                out.append(make_key(kind, group="exploratory"))
-            continue
-        if kind == "lock":
+        if kind in GROUP_KINDS:
             out += [make_key(kind, group=g) for g in K.GROUPS if g in groups]
-            continue
-        if kind in ("look_exploratory", "look_confirmatory"):
-            g = kind.split("_")[1]
-            if g in groups:
-                out.append(make_key(kind, group=g))
             continue
         for s in seeds:
             if kind == "critic_full":
-                if s in K.CONFIRMATORY:
-                    out.append(make_key(kind, "x", "stall", s))
+                out.append(make_key(kind, "x", "stall", s))
                 continue
             for setting in settings_for(kind, s):
                 for world in K.WORLDS:
@@ -198,29 +176,14 @@ def table_keys(seeds=None, groups=K.GROUPS):
 
 
 def smoke_keys():
-    """The plumbing smoke (scratch only): every kind on seed 0, both worlds, plus the kinds and settings that the
-    official table runs on seeds 10-14 only (the full-log critic and the main setting's learners and actor
-    training), so that every code path runs once at 40 steps. Seeds 10-14 are never touched."""
-    s = SMOKE_SEED
-    out = list(table_keys(seeds=[s], groups=("exploratory",)))
-    extra = [make_key("critic_full", "x", "stall", s)]
-    for kind in LEARNER_KINDS:
-        for world in K.WORLDS:
-            extra.append(make_key(kind, "main", world, s))
-    by_kind = {}
-    for key in out + extra:
-        by_kind.setdefault(key.kind, []).append(key)
-    ordered = []
-    for kind in K.PHASE_KINDS:
-        if kind == "look_confirmatory":
-            continue
-        ordered += by_kind.get(kind, [])
-    return ordered
+    """The plumbing smoke (scratch only): every kind on seed 0, both worlds, with the smoke group's lock and look.
+    The fresh seeds are never touched."""
+    return table_keys(seeds=[SMOKE_SEED], groups=("smoke",))
 
 
-def plan(groups=K.GROUPS, spec="full"):
-    """The phase list of a plan: 'full' (the official table), 'smoke' (plumbing) or 'seeds:<a>,<b>' (a stub run on
-    fewer seeds; never official)."""
+def plan(groups=("fresh",), spec="full"):
+    """The phase list of a plan: 'full' (the official table: the fresh seeds), 'smoke' (plumbing, seed 0) or
+    'seeds:<a>,<b>' (a stub run on the given seeds; never official)."""
     if spec == "full":
         return table_keys(groups=groups)
     if spec == "smoke":
@@ -228,16 +191,16 @@ def plan(groups=K.GROUPS, spec="full"):
     if str(spec).startswith("seeds:"):
         seeds = [int(v) for v in str(spec)[6:].split(",") if v.strip()]
         mine = {K.group_of(s) for s in seeds}
-        return table_keys(seeds=seeds, groups=tuple(g for g in groups if g in mine))
+        return table_keys(seeds=seeds, groups=tuple(g for g in K.GROUPS if g in mine))
     raise Refused(f"refused: unknown plan {spec!r}")
 
 
-SCRATCH_FRESH = "refused: seeds 10-14 run only in the official run (scratch is the plumbing on seed 0)"
+SCRATCH_FRESH = "refused: the fresh seeds run only in the official run (scratch is the plumbing on seed 0)"
 
 
 def check_plan_spec(spec, mode):
     """The official run uses the full plan only; a scratch run is the plumbing smoke on seed 0 only (PREREGISTRATION.md
-    section 8.2), so it never reaches seeds 10-14; a stub run may use any plan."""
+    section 8.2), so it never reaches the fresh seeds; a stub run may use any plan."""
     if mode == "official" and spec != "full":
         raise Refused("refused: the official run uses the full plan only")
     if mode == "scratch" and spec != "smoke":
@@ -247,26 +210,27 @@ def check_plan_spec(spec, mode):
 
 
 def check_key(key, mode="official", spec="full"):
-    """Refuses (Refused) a reserved seed (5-9, in every mode), a seed outside 0-4 and 10-14, a phase of seeds 10-14 or
-    of the confirmatory group in scratch mode, and every key that is not in the plan's table (for example
-    critic.main.stall.s0 in the official table). Returns the key."""
+    """Refuses (Refused) a used seed (every mode), a seed outside this version's seeds, a phase of the fresh seeds or
+    of the fresh group in scratch mode, the smoke seed in official mode, and every key that is not in the plan's
+    table. Returns the key."""
     if key.seed is not None:
-        if int(key.seed) in K.RESERVED:
-            raise Refused(f"refused: seed {key.seed} belongs to version 6/7 (5-9); no near-80 phase touches it")
-        if int(key.seed) not in K.EXPLORATORY + K.CONFIRMATORY:
-            raise Refused(f"refused: seed {key.seed} is not one of this version's seeds (0-4, 10-14)")
+        try:
+            g = K.group_of(key.seed)
+        except ValueError as error:
+            raise Refused(str(error)) from None
+        if mode == "official" and g != "fresh":
+            raise Refused(f"refused: seed {key.seed} is the plumbing's seed; the official run uses the fresh seeds only")
     if mode == "scratch":
-        if key.seed is not None and int(key.seed) in K.CONFIRMATORY:
+        if key.seed is not None and K.group_of(key.seed) == "fresh":
             raise Refused(SCRATCH_FRESH)
-        if key.seed is None and key.group == "confirmatory":
-            raise Refused("refused: the confirmatory group runs only in the official run (scratch is the plumbing on "
-                          "seed 0)")
+        if key.seed is None and key.group == "fresh":
+            raise Refused("refused: the fresh group runs only in the official run (scratch is the plumbing on seed 0)")
+    if mode == "official" and key.seed is None and key.group != "fresh":
+        raise Refused("refused: the official run has the fresh group only")
     if key.kind not in K.PHASE_KINDS:
         raise Refused(f"refused: {key.kind!r} is not a phase kind of the table")
-    if key.setting not in K.SETTINGS + ("band", "x") or key.world not in K.WORLDS + ("x",):
+    if key.setting not in K.SETTINGS + ("x",) or key.world not in K.WORLDS + ("x",):
         raise Refused(f"refused: setting {key.setting!r} or world {key.world!r} is outside the table")
-    if key.setting == "band" and key.kind != "data_band":
-        raise Refused("refused: the setting token 'band' belongs to data_band only")
     check_plan_spec(spec, mode)
     if key not in plan(spec=spec):
         raise Refused(f"refused: {phase_id(key)} is not in the table" + ("" if spec == "full" else f" ({spec})"))
@@ -275,66 +239,40 @@ def check_key(key, mode="official", spec="full"):
 
 # --------------------------------------------------------------------------------------------- needs
 
-def data_key(setting, world, seed):
-    return make_key("data_main", "main", world, seed) if setting == "main" else make_key("data_band", "band", world,
-                                                                                       seed)
-
-
-def look_key(group):
-    return make_key(f"look_{group}", group=group)
+def data_key(world, seed):
+    return make_key("data_main", "main", world, seed)
 
 
 def needs(key, keys=None):
-    """The keys this phase needs (all of them must be done; for the lock and the looks: done, stopped or skipped).
-    keys: the plan (for the group phases); default the full table."""
-    keys = table_keys() if keys is None else keys
+    """The keys this phase needs (all of them must be done; for the lock and the look: done, stopped or skipped).
+    keys: the plan (for the group phases); default the table of the key's group."""
+    keys = table_keys(groups=(key.group,) if key.group else ("fresh",)) if keys is None else keys
     k, st, w, s = key.kind, key.setting, key.world, key.seed
-    if k == "fixed_checks":
-        return []
     if k == "data_main":
-        return [] if s in K.EXPLORATORY else [look_key("exploratory")]
-    if k == "data_band":
-        return [make_key("data_main", "main", w, s)]
+        return []
     if k in ("critic", "critic_second", "clone"):
-        return [data_key(st, w, s)]
+        return [data_key(w, s)]
     if k == "critic_full":
-        return [make_key("data_main", "main", "stall", s)]
+        return [data_key("stall", s)]
     if k == "switch":
         return [make_key("critic_second", st, w, s)]
     if k == "reference_actors":
         out = [make_key("critic", st, w, s), make_key("clone", st, w, s)]
-        if w == "stall" and st in ("near80", "main") and s in K.CONFIRMATORY:
+        if w == "stall":
             out.append(make_key("critic_full", "x", "stall", s))
         return out
-    if k == "v6_band":
-        return [make_key("critic", st, w, s)]
     if k == "policy":
         out = [make_key("switch", st, "stall", s), make_key("switch", st, "no_stall", s), make_key("critic", st, w, s),
                make_key("clone", st, w, s), make_key("reference_actors", st, w, s)]
-        if st == "near80":
-            out.append(make_key("v6_band", st, w, s))
         if w == "no_stall":
             out.append(make_key("policy", st, "stall", s))
         return out
     if k == "lock":
         return [x for x in keys if x.kind == "policy" and x.group == key.group]
     if k == "evaluate":
-        out = [make_key("lock", group=key.group)]
-        if not (st == "main" and s in K.EXPLORATORY):
-            out.append(make_key("policy", st, w, s))
-        else:
-            out.append(make_key("data_main", "main", w, s))
-        return out
-    if k == "readouts":
-        return [make_key("lock", group=key.group), make_key("v6_band", st, w, s)]
-    if k in ("look_exploratory", "look_confirmatory"):
-        g = key.group
-        out = [x for x in keys if x.group == g and x.kind in ("evaluate", "readouts", "data_main", "data_band")]
-        if g == "exploratory":
-            out += [x for x in keys if x.kind == "fixed_checks"]
-        else:
-            out.append(look_key("exploratory"))
-        return out
+        return [make_key("lock", group=key.group), make_key("policy", st, w, s)]
+    if k == "look":
+        return [x for x in keys if x.group == key.group and x.kind in ("evaluate", "data_main", "switch")]
     raise Refused(f"refused: {k!r} has no row in the table")
 
 
@@ -352,17 +290,13 @@ def children(keys):
 # --------------------------------------------------------------------------------------------- time (queue order)
 
 def est_minutes(key):
-    """Rough minutes per phase (queue order only: longest remaining chain first, as version 7)."""
+    """Rough minutes per phase (queue order only: longest remaining chain first, as version 7), from version 8's
+    ledger of the main setting."""
     k = key.kind
     if k == "policy":
-        if key.setting == "random_rows":
-            return 4
-        return 40 if key.world == "stall" else 12
-    if k == "data_main":
-        return 1 if key.seed in K.EXPLORATORY else 3
-    return dict(critic=8, critic_second=8, critic_full=8, clone=2, reference_actors=4, v6_band=5, evaluate=2,
-                readouts=2, data_band=2, fixed_checks=2, switch=1, lock=1, look_exploratory=1,
-                look_confirmatory=1)[k]
+        return 50 if key.world == "stall" else 14
+    return dict(data_main=3, critic=6, critic_second=6, critic_full=6, clone=1, reference_actors=4, evaluate=2,
+                switch=1, lock=1, look=1)[k]
 
 
 def priorities(keys):
@@ -390,15 +324,11 @@ def stage(key):
 def record_rel(key):
     """The phase's final record, relative to the output root."""
     k, st, w, s = key.kind, key.setting, key.world, key.seed
-    if k == "fixed_checks":
-        return K.LAYOUT["fixed"]
     if k == "data_main":
         return K.LAYOUT["data_main"].format(world=w, seed=s)
-    if k == "data_band":
-        return K.LAYOUT["data_band"].format(world=w, seed=s)
     if k == "critic_full":
         return K.LAYOUT["critic_full"].format(seed=s)
-    if k in ("critic", "critic_second", "switch", "clone", "reference_actors", "v6_band"):
+    if k in ("critic", "critic_second", "switch", "clone", "reference_actors"):
         return K.LAYOUT[k].format(setting=st, world=w, seed=s)
     if k == "policy":
         return K.LAYOUT["policy_lock"].format(setting=st, world=w, seed=s)
@@ -406,9 +336,7 @@ def record_rel(key):
         return K.LAYOUT["stage_lock"].format(group=key.group)
     if k == "evaluate":
         return K.LAYOUT["values"].format(setting=st, world=w, seed=s)
-    if k == "readouts":
-        return K.LAYOUT["readouts"].format(setting=st, world=w, seed=s)
-    if k in ("look_exploratory", "look_confirmatory"):
+    if k == "look":
         return K.LAYOUT["look"].format(group=key.group)
     raise Refused(f"refused: {k!r} has no record")
 
@@ -441,13 +369,9 @@ def outputs(key):
     rec = record_rel(key)
     d = str(Path(rec).parent)
     files = [rec]
-    if k == "data_main" and s in K.CONFIRMATORY:
+    if k == "data_main":
         t = K.LAYOUT["train_file"].format(setting="main", world=w, seed=s)
         files += [t, t + ".manifest.json"]
-    if k == "data_band":
-        for setting in BAND_SETTINGS:
-            t = K.LAYOUT["train_file"].format(setting=setting, world=w, seed=s)
-            files += [t, t + ".manifest.json"]
     if k in ("critic", "critic_full"):
         files.append(f"{d}/critic.msgpack")
     if k == "critic_second":
@@ -456,11 +380,9 @@ def outputs(key):
         files.append(f"{d}/clone.msgpack")
     if k == "reference_actors":
         files.append(f"{d}/reference_actors.msgpack")
-    if k == "v6_band":
-        files += [f"{d}/v6_band.msgpack", f"{d}/v6_bank_scores.npz"]
     if k == "policy":
         files += [f"{d}/actors.msgpack", policy_stop_rel(key)]
-    if k in ("look_exploratory", "look_confirmatory"):
+    if k == "look":
         files.append(K.LAYOUT["look_md"].format(group=key.group))
     files.append(stop_rel(key))
     return _with_sidecars(files)
@@ -483,42 +405,30 @@ def done(key, out_root):
     return "missing"
 
 
-def read_look(out_root, group="exploratory"):
+def read_look(out_root, group="fresh"):
     """The look record of a group with a verified sidecar, or None."""
     return LG.ok_record(Path(out_root) / K.LAYOUT["look"].format(group=group))
 
 
-def seed_failures(out_root, seed):
-    """(reason the seed failed for every setting or None, reason it failed for the near-80 settings or None), from
-    its data records: a data_main record of either world with seed_failed_reason fails every setting; a data_band
-    record of either world with seed_failed_reason fails the near-80 and random-rows settings."""
+def seed_failure(out_root, seed):
+    """The reason the seed failed (its data_main record of either world carries seed_failed_reason), or None."""
     root = Path(out_root)
-    main, band = None, None
     for w in K.WORLDS:
         r = LG.ok_record(root / K.LAYOUT["data_main"].format(world=w, seed=seed))
-        if r and r.get("seed_failed_reason") and main is None:
-            main = f"seed {seed} failed the gate's checks in the {K.WORLD_PLAIN[w]}: {r['seed_failed_reason']}"
-        b = LG.ok_record(root / K.LAYOUT["data_band"].format(world=w, seed=seed))
-        if b and b.get("seed_failed_reason") and band is None:
-            band = f"seed {seed} failed a no-training check in the {K.WORLD_PLAIN[w]}: {b['seed_failed_reason']}"
-    return main, band
+        if r and r.get("seed_failed_reason"):
+            return f"seed {seed} failed the gate's checks in the {K.WORLD_PLAIN[w]}: {r['seed_failed_reason']}"
+    return None
 
 
 def rule_skip(key, out_root, keys=None, states=None, look=None, _memo=None):
-    """Why this phase is skipped by rule (or None): a failed seed, a stopped or skipped need (followed through
-    chains of needs that are themselves skipped by rule), or a look that stops the near-80 settings before the fresh
-    seeds. states: {key: state} already known (the runner's), else read from the files."""
+    """Why this phase is skipped by rule (or None): a failed seed, or a stopped or skipped need (followed through
+    chains of needs that are themselves skipped by rule). states: {key: state} already known (the runner's), else
+    read from the files."""
     memo = {} if _memo is None else _memo
-    if key.seed is not None and key.kind not in ("data_main",):
-        main, band = seed_failures(out_root, key.seed)
-        if main:
-            return main
-        if band and key.setting in BAND_SETTINGS and key.kind != "data_band":
-            return band
-    if key.seed in K.CONFIRMATORY and (key.setting in BAND_SETTINGS or key.kind == "data_band"):
-        look = read_look(out_root) if look is None else look
-        if look is not None and look.get("fresh_near80_allowed") is not True:
-            return SKIP_LOOK
+    if key.seed is not None and key.kind != "data_main":
+        why = seed_failure(out_root, key.seed)
+        if why:
+            return why
     if key.kind in LENIENT_KINDS:
         return None
     for d in needs(key, keys):
@@ -559,43 +469,26 @@ def needs_state(key, out_root, keys=None):
 
 # --------------------------------------------------------------------------------------------- admission
 
-def admit(key, approval, look, mode="official"):
-    """(ok, why). Every phase needs the approval facts (approval_check.require_approval's dict). A phase of seeds
-    10-14 (or of the confirmatory group) also needs the exploratory look record: kind 'near80-look-exploratory',
-    the same prereg_sha256 (records of stub runs carry none, so there, and only there, the look's may also be null; a
-    scratch run never reaches seeds 10-14). A near-80 or random-rows phase on seeds 10-14 (and data_band there) needs
-    look['fresh_near80_allowed'] is True; otherwise (False, SKIP_LOOK): the phase is skipped and nothing of it is
-    generated."""
+def admit(key, approval, look=None, mode="official"):
+    """(ok, why). Every phase needs the approval facts (approval_check.require_approval's dict). A fresh seed's
+    phase (or the fresh group's) is refused in scratch mode. Nothing else gates a phase: version 8's exploratory
+    look and its stop rules are gone with the band settings."""
     if not approval:
         return False, "refused: no verified approval (approval_check.require_approval)"
-    if key.group == "confirmatory" and key.kind != "look_exploratory":
-        if mode == "scratch":
-            return False, SCRATCH_FRESH
-        if look is None:
-            return False, "refused: the exploratory look does not exist yet (seeds 10-14 wait for it)"
-        if look.get("kind") != "near80-look-exploratory":
-            return False, "refused: the exploratory look record is not a near-80 exploratory look"
-        allowed = {approval.get("prereg_sha256")} if mode != "stub" else {approval.get("prereg_sha256"), None}
-        if look.get("prereg_sha256") not in allowed or (mode == "official" and look.get("mode") != "official"):
-            return False, "refused: the exploratory look was made under another pre-registration"
-        if key.seed is not None and (key.setting in BAND_SETTINGS or key.kind == "data_band"):
-            if look.get("fresh_near80_allowed") is not True:
-                return False, SKIP_LOOK
+    if key.group == "fresh" and mode == "scratch":
+        return False, SCRATCH_FRESH
     return True, None
 
 
 def is_skip(why):
-    return why == SKIP_LOOK
+    return False
 
 
 def plain_name(key):
     base = K.PHASE_PLAIN[key.kind]
     parts = []
-    if key.setting not in ("x", "band"):
-        parts.append({"main": "main setting", "near80": "near-80 setting", "random_rows": "random-rows setting"}[
-            key.setting])
-    if key.setting == "band":
-        parts.append("near-80 and random-rows settings")
+    if key.setting not in ("x",):
+        parts.append({"main": "main setting"}[key.setting])
     if key.world != "x":
         parts.append(K.WORLD_PLAIN[key.world])
     if key.seed is not None:
