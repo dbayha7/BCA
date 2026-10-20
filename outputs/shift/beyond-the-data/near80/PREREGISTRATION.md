@@ -5,10 +5,10 @@
 No learner, critic or actor has been trained for this version, and nothing has been frozen. This version was built by
 the session on 20 October 2026, after version 8's run on the Framework Desktop ended (19 October), after the check of
 its results (`../near80_results_check/REPORT.md`), and after `DECISION.md` (the same day, revised after three
-independent reviews) fixed every value below. Two items stay open until the freeze and are marked `TODO(...)`: your
-answer to section 16 (`TODO(OWNER: ...)`) and the facts the frozen code computes before approval (`TODO(FREEZE:
-...)`); the freeze step (`code/freeze.py`) refuses to freeze while any such mark, or the status line above, remains.
-Version 8's files stay in this folder as history (section 18).
+independent reviews) fixed every value below. Two items stay open until the freeze and carry a bracketed mark the
+freeze step (`code/freeze.py`) refuses: your answer to section 16 (sections 0 and 16) and the facts the frozen code
+computes before approval (section 4.2, with the redraft count of section 0). The freeze also refuses while the status
+line above says DRAFT. Version 8's files stay in this folder as history (section 18).
 
 **The one question this answers:** on fresh seeds, in the main test's setting (the densest 15% of recorded commands
 removed), does BCA's switched ramp meet step 2's three marks once its two calibration groups are pooled over every
