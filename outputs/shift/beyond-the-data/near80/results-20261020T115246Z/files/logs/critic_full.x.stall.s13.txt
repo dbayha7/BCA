@@ -1,0 +1,45 @@
+2026-10-16T19:03:39Z start: attempt 1 of critic_full.x.stall.s13 on processor 16
+15:03:39 critic_full.x.stall.s13: official -> /home/user/bca/runs/shift_explore/near80; processor [16]; attempt 1
+Traceback (most recent call last):
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/phase_main.py", line 377, in main
+    code = run_phase(a, key, out_root, n, t0)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/phase_main.py", line 286, in run_phase
+    rec = dispatch(run, fresh_path=a.fresh_path)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/phase_main.py", line 240, in dispatch
+    rec = LP.DISPATCH[k.kind](run, ctx)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/learner_phases.py", line 88, in critic_full
+    sd = ctx.seed("stall")
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 539, in seed
+    self._sd[world] = seed_data(self.rep, world, self.out_root, self.run)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 269, in seed_data
+    return FreshSeed(seed, world, rec)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 229, in __init__
+    lg = fresh_log(seed, world, spec, tuple(record["sizes"]), record["stall_slope"])
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 135, in fresh_log
+    return DS.generate(int(seed), world, spec, tuple(sizes), slope)
+  File "/home/user/bca/experiments/shift/dataset.py", line 179, in generate
+    E, L = int(sum(sizes)), physics.length
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+2026-10-19T20:30:22Z start: attempt 2 of critic_full.x.stall.s13 on processor 16
+16:30:23 critic_full.x.stall.s13: official -> /home/user/bca/runs/shift_explore/near80; processor [16]; attempt 2
+16:30:57 stall-aware controller critic rep 13: update 5000/100000, critic loss 0.07415
+16:31:13 stall-aware controller critic rep 13: update 10000/100000, critic loss 0.1307
+16:31:28 stall-aware controller critic rep 13: update 15000/100000, critic loss 0.153
+16:31:43 stall-aware controller critic rep 13: update 20000/100000, critic loss 0.1473
+16:31:58 stall-aware controller critic rep 13: update 25000/100000, critic loss 0.1386
+16:32:13 stall-aware controller critic rep 13: update 30000/100000, critic loss 0.1316
+16:32:28 stall-aware controller critic rep 13: update 35000/100000, critic loss 0.1308
+16:32:43 stall-aware controller critic rep 13: update 40000/100000, critic loss 0.1297
+16:32:58 stall-aware controller critic rep 13: update 45000/100000, critic loss 0.1292
+16:33:14 stall-aware controller critic rep 13: update 50000/100000, critic loss 0.1272
+16:33:29 stall-aware controller critic rep 13: update 55000/100000, critic loss 0.1271
+16:33:44 stall-aware controller critic rep 13: update 60000/100000, critic loss 0.1266
+16:33:59 stall-aware controller critic rep 13: update 65000/100000, critic loss 0.1249
+16:34:15 stall-aware controller critic rep 13: update 70000/100000, critic loss 0.1245
+16:34:32 stall-aware controller critic rep 13: update 75000/100000, critic loss 0.1251
+16:34:48 stall-aware controller critic rep 13: update 80000/100000, critic loss 0.1242
+16:35:05 stall-aware controller critic rep 13: update 85000/100000, critic loss 0.1224
+16:35:21 stall-aware controller critic rep 13: update 90000/100000, critic loss 0.1236
+16:35:37 stall-aware controller critic rep 13: update 95000/100000, critic loss 0.1224
+16:35:53 stall-aware controller critic rep 13: update 100000/100000, critic loss 0.1219
+16:35:53 critic_full.x.stall.s13: done (337s)

@@ -1,0 +1,583 @@
+{
+ "about": "the room check's lock: every arm trained and even caution matched in strength to the placed arm, written before any return is computed",
+ "actors_sha256": "d2b72d27e59e9c1458083284c02cc04e8f995977868f9e2404d1814e68d9d58e",
+ "code_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/shift_iw/__init__.py": "fcf4193aba1b22f438a8004409f6b7e4f688ce98407db7f58c070b26380353c2",
+  "experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+  "experiments/shift_iw/coverage.py": "4d8b7b70f2ea17a7092d207b1c48f34c78ee2d8738c3b91fecbb5eddd92480e1",
+  "experiments/shift_iw/data.py": "1965071f660f9e698f77da15b0b14c0b7288feb71f119f49c843f93df5906e67",
+  "experiments/shift_iw/launch.sh": "19586f0348db903f5db7fe75d2c7b749e7daeb12bce36d143e8ca9893e604166",
+  "experiments/shift_iw/learners_iw.py": "38633ab06fa8078d703bce1fd4330b07e1d09a32f5ae883438902ac685dd7f3c",
+  "experiments/shift_iw/lower_edge.py": "49835423dbb9923946ab61801e2a038964431592ca27ef68fe9d4fc2d593a697",
+  "experiments/shift_iw/run.py": "9e603b305ca249a66e147df703cbc2ecc7fab261627d04226c8bfe32b45e6e24",
+  "experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "finished_at": "2026-10-17T01:43:57+0000",
+ "inputs_sha256": {
+  "medium-expert/host/gap/seed1/record.json": "e4154255f2f0c4d52cb98b491a331188f95d148a7b257254abd3b603c103745a"
+ },
+ "kind": "shift-iw-room",
+ "machine": "vm",
+ "quality": "medium-expert",
+ "room": {
+  "arms": [
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "none",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "harm",
+    "name": "placed",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.1",
+    "source": null,
+    "value": 1.1
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.25",
+    "source": null,
+    "value": 1.25
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.5",
+    "source": null,
+    "value": 1.5
+   }
+  ],
+  "chunk_metrics": [
+   [
+    [
+     2.6764589278697968,
+     -40.972081082344054,
+     0.06123190883547067,
+     0.1764589269272983
+    ],
+    [
+     2.691313512086868,
+     -41.09124359512329,
+     0.061054963168688116,
+     0.1913135113529861
+    ],
+    [
+     2.6886075130701066,
+     -41.05925752067566,
+     0.06110190862044692,
+     0.18860751347243787
+    ],
+    [
+     2.7067988752126695,
+     -41.176849812507626,
+     0.060927517658099534,
+     0.20679887703061103
+    ],
+    [
+     2.7371971104741095,
+     -41.34386452198029,
+     0.060681653968058524,
+     0.23719711089506745
+    ]
+   ],
+   [
+    [
+     2.6730746193528176,
+     -40.95534338092804,
+     0.061253338884562254,
+     0.17307462199777365
+    ],
+    [
+     2.697740843474865,
+     -41.13959238147736,
+     0.06097872848343104,
+     0.19774084302783013
+    ],
+    [
+     2.684677788972855,
+     -41.045075746536256,
+     0.061119343588128684,
+     0.18467778988182545
+    ],
+    [
+     2.7020985840559004,
+     -41.16537977123261,
+     0.06094068345893174,
+     0.2020985859706998
+    ],
+    [
+     2.731223394691944,
+     -41.33665916824341,
+     0.06068828151840717,
+     0.2312233956567943
+    ]
+   ],
+   [
+    [
+     2.6697852923870085,
+     -40.97757120990753,
+     0.06122615991625935,
+     0.16978529512509705
+    ],
+    [
+     2.6911233896017075,
+     -41.147838731765745,
+     0.060972736712545154,
+     0.19112338818237185
+    ],
+    [
+     2.6809894641041754,
+     -41.068459648132325,
+     0.06109060728270561,
+     0.18098946504667401
+    ],
+    [
+     2.6978107815384864,
+     -41.19023525810242,
+     0.06091000603977591,
+     0.1978107794262469
+    ],
+    [
+     2.7259481490254402,
+     -41.36352873420715,
+     0.06065496169403196,
+     0.22594814796745777
+    ]
+   ],
+   [
+    [
+     2.6663320187330246,
+     -40.96310048007965,
+     0.06124256749078631,
+     0.16633201893046498
+    ],
+    [
+     2.6866144993901253,
+     -41.13171398258209,
+     0.06099141899775714,
+     0.18661450076475739
+    ],
+    [
+     2.6771357449293136,
+     -41.05467977333069,
+     0.06110590133816004,
+     0.17713574755936862
+    ],
+    [
+     2.6933646582365034,
+     -41.1776641330719,
+     0.06092331996560097,
+     0.19336465806141495
+    ],
+    [
+     2.720476821899414,
+     -41.352805809021,
+     0.06066538497246802,
+     0.2204768192768097
+    ]
+   ],
+   [
+    [
+     2.663484812259674,
+     -40.978673265457154,
+     0.06122477783076465,
+     0.16348481431417167
+    ],
+    [
+     2.6840182825922967,
+     -41.16158985424042,
+     0.06095254082325846,
+     0.18401828299090267
+    ],
+    [
+     2.6739265350699424,
+     -41.07108735084534,
+     0.0610869883261621,
+     0.17392653768509628
+    ],
+    [
+     2.689629580080509,
+     -41.19518290615082,
+     0.06090297418553382,
+     0.1896295799612999
+    ],
+    [
+     2.7159412959218026,
+     -41.37097797775269,
+     0.06064430668298155,
+     0.21594129599258305
+    ]
+   ]
+  ],
+  "clone": {
+   "actor_sha256": "f1125961a66d6c86cade0768d9f874d411650a9fab96e0c7a6c821fe088ead2a",
+   "data": {
+    "bank_rows": 891,
+    "eval_states": 5000,
+    "obs_mean": [
+     -0.517266035079956,
+     0.18179382383823395,
+     -0.2512016296386719,
+     0.04940491542220116,
+     -0.2105993628501892,
+     0.05695788189768791,
+     -0.09799186885356903,
+     0.038340698927640915,
+     -0.11217416077852249,
+     0.05454574525356293,
+     0.40786030888557434,
+     -0.009141189977526665,
+     0.002980816178023815
+    ],
+    "obs_std": [
+     0.6780218482017517,
+     0.5041162967681885,
+     0.5101606845855713,
+     0.48853570222854614,
+     0.43384647369384766,
+     0.41660699248313904,
+     0.3760041296482086,
+     0.37811893224716187,
+     0.2746943235397339,
+     0.27446186542510986,
+     0.24683347344398499,
+     0.1853245198726654,
+     0.18625690042972565
+    ],
+    "removal": "gap",
+    "rep": 1,
+    "rows": 45372,
+    "sha256": {
+     "bank": "3686ca05d1e7795cb85dabe912c28a172b2d04e36dc8360a04efbbc5a0613b16",
+     "bank_rows": "3597e1f51e67b2b42e93a8401cd1a14ba1e5a9c78e78dc32427153991b3e544e",
+     "eval_rows": "9b392ff571f54001c530c3f57e8c8b32d6b903b0f5386322d51b88f64abb0ae9",
+     "normalization": "2508a8248d7d594117747f2ff61bf80b97aeacf886db35b9c2c5f15beb39e710",
+     "rows": "d4935627ae7fd507cd0bc459782d3f1e1c30277d5bc4ee0c1c63c68fa7acda4a",
+     "train": "587be2203a8058c5781e6f27e73f2cbbfec56d7c6783a2a963c1f965f6fb20f3"
+    },
+    "world": "stall"
+   },
+   "failed": false,
+   "kind": "shift-clone",
+   "losses": [
+    0.17118698358535767,
+    0.15862128138542175,
+    0.14782166481018066,
+    0.1391710489988327
+   ],
+   "rep": 1,
+   "rows_sha256": "38c240badfcf2e2765ab4e857a4b8ee8dc10df77a67674defba7ecd97a718684",
+   "steps": 20000
+  },
+  "dose_history": [
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.1000001430511475,
+     "min": 1.100000023841858,
+     "sd": 1.1920928955078125e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4981337785720825,
+     "mean": 1.1158690452575684,
+     "min": 1.0,
+     "sd": 0.16806291043758392
+    },
+    "step": 0
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.1000001430511475,
+     "min": 1.100000023841858,
+     "sd": 1.1920928955078125e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.495942234992981,
+     "mean": 1.1902742385864258,
+     "min": 1.0,
+     "sd": 0.17989614605903625
+    },
+    "step": 4000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.1000001430511475,
+     "min": 1.100000023841858,
+     "sd": 1.1920928955078125e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4972597360610962,
+     "mean": 1.178766131401062,
+     "min": 1.0,
+     "sd": 0.18104103207588196
+    },
+    "step": 8000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.1000001430511475,
+     "min": 1.100000023841858,
+     "sd": 1.1920928955078125e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4976667165756226,
+     "mean": 1.1757763624191284,
+     "min": 1.0,
+     "sd": 0.18075315654277802
+    },
+    "step": 12000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.1000001430511475,
+     "min": 1.100000023841858,
+     "sd": 1.1920928955078125e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4960532188415527,
+     "mean": 1.1814210414886475,
+     "min": 1.0,
+     "sd": 0.18019181489944458
+    },
+    "step": 16000
+   }
+  ],
+  "failed": {
+   "even_x1.1": false,
+   "even_x1.25": false,
+   "even_x1.5": false,
+   "none": false,
+   "placed": false
+  },
+  "kind": "shift-iw-room",
+  "match": {
+   "S": 0.0970894996883818,
+   "bracket": [
+    2,
+    3
+   ],
+   "converged": true,
+   "evaluations": 4,
+   "glq_match_sha256": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+   "history": [
+    [
+     0.323984656846726,
+     0.09319466275661839
+    ],
+    [
+     0.40248270574443695,
+     0.10848082452712202
+    ],
+    [
+     0.36110693888009576,
+     0.1023102890161719
+    ],
+    [
+     0.3420425524376163,
+     0.0970894996883818
+    ]
+   ],
+   "knob": 0.3420425524376163,
+   "ladder_S": [
+    0.0,
+    0.0450644825891203,
+    0.07975369692396704,
+    0.12363954294043873
+   ],
+   "ladder_knobs": [
+    0.0,
+    0.10000000000000009,
+    0.25,
+    0.5
+   ],
+   "ladder_multiplier": null,
+   "monotone": true,
+   "multiplier": 1.3420425524376163,
+   "reachable": true,
+   "relative_error": 0.009593848666987093,
+   "rounds": 4,
+   "target": 0.09616688910750944,
+   "tol": 0.01
+  },
+  "metric_names": [
+   "actor_loss",
+   "q_mean",
+   "lambda",
+   "bc"
+  ],
+  "names": [
+   "even_x1.1",
+   "even_x1.25",
+   "even_x1.5",
+   "matched_even",
+   "none",
+   "placed"
+  ],
+  "oracle_calls": 5,
+  "rep": 1,
+  "rows_sha256": "01656d384532135c6cd73efc524a10fe6ad6962c2f40fc0bb7372dbb256200ee",
+  "start_sha256": "f1125961a66d6c86cade0768d9f874d411650a9fab96e0c7a6c821fe088ead2a",
+  "strengths": {
+   "even_x1.1": 0.0450644825891203,
+   "even_x1.25": 0.07975369692396704,
+   "even_x1.5": 0.12363954294043873,
+   "matched_even": 0.0970894996883818,
+   "none": 0.0,
+   "placed": 0.09616688910750944
+  }
+ },
+ "seconds": 1297.9397210739999,
+ "seed": 1,
+ "software": {
+  "flax": "0.10.7",
+  "jax": "0.6.2",
+  "numpy": "2.2.6",
+  "optax": "0.2.8",
+  "python": "3.10.20",
+  "scipy": "1.15.3"
+ },
+ "spec_sha256": "a71af9bd2e51740e481337198e63ec04196b631e3bcd729d3eb2073a589ce0b6",
+ "stage": "room",
+ "status": "finished"
+}

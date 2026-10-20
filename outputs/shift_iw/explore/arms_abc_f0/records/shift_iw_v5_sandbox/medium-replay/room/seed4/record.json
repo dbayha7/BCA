@@ -1,0 +1,571 @@
+{
+ "about": "the room check's lock: every arm trained and even caution matched in strength to the placed arm, written before any return is computed",
+ "actors_sha256": "56b3cb2ad4a6d6ef48f52e220777a94da97c2080120697be08e284dc1a482ce2",
+ "code_sha256": {
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/shift_iw/__init__.py": "fcf4193aba1b22f438a8004409f6b7e4f688ce98407db7f58c070b26380353c2",
+  "experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+  "experiments/shift_iw/coverage.py": "4d8b7b70f2ea17a7092d207b1c48f34c78ee2d8738c3b91fecbb5eddd92480e1",
+  "experiments/shift_iw/data.py": "1965071f660f9e698f77da15b0b14c0b7288feb71f119f49c843f93df5906e67",
+  "experiments/shift_iw/launch.sh": "19586f0348db903f5db7fe75d2c7b749e7daeb12bce36d143e8ca9893e604166",
+  "experiments/shift_iw/learners_iw.py": "38633ab06fa8078d703bce1fd4330b07e1d09a32f5ae883438902ac685dd7f3c",
+  "experiments/shift_iw/lower_edge.py": "49835423dbb9923946ab61801e2a038964431592ca27ef68fe9d4fc2d593a697",
+  "experiments/shift_iw/run.py": "9e603b305ca249a66e147df703cbc2ecc7fab261627d04226c8bfe32b45e6e24",
+  "experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "finished_at": "2026-10-17T01:19:56+0000",
+ "inputs_sha256": {
+  "medium-replay/host/gap/seed4/record.json": "a71a6581f56ca8d0f011b65ba048d11c10fba4b01413afa5568de65854bce689"
+ },
+ "kind": "shift-iw-room",
+ "machine": "vm",
+ "quality": "medium-replay",
+ "room": {
+  "arms": [
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "none",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "harm",
+    "name": "placed",
+    "source": null,
+    "value": 1.0
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.1",
+    "source": null,
+    "value": 1.1
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.25",
+    "source": null,
+    "value": 1.25
+   },
+   {
+    "critic": 0,
+    "index": 0,
+    "kind": "even",
+    "name": "even_x1.5",
+    "source": null,
+    "value": 1.5
+   }
+  ],
+  "chunk_metrics": [
+   [
+    [
+     2.777019780576229,
+     -119.69577222061157,
+     0.020928495333530008,
+     0.2770197800025344
+    ],
+    [
+     2.8149972622394563,
+     -119.9167539730072,
+     0.020889989487361163,
+     0.3149972646608949
+    ],
+    [
+     2.8002073924541473,
+     -119.90360501480103,
+     0.020892205596435814,
+     0.30020739018172027
+    ],
+    [
+     2.8352494839429854,
+     -120.17101998138428,
+     0.020845704501029103,
+     0.33524948366731405
+    ],
+    [
+     2.894247358739376,
+     -120.52625278663635,
+     0.020784265710506587,
+     0.39424735695123675
+    ]
+   ],
+   [
+    [
+     2.7716628950834274,
+     -119.78806227684021,
+     0.020912504103500398,
+     0.27166289322823284
+    ],
+    [
+     2.8203685795068743,
+     -120.3293082408905,
+     0.0208183434731327,
+     0.3203685795217752
+    ],
+    [
+     2.7942090210318566,
+     -120.00013718605041,
+     0.02087552643381059,
+     0.2942090209312737
+    ],
+    [
+     2.8283169734477998,
+     -120.27248243141175,
+     0.020828240210656077,
+     0.328316973157227
+    ],
+    [
+     2.8857417426109313,
+     -120.63442599487304,
+     0.020765743829775602,
+     0.38574174127727745
+    ]
+   ],
+   [
+    [
+     2.7662940980792046,
+     -119.65895744895936,
+     0.020932777223642916,
+     0.26629410092160105
+    ],
+    [
+     2.807589452803135,
+     -120.06811713409424,
+     0.020861442581750454,
+     0.30758945202827453
+    ],
+    [
+     2.7882421682476997,
+     -119.87347523117066,
+     0.02089530788687989,
+     0.2882421683631837
+    ],
+    [
+     2.821447763681412,
+     -120.14936898040771,
+     0.020847325274255125,
+     0.32144776056706903
+    ],
+    [
+     2.877403379499912,
+     -120.51542723274231,
+     0.020784014079719783,
+     0.37740337853133676
+    ]
+   ],
+   [
+    [
+     2.761691976547241,
+     -119.7745419254303,
+     0.02091337565658614,
+     0.2616919767484069
+    ],
+    [
+     2.8037879031300545,
+     -120.21535356712342,
+     0.020836657122243196,
+     0.30378790095448494
+    ],
+    [
+     2.783173042833805,
+     -119.98953876686096,
+     0.02087588509032503,
+     0.28317304292321205
+    ],
+    [
+     2.8156787593960764,
+     -120.26624850273133,
+     0.02082783095072955,
+     0.315678756557405
+    ],
+    [
+     2.8704567320942878,
+     -120.63366650009155,
+     0.02076439080340788,
+     0.3704567300230265
+    ]
+   ],
+   [
+    [
+     2.757645242989063,
+     -119.76964315605163,
+     0.020912726763635873,
+     0.2576452424302697
+    ],
+    [
+     2.7989173021912577,
+     -120.23214480781556,
+     0.020832229827530684,
+     0.2989173009991646
+    ],
+    [
+     2.7786897406578066,
+     -119.98647710418702,
+     0.020874915753025563,
+     0.278689741615206
+    ],
+    [
+     2.810554069340229,
+     -120.2646207485199,
+     0.02082662269519642,
+     0.31055407033115623
+    ],
+    [
+     2.8642789197564125,
+     -120.63369922065735,
+     0.02076290514273569,
+     0.364278918787837
+    ]
+   ]
+  ],
+  "clone": {
+   "actor_sha256": "a41302f19a9e371885805d833254bb7b4f402ab0f43bdfbe40720bd70f33f14c",
+   "data": {
+    "bank_rows": 970,
+    "eval_states": 5000,
+    "obs_mean": [
+     -0.9477640986442566,
+     0.3317066729068756,
+     -0.5055930018424988,
+     0.10903144627809525,
+     -0.31935134530067444,
+     0.08882534503936768,
+     -0.17831315100193024,
+     0.07273316383361816,
+     -0.13957087695598602,
+     0.0678979903459549,
+     0.4239332377910614,
+     -0.0019123749807476997,
+     0.0001357563742203638
+    ],
+    "obs_std": [
+     0.8731196522712708,
+     0.7021887302398682,
+     0.7167112231254578,
+     0.7266793847084045,
+     0.6193429827690125,
+     0.6024221181869507,
+     0.515846312046051,
+     0.5202065706253052,
+     0.3488120138645172,
+     0.35575157403945923,
+     0.24735316634178162,
+     0.18164564669132233,
+     0.18205012381076813
+    ],
+    "removal": "gap",
+    "rep": 4,
+    "rows": 48677,
+    "sha256": {
+     "bank": "53865d859e16241aa0e6672477291cc98515261add6ee61fcec3d7cca70cd526",
+     "bank_rows": "1e974b322b637e90c2b2d6872d7055bde3f80ddba35e0b88f6c3ea7344ccb492",
+     "eval_rows": "d77df69513277c46888c12457ed8d6edefef946e23f6c83ed21564e15b42e721",
+     "normalization": "041fcd56d025f1150790fce5420c72c3a7f36e26642877ec2ae872751cc82cf2",
+     "rows": "f392de6b9e52567af2b10f1c7b62c28081a3d9af4855e303c9a63414d2b08c55",
+     "train": "95427fbb6fc226c06271d372168eda3710542a7fc35893aaf7dd70bb666aba70"
+    },
+    "world": "stall"
+   },
+   "failed": false,
+   "kind": "shift-clone",
+   "losses": [
+    0.2967154383659363,
+    0.2814883887767792,
+    0.2676781117916107,
+    0.25628113746643066
+   ],
+   "rep": 4,
+   "rows_sha256": "3b4f806c0a15dd4611bcc146180b176d2115bb4bea6f9072680f9d934d15aeb6",
+   "steps": 20000
+  },
+  "dose_history": [
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4979276657104492,
+     "mean": 1.1720255613327026,
+     "min": 1.0,
+     "sd": 0.1967306137084961
+    },
+    "step": 0
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4930047988891602,
+     "mean": 1.203176736831665,
+     "min": 1.0,
+     "sd": 0.19628754258155823
+    },
+    "step": 4000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4937818050384521,
+     "mean": 1.1844148635864258,
+     "min": 1.0,
+     "sd": 0.19885753095149994
+    },
+    "step": 8000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4927947521209717,
+     "mean": 1.1902457475662231,
+     "min": 1.0,
+     "sd": 0.19869619607925415
+    },
+    "step": 12000
+   },
+   {
+    "even_x1.1": {
+     "max": 1.100000023841858,
+     "mean": 1.100000262260437,
+     "min": 1.100000023841858,
+     "sd": 2.384185791015625e-07
+    },
+    "even_x1.25": {
+     "max": 1.25,
+     "mean": 1.25,
+     "min": 1.25,
+     "sd": 0.0
+    },
+    "even_x1.5": {
+     "max": 1.5,
+     "mean": 1.5,
+     "min": 1.5,
+     "sd": 0.0
+    },
+    "none": {
+     "max": 1.0,
+     "mean": 1.0,
+     "min": 1.0,
+     "sd": 0.0
+    },
+    "placed": {
+     "max": 1.4953213930130005,
+     "mean": 1.190233826637268,
+     "min": 1.0,
+     "sd": 0.19797293841838837
+    },
+    "step": 16000
+   }
+  ],
+  "failed": {
+   "even_x1.1": false,
+   "even_x1.25": false,
+   "even_x1.5": false,
+   "none": false,
+   "placed": false
+  },
+  "kind": "shift-iw-room",
+  "match": {
+   "S": 0.1120207438395594,
+   "bracket": [
+    2,
+    3
+   ],
+   "converged": true,
+   "evaluations": 1,
+   "glq_match_sha256": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+   "history": [
+    [
+     0.4799409964471131,
+     0.1120207438395594
+    ]
+   ],
+   "knob": 0.4799409964471131,
+   "ladder_S": [
+    0.0,
+    0.04199898297772633,
+    0.07331192885429383,
+    0.11414382111550814
+   ],
+   "ladder_knobs": [
+    0.0,
+    0.10000000000000009,
+    0.25,
+    0.5
+   ],
+   "ladder_multiplier": null,
+   "monotone": true,
+   "multiplier": 1.479940996447113,
+   "reachable": true,
+   "relative_error": 0.0025857011391741125,
+   "rounds": 1,
+   "target": 0.11173183869695866,
+   "tol": 0.01
+  },
+  "metric_names": [
+   "actor_loss",
+   "q_mean",
+   "lambda",
+   "bc"
+  ],
+  "names": [
+   "even_x1.1",
+   "even_x1.25",
+   "even_x1.5",
+   "matched_even",
+   "none",
+   "placed"
+  ],
+  "oracle_calls": 5,
+  "rep": 4,
+  "rows_sha256": "f3241876b9e2a6ac7dc95b7d10c0007df1042e3e964a65f5616b414c3292985e",
+  "start_sha256": "a41302f19a9e371885805d833254bb7b4f402ab0f43bdfbe40720bd70f33f14c",
+  "strengths": {
+   "even_x1.1": 0.04199898297772633,
+   "even_x1.25": 0.07331192885429383,
+   "even_x1.5": 0.11414382111550814,
+   "matched_even": 0.1120207438395594,
+   "none": 0.0,
+   "placed": 0.11173183869695866
+  }
+ },
+ "seconds": 1168.662434754,
+ "seed": 4,
+ "software": {
+  "flax": "0.10.7",
+  "jax": "0.6.2",
+  "numpy": "2.2.6",
+  "optax": "0.2.8",
+  "python": "3.10.20",
+  "scipy": "1.15.3"
+ },
+ "spec_sha256": "a71af9bd2e51740e481337198e63ec04196b631e3bcd729d3eb2073a589ce0b6",
+ "stage": "room",
+ "status": "finished"
+}
