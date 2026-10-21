@@ -1,0 +1,461 @@
+{
+  "as_of_utc": "2026-10-20T23:07:59.810285+00:00",
+  "fingerprint": "d3538fd0b39698361e3318666e28d8316c37df9175769d5a2cb54225e5e2f71a",
+  "code_changed": false,
+  "method": {
+    "central": "median observed v4 100k process wall/CPU by learner and setup; fixed two-worker order simulated per unit; grouped full-lane CPU costs",
+    "stress": "1.5 times worst observed matched run and full-lane costs, including seed4 slowdown; scenario, not a statistical upper bound",
+    "proxies": "room uses same learner alone; unseen sham uses standard BCA (conservative); medium costs extrapolate same learners from medium-expert",
+    "wall_eta": "GPU union estimate plus 5-10 minutes for resumed checks and evaluation tail; lanes ordinarily overlap training"
+  },
+  "stop_evidence": {
+    "record_sha256": "3f7085ac9c898325ccd032c39c11b4b45b317fc251ad01dcc8e46f37da1b6454",
+    "steady_ms": 7.129559999999999,
+    "stage1_reference_ms": 3.101952754668628,
+    "compile_after_first": 0.0,
+    "last_10_median_ms": 3.4827399999999997,
+    "first_30_median_ms": 7.270040000000001
+  },
+  "samples": {
+    "iql/alone": [
+      {
+        "seed": 0,
+        "wall": 58.1384562610001,
+        "cpu": 56.098818,
+        "steady_ms": 0.48235999999999996
+      },
+      {
+        "seed": 1,
+        "wall": 60.163836488000015,
+        "cpu": 55.129987,
+        "steady_ms": 0.49067999999999995
+      },
+      {
+        "seed": 2,
+        "wall": 66.70857243299997,
+        "cpu": 54.032511,
+        "steady_ms": 0.48448
+      },
+      {
+        "seed": 3,
+        "wall": 56.66623593899931,
+        "cpu": 45.980175,
+        "steady_ms": 0.45803999999999995
+      },
+      {
+        "seed": 4,
+        "wall": 60.17569800900037,
+        "cpu": 56.363526,
+        "steady_ms": 0.49996
+      }
+    ],
+    "iql/iw": [
+      {
+        "seed": 0,
+        "wall": 432.41190171300013,
+        "cpu": 447.59079099999997,
+        "steady_ms": 3.6718
+      },
+      {
+        "seed": 1,
+        "wall": 469.00113716999977,
+        "cpu": 478.22150800000003,
+        "steady_ms": 4.198919999999999
+      },
+      {
+        "seed": 2,
+        "wall": 550.2376881569999,
+        "cpu": 559.097513,
+        "steady_ms": 4.23892
+      },
+      {
+        "seed": 3,
+        "wall": 430.89872723499957,
+        "cpu": 439.897199,
+        "steady_ms": 3.6808400000000003
+      },
+      {
+        "seed": 4,
+        "wall": 747.9970588360011,
+        "cpu": 765.233446,
+        "steady_ms": 5.7314799999999995
+      }
+    ],
+    "iql/sham_alone": [
+      {
+        "seed": 0,
+        "wall": 122.17868269099995,
+        "cpu": 125.191145,
+        "steady_ms": 1.09748
+      }
+    ],
+    "iql/standard": [
+      {
+        "seed": 0,
+        "wall": 202.5347064980001,
+        "cpu": 208.472489,
+        "steady_ms": 1.59928
+      },
+      {
+        "seed": 1,
+        "wall": 208.48138081000025,
+        "cpu": 211.09284000000002,
+        "steady_ms": 1.8986
+      },
+      {
+        "seed": 2,
+        "wall": 237.07257294200008,
+        "cpu": 239.73535099999998,
+        "steady_ms": 1.72744
+      },
+      {
+        "seed": 3,
+        "wall": 198.47257306099982,
+        "cpu": 201.72507199999998,
+        "steady_ms": 1.6543199999999998
+      },
+      {
+        "seed": 4,
+        "wall": 207.01738102299987,
+        "cpu": 210.023576,
+        "steady_ms": 1.8714400000000002
+      }
+    ],
+    "rebrac/alone": [
+      {
+        "seed": 0,
+        "wall": 232.91107843600025,
+        "cpu": 238.83038800000003,
+        "steady_ms": 2.34684
+      },
+      {
+        "seed": 1,
+        "wall": 234.44013006800014,
+        "cpu": 237.358727,
+        "steady_ms": 2.3634399999999998
+      },
+      {
+        "seed": 2,
+        "wall": 310.95444084300016,
+        "cpu": 313.444666,
+        "steady_ms": 3.12688
+      },
+      {
+        "seed": 3,
+        "wall": 232.9136090969996,
+        "cpu": 236.280644,
+        "steady_ms": 2.3464
+      },
+      {
+        "seed": 4,
+        "wall": 598.6083195009996,
+        "cpu": 609.734514,
+        "steady_ms": 7.129559999999999
+      }
+    ],
+    "rebrac/iw": [
+      {
+        "seed": 0,
+        "wall": 548.042538225,
+        "cpu": 567.499777,
+        "steady_ms": 2.7993200000000003
+      },
+      {
+        "seed": 1,
+        "wall": 696.017912674,
+        "cpu": 702.415712,
+        "steady_ms": 7.257840000000001
+      },
+      {
+        "seed": 2,
+        "wall": 601.3090092399998,
+        "cpu": 614.886132,
+        "steady_ms": 4.4158
+      },
+      {
+        "seed": 3,
+        "wall": 531.01380195,
+        "cpu": 544.3843039999999,
+        "steady_ms": 5.1844
+      }
+    ],
+    "rebrac/standard": [
+      {
+        "seed": 0,
+        "wall": 490.44539536599996,
+        "cpu": 507.39478999999994,
+        "steady_ms": 4.40636
+      },
+      {
+        "seed": 1,
+        "wall": 652.4732366799999,
+        "cpu": 661.3677789999999,
+        "steady_ms": 5.77616
+      },
+      {
+        "seed": 2,
+        "wall": 607.1033219430001,
+        "cpu": 617.477436,
+        "steady_ms": 5.62368
+      },
+      {
+        "seed": 3,
+        "wall": 493.5203039300004,
+        "cpu": 505.637794,
+        "steady_ms": 4.75412
+      }
+    ],
+    "td3_bc/alone": [
+      {
+        "seed": 0,
+        "wall": 96.67323695900018,
+        "cpu": 96.372609,
+        "steady_ms": 0.9210800000000001
+      },
+      {
+        "seed": 1,
+        "wall": 103.28899450599965,
+        "cpu": 100.663222,
+        "steady_ms": 0.9298
+      },
+      {
+        "seed": 2,
+        "wall": 106.2572232120001,
+        "cpu": 93.831009,
+        "steady_ms": 0.9430400000000001
+      },
+      {
+        "seed": 3,
+        "wall": 100.76509020899994,
+        "cpu": 97.242489,
+        "steady_ms": 0.9156
+      },
+      {
+        "seed": 4,
+        "wall": 99.20734472700042,
+        "cpu": 97.092206,
+        "steady_ms": 0.92264
+      }
+    ],
+    "td3_bc/iw": [
+      {
+        "seed": 0,
+        "wall": 333.208825037,
+        "cpu": 344.741339,
+        "steady_ms": 2.08844
+      },
+      {
+        "seed": 1,
+        "wall": 345.4215555239998,
+        "cpu": 348.589972,
+        "steady_ms": 2.26004
+      },
+      {
+        "seed": 2,
+        "wall": 407.5308982640008,
+        "cpu": 414.97085300000003,
+        "steady_ms": 2.64344
+      },
+      {
+        "seed": 3,
+        "wall": 334.72721133699997,
+        "cpu": 339.637555,
+        "steady_ms": 2.2629200000000003
+      },
+      {
+        "seed": 4,
+        "wall": 327.2610110830001,
+        "cpu": 333.639381,
+        "steady_ms": 2.36444
+      }
+    ],
+    "td3_bc/standard": [
+      {
+        "seed": 0,
+        "wall": 243.94476291700016,
+        "cpu": 251.461839,
+        "steady_ms": 2.22416
+      },
+      {
+        "seed": 1,
+        "wall": 257.75665051900023,
+        "cpu": 261.629955,
+        "steady_ms": 2.43432
+      },
+      {
+        "seed": 2,
+        "wall": 280.64708337499997,
+        "cpu": 282.267859,
+        "steady_ms": 2.3844
+      },
+      {
+        "seed": 3,
+        "wall": 243.5288949400001,
+        "cpu": 247.34778,
+        "steady_ms": 2.22964
+      },
+      {
+        "seed": 4,
+        "wall": 244.51511889100038,
+        "cpu": 248.353528,
+        "steady_ms": 2.33432
+      }
+    ]
+  },
+  "lane_costs": {
+    "s7": {
+      "n": 102,
+      "median": 12.327589999999999,
+      "max": 22.278101
+    },
+    "score": {
+      "n": 78,
+      "median": 9.4507915,
+      "max": 20.237337
+    },
+    "viewer": {
+      "n": 6,
+      "median": 17.907044499999998,
+      "max": 23.674552
+    },
+    "coverage": {
+      "n": 27,
+      "median": 12.278321,
+      "max": 20.560621
+    }
+  },
+  "qualities": {
+    "medium-expert": {
+      "planned": 56,
+      "trained": 44,
+      "remaining": 12,
+      "remaining_runs": [
+        "stage2/medium-expert/seed4/rebrac-standard",
+        "stage2/medium-expert/seed4/rebrac-iw",
+        "stage2/medium-expert/seed0/iql-room",
+        "stage2/medium-expert/seed0/rebrac-room",
+        "stage2/medium-expert/seed1/iql-room",
+        "stage2/medium-expert/seed1/rebrac-room",
+        "stage2/medium-expert/seed2/iql-room",
+        "stage2/medium-expert/seed2/rebrac-room",
+        "stage2/medium-expert/seed3/iql-room",
+        "stage2/medium-expert/seed3/rebrac-room",
+        "stage2/medium-expert/seed4/iql-room",
+        "stage2/medium-expert/seed4/rebrac-room"
+      ],
+      "pending_lanes": 39,
+      "pending_lanes_for_trained": [
+        "stage2/medium-expert/seed4/iql-iw/score-50000",
+        "stage2/medium-expert/seed4/iql-iw/score-100000",
+        "stage2/medium-expert/seed4/iql-iw/s7",
+        "stage2/medium-expert/seed4/iql-iw/s7-50000",
+        "stage2/medium-expert/seed4/iql-iw/coverage-95000",
+        "stage2/medium-expert/seed4/rebrac-alone/score-50000",
+        "stage2/medium-expert/seed4/rebrac-alone/score-100000",
+        "stage2/medium-expert/seed4/rebrac-alone/s7",
+        "stage2/medium-expert/seed4/rebrac-alone/s7-50000"
+      ],
+      "spent": {
+        "card_hours": 2.287743066695278,
+        "processor_hours": 4.963762717222219
+      },
+      "caps": {
+        "card_hours": 14.0,
+        "processor_hours": 21.0,
+        "covers": "stages 0, 1 and 2a (approval item 10)"
+      },
+      "scenarios": {
+        "central": {
+          "remaining_card_hours": 0.3884232880312501,
+          "remaining_processor_hours": 0.8398635520833332,
+          "total_card_hours": 2.676166354726528,
+          "total_processor_hours": 5.8036262693055525,
+          "within_caps": true
+        },
+        "stress": {
+          "remaining_card_hours": 1.093858340017916,
+          "remaining_processor_hours": 2.2920107491666664,
+          "total_card_hours": 3.381601406713194,
+          "total_processor_hours": 7.255773466388886,
+          "within_caps": true
+        }
+      }
+    },
+    "medium": {
+      "planned": 42,
+      "trained": 0,
+      "remaining": 42,
+      "remaining_runs": [
+        "stage2/medium/seed0/td3_bc-sham_alone",
+        "stage2/medium/seed0/iql-sham_alone",
+        "stage2/medium/seed0/td3_bc-alone",
+        "stage2/medium/seed0/td3_bc-standard",
+        "stage2/medium/seed0/td3_bc-iw",
+        "stage2/medium/seed0/iql-alone",
+        "stage2/medium/seed0/iql-standard",
+        "stage2/medium/seed0/iql-iw",
+        "stage2/medium/seed1/td3_bc-alone",
+        "stage2/medium/seed1/td3_bc-standard",
+        "stage2/medium/seed1/td3_bc-iw",
+        "stage2/medium/seed1/iql-alone",
+        "stage2/medium/seed1/iql-standard",
+        "stage2/medium/seed1/iql-iw",
+        "stage2/medium/seed2/td3_bc-alone",
+        "stage2/medium/seed2/td3_bc-standard",
+        "stage2/medium/seed2/td3_bc-iw",
+        "stage2/medium/seed2/iql-alone",
+        "stage2/medium/seed2/iql-standard",
+        "stage2/medium/seed2/iql-iw",
+        "stage2/medium/seed3/td3_bc-alone",
+        "stage2/medium/seed3/td3_bc-standard",
+        "stage2/medium/seed3/td3_bc-iw",
+        "stage2/medium/seed3/iql-alone",
+        "stage2/medium/seed3/iql-standard",
+        "stage2/medium/seed3/iql-iw",
+        "stage2/medium/seed4/td3_bc-alone",
+        "stage2/medium/seed4/td3_bc-standard",
+        "stage2/medium/seed4/td3_bc-iw",
+        "stage2/medium/seed4/iql-alone",
+        "stage2/medium/seed4/iql-standard",
+        "stage2/medium/seed4/iql-iw",
+        "stage2/medium/seed0/td3_bc-room",
+        "stage2/medium/seed0/iql-room",
+        "stage2/medium/seed1/td3_bc-room",
+        "stage2/medium/seed1/iql-room",
+        "stage2/medium/seed2/td3_bc-room",
+        "stage2/medium/seed2/iql-room",
+        "stage2/medium/seed3/td3_bc-room",
+        "stage2/medium/seed3/iql-room",
+        "stage2/medium/seed4/td3_bc-room",
+        "stage2/medium/seed4/iql-room"
+      ],
+      "pending_lanes": 164,
+      "pending_lanes_for_trained": [],
+      "spent": {
+        "card_hours": 0.0,
+        "processor_hours": 0.0
+      },
+      "caps": {
+        "card_hours": 12.0,
+        "processor_hours": 16.0,
+        "covers": "stage 2b (approval item 10, a separate yes)"
+      },
+      "scenarios": {
+        "central": {
+          "remaining_card_hours": 1.4415570155761106,
+          "remaining_processor_hours": 2.815008206111111,
+          "total_card_hours": 1.4415570155761106,
+          "total_processor_hours": 2.815008206111111,
+          "within_caps": true
+        },
+        "stress": {
+          "remaining_card_hours": 2.934067416432087,
+          "remaining_processor_hours": 5.812644865416662,
+          "total_card_hours": 2.934067416432087,
+          "total_processor_hours": 5.812644865416662,
+          "within_caps": true
+        }
+      }
+    }
+  }
+}

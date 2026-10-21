@@ -1,0 +1,542 @@
+{
+  "schema_version": 1,
+  "comparison_goal": "Within this frozen continuous ThrusterChain task, compare native TD3+BC and BCA under critical-region retention; five matched trained replicates per arm/retention.",
+  "generalization_claim": "within_tasks",
+  "experiments": [
+    {
+      "id": "full/td3_bc",
+      "algorithm": "native TD3+BC",
+      "source": {
+        "repository": "https://github.com/dbayha7/BCA.git",
+        "commit": "b007052a2494dc651ac00469fa9e922b287cd1e5 + isolated uncommitted suite, source hashes recorded",
+        "entrypoint": "experiments/thrusterchain_diagnostics/full_run.py; authorized Titan transfer wrapper for eight assigned jobs",
+        "resolved_config_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "composition": "Deterministic TD3+BC actor, twin critic/target networks, delayed actor, raw reward and finite-horizon terminal mask; unweighted BC loss"
+      },
+      "dataset": {
+        "id": "ThrusterChain observed regime H100 full",
+        "version": "core_20261020T2250Z, five data seeds 1101-1105",
+        "sha256": "0a15bc204b7c30b2c208ced4bd160e2df0facff7931409a8088e5c6928ff0cb0",
+        "transitions": 448000,
+        "per_replica_learner_hashes": [
+          "2d79d17ab26b4f8dc9042ab16016c26357d03cffb49a2cd44de7867b561a7501",
+          "56cac55c7405fd10cce5aa9e99ee37af1cd4dee5a187bf60b54eb5ccbe8c66a5",
+          "911fb5c2e186a2185194a6ba6b3bf2b984b788070f0521f0121a603790deb7d8",
+          "17418e931066d3b55e9db54aedd283990184c8408aa5370629d87e4afb02c0c1",
+          "922579cf0a642f6d9d654001e23c0024af87aef794bb450e22418d995683befa"
+        ]
+      },
+      "training": {
+        "actor_updates": 250000,
+        "critic_updates": 500000,
+        "batch_size": 256,
+        "sampled_transitions": 128000000,
+        "wall_seconds": 2643.0180653000134,
+        "device": "CPU; Zeus seed 2101, Zeus seed 2102, Zeus seed 2103, Zeus seed 2104, Zeus seed 2105",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Frozen 100000-update terminal policy; no online selection. 50000 midpoint evaluated descriptively, never used for checkpoint or hyperparameter selection. Strict offline describes this frozen training/selection run; development history is incompletely counted.",
+        "search_space_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "candidates_trained": 5,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": null,
+        "report_tasks": [
+          "ThrusterChain observed regime H100"
+        ],
+        "tuning_datasets": null,
+        "report_datasets": [
+          "1101/full",
+          "1102/full",
+          "1103/full",
+          "1104/full",
+          "1105/full"
+        ],
+        "training_seeds": [
+          2101,
+          2102,
+          2103,
+          2104,
+          2105
+        ],
+        "selection_eval_seeds": [],
+        "report_eval_seeds": [
+          82001
+        ],
+        "holdout_policy": "Final bank fixed before training, no checkpoint selection; validation72001 descriptive. Model-specific Q queries92001 and calibration evaluation102001 separately recorded. Prior development feedback not fully enumerated."
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 100000 critic updates",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": "finite H100 undiscounted native task reward",
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "full/bca",
+      "algorithm": "native TD3+BC plus residual-calibrated BC multiplier",
+      "source": {
+        "repository": "https://github.com/dbayha7/BCA.git",
+        "commit": "b007052a2494dc651ac00469fa9e922b287cd1e5 + isolated uncommitted suite, source hashes recorded",
+        "entrypoint": "experiments/thrusterchain_diagnostics/full_run.py; authorized Titan transfer wrapper for eight assigned jobs",
+        "resolved_config_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "composition": "Deterministic TD3+BC actor, twin critic/target networks, delayed actor, raw reward and finite-horizon terminal mask; native detached bounded BCA multiplier on BC loss, no value-credit refusal"
+      },
+      "dataset": {
+        "id": "ThrusterChain observed regime H100 full",
+        "version": "core_20261020T2250Z, five data seeds 1101-1105",
+        "sha256": "0a15bc204b7c30b2c208ced4bd160e2df0facff7931409a8088e5c6928ff0cb0",
+        "transitions": 448000,
+        "per_replica_learner_hashes": [
+          "2d79d17ab26b4f8dc9042ab16016c26357d03cffb49a2cd44de7867b561a7501",
+          "56cac55c7405fd10cce5aa9e99ee37af1cd4dee5a187bf60b54eb5ccbe8c66a5",
+          "911fb5c2e186a2185194a6ba6b3bf2b984b788070f0521f0121a603790deb7d8",
+          "17418e931066d3b55e9db54aedd283990184c8408aa5370629d87e4afb02c0c1",
+          "922579cf0a642f6d9d654001e23c0024af87aef794bb450e22418d995683befa"
+        ]
+      },
+      "training": {
+        "actor_updates": 250000,
+        "critic_updates": 500000,
+        "batch_size": 256,
+        "sampled_transitions": 128000000,
+        "wall_seconds": 2417.8293853519426,
+        "device": "CPU; Zeus seed 2101, Titan seed 2102, Titan seed 2103, Titan seed 2104, Titan seed 2105",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Frozen 100000-update terminal policy; no online selection. 50000 midpoint evaluated descriptively, never used for checkpoint or hyperparameter selection. Strict offline describes this frozen training/selection run; development history is incompletely counted.",
+        "search_space_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "candidates_trained": 5,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": null,
+        "report_tasks": [
+          "ThrusterChain observed regime H100"
+        ],
+        "tuning_datasets": null,
+        "report_datasets": [
+          "1101/full",
+          "1102/full",
+          "1103/full",
+          "1104/full",
+          "1105/full"
+        ],
+        "training_seeds": [
+          2101,
+          2102,
+          2103,
+          2104,
+          2105
+        ],
+        "selection_eval_seeds": [],
+        "report_eval_seeds": [
+          82001
+        ],
+        "holdout_policy": "Final bank fixed before training, no checkpoint selection; validation72001 descriptive. Model-specific Q queries92001 and calibration evaluation102001 separately recorded. Prior development feedback not fully enumerated."
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 100000 critic updates",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": "finite H100 undiscounted native task reward",
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "rare/td3_bc",
+      "algorithm": "native TD3+BC",
+      "source": {
+        "repository": "https://github.com/dbayha7/BCA.git",
+        "commit": "b007052a2494dc651ac00469fa9e922b287cd1e5 + isolated uncommitted suite, source hashes recorded",
+        "entrypoint": "experiments/thrusterchain_diagnostics/full_run.py; authorized Titan transfer wrapper for eight assigned jobs",
+        "resolved_config_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "composition": "Deterministic TD3+BC actor, twin critic/target networks, delayed actor, raw reward and finite-horizon terminal mask; unweighted BC loss"
+      },
+      "dataset": {
+        "id": "ThrusterChain observed regime H100 rare",
+        "version": "core_20261020T2250Z, five data seeds 1101-1105",
+        "sha256": "c530d7475eee7deaefb2a9aa045dc358b98bf03fa3d087c7292d1d524ce3a65d",
+        "transitions": 387888,
+        "per_replica_learner_hashes": [
+          "1dbd7dd879626322592ecb51bd025b0be53f69d652d25b7d393fb5a922159105",
+          "5848063b972ecbb54905acc116c99ca638632d6b7d73cde75645fcc9394f5789",
+          "cf32a3fa8df5cd7b532854a47952131563109c5df6d27bf833d58945371c798f",
+          "1ebb48685ef888d8d77919c220d26867602e3a5c5b1a78431bae211dac9a56fa",
+          "56fa509b9c4bb8fa6e3fb9d0ae30c2b847cfd49d6a6c003c950bac5c1d408a58"
+        ]
+      },
+      "training": {
+        "actor_updates": 250000,
+        "critic_updates": 500000,
+        "batch_size": 256,
+        "sampled_transitions": 128000000,
+        "wall_seconds": 2584.982974200044,
+        "device": "CPU; Zeus seed 2101, Zeus seed 2102, Zeus seed 2103, Zeus seed 2104, Zeus seed 2105",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Frozen 100000-update terminal policy; no online selection. 50000 midpoint evaluated descriptively, never used for checkpoint or hyperparameter selection. Strict offline describes this frozen training/selection run; development history is incompletely counted.",
+        "search_space_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "candidates_trained": 5,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": null,
+        "report_tasks": [
+          "ThrusterChain observed regime H100"
+        ],
+        "tuning_datasets": null,
+        "report_datasets": [
+          "1101/rare",
+          "1102/rare",
+          "1103/rare",
+          "1104/rare",
+          "1105/rare"
+        ],
+        "training_seeds": [
+          2101,
+          2102,
+          2103,
+          2104,
+          2105
+        ],
+        "selection_eval_seeds": [],
+        "report_eval_seeds": [
+          82001
+        ],
+        "holdout_policy": "Final bank fixed before training, no checkpoint selection; validation72001 descriptive. Model-specific Q queries92001 and calibration evaluation102001 separately recorded. Prior development feedback not fully enumerated."
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 100000 critic updates",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": "finite H100 undiscounted native task reward",
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "rare/bca",
+      "algorithm": "native TD3+BC plus residual-calibrated BC multiplier",
+      "source": {
+        "repository": "https://github.com/dbayha7/BCA.git",
+        "commit": "b007052a2494dc651ac00469fa9e922b287cd1e5 + isolated uncommitted suite, source hashes recorded",
+        "entrypoint": "experiments/thrusterchain_diagnostics/full_run.py; authorized Titan transfer wrapper for eight assigned jobs",
+        "resolved_config_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "composition": "Deterministic TD3+BC actor, twin critic/target networks, delayed actor, raw reward and finite-horizon terminal mask; native detached bounded BCA multiplier on BC loss, no value-credit refusal"
+      },
+      "dataset": {
+        "id": "ThrusterChain observed regime H100 rare",
+        "version": "core_20261020T2250Z, five data seeds 1101-1105",
+        "sha256": "c530d7475eee7deaefb2a9aa045dc358b98bf03fa3d087c7292d1d524ce3a65d",
+        "transitions": 387888,
+        "per_replica_learner_hashes": [
+          "1dbd7dd879626322592ecb51bd025b0be53f69d652d25b7d393fb5a922159105",
+          "5848063b972ecbb54905acc116c99ca638632d6b7d73cde75645fcc9394f5789",
+          "cf32a3fa8df5cd7b532854a47952131563109c5df6d27bf833d58945371c798f",
+          "1ebb48685ef888d8d77919c220d26867602e3a5c5b1a78431bae211dac9a56fa",
+          "56fa509b9c4bb8fa6e3fb9d0ae30c2b847cfd49d6a6c003c950bac5c1d408a58"
+        ]
+      },
+      "training": {
+        "actor_updates": 250000,
+        "critic_updates": 500000,
+        "batch_size": 256,
+        "sampled_transitions": 128000000,
+        "wall_seconds": 3039.934824899945,
+        "device": "CPU; Zeus seed 2101, Zeus seed 2102, Zeus seed 2103, Zeus seed 2104, Zeus seed 2105",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Frozen 100000-update terminal policy; no online selection. 50000 midpoint evaluated descriptively, never used for checkpoint or hyperparameter selection. Strict offline describes this frozen training/selection run; development history is incompletely counted.",
+        "search_space_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "candidates_trained": 5,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": null,
+        "report_tasks": [
+          "ThrusterChain observed regime H100"
+        ],
+        "tuning_datasets": null,
+        "report_datasets": [
+          "1101/rare",
+          "1102/rare",
+          "1103/rare",
+          "1104/rare",
+          "1105/rare"
+        ],
+        "training_seeds": [
+          2101,
+          2102,
+          2103,
+          2104,
+          2105
+        ],
+        "selection_eval_seeds": [],
+        "report_eval_seeds": [
+          82001
+        ],
+        "holdout_policy": "Final bank fixed before training, no checkpoint selection; validation72001 descriptive. Model-specific Q queries92001 and calibration evaluation102001 separately recorded. Prior development feedback not fully enumerated."
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 100000 critic updates",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": "finite H100 undiscounted native task reward",
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "zero/td3_bc",
+      "algorithm": "native TD3+BC",
+      "source": {
+        "repository": "https://github.com/dbayha7/BCA.git",
+        "commit": "b007052a2494dc651ac00469fa9e922b287cd1e5 + isolated uncommitted suite, source hashes recorded",
+        "entrypoint": "experiments/thrusterchain_diagnostics/full_run.py; authorized Titan transfer wrapper for eight assigned jobs",
+        "resolved_config_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "composition": "Deterministic TD3+BC actor, twin critic/target networks, delayed actor, raw reward and finite-horizon terminal mask; unweighted BC loss"
+      },
+      "dataset": {
+        "id": "ThrusterChain observed regime H100 zero",
+        "version": "core_20261020T2250Z, five data seeds 1101-1105",
+        "sha256": "2e991a4a55bd3b7688e2628a7ce2308ab6aa67b2baddd77c3e95a2590f5c8753",
+        "transitions": 384602,
+        "per_replica_learner_hashes": [
+          "c59ff52b65dcd1e5326265e83ebb5e3d1ef610f628317bfc5586ad9d28b6e1ea",
+          "354d5f1d8cdd441751c90cba14604e891889f6fecd655fc1928721ed8caf7de8",
+          "28182f574005466c0860e1b9d6a1643b699557e889a0809d07ef7f9ec120834b",
+          "8fae66926531464231698cf57a1622105de8a3083c136e1e49e534ed0edf3777",
+          "3fbf9d6a849f022113d6e6512f021daa53820aef69b32fbf4cd32e7c9534023a"
+        ]
+      },
+      "training": {
+        "actor_updates": 250000,
+        "critic_updates": 500000,
+        "batch_size": 256,
+        "sampled_transitions": 128000000,
+        "wall_seconds": 2490.8094329680316,
+        "device": "CPU; Zeus seed 2101, Titan seed 2102, Titan seed 2103, Titan seed 2104, Titan seed 2105",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Frozen 100000-update terminal policy; no online selection. 50000 midpoint evaluated descriptively, never used for checkpoint or hyperparameter selection. Strict offline describes this frozen training/selection run; development history is incompletely counted.",
+        "search_space_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "candidates_trained": 5,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": null,
+        "report_tasks": [
+          "ThrusterChain observed regime H100"
+        ],
+        "tuning_datasets": null,
+        "report_datasets": [
+          "1101/zero",
+          "1102/zero",
+          "1103/zero",
+          "1104/zero",
+          "1105/zero"
+        ],
+        "training_seeds": [
+          2101,
+          2102,
+          2103,
+          2104,
+          2105
+        ],
+        "selection_eval_seeds": [],
+        "report_eval_seeds": [
+          82001
+        ],
+        "holdout_policy": "Final bank fixed before training, no checkpoint selection; validation72001 descriptive. Model-specific Q queries92001 and calibration evaluation102001 separately recorded. Prior development feedback not fully enumerated."
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 100000 critic updates",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": "finite H100 undiscounted native task reward",
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "zero/bca",
+      "algorithm": "native TD3+BC plus residual-calibrated BC multiplier",
+      "source": {
+        "repository": "https://github.com/dbayha7/BCA.git",
+        "commit": "b007052a2494dc651ac00469fa9e922b287cd1e5 + isolated uncommitted suite, source hashes recorded",
+        "entrypoint": "experiments/thrusterchain_diagnostics/full_run.py; authorized Titan transfer wrapper for eight assigned jobs",
+        "resolved_config_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "composition": "Deterministic TD3+BC actor, twin critic/target networks, delayed actor, raw reward and finite-horizon terminal mask; native detached bounded BCA multiplier on BC loss, no value-credit refusal"
+      },
+      "dataset": {
+        "id": "ThrusterChain observed regime H100 zero",
+        "version": "core_20261020T2250Z, five data seeds 1101-1105",
+        "sha256": "2e991a4a55bd3b7688e2628a7ce2308ab6aa67b2baddd77c3e95a2590f5c8753",
+        "transitions": 384602,
+        "per_replica_learner_hashes": [
+          "c59ff52b65dcd1e5326265e83ebb5e3d1ef610f628317bfc5586ad9d28b6e1ea",
+          "354d5f1d8cdd441751c90cba14604e891889f6fecd655fc1928721ed8caf7de8",
+          "28182f574005466c0860e1b9d6a1643b699557e889a0809d07ef7f9ec120834b",
+          "8fae66926531464231698cf57a1622105de8a3083c136e1e49e534ed0edf3777",
+          "3fbf9d6a849f022113d6e6512f021daa53820aef69b32fbf4cd32e7c9534023a"
+        ]
+      },
+      "training": {
+        "actor_updates": 250000,
+        "critic_updates": 500000,
+        "batch_size": 256,
+        "sampled_transitions": 128000000,
+        "wall_seconds": 3176.569905099983,
+        "device": "CPU; Zeus seed 2101, Zeus seed 2102, Zeus seed 2103, Zeus seed 2104, Zeus seed 2105",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Frozen 100000-update terminal policy; no online selection. 50000 midpoint evaluated descriptively, never used for checkpoint or hyperparameter selection. Strict offline describes this frozen training/selection run; development history is incompletely counted.",
+        "search_space_sha256": "b26924fa127cdb001ae1e1233056e8fc6a871921f29bb58986b8f967660f017e",
+        "candidates_trained": 5,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": null,
+        "report_tasks": [
+          "ThrusterChain observed regime H100"
+        ],
+        "tuning_datasets": null,
+        "report_datasets": [
+          "1101/zero",
+          "1102/zero",
+          "1103/zero",
+          "1104/zero",
+          "1105/zero"
+        ],
+        "training_seeds": [
+          2101,
+          2102,
+          2103,
+          2104,
+          2105
+        ],
+        "selection_eval_seeds": [],
+        "report_eval_seeds": [
+          82001
+        ],
+        "holdout_policy": "Final bank fixed before training, no checkpoint selection; validation72001 descriptive. Model-specific Q queries92001 and calibration evaluation102001 separately recorded. Prior development feedback not fully enumerated."
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 100000 critic updates",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": "finite H100 undiscounted native task reward",
+          "clip": false
+        }
+      }
+    }
+  ],
+  "accounting": "Each experiment entry combines five independent trained replicas. Update/draw/wall-time counts are totals over the five. Sampled transitions counts critic minibatch draws, including repeats; actor/calibrator reuse does not create new source records. BCA additionally reuses its reserved 128-row bank at 18 refreshes per seed, 11520 score evaluations per five-seed condition. Final evaluation steps exclude separately recorded midpoint and designed-query diagnostics."
+}

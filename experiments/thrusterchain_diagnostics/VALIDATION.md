@@ -1,0 +1,19 @@
+# Implementation validation — Zeus, 20 October 2026
+
+The delivered suite is additive to BCA commit `b007052a2494dc651ac00469fa9e922b287cd1e5`. No learner training, online policy selection, budget top-ups, publication, merge, or external sharing occurred. GPT-6 Astra agents with Ultra reasoning implemented and independently reviewed the components.
+
+**50 tests passed, zero skipped**, including genuine imports of the authoritative legacy physics through its existing dependency checks. The test transcript is `artifacts/verification/tests.txt`. The continuous adapter agrees bitwise with legacy matrices, thrust, batched/scalar dynamics and rewards; its frozen matrix and source hashes are recorded. Tests cover finite kernel normalization, Bellman/occupancy identities, simulator agreement, remaining-time observations, terminal bootstrap masks, nested retention, support gaps, full hidden-log equality, rare probes, metric edge cases, explicit refusal fallback, and refusal to overwrite prior outputs.
+
+The final reproducible demonstration is `artifacts/smoke_release_20261020/report.json`, with its configuration, computational source hashes, separate learner exports, and evaluator artifacts. Earlier `smoke_20261020` and `smoke_verified_20261020` development records remain in the task staging workspace and are excluded from the released package. Only the release folder is the final contract/example. None are historical trained-method results.
+
+For the declared **single deterministic high-current start** and 100-step undiscounted objective, the stall and monotone QP returns are respectively −596.322852909255 and −349.96802948135485. Numerical Frank–Wolfe gaps are below 1e−10 and replay errors below 1e−10. These certify fixed-start numerical optimization to the reported tolerance, not population expectations. The same finite-horizon LQR command capped at the knee versus capped by regime returns −762.8068362702845 versus −432.0700512717281 in the monotone witness.
+
+For the companion's declared critical query (time 0, position 1.5, high load), optimal-continuation Q of the negative full command minus the negative knee command is −1.2741470926780458 in stall and +0.5937927508058731 in monotone. This local contrast does not assert global dominance on its coarse action grid.
+
+The zero-probe paired-world certificate checks the complete observable kernel on logging support and the coupled complete/retained logs are identical. The separate rare-probe run reports exact probabilities of encountering a differing kernel, not a guarantee of learning to distinguish the worlds. Finite trajectory critical counts are 19, 1, 0 under full/rare/zero retention; continuous trajectory counts are 438, 20, 0. These are realized counts under declared seeds, distinct from population support.
+
+The original attachment is retained byte-for-byte under `reference/ThrusterChain_10_20_1.html` (SHA-256 `4d9f64b8309a5780aa6b72868482dd45be9460a90f3738fed90dd25a2ec78039`). The guide builder preserves historical anchors, scripts/data blocks, and embedded assets, and adds an explorer backed by the finite oracle artifacts. Static guide/JavaScript checks are recorded under `artifacts/verification`.
+
+**Browser limitation:** the browser automation tool returned “Browser is not available: iab,” and inventory contained no browsers or applications. Therefore actual rendering, navigation in a browser, and browser console errors were not verified. Static parsing or DOM unit checks do not replace this check.
+
+Deferred with intent: confirmatory TD3+BC/IQL/CQL/ReBRAC/BCA training, statistical comparisons across independent training seeds, continuous population-density estimation, heat/delayed-damage dynamics, and novelty/effectiveness claims. No additional dynamics-shift track is represented as context reweighting.

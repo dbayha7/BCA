@@ -1,0 +1,33 @@
+{
+  "arrays_sha256": "9338df3b77c83c89fbb4ffa86f8ca82d168cdcd990a1c42af00b3bbba321281d",
+  "averaging": "equal context empirical mean over frozen independent starts; not analytic population expectation",
+  "context_order": [
+    "stall_low",
+    "stall_high",
+    "monotone_low",
+    "monotone_high"
+  ],
+  "deployment": "float32 observations and commands; clipped [-1,1]; float64 actual continuous.dynamics",
+  "failure_rule": "any abs(position state[0:10:2])>3 at pre/post state; event only, episode continues to H",
+  "file": "bank.npz",
+  "file_sha256": "069b21b443bec2d71f7f7857372906eb63be2d27b8982fb882bf77bc7047adbe",
+  "objective": {
+    "gamma": 1.0,
+    "horizon": 100,
+    "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))",
+    "terminal_bootstrap": false,
+    "terminal_reward": 0.0
+  },
+  "per_context": 20,
+  "purpose": "evaluation only; never normalization, fitting, calibration, selection or restart",
+  "rows": 80,
+  "schema": "thrusterchain-training-start-bank-v1",
+  "seed": 72001,
+  "seed_sequence": [
+    72001,
+    2026102002,
+    0
+  ],
+  "split": "validation",
+  "start_law": "independent U[-.5,.5]^10; fixed current .3/1.1; wave amplitude .2, uniform phase"
+}

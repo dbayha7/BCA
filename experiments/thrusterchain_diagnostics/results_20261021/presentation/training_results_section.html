@@ -1,0 +1,187 @@
+<style>
+  #training-results .tr-filter { display:flex; flex-wrap:wrap; gap:12px; }
+  #training-results .tr-filter label { display:flex; flex-direction:column; gap:3px; font-weight:600; }
+  #training-results select { font:inherit; padding:6px; color:var(--ink); background:var(--surface); border:1px solid var(--rule-strong); border-radius:5px; }
+  #training-results .tr-wide { max-width:100%; }
+  #training-results .table-wrap { overflow-x:auto; margin:16px 0; }
+  #training-results .table-wrap table { min-width:650px; width:100%; }
+  #training-results td { overflow-wrap:anywhere; }
+  #training-results td.n { overflow-wrap:normal; }
+  #training-results details pre { font-size:12px; }
+  #training-results .tr-stage { border:1px solid var(--rule); border-radius:10px; padding:18px; margin:20px 0; background:var(--surface); }
+  #training-results .tr-stage h4 { margin-top:0; }
+  #training-results .tr-code { counter-reset:stage-line; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--surface-alt, #f1f3f5); padding:16px; }
+  #training-results .tr-code span { display:block; padding-left:3em; text-indent:-3em; }
+  #training-results .tr-code b { display:inline-block; width:2.6em; color:#486e92; }
+</style>
+<section id="training-results" aria-labelledby="training-results-heading">
+  <h2 id="training-results-heading">BCA stage verification and continuous training results</h2>
+  $status
+  <p>The organizing question is whether each stage of the algorithm does what it is intended to do, and what
+    its output permits us to conclude. A working formula is not a coverage guarantee; coverage is not proof of
+    a sensible penalty; a sensible penalty is not proof of policy benefit. The numbered modules below are a
+    teaching and testing map, not official native module boundaries.</p>
+  <p><a href="#tr-stage-map">Stage map and labeled pseudocode</a> · <a href="#tr-penalty-alignment">Penalty/error debugging cases</a> · <a href="#tr-comparison">Five-replicate training results</a> · <a href="#tr-provenance">Execution and source records</a></p>
+  $stage_audit
+  $penalty_alignment
+  $headline
+  <p>This section reports the separately authorized continuous TD3+BC comparison. The preserved
+    <a href="#diagnostics-suite">diagnostics release</a> describes implementation checks and finite-model examples;
+    its statements that no method had been trained refer to that earlier release. The historical experiments,
+    lesson, saved actors and numerical results elsewhere in this file retain their original scope.</p>
+
+  <h3 id="tr-scope">What was trained, and what is being compared</h3>
+  <p>The core compares the repository's native TD3+BC host with its native TD3+BC+BCA variant on continuous
+    ThrusterChain. There are five independent data/optimization replicates, three retention conditions and two
+    arms: 30 planned jobs. This is the task-specific BCA objective at the predeclared 100,000-update budget,
+    not every possible BCA formulation. Both actuator regimes and both load levels are present in each training distribution.
+    These are real neural learner runs, distinct from the finite companion's enumerated dynamic-programming
+    smoke results. Other host algorithms, context-frequency shifts and placement ablations are outside this core.</p>
+  <p>The objective is raw undiscounted reward over 100 steps, with zero terminal continuation. An observation
+    has the 13 physical coordinates, the observed episode-fixed regime and remaining-time fraction. Network
+    arithmetic and deployed observations/actions are float32; the common plant executes in float64. The horizon
+    mask stops the Bellman target even though the physical environment reports a time-limit truncation.</p>
+  $budget
+  <p>The terminal 100,000-update checkpoint is the primary result. The 50,000-update checkpoint is descriptive;
+    it is not selected by return. No evaluation transitions enter replay, calibration or normalization. There is
+    no online policy-selection budget, outcome-based restart, early stopping, hyperparameter search or data top-up.
+    A matched number of host updates does not mean matched computation: BCA adds scale fitting and refresh work.</p>
+
+  <h3 id="tr-comparison">Paired results across five trained replicates</h3>
+  <p>Each cell starts from a policy's mean over the same frozen start bank, then compares matched methods within
+    a trained replicate. The table reports the mean and sample standard deviation of BCA-minus-TD3+BC differences
+    across all five trained replicates. A positive difference favors BCA for that condition. The exploratory
+    95% paired-t intervals use 4 degrees of freedom, condition on the shared evaluation banks, and are unadjusted
+    for the many retention/context comparisons. With five replicates they should be read cautiously, especially
+    where host and arm are confounded. An incomplete pair remains visible, and five-replicate
+    aggregates are withheld unless all five pairs are present.</p>
+  $comparisons
+  $plot
+  <p class="note">The replication unit is the trained replicate, not an evaluation rollout. The final bank has
+    100 starts per regime/load context, 400 in total, shared across methods and replicates. These bank means are
+    sample estimates of the declared continuous-start distribution, not exact population expectations. Pooling
+    gives each of the four contexts equal weight and can conceal gains and losses in different regimes.</p>
+
+  <h3 id="tr-jobs">Every planned job, including failures and refusals</h3>
+  $jobs
+  <p class="note">Accepted updates and native optimizer counters are read from each saved manifest. A training
+    refusal or failure is not silently dropped. “Complete run” means that the planned terminal records and required
+    evaluations are accounted for; it does not mean every learner succeeded. A dash means unavailable or absent,
+    not zero. Training seconds are the adapter's recorded elapsed training time, not CPU core-hours.</p>
+
+  <h3 id="tr-policy">Return, regret, failure and action use</h3>
+  <div class="tr-filter">
+    <label>Retention <select id="tr-retention-filter"><option value="all">All conditions</option><option value="full">Full</option><option value="rare">Rare</option><option value="zero">Zero</option></select></label>
+    <label>Context <select id="tr-context-filter"><option value="pooled">Pooled</option><option value="stall_low">Stall / low load</option><option value="stall_high">Stall / high load</option><option value="monotone_low">Monotone / low load</option><option value="monotone_high">Monotone / high load</option><option value="all">All contexts</option></select></label>
+  </div>
+  <p id="tr-filter-count" class="note" aria-live="polite">All rows are available without JavaScript.</p>
+  $policy
+  <p>Failure is an absolute position coordinate above 3 at any pre-step or post-step state, or an incomplete/nonfinite
+    rollout. It is measured without early termination; finite rollouts continue to step 100. Above-knee frequency
+    and critical-region frequency describe executed actions and visits, not categorical behavior support.</p>
+  $oracle
+  <p>Regret is reported as numerical lower/upper bounds relative to a constrained continuous QP at each shared
+    start. Its Frank–Wolfe gap and replay error are numerical checks, not interval arithmetic or symbolic exactness.
+    Averages of these fixed-start bounds do not certify the continuous population optimum.</p>
+
+  <h3 id="tr-controls">Fixed controls on the same banks</h3>
+  $controls
+  <p>These are <b>untrained model-based controls</b>: they use the known dynamics' finite-horizon LQR gains and
+    apply the stated action cap. They are not data-matched learned baselines, and their known-model information
+    prevents a claim of equal information or learning fairness. The fixed-knee cap tests indiscriminate exclusion of high commands. The regime-aware cap permits useful
+    monotone-regime commands while respecting the stall knee. These controls need no fitting and are evaluated
+    even when a learned job fails. They are neither trained-method replicates nor the constrained optimal policy.</p>
+
+  <h3 id="tr-data">Retained data and the reserved calibration bank</h3>
+  <p>Each replicate generates 1,024 source episodes of 100 steps, exactly 256 in each regime/load context, with
+    randomized order. Physical starts and action draws are independent across episodes conditional on the balanced
+    context assignment; the sequence of contexts is not an i.i.d. mixture draw. A seeded permutation reserves the
+    same 128 whole episode IDs before retention, leaving 896 episode IDs for optimization in both methods.</p>
+  <p>The behavior chooses commands from five atoms per coordinate. Its center is the nearest atom to the
+    knee-clipped 0.6-scaled finite-horizon LQR command; each coordinate samples the center with probability 0.8
+    and a uniform atom with probability 0.2. Recorded probabilities are categorical masses. A continuous neural
+    actor generally proposes actions outside those atoms: full retention does not create continuous action support,
+    and ordinary action-density ratios cannot repair that mismatch.</p>
+  <p>The pre-outcome critical rule is current at least 0.8 and any absolute command above the knee. Full, rare
+    and zero retention keep critical rows with probabilities 1, 0.05 and 0, using the same source log and retention
+    random stream. Rows are never bridged or replenished. Both methods use the same retained training rows and
+    training-only normalization within a condition; normalization is fitted separately by retention. Host
+    initialization and random streams are paired, with a separate BCA stream.</p>
+  $data
+  $critical_note
+  <p>One retained row is selected without using outcomes from each reserved episode. An empty reserved episode
+    contributes no row, without replacement or replenishment. The same bank is reused for 18 adaptive refreshes.
+    A pooled numerical threshold-size check does not establish context-conditional coverage, and the reused bank
+    is not a fresh independent holdout at each refresh. The shared episode reservation also does not remove the
+    dependence imposed by balanced context assignment.</p>
+  $data_contexts
+
+  <h3 id="tr-critic">Policy-value error and action ranking</h3>
+  <p>The independent critic-query bank contains 48 query states: four physical starts per context crossed with
+    times 0, 50 and 99. Six candidate commands are checked at each query: zero, all-negative knee, all-positive
+    knee, all-negative one, all-positive one and the deployed actor command. A reference Q forces that first
+    command, then deterministically rolls out the deployed policy to step 100. It is policy Q, not optimal Q.
+    Each method therefore has its own policy-continuation target and its own sixth candidate action: cross-method
+    Q-error differences do not isolate estimation quality against a common target.</p>
+  $critic
+  <p>Ranking regret compares the true return of the critic's preferred candidate with the best of these six
+    candidates. It is not regret over all possible continuous actions. Pairwise accuracy excludes true ties.
+    This designed query law is not the actor's occupancy distribution. The separate one-step Bellman residual
+    uses the deployed actor and learned twin-min continuation; it need not equal the noisy native target residual
+    evaluated in the next section.</p>
+
+  <h3 id="tr-calibration">Native residual bands, usability and refusal</h3>
+  <p>BCA uses one pooled, uniformly weighted bank across both regimes and both loads. Each score is
+    <code>abs(noisy native one-step TD target − current twin-min Q) / positive learned scale</code>.
+    A single global weighted Bayesian conformal prediction threshold is fitted to those scores. The scale takes
+    state and action as inputs; that does not turn the global threshold into a groupwise conditional certificate.
+    This is neither critical-only calibration nor a Mondrian procedure.</p>
+  <p>The native band's target is the current noisy TD3 one-step target minus current twin-min Q. Its nominal
+    residual coverage is 90%, with posterior credibility 95%; these numbers have different meanings. The report
+    checks the frozen checkpoint reference on an independent designed query bank. This is empirical residual
+    coverage, not long-horizon Q coverage or a new generalization guarantee. This designed distribution of
+    states, times and candidate actions differs from the behavior calibration bank. Coverage below 90% on this
+    diagnostic distribution is not, by itself, a contradiction of the calibration theory's assumptions.</p>
+  $calibration
+  <p>The final reference generally comes from the last refresh at update 95,000. An unready reference or a ready
+    infinite threshold is not a usable calibrated intervention. Native infinite-threshold fallback applies a unit
+    behavior-cloning multiplier; it does not refuse the actor's command or apply maximal caution. “Band refusal”
+    below counts lack of both a ready reference and native dose usability. Dose usability is not certified
+    statistical support or population action support. Infinite widths can make coverage vacuous.</p>
+  <p>An initially insufficient bank would refuse the entire BCA training arm, leaving no trained policy for it.
+    All prepared banks in this frozen run currently pass the pooled numerical size check; this says nothing about
+    critical-group calibration. The scientific comparison is the utility of a global calibration intervention
+    under critical thinning, with local diagnostics. It does not validate critical-region uncertainty.</p>
+  $calibration_contexts
+  $refreshes
+
+  <h3 id="tr-midpoint">Descriptive midpoint, never checkpoint selection</h3>
+  $midpoint
+  <p>These 50,000-update values use the separate 80-start validation bank. They are displayed for completeness;
+    the final checkpoint remains primary regardless of whether a midpoint value is higher.</p>
+
+  <h3 id="tr-interpretation">What these results establish, and what comes next</h3>
+  $interpretation
+
+  <h3 id="tr-provenance">Configuration, execution and source records</h3>
+  <p>Twenty-two jobs were trained and evaluated on Zeus. Eight Titan CPU jobs are represented by the imported,
+    hash-verified report; their rollouts were not independently rerun in this Zeus-only results session. Both hosts
+    used CPU, but host, operating system, Python patch and ancillary environment differences remain. Four of five
+    full-retention pairs put BCA on Titan, and four of five zero-retention pairs put TD3+BC on Titan. This confounds
+    host with method in those conditions. Passing a fixed numerical fixture does not remove that confounding or
+    guarantee identical training trajectories. All rare-retention pairs ran on Zeus.</p>
+  $provenance
+  <p>The HTML generator reads saved records and adds presentation only. It imports no learner, computes no new
+    rollout, and changes no frozen source, checkpoint, dataset or bank. Missing optional diagnostic outputs remain
+    missing. All source hashes used to build this view are recorded in the companion build manifest.</p>
+
+  <h3 id="tr-reproduce">Reproduce or rebuild this report</h3>
+  $commands
+  <p>Existing run directories are refused by preparation. Running workers, solving the shared oracle and
+    evaluating are separate resumable commands. The status command is read-only. A launch or partial checkpoint
+    is not completion. The guide generator requires the verified aggregate's <code>complete == true</code> by default;
+    <code>--allow-partial</code> is only for prominently marked internal previews.</p>
+  <p class="note">Browser rendering and live navigation were not verified in this session because no browser
+    surface was available. Static checks verify anchors and preservation of embedded scripts and SVGs; executable
+    JavaScript can be syntax-checked separately. No Library upload is performed by this generator.</p>
+</section>

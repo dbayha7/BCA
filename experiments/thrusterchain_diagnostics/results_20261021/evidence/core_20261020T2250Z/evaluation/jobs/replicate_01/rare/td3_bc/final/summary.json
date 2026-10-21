@@ -1,0 +1,146 @@
+{
+  "arrays_sha256": "ff06400d4043bf1244a132e90400d9c3d1e8fd9023bc505ad352e8d1e14c47de",
+  "bank_sha256": "22b9f166aebfe9f7226e287e307e78e5e9ef4422793520269a386a4d17bb93b1",
+  "calibration_diagnostics": {
+    "coverage": null,
+    "coverage_claim": "empirical designed-query residual coverage only; no long-horizon Q coverage guarantee",
+    "query_bank_sha256": "812086a42420719546cc2d46fd490ab9494a53d01a69c5b4de3ba2c35e0bd490",
+    "reason": "method has no native BCA band",
+    "schema": "thrusterchain-native-residual-evaluation-v1",
+    "selection": "none; evaluation cannot fit, refresh, select, restart, or modify training",
+    "status": "absent",
+    "support_semantics": "native dose usability, not certified statistical or population action support",
+    "target": "current native one-step noisy TD3 target minus current twin-min Q"
+  },
+  "checkpoint": {
+    "actor_sha256": "1fb7e8b28996614e67923258b7e8d347bf2eced162513f1c884ba08909119f44",
+    "file": "checkpoint_000100000.msgpack",
+    "sha256": "7d7be123280aebfe14cffef084e54e5171abd478613a155a1fb8d55025a40fe5",
+    "update": 100000
+  },
+  "continuous_optimum_status": "numerical feasible/lower and Frank-Wolfe upper return bounds",
+  "critic_diagnostics": {
+    "action_ranking": {
+      "mean_true_regret_of_predicted_best": 1.080763852324523,
+      "pairwise_accuracy_excluding_true_ties": 0.8125,
+      "predicted_best_tie_rule": "first candidate index (numpy.argmax)"
+    },
+    "bank_sha256": "812086a42420719546cc2d46fd490ab9494a53d01a69c5b4de3ba2c35e0bd490",
+    "bellman_residual": {
+      "mae": 3.143213667584978,
+      "rmse": 5.329184844602788
+    },
+    "candidate_names": [
+      "zero",
+      "all_negative_knee",
+      "all_positive_knee",
+      "all_negative_one",
+      "all_positive_one",
+      "deployed_actor"
+    ],
+    "candidates": 6,
+    "coverage": "point Q error and one-step Bellman residual are separate; no residual or long-horizon interval coverage certificate asserted",
+    "q_error": {
+      "critic_1": {
+        "mae": 62.82364426848663,
+        "mean_error": 36.14540743607123,
+        "rmse": 124.18791235780142
+      },
+      "critic_2": {
+        "mae": 63.194930508716524,
+        "mean_error": 36.4767532925714,
+        "rmse": 124.453121222292
+      },
+      "twin_min": {
+        "mae": 63.30418981498805,
+        "mean_error": 35.001041189837025,
+        "rmse": 123.93672200914065
+      }
+    },
+    "query_law": "start-law physical states crossed with fixed times; not policy occupancy",
+    "query_states": 48,
+    "status": "completed",
+    "target": "finite Q_t^pi: forced command, deterministic deployed policy thereafter, no terminal bootstrap"
+  },
+  "deployment": "float32 observations and commands; clipped [-1,1]; float64 actual continuous.dynamics",
+  "failure_rule": "any abs(position state[0:10:2])>3 at pre/post state; event only, episode continues to H",
+  "file": "per_start.npz",
+  "file_sha256": "6e45c0c58dcca9335b3a483c0c39ed5a5a0b8f86b6e83c8c4e212e9d1d500592",
+  "inference": "finite shared bank sample estimates; replication unit is trained seed, not rollout",
+  "job": {
+    "arm": "td3_bc",
+    "data_seed": 1101,
+    "job_id": "replicate_01/rare/td3_bc",
+    "optimization_seed": 2101,
+    "replicate": 1,
+    "reservation_seed": 3101,
+    "retention": "rare"
+  },
+  "objective": {
+    "gamma": 1.0,
+    "horizon": 100,
+    "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))",
+    "terminal_bootstrap": false,
+    "terminal_reward": 0.0
+  },
+  "pooled": {
+    "completed": 400,
+    "critical_fraction": 0.4362,
+    "failure_rate": 0.0025,
+    "high_action_fraction": 0.440925,
+    "mean_return": -180.1569549110066,
+    "regret_lower": 115.06418063003504,
+    "regret_upper": 115.06418063003933,
+    "return_std": 206.9609876143529,
+    "starts": 400
+  },
+  "schema": "thrusterchain-training-policy-evaluation-v1",
+  "selection": "none; terminal checkpoint primary, midpoint descriptive",
+  "split": "final",
+  "strata": {
+    "monotone_high": {
+      "completed": 100,
+      "critical_fraction": 0.9553999999999999,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.9553999999999999,
+      "mean_return": -124.55242537797619,
+      "regret_lower": 41.13199541128045,
+      "regret_upper": 41.131995411284116,
+      "return_std": 5.896371804254799,
+      "starts": 100
+    },
+    "monotone_low": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.008100000000000001,
+      "mean_return": -33.09124177390416,
+      "regret_lower": 22.72303748311936,
+      "regret_upper": 22.723037483125847,
+      "return_std": 2.133026924592988,
+      "starts": 100
+    },
+    "stall_high": {
+      "completed": 100,
+      "critical_fraction": 0.7893999999999999,
+      "failure_rate": 0.01,
+      "high_action_fraction": 0.7893999999999999,
+      "mean_return": -530.5929444026524,
+      "regret_lower": 374.1047842643318,
+      "regret_upper": 374.1047842643344,
+      "return_std": 38.893099506866115,
+      "starts": 100
+    },
+    "stall_low": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0108,
+      "mean_return": -32.39120808949368,
+      "regret_lower": 22.296905361408694,
+      "regret_upper": 22.296905361413025,
+      "return_std": 2.5259125438434316,
+      "starts": 100
+    }
+  }
+}
