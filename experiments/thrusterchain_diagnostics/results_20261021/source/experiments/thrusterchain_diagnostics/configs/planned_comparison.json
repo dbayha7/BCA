@@ -1,0 +1,428 @@
+{
+  "schema_version": 1,
+  "comparison_goal": "Planned full continuous ThrusterChain core comparison of native TD3+BC and BCA across pre-outcome full, rare, and zero critical retention.",
+  "generalization_claim": "within_tasks",
+  "phase": "prelaunch declaration; planned budgets are not completed work",
+  "experiments": [
+    {
+      "id": "td3_bc_full",
+      "algorithm": "TD3+BC",
+      "source": {
+        "repository": "C:/Users/David/dev/BCA",
+        "commit": null,
+        "entrypoint": "experiments/thrusterchain_diagnostics/training.py::train",
+        "resolved_config_sha256": null,
+        "composition": "algorithms.td3_bc_bca.initialize/make_train_step, arm=host; native TD3+BC update"
+      },
+      "dataset": {
+        "id": "continuous-thrusterchain-h100-full",
+        "version": "controller-centered categorical behavior v1, critical retention full",
+        "sha256": null,
+        "transitions": null
+      },
+      "training": {
+        "actor_updates": 50000,
+        "critic_updates": 100000,
+        "batch_size": 256,
+        "sampled_transitions": 25600000,
+        "wall_seconds": null,
+        "device": null,
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Fixed terminal 100000-update checkpoint; no outcome-based selection; midpoint validation descriptive only",
+        "search_space_sha256": null,
+        "candidates_trained": 1,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": [],
+        "report_tasks": [
+          "ThrusterChain observed stall/monotone; low/high load"
+        ],
+        "tuning_datasets": [],
+        "report_datasets": [
+          "continuous-thrusterchain-h100-full"
+        ],
+        "training_seeds": null,
+        "selection_eval_seeds": [],
+        "report_eval_seeds": null,
+        "holdout_policy": "Freeze independent validation/final seed namespaces before fitting; final results cannot tune behavior, algorithm, data, checkpoints, or budgets"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "100000 accepted updates primary; 50000 descriptive only",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "bca_full",
+      "algorithm": "TD3+BC with native BCA",
+      "source": {
+        "repository": "C:/Users/David/dev/BCA",
+        "commit": null,
+        "entrypoint": "experiments/thrusterchain_diagnostics/training.py::train",
+        "resolved_config_sha256": null,
+        "composition": "algorithms.td3_bc_bca.initialize/make_train_step/refresh, arm=bca"
+      },
+      "dataset": {
+        "id": "continuous-thrusterchain-h100-full",
+        "version": "controller-centered categorical behavior v1, critical retention full",
+        "sha256": null,
+        "transitions": null
+      },
+      "training": {
+        "actor_updates": 50000,
+        "critic_updates": 100000,
+        "batch_size": 256,
+        "sampled_transitions": 25600000,
+        "wall_seconds": null,
+        "device": null,
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Fixed terminal 100000-update checkpoint; no outcome-based selection; midpoint validation descriptive only",
+        "search_space_sha256": null,
+        "candidates_trained": 1,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": [],
+        "report_tasks": [
+          "ThrusterChain observed stall/monotone; low/high load"
+        ],
+        "tuning_datasets": [],
+        "report_datasets": [
+          "continuous-thrusterchain-h100-full"
+        ],
+        "training_seeds": null,
+        "selection_eval_seeds": [],
+        "report_eval_seeds": null,
+        "holdout_policy": "Freeze independent validation/final seed namespaces before fitting; final results cannot tune behavior, algorithm, data, checkpoints, or budgets"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "100000 accepted updates primary; 50000 descriptive only",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "td3_bc_rare",
+      "algorithm": "TD3+BC",
+      "source": {
+        "repository": "C:/Users/David/dev/BCA",
+        "commit": null,
+        "entrypoint": "experiments/thrusterchain_diagnostics/training.py::train",
+        "resolved_config_sha256": null,
+        "composition": "algorithms.td3_bc_bca.initialize/make_train_step, arm=host; native TD3+BC update"
+      },
+      "dataset": {
+        "id": "continuous-thrusterchain-h100-rare",
+        "version": "controller-centered categorical behavior v1, critical retention rare",
+        "sha256": null,
+        "transitions": null
+      },
+      "training": {
+        "actor_updates": 50000,
+        "critic_updates": 100000,
+        "batch_size": 256,
+        "sampled_transitions": 25600000,
+        "wall_seconds": null,
+        "device": null,
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Fixed terminal 100000-update checkpoint; no outcome-based selection; midpoint validation descriptive only",
+        "search_space_sha256": null,
+        "candidates_trained": 1,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": [],
+        "report_tasks": [
+          "ThrusterChain observed stall/monotone; low/high load"
+        ],
+        "tuning_datasets": [],
+        "report_datasets": [
+          "continuous-thrusterchain-h100-rare"
+        ],
+        "training_seeds": null,
+        "selection_eval_seeds": [],
+        "report_eval_seeds": null,
+        "holdout_policy": "Freeze independent validation/final seed namespaces before fitting; final results cannot tune behavior, algorithm, data, checkpoints, or budgets"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "100000 accepted updates primary; 50000 descriptive only",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "bca_rare",
+      "algorithm": "TD3+BC with native BCA",
+      "source": {
+        "repository": "C:/Users/David/dev/BCA",
+        "commit": null,
+        "entrypoint": "experiments/thrusterchain_diagnostics/training.py::train",
+        "resolved_config_sha256": null,
+        "composition": "algorithms.td3_bc_bca.initialize/make_train_step/refresh, arm=bca"
+      },
+      "dataset": {
+        "id": "continuous-thrusterchain-h100-rare",
+        "version": "controller-centered categorical behavior v1, critical retention rare",
+        "sha256": null,
+        "transitions": null
+      },
+      "training": {
+        "actor_updates": 50000,
+        "critic_updates": 100000,
+        "batch_size": 256,
+        "sampled_transitions": 25600000,
+        "wall_seconds": null,
+        "device": null,
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Fixed terminal 100000-update checkpoint; no outcome-based selection; midpoint validation descriptive only",
+        "search_space_sha256": null,
+        "candidates_trained": 1,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": [],
+        "report_tasks": [
+          "ThrusterChain observed stall/monotone; low/high load"
+        ],
+        "tuning_datasets": [],
+        "report_datasets": [
+          "continuous-thrusterchain-h100-rare"
+        ],
+        "training_seeds": null,
+        "selection_eval_seeds": [],
+        "report_eval_seeds": null,
+        "holdout_policy": "Freeze independent validation/final seed namespaces before fitting; final results cannot tune behavior, algorithm, data, checkpoints, or budgets"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "100000 accepted updates primary; 50000 descriptive only",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "td3_bc_zero",
+      "algorithm": "TD3+BC",
+      "source": {
+        "repository": "C:/Users/David/dev/BCA",
+        "commit": null,
+        "entrypoint": "experiments/thrusterchain_diagnostics/training.py::train",
+        "resolved_config_sha256": null,
+        "composition": "algorithms.td3_bc_bca.initialize/make_train_step, arm=host; native TD3+BC update"
+      },
+      "dataset": {
+        "id": "continuous-thrusterchain-h100-zero",
+        "version": "controller-centered categorical behavior v1, critical retention zero",
+        "sha256": null,
+        "transitions": null
+      },
+      "training": {
+        "actor_updates": 50000,
+        "critic_updates": 100000,
+        "batch_size": 256,
+        "sampled_transitions": 25600000,
+        "wall_seconds": null,
+        "device": null,
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Fixed terminal 100000-update checkpoint; no outcome-based selection; midpoint validation descriptive only",
+        "search_space_sha256": null,
+        "candidates_trained": 1,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": [],
+        "report_tasks": [
+          "ThrusterChain observed stall/monotone; low/high load"
+        ],
+        "tuning_datasets": [],
+        "report_datasets": [
+          "continuous-thrusterchain-h100-zero"
+        ],
+        "training_seeds": null,
+        "selection_eval_seeds": [],
+        "report_eval_seeds": null,
+        "holdout_policy": "Freeze independent validation/final seed namespaces before fitting; final results cannot tune behavior, algorithm, data, checkpoints, or budgets"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "100000 accepted updates primary; 50000 descriptive only",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "bca_zero",
+      "algorithm": "TD3+BC with native BCA",
+      "source": {
+        "repository": "C:/Users/David/dev/BCA",
+        "commit": null,
+        "entrypoint": "experiments/thrusterchain_diagnostics/training.py::train",
+        "resolved_config_sha256": null,
+        "composition": "algorithms.td3_bc_bca.initialize/make_train_step/refresh, arm=bca"
+      },
+      "dataset": {
+        "id": "continuous-thrusterchain-h100-zero",
+        "version": "controller-centered categorical behavior v1, critical retention zero",
+        "sha256": null,
+        "transitions": null
+      },
+      "training": {
+        "actor_updates": 50000,
+        "critic_updates": 100000,
+        "batch_size": 256,
+        "sampled_transitions": 25600000,
+        "wall_seconds": null,
+        "device": null,
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "strict_offline",
+        "rule": "Fixed terminal 100000-update checkpoint; no outcome-based selection; midpoint validation descriptive only",
+        "search_space_sha256": null,
+        "candidates_trained": 1,
+        "online_eval_episodes": 0,
+        "online_eval_env_steps": 0,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": [
+          0
+        ]
+      },
+      "splits": {
+        "tuning_tasks": [],
+        "report_tasks": [
+          "ThrusterChain observed stall/monotone; low/high load"
+        ],
+        "tuning_datasets": [],
+        "report_datasets": [
+          "continuous-thrusterchain-h100-zero"
+        ],
+        "training_seeds": null,
+        "selection_eval_seeds": [],
+        "report_eval_seeds": null,
+        "holdout_policy": "Freeze independent validation/final seed namespaces before fitting; final results cannot tune behavior, algorithm, data, checkpoints, or budgets"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "100000 accepted updates primary; 50000 descriptive only",
+        "episodes_per_trained_seed": 400,
+        "total_env_steps": 200000,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    }
+  ]
+}

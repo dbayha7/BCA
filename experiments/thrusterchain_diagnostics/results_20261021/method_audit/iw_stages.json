@@ -1,0 +1,340 @@
+{
+  "schema": "iw-stage-audit-v1",
+  "audited_at": "2026-10-21",
+  "repository": "C:\\Users\\David\\dev\\BCA",
+  "head": "b007052a2494dc651ac00469fa9e922b287cd1e5",
+  "scope": "Read-only code/test inspection; no training or test execution by this auditor. Working-tree hashes, not assumed HEAD content.",
+  "versions": [
+    {
+      "id": "weighted_conformal_history",
+      "source": "experiments/weighted_conformal/reference.py",
+      "status": "Historical finite-rank weighted-conformal plus observed-support Bayesian floor; docs/WEIGHTED_CONFORMAL_DESIGN.md:3-11 says superseded for active code."
+    },
+    {
+      "id": "shift_iw_v3_single",
+      "source": "experiments/shift_iw/learners_iw.py:27-29",
+      "status": "Scalar WBCP mass E_target[w], native dose consumer."
+    },
+    {
+      "id": "shift_iw_v4_per_row",
+      "source": "experiments/shift_iw/learners_iw.py:20-26",
+      "status": "Per-query mass w(x), upward grid lookup; +inf gets maximum dose1.5 instead of native1."
+    },
+    {
+      "id": "shift_iw_v5_lower_edge",
+      "source": "experiments/shift_iw/lower_edge.py:7-18",
+      "status": "Distinct paired actor-action width penalty; infinite threshold replaced by largest finite table threshold."
+    },
+    {
+      "id": "shift_hosts_iw",
+      "source": "experiments/shift_hosts/iw.py:383-416",
+      "status": "Four-host restatement; IW refusal rule changes TD3/ReBRAC/CQL/IQL consumer."
+    }
+  ],
+  "stages": [
+    {
+      "id": "S0_target_law",
+      "pseudocode": "w(c)=M(-2)/M(lambda)*exp((lambda+2)*c); lambda_train=-2; target none=-2,mild=0,strong=2. For retained source: Z*w(c) outside removed action ball; unsupported inside.",
+      "sources": [
+        "experiments/shift_iw/world.py:7",
+        "experiments/shift_iw/world.py:27",
+        "experiments/shift_iw/world.py:44",
+        "experiments/shift_iw/world.py:128"
+      ],
+      "premises": [
+        "Conditional starts, behavior actions and dynamics given c identical across source and target.",
+        "Target recorded-step law absolutely continuous with source outside explicitly removed ball."
+      ],
+      "invariants": [
+        "No-shift exact weights identically1.",
+        "Common factor Z must scale bank and test mass equally."
+      ],
+      "limitations": [
+        "This ratio does not represent a learned actor's occupancy/action law.",
+        "Intended continuous deterministic actor law can be singular relative to continuous behavior; finiteprecision does not establish useful overlap."
+      ],
+      "dependencies": [
+        "S1",
+        "S2",
+        "S4",
+        "coverage interpretation"
+      ]
+    },
+    {
+      "id": "S1_estimator",
+      "pseudocode": "Fit unpenalized logistic classifier on independent source and target observation samples; logw=logodds+log(n_source/n_target); w=exp(logw).",
+      "sources": [
+        "experiments/shift_iw/classifier.py:42",
+        "experiments/shift_iw/classifier.py:69",
+        "experiments/shift_iw/classifier.py:104",
+        "experiments/shift_iw/data.py:428",
+        "experiments/shift_iw/run.py:560"
+      ],
+      "premises": [
+        "Log ratio linear in included current coordinate under this designed shift.",
+        "Samples independent of learner/calibration/evaluation outcome data."
+      ],
+      "invariants": [
+        "No reward, nextstate or truthvalue fields in classifier samples.",
+        "Correct source/target prior correction."
+      ],
+      "tests_inspected": [
+        "experiments/shift_iw/test_data.py:599",
+        "experiments/shift_iw/test_data.py:609",
+        "experiments/shift_iw/test_data.py:636"
+      ],
+      "limitations": [
+        "Convergence is recorded but run.py does not require it before consuming weights.",
+        "Each sample has100 correlated rows per episode.",
+        "Estimated ratios are not exact-ratio theoretical evidence."
+      ],
+      "dependencies": [
+        "S2",
+        "S4"
+      ]
+    },
+    {
+      "id": "S2_test_mass",
+      "pseudocode": "v3 exact: t=E_target[w] analytically full or quadrature outside gap; estimated: mean(w_hat(target fitting observations outside gap)). v4: t_i=w(x_i).",
+      "sources": [
+        "experiments/shift_iw/world.py:148",
+        "experiments/shift_iw/classifier.py:111",
+        "experiments/shift_iw/run.py:549",
+        "experiments/shift_iw/run.py:591",
+        "calibration/wbcp.py:13"
+      ],
+      "premises": [
+        "Explicit scalar vs per-query contract must be specified.",
+        "Unsupported action-ball rows refused before threshold."
+      ],
+      "invariants": [
+        "Bank weights and test mass share scale."
+      ],
+      "limitations": [
+        "Estimated scalar mean reuses target observations used to fit ratio estimator.",
+        "Per-row replacement differs from active scalar WBCP engine's documented E_target[w] contract; no theorem equivalence established by this audit."
+      ],
+      "dependencies": [
+        "S5",
+        "S6"
+      ]
+    },
+    {
+      "id": "S3_score",
+      "pseudocode": "y=native_target(frozen host,target smoothing draw); q=min critic heads; score=abs(y-q)/(unit*max(frozen_eta(s,a),1e-6)).",
+      "sources": [
+        "experiments/shift_iw/learners_iw.py:540",
+        "experiments/shift_iw/learners_iw.py:555"
+      ],
+      "premises": [
+        "Frozen host/scale and calibration separated from fitting.",
+        "Target-noise stream matches native refresh."
+      ],
+      "invariants": [
+        "Recomputed all-one threshold checked bitwise against native reference."
+      ],
+      "limitations": [
+        "Response is one-step bootstrapped TD target, not long-horizon true Q.",
+        "During co-training reused bank affects later policies; freezing after feedback does not restore independence."
+      ],
+      "dependencies": [
+        "S5",
+        "S7"
+      ]
+    },
+    {
+      "id": "S4_weight_validation_and_ess",
+      "pseudocode": "Require finite nonnegative aligned bank weights with positive total and finite positive t; divide both by max(bankw); ESS=(sumw)^2/sum(w^2). No clipping/tempering.",
+      "sources": [
+        "calibration/wbcp.py:63",
+        "calibration/wbcp.py:83",
+        "calibration/wbcp.py:116",
+        "experiments/shift_iw/data.py:10",
+        "experiments/shift_iw/data.py:353"
+      ],
+      "premises": [
+        "Weights represent declared ratio; positivity alone does not establish correctness."
+      ],
+      "invariants": [
+        "Common scaling cancels.",
+        "ESS informational, no ESS cutoff automatically imposed."
+      ],
+      "tests_inspected": [
+        "experiments/wbcp/test_wbcp.py:90",
+        "experiments/wbcp/test_wbcp.py:98",
+        "experiments/wbcp/test_wbcp.py:128"
+      ],
+      "limitations": [
+        "Bank up to1000rows from200episodes, five per episode: row Kish ESS is not count of independent trajectories.",
+        "No clipping bias in this path because no ratio clipping; introducing clipping creates a separate method/target approximation."
+      ],
+      "dependencies": [
+        "S5"
+      ]
+    },
+    {
+      "id": "S5_threshold",
+      "pseudocode": "lambda_hat=weighted empirical (1-alpha) quantile of bank scores. For1000 draws draw E_i,E_query~Exp(1); find first score with cumulative w_iE_i >= (1-alpha)*(sumw_iE_i+tE_query), else infinity. lambda_hpd=ceil(beta*M) crossing orderstat; R=max(lambda_hat,lambda_hpd). alpha=.1,beta=.95.",
+      "sources": [
+        "calibration/wbcp.py:43",
+        "calibration/wbcp.py:89",
+        "calibration/wbcp.py:104"
+      ],
+      "premises": [
+        "Declared weighting and sampling law valid.",
+        "Bayesian credible level is not automatically a frequentist true-Q guarantee."
+      ],
+      "invariants": [
+        "Test atom excluded from empirical quantile, included in posterior worstcase total.",
+        "Statistical infinity remains explicit refusal."
+      ],
+      "tests_inspected": [
+        "experiments/wbcp/test_wbcp.py:21",
+        "experiments/wbcp/test_wbcp.py:34",
+        "experiments/wbcp/test_wbcp.py:42",
+        "experiments/wbcp/test_wbcp.py:56",
+        "experiments/wbcp/test_wbcp.py:122"
+      ],
+      "limitations": [
+        "Tests inspected, not executed by this auditor.",
+        "1000 posterior draws introduce Monte Carlo threshold variation."
+      ],
+      "dependencies": [
+        "S6",
+        "S7"
+      ]
+    },
+    {
+      "id": "S6_per_row_table",
+      "pseudocode": "Build R(t) on log grid using identical bootstrap stream at each t; usedR=cumulative_max(rawR); query uses first grid mass >= own mass; reject beyond grid.",
+      "sources": [
+        "experiments/shift_iw/coverage.py:153",
+        "experiments/shift_iw/coverage.py:173",
+        "experiments/shift_iw/coverage.py:196",
+        "experiments/shift_iw/coverage.py:208"
+      ],
+      "premises": [
+        "R monotone for shared draws.",
+        "Mass lies within preconstructed grid."
+      ],
+      "invariants": [
+        "Round upward, no downward interpolation.",
+        "Record raw monotonicity/cumulative-max use and possible rounding into refusal."
+      ],
+      "tests_inspected": [
+        "experiments/shift_hosts/tests/test_iw.py:182",
+        "experiments/shift_hosts/tests/test_iw.py:191",
+        "experiments/shift_hosts/tests/test_iw.py:238",
+        "experiments/shift_hosts/tests/test_iw.py:262"
+      ],
+      "dependencies": [
+        "S7"
+      ]
+    },
+    {
+      "id": "S7_width_and_dose",
+      "pseudocode": "At RECORDED row(s,a), U_i=R_i*unit*max(eta(s,a),1e-6). Before ready dose1. Finite dose=1+blend*U/(U+unit). Native unsupported +inf dose1; per-row IW +inf dose1+blend=1.5.",
+      "sources": [
+        "experiments/shift_iw/learners_iw.py:655",
+        "experiments/shift_hosts/iw.py:279",
+        "experiments/shift_hosts/iw.py:383",
+        "experiments/shift_hosts/iw.py:416"
+      ],
+      "premises": [
+        "Dose is a heuristic consumer of TD residual width.",
+        "Equal refusal semantics needed to isolate weighting."
+      ],
+      "invariants": [
+        "Finite-R all-one identity only; +inf branch differs.",
+        "IID/all-one ratios do not imply zero width or zero extra penalty."
+      ],
+      "tests_inspected": [
+        "experiments/shift_iw/test_learners_iw.py:524",
+        "experiments/shift_hosts/tests/test_iw.py:395"
+      ],
+      "limitations": [
+        "Standard-vs-IW contrast confounds weights and refusal response when refused rows occur.",
+        "No action-level error-ranking guarantee from recorded-action dose."
+      ],
+      "dependencies": [
+        "S8"
+      ]
+    },
+    {
+      "id": "S8_host_update",
+      "pseudocode": "Fit native scale; get dose; call native consumed_bc_multiplier; native TD3 actor loss=-alpha/stopgrad(mean|Q1|)*meanQ1+mean(stopgrad(multiplier_i)*perrowMSE_i). Delayed actor every2 critic updates. Invalid update retains state, PRNG and counter.",
+      "sources": [
+        "experiments/shift_iw/learners_iw.py:797",
+        "experiments/shift_iw/learners_iw.py:826",
+        "algorithms/td3_bc.py:128",
+        "algorithms/td3_bc.py:162"
+      ],
+      "premises": [
+        "Exact initialization/minibatch/noise streams and budgets matched across arms."
+      ],
+      "invariants": [
+        "Multiplier gradient detached.",
+        "Invalid inputs do not silently advance training."
+      ],
+      "dependencies": [
+        "policy utility evaluation"
+      ]
+    },
+    {
+      "id": "S9_lower_edge",
+      "pseudocode": "Actor objective additionally penalizes k*[U(s,actor(s))-U(s,recorded_a)]_+ inside scaled Q objective. Gradient flows through frozen eta(action) to actor; R/unit/eta parameters fixed. +inf R replaced largest finite tableR.",
+      "sources": [
+        "experiments/shift_iw/lower_edge.py:7",
+        "experiments/shift_iw/lower_edge.py:15",
+        "experiments/shift_iw/lower_edge.py:17"
+      ],
+      "premises": [
+        "Actor-action scale generalization supplies useful gradient; empirical hypothesis.",
+        "Infinity replacement explicitly identified as finite surrogate."
+      ],
+      "invariants": [
+        "Separate method from native dose BCA.",
+        "Penalty normalization lambda depends Q only."
+      ],
+      "limitations": [
+        "Finite substitution is not a certified finite band at unsupported query.",
+        "Oracle lower-edge room check tests oracle intervention potential, not calibrated method benefit."
+      ],
+      "dependencies": [
+        "matched policy ablation"
+      ]
+    }
+  ],
+  "recommendation": {
+    "advance": "Arithmetic and declared-law controlled calibration fixtures; exact vs estimated frozen-score comparisons.",
+    "inconclusive": "Generalized actor-action calibration and matched policy improvement without downstream evidence.",
+    "redesign_or_separate": "Deterministic actor ratio interpretation; any hidden refusal-rule or lower-edge infinity-surrogate changes.",
+    "minimal_preregistered_controls": [
+      "Native baseline and native BCA.",
+      "IW all-one under SAME refusal rule as exact IW.",
+      "Exact-law IW vs estimated IW with held-out/cross-fitted estimator mass.",
+      "Equal-strength constant-dose intervention selected on training/validation strength, never test returns.",
+      "Zero-support refusal counts unconditional and conditional coverage; no support topups.",
+      "Fixed frozen-policy fresh episode-level calibration/test before adaptive co-training claims."
+    ]
+  },
+  "hashes": {
+    "calibration/wbcp.py": "FDD36B42A1D2C440CFA5E4DF4B59C421C8FCA477F8B3FFC5E7D9F095E889C023",
+    "experiments/shift_iw/world.py": "7BD80DA0B4430B305490AE8DD2DDE90F9A08CEC7A3A633D30AE5D3CC92088A48",
+    "experiments/shift_iw/classifier.py": "3E107564D08E7AEC64A6B41952656A26493AC32ABB1E4E1127654897B554FE41",
+    "experiments/shift_iw/learners_iw.py": "38633AB06FA8078D703BCE1FD4330B07E1D09A32F5AE883438902AC685DD7F3C",
+    "experiments/shift_iw/data.py": "1965071F660F9E698F77DA15B0B14C0B7288FEB71F119F49C843F93DF5906E67",
+    "experiments/shift_iw/run.py": "9E603B305CA249A66E147DF703CBC2ECC7FAB261627D04226C8BFE32B45E6E24",
+    "experiments/shift_iw/coverage.py": "4D8B7B70F2EA17A7092D207B1C48F34C78EE2D8738C3B91FECBB5EDDD92480E1",
+    "experiments/shift_iw/lower_edge.py": "49835423DBB9923946AB61801E2A038964431592CA27EF68FE9D4FC2D593A697",
+    "experiments/shift_hosts/iw.py": "E076537F8D8B217C1C751269901D57E7E9F82B88D566624930C8BF35C4C26784",
+    "experiments/iw/spec.json": "A71AF9BD2E51740E481337198E63EC04196B631E3BCD729D3EB2073A589CE0B6",
+    "experiments/weighted_conformal/reference.py": "14033AFB0786DA13FC49573421D33186FE84B076641312CE36ECB7EF7273DEBF",
+    "docs/WEIGHTED_CONFORMAL_DESIGN.md": "DAD5607AC457DDC0458C8C3F0CA1A97698A4FC79A6638B577A7AC1F862E8B8E6",
+    "algorithms/td3_bc.py": "BF95A54DCB7402CCA6533BCB0CB7C5ED5A383EF2E71A8C118E24B67310300BB8",
+    "algorithms/td3_bc_bca.py": "3F8452DF67B1AC51C78B67C36A6F6269C849AA9746F5E15DF771D553FCE0536E",
+    "calibration/dose.py": "6D2FAB35CB772952103ADEEB6E9CA5F0A17040C0BC05217E5704C278AD617470",
+    "experiments/wbcp/test_wbcp.py": "3FCD940BB98905A512F4A5BE0E430B11C5A3FA162DE03BCC7AE843A44B206B44"
+  },
+  "mirror_note": "bca/calibration/wbcp.py and bca/experiments/shift_iw/learners_iw.py match top-level hashes; bca/experiments/shift_hosts/iw.py absent."
+}

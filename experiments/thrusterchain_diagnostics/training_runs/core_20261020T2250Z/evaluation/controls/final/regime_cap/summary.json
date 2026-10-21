@@ -1,0 +1,67 @@
+{
+  "arrays_sha256": "6e828503ba928b1392b5bfa0c456b40b43def3faba5bf24c18c812f6b6678ee8",
+  "bank_sha256": "22b9f166aebfe9f7226e287e307e78e5e9ef4422793520269a386a4d17bb93b1",
+  "continuous_optimum_status": "not computed",
+  "deployment": "float32 observations and commands; clipped [-1,1]; float64 actual continuous.dynamics",
+  "failure_rule": "any abs(position state[0:10:2])>3 at pre/post state; event only, episode continues to H",
+  "file": "per_start.npz",
+  "file_sha256": "c609379377f0c77fe0211ea6ea4bddb047109c0a29ed512022da784daf0bb6f5",
+  "inference": "finite shared bank sample estimates; replication unit is trained seed, not rollout",
+  "objective": {
+    "gamma": 1.0,
+    "horizon": 100,
+    "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))",
+    "terminal_bootstrap": false,
+    "terminal_reward": 0.0
+  },
+  "pooled": {
+    "completed": 400,
+    "critical_fraction": 0.23845,
+    "failure_rate": 0.0,
+    "high_action_fraction": 0.23962499999999995,
+    "mean_return": -75.00828054864803,
+    "return_std": 74.69540336442276,
+    "starts": 400
+  },
+  "schema": "thrusterchain-training-policy-evaluation-v1",
+  "selection": "none; terminal checkpoint primary, midpoint descriptive",
+  "split": "final",
+  "strata": {
+    "monotone_high": {
+      "completed": 100,
+      "critical_fraction": 0.9538000000000001,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.9538000000000001,
+      "mean_return": -89.58177730116572,
+      "return_std": 7.175001762683858,
+      "starts": 100
+    },
+    "monotone_low": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0047,
+      "mean_return": -10.36873805921116,
+      "return_std": 1.6647142559623882,
+      "starts": 100
+    },
+    "stall_high": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0,
+      "mean_return": -189.98611171862368,
+      "return_std": 19.631778127624624,
+      "starts": 100
+    },
+    "stall_low": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0,
+      "mean_return": -10.09649511559163,
+      "return_std": 1.5757771280824495,
+      "starts": 100
+    }
+  }
+}

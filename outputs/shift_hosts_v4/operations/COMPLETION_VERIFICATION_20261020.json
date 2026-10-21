@@ -1,0 +1,182 @@
+{
+  "results_sha256": "aee3bbce94281df5b8c6bb84a9c201229216d493bc6cd8d5ff5da41d5efc2dc4",
+  "judged_v3_unchanged": true,
+  "stage1_verified": 20,
+  "plan_check": {
+    "not_recorded": [],
+    "outside_the_plan": [],
+    "planned": 98,
+    "recorded": 98
+  },
+  "excluded": 0,
+  "unscored": 0,
+  "halted": 0,
+  "integrity": {
+    "S0": {
+      "status": "not recorded",
+      "why": "stage 0's suite records it (runs/shift_hosts/stage0/SUMMARY.json, frozen with the pre-specification); the stage driver does not",
+      "halt_count": 0
+    },
+    "S1": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S10": {
+      "status": "readout",
+      "why": null,
+      "halt_count": 0
+    },
+    "S11": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S2": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S3": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S4": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S5": {
+      "status": "not recorded",
+      "why": "neither the driver's files nor a run record read here holds it yet",
+      "halt_count": 0
+    },
+    "S6": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S6b": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S7": {
+      "status": "outcome",
+      "why": null,
+      "halt_count": 0
+    },
+    "S8": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "S9": {
+      "status": "passed",
+      "why": null,
+      "halt_count": 0
+    },
+    "driver": {
+      "status": null,
+      "why": null,
+      "halt_count": 0
+    }
+  },
+  "reproduction_counts": {
+    "equal": 41,
+    "missing": 77
+  },
+  "reproduction_differences": [],
+  "judged_scope_failures": [
+    {
+      "file": "/root/bca-hosts/runs/shift_hosts/supplement_v4/stage2/medium-expert/seed3/td3_bc-standard/lanes/s7-step100000/s7.json",
+      "label": "stage2/medium-expert/seed3/td3_bc-standard/s7",
+      "learner": "td3_bc",
+      "quality": "medium-expert",
+      "run": "stage2/medium-expert/seed3/td3_bc-standard",
+      "seed": 3,
+      "setup": "standard",
+      "sha256": "04d3a59db8310766d23b52b7a7ff661d8815c9c8295331215f4c731ea8d839e5",
+      "step": 100000
+    },
+    {
+      "file": "/root/bca-hosts/runs/shift_hosts/supplement_v4/stage2/medium-expert/seed4/td3_bc-standard/lanes/s7-step100000/s7.json",
+      "label": "stage2/medium-expert/seed4/td3_bc-standard/s7",
+      "learner": "td3_bc",
+      "quality": "medium-expert",
+      "run": "stage2/medium-expert/seed4/td3_bc-standard",
+      "seed": 4,
+      "setup": "standard",
+      "sha256": "177518ad4a2c55e6e321609f3fd9664a2a7cc89a34ba6eb4f5cdaa97a2ef86f0",
+      "step": 100000
+    }
+  ],
+  "caveat": "Post hoc (pre-specification version 4, PRESPEC.md section 21): every stage-2 run of every scope version 3's S7 check stopped was trained and scored in full under version 4, in its own root (runs/shift_hosts/supplement_v4), and is shown under qualities.<quality>.s7_shown and s7_supplement, never judged: version 3's results above are carried byte for byte, so no claim, badge, p-value, Holm step, mark or bar changed. The shown scores are float64-adapter returns of those scopes' actors: S7's float32 check failed on at least one actor of each scope (seed 0 or stage 1), and ran on seeds 1-4 and on the 50,000-step actors only in the supplement, so a shown score may differ from the learner's own float32 policy by more than 0.05 points per start. S7 also failed in the supplement on 2 actor(s) of scopes version 3 judged, whose pre-specified S7 check covered only stage 1's and seed 0's final actors: stage2/medium-expert/seed3/td3_bc-standard at 100,000 steps; stage2/medium-expert/seed4/td3_bc-standard at 100,000 steps. Version 3's judgment there is carried unchanged; these failures are a caveat on its judged claims for those learners (s7_supplement.s7_failures_in_judged_scopes).",
+  "budget": {
+    "booking": "the supplement's own ledger under the same per-quality cap numbers (decision D2); the study-wide total is disclosed",
+    "caps": {
+      "medium": {
+        "card_hours": 12.0,
+        "processor_hours": 16.0
+      },
+      "medium-expert": {
+        "card_hours": 14.0,
+        "processor_hours": 21.0
+      }
+    },
+    "ledgers": {
+      "version 3": {
+        "medium": {
+          "card_hours": 3.145235997252498,
+          "processor_hours": 6.189911691944441
+        },
+        "medium-expert": {
+          "card_hours": 2.724443727296111,
+          "processor_hours": 5.111195598888886
+        }
+      },
+      "version 4": {
+        "medium": {
+          "card_hours": 1.215639967788612,
+          "processor_hours": 2.6035622075000027
+        },
+        "medium-expert": {
+          "card_hours": 2.9439105873905564,
+          "processor_hours": 6.400767476388888
+        }
+      }
+    },
+    "study_wide": {
+      "earlier": {
+        "medium-expert": {
+          "card_hours": 0.4939,
+          "processor_hours": 0.7101,
+          "source": "PRESPEC.md section 20.9: versions 1 and 2's stage 1; of which, already counted in version 3's ledger (not added again)"
+        }
+      },
+      "totals": {
+        "medium": {
+          "card_hours": 4.36087596504111,
+          "complete": true,
+          "processor_hours": 8.793473899444443
+        },
+        "medium-expert": {
+          "card_hours": 5.668354314686667,
+          "complete": true,
+          "processor_hours": 11.511963075277775
+        }
+      }
+    }
+  },
+  "driver_problems": [],
+  "s0": {
+    "passed": true,
+    "reason": "the stage-0 suite passed on exactly this code",
+    "summary": "/root/bca-hosts/runs/shift_hosts/stage0/SUMMARY.json",
+    "summary_sha256": "06851507de218a25a2027f75d7b61bf7fbe164bd560acc468f79e06a44abfaeb",
+    "suite_run": "20261020T183357Z",
+    "summary_code_manifest_sha256": "46ad60e98f9499f0770a5a905f568ff8a569d6cb811e3745fda736ccc15ec37e",
+    "code_manifest_sha256": "46ad60e98f9499f0770a5a905f568ff8a569d6cb811e3745fda736ccc15ec37e"
+  }
+}

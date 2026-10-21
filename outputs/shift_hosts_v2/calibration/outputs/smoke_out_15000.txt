@@ -1,0 +1,742 @@
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/probe_s7.py sha256 406ca0ffb0f04ab2b88e280ec1f99393219ca71b148e67f3245c759475eded8a; argv ['--repo', '/tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2wt', '--run-dir', '/tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/smoke/root/runs/shift_hosts/stage1/medium-expert/seed0/rebrac-alone', '--list-s7', '--compare', '--out', '/tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/rr/final/smoke_out_15000.txt']
+probe: python 3.13.16, numpy 2.2.6, jax settings {'xla_flags': '--xla_gpu_deterministic_ops=true --xla_cpu_multi_thread_eigen=false', 'jax_platforms': 'cpu', 'matmul_precision': 'highest', 'jax': '0.6.2', 'backend': 'cpu'}
+probe: code manifest e397273a553a1963 (170 files)
+probe: approval 8c5e8421922dcceb verifies (version 1; commit 0000000)
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/smoke/root/runs/shift_hosts/stage1/medium-expert/seed0/rebrac-alone/lanes/s7-step15000/s7.json sha256 875af7b649ba836ecb41799ec285efb689a3a6fe544c8ec8c131f74c60075a79
+probe: rebrac-alone's record was made on code manifest made-up; this process runs e397273a553a1963 (DIFFERENT)
+
+=== smoke/rebrac-alone step 15000: learner rebrac, actor ef4e8a3e0262e791, s7.json present (tol_points 0.05); JUDGED (PRESPEC.md 19.6)
+[scored/none] starts 1000 finite True reproduced True | |dpoints| p50 1.83e-06 p90 7.49e-06 p99 1.61e-05 p99.9 2.70e-05 max 2.71435e-05 mean 3.016e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.449e-04
+    (i) injected gap max 9.44e-07; float32 reference spread max 6.33e-07 (ratio 1.49); bound max(1e-5, 10 x spread) 1.00e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 700:2.71e-05 385:2.70e-05 507:2.34e-05 233:2.20e-05 18:2.19e-05 815:2.13e-05 414:2.11e-05 788:1.83e-05 361:1.81e-05 801:1.62e-05
+[scored/mild] starts 1000 finite True reproduced True | |dpoints| p50 1.83e-06 p90 7.49e-06 p99 1.61e-05 p99.9 2.70e-05 max 2.71435e-05 mean 3.016e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.449e-04
+    (i) injected gap max 9.44e-07; float32 reference spread max 6.33e-07 (ratio 1.49); bound max(1e-5, 10 x spread) 1.00e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 700:2.71e-05 385:2.70e-05 507:2.34e-05 233:2.20e-05 18:2.19e-05 815:2.13e-05 414:2.11e-05 788:1.83e-05 361:1.81e-05 801:1.62e-05
+[scored/strong] starts 1000 finite True reproduced True | |dpoints| p50 1.83e-06 p90 7.49e-06 p99 1.61e-05 p99.9 2.70e-05 max 2.71435e-05 mean 3.016e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.449e-04
+    (i) injected gap max 9.44e-07; float32 reference spread max 6.33e-07 (ratio 1.49); bound max(1e-5, 10 x spread) 1.00e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 700:2.71e-05 385:2.70e-05 507:2.34e-05 233:2.20e-05 18:2.19e-05 815:2.13e-05 414:2.11e-05 788:1.83e-05 361:1.81e-05 801:1.62e-05
+[scored/recorded] starts 1000 finite True reproduced True | |dpoints| p50 4.36e-05 p90 1.78e-04 p99 3.83e-04 p99.9 6.42e-04 max 0.000645474 mean 7.171e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.449e-04
+    (i) injected gap max 9.44e-07; float32 reference spread max 6.33e-07 (ratio 1.49); bound max(1e-5, 10 x spread) 1.00e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 700:6.45e-04 385:6.42e-04 507:5.57e-04 233:5.24e-04 18:5.20e-04 815:5.06e-04 414:5.02e-04 788:4.34e-04 361:4.30e-04 801:3.84e-04
+[scored/strong_current] starts 1000 finite True reproduced True | |dpoints| p50 6.75e-05 p90 1.95e-04 p99 3.64e-04 p99.9 5.00e-04 max 0.0008052 mean 9.002e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.209e-03
+    (i) injected gap max 1.32e-06; float32 reference spread max 1.19e-06 (ratio 1.11); bound max(1e-5, 10 x spread) 1.19e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 838:8.05e-04 294:5.00e-04 888:4.28e-04 847:4.27e-04 307:4.02e-04 235:3.98e-04 433:3.78e-04 804:3.77e-04 856:3.66e-04 814:3.66e-04
+[scored/big_waves] starts 1000 finite True reproduced True | |dpoints| p50 5.16e-05 p90 1.66e-04 p99 3.52e-04 p99.9 4.78e-04 max 0.000503292 mean 7.546e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.554e-04
+    (i) injected gap max 9.88e-07; float32 reference spread max 6.56e-07 (ratio 1.51); bound max(1e-5, 10 x spread) 1.00e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 307:5.03e-04 761:4.78e-04 377:4.20e-04 815:4.09e-04 858:4.09e-04 284:3.81e-04 972:3.74e-04 423:3.73e-04 117:3.67e-04 355:3.65e-04
+[scored/big_kicks] starts 1000 finite True reproduced True | |dpoints| p50 5.58e-05 p90 1.91e-04 p99 3.93e-04 p99.9 5.27e-04 max 0.000647493 mean 8.314e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 6.458e-04
+    (i) injected gap max 1.33e-06; float32 reference spread max 8.83e-07 (ratio 1.51); bound max(1e-5, 10 x spread) 1.00e-05: passed True [JUDGED] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 757:6.47e-04 523:5.27e-04 97:5.01e-04 127:4.67e-04 318:4.59e-04 284:4.57e-04 475:4.29e-04 826:4.20e-04 759:4.11e-04 909:3.98e-04
+
+--- controls: |dpoints| of rounding-size perturbations that do not involve the restatement ---
+    round = float64 adapter with float32-rounded commands; up/down = start floats +-1 ulp (float64 adapter); f32_up = restatement, +1 ulp; same_fixed0-1 / same_random0-2 = float64 adapter plus offsets of the measured injected size, signs fixed per start or drawn per step (control (e), judged in (iii) as the largest of its five draws); the others are shown, not judged
+[scored/none] J32-J64 worst start 700: 2.71e-05 | round: max 4.90e-06, rho +0.27, worst start 1.18e-06 (rank 21) | up: max 4.97e-14, rho +0.09, worst start 0.00e+00 (rank 195) | down: max 3.55e-14, rho +0.09, worst start 1.42e-14 (rank 54) | same_fixed0: max 5.76e-05, rho +0.46, worst start 2.37e-05 (rank 43) | same_fixed1: max 5.13e-05, rho +0.47, worst start 2.31e-05 (rank 51) | same_random0: max 3.39e-05, rho +0.36, worst start 1.19e-05 (rank 20) | same_random1: max 2.24e-05, rho +0.39, worst start 7.58e-06 (rank 73) | same_random2: max 2.16e-05, rho +0.35, worst start 2.16e-05 (rank 1) | f32_up: max 7.11e-14, rho +0.13, worst start 7.11e-14 (rank 1)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.12 (within 0.1-10: True) [shown]; at the worst start 0.874 (shown)
+[scored/mild] J32-J64 worst start 700: 2.71e-05 | round: max 4.90e-06, rho +0.27, worst start 1.18e-06 (rank 21) | up: max 4.97e-14, rho +0.09, worst start 0.00e+00 (rank 195) | down: max 3.55e-14, rho +0.09, worst start 1.42e-14 (rank 54) | same_fixed0: max 4.87e-05, rho +0.47, worst start 1.33e-05 (rank 249) | same_fixed1: max 5.18e-05, rho +0.48, worst start 1.32e-05 (rank 255) | same_random0: max 2.70e-05, rho +0.37, worst start 5.92e-06 (rank 129) | same_random1: max 2.22e-05, rho +0.33, worst start 1.22e-05 (rank 29) | same_random2: max 2.38e-05, rho +0.32, worst start 5.57e-06 (rank 127) | f32_up: max 7.11e-14, rho +0.13, worst start 7.11e-14 (rank 1)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.91 (within 0.1-10: True) [shown]; at the worst start 0.491 (shown)
+[scored/strong] J32-J64 worst start 700: 2.71e-05 | round: max 4.90e-06, rho +0.27, worst start 1.18e-06 (rank 21) | up: max 4.97e-14, rho +0.09, worst start 0.00e+00 (rank 195) | down: max 3.55e-14, rho +0.09, worst start 1.42e-14 (rank 54) | same_fixed0: max 4.90e-05, rho +0.46, worst start 5.31e-06 (rank 524) | same_fixed1: max 5.13e-05, rho +0.47, worst start 1.65e-05 (rank 151) | same_random0: max 3.36e-05, rho +0.37, worst start 1.08e-05 (rank 37) | same_random1: max 2.76e-05, rho +0.35, worst start 1.04e-05 (rank 42) | same_random2: max 3.23e-05, rho +0.39, worst start 1.38e-05 (rank 24) | f32_up: max 7.11e-14, rho +0.13, worst start 7.11e-14 (rank 1)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.89 (within 0.1-10: True) [shown]; at the worst start 0.607 (shown)
+[scored/recorded] J32-J64 worst start 700: 6.45e-04 | round: max 1.17e-04, rho +0.27, worst start 2.81e-05 (rank 21) | up: max 1.14e-12, rho -0.03, worst start 0.00e+00 (rank 451) | down: max 9.09e-13, rho -0.01, worst start 4.55e-13 (rank 17) | same_fixed0: max 1.11e-03, rho +0.45, worst start 3.17e-04 (rank 229) | same_fixed1: max 1.59e-03, rho +0.48, worst start 3.92e-04 (rank 153) | same_random0: max 9.15e-04, rho +0.39, worst start 4.40e-04 (rank 8) | same_random1: max 7.34e-04, rho +0.35, worst start 2.95e-04 (rank 21) | same_random2: max 1.02e-03, rho +0.35, worst start 2.31e-04 (rank 38) | f32_up: max 1.59e-12, rho +0.07, worst start 1.59e-12 (rank 1)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.47 (within 0.1-10: True) [shown]; at the worst start 0.682 (shown)
+[scored/strong_current] J32-J64 worst start 838: 8.05e-04 | round: max 7.40e-05, rho +0.19, worst start 6.24e-06 (rank 347) | up: max 9.09e-13, rho -0.04, worst start 0.00e+00 (rank 287) | down: max 1.14e-12, rho +0.01, worst start 0.00e+00 (rank 320) | same_fixed0: max 7.99e-04, rho +0.21, worst start 6.20e-04 (rank 35) | same_fixed1: max 8.45e-04, rho +0.19, worst start 6.20e-04 (rank 24) | same_random0: max 5.59e-04, rho +0.17, worst start 2.98e-04 (rank 25) | same_random1: max 5.15e-04, rho +0.21, worst start 2.56e-04 (rank 58) | same_random2: max 5.50e-04, rho +0.20, worst start 1.08e-04 (rank 306) | f32_up: max 9.09e-13, rho +0.03, worst start 0.00e+00 (rank 323)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.05 (within 0.1-10: True) [shown]; at the worst start 0.77 (shown)
+[scored/big_waves] J32-J64 worst start 307: 5.03e-04 | round: max 6.04e-05, rho +0.17, worst start 9.33e-06 (rank 260) | up: max 1.14e-12, rho +0.06, worst start 0.00e+00 (rank 374) | down: max 1.36e-12, rho -0.03, worst start 0.00e+00 (rank 350) | same_fixed0: max 1.09e-03, rho +0.30, worst start 4.65e-04 (rank 65) | same_fixed1: max 1.25e-03, rho +0.33, worst start 4.41e-04 (rank 85) | same_random0: max 5.38e-04, rho +0.23, worst start 2.01e-05 (rank 802) | same_random1: max 5.77e-04, rho +0.24, worst start 9.84e-05 (rank 286) | same_random2: max 5.91e-04, rho +0.20, worst start 6.43e-06 (rank 917) | f32_up: max 1.36e-12, rho -0.01, worst start 0.00e+00 (rank 370)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.47 (within 0.1-10: True) [shown]; at the worst start 0.925 (shown)
+[scored/big_kicks] J32-J64 worst start 757: 6.47e-04 | round: max 6.58e-05, rho +0.22, worst start 8.83e-06 (rank 280) | up: max 1.82e-12, rho +0.13, worst start 0.00e+00 (rank 555) | down: max 1.82e-12, rho +0.07, worst start 4.55e-13 (rank 69) | same_fixed0: max 1.04e-03, rho +0.31, worst start 1.04e-03 (rank 1) | same_fixed1: max 1.04e-03, rho +0.32, worst start 1.04e-03 (rank 1) | same_random0: max 6.05e-04, rho +0.26, worst start 5.14e-04 (rank 2) | same_random1: max 6.00e-04, rho +0.23, worst start 1.13e-04 (rank 217) | same_random2: max 5.95e-04, rho +0.28, worst start 1.44e-04 (rank 168) | f32_up: max 1.59e-12, rho +0.07, worst start 0.00e+00 (rank 544)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.61 (within 0.1-10: True) [JUDGED]; at the worst start 1.61 (shown)
+
+--- worst start of scored/big_kicks: start 757, |dpoints| 0.000647493 (differences only) [JUDGED] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf      -6.63     -6.37     -6.37     -6.37      -inf +1.073e-07 +1.073e-07    0    0   0 0,0,0
+  1     -6.63      -6.50     -6.33     -6.33     -6.34     -7.44 +6.974e-07 +8.046e-07    3    0   0 0,0,0
+  2     -6.50      -6.47     -6.78     -6.54     -6.58     -6.76 +7.013e-07 +1.506e-06    7    0   0 0,0,0
+  3     -6.47      -6.41     -6.51     -6.61     -6.28     -6.66 +1.019e-06 +2.525e-06    8    0   0 0,0,0
+  4     -6.41      -6.32     -6.60     -6.51     -6.50     -7.03 +8.982e-07 +3.424e-06    6    0   0 0,0,0
+  5     -6.32      -6.31     -6.87     -6.71     -6.91     -7.20 +7.860e-07 +4.210e-06    7    0   0 0,0,0
+  6     -6.31      -6.27     -6.66     -6.81     -6.61     -7.40 +2.391e-07 +4.449e-06    6    0   0 0,0,0
+  7     -6.27      -6.16     -6.28     -6.33     -6.36     -7.04 -9.068e-08 +4.358e-06    8    0   0 0,0,0
+  8     -6.16      -6.19     -7.03     -6.82     -6.99     -7.46 -3.704e-07 +3.988e-06    9    0   0 0,0,0
+  9     -6.19      -6.21     -6.98     -6.98     -6.82     -6.74 -7.295e-07 +3.258e-06    7    0   0 0,0,0
+ 10     -6.21      -6.16     -6.34     -6.54     -6.62     -6.68 -1.038e-06 +2.220e-06    7    0   0 0,0,0
+ 11     -6.16      -6.12     -6.36     -6.31     -6.71     -6.62 -2.263e-06 -4.290e-08    8    0   0 0,0,0
+ 12     -6.12      -6.07     -6.40     -6.50     -6.71     -6.69 -3.789e-06 -3.831e-06    9    0   0 0,0,0
+ 13     -6.07      -6.05     -6.52     -6.52     -6.70     -6.84 -5.231e-06 -9.063e-06    8    0   0 0,0,0
+ 14     -6.05      -5.97     -6.16     -6.67     -6.22     -6.78 -5.891e-06 -1.495e-05    9    0   0 0,0,0
+ 15     -5.97      -5.94     -6.48     -6.37     -6.68     -6.91 -8.159e-06 -2.311e-05    9    0   0 0,0,0
+ 16     -5.94      -5.92     -6.46     -6.77     -6.53     -6.70 -9.392e-06 -3.250e-05    9    0   0 0,0,0
+ 17     -5.92      -5.92     -6.73     -6.61     -6.66     -7.18 -1.078e-05 -4.328e-05    7    0   0 0,0,0
+ 18     -5.92      -5.90     -6.44     -6.57     -6.50     -7.22 -1.150e-05 -5.478e-05    9    0   0 0,0,0
+ 19     -5.90      -5.87     -6.47     -6.59     -6.48     -7.10 -1.308e-05 -6.787e-05   10    0   0 0,0,0
+ 20     -5.87      -5.87     -6.93     -6.47     -6.76     -6.97 -1.421e-05 -8.208e-05   10    0   0 0,0,0
+ 21     -5.87      -5.88     -6.72     -6.55     -6.53     -6.80 -1.396e-05 -9.604e-05    9    0   0 0,0,0
+ 22     -5.88      -5.85     -6.25     -6.40     -6.36     -6.90 -1.369e-05 -1.097e-04    8    0   0 0,0,0
+ 23     -5.85      -5.84     -6.27     -6.68     -6.34     -6.89 -1.443e-05 -1.242e-04   10    0   0 0,0,0
+ 24     -5.84      -5.80     -6.38     -6.34     -6.31     -7.05 -1.354e-05 -1.377e-04    9    0   0 0,0,0
+ 25     -5.80      -5.81     -6.81     -6.46     -6.78     -6.73 -1.381e-05 -1.515e-04   10    0   0 0,0,0
+ 26     -5.81      -5.82     -6.95     -6.30     -6.81     -6.60 -1.375e-05 -1.653e-04   10    0   0 0,0,0
+ 27     -5.82      -5.82     -6.66     -6.72     -6.50     -6.75 -1.349e-05 -1.787e-04    9    0   0 0,0,0
+ 28     -5.82      -5.85     -6.49     -6.57     -6.65     -6.76 -1.304e-05 -1.918e-04    8    0   0 0,0,0
+ 29     -5.85      -5.91     -6.47     -6.68     -6.54     -6.67 -1.263e-05 -2.044e-04    9    0   0 0,0,0
+ 30     -5.91      -5.94     -6.32     -6.32     -6.52     -6.76 -1.190e-05 -2.163e-04   10    0   0 0,0,0
+ 31     -5.94      -5.98     -6.33     -6.39     -6.47     -6.54 -1.117e-05 -2.275e-04    8    0   0 0,0,0
+ 32     -5.98      -5.99     -5.98     -6.12     -6.14     -6.51 -9.933e-06 -2.374e-04   10    0   0 0,0,0
+ 33     -5.99      -5.97     -6.36     -6.87     -6.57     -6.39 -8.382e-06 -2.458e-04    7    0   0 0,0,0
+ 34     -5.97      -5.94     -6.37     -6.39     -6.72     -6.54 -7.426e-06 -2.532e-04    9    0   0 0,0,0
+ 35     -5.94      -5.95     -6.51     -6.17     -6.55     -6.75 -6.658e-06 -2.599e-04    9    0   0 0,0,0
+ 36     -5.95      -5.95     -6.63     -6.39     -6.95     -6.77 -6.987e-06 -2.669e-04   10    0   0 0,0,0
+ 37     -5.95      -5.95     -6.50     -7.00     -6.64     -6.65 -6.301e-06 -2.732e-04   10    0   0 0,0,0
+ 38     -5.95      -5.97     -6.91     -6.62     -6.87     -7.05 -5.899e-06 -2.791e-04   10    0   0 0,0,0
+ 39     -5.97      -5.98     -6.38     -6.42     -6.36     -7.19 -5.981e-06 -2.851e-04    9    0   0 0,0,0
+ 40     -5.98      -5.99     -6.49     -6.72     -6.57     -7.13 -6.682e-06 -2.917e-04    9    0   0 0,0,0
+ 41     -5.99      -5.99     -6.49     -6.56     -6.42     -7.01 -5.842e-06 -2.976e-04    9    0   0 0,0,0
+ 42     -5.99      -5.95     -6.32     -6.26     -6.36     -6.90 -5.527e-06 -3.031e-04    9    0   0 0,0,0
+ 43     -5.95      -5.99     -6.62     -6.86     -6.54     -6.95 -6.189e-06 -3.093e-04    9    0   0 0,0,0
+ 44     -5.99      -6.00     -7.27     -6.37     -6.61     -6.67 -5.227e-06 -3.145e-04    8    0   0 0,0,0
+ 45     -6.00      -5.99     -6.57     -6.71     -6.86     -6.63 -5.006e-06 -3.195e-04    8    0   0 0,0,0
+ 46     -5.99      -6.00     -6.43     -6.43     -6.54     -6.62 -5.617e-06 -3.252e-04    9    0   0 0,0,0
+ 47     -6.00      -5.96     -6.34     -6.85     -6.61     -6.68 -5.472e-06 -3.306e-04   10    0   0 0,0,0
+ 48     -5.96      -5.96     -6.65     -6.74     -6.48     -6.68 -6.127e-06 -3.368e-04   10    0   0 0,0,0
+ 49     -5.96      -6.00     -6.32     -6.53     -6.50     -6.79 -6.433e-06 -3.432e-04   10    0   0 0,0,0
+ 50     -6.00      -6.00     -6.66     -6.60     -6.57     -6.80 -5.959e-06 -3.491e-04   10    0   0 0,0,0
+ 51     -6.00      -6.03     -6.43     -6.75     -6.68     -6.79 -6.312e-06 -3.555e-04   10    0   0 0,0,0
+ 52     -6.03      -6.02     -6.77     -6.96     -6.80     -6.91 -5.966e-06 -3.614e-04   10    0   0 0,0,0
+ 53     -6.02      -6.05     -6.58     -6.59     -6.70     -6.88 -5.880e-06 -3.673e-04   10    0   0 0,0,0
+ 54     -6.05      -6.04     -6.62     -6.84     -6.47     -6.99 -5.262e-06 -3.726e-04    9    0   0 0,0,0
+ 55     -6.04      -6.06     -6.45     -6.45     -6.48     -6.91 -5.369e-06 -3.779e-04    9    0   0 0,0,0
+ 56     -6.06      -6.06     -6.44     -6.68     -6.55     -7.07 -4.743e-06 -3.827e-04   10    0   0 0,0,0
+ 57     -6.06      -6.07     -6.50     -6.96     -6.65     -7.03 -4.207e-06 -3.869e-04   10    0   0 0,0,0
+ 58     -6.07      -6.09     -6.62     -7.13     -6.62     -6.97 -3.814e-06 -3.907e-04   10    0   0 0,0,0
+ 59     -6.09      -6.13     -6.69     -6.57     -6.77     -7.03 -3.529e-06 -3.942e-04   10    0   0 0,0,0
+ 60     -6.13      -6.14     -6.98     -6.81     -7.00     -7.02 -3.182e-06 -3.974e-04    9    0   0 0,0,0
+ 61     -6.14      -6.14     -6.84     -6.50     -6.99     -7.12 -3.174e-06 -4.006e-04   10    0   0 0,0,0
+ 62     -6.14      -6.17     -6.76     -6.95     -6.60     -7.10 -3.166e-06 -4.037e-04    9    0   0 0,0,0
+ 63     -6.17      -6.17     -6.70     -6.75     -6.95     -7.05 -3.140e-06 -4.069e-04   10    0   0 0,0,0
+ 64     -6.17      -6.15     -6.73     -6.59     -6.70     -7.31 -3.018e-06 -4.099e-04   10    0   0 0,0,0
+ 65     -6.15      -6.16     -6.72     -7.11     -6.70     -7.20 -3.216e-06 -4.131e-04    8    0   0 0,0,0
+ 66     -6.16      -6.17     -6.59     -6.80     -6.59     -7.26 -3.508e-06 -4.166e-04    9    0   0 0,0,0
+ 67     -6.17      -6.19     -6.62     -6.87     -6.55     -7.17 -3.277e-06 -4.199e-04    9    0   0 0,0,0
+ 68     -6.19      -6.20     -6.72     -6.60     -6.76     -7.05 -3.235e-06 -4.231e-04    9    0   0 0,0,0
+ 69     -6.20      -6.20     -6.89     -6.86     -6.90     -7.12 -3.095e-06 -4.262e-04    9    0   0 0,0,0
+ 70     -6.20      -6.20     -6.92     -6.61     -6.98     -7.02 -2.938e-06 -4.292e-04   10    0   0 0,0,0
+ 71     -6.20      -6.22     -6.91     -6.73     -6.81     -6.77 -2.720e-06 -4.319e-04   10    0   0 0,0,0
+ 72     -6.22      -6.23     -6.67     -6.88     -6.84     -7.10 -2.651e-06 -4.345e-04   10    0   0 0,0,0
+ 73     -6.23      -6.21     -6.83     -6.71     -6.85     -7.08 -2.479e-06 -4.370e-04   10    0   0 0,0,0
+ 74     -6.21      -6.24     -6.98     -6.79     -6.83     -7.18 -2.552e-06 -4.396e-04   10    0   0 0,0,0
+ 75     -6.24      -6.25     -7.03     -6.52     -6.74     -7.04 -2.412e-06 -4.420e-04    9    0   0 0,0,0
+ 76     -6.25      -6.27     -6.98     -6.75     -6.90     -6.98 -2.258e-06 -4.442e-04   10    0   0 0,0,0
+ 77     -6.27      -6.25     -6.53     -6.71     -6.58     -6.82 -2.301e-06 -4.465e-04   10    0   0 0,0,0
+ 78     -6.25      -6.25     -6.66     -6.84     -6.77     -6.95 -2.442e-06 -4.490e-04   10    0   0 0,0,0
+ 79     -6.25      -6.31     -6.53     -6.93     -6.70     -6.99 -2.773e-06 -4.518e-04   10    0   0 0,0,0
+ 80     -6.31      -6.28     -6.39     -6.58     -6.44     -7.06 -2.621e-06 -4.544e-04   10    0   0 0,0,0
+ 81     -6.28      -6.24     -6.54     -6.53     -6.49     -7.28 -3.394e-06 -4.578e-04   10    0   0 0,0,0
+ 82     -6.24      -6.34     -6.24     -6.47     -6.29     -7.09 -3.856e-06 -4.616e-04    7    0   0 0,0,0
+ 83     -6.34      -6.29     -6.42     -6.58     -6.47     -7.07 -3.578e-06 -4.652e-04    8    0   0 0,0,0
+ 84     -6.29      -6.21     -6.61     -6.61     -6.75     -7.17 -4.947e-06 -4.702e-04    9    0   0 0,0,0
+ 85     -6.21      -6.14     -6.58     -6.81     -6.82     -6.79 -6.316e-06 -4.765e-04    9    0   0 0,0,0
+ 86     -6.14      -6.13     -6.65     -6.70     -6.74     -7.03 -7.674e-06 -4.841e-04   10    0   0 0,0,0
+ 87     -6.13      -6.12     -6.83     -6.83     -7.57     -6.88 -8.218e-06 -4.924e-04    9    0   0 0,0,0
+ 88     -6.12      -6.03     -6.35     -6.35     -6.44     -7.01 -9.124e-06 -5.015e-04   10    0   0 0,0,0
+ 89     -6.03      -6.00     -6.53     -6.32     -6.65     -7.12 -1.083e-05 -5.123e-04    8    0   0 0,0,0
+ 90     -6.00      -6.03     -6.93     -6.93     -6.64     -6.96 -1.210e-05 -5.244e-04   10    0   0 0,0,0
+ 91     -6.03      -5.96     -6.21     -6.69     -6.34     -6.78 -1.211e-05 -5.365e-04   10    0   0 0,0,0
+ 92     -5.96      -5.93     -6.27     -6.11     -6.41     -6.83 -1.394e-05 -5.505e-04    9    0   0 0,0,0
+ 93     -5.93      -5.90     -6.24     -7.07     -6.33     -6.98 -1.406e-05 -5.645e-04   10    0   0 0,0,0
+ 94     -5.90      -5.92     -7.02     -7.00     -6.68     -6.91 -1.401e-05 -5.785e-04   10    0   0 0,0,0
+ 95     -5.92      -5.93     -6.83     -6.83     -6.81     -6.89 -1.408e-05 -5.926e-04   10    0   0 0,0,0
+ 96     -5.93      -5.94     -6.59     -6.50     -6.42     -6.91 -1.385e-05 -6.065e-04   10    0   0 0,0,0
+ 97     -5.94      -5.95     -6.21     -6.26     -6.28     -6.82 -1.387e-05 -6.203e-04    9    0   0 0,0,0
+ 98     -5.95      -5.96     -6.59     -6.46     -6.48     -6.76 -1.303e-05 -6.334e-04   10    0   0 0,0,0
+ 99     -5.96      -5.97     -6.64     -6.17     -6.50     -6.73 -1.243e-05 -6.458e-04   10    0   0 0,0,0
+  all steps (shown): largest one-step growth 0.13457092098958798 decades at step 1; 47 steps growing; 0.6641763602807096 decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 4, the first at step 9; largest one-step growth on them 0.06519855609529647 decades at step 85 (at most 1): passed True [JUDGED]
+
+--- worst start of scored/strong_current: start 838, |dpoints| 0.0008052 (differences only) [shown] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf      -7.38     -7.04     -7.04     -7.04      -inf +2.166e-08 +2.166e-08    0    0   0 0,0,0
+  1     -7.38      -7.38     -7.39     -6.91     -7.38     -7.76 -3.563e-08 -1.397e-08    5    0   0 0,0,0
+  2     -7.38      -7.11     -7.07     -7.40     -7.15     -7.83 -4.297e-08 -5.694e-08    2    0   0 0,0,0
+  3     -7.11      -6.78     -6.80     -6.89     -6.83     -7.88 -1.689e-07 -2.259e-07    4    0   0 0,0,0
+  4     -6.78      -6.91     -6.90     -6.96     -6.84     -7.48 -4.166e-07 -6.425e-07    7    0   0 0,0,0
+  5     -6.91      -6.69     -6.77     -6.69     -6.88     -7.40 -3.772e-07 -1.020e-06    6    0   0 0,0,0
+  6     -6.69      -6.70     -6.74     -7.10     -6.71     -7.65 -8.098e-07 -1.829e-06    7    0   0 0,0,0
+  7     -6.70      -6.65     -6.86     -6.77     -6.95     -7.57 -5.904e-07 -2.420e-06    7    0   0 0,0,0
+  8     -6.65      -6.48     -6.55     -6.76     -6.71     -7.00 -8.907e-07 -3.311e-06    9    0   0 0,0,0
+  9     -6.48      -6.36     -6.54     -6.63     -6.63     -6.89 -1.589e-06 -4.899e-06    8    0   0 0,0,0
+ 10     -6.36      -6.23     -6.31     -6.50     -6.43     -6.91 -2.578e-06 -7.477e-06   10    0   0 0,0,0
+ 11     -6.23      -6.09     -6.23     -6.92     -6.33     -6.91 -3.794e-06 -1.127e-05   10    0   0 0,0,0
+ 12     -6.09      -6.07     -6.55     -6.69     -6.55     -6.92 -5.673e-06 -1.694e-05    9    0   0 0,0,0
+ 13     -6.07      -6.01     -6.43     -6.46     -6.72     -6.74 -6.643e-06 -2.359e-05   10    0   0 0,0,0
+ 14     -6.01      -5.96     -6.38     -6.66     -6.49     -7.03 -8.435e-06 -3.202e-05    9    0   0 0,0,0
+ 15     -5.96      -5.95     -6.56     -6.79     -6.63     -6.59 -1.007e-05 -4.210e-05    9    0   0 0,0,0
+ 16     -5.95      -5.88     -6.15     -6.81     -6.38     -6.54 -1.149e-05 -5.358e-05   10    0   0 0,0,0
+ 17     -5.88      -5.86     -6.77     -6.51     -7.03     -6.95 -1.434e-05 -6.792e-05   10    0   0 0,0,0
+ 18     -5.86      -5.88     -6.71     -6.88     -6.55     -6.96 -1.523e-05 -8.315e-05   10    0   0 0,0,0
+ 19     -5.88      -5.88     -6.52     -6.50     -6.69     -6.99 -1.507e-05 -9.822e-05   10    0   0 0,0,0
+ 20     -5.88      -5.92     -6.13     -6.13     -6.14     -7.16 -1.587e-05 -1.141e-04   10    0   0 0,0,0
+ 21     -5.92      -5.93     -6.33     -6.98     -6.41     -7.16 -1.389e-05 -1.280e-04    9    0   0 0,0,0
+ 22     -5.93      -5.94     -6.34     -6.24     -6.38     -6.71 -1.340e-05 -1.414e-04   10    0   0 0,0,0
+ 23     -5.94      -5.95     -6.34     -6.69     -6.35     -6.70 -1.350e-05 -1.549e-04   10    0   0 0,0,0
+ 24     -5.95      -5.95     -6.68     -6.38     -6.44     -6.80 -1.285e-05 -1.677e-04   10    0   0 0,0,0
+ 25     -5.95      -5.96     -6.37     -6.56     -6.24     -6.81 -1.291e-05 -1.806e-04   10    0   0 0,0,0
+ 26     -5.96      -5.96     -6.24     -6.59     -6.32     -7.00 -1.286e-05 -1.935e-04   10    0   0 0,0,0
+ 27     -5.96      -5.96     -7.01     -6.64     -6.70     -6.92 -1.145e-05 -2.049e-04    9    0   0 0,0,0
+ 28     -5.96      -6.01     -6.38     -6.50     -6.46     -6.78 -1.058e-05 -2.155e-04   10    0   0 0,0,0
+ 29     -6.01      -5.99     -6.24     -6.59     -6.19     -6.69 -9.106e-06 -2.246e-04   10    0   0 0,0,0
+ 30     -5.99      -6.02     -6.51     -6.30     -7.07     -6.64 -8.572e-06 -2.332e-04   10    0   0 0,0,0
+ 31     -6.02      -6.07     -6.45     -6.63     -6.50     -6.63 -7.720e-06 -2.409e-04    9    0   0 0,0,0
+ 32     -6.07      -6.04     -6.70     -6.57     -6.58     -7.04 -6.604e-06 -2.475e-04    8    0   0 0,0,0
+ 33     -6.04      -6.07     -6.73     -6.83     -7.00     -7.06 -5.974e-06 -2.535e-04    9    0   0 0,0,0
+ 34     -6.07      -6.06     -6.67     -6.04     -6.61     -7.45 -5.418e-06 -2.589e-04    9    0   0 0,0,0
+ 35     -6.06      -6.04     -6.35     -6.36     -6.32     -7.32 -4.713e-06 -2.636e-04    9    0   0 0,0,0
+ 36     -6.04      -5.99     -6.35     -6.52     -6.29     -7.19 -3.665e-06 -2.673e-04    9    0   0 0,0,0
+ 37     -5.99      -5.98     -6.36     -6.42     -6.32     -6.94 -2.597e-06 -2.699e-04    9    0   0 0,0,0
+ 38     -5.98      -5.96     -6.69     -6.53     -6.46     -6.84 -1.421e-06 -2.713e-04   10    0   0 0,0,0
+ 39     -5.96      -5.96     -6.43     -6.26     -6.47     -7.10 -3.475e-07 -2.717e-04   10    0   0 0,0,0
+ 40     -5.96      -5.91     -6.34     -6.70     -6.33     -7.17 +7.799e-07 -2.709e-04   10    0   0 0,0,0
+ 41     -5.91      -5.89     -6.04     -6.42     -6.08     -6.80 +1.625e-06 -2.693e-04    9    0   0 0,0,0
+ 42     -5.89      -5.85     -6.14     -6.45     -6.38     -6.51 +2.376e-06 -2.669e-04    8    0   0 0,0,0
+ 43     -5.85      -5.79     -6.10     -6.58     -6.38     -6.32 +2.660e-06 -2.642e-04    9    0   0 0,0,0
+ 44     -5.79      -5.73     -6.07     -6.55     -6.60     -6.09 +2.726e-06 -2.615e-04   10    0   0 0,0,0
+ 45     -5.73      -5.66     -5.95     -6.55     -6.45     -6.02 +2.557e-06 -2.589e-04   10    0   0 0,0,0
+ 46     -5.66      -5.60     -5.98     -6.42     -6.53     -5.99 +2.326e-06 -2.566e-04   10    0   0 0,0,0
+ 47     -5.60      -5.56     -6.12     -6.52     -6.67     -6.05 +2.170e-06 -2.545e-04   10    0   0 0,0,0
+ 48     -5.56      -5.55     -6.32     -6.36     -6.66     -6.37 +1.998e-06 -2.525e-04   10    0   0 0,0,0
+ 49     -5.55      -5.56     -6.25     -6.51     -6.71     -6.19 +2.709e-06 -2.497e-04   10    0   0 0,0,0
+ 50     -5.56      -5.55     -6.11     -6.46     -6.52     -6.16 +3.990e-06 -2.458e-04   10    0   0 0,0,0
+ 51     -5.55      -5.55     -6.69     -6.28     -6.91     -6.55 +3.911e-06 -2.418e-04   10    0   0 0,0,0
+ 52     -5.55      -5.55     -6.37     -6.76     -6.88     -6.44 +4.203e-06 -2.376e-04   10    0   0 0,0,0
+ 53     -5.55      -5.56     -6.48     -6.50     -6.68     -6.32 +3.930e-06 -2.337e-04   10    0   0 0,0,0
+ 54     -5.56      -5.56     -6.35     -6.49     -6.98     -6.46 +3.462e-06 -2.302e-04    9    0   0 0,0,0
+ 55     -5.56      -5.57     -6.25     -6.72     -6.65     -6.28 +3.468e-06 -2.268e-04   10    0   0 0,0,0
+ 56     -5.57      -5.57     -6.21     -6.49     -6.63     -6.27 +2.962e-06 -2.238e-04   10    0   0 0,0,0
+ 57     -5.57      -5.58     -6.31     -6.45     -6.50     -6.33 +1.875e-06 -2.219e-04   10    0   0 0,0,0
+ 58     -5.58      -5.58     -6.52     -6.56     -6.92     -6.38 +6.545e-07 -2.213e-04   10    0   0 0,0,0
+ 59     -5.58      -5.58     -6.56     -6.77     -7.02     -6.46 -3.137e-07 -2.216e-04   10    0   0 0,0,0
+ 60     -5.58      -5.60     -6.85     -6.69     -6.72     -6.70 -1.312e-06 -2.229e-04   10    0   0 0,0,0
+ 61     -5.60      -5.61     -6.92     -7.20     -7.28     -6.76 -1.952e-06 -2.249e-04   10    0   0 0,0,0
+ 62     -5.61      -5.62     -6.58     -6.69     -7.30     -6.57 -2.321e-06 -2.272e-04   10    0   0 0,0,0
+ 63     -5.62      -5.62     -6.78     -6.80     -6.93     -6.76 -2.468e-06 -2.297e-04    9    0   0 0,0,0
+ 64     -5.62      -5.62     -6.38     -7.00     -6.81     -6.42 -2.440e-06 -2.321e-04   10    0   0 0,0,0
+ 65     -5.62      -5.63     -6.70     -7.12     -6.91     -6.91 -2.350e-06 -2.344e-04   10    0   0 0,0,0
+ 66     -5.63      -5.63     -6.58     -6.97     -6.84     -6.51 -2.435e-06 -2.369e-04   10    0   0 0,0,0
+ 67     -5.63      -5.63     -6.64     -6.86     -6.84     -6.55 -2.577e-06 -2.395e-04   10    0   0 0,0,0
+ 68     -5.63      -5.62     -6.33     -6.76     -6.95     -6.41 -2.725e-06 -2.422e-04   10    0   0 0,0,0
+ 69     -5.62      -5.60     -6.31     -6.94     -7.05     -6.28 -3.061e-06 -2.452e-04   10    0   0 0,0,0
+ 70     -5.60      -5.60     -6.44     -6.85     -6.97     -6.33 -3.622e-06 -2.489e-04   10    0   0 0,0,0
+ 71     -5.60      -5.58     -6.29     -7.19     -6.94     -6.20 -4.381e-06 -2.532e-04   10    0   0 0,0,0
+ 72     -5.58      -5.55     -6.15     -7.12     -6.70     -6.30 -5.478e-06 -2.587e-04   10    0   0 0,0,0
+ 73     -5.55      -5.53     -6.25     -6.88     -6.82     -6.37 -7.087e-06 -2.658e-04   10    0   0 0,0,0
+ 74     -5.53      -5.54     -6.29     -7.03     -6.86     -6.29 -8.914e-06 -2.747e-04   10    0   0 0,0,0
+ 75     -5.54      -5.53     -6.47     -6.92     -6.78     -6.30 -1.005e-05 -2.848e-04   10    0   0 0,0,0
+ 76     -5.53      -5.52     -6.22     -6.74     -6.65     -6.22 -1.110e-05 -2.959e-04   10    0   0 0,0,0
+ 77     -5.52      -5.49     -6.00     -6.87     -6.64     -6.11 -1.237e-05 -3.082e-04   10    0   0 0,0,0
+ 78     -5.49      -5.45     -5.98     -6.79     -6.59     -5.94 -1.378e-05 -3.220e-04   10    0   0 0,0,0
+ 79     -5.45      -5.43     -6.04     -6.79     -7.03     -6.03 -1.562e-05 -3.376e-04   10    0   0 0,0,0
+ 80     -5.43      -5.39     -5.88     -6.66     -6.56     -5.98 -1.803e-05 -3.557e-04   10    0   0 0,0,0
+ 81     -5.39      -5.37     -6.01     -6.74     -6.95     -6.06 -2.175e-05 -3.774e-04    9    0   0 0,0,0
+ 82     -5.37      -5.35     -6.00     -6.44     -6.73     -6.09 -2.616e-05 -4.036e-04   10    0   0 0,0,0
+ 83     -5.35      -5.34     -6.14     -6.85     -6.60     -6.01 -3.148e-05 -4.351e-04   10    0   0 0,0,0
+ 84     -5.34      -5.33     -6.06     -6.90     -6.56     -6.23 -3.667e-05 -4.717e-04   10    0   0 0,0,0
+ 85     -5.33      -5.32     -5.98     -6.67     -6.61     -6.10 -4.253e-05 -5.143e-04   10    0   0 0,0,0
+ 86     -5.32      -5.31     -6.20     -6.34     -7.14     -6.24 -4.841e-05 -5.627e-04   10    0   0 0,0,0
+ 87     -5.31      -5.30     -6.03     -6.81     -6.36     -6.31 -5.282e-05 -6.155e-04   10    0   0 0,0,0
+ 88     -5.30      -5.29     -6.27     -6.62     -6.65     -6.50 -5.752e-05 -6.730e-04   10    0   0 0,0,0
+ 89     -5.29      -5.30     -6.59     -6.73     -7.10     -6.53 -5.980e-05 -7.328e-04   10    0   0 0,0,0
+ 90     -5.30      -5.30     -6.69     -6.78     -6.62     -6.52 -6.044e-05 -7.933e-04   10    0   0 0,0,0
+ 91     -5.30      -5.31     -6.47     -6.54     -6.42     -6.65 -5.990e-05 -8.532e-04    9    0   0 0,0,0
+ 92     -5.31      -5.32     -6.19     -6.54     -6.24     -6.62 -5.766e-05 -9.108e-04   10    0   0 0,0,0
+ 93     -5.32      -5.33     -6.71     -6.18     -6.64     -6.68 -5.430e-05 -9.651e-04   10    0   0 0,0,0
+ 94     -5.33      -5.34     -6.25     -6.18     -6.36     -6.69 -5.132e-05 -1.016e-03   10    0   0 0,0,0
+ 95     -5.34      -5.34     -6.52     -6.20     -6.36     -6.63 -4.723e-05 -1.064e-03    9    0   0 0,0,0
+ 96     -5.34      -5.35     -6.66     -6.51     -6.41     -6.72 -4.320e-05 -1.107e-03   10    0   0 0,0,0
+ 97     -5.35      -5.35     -6.28     -5.98     -6.38     -6.53 -3.897e-05 -1.146e-03   10    0   0 0,0,0
+ 98     -5.35      -5.37     -6.44     -6.49     -6.73     -6.66 -3.393e-05 -1.180e-03    9    0   0 0,0,0
+ 99     -5.37      -5.38     -6.82     -6.25     -6.49     -6.36 -2.924e-05 -1.209e-03   10    0   0 0,0,0
+  all steps (shown): largest one-step growth 0.3240748496117463 decades at step 3; 56 steps growing; 1.9978294273543449 decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 45, the first at step 15; largest one-step growth on them 0.06426968658785767 decades at step 43 (at most 1): passed True [shown]
+
+=== READINGS (PRESPEC.md 19.6), judged on smoke/rebrac-alone step 15000 ===
+  the lane's numbers reproduced bit for bit on 7 of 7 banks: True
+  (i) injected gap within max(1e-5, 10 x float32 reference spread) on every bank: True (highest share of its bound: big_kicks, 1.33e-06 against 1.00e-05)
+  (ii) big_kicks's worst start 757: propagation reaches injection at step 9; largest growth on propagation-dominated steps 0.06519855609529647 decades: True
+  (iii) big_kicks: same-size control / J32-J64, bank's largest 1.61: True (at the worst start 1.61, shown)
+  big_kicks starts above 0.01 points: 0; above 0.05: 0
+  VERDICT: consistent with float32 rounding amplified by the closed loop: True
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/smoke/root/runs/shift_hosts/stage1/medium-expert/seed0/td3_bc-alone/lanes/s7-step15000/s7.json sha256 b0ed365fe6d1842b6bfc930b88b304a139a25295cd089be158f7729865ee17a4
+probe: td3_bc-alone's record was made on code manifest made-up; this process runs e397273a553a1963 (DIFFERENT)
+
+=== smoke/td3_bc-alone step 15000: learner td3_bc, actor a05b568f9a1437da, s7.json present (tol_points 0.05); shown, not judged
+[scored/none] starts 1000 finite True reproduced True | |dpoints| p50 1.59e-06 p90 5.00e-06 p99 8.66e-06 p99.9 1.17e-05 max 1.7494e-05 mean 2.193e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.223e-04
+    (i) injected gap max 1.01e-06; float32 reference spread max 7.60e-07 (ratio 1.33); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 983:1.75e-05 666:1.17e-05 146:1.04e-05 523:1.04e-05 842:1.01e-05 676:1.00e-05 426:9.25e-06 76:9.23e-06 708:9.03e-06 648:8.81e-06
+[scored/mild] starts 1000 finite True reproduced True | |dpoints| p50 1.59e-06 p90 5.00e-06 p99 8.66e-06 p99.9 1.17e-05 max 1.7494e-05 mean 2.193e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.223e-04
+    (i) injected gap max 1.01e-06; float32 reference spread max 7.60e-07 (ratio 1.33); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 983:1.75e-05 666:1.17e-05 146:1.04e-05 523:1.04e-05 842:1.01e-05 676:1.00e-05 426:9.25e-06 76:9.23e-06 708:9.03e-06 648:8.81e-06
+[scored/strong] starts 1000 finite True reproduced True | |dpoints| p50 1.59e-06 p90 5.00e-06 p99 8.66e-06 p99.9 1.17e-05 max 1.7494e-05 mean 2.193e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.223e-04
+    (i) injected gap max 1.01e-06; float32 reference spread max 7.60e-07 (ratio 1.33); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 983:1.75e-05 666:1.17e-05 146:1.04e-05 523:1.04e-05 842:1.01e-05 676:1.00e-05 426:9.25e-06 76:9.23e-06 708:9.03e-06 648:8.81e-06
+[scored/recorded] starts 1000 finite True reproduced True | |dpoints| p50 3.79e-05 p90 1.19e-04 p99 2.06e-04 p99.9 2.77e-04 max 0.000416009 mean 5.214e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.223e-04
+    (i) injected gap max 1.01e-06; float32 reference spread max 7.60e-07 (ratio 1.33); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 983:4.16e-04 666:2.77e-04 146:2.48e-04 523:2.48e-04 842:2.40e-04 676:2.38e-04 426:2.20e-04 76:2.19e-04 708:2.15e-04 648:2.10e-04
+[scored/strong_current] starts 1000 finite True reproduced True | |dpoints| p50 3.25e-05 p90 8.31e-05 p99 1.40e-04 p99.9 1.76e-04 max 0.000179663 mean 3.968e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.698e-04
+    (i) injected gap max 1.36e-06; float32 reference spread max 9.24e-07 (ratio 1.47); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 789:1.80e-04 683:1.76e-04 950:1.68e-04 162:1.64e-04 547:1.62e-04 471:1.60e-04 679:1.58e-04 491:1.56e-04 133:1.55e-04 942:1.50e-04
+[scored/big_waves] starts 1000 finite True reproduced True | |dpoints| p50 5.24e-05 p90 1.36e-04 p99 2.40e-04 p99.9 3.18e-04 max 0.000342578 mean 6.539e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.419e-04
+    (i) injected gap max 1.37e-06; float32 reference spread max 9.61e-07 (ratio 1.43); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 414:3.43e-04 53:3.18e-04 122:2.89e-04 938:2.78e-04 816:2.71e-04 509:2.69e-04 658:2.54e-04 543:2.51e-04 237:2.50e-04 450:2.48e-04
+[scored/big_kicks] starts 1000 finite True reproduced True | |dpoints| p50 3.78e-05 p90 1.09e-04 p99 2.23e-04 p99.9 2.84e-04 max 0.00033013 mean 5.075e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.293e-04
+    (i) injected gap max 2.21e-06; float32 reference spread max 1.25e-06 (ratio 1.77); bound max(1e-5, 10 x spread) 1.25e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 699:3.30e-04 686:2.84e-04 457:2.68e-04 420:2.59e-04 194:2.43e-04 560:2.43e-04 773:2.42e-04 39:2.42e-04 982:2.40e-04 730:2.37e-04
+
+--- controls: |dpoints| of rounding-size perturbations that do not involve the restatement ---
+    round = float64 adapter with float32-rounded commands; up/down = start floats +-1 ulp (float64 adapter); f32_up = restatement, +1 ulp; same_fixed0-1 / same_random0-2 = float64 adapter plus offsets of the measured injected size, signs fixed per start or drawn per step (control (e), judged in (iii) as the largest of its five draws); the others are shown, not judged
+[scored/none] J32-J64 worst start 983: 1.75e-05 | round: max 1.61e-06, rho +0.14, worst start 4.29e-07 (rank 114) | up: max 2.84e-14, rho -0.03, worst start 0.00e+00 (rank 169) | down: max 3.55e-14, rho +0.01, worst start 1.42e-14 (rank 28) | same_fixed0: max 2.60e-05, rho +0.16, worst start 1.55e-05 (rank 39) | same_fixed1: max 3.28e-05, rho +0.21, worst start 1.49e-05 (rank 51) | same_random0: max 1.19e-05, rho +0.15, worst start 6.93e-06 (rank 28) | same_random1: max 1.95e-05, rho +0.16, worst start 3.50e-06 (rank 189) | same_random2: max 1.20e-05, rho +0.21, worst start 4.29e-06 (rank 118) | f32_up: max 3.55e-14, rho +0.07, worst start 0.00e+00 (rank 197)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.87 (within 0.1-10: True) [shown]; at the worst start 0.883 (shown)
+[scored/mild] J32-J64 worst start 983: 1.75e-05 | round: max 1.61e-06, rho +0.14, worst start 4.29e-07 (rank 114) | up: max 2.84e-14, rho -0.03, worst start 0.00e+00 (rank 169) | down: max 3.55e-14, rho +0.01, worst start 1.42e-14 (rank 28) | same_fixed0: max 2.60e-05, rho +0.20, worst start 1.05e-05 (rank 186) | same_fixed1: max 2.41e-05, rho +0.19, worst start 2.41e-05 (rank 1) | same_random0: max 1.27e-05, rho +0.13, worst start 5.82e-06 (rank 45) | same_random1: max 1.09e-05, rho +0.16, worst start 1.55e-06 (rank 508) | same_random2: max 1.48e-05, rho +0.11, worst start 2.52e-07 (rank 901) | f32_up: max 3.55e-14, rho +0.07, worst start 0.00e+00 (rank 197)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.49 (within 0.1-10: True) [shown]; at the worst start 1.38 (shown)
+[scored/strong] J32-J64 worst start 983: 1.75e-05 | round: max 1.61e-06, rho +0.14, worst start 4.29e-07 (rank 114) | up: max 2.84e-14, rho -0.03, worst start 0.00e+00 (rank 169) | down: max 3.55e-14, rho +0.01, worst start 1.42e-14 (rank 28) | same_fixed0: max 2.27e-05, rho +0.19, worst start 1.55e-05 (rank 30) | same_fixed1: max 2.53e-05, rho +0.22, worst start 2.43e-05 (rank 2) | same_random0: max 1.35e-05, rho +0.19, worst start 6.12e-06 (rank 41) | same_random1: max 1.15e-05, rho +0.16, worst start 2.66e-06 (rank 301) | same_random2: max 1.49e-05, rho +0.23, worst start 5.14e-06 (rank 67) | f32_up: max 3.55e-14, rho +0.07, worst start 0.00e+00 (rank 197)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.44 (within 0.1-10: True) [shown]; at the worst start 1.39 (shown)
+[scored/recorded] J32-J64 worst start 983: 4.16e-04 | round: max 3.82e-05, rho +0.14, worst start 1.02e-05 (rank 114) | up: max 6.82e-13, rho -0.04, worst start 0.00e+00 (rank 388) | down: max 6.82e-13, rho -0.00, worst start 3.41e-13 (rank 21) | same_fixed0: max 7.84e-04, rho +0.21, worst start 2.55e-04 (rank 163) | same_fixed1: max 6.01e-04, rho +0.21, worst start 3.41e-04 (rank 56) | same_random0: max 2.92e-04, rho +0.18, worst start 3.14e-05 (rank 569) | same_random1: max 3.63e-04, rho +0.11, worst start 9.84e-05 (rank 133) | same_random2: max 2.88e-04, rho +0.18, worst start 7.59e-05 (rank 219) | f32_up: max 9.09e-13, rho +0.02, worst start 0.00e+00 (rank 401)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.88 (within 0.1-10: True) [shown]; at the worst start 0.819 (shown)
+[scored/strong_current] J32-J64 worst start 789: 1.80e-04 | round: max 2.32e-05, rho +0.06, worst start 2.16e-06 (rank 569) | up: max 5.68e-13, rho +0.04, worst start 1.71e-13 (rank 61) | down: max 5.68e-13, rho +0.00, worst start 0.00e+00 (rank 347) | same_fixed0: max 3.59e-04, rho +0.05, worst start 4.26e-05 (rank 910) | same_fixed1: max 3.63e-04, rho +0.08, worst start 1.45e-04 (rank 278) | same_random0: max 2.49e-04, rho +0.03, worst start 3.77e-05 (rank 444) | same_random1: max 2.38e-04, rho +0.07, worst start 2.03e-05 (rank 654) | same_random2: max 1.90e-04, rho +0.05, worst start 4.07e-05 (rank 384) | f32_up: max 4.55e-13, rho +0.00, worst start 1.14e-13 (rank 80)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.02 (within 0.1-10: True) [shown]; at the worst start 0.805 (shown)
+[scored/big_waves] J32-J64 worst start 414: 3.43e-04 | round: max 4.56e-05, rho +0.03, worst start 8.13e-08 (rank 982) | up: max 6.82e-13, rho -0.02, worst start 0.00e+00 (rank 371) | down: max 9.09e-13, rho -0.02, worst start 0.00e+00 (rank 356) | same_fixed0: max 5.36e-04, rho +0.09, worst start 2.72e-04 (rank 107) | same_fixed1: max 4.96e-04, rho +0.05, worst start 2.72e-04 (rank 95) | same_random0: max 3.12e-04, rho +0.04, worst start 3.87e-05 (rank 569) | same_random1: max 3.43e-04, rho +0.05, worst start 1.06e-04 (rank 178) | same_random2: max 4.01e-04, rho +0.05, worst start 1.00e-05 (rank 890) | f32_up: max 9.09e-13, rho -0.01, worst start 0.00e+00 (rank 381)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.56 (within 0.1-10: True) [shown]; at the worst start 0.794 (shown)
+[scored/big_kicks] J32-J64 worst start 699: 3.30e-04 | round: max 3.58e-05, rho +0.15, worst start 2.68e-06 (rank 605) | up: max 9.09e-13, rho +0.03, worst start 2.27e-13 (rank 116) | down: max 1.48e-12, rho -0.03, worst start 0.00e+00 (rank 554) | same_fixed0: max 5.81e-04, rho +0.19, worst start 4.60e-04 (rank 8) | same_fixed1: max 5.70e-04, rho +0.21, worst start 4.19e-04 (rank 7) | same_random0: max 2.71e-04, rho +0.19, worst start 3.86e-05 (rank 489) | same_random1: max 2.82e-04, rho +0.22, worst start 1.07e-04 (rank 90) | same_random2: max 4.66e-04, rho +0.13, worst start 1.07e-04 (rank 95) | f32_up: max 9.09e-13, rho +0.04, worst start 4.55e-13 (rank 10)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.76 (within 0.1-10: True) [shown]; at the worst start 1.39 (shown)
+
+--- worst start of scored/recorded: start 983, |dpoints| 0.000416009 (differences only) [shown] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf      -7.54     -7.19     -7.19     -7.19      -inf -4.016e-09 -4.016e-09    0    0   0 -
+  1     -7.54      -7.05     -6.91     -6.82     -6.93     -8.23 -2.581e-09 -6.597e-09    3    0   0 -
+  2     -7.05      -6.92     -7.09     -7.05     -7.04     -7.61 +8.765e-08 +8.105e-08    5    0   0 -
+  3     -6.92      -6.84     -6.83     -6.92     -6.81     -7.55 +1.725e-07 +2.536e-07    7    0   0 -
+  4     -6.84      -6.80     -6.59     -6.92     -6.72     -7.16 +1.233e-07 +3.769e-07    7    0   0 -
+  5     -6.80      -6.72     -6.99     -7.02     -7.00     -7.19 +1.696e-07 +5.466e-07    7    0   0 -
+  6     -6.72      -6.68     -6.87     -6.88     -6.94     -7.43 -1.072e-07 +4.394e-07    6    0   0 -
+  7     -6.68      -6.72     -6.66     -6.61     -6.70     -7.37 -1.540e-07 +2.853e-07    7    0   0 -
+  8     -6.72      -6.63     -6.68     -6.74     -6.63     -7.21 -2.846e-07 +7.216e-10    8    0   0 -
+  9     -6.63      -6.69     -6.80     -6.49     -6.72     -7.20 -3.894e-07 -3.887e-07    9    0   0 -
+ 10     -6.69      -6.43     -6.41     -6.41     -6.37     -7.34 -9.733e-08 -4.860e-07    7    0   0 -
+ 11     -6.43      -6.43     -6.70     -6.62     -7.08     -6.94 -4.043e-07 -8.903e-07    8    0   0 -
+ 12     -6.43      -6.41     -6.46     -6.47     -6.52     -6.58 -4.652e-07 -1.355e-06    9    0   0 -
+ 13     -6.41      -6.39     -6.85     -6.51     -6.71     -6.67 -5.619e-07 -1.917e-06    8    0   0 -
+ 14     -6.39      -6.30     -6.53     -6.85     -6.69     -6.93 -7.182e-07 -2.636e-06   10    0   0 -
+ 15     -6.30      -6.30     -6.71     -6.94     -6.91     -6.81 -1.028e-06 -3.663e-06    9    0   0 -
+ 16     -6.30      -6.33     -6.61     -6.87     -7.23     -6.68 -1.152e-06 -4.815e-06    8    0   0 -
+ 17     -6.33      -6.37     -6.60     -7.11     -6.51     -6.89 -1.173e-06 -5.988e-06    9    0   0 -
+ 18     -6.37      -6.41     -6.48     -6.58     -6.63     -6.91 -1.071e-06 -7.059e-06   10    0   0 -
+ 19     -6.41      -6.36     -6.41     -6.64     -6.54     -7.00 -1.072e-06 -8.131e-06   10    0   0 -
+ 20     -6.36      -6.28     -6.39     -6.49     -6.41     -6.99 -1.382e-06 -9.513e-06    9    0   0 -
+ 21     -6.28      -6.22     -6.55     -6.63     -6.50     -6.85 -1.634e-06 -1.115e-05    9    0   0 -
+ 22     -6.22      -6.29     -6.58     -6.59     -7.03     -6.62 -2.195e-06 -1.334e-05   10    0   0 -
+ 23     -6.29      -6.37     -6.61     -6.54     -6.82     -6.76 -1.814e-06 -1.516e-05   10    0   0 -
+ 24     -6.37      -6.34     -6.57     -6.75     -6.54     -6.68 -1.555e-06 -1.671e-05    9    0   0 -
+ 25     -6.34      -6.29     -6.67     -6.93     -6.50     -6.99 -1.579e-06 -1.829e-05    9    0   0 -
+ 26     -6.29      -6.26     -6.37     -6.52     -6.66     -6.49 -2.088e-06 -2.038e-05    8    0   0 -
+ 27     -6.26      -6.20     -6.54     -6.49     -6.45     -6.91 -2.082e-06 -2.246e-05    8    0   0 -
+ 28     -6.20      -6.20     -6.40     -6.28     -6.40     -6.85 -2.244e-06 -2.470e-05    8    0   0 -
+ 29     -6.20      -6.19     -6.40     -6.54     -6.41     -6.76 -2.653e-06 -2.736e-05    9    0   0 -
+ 30     -6.19      -6.11     -6.18     -6.47     -6.28     -6.86 -2.769e-06 -3.013e-05    9    0   0 -
+ 31     -6.11      -6.12     -6.67     -6.64     -6.60     -6.52 -2.340e-06 -3.247e-05    9    0   0 -
+ 32     -6.12      -6.04     -6.40     -6.94     -6.46     -6.57 -2.345e-06 -3.481e-05    9    0   0 -
+ 33     -6.04      -6.04     -6.41     -6.73     -6.52     -6.48 -2.723e-06 -3.753e-05   10    0   0 -
+ 34     -6.04      -5.98     -6.29     -6.59     -6.99     -6.39 -2.835e-06 -4.037e-05   10    0   0 -
+ 35     -5.98      -5.96     -6.38     -7.05     -6.83     -6.57 -3.427e-06 -4.380e-05   10    0   0 -
+ 36     -5.96      -5.94     -6.52     -6.72     -7.09     -6.62 -3.935e-06 -4.773e-05   10    0   0 -
+ 37     -5.94      -5.93     -6.49     -6.67     -6.89     -6.44 -4.407e-06 -5.214e-05   10    0   0 -
+ 38     -5.93      -5.94     -6.22     -7.46     -6.96     -6.27 -4.717e-06 -5.686e-05   10    0   0 -
+ 39     -5.94      -5.93     -6.31     -6.68     -6.96     -6.41 -4.758e-06 -6.161e-05   10    0   0 -
+ 40     -5.93      -5.93     -6.25     -7.01     -6.62     -6.32 -4.756e-06 -6.637e-05   10    0   0 -
+ 41     -5.93      -5.93     -6.26     -6.71     -7.00     -6.33 -4.344e-06 -7.071e-05   10    0   0 -
+ 42     -5.93      -5.95     -6.70     -6.85     -6.84     -6.68 -3.544e-06 -7.426e-05   10    0   0 -
+ 43     -5.95      -5.92     -6.31     -6.57     -6.66     -6.57 -3.532e-06 -7.779e-05   10    0   0 -
+ 44     -5.92      -5.86     -6.26     -6.46     -6.70     -6.46 -4.379e-06 -8.217e-05   10    0   0 -
+ 45     -5.86      -5.80     -6.22     -6.56     -6.48     -6.34 -6.576e-06 -8.874e-05   10    0   0 -
+ 46     -5.80      -5.78     -6.26     -6.51     -6.64     -6.49 -8.620e-06 -9.736e-05   10    0   0 -
+ 47     -5.78      -5.75     -6.05     -6.46     -6.39     -6.32 -9.286e-06 -1.067e-04   10    0   0 -
+ 48     -5.75      -5.76     -6.74     -6.79     -7.02     -6.55 -9.612e-06 -1.163e-04    9    0   0 -
+ 49     -5.76      -5.77     -6.48     -7.01     -7.01     -6.50 -9.613e-06 -1.259e-04   10    0   0 -
+ 50     -5.77      -5.78     -6.29     -7.00     -6.54     -6.48 -9.233e-06 -1.351e-04    9    0   0 -
+ 51     -5.78      -5.77     -6.46     -6.41     -6.61     -6.47 -8.626e-06 -1.437e-04   10    0   0 -
+ 52     -5.77      -5.76     -6.54     -6.80     -6.62     -6.91 -8.195e-06 -1.519e-04    9    0   0 -
+ 53     -5.76      -5.78     -6.45     -6.67     -6.79     -6.29 -7.374e-06 -1.593e-04   10    0   0 -
+ 54     -5.78      -5.78     -6.55     -6.53     -6.55     -6.41 -6.502e-06 -1.658e-04   10    0   0 -
+ 55     -5.78      -5.80     -6.65     -6.65     -6.65     -6.54 -5.796e-06 -1.716e-04    9    0   0 -
+ 56     -5.80      -5.82     -6.15     -6.67     -6.57     -6.35 -4.953e-06 -1.766e-04    9    0   0 -
+ 57     -5.82      -5.82     -6.48     -6.68     -6.49     -6.40 -4.171e-06 -1.807e-04   10    0   0 -
+ 58     -5.82      -5.86     -6.37     -6.53     -6.73     -6.34 -3.745e-06 -1.845e-04   10    0   0 -
+ 59     -5.86      -5.88     -6.33     -6.70     -6.84     -6.33 -3.410e-06 -1.879e-04   10    0   0 -
+ 60     -5.88      -5.87     -6.39     -6.87     -6.72     -6.48 -2.978e-06 -1.909e-04   10    0   0 -
+ 61     -5.87      -5.83     -6.25     -6.97     -6.53     -6.25 -2.663e-06 -1.935e-04   10    0   0 -
+ 62     -5.83      -5.76     -6.16     -6.96     -6.91     -6.22 -2.663e-06 -1.962e-04    9    0   0 -
+ 63     -5.76      -5.71     -6.21     -6.67     -6.85     -6.19 -3.109e-06 -1.993e-04    9    0   0 -
+ 64     -5.71      -5.72     -6.70     -6.95     -6.93     -6.68 -3.462e-06 -2.028e-04    9    0   0 -
+ 65     -5.72      -5.76     -6.24     -6.95     -7.04     -6.18 -3.300e-06 -2.061e-04    9    0   0 -
+ 66     -5.76      -5.76     -6.08     -6.77     -6.76     -6.04 -2.813e-06 -2.089e-04    9    0   0 -
+ 67     -5.76      -5.72     -6.08     -6.65     -6.59     -6.22 -2.203e-06 -2.111e-04    9    0   0 -
+ 68     -5.72      -5.72     -6.09     -6.70     -6.49     -6.10 -1.864e-06 -2.129e-04    9    0   0 -
+ 69     -5.72      -5.77     -6.08     -6.83     -6.49     -5.96 -8.886e-07 -2.138e-04    9    0   0 -
+ 70     -5.77      -5.81     -5.96     -6.68     -6.22     -6.23 +1.460e-07 -2.137e-04   10    0   0 -
+ 71     -5.81      -5.80     -6.24     -7.03     -6.39     -6.43 +2.152e-07 -2.135e-04   10    0   0 -
+ 72     -5.80      -5.78     -6.34     -7.03     -6.61     -6.67 +5.918e-07 -2.129e-04   10    0   0 -
+ 73     -5.78      -5.82     -6.46     -6.53     -6.58     -6.44 +1.305e-06 -2.116e-04    9    0   0 -
+ 74     -5.82      -5.85     -6.55     -6.99     -7.17     -6.60 +1.895e-06 -2.097e-04   10    0   0 -
+ 75     -5.85      -5.84     -6.30     -6.70     -6.61     -6.44 +1.984e-06 -2.077e-04   10    0   0 -
+ 76     -5.84      -5.85     -6.50     -6.69     -6.97     -6.48 +1.379e-06 -2.063e-04   10    0   0 -
+ 77     -5.85      -5.85     -6.28     -7.08     -7.06     -6.36 +7.727e-07 -2.055e-04    9    0   0 -
+ 78     -5.85      -5.88     -6.38     -6.87     -6.60     -6.68 +3.975e-07 -2.051e-04   10    0   0 -
+ 79     -5.88      -5.87     -6.58     -6.88     -6.84     -6.94 +3.062e-07 -2.048e-04    9    0   0 -
+ 80     -5.87      -5.89     -6.77     -6.63     -6.55     -6.58 +7.270e-08 -2.048e-04   10    0   0 -
+ 81     -5.89      -5.92     -6.41     -6.63     -6.55     -6.59 -8.898e-08 -2.048e-04   10    0   0 -
+ 82     -5.92      -5.93     -6.33     -6.99     -6.76     -6.53 -1.748e-07 -2.050e-04   10    0   0 -
+ 83     -5.93      -5.94     -6.82     -6.85     -6.90     -6.79 -9.850e-08 -2.051e-04    8    0   0 -
+ 84     -5.94      -5.94     -6.73     -7.13     -6.96     -6.62 -3.797e-08 -2.052e-04    8    0   0 -
+ 85     -5.94      -5.92     -6.51     -6.90     -7.04     -6.55 +2.085e-08 -2.051e-04   10    0   0 -
+ 86     -5.92      -5.92     -6.50     -6.86     -7.10     -6.58 +4.846e-08 -2.051e-04   10    0   0 -
+ 87     -5.92      -5.94     -6.67     -6.94     -6.90     -7.03 +6.565e-08 -2.050e-04   10    0   0 -
+ 88     -5.94      -5.94     -6.71     -6.79     -7.10     -6.94 +1.899e-07 -2.048e-04   10    0   0 -
+ 89     -5.94      -5.88     -6.33     -7.12     -6.75     -6.33 +2.992e-07 -2.045e-04   10    0   0 -
+ 90     -5.88      -5.90     -6.22     -7.13     -7.02     -6.16 +4.957e-07 -2.040e-04   10    0   0 -
+ 91     -5.90      -5.89     -6.22     -6.63     -7.08     -6.28 +4.917e-07 -2.035e-04   10    0   0 -
+ 92     -5.89      -5.88     -6.23     -7.24     -6.95     -6.22 +2.950e-07 -2.033e-04    9    0   0 -
+ 93     -5.88      -5.91     -6.44     -6.78     -6.60     -6.39 -4.813e-07 -2.037e-04    8    0   0 -
+ 94     -5.91      -5.92     -6.48     -6.98     -6.84     -6.56 -1.158e-06 -2.049e-04   10    0   0 -
+ 95     -5.92      -5.90     -6.33     -6.64     -6.92     -6.38 -1.777e-06 -2.067e-04    9    0   0 -
+ 96     -5.90      -5.84     -6.20     -6.90     -6.49     -6.51 -2.550e-06 -2.092e-04    9    0   0 -
+ 97     -5.84      -5.80     -6.50     -6.70     -6.80     -6.47 -3.542e-06 -2.128e-04   10    0   0 -
+ 98     -5.80      -5.78     -6.36     -6.80     -6.67     -6.59 -4.430e-06 -2.172e-04   10    0   0 -
+ 99     -5.78      -5.79     -6.43     -6.83     -6.55     -6.64 -5.122e-06 -2.223e-04   10    0   0 -
+  all steps (shown): largest one-step growth 0.49626165047908727 decades at step 1; 58 steps growing; 1.749820058857504 decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 58, the first at step 15; largest one-step growth on them 0.07153341090079154 decades at step 62 (at most 1): passed True [shown]
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/smoke/root/runs/shift_hosts/stage1/medium-expert/seed0/cql-alone/lanes/s7-step15000/s7.json sha256 2f8300794fc267d52f0dd8e61ecfbd5ab2e946334e1e544132975ce6db15abd4
+probe: cql-alone's record was made on code manifest made-up; this process runs e397273a553a1963 (DIFFERENT)
+
+=== smoke/cql-alone step 15000: learner cql, actor f100e4c16407d536, s7.json present (tol_points 0.05); shown, not judged
+[scored/none] starts 1000 finite True reproduced True | |dpoints| p50 1.36e-06 p90 3.96e-06 p99 7.60e-06 p99.9 1.10e-05 max 1.24904e-05 mean 1.799e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.587e-04
+    (i) injected gap max 1.25e-06; float32 reference spread max 1.01e-06 (ratio 1.23); bound max(1e-5, 10 x spread) 1.01e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 751:1.25e-05 434:1.10e-05 163:1.00e-05 239:9.98e-06 342:9.88e-06 35:9.31e-06 63:8.50e-06 740:8.37e-06 110:7.85e-06 181:7.68e-06
+[scored/mild] starts 1000 finite True reproduced True | |dpoints| p50 1.46e-06 p90 4.13e-06 p99 7.57e-06 p99.9 1.30e-05 max 1.35197e-05 mean 1.916e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.718e-04
+    (i) injected gap max 1.18e-06; float32 reference spread max 1.37e-06 (ratio 0.86); bound max(1e-5, 10 x spread) 1.37e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 671:1.35e-05 499:1.30e-05 347:1.12e-05 244:1.06e-05 980:1.04e-05 342:1.01e-05 144:9.85e-06 523:9.33e-06 217:8.55e-06 877:8.17e-06
+[scored/strong] starts 1000 finite True reproduced True | |dpoints| p50 1.30e-06 p90 3.79e-06 p99 6.06e-06 p99.9 8.24e-06 max 8.52849e-06 mean 1.690e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.084e-04
+    (i) injected gap max 1.23e-06; float32 reference spread max 1.10e-06 (ratio 1.12); bound max(1e-5, 10 x spread) 1.10e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 674:8.53e-06 689:8.24e-06 308:8.11e-06 509:7.41e-06 92:7.20e-06 474:7.12e-06 263:6.67e-06 162:6.60e-06 512:6.54e-06 475:6.15e-06
+[scored/recorded] starts 1000 finite True reproduced True | |dpoints| p50 3.34e-05 p90 9.17e-05 p99 1.58e-04 p99.9 2.54e-04 max 0.000290991 mean 4.234e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.555e-04
+    (i) injected gap max 1.12e-06; float32 reference spread max 1.34e-06 (ratio 0.838); bound max(1e-5, 10 x spread) 1.34e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 273:2.91e-04 615:2.54e-04 822:2.35e-04 484:2.10e-04 541:1.89e-04 294:1.72e-04 512:1.67e-04 181:1.66e-04 121:1.59e-04 413:1.59e-04
+[scored/strong_current] starts 1000 finite True reproduced True | |dpoints| p50 2.45e-05 p90 6.40e-05 p99 1.06e-04 p99.9 1.87e-04 max 0.000206206 mean 3.116e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.096e-04
+    (i) injected gap max 1.80e-06; float32 reference spread max 1.79e-06 (ratio 1.01); bound max(1e-5, 10 x spread) 1.79e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 487:2.06e-04 246:1.87e-04 484:1.49e-04 27:1.35e-04 4:1.30e-04 326:1.24e-04 977:1.19e-04 284:1.12e-04 497:1.11e-04 383:1.11e-04
+[scored/big_waves] starts 1000 finite True reproduced True | |dpoints| p50 3.08e-05 p90 8.18e-05 p99 1.41e-04 p99.9 2.07e-04 max 0.000213105 mean 3.830e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.505e-04
+    (i) injected gap max 1.34e-06; float32 reference spread max 1.19e-06 (ratio 1.12); bound max(1e-5, 10 x spread) 1.19e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 579:2.13e-04 325:2.07e-04 106:1.98e-04 871:1.87e-04 151:1.77e-04 347:1.62e-04 528:1.56e-04 654:1.56e-04 788:1.46e-04 831:1.45e-04
+[scored/big_kicks] starts 1000 finite True reproduced True | |dpoints| p50 2.31e-05 p90 6.71e-05 p99 1.12e-04 p99.9 1.65e-04 max 0.000199298 mean 3.002e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.988e-04
+    (i) injected gap max 1.84e-06; float32 reference spread max 1.28e-06 (ratio 1.44); bound max(1e-5, 10 x spread) 1.28e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 988:1.99e-04 689:1.64e-04 160:1.60e-04 847:1.36e-04 886:1.35e-04 607:1.32e-04 601:1.22e-04 519:1.19e-04 692:1.13e-04 555:1.12e-04
+[tanh_mean/none] starts 1000 finite True reproduced True | |dpoints| p50 4.86e-06 p90 1.41e-05 p99 2.19e-05 p99.9 2.54e-05 max 2.7701e-05 mean 6.235e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.520e-04
+    (i) injected gap max 8.29e-07; float32 reference spread max 5.36e-07 (ratio 1.55); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 860:2.77e-05 791:2.53e-05 172:2.46e-05 349:2.37e-05 957:2.35e-05 314:2.33e-05 251:2.30e-05 396:2.24e-05 431:2.23e-05 932:2.21e-05
+[tanh_mean/mild] starts 1000 finite True reproduced True | |dpoints| p50 4.86e-06 p90 1.41e-05 p99 2.19e-05 p99.9 2.54e-05 max 2.7701e-05 mean 6.235e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.520e-04
+    (i) injected gap max 8.29e-07; float32 reference spread max 5.36e-07 (ratio 1.55); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 860:2.77e-05 791:2.53e-05 172:2.46e-05 349:2.37e-05 957:2.35e-05 314:2.33e-05 251:2.30e-05 396:2.24e-05 431:2.23e-05 932:2.21e-05
+[tanh_mean/strong] starts 1000 finite True reproduced True | |dpoints| p50 4.86e-06 p90 1.41e-05 p99 2.19e-05 p99.9 2.54e-05 max 2.7701e-05 mean 6.235e-06 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.520e-04
+    (i) injected gap max 8.29e-07; float32 reference spread max 5.36e-07 (ratio 1.55); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 860:2.77e-05 791:2.53e-05 172:2.46e-05 349:2.37e-05 957:2.35e-05 314:2.33e-05 251:2.30e-05 396:2.24e-05 431:2.23e-05 932:2.21e-05
+[tanh_mean/recorded] starts 1000 finite True reproduced True | |dpoints| p50 1.16e-04 p90 3.34e-04 p99 5.21e-04 p99.9 6.03e-04 max 0.000658731 mean 1.483e-04 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.520e-04
+    (i) injected gap max 8.29e-07; float32 reference spread max 5.36e-07 (ratio 1.55); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 860:6.59e-04 791:6.03e-04 172:5.85e-04 349:5.64e-04 957:5.59e-04 314:5.55e-04 251:5.46e-04 396:5.33e-04 431:5.30e-04 932:5.25e-04
+[tanh_mean/strong_current] starts 1000 finite True reproduced True | |dpoints| p50 7.22e-05 p90 1.48e-04 p99 2.01e-04 p99.9 2.21e-04 max 0.000222102 mean 7.846e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 3.335e-04
+    (i) injected gap max 1.26e-06; float32 reference spread max 6.26e-07 (ratio 2.01); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 982:2.22e-04 481:2.21e-04 624:2.21e-04 263:2.16e-04 640:2.11e-04 275:2.08e-04 976:2.06e-04 708:2.06e-04 162:2.02e-04 784:2.01e-04
+[tanh_mean/big_waves] starts 1000 finite True reproduced True | |dpoints| p50 6.22e-05 p90 2.26e-04 p99 3.91e-04 p99.9 4.96e-04 max 0.000604648 mean 9.416e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 4.270e-04
+    (i) injected gap max 9.86e-07; float32 reference spread max 5.96e-07 (ratio 1.65); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 179:6.05e-04 246:4.96e-04 326:4.41e-04 711:4.39e-04 157:4.31e-04 677:4.23e-04 194:4.16e-04 943:4.11e-04 824:4.00e-04 434:3.94e-04
+[tanh_mean/big_kicks] starts 1000 finite True reproduced True | |dpoints| p50 5.93e-05 p90 2.07e-04 p99 3.59e-04 p99.9 4.59e-04 max 0.000493646 mean 8.852e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 4.924e-04
+    (i) injected gap max 1.02e-06; float32 reference spread max 6.26e-07 (ratio 1.63); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 206:4.94e-04 1:4.59e-04 907:4.41e-04 137:4.35e-04 860:4.26e-04 172:4.18e-04 485:3.85e-04 957:3.84e-04 158:3.75e-04 970:3.66e-04
+
+--- controls: |dpoints| of rounding-size perturbations that do not involve the restatement ---
+    round = float64 adapter with float32-rounded commands; up/down = start floats +-1 ulp (float64 adapter); f32_up = restatement, +1 ulp; same_fixed0-1 / same_random0-2 = float64 adapter plus offsets of the measured injected size, signs fixed per start or drawn per step (control (e), judged in (iii) as the largest of its five draws); the others are shown, not judged
+[scored/none] J32-J64 worst start 751: 1.25e-05 | round: max 1.73e-06, rho +0.08, worst start 2.59e-07 (rank 545) | up: max 5.33e-14, rho +0.06, worst start 1.78e-14 (rank 69) | down: max 5.24e-14, rho +0.09, worst start 0.00e+00 (rank 330) | same_fixed0: max 1.01e-05, rho +0.13, worst start 2.36e-07 (rank 886) | same_fixed1: max 9.95e-06, rho +0.12, worst start 2.73e-06 (rank 206) | same_random0: max 9.22e-06, rho +0.09, worst start 6.98e-07 (rank 757) | same_random1: max 7.87e-06, rho +0.18, worst start 7.54e-06 (rank 2) | same_random2: max 1.29e-05, rho +0.14, worst start 1.90e-06 (rank 332) | f32_up: max 4.26e-14, rho +0.08, worst start 0.00e+00 (rank 322)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.03 (within 0.1-10: True) [shown]; at the worst start 0.603 (shown)
+[scored/mild] J32-J64 worst start 671: 1.35e-05 | round: max 1.65e-06, rho +0.12, worst start 3.13e-08 (rank 940) | up: max 5.33e-14, rho +0.06, worst start 1.80e-14 (rank 46) | down: max 5.68e-14, rho +0.04, worst start 0.00e+00 (rank 318) | same_fixed0: max 1.76e-05, rho +0.12, worst start 5.10e-07 (rank 820) | same_fixed1: max 1.66e-05, rho +0.15, worst start 5.10e-07 (rank 807) | same_random0: max 1.03e-05, rho +0.18, worst start 3.42e-06 (rank 116) | same_random1: max 9.36e-06, rho +0.17, worst start 7.21e-07 (rank 711) | same_random2: max 1.11e-05, rho +0.16, worst start 2.97e-06 (rank 165) | f32_up: max 5.33e-14, rho +0.05, worst start 0.00e+00 (rank 303)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.3 (within 0.1-10: True) [shown]; at the worst start 0.253 (shown)
+[scored/strong] J32-J64 worst start 674: 8.53e-06 | round: max 2.19e-06, rho +0.05, worst start 4.50e-07 (rank 257) | up: max 4.26e-14, rho +0.03, worst start 1.95e-14 (rank 46) | down: max 5.33e-14, rho +0.01, worst start 0.00e+00 (rank 310) | same_fixed0: max 8.75e-06, rho +0.11, worst start 5.15e-06 (rank 42) | same_fixed1: max 8.56e-06, rho +0.11, worst start 5.17e-06 (rank 41) | same_random0: max 9.96e-06, rho +0.08, worst start 4.63e-06 (rank 56) | same_random1: max 8.59e-06, rho +0.14, worst start 4.33e-06 (rank 65) | same_random2: max 9.61e-06, rho +0.07, worst start 4.78e-07 (rank 812) | f32_up: max 5.42e-14, rho +0.09, worst start 0.00e+00 (rank 317)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.17 (within 0.1-10: True) [shown]; at the worst start 0.606 (shown)
+[scored/recorded] J32-J64 worst start 273: 2.91e-04 | round: max 3.73e-05, rho +0.12, worst start 1.49e-05 (rank 140) | up: max 1.14e-12, rho +0.01, worst start 0.00e+00 (rank 349) | down: max 1.36e-12, rho +0.04, worst start 0.00e+00 (rank 357) | same_fixed0: max 2.53e-04, rho +0.17, worst start 4.16e-05 (rank 389) | same_fixed1: max 2.38e-04, rho +0.14, worst start 1.33e-05 (rank 799) | same_random0: max 2.45e-04, rho +0.14, worst start 8.50e-05 (rank 83) | same_random1: max 2.18e-04, rho +0.11, worst start 4.55e-05 (rank 365) | same_random2: max 2.10e-04, rho +0.14, worst start 7.00e-05 (rank 153) | f32_up: max 1.36e-12, rho -0.00, worst start 4.55e-13 (rank 31)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 0.869 (within 0.1-10: True) [shown]; at the worst start 0.292 (shown)
+[scored/strong_current] J32-J64 worst start 487: 2.06e-04 | round: max 2.42e-05, rho +0.08, worst start 3.61e-06 (rank 563) | up: max 1.14e-12, rho -0.03, worst start 0.00e+00 (rank 293) | down: max 1.14e-12, rho -0.00, worst start 0.00e+00 (rank 301) | same_fixed0: max 1.55e-04, rho +0.01, worst start 1.28e-04 (rank 7) | same_fixed1: max 1.85e-04, rho +0.01, worst start 1.33e-04 (rank 10) | same_random0: max 1.62e-04, rho +0.04, worst start 3.70e-05 (rank 270) | same_random1: max 1.31e-04, rho +0.03, worst start 2.47e-05 (rank 498) | same_random2: max 1.39e-04, rho +0.02, worst start 4.00e-05 (rank 290) | f32_up: max 1.59e-12, rho +0.02, worst start 0.00e+00 (rank 317)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 0.898 (within 0.1-10: True) [shown]; at the worst start 0.643 (shown)
+[scored/big_waves] J32-J64 worst start 579: 2.13e-04 | round: max 4.06e-05, rho +0.11, worst start 7.94e-07 (rank 920) | up: max 1.36e-12, rho +0.04, worst start 1.36e-12 (rank 1) | down: max 9.09e-13, rho +0.01, worst start 0.00e+00 (rank 328) | same_fixed0: max 2.11e-04, rho +0.13, worst start 8.16e-05 (rank 113) | same_fixed1: max 2.17e-04, rho +0.11, worst start 8.87e-05 (rank 83) | same_random0: max 1.68e-04, rho +0.10, worst start 4.12e-05 (rank 340) | same_random1: max 1.64e-04, rho +0.09, worst start 3.77e-05 (rank 383) | same_random2: max 1.82e-04, rho +0.02, worst start 1.87e-06 (rank 954) | f32_up: max 1.36e-12, rho +0.03, worst start 6.82e-13 (rank 5)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.02 (within 0.1-10: True) [shown]; at the worst start 0.416 (shown)
+[scored/big_kicks] J32-J64 worst start 988: 1.99e-04 | round: max 3.16e-05, rho +0.10, worst start 7.56e-06 (rank 227) | up: max 7.04e-11, rho +0.05, worst start 0.00e+00 (rank 497) | down: max 1.14e-12, rho +0.05, worst start 6.82e-13 (rank 13) | same_fixed0: max 2.22e-04, rho +0.15, worst start 1.26e-04 (rank 20) | same_fixed1: max 2.13e-04, rho +0.15, worst start 1.65e-04 (rank 7) | same_random0: max 1.92e-04, rho +0.10, worst start 9.90e-05 (rank 21) | same_random1: max 1.97e-04, rho +0.12, worst start 4.85e-05 (rank 195) | same_random2: max 2.13e-04, rho +0.15, worst start 1.26e-04 (rank 10) | f32_up: max 1.14e-12, rho +0.06, worst start 0.00e+00 (rank 497)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.11 (within 0.1-10: True) [shown]; at the worst start 0.827 (shown)
+[tanh_mean/none] J32-J64 worst start 860: 2.77e-05 | round: max 2.77e-06, rho +0.27, worst start 8.31e-07 (rank 176) | up: max 7.11e-14, rho +0.10, worst start 1.78e-14 (rank 107) | down: max 7.82e-14, rho +0.09, worst start 1.78e-14 (rank 120) | same_fixed0: max 6.55e-05, rho +0.50, worst start 5.24e-05 (rank 16) | same_fixed1: max 5.95e-05, rho +0.50, worst start 5.07e-05 (rank 17) | same_random0: max 1.82e-05, rho +0.27, worst start 3.46e-07 (rank 902) | same_random1: max 1.66e-05, rho +0.29, worst start 4.80e-06 (rank 270) | same_random2: max 1.54e-05, rho +0.27, worst start 2.65e-06 (rank 501) | f32_up: max 7.82e-14, rho +0.12, worst start 0.00e+00 (rank 252)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.36 (within 0.1-10: True) [shown]; at the worst start 1.89 (shown)
+[tanh_mean/mild] J32-J64 worst start 860: 2.77e-05 | round: max 2.77e-06, rho +0.27, worst start 8.31e-07 (rank 176) | up: max 7.11e-14, rho +0.10, worst start 1.78e-14 (rank 107) | down: max 7.82e-14, rho +0.09, worst start 1.78e-14 (rank 120) | same_fixed0: max 6.32e-05, rho +0.50, worst start 4.40e-05 (rank 68) | same_fixed1: max 5.72e-05, rho +0.49, worst start 3.33e-05 (rank 224) | same_random0: max 1.90e-05, rho +0.28, worst start 6.89e-06 (rank 129) | same_random1: max 1.57e-05, rho +0.29, worst start 1.05e-06 (rank 726) | same_random2: max 1.85e-05, rho +0.31, worst start 2.61e-06 (rank 469) | f32_up: max 7.82e-14, rho +0.12, worst start 0.00e+00 (rank 252)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.28 (within 0.1-10: True) [shown]; at the worst start 1.59 (shown)
+[tanh_mean/strong] J32-J64 worst start 860: 2.77e-05 | round: max 2.77e-06, rho +0.27, worst start 8.31e-07 (rank 176) | up: max 7.11e-14, rho +0.10, worst start 1.78e-14 (rank 107) | down: max 7.82e-14, rho +0.09, worst start 1.78e-14 (rank 120) | same_fixed0: max 6.24e-05, rho +0.50, worst start 5.24e-05 (rank 13) | same_fixed1: max 5.93e-05, rho +0.49, worst start 3.96e-05 (rank 138) | same_random0: max 2.05e-05, rho +0.32, worst start 5.67e-06 (rank 185) | same_random1: max 1.57e-05, rho +0.26, worst start 4.07e-06 (rank 327) | same_random2: max 1.55e-05, rho +0.30, worst start 7.53e-06 (rank 97) | f32_up: max 7.82e-14, rho +0.12, worst start 0.00e+00 (rank 252)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.25 (within 0.1-10: True) [shown]; at the worst start 1.89 (shown)
+[tanh_mean/recorded] J32-J64 worst start 860: 6.59e-04 | round: max 6.59e-05, rho +0.27, worst start 1.98e-05 (rank 176) | up: max 1.82e-12, rho -0.05, worst start 4.55e-13 (rank 58) | down: max 1.82e-12, rho -0.04, worst start 4.55e-13 (rank 63) | same_fixed0: max 1.42e-03, rho +0.51, worst start 9.67e-04 (rank 99) | same_fixed1: max 1.53e-03, rho +0.48, worst start 1.04e-03 (rank 58) | same_random0: max 3.61e-04, rho +0.30, worst start 9.80e-06 (rank 889) | same_random1: max 4.51e-04, rho +0.29, worst start 1.33e-04 (rank 171) | same_random2: max 3.89e-04, rho +0.27, worst start 1.29e-04 (rank 220) | f32_up: max 1.82e-12, rho -0.04, worst start 0.00e+00 (rank 339)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.32 (within 0.1-10: True) [shown]; at the worst start 1.58 (shown)
+[tanh_mean/strong_current] J32-J64 worst start 982: 2.22e-04 | round: max 2.84e-05, rho +0.04, worst start 3.74e-06 (rank 604) | up: max 1.36e-12, rho +0.02, worst start 0.00e+00 (rank 254) | down: max 9.09e-13, rho -0.01, worst start 0.00e+00 (rank 256) | same_fixed0: max 3.25e-04, rho +0.04, worst start 2.03e-04 (rank 217) | same_fixed1: max 3.29e-04, rho +0.08, worst start 2.15e-04 (rank 151) | same_random0: max 1.97e-04, rho +0.02, worst start 1.31e-06 (rank 978) | same_random1: max 2.06e-04, rho +0.04, worst start 2.34e-05 (rank 633) | same_random2: max 1.67e-04, rho -0.03, worst start 2.45e-05 (rank 632) | f32_up: max 1.36e-12, rho +0.03, worst start 0.00e+00 (rank 232)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.48 (within 0.1-10: True) [shown]; at the worst start 0.968 (shown)
+[tanh_mean/big_waves] J32-J64 worst start 179: 6.05e-04 | round: max 6.88e-05, rho +0.40, worst start 8.03e-06 (rank 399) | up: max 1.36e-12, rho -0.04, worst start 2.27e-13 (rank 121) | down: max 1.82e-12, rho -0.01, worst start 0.00e+00 (rank 354) | same_fixed0: max 1.39e-03, rho +0.54, worst start 8.35e-04 (rank 113) | same_fixed1: max 1.69e-03, rho +0.54, worst start 8.35e-04 (rank 122) | same_random0: max 4.52e-04, rho +0.35, worst start 7.98e-07 (rank 988) | same_random1: max 4.79e-04, rho +0.36, worst start 1.16e-04 (rank 193) | same_random2: max 4.63e-04, rho +0.41, worst start 7.45e-05 (rank 333) | f32_up: max 1.36e-12, rho -0.02, worst start 2.27e-13 (rank 120)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.79 (within 0.1-10: True) [shown]; at the worst start 1.38 (shown)
+[tanh_mean/big_kicks] J32-J64 worst start 206: 4.94e-04 | round: max 4.73e-05, rho +0.25, worst start 1.36e-05 (rank 113) | up: max 1.82e-12, rho +0.01, worst start 0.00e+00 (rank 490) | down: max 1.36e-12, rho -0.00, worst start 0.00e+00 (rank 503) | same_fixed0: max 1.25e-03, rho +0.48, worst start 5.85e-04 (rank 133) | same_fixed1: max 1.01e-03, rho +0.49, worst start 6.28e-04 (rank 94) | same_random0: max 3.75e-04, rho +0.23, worst start 7.24e-05 (rank 261) | same_random1: max 3.48e-04, rho +0.27, worst start 1.58e-04 (rank 41) | same_random2: max 3.67e-04, rho +0.19, worst start 1.49e-05 (rank 778) | f32_up: max 1.36e-12, rho +0.06, worst start 4.55e-13 (rank 52)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.53 (within 0.1-10: True) [shown]; at the worst start 1.27 (shown)
+
+--- worst start of tanh_mean/recorded: start 860, |dpoints| 0.000658731 (differences only) [shown] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf      -7.32     -6.95     -6.95     -6.95      -inf -2.609e-08 -2.609e-08    0    0   0 0,0,0
+  1     -7.32      -7.01     -6.93     -6.93     -6.92     -8.03 -7.112e-08 -9.720e-08    2    0   0 0,0,0
+  2     -7.01      -6.99     -6.95     -6.95     -6.91     -7.52 -3.204e-07 -4.177e-07    4    0   0 0,0,0
+  3     -6.99      -7.00     -7.13     -6.87     -7.05     -7.74 -3.317e-07 -7.494e-07    5    0   0 0,0,0
+  4     -7.00      -6.95     -7.12     -6.89     -7.08     -7.80 -3.354e-07 -1.085e-06    4    0   0 0,0,0
+  5     -6.95      -6.90     -6.90     -6.73     -6.91     -7.65 -2.869e-07 -1.372e-06    6    0   0 0,0,0
+  6     -6.90      -6.82     -6.91     -6.77     -6.91     -8.19 -2.696e-07 -1.641e-06    6    0   0 0,0,0
+  7     -6.82      -6.85     -7.23     -6.83     -7.23     -7.87 -2.706e-07 -1.912e-06    5    0   0 0,0,0
+  8     -6.85      -6.83     -7.06     -7.11     -6.95     -7.56 -2.121e-07 -2.124e-06    7    0   0 0,0,0
+  9     -6.83      -6.72     -6.62     -6.97     -6.65     -7.53 -2.351e-07 -2.359e-06    6    0   0 0,0,0
+ 10     -6.72      -6.67     -6.81     -7.09     -6.88     -7.59 -1.513e-07 -2.510e-06    8    0   0 0,0,0
+ 11     -6.67      -6.61     -6.69     -6.68     -6.88     -7.13 -1.829e-07 -2.693e-06    8    0   0 0,0,0
+ 12     -6.61      -6.52     -6.73     -6.68     -6.75     -7.15 -3.079e-07 -3.001e-06    6    0   0 0,0,0
+ 13     -6.52      -6.47     -7.01     -6.95     -6.95     -7.33 -6.422e-07 -3.643e-06    9    0   0 0,0,0
+ 14     -6.47      -6.51     -6.67     -6.98     -6.75     -6.99 -9.869e-07 -4.630e-06    7    0   0 0,0,0
+ 15     -6.51      -6.50     -6.73     -6.73     -6.76     -7.02 -1.171e-06 -5.802e-06    6    0   0 0,0,0
+ 16     -6.50      -6.49     -6.58     -6.76     -6.66     -7.37 -1.378e-06 -7.180e-06    8    0   0 0,0,0
+ 17     -6.49      -6.56     -6.76     -6.94     -6.90     -7.32 -1.555e-06 -8.734e-06    8    0   0 0,0,0
+ 18     -6.56      -6.54     -7.34     -6.80     -7.16     -7.53 -1.202e-06 -9.936e-06    9    0   0 0,0,0
+ 19     -6.54      -6.53     -6.64     -7.10     -6.63     -7.17 -1.177e-06 -1.111e-05    8    0   0 0,0,0
+ 20     -6.53      -6.47     -6.60     -6.84     -6.63     -7.47 -1.267e-06 -1.238e-05    9    0   0 0,0,0
+ 21     -6.47      -6.54     -6.47     -6.72     -6.56     -7.20 -1.231e-06 -1.361e-05    9    0   0 0,0,0
+ 22     -6.54      -6.49     -6.71     -6.77     -6.68     -7.63 -1.318e-06 -1.493e-05    9    0   0 0,0,0
+ 23     -6.49      -6.45     -6.53     -6.84     -6.67     -7.11 -1.400e-06 -1.633e-05    9    0   0 0,0,0
+ 24     -6.45      -6.40     -6.62     -6.67     -6.64     -7.53 -1.586e-06 -1.792e-05    9    0   0 0,0,0
+ 25     -6.40      -6.38     -6.67     -6.99     -6.59     -7.24 -1.723e-06 -1.964e-05    9    0   0 0,0,0
+ 26     -6.38      -6.34     -6.64     -6.65     -6.61     -7.05 -1.669e-06 -2.131e-05    8    0   0 0,0,0
+ 27     -6.34      -6.34     -6.95     -6.73     -6.73     -6.92 -1.829e-06 -2.314e-05    9    0   0 0,0,0
+ 28     -6.34      -6.35     -6.70     -6.44     -6.72     -7.11 -1.877e-06 -2.501e-05    9    0   0 0,0,0
+ 29     -6.35      -6.31     -6.68     -6.53     -6.65     -7.20 -1.989e-06 -2.700e-05    7    0   0 0,0,0
+ 30     -6.31      -6.31     -6.66     -7.78     -6.67     -7.20 -2.091e-06 -2.909e-05    8    0   0 0,0,0
+ 31     -6.31      -6.29     -6.72     -6.79     -6.88     -7.11 -2.259e-06 -3.135e-05    8    0   0 0,0,0
+ 32     -6.29      -6.30     -6.70     -6.76     -6.64     -7.22 -2.201e-06 -3.355e-05    7    0   0 0,0,0
+ 33     -6.30      -6.30     -6.74     -6.57     -6.96     -7.14 -2.240e-06 -3.579e-05    9    0   0 0,0,0
+ 34     -6.30      -6.29     -6.52     -6.62     -6.47     -7.39 -2.295e-06 -3.809e-05    9    0   0 0,0,0
+ 35     -6.29      -6.27     -6.66     -6.53     -6.65     -7.30 -2.193e-06 -4.028e-05    5    0   0 0,0,0
+ 36     -6.27      -6.25     -6.83     -6.58     -6.63     -7.05 -1.968e-06 -4.225e-05    8    0   0 0,0,0
+ 37     -6.25      -6.23     -6.40     -6.64     -6.57     -6.88 -1.868e-06 -4.412e-05    8    0   0 0,0,0
+ 38     -6.23      -6.25     -7.10     -6.66     -6.86     -6.88 -1.999e-06 -4.612e-05    9    0   0 0,0,0
+ 39     -6.25      -6.26     -6.41     -7.17     -6.58     -6.90 -1.974e-06 -4.809e-05   10    0   0 0,0,0
+ 40     -6.26      -6.22     -6.36     -6.46     -6.56     -6.78 -2.371e-06 -5.046e-05    8    0   0 0,0,0
+ 41     -6.22      -6.20     -6.64     -6.64     -6.93     -6.96 -2.666e-06 -5.313e-05    9    0   0 0,0,0
+ 42     -6.20      -6.19     -6.71     -6.86     -6.71     -7.47 -2.870e-06 -5.600e-05    8    0   0 0,0,0
+ 43     -6.19      -6.15     -6.51     -6.51     -6.61     -7.04 -3.198e-06 -5.920e-05    7    0   0 0,0,0
+ 44     -6.15      -6.13     -6.51     -7.03     -6.54     -7.06 -3.805e-06 -6.300e-05    9    0   0 0,0,0
+ 45     -6.13      -6.12     -6.81     -6.60     -7.13     -6.99 -3.834e-06 -6.684e-05    9    0   0 0,0,0
+ 46     -6.12      -6.11     -6.60     -6.86     -6.53     -7.08 -4.127e-06 -7.096e-05    7    0   0 0,0,0
+ 47     -6.11      -6.05     -6.32     -6.73     -6.39     -7.00 -4.692e-06 -7.565e-05    7    0   0 0,0,0
+ 48     -6.05      -6.07     -6.38     -6.52     -6.44     -7.20 -5.050e-06 -8.070e-05    8    0   0 0,0,0
+ 49     -6.07      -6.04     -6.73     -6.59     -6.59     -7.05 -5.701e-06 -8.641e-05   10    0   0 0,0,0
+ 50     -6.04      -6.01     -6.59     -6.80     -6.46     -7.05 -6.265e-06 -9.267e-05    8    0   0 0,0,0
+ 51     -6.01      -6.01     -6.66     -6.66     -6.78     -7.20 -6.736e-06 -9.941e-05    7    0   0 0,0,0
+ 52     -6.01      -5.99     -6.52     -6.72     -6.45     -7.07 -7.288e-06 -1.067e-04    7    0   0 0,0,0
+ 53     -5.99      -6.01     -6.63     -6.54     -6.77     -7.10 -7.532e-06 -1.142e-04    9    0   0 0,0,0
+ 54     -6.01      -6.01     -6.80     -6.88     -6.76     -7.02 -7.689e-06 -1.219e-04   10    0   0 0,0,0
+ 55     -6.01      -6.02     -6.63     -6.54     -6.72     -6.75 -7.555e-06 -1.295e-04   10    0   0 0,0,0
+ 56     -6.02      -6.02     -6.64     -6.58     -6.65     -6.80 -7.326e-06 -1.368e-04    9    0   0 0,0,0
+ 57     -6.02      -6.02     -6.57     -6.68     -6.53     -6.75 -6.934e-06 -1.437e-04   10    0   0 0,0,0
+ 58     -6.02      -6.06     -6.42     -6.70     -6.73     -6.71 -6.557e-06 -1.503e-04    6    0   0 0,0,0
+ 59     -6.06      -6.07     -6.34     -6.79     -6.57     -6.73 -6.478e-06 -1.568e-04    8    0   0 0,0,0
+ 60     -6.07      -6.08     -6.80     -6.96     -6.67     -6.77 -6.428e-06 -1.632e-04    8    0   0 0,0,0
+ 61     -6.08      -6.09     -6.32     -6.60     -6.50     -6.77 -6.595e-06 -1.698e-04    8    0   0 0,0,0
+ 62     -6.09      -6.09     -6.65     -6.75     -6.96     -6.81 -6.730e-06 -1.765e-04    9    0   0 0,0,0
+ 63     -6.09      -6.08     -6.70     -6.80     -6.59     -6.91 -6.805e-06 -1.833e-04    9    0   0 0,0,0
+ 64     -6.08      -6.07     -6.54     -6.52     -6.80     -6.83 -6.919e-06 -1.902e-04    9    0   0 0,0,0
+ 65     -6.07      -6.08     -7.28     -6.56     -6.84     -6.94 -6.930e-06 -1.972e-04    9    0   0 0,0,0
+ 66     -6.08      -6.08     -6.88     -6.64     -7.18     -6.89 -7.148e-06 -2.043e-04    9    0   0 0,0,0
+ 67     -6.08      -6.09     -6.69     -6.73     -7.08     -6.91 -7.203e-06 -2.115e-04   10    0   0 0,0,0
+ 68     -6.09      -6.09     -6.87     -7.12     -7.07     -6.94 -7.171e-06 -2.187e-04    9    0   0 0,0,0
+ 69     -6.09      -6.10     -6.71     -6.48     -6.71     -6.98 -7.149e-06 -2.258e-04    9    0   0 0,0,0
+ 70     -6.10      -6.11     -6.37     -6.56     -6.58     -6.79 -7.000e-06 -2.328e-04    8    0   0 0,0,0
+ 71     -6.11      -6.12     -6.43     -6.54     -6.51     -7.16 -6.739e-06 -2.396e-04    8    0   0 0,0,0
+ 72     -6.12      -6.13     -6.83     -6.70     -6.63     -7.08 -6.444e-06 -2.460e-04    9    0   0 0,0,0
+ 73     -6.13      -6.15     -6.68     -6.91     -6.91     -6.88 -6.484e-06 -2.525e-04    9    0   0 0,0,0
+ 74     -6.15      -6.16     -6.38     -6.64     -6.63     -6.74 -6.187e-06 -2.587e-04    9    0   0 0,0,0
+ 75     -6.16      -6.16     -6.65     -6.65     -6.81     -7.08 -6.000e-06 -2.647e-04    9    0   0 0,0,0
+ 76     -6.16      -6.16     -6.72     -6.76     -6.88     -7.21 -5.717e-06 -2.704e-04   10    0   0 0,0,0
+ 77     -6.16      -6.16     -6.26     -6.50     -6.22     -7.31 -5.379e-06 -2.758e-04    9    0   0 0,0,0
+ 78     -6.16      -6.18     -6.65     -6.50     -6.88     -6.84 -5.156e-06 -2.809e-04   10    0   0 0,0,0
+ 79     -6.18      -6.19     -6.75     -6.59     -6.91     -6.70 -4.847e-06 -2.858e-04    8    0   0 0,0,0
+ 80     -6.19      -6.21     -6.57     -6.82     -6.69     -6.79 -4.700e-06 -2.905e-04   10    0   0 0,0,0
+ 81     -6.21      -6.22     -6.59     -6.89     -6.82     -6.97 -4.437e-06 -2.949e-04    9    0   0 0,0,0
+ 82     -6.22      -6.22     -6.52     -6.49     -6.56     -7.02 -4.262e-06 -2.992e-04    9    0   0 0,0,0
+ 83     -6.22      -6.21     -6.53     -6.88     -6.52     -6.92 -3.978e-06 -3.032e-04    9    0   0 0,0,0
+ 84     -6.21      -6.22     -6.74     -6.82     -7.03     -6.86 -3.531e-06 -3.067e-04    9    0   0 0,0,0
+ 85     -6.22      -6.24     -6.64     -6.64     -6.93     -6.83 -3.115e-06 -3.098e-04    8    0   0 0,0,0
+ 86     -6.24      -6.21     -6.80     -6.51     -6.62     -6.95 -2.687e-06 -3.125e-04    8    0   0 0,0,0
+ 87     -6.21      -6.18     -6.38     -6.69     -6.38     -6.71 -2.337e-06 -3.148e-04    8    0   0 0,0,0
+ 88     -6.18      -6.20     -6.92     -6.93     -7.13     -6.81 -1.717e-06 -3.166e-04    7    0   0 0,0,0
+ 89     -6.20      -6.24     -6.58     -6.65     -6.89     -6.62 -1.252e-06 -3.178e-04    8    0   0 0,0,0
+ 90     -6.24      -6.21     -6.36     -6.71     -6.58     -6.77 -1.340e-06 -3.192e-04    8    0   0 0,0,0
+ 91     -6.21      -6.23     -7.34     -6.81     -6.76     -6.89 -1.589e-06 -3.207e-04    7    0   0 0,0,0
+ 92     -6.23      -6.13     -6.49     -6.66     -6.68     -6.95 -2.137e-06 -3.229e-04    9    0   0 0,0,0
+ 93     -6.13      -6.09     -6.66     -6.84     -6.55     -6.98 -2.743e-06 -3.256e-04    8    0   0 0,0,0
+ 94     -6.09      -6.01     -6.32     -6.95     -6.37     -6.80 -3.464e-06 -3.291e-04    8    0   0 0,0,0
+ 95     -6.01      -5.98     -6.61     -6.68     -6.68     -6.92 -4.126e-06 -3.332e-04    9    0   0 0,0,0
+ 96     -5.98      -6.00     -6.93     -7.30     -7.09     -6.70 -4.610e-06 -3.378e-04   10    0   0 0,0,0
+ 97     -6.00      -6.01     -6.69     -6.49     -6.87     -7.15 -5.029e-06 -3.429e-04   10    0   0 0,0,0
+ 98     -6.01      -6.00     -6.76     -7.19     -6.76     -6.86 -4.834e-06 -3.477e-04   10    0   0 0,0,0
+ 99     -6.00      -6.00     -6.79     -6.62     -6.92     -6.74 -4.339e-06 -3.520e-04    8    0   0 0,0,0
+  all steps (shown): largest one-step growth 0.3075942884954913 decades at step 1; 55 steps growing; 1.3229971989092575 decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 5, the first at step 68; largest one-step growth on them -0.007159459341515628 decades at step 68 (at most 1): passed True [shown]
+probe: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/smoke/root/runs/shift_hosts/stage1/medium-expert/seed0/iql-alone/lanes/s7-step15000/s7.json sha256 9f3fabe8532fd3a5e1e0a6e6a9d4d4cb33b23aadc407935a78616d709b682490
+probe: iql-alone's record was made on code manifest made-up; this process runs e397273a553a1963 (DIFFERENT)
+
+=== smoke/iql-alone step 15000: learner iql, actor 91f6bdad8dd8eb30, s7.json present (tol_points 0.05); shown, not judged
+[scored/none] starts 1000 finite True reproduced True | |dpoints| p50 8.39e-06 p90 2.65e-05 p99 6.67e-05 p99.9 1.30e-04 max 0.000159807 mean 1.266e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.031e-03
+    (i) injected gap max 1.38e-06; float32 reference spread max 9.54e-07 (ratio 1.45); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 856:1.60e-04 886:1.30e-04 458:1.04e-04 279:1.00e-04 885:9.83e-05 658:9.18e-05 731:8.83e-05 951:8.35e-05 412:7.46e-05 81:6.98e-05
+[scored/mild] starts 1000 finite True reproduced True | |dpoints| p50 8.39e-06 p90 2.65e-05 p99 6.67e-05 p99.9 1.30e-04 max 0.000159807 mean 1.266e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.031e-03
+    (i) injected gap max 1.38e-06; float32 reference spread max 9.54e-07 (ratio 1.45); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 856:1.60e-04 886:1.30e-04 458:1.04e-04 279:1.00e-04 885:9.83e-05 658:9.18e-05 731:8.83e-05 951:8.35e-05 412:7.46e-05 81:6.98e-05
+[scored/strong] starts 1000 finite True reproduced True | |dpoints| p50 8.39e-06 p90 2.65e-05 p99 6.67e-05 p99.9 1.30e-04 max 0.000159807 mean 1.266e-05 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.031e-03
+    (i) injected gap max 1.38e-06; float32 reference spread max 9.54e-07 (ratio 1.45); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 856:1.60e-04 886:1.30e-04 458:1.04e-04 279:1.00e-04 885:9.83e-05 658:9.18e-05 731:8.83e-05 951:8.35e-05 412:7.46e-05 81:6.98e-05
+[scored/recorded] starts 1000 finite True reproduced True | |dpoints| p50 2.00e-04 p90 6.31e-04 p99 1.59e-03 p99.9 3.08e-03 max 0.00380023 mean 3.010e-04 | >0.001:42 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.031e-03
+    (i) injected gap max 1.38e-06; float32 reference spread max 9.54e-07 (ratio 1.45); bound max(1e-5, 10 x spread) 1.00e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 856:3.80e-03 886:3.08e-03 458:2.48e-03 279:2.39e-03 885:2.34e-03 658:2.18e-03 731:2.10e-03 951:1.99e-03 412:1.77e-03 81:1.66e-03
+[scored/strong_current] starts 1000 finite True reproduced True | |dpoints| p50 9.27e-05 p90 2.71e-04 p99 6.09e-04 p99.9 1.20e-03 max 0.00131755 mean 1.260e-04 | >0.001:3 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 1.978e-03
+    (i) injected gap max 1.94e-06; float32 reference spread max 1.30e-06 (ratio 1.5); bound max(1e-5, 10 x spread) 1.30e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 416:1.32e-03 714:1.20e-03 616:1.08e-03 703:8.83e-04 642:7.81e-04 610:7.47e-04 836:6.64e-04 558:6.45e-04 118:6.26e-04 318:6.12e-04
+[scored/big_waves] starts 1000 finite True reproduced True | |dpoints| p50 1.40e-04 p90 3.60e-04 p99 5.74e-04 p99.9 7.79e-04 max 0.000780213 mean 1.706e-04 | >0.001:0 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 5.510e-04
+    (i) injected gap max 2.15e-06; float32 reference spread max 1.10e-06 (ratio 1.96); bound max(1e-5, 10 x spread) 1.10e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 822:7.80e-04 863:7.79e-04 260:7.55e-04 710:7.41e-04 123:6.84e-04 62:6.50e-04 601:6.27e-04 787:6.00e-04 458:5.98e-04 22:5.85e-04
+[scored/big_kicks] starts 1000 finite True reproduced True | |dpoints| p50 1.03e-04 p90 3.34e-04 p99 7.24e-04 p99.9 1.04e-03 max 0.00235992 mean 1.535e-04 | >0.001:2 >0.005:0 >0.01:0 >0.02:0 >0.05:0 | max |dJ| 2.354e-03
+    (i) injected gap max 2.01e-06; float32 reference spread max 1.27e-06 (ratio 1.59); bound max(1e-5, 10 x spread) 1.27e-05: passed True [shown] (stage 0's 1e-5 alone, shown: True)
+    top 10 starts (index:|dpoints|): 478:2.36e-03 783:1.04e-03 288:9.19e-04 244:8.85e-04 834:8.82e-04 299:8.28e-04 575:7.82e-04 798:7.78e-04 926:7.67e-04 79:7.25e-04
+
+--- controls: |dpoints| of rounding-size perturbations that do not involve the restatement ---
+    round = float64 adapter with float32-rounded commands; up/down = start floats +-1 ulp (float64 adapter); f32_up = restatement, +1 ulp; same_fixed0-1 / same_random0-2 = float64 adapter plus offsets of the measured injected size, signs fixed per start or drawn per step (control (e), judged in (iii) as the largest of its five draws); the others are shown, not judged
+[scored/none] J32-J64 worst start 856: 1.60e-04 | round: max 1.26e-05, rho +0.20, worst start 2.77e-06 (rank 119) | up: max 7.28e-14, rho +0.05, worst start 0.00e+00 (rank 338) | down: max 1.67e-13, rho +0.04, worst start 0.00e+00 (rank 353) | same_fixed0: max 1.78e-04, rho +0.25, worst start 8.65e-05 (rank 19) | same_fixed1: max 1.87e-04, rho +0.22, worst start 6.55e-05 (rank 41) | same_random0: max 1.40e-04, rho +0.23, worst start 5.72e-05 (rank 21) | same_random1: max 1.56e-04, rho +0.18, worst start 6.26e-05 (rank 8) | same_random2: max 1.54e-04, rho +0.23, worst start 2.79e-05 (rank 83) | f32_up: max 7.11e-14, rho -0.00, worst start 0.00e+00 (rank 353)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.17 (within 0.1-10: True) [shown]; at the worst start 0.541 (shown)
+[scored/mild] J32-J64 worst start 856: 1.60e-04 | round: max 1.26e-05, rho +0.20, worst start 2.77e-06 (rank 119) | up: max 7.28e-14, rho +0.05, worst start 0.00e+00 (rank 338) | down: max 1.67e-13, rho +0.04, worst start 0.00e+00 (rank 353) | same_fixed0: max 2.59e-04, rho +0.20, worst start 1.24e-04 (rank 5) | same_fixed1: max 1.79e-04, rho +0.20, worst start 6.55e-05 (rank 47) | same_random0: max 2.07e-04, rho +0.26, worst start 8.58e-05 (rank 6) | same_random1: max 2.02e-04, rho +0.20, worst start 7.47e-05 (rank 6) | same_random2: max 1.69e-04, rho +0.26, worst start 1.18e-04 (rank 4) | f32_up: max 7.11e-14, rho -0.00, worst start 0.00e+00 (rank 353)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.62 (within 0.1-10: True) [shown]; at the worst start 0.779 (shown)
+[scored/strong] J32-J64 worst start 856: 1.60e-04 | round: max 1.26e-05, rho +0.20, worst start 2.77e-06 (rank 119) | up: max 7.28e-14, rho +0.05, worst start 0.00e+00 (rank 338) | down: max 1.67e-13, rho +0.04, worst start 0.00e+00 (rank 353) | same_fixed0: max 2.03e-04, rho +0.18, worst start 1.15e-04 (rank 10) | same_fixed1: max 1.61e-04, rho +0.22, worst start 5.10e-05 (rank 93) | same_random0: max 1.81e-04, rho +0.32, worst start 3.85e-05 (rank 46) | same_random1: max 1.69e-04, rho +0.23, worst start 1.19e-05 (rank 376) | same_random2: max 1.27e-04, rho +0.23, worst start 6.96e-05 (rank 14) | f32_up: max 7.11e-14, rho -0.00, worst start 0.00e+00 (rank 353)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.27 (within 0.1-10: True) [shown]; at the worst start 0.721 (shown)
+[scored/recorded] J32-J64 worst start 856: 3.80e-03 | round: max 2.99e-04, rho +0.20, worst start 6.59e-05 (rank 119) | up: max 2.27e-12, rho +0.04, worst start 0.00e+00 (rank 324) | down: max 3.64e-12, rho +0.03, worst start 0.00e+00 (rank 345) | same_fixed0: max 3.76e-03, rho +0.21, worst start 1.90e-03 (rank 22) | same_fixed1: max 3.97e-03, rho +0.20, worst start 3.05e-03 (rank 5) | same_random0: max 2.76e-03, rho +0.23, worst start 1.05e-03 (rank 25) | same_random1: max 6.62e-03, rho +0.24, worst start 1.34e-03 (rank 14) | same_random2: max 2.42e-03, rho +0.22, worst start 4.97e-04 (rank 165) | f32_up: max 1.82e-12, rho -0.01, worst start 0.00e+00 (rank 343)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.74 (within 0.1-10: True) [shown]; at the worst start 0.803 (shown)
+[scored/strong_current] J32-J64 worst start 416: 1.32e-03 | round: max 9.95e-05, rho +0.16, worst start 3.42e-05 (rank 34) | up: max 1.14e-12, rho -0.01, worst start 0.00e+00 (rank 265) | down: max 9.09e-13, rho +0.04, worst start 0.00e+00 (rank 247) | same_fixed0: max 2.74e-03, rho +0.18, worst start 1.81e-03 (rank 6) | same_fixed1: max 2.92e-03, rho +0.18, worst start 2.14e-03 (rank 3) | same_random0: max 8.39e-04, rho +0.18, worst start 2.40e-04 (rank 114) | same_random1: max 9.56e-04, rho +0.12, worst start 4.59e-05 (rank 694) | same_random2: max 1.16e-03, rho +0.19, worst start 3.10e-04 (rank 47) | f32_up: max 9.09e-13, rho +0.00, worst start 0.00e+00 (rank 280)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.21 (within 0.1-10: True) [shown]; at the worst start 1.63 (shown)
+[scored/big_waves] J32-J64 worst start 822: 7.80e-04 | round: max 9.55e-05, rho +0.03, worst start 1.56e-05 (rank 442) | up: max 2.27e-12, rho +0.08, worst start 0.00e+00 (rank 313) | down: max 1.82e-12, rho +0.02, worst start 0.00e+00 (rank 309) | same_fixed0: max 1.59e-03, rho +0.07, worst start 3.11e-04 (rank 535) | same_fixed1: max 1.46e-03, rho +0.10, worst start 3.91e-04 (rank 404) | same_random0: max 1.05e-03, rho +0.00, worst start 1.71e-04 (rank 411) | same_random1: max 1.03e-03, rho +0.07, worst start 2.08e-04 (rank 299) | same_random2: max 1.25e-03, rho +0.12, worst start 2.90e-04 (rank 158) | f32_up: max 2.27e-12, rho -0.04, worst start 4.55e-13 (rank 81)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 2.04 (within 0.1-10: True) [shown]; at the worst start 0.502 (shown)
+[scored/big_kicks] J32-J64 worst start 478: 2.36e-03 | round: max 1.67e-04, rho +0.20, worst start 8.20e-05 (rank 16) | up: max 2.73e-12, rho -0.02, worst start 0.00e+00 (rank 510) | down: max 1.82e-12, rho -0.01, worst start 3.41e-13 (rank 227) | same_fixed0: max 3.52e-03, rho +0.23, worst start 2.38e-03 (rank 2) | same_fixed1: max 3.26e-03, rho +0.21, worst start 1.21e-03 (rank 14) | same_random0: max 1.04e-03, rho +0.18, worst start 5.43e-05 (rank 726) | same_random1: max 1.46e-03, rho +0.19, worst start 1.46e-03 (rank 1) | same_random2: max 1.75e-03, rho +0.23, worst start 1.24e-03 (rank 4) | f32_up: max 2.27e-12, rho -0.02, worst start 0.00e+00 (rank 488)
+    (iii) same-size control (largest of 5 draws) / J32-J64: bank's largest 1.49 (within 0.1-10: True) [shown]; at the worst start 1.01 (shown)
+
+--- worst start of scored/recorded: start 856, |dpoints| 0.00380023 (differences only) [shown] ---
+  t  log|dx_t| log|dx_t+1| log|da_t| log inj64 log inj32 log prop    d r_t       cum dJ  obs knee sat relu(l0,l1,l2)
+  0      -inf      -6.76     -6.49     -6.49     -6.49      -inf -1.285e-07 -1.285e-07    0    0   0 -
+  1     -6.76      -6.63     -6.61     -6.87     -6.64     -7.38 -6.249e-08 -1.910e-07    3    0   0 -
+  2     -6.63      -6.55     -6.75     -6.60     -6.85     -7.10 -1.166e-07 -3.076e-07    8    0   0 -
+  3     -6.55      -6.56     -6.77     -6.96     -6.98     -7.02 -5.707e-08 -3.647e-07    7    0   0 -
+  4     -6.56      -6.55     -6.85     -6.58     -7.04     -7.21 -9.327e-08 -4.580e-07    6    0   0 -
+  5     -6.55      -6.52     -6.83     -6.93     -7.03     -7.17 +1.037e-07 -3.543e-07    7    0   0 -
+  6     -6.52      -6.47     -6.44     -6.67     -6.42     -7.34 -1.533e-07 -5.076e-07    8    0   0 -
+  7     -6.47      -6.40     -6.78     -6.50     -6.75     -7.00 +1.736e-08 -4.902e-07    9    0   0 -
+  8     -6.40      -6.38     -6.75     -6.74     -6.85     -6.77 -6.527e-08 -5.555e-07    9    0   0 -
+  9     -6.38      -6.36     -6.86     -6.86     -6.73     -6.81 -2.475e-07 -8.029e-07   10    0   0 -
+ 10     -6.36      -6.27     -6.37     -6.26     -6.55     -6.84 -4.641e-07 -1.267e-06   10    0   0 -
+ 11     -6.27      -6.23     -6.74     -7.07     -7.06     -6.82 -5.530e-07 -1.820e-06    9    0   0 -
+ 12     -6.23      -6.15     -6.31     -6.86     -6.57     -6.66 -5.716e-07 -2.392e-06    9    0   0 -
+ 13     -6.15      -6.12     -6.63     -6.89     -6.70     -6.58 -6.565e-07 -3.048e-06    9    0   0 -
+ 14     -6.12      -6.10     -6.31     -6.87     -6.30     -6.54 -9.532e-07 -4.001e-06   10    0   0 -
+ 15     -6.10      -6.09     -6.65     -6.78     -6.54     -6.93 -6.856e-07 -4.687e-06   10    0   0 -
+ 16     -6.09      -6.09     -6.60     -6.56     -6.60     -6.93 -5.030e-07 -5.190e-06    9    0   0 -
+ 17     -6.09      -6.04     -6.20     -6.43     -6.38     -6.66 -1.884e-07 -5.378e-06   10    0   0 -
+ 18     -6.04      -6.00     -6.35     -6.80     -7.09     -6.44 +1.156e-07 -5.263e-06   10    0   0 -
+ 19     -6.00      -5.97     -6.34     -6.84     -6.71     -6.41 +4.363e-07 -4.826e-06   10    0   0 -
+ 20     -5.97      -5.97     -6.38     -6.61     -6.78     -6.47 +8.637e-07 -3.963e-06   10    0   0 -
+ 21     -5.97      -5.99     -6.39     -6.62     -6.40     -6.59 +1.026e-06 -2.936e-06   10    0   0 -
+ 22     -5.99      -6.00     -6.59     -6.62     -6.93     -6.74 +1.154e-06 -1.782e-06   10    0   0 -
+ 23     -6.00      -6.02     -6.72     -6.55     -6.98     -6.56 +1.119e-06 -6.632e-07    9    0   0 -
+ 24     -6.02      -5.97     -6.53     -6.43     -6.57     -6.49 +9.006e-07 +2.374e-07    9    0   0 -
+ 25     -5.97      -5.93     -6.36     -6.37     -6.78     -6.54 +5.674e-07 +8.048e-07    8    0   0 -
+ 26     -5.93      -5.87     -6.19     -6.65     -6.25     -6.77 -1.116e-07 +6.932e-07   10    0   0 -
+ 27     -5.87      -5.83     -6.15     -6.65     -6.32     -6.52 -3.245e-07 +3.688e-07    9    0   0 -
+ 28     -5.83      -5.83     -6.51     -6.56     -6.67     -6.39 -3.405e-07 +2.822e-08   10    0   0 -
+ 29     -5.83      -5.82     -6.16     -6.74     -6.45     -6.32 -6.566e-07 -6.284e-07   10    0   0 -
+ 30     -5.82      -5.79     -6.08     -6.62     -6.36     -6.34 -9.390e-07 -1.567e-06   10    0   0 -
+ 31     -5.79      -5.75     -6.08     -6.81     -6.59     -6.21 -1.049e-06 -2.616e-06   10    0   0 -
+ 32     -5.75      -5.69     -6.08     -6.61     -6.55     -6.12 -1.594e-06 -4.210e-06    9    0   0 -
+ 33     -5.69      -5.63     -5.88     -6.88     -6.35     -6.06 -2.301e-06 -6.511e-06    9    0   0 -
+ 34     -5.63      -5.60     -5.85     -6.41     -7.27     -5.84 -3.025e-06 -9.537e-06   10    0   0 -
+ 35     -5.60      -5.60     -5.96     -6.46     -6.33     -5.85 -3.933e-06 -1.347e-05   10    0   0 -
+ 36     -5.60      -5.59     -5.81     -6.34     -6.82     -5.83 -4.228e-06 -1.770e-05   10    0   0 -
+ 37     -5.59      -5.57     -5.88     -6.55     -6.78     -5.89 -4.908e-06 -2.261e-05   10    0   0 -
+ 38     -5.57      -5.55     -6.01     -6.49     -6.56     -6.07 -5.365e-06 -2.797e-05   10    0   0 -
+ 39     -5.55      -5.53     -6.08     -6.66     -6.45     -6.25 -5.557e-06 -3.353e-05   10    0   0 -
+ 40     -5.53      -5.54     -6.21     -6.56     -6.89     -6.14 -5.062e-06 -3.859e-05   10    0   0 -
+ 41     -5.54      -5.53     -5.98     -6.71     -6.43     -6.04 -4.592e-06 -4.318e-05    9    0   0 -
+ 42     -5.53      -5.49     -5.84     -6.93     -6.65     -5.90 -3.555e-06 -4.674e-05   10    0   0 -
+ 43     -5.49      -5.46     -5.91     -6.83     -7.10     -5.94 -1.649e-06 -4.838e-05   10    0   0 -
+ 44     -5.46      -5.43     -6.06     -6.76     -6.60     -6.06 +7.772e-07 -4.761e-05   10    0   0 -
+ 45     -5.43      -5.46     -6.12     -6.78     -6.51     -6.28 +3.478e-06 -4.413e-05   10    0   0 -
+ 46     -5.46      -5.49     -5.73     -6.91     -6.63     -5.79 +4.139e-06 -3.999e-05   10    0   0 -
+ 47     -5.49      -5.49     -5.99     -6.59     -6.51     -5.88 +2.487e-06 -3.750e-05   10    0   0 -
+ 48     -5.49      -5.48     -5.87     -7.28     -6.97     -5.86 +1.124e-06 -3.638e-05   10    0   0 -
+ 49     -5.48      -5.44     -5.71     -6.34     -6.90     -5.68 -1.169e-06 -3.755e-05    9    0   0 -
+ 50     -5.44      -5.42     -5.84     -6.48     -6.76     -5.81 -3.669e-06 -4.122e-05   10    0   0 -
+ 51     -5.42      -5.41     -5.90     -6.31     -6.61     -5.83 -5.117e-06 -4.633e-05   10    0   0 -
+ 52     -5.41      -5.40     -5.81     -6.08     -6.22     -5.76 -6.558e-06 -5.289e-05   10    0   0 -
+ 53     -5.40      -5.40     -5.89     -6.57     -6.51     -5.85 -7.831e-06 -6.072e-05   10    0   0 -
+ 54     -5.40      -5.39     -5.90     -6.27     -6.33     -6.08 -8.706e-06 -6.943e-05   10    0   0 -
+ 55     -5.39      -5.38     -5.99     -6.90     -6.23     -6.10 -9.168e-06 -7.860e-05   10    0   0 -
+ 56     -5.38      -5.35     -5.94     -6.29     -6.81     -5.94 -9.667e-06 -8.826e-05   10    0   0 -
+ 57     -5.35      -5.32     -5.95     -6.51     -6.35     -5.80 -1.008e-05 -9.834e-05   10    0   0 -
+ 58     -5.32      -5.29     -5.61     -6.84     -7.07     -5.60 -1.009e-05 -1.084e-04   10    0   0 -
+ 59     -5.29      -5.26     -5.51     -6.54     -6.47     -5.56 -1.031e-05 -1.187e-04   10    0   0 -
+ 60     -5.26      -5.24     -5.66     -6.61     -6.66     -5.62 -1.045e-05 -1.292e-04   10    0   0 -
+ 61     -5.24      -5.21     -5.70     -6.30     -6.43     -5.77 -8.508e-06 -1.377e-04   10    0   0 -
+ 62     -5.21      -5.22     -5.64     -6.32     -6.84     -5.66 -7.089e-06 -1.448e-04   10    0   0 -
+ 63     -5.22      -5.18     -5.47     -6.60     -6.80     -5.46 -8.327e-06 -1.531e-04   10    0   0 -
+ 64     -5.18      -5.12     -5.28     -6.78     -6.65     -5.27 -9.650e-06 -1.628e-04   10    0   0 -
+ 65     -5.12      -5.08     -5.30     -6.48     -6.58     -5.32 -1.085e-05 -1.736e-04   10    0   0 -
+ 66     -5.08      -5.03     -5.09     -6.50     -6.62     -5.09 -1.235e-05 -1.860e-04   10    0   0 -
+ 67     -5.03      -4.96     -4.96     -6.49     -6.56     -4.97 -1.052e-05 -1.965e-04   10    0   0 -
+ 68     -4.96      -4.90     -5.03     -6.64     -6.51     -5.03 -4.406e-06 -2.009e-04   10    0   0 -
+ 69     -4.90      -4.85     -5.25     -6.39     -6.80     -5.26 +3.371e-06 -1.975e-04   10    0   0 -
+ 70     -4.85      -4.81     -5.31     -7.01     -6.47     -5.32 +1.092e-05 -1.866e-04   10    0   0 -
+ 71     -4.81      -4.81     -5.39     -6.54     -6.60     -5.37 +1.930e-05 -1.673e-04   10    0   0 -
+ 72     -4.81      -4.77     -5.27     -6.58     -6.45     -5.28 +2.408e-05 -1.432e-04   10    0   0 -
+ 73     -4.77      -4.75     -5.41     -6.75     -6.35     -5.37 +3.186e-05 -1.114e-04   10    0   0 -
+ 74     -4.75      -4.74     -5.41     -6.82     -6.44     -5.37 +3.847e-05 -7.291e-05   10    0   0 -
+ 75     -4.74      -4.74     -5.07     -6.68     -6.96     -5.08 +4.348e-05 -2.943e-05   10    0   0 -
+ 76     -4.74      -4.74     -5.15     -6.74     -6.96     -5.15 +4.275e-05 +1.332e-05   10    0   0 -
+ 77     -4.74      -4.72     -4.98     -6.25     -6.45     -5.00 +4.223e-05 +5.554e-05    9    0   0 -
+ 78     -4.72      -4.68     -5.05     -6.34     -6.30     -5.08 +4.000e-05 +9.555e-05   10    0   0 -
+ 79     -4.68      -4.64     -5.04     -6.49     -6.42     -5.05 +3.587e-05 +1.314e-04   10    0   0 -
+ 80     -4.64      -4.60     -5.10     -6.12     -6.53     -5.09 +3.001e-05 +1.614e-04   10    0   0 -
+ 81     -4.60      -4.60     -5.43     -6.30     -6.16     -5.52 +2.286e-05 +1.843e-04   10    0   0 -
+ 82     -4.60      -4.57     -5.42     -6.31     -6.31     -5.37 +1.303e-05 +1.973e-04   10    0   0 -
+ 83     -4.57      -4.55     -5.37     -7.10     -6.86     -5.38 +5.801e-06 +2.031e-04   10    0   0 -
+ 84     -4.55      -4.53     -5.35     -6.09     -6.81     -5.36 +2.359e-06 +2.055e-04   10    0   0 -
+ 85     -4.53      -4.54     -5.09     -6.82     -6.50     -5.07 -3.179e-06 +2.023e-04   10    0   0 -
+ 86     -4.54      -4.53     -4.77     -6.79     -6.87     -4.78 +1.664e-06 +2.040e-04   10    0   0 -
+ 87     -4.53      -4.44     -4.58     -6.86     -6.89     -4.58 +1.529e-05 +2.192e-04   10    0   0 -
+ 88     -4.44      -4.35     -4.52     -7.07     -6.55     -4.52 +4.734e-05 +2.666e-04   10    0   0 -
+ 89     -4.35      -4.32     -4.80     -6.37     -6.63     -4.79 +8.237e-05 +3.490e-04   10    0   0 -
+ 90     -4.32      -4.30     -4.79     -6.90     -6.35     -4.79 +1.100e-04 +4.589e-04   10    0   0 -
+ 91     -4.30      -4.29     -4.78     -6.53     -7.01     -4.78 +1.312e-04 +5.901e-04   10    0   0 -
+ 92     -4.29      -4.27     -4.68     -7.07     -6.39     -4.68 +1.503e-04 +7.404e-04   10    0   0 -
+ 93     -4.27      -4.28     -5.11     -7.07     -6.86     -5.12 +1.597e-04 +9.001e-04   10    0   0 -
+ 94     -4.28      -4.28     -5.31     -6.57     -6.62     -5.30 +1.669e-04 +1.067e-03   10    0   0 -
+ 95     -4.28      -4.29     -5.12     -6.47     -6.22     -5.12 +1.723e-04 +1.239e-03   10    0   0 -
+ 96     -4.29      -4.29     -5.34     -6.67     -6.80     -5.33 +1.813e-04 +1.421e-03   10    0   0 -
+ 97     -4.29      -4.30     -5.13     -6.69     -6.75     -5.12 +1.945e-04 +1.615e-03   10    0   0 -
+ 98     -4.30      -4.31     -4.97     -6.78     -6.53     -4.97 +2.074e-04 +1.823e-03   10    0   0 -
+ 99     -4.31      -4.30     -4.71     -6.85     -6.62     -4.71 +2.083e-04 +2.031e-03   10    0   0 -
+  all steps (shown): largest one-step growth 0.1292887495800282 decades at step 1; 79 steps growing; 2.460869818895341 decades from step 1 to the end
+  (ii) propagation-dominated steps (prop >= max(inj64, inj32), t >= 1): 77, the first at step 11; largest one-step growth on them 0.08965659814014738 decades at step 88 (at most 1): passed True [shown]
+
+probe: bytecode beside hashed code after the run: none; wrote nothing but --out /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/v2notes/rr/final/smoke_out_15000.txt

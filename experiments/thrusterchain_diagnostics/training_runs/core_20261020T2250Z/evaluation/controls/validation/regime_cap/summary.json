@@ -1,0 +1,67 @@
+{
+  "arrays_sha256": "8647e0bc3990633887cf591c8fbbe73b3a2492be715d91a464a3e2d3bdbb0272",
+  "bank_sha256": "9338df3b77c83c89fbb4ffa86f8ca82d168cdcd990a1c42af00b3bbba321281d",
+  "continuous_optimum_status": "not computed",
+  "deployment": "float32 observations and commands; clipped [-1,1]; float64 actual continuous.dynamics",
+  "failure_rule": "any abs(position state[0:10:2])>3 at pre/post state; event only, episode continues to H",
+  "file": "per_start.npz",
+  "file_sha256": "d7f251b3c03daa84b1a65b1bd7ae6b9f667b8ec63c5f0efa47130a30fa5cd5d4",
+  "inference": "finite shared bank sample estimates; replication unit is trained seed, not rollout",
+  "objective": {
+    "gamma": 1.0,
+    "horizon": 100,
+    "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))",
+    "terminal_bootstrap": false,
+    "terminal_reward": 0.0
+  },
+  "pooled": {
+    "completed": 80,
+    "critical_fraction": 0.240625,
+    "failure_rate": 0.0,
+    "high_action_fraction": 0.24187499999999998,
+    "mean_return": -74.93992740173302,
+    "return_std": 75.075722862072,
+    "starts": 80
+  },
+  "schema": "thrusterchain-training-policy-evaluation-v1",
+  "selection": "none; terminal checkpoint primary, midpoint descriptive",
+  "split": "validation",
+  "strata": {
+    "monotone_high": {
+      "completed": 20,
+      "critical_fraction": 0.9625,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.9625,
+      "mean_return": -90.85299806288785,
+      "return_std": 9.255876867222588,
+      "starts": 20
+    },
+    "monotone_low": {
+      "completed": 20,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.004999999999999999,
+      "mean_return": -10.067845684971166,
+      "return_std": 2.0829244385133863,
+      "starts": 20
+    },
+    "stall_high": {
+      "completed": 20,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0,
+      "mean_return": -189.22985699837946,
+      "return_std": 20.11245042883765,
+      "starts": 20
+    },
+    "stall_low": {
+      "completed": 20,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0,
+      "mean_return": -9.609008860693638,
+      "return_std": 1.4195061165927143,
+      "starts": 20
+    }
+  }
+}

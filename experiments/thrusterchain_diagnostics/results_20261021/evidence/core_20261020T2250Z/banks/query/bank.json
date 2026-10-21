@@ -1,0 +1,39 @@
+{
+  "arrays_sha256": "812086a42420719546cc2d46fd490ab9494a53d01a69c5b4de3ba2c35e0bd490",
+  "averaging": "equal context empirical mean over frozen independent starts; not analytic population expectation",
+  "context_order": [
+    "stall_low",
+    "stall_high",
+    "monotone_low",
+    "monotone_high"
+  ],
+  "deployment": "float32 observations and commands; clipped [-1,1]; float64 actual continuous.dynamics",
+  "failure_rule": "any abs(position state[0:10:2])>3 at pre/post state; event only, episode continues to H",
+  "file": "bank.npz",
+  "file_sha256": "2d8bd4fefb5b1c718688042658f91b9a886751b51cac17bff4bde4037f561388",
+  "objective": {
+    "gamma": 1.0,
+    "horizon": 100,
+    "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))",
+    "terminal_bootstrap": false,
+    "terminal_reward": 0.0
+  },
+  "per_context": 4,
+  "purpose": "evaluation only; never normalization, fitting, calibration, selection or restart",
+  "query_law": "start-law physical states crossed with fixed times; not policy occupancy",
+  "query_times": [
+    0,
+    50,
+    99
+  ],
+  "rows": 48,
+  "schema": "thrusterchain-training-query-bank-v1",
+  "seed": 92001,
+  "seed_sequence": [
+    92001,
+    2026102002,
+    2
+  ],
+  "split": "query",
+  "start_law": "independent U[-.5,.5]^10; fixed current .3/1.1; wave amplitude .2, uniform phase"
+}

@@ -1,0 +1,102 @@
+{
+  "arms": [
+    "td3_bc",
+    "bca"
+  ],
+  "calibration_evaluation": {
+    "query_bank": "query",
+    "seed": 102001,
+    "split": "final"
+  },
+  "controls": [
+    "fixed_cap",
+    "regime_cap"
+  ],
+  "data_seeds": [
+    1101,
+    1102,
+    1103,
+    1104,
+    1105
+  ],
+  "execution": {
+    "parallel_jobs": 3,
+    "training_host": "zeus"
+  },
+  "final": {
+    "per_context": 100,
+    "seed": 82001,
+    "update": 100000
+  },
+  "normalization": "per-retention training complement",
+  "optimization_seeds": [
+    2101,
+    2102,
+    2103,
+    2104,
+    2105
+  ],
+  "oracle": {
+    "required": true,
+    "shared": true,
+    "split": "final"
+  },
+  "query": {
+    "per_context": 4,
+    "seed": 92001,
+    "times": [
+      0,
+      50,
+      99
+    ]
+  },
+  "rare_probability": 0.05,
+  "reservation_episodes": 128,
+  "reservation_seeds": [
+    3101,
+    3102,
+    3103,
+    3104,
+    3105
+  ],
+  "retentions": [
+    "full",
+    "rare",
+    "zero"
+  ],
+  "schema": "thrusterchain-full-core-v1",
+  "selection": "none; terminal primary and midpoint descriptive",
+  "settings": {
+    "alpha": 2.5,
+    "batch_size": 256,
+    "bca_refresh": 5000,
+    "bca_warmup": 10000,
+    "blend": 0.5,
+    "cal_beta": 20.0,
+    "cal_lr": 0.001,
+    "calibration_size": 128,
+    "chunk": 2500,
+    "credibility": 0.95,
+    "draws": 1000,
+    "gamma": 1.0,
+    "horizon": 100,
+    "lr": 0.0003,
+    "max_reserved_fraction": 0.25,
+    "miscoverage": 0.1,
+    "noise_clip": 0.5,
+    "policy_freq": 2,
+    "policy_noise": 0.2,
+    "reservation_seed": 911,
+    "rows_per_episode": 1,
+    "scale_ema": 0.99,
+    "tau": 0.005,
+    "updates": 100000,
+    "width_penalty": 0.005
+  },
+  "source_episodes": 1024,
+  "validation": {
+    "per_context": 20,
+    "seed": 72001,
+    "update": 50000
+  }
+}

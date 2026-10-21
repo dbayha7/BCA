@@ -1,0 +1,2169 @@
+{
+  "schema_version": 1,
+  "run_kind": "isolated_native_function_fixtures",
+  "repository": "C:\\Users\\David\\dev\\BCA",
+  "repository_head": "b007052a2494dc651ac00469fa9e922b287cd1e5",
+  "executed_utc": "2026-10-21T13:15:11Z",
+  "elapsed_seconds": 3.611462800006848,
+  "environment": {
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "numpy": "2.2.6",
+    "jax": "0.6.2",
+    "host": "Zeus",
+    "executable": "C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe",
+    "devices": [
+      "TFRT_CPU_0"
+    ],
+    "resources": {
+      "cpu_indices": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "affinity_mask": 240,
+      "priority_class": 64,
+      "priority": "IDLE",
+      "thread_environment": {
+        "OMP_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "JAX_NUM_THREADS": "1",
+        "TF_NUM_INTRAOP_THREADS": "1",
+        "TF_NUM_INTEROP_THREADS": "1"
+      }
+    }
+  },
+  "sources": {
+    "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+    "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+    "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+    "experiments/shift_hosts/iw.py": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784",
+    "experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+    "experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+  },
+  "coverage_claim": "No population coverage certified. Arithmetic tests condition on fixed inputs and posterior draws; oracle alignment is an intentional analytic example.",
+  "cases": [
+    {
+      "id": "known_population_ratio",
+      "stage": "W1",
+      "premise": "Known truncated-exponential source and target laws; no fitted ratio.",
+      "inputs": {
+        "c": [
+          0.1,
+          0.35,
+          0.6,
+          1.1
+        ],
+        "source_lambda": -2,
+        "target_lambda": 2
+      },
+      "expected": {
+        "ratios": [
+          0.1353352832366127,
+          0.36787944117144233,
+          1.0,
+          7.389056098930653
+        ],
+        "target_mean_ratio": 2.8414637940557554
+      },
+      "observed": {
+        "ratios": [
+          0.13533528323661267,
+          0.3678794411714423,
+          0.9999999999999999,
+          7.389056098930652
+        ],
+        "target_mean_ratio": 2.8414637940557537
+      },
+      "status": "PASS",
+      "interpretation": "Exact ratio arithmetic passes for supplied laws; this does not certify a learned ratio.",
+      "source_refs": [
+        {
+          "path": "experiments/shift_iw/world.py",
+          "first_line": 128,
+          "last_line": 135,
+          "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+        },
+        {
+          "path": "experiments/shift_iw/world.py",
+          "first_line": 148,
+          "last_line": 151,
+          "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+        }
+      ]
+    },
+    {
+      "id": "iid_classifier_class_size_correction",
+      "stage": "W1",
+      "premise": "Both classes have the identical empirical covariate law; target class has twice as many rows.",
+      "inputs": {
+        "source_rows": 26,
+        "target_rows": 52,
+        "construction": "plus/minus identity design, every target row repeated twice"
+      },
+      "expected": {
+        "log_odds": 0.6931471805599453,
+        "weights": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "converged": true
+      },
+      "observed": {
+        "log_odds": [
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599458,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599457,
+          0.6931471805599456,
+          0.6931471805599457,
+          0.6931471805599457
+        ],
+        "weights": [
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004,
+          1.0000000000000004
+        ],
+        "converged": true,
+        "max_score": 1.3766765505351941e-14
+      },
+      "status": "PASS",
+      "interpretation": "Class-size correction is necessary: raw odds would be 2 despite IID covariates. This exact finite design does not test estimator generalization.",
+      "source_refs": [
+        {
+          "path": "experiments/shift_iw/classifier.py",
+          "first_line": 69,
+          "last_line": 101,
+          "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+        },
+        {
+          "path": "experiments/shift_iw/classifier.py",
+          "first_line": 42,
+          "last_line": 43,
+          "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+        },
+        {
+          "path": "experiments/shift_iw/classifier.py",
+          "first_line": 45,
+          "last_line": 46,
+          "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+        }
+      ]
+    },
+    {
+      "id": "hand_query_atom_crossings",
+      "stage": "N5",
+      "premise": "Candidate is feasible when mass of scores above it plus the unseen atom is at most alpha of all mass.",
+      "inputs": {
+        "scores": [
+          1.0,
+          3.0,
+          9.0
+        ],
+        "weights": [
+          1.0,
+          2.0,
+          1.0
+        ],
+        "query_mass": 1.0,
+        "alpha": 0.4,
+        "exponentials": [
+          [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            4.0
+          ],
+          [
+            2.0,
+            1.0,
+            1.0,
+            0.5
+          ],
+          [
+            1.0,
+            1.0,
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      "expected": [
+        3.0,
+        "inf",
+        3.0,
+        3.0
+      ],
+      "observed": [
+        3.0,
+        "inf",
+        3.0,
+        3.0
+      ],
+      "status": "PASS",
+      "interpretation": "A sufficiently large query atom gives infinity even though all observed scores are finite.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 43,
+          "last_line": 54,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ]
+    },
+    {
+      "id": "independent_tail_risk_posterior",
+      "stage": "N5",
+      "premise": "Enumerate tail-risk inequalities and credible selection independently of native cumulative sums.",
+      "inputs": {
+        "scores": [
+          0.1,
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7,
+          0.8,
+          0.9,
+          1.0,
+          1.1,
+          1.2,
+          1.3,
+          1.4,
+          1.5,
+          1.6,
+          1.7,
+          1.8,
+          1.9,
+          2.0,
+          2.1,
+          2.2,
+          2.3,
+          2.4,
+          2.5,
+          2.6,
+          2.7,
+          2.8,
+          2.9,
+          3.0,
+          3.1,
+          3.2,
+          3.3,
+          3.4,
+          3.5,
+          3.6,
+          3.7,
+          3.8,
+          3.9,
+          4.0,
+          4.1,
+          4.2,
+          4.3,
+          4.4,
+          4.5,
+          4.6,
+          4.7,
+          4.8
+        ],
+        "weights": [
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5,
+          1.0,
+          2.0,
+          0.5
+        ],
+        "query_mass": 0.75,
+        "alpha": 0.1,
+        "beta": 0.95,
+        "draws": 256,
+        "seed": 20261021
+      },
+      "expected": {
+        "lambda_hat": 4.4,
+        "lambda_hpd": 4.7,
+        "threshold": 4.7,
+        "crossings": [
+          3.5,
+          3.6,
+          3.7,
+          3.7,
+          3.8,
+          3.8,
+          3.8,
+          3.8,
+          3.9,
+          3.9,
+          3.9,
+          3.9,
+          3.9,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7
+        ],
+        "n_eff": 37.333333333333336
+      },
+      "observed": {
+        "threshold": 4.7,
+        "lambda_hat": 4.4,
+        "lambda_hpd": 4.7,
+        "n_eff": 37.333333333333336,
+        "finite_draw_fraction": 1.0,
+        "certified_finite": true,
+        "crossings": [
+          3.5,
+          3.6,
+          3.7,
+          3.7,
+          3.8,
+          3.8,
+          3.8,
+          3.8,
+          3.9,
+          3.9,
+          3.9,
+          3.9,
+          3.9,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.1,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.2,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.3,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.4,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.5,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.6,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7,
+          4.7
+        ]
+      },
+      "status": "PASS",
+      "interpretation": "Checks arithmetic conditional on the recorded exponential draw realization. This is not a coverage theorem.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ]
+    },
+    {
+      "id": "all_one_weights_reduce_to_native",
+      "stage": "W2",
+      "premise": "Same scores, test mass 1 and same posterior random stream.",
+      "inputs": {
+        "n": 128,
+        "seed": 20261021,
+        "weights": "all one",
+        "query_mass": 1
+      },
+      "expected": {
+        "threshold": 1.895275590551181,
+        "lambda_hat": 1.820472440944882,
+        "lambda_hpd": 1.895275590551181,
+        "n_eff": 128.0,
+        "finite_draw_fraction": 1.0,
+        "certified_finite": true
+      },
+      "observed": {
+        "threshold": 1.895275590551181,
+        "lambda_hat": 1.820472440944882,
+        "lambda_hpd": 1.895275590551181,
+        "n_eff": 128.0,
+        "finite_draw_fraction": 1.0,
+        "certified_finite": true
+      },
+      "status": "PASS",
+      "interpretation": "Finite-threshold arithmetic is identical. Refusal-policy equivalence is a separate fixture.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 94,
+          "last_line": 98,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ]
+    },
+    {
+      "id": "common_rescaling_invariance",
+      "stage": "W2",
+      "premise": "A common positive factor multiplies every bank weight and the query mass.",
+      "inputs": {
+        "scores": [
+          0.1,
+          0.11496062992125985,
+          0.12992125984251968,
+          0.14488188976377953,
+          0.15984251968503937,
+          0.17480314960629922,
+          0.18976377952755907,
+          0.2047244094488189,
+          0.21968503937007874,
+          0.2346456692913386,
+          0.24960629921259844,
+          0.26456692913385826,
+          0.2795275590551181,
+          0.29448818897637796,
+          0.30944881889763776,
+          0.32440944881889766,
+          0.33937007874015745,
+          0.35433070866141736,
+          0.36929133858267715,
+          0.38425196850393706,
+          0.39921259842519685,
+          0.41417322834645665,
+          0.42913385826771655,
+          0.44409448818897634,
+          0.45905511811023625,
+          0.47401574803149604,
+          0.48897637795275595,
+          0.5039370078740157,
+          0.5188976377952755,
+          0.5338582677165354,
+          0.5488188976377952,
+          0.5637795275590551,
+          0.5787401574803149,
+          0.5937007874015748,
+          0.6086614173228346,
+          0.6236220472440944,
+          0.6385826771653543,
+          0.6535433070866141,
+          0.668503937007874,
+          0.6834645669291338,
+          0.6984251968503937,
+          0.7133858267716535,
+          0.7283464566929133,
+          0.7433070866141732,
+          0.758267716535433,
+          0.7732283464566929,
+          0.7881889763779527,
+          0.8031496062992126,
+          0.8181102362204724,
+          0.8330708661417322,
+          0.8480314960629921,
+          0.8629921259842519,
+          0.8779527559055118,
+          0.8929133858267716,
+          0.9078740157480315,
+          0.9228346456692913,
+          0.9377952755905511,
+          0.952755905511811,
+          0.9677165354330708,
+          0.9826771653543307,
+          0.9976377952755905,
+          1.0125984251968505,
+          1.0275590551181102,
+          1.04251968503937,
+          1.05748031496063,
+          1.0724409448818897,
+          1.0874015748031496,
+          1.1023622047244095,
+          1.1173228346456694,
+          1.1322834645669293,
+          1.147244094488189,
+          1.1622047244094489,
+          1.1771653543307088,
+          1.1921259842519685,
+          1.2070866141732284,
+          1.2220472440944883,
+          1.2370078740157482,
+          1.2519685039370079,
+          1.2669291338582678,
+          1.2818897637795277,
+          1.2968503937007876,
+          1.3118110236220473,
+          1.3267716535433072,
+          1.341732283464567,
+          1.3566929133858268,
+          1.3716535433070867,
+          1.3866141732283466,
+          1.4015748031496065,
+          1.4165354330708662,
+          1.431496062992126,
+          1.446456692913386,
+          1.4614173228346456,
+          1.4763779527559056,
+          1.4913385826771655,
+          1.5062992125984254,
+          1.521259842519685,
+          1.536220472440945,
+          1.5511811023622049,
+          1.5661417322834645,
+          1.5811023622047244,
+          1.5960629921259843,
+          1.6110236220472443,
+          1.625984251968504,
+          1.6409448818897638,
+          1.6559055118110237,
+          1.6708661417322834,
+          1.6858267716535433,
+          1.7007874015748032,
+          1.7157480314960631,
+          1.7307086614173228,
+          1.7456692913385827,
+          1.7606299212598426,
+          1.7755905511811023,
+          1.7905511811023622,
+          1.8055118110236221,
+          1.820472440944882,
+          1.8354330708661417,
+          1.8503937007874016,
+          1.8653543307086615,
+          1.8803149606299214,
+          1.895275590551181,
+          1.910236220472441,
+          1.925196850393701,
+          1.9401574803149606,
+          1.9551181102362205,
+          1.9700787401574804,
+          1.9850393700787403,
+          2.0
+        ],
+        "weights": [
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0,
+          0.5,
+          1.0,
+          2.0,
+          4.0
+        ],
+        "query_mass": 0.75,
+        "factor": 8,
+        "seed": 20261021
+      },
+      "expected": {
+        "threshold": 1.925196850393701,
+        "lambda_hat": 1.820472440944882,
+        "lambda_hpd": 1.925196850393701,
+        "n_eff": 84.70588235294117,
+        "finite_draw_fraction": 1.0,
+        "certified_finite": true
+      },
+      "observed": {
+        "threshold": 1.925196850393701,
+        "lambda_hat": 1.820472440944882,
+        "lambda_hpd": 1.925196850393701,
+        "n_eff": 84.70588235294117,
+        "finite_draw_fraction": 1.0,
+        "certified_finite": true
+      },
+      "status": "PASS",
+      "interpretation": "Only common rescaling is invariant; normalizing bank weights alone changes the query's relative mass.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ]
+    },
+    {
+      "id": "bank_only_normalization_exception",
+      "stage": "W2",
+      "premise": "Intentionally wrong preprocessing divides only bank weights by two.",
+      "inputs": {
+        "n": 48,
+        "scores": 1.0,
+        "original_bank_weights": 2.0,
+        "original_query_mass": 2.0,
+        "draws": 1000,
+        "seeds": [
+          7,
+          19,
+          20261021
+        ]
+      },
+      "expected": "Common-scale thresholds finite at 1; bank-only normalization refuses at infinity for these fixed seeds.",
+      "observed": [
+        {
+          "seed": 7,
+          "common_scale": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 48.0,
+            "finite_draw_fraction": 0.988,
+            "certified_finite": true
+          },
+          "bank_only": {
+            "threshold": "inf",
+            "lambda_hat": 1.0,
+            "lambda_hpd": "inf",
+            "n_eff": 48.0,
+            "finite_draw_fraction": 0.921,
+            "certified_finite": false
+          }
+        },
+        {
+          "seed": 19,
+          "common_scale": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 48.0,
+            "finite_draw_fraction": 0.992,
+            "certified_finite": true
+          },
+          "bank_only": {
+            "threshold": "inf",
+            "lambda_hat": 1.0,
+            "lambda_hpd": "inf",
+            "n_eff": 48.0,
+            "finite_draw_fraction": 0.93,
+            "certified_finite": false
+          }
+        },
+        {
+          "seed": 20261021,
+          "common_scale": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 48.0,
+            "finite_draw_fraction": 0.994,
+            "certified_finite": true
+          },
+          "bank_only": {
+            "threshold": "inf",
+            "lambda_hat": 1.0,
+            "lambda_hpd": "inf",
+            "n_eff": 48.0,
+            "finite_draw_fraction": 0.926,
+            "certified_finite": false
+          }
+        }
+      ],
+      "status": "PASS",
+      "interpretation": "Reproducible exceptional failure mechanism, not a defect in the native common-scale normalization.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ]
+    },
+    {
+      "id": "zero_support_is_refused_not_epsilon_repaired",
+      "stage": "W3",
+      "premise": "The removed action set has zero source support; target-only actions have infinite density ratio.",
+      "inputs": {
+        "current": 0.4,
+        "Z": 0.8,
+        "tilt": "none",
+        "removed_action_first_coordinate": 0
+      },
+      "expected": {
+        "ratios": [
+          "inf",
+          0.8
+        ],
+        "infinite_test_mass_rejected": true
+      },
+      "observed": {
+        "ratios": [
+          "inf",
+          0.8
+        ],
+        "infinite_test_mass_rejected": true
+      },
+      "status": "PASS",
+      "interpretation": "Structural support refusal is upstream of calibration; finite positive query mass can separately cause a posterior threshold infinity.",
+      "source_refs": [
+        {
+          "path": "experiments/shift_iw/world.py",
+          "first_line": 160,
+          "last_line": 164,
+          "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+        },
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ]
+    },
+    {
+      "id": "query_mass_table_and_conservative_lookup",
+      "stage": "W6",
+      "premise": "Coupled posterior draws; query masses round up to the next grid point.",
+      "inputs": {
+        "n": 64,
+        "scores": "linspace(.1,2,64)",
+        "weights": 1,
+        "stream": [
+          20261021,
+          1
+        ],
+        "grid": [
+          0.1,
+          1.0,
+          5.0,
+          1000.0
+        ],
+        "query": [
+          0.1,
+          0.5,
+          2,
+          1000
+        ]
+      },
+      "expected": {
+        "monotone": true,
+        "running_max_applied": false,
+        "indices": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "last_threshold": "inf"
+      },
+      "observed": {
+        "table": {
+          "grid": [
+            0.1,
+            1.0,
+            5.0,
+            1000.0
+          ],
+          "raw": [
+            1.9396825396825397,
+            1.9396825396825397,
+            "inf",
+            "inf"
+          ],
+          "thresholds": [
+            1.9396825396825397,
+            1.9396825396825397,
+            "inf",
+            "inf"
+          ],
+          "lambda_hat": 1.819047619047619,
+          "n_eff": 64.0,
+          "points": 4,
+          "monotone": true,
+          "running_max_applied": false,
+          "infinite_from": 5.0
+        },
+        "lookup": [
+          1.9396825396825397,
+          1.9396825396825397,
+          "inf",
+          "inf"
+        ],
+        "indices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "status": "PASS",
+      "interpretation": "The fixed sample demonstrates monotonic arithmetic and conservative lookup, not target-population coverage.",
+      "source_refs": [
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 157,
+          "last_line": 170,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 180,
+          "last_line": 189,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ]
+    },
+    {
+      "id": "concentration_ess_and_no_native_ratio_clipping",
+      "stage": "W4",
+      "premise": "The native engine rescales but does not clip supplied ratios; clipping below is an explicit input sensitivity control.",
+      "inputs": {
+        "raw_weights": [
+          0.01,
+          1.0,
+          100.0
+        ],
+        "sensitivity_only_cap": 10,
+        "query_mass": 2
+      },
+      "expected": {
+        "raw_ess": 1.0201999798000205,
+        "uniform_ess": 3.0,
+        "clipping_is_native": false
+      },
+      "observed": {
+        "raw_ess": 1.0201999798000203,
+        "iw_kish": 1.0201999798000205,
+        "uniform_ess": 3.0,
+        "manually_capped_ess": 1.2001978215863152
+      },
+      "status": "PASS",
+      "interpretation": "Concentration reduces ESS; raising ESS by manually clipping changes the target weighting. No native clipping stage is claimed.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 101,
+          "last_line": 104,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        },
+        {
+          "path": "experiments/shift_iw/classifier.py",
+          "first_line": 45,
+          "last_line": 46,
+          "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+        }
+      ]
+    },
+    {
+      "id": "iid_same_target_low_high_residual",
+      "stage": "N4",
+      "premise": "IID/unit-weight calibration, fixed eta=1; residual and frozen unit are controlled separately.",
+      "inputs": {
+        "n": 128,
+        "eta": 1,
+        "cases": [
+          [
+            0.1,
+            1
+          ],
+          [
+            10,
+            1
+          ],
+          [
+            10,
+            100
+          ]
+        ],
+        "key": [
+          20261021,
+          3
+        ],
+        "blend": 0.5
+      },
+      "expected": {
+        "doses": [
+          1.0454545454545454,
+          1.4545454545454546,
+          1.0454545454545454
+        ],
+        "widths": [
+          0.1,
+          10,
+          10
+        ]
+      },
+      "observed": [
+        {
+          "residual": 0.1,
+          "unit": 1.0,
+          "valid": true,
+          "threshold": 0.10000000149011612,
+          "width": [
+            0.10000000149011612,
+            0.10000000149011612,
+            0.10000000149011612
+          ],
+          "dose": [
+            1.045454502105713,
+            1.045454502105713,
+            1.045454502105713
+          ],
+          "support": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "residual": 10.0,
+          "unit": 1.0,
+          "valid": true,
+          "threshold": 10.0,
+          "width": [
+            10.0,
+            10.0,
+            10.0
+          ],
+          "dose": [
+            1.454545497894287,
+            1.454545497894287,
+            1.454545497894287
+          ],
+          "support": [
+            true,
+            true,
+            true
+          ]
+        },
+        {
+          "residual": 10.0,
+          "unit": 100.0,
+          "valid": true,
+          "threshold": 0.10000000149011612,
+          "width": [
+            10.0,
+            10.0,
+            10.0
+          ],
+          "dose": [
+            1.045454502105713,
+            1.045454502105713,
+            1.045454502105713
+          ],
+          "support": [
+            true,
+            true,
+            true
+          ]
+        }
+      ],
+      "status": "PASS",
+      "interpretation": "IID does not imply small normalized error or low penalty. High absolute residual with proportionally larger unit can have the same dose as the low-residual case.",
+      "source_refs": [
+        {
+          "path": "calibration/reference.py",
+          "first_line": 152,
+          "last_line": 194,
+          "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+        },
+        {
+          "path": "calibration/reference.py",
+          "first_line": 148,
+          "last_line": 149,
+          "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+        },
+        {
+          "path": "calibration/dose.py",
+          "first_line": 65,
+          "last_line": 95,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        }
+      ]
+    },
+    {
+      "id": "invalid_reference_does_not_become_ready",
+      "stage": "N9",
+      "premise": "A zero residual unit is outside the positive-scale contract.",
+      "inputs": {
+        "unit": 0,
+        "n": 128
+      },
+      "expected": {
+        "valid": false,
+        "ready": false
+      },
+      "observed": {
+        "valid": false,
+        "ready": false
+      },
+      "status": "PASS",
+      "interpretation": "The helper returns an invalid/not-ready reference; caller preservation of a previous state is source-audited separately.",
+      "source_refs": [
+        {
+          "path": "calibration/reference.py",
+          "first_line": 152,
+          "last_line": 194,
+          "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+        }
+      ]
+    },
+    {
+      "id": "native_dose_bound_direction_and_infinite_fallback",
+      "stage": "N7",
+      "premise": "Finite width increases the multiplier monotonically; native unsupported infinity returns neutral dose 1.",
+      "inputs": {
+        "widths": [
+          0.0,
+          1.0,
+          4.0,
+          "inf"
+        ],
+        "unit": 1.0,
+        "blend": 0.5
+      },
+      "expected": {
+        "dose": [
+          1.0,
+          1.25,
+          1.4,
+          1.0
+        ],
+        "support": [
+          true,
+          true,
+          true,
+          false
+        ]
+      },
+      "observed": {
+        "dose": [
+          1.0,
+          1.25,
+          1.399999976158142,
+          1.0
+        ],
+        "support": [
+          true,
+          true,
+          true,
+          false
+        ]
+      },
+      "status": "PASS",
+      "interpretation": "Infinity is a refusal branch, not the finite-width limit 1+blend. Plot it as refusal, not as ordinary high uncertainty.",
+      "source_refs": [
+        {
+          "path": "calibration/dose.py",
+          "first_line": 23,
+          "last_line": 62,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        }
+      ]
+    },
+    {
+      "id": "identical_thresholds_different_refusal_policy",
+      "stage": "W7",
+      "premise": "Hold eta, unit and row thresholds fixed; change only the actual most_caution flag.",
+      "inputs": {
+        "thresholds": [
+          1,
+          "inf"
+        ],
+        "eta": 1,
+        "unit": 1,
+        "blend": 0.5
+      },
+      "expected": {
+        "native_rule": [
+          1.25,
+          1.0
+        ],
+        "most_caution": [
+          1.25,
+          1.5
+        ],
+        "refused": [
+          false,
+          true
+        ]
+      },
+      "observed": {
+        "native_rule": [
+          1.25,
+          1.0
+        ],
+        "most_caution": [
+          1.25,
+          1.5
+        ],
+        "refused": [
+          false,
+          true
+        ]
+      },
+      "status": "PASS",
+      "interpretation": "A penalty increase at refusal can be caused entirely by the refusal rule, even when all importance weights are one. Do not attribute it to ratio weighting.",
+      "source_refs": [
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 279,
+          "last_line": 312,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ]
+    },
+    {
+      "id": "iql_refusal_is_host_specific",
+      "stage": "W7",
+      "premise": "The IQL action weight is not a TD3/CQL/ReBRAC penalty multiplier.",
+      "inputs": {
+        "advantages": [
+          1,
+          0,
+          -1
+        ],
+        "thresholds": "inf",
+        "beta": 3,
+        "cap": 100
+      },
+      "expected": {
+        "native_rule": [
+          0,
+          0,
+          0
+        ],
+        "most_caution": [
+          1,
+          1,
+          0.049787068367863944
+        ]
+      },
+      "observed": {
+        "native_rule": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "most_caution": [
+          1.0,
+          1.0,
+          0.049787066876888275
+        ],
+        "native_has_support": false,
+        "cautious_has_support": true
+      },
+      "status": "PASS",
+      "interpretation": "Native IQL refuses unsupported rows; most-caution IQL uses cloning weight 1 for positive advantage and the native lower weight otherwise.",
+      "source_refs": [
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 315,
+          "last_line": 364,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ]
+    },
+    {
+      "id": "controlled_iw_increase_and_decrease",
+      "stage": "N5",
+      "premise": "Fixed scores and random streams; only relative calibration weights change, with query mass 1.",
+      "inputs": {
+        "seeds": [
+          7,
+          19,
+          20261021
+        ],
+        "draws": 1000,
+        "increase": "124 scores=1 weights=1; 4 scores=10 weights=16",
+        "decrease": "64 scores=1 weights=8; 64 scores=10 weights=.125",
+        "query_mass": 1
+      },
+      "expected": "Increase: R 1 to 10 and dose 1.25 to 1.454545. Decrease: reversed; both finite for all three seeds.",
+      "observed": [
+        {
+          "direction": "increase",
+          "seed": 7,
+          "plain": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 128.0,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "weighted": {
+            "threshold": 10.0,
+            "lambda_hat": 10.0,
+            "lambda_hpd": 10.0,
+            "n_eff": 30.78745644599303,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "plain_dose": 1.25,
+          "weighted_dose": 1.4545454545454546,
+          "expected_thresholds": [
+            1.0,
+            10.0
+          ]
+        },
+        {
+          "direction": "increase",
+          "seed": 19,
+          "plain": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 128.0,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "weighted": {
+            "threshold": 10.0,
+            "lambda_hat": 10.0,
+            "lambda_hpd": 10.0,
+            "n_eff": 30.78745644599303,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "plain_dose": 1.25,
+          "weighted_dose": 1.4545454545454546,
+          "expected_thresholds": [
+            1.0,
+            10.0
+          ]
+        },
+        {
+          "direction": "increase",
+          "seed": 20261021,
+          "plain": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 128.0,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "weighted": {
+            "threshold": 10.0,
+            "lambda_hat": 10.0,
+            "lambda_hpd": 10.0,
+            "n_eff": 30.78745644599303,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "plain_dose": 1.25,
+          "weighted_dose": 1.4545454545454546,
+          "expected_thresholds": [
+            1.0,
+            10.0
+          ]
+        },
+        {
+          "direction": "decrease",
+          "seed": 7,
+          "plain": {
+            "threshold": 10.0,
+            "lambda_hat": 10.0,
+            "lambda_hpd": 10.0,
+            "n_eff": 128.0,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "weighted": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 65.99951183793019,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "plain_dose": 1.4545454545454546,
+          "weighted_dose": 1.25,
+          "expected_thresholds": [
+            10.0,
+            1.0
+          ]
+        },
+        {
+          "direction": "decrease",
+          "seed": 19,
+          "plain": {
+            "threshold": 10.0,
+            "lambda_hat": 10.0,
+            "lambda_hpd": 10.0,
+            "n_eff": 128.0,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "weighted": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 65.99951183793019,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "plain_dose": 1.4545454545454546,
+          "weighted_dose": 1.25,
+          "expected_thresholds": [
+            10.0,
+            1.0
+          ]
+        },
+        {
+          "direction": "decrease",
+          "seed": 20261021,
+          "plain": {
+            "threshold": 10.0,
+            "lambda_hat": 10.0,
+            "lambda_hpd": 10.0,
+            "n_eff": 128.0,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "weighted": {
+            "threshold": 1.0,
+            "lambda_hat": 1.0,
+            "lambda_hpd": 1.0,
+            "n_eff": 65.99951183793019,
+            "finite_draw_fraction": 1.0,
+            "certified_finite": true
+          },
+          "plain_dose": 1.4545454545454546,
+          "weighted_dose": 1.25,
+          "expected_thresholds": [
+            10.0,
+            1.0
+          ]
+        }
+      ],
+      "status": "PASS",
+      "interpretation": "Correct IW need not always raise caution: it emphasizes whichever residual region the supplied target weights favor. These are controlled fixtures, not deployment results.",
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ]
+    },
+    {
+      "id": "dose_is_detached_from_width_gradient",
+      "stage": "N8",
+      "premise": "The multiplier is a frozen coefficient; this probes its actual autodiff behavior only.",
+      "inputs": {
+        "widths": [
+          0.1,
+          1,
+          10
+        ],
+        "blend": 0.5,
+        "unit": 1
+      },
+      "expected": [
+        0,
+        0,
+        0
+      ],
+      "observed": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "status": "PASS",
+      "interpretation": "Checks stop-gradient ownership at the dose boundary. This does not execute any host optimizer update.",
+      "source_refs": [
+        {
+          "path": "calibration/dose.py",
+          "first_line": 23,
+          "last_line": 62,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        }
+      ]
+    },
+    {
+      "id": "known_oracle_alignment_and_counterexample",
+      "stage": "N8",
+      "premise": "Analytic one-step oracle Q(a)=-a^2, a in {-1,0,1}; predictor Qhat=0. Eta is deliberately specified, not fitted.",
+      "inputs": {
+        "actions": [
+          -1.0,
+          0.0,
+          1.0
+        ],
+        "true_Q": [
+          -1.0,
+          -0.0,
+          -1.0
+        ],
+        "predicted_Q": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "absolute_error": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "action_harm": [
+          1.0,
+          0.0,
+          1.0
+        ],
+        "R": 1,
+        "unit": 1
+      },
+      "expected": {
+        "aligned_correlation": 1,
+        "reversed_correlation": -1
+      },
+      "observed": [
+        {
+          "case": "aligned",
+          "dose": [
+            1.25,
+            1.0049505233764648,
+            1.25
+          ],
+          "half_width": [
+            1.0,
+            0.009999999776482582,
+            1.0
+          ],
+          "error_rank_correlation": 1.0,
+          "action_harm_rank_correlation": 1.0
+        },
+        {
+          "case": "reversed",
+          "dose": [
+            1.0049505233764648,
+            1.25,
+            1.0049505233764648
+          ],
+          "half_width": [
+            0.009999999776482582,
+            1.0,
+            0.009999999776482582
+          ],
+          "error_rank_correlation": -1.0,
+          "action_harm_rank_correlation": -1.0
+        }
+      ],
+      "status": "PASS",
+      "interpretation": "Correct width-to-dose arithmetic alone does not guarantee useful error or action-harm ranking. The reversed fixture is an intentional counterexample, not an observed trained-agent failure.",
+      "source_refs": [
+        {
+          "path": "calibration/dose.py",
+          "first_line": 65,
+          "last_line": 95,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "passed": 18,
+    "failed": 0,
+    "total": 18
+  },
+  "untested": [
+    "Episode reservation",
+    "Bellman target construction",
+    "Scale-network fitting",
+    "Host optimizer update",
+    "Population coverage or learned-ratio correctness"
+  ]
+}
