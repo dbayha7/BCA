@@ -1,0 +1,78 @@
+{
+  "schema": "thrusterchain-action-only-v1",
+  "status": "candidate protocol; main execution requires freeze.json",
+  "design": "post-hoc controlled evaluation, conditional on one trained model and one fixed finite state bank",
+  "checkpoint_job": "replicate_01/full/bca",
+  "checkpoint_update": 100000,
+  "checkpoint_sha256": "4088278230fc413c509e27e189daa342468cfc4fb6d2479e3e8c29e149dac3d8",
+  "original_training_source_commit": "b007052a2494dc651ac00469fa9e922b287cd1e5",
+  "observed_current_checkout_commit": "30c5c68cbcfab7339ed4b69c109513e7acbb121b",
+  "source_policy": "authenticated preserved training closure; do not import changed current checkout code",
+  "state_law": {
+    "size": 64,
+    "per_context": 16,
+    "contexts": ["stall/load0.3", "stall/load1.1", "monotone/load0.3", "monotone/load1.1"],
+    "source": "64 distinct original source episodes, selected by seeded episode IDs without outcomes",
+    "selection_seed": 2026102101,
+    "time_cycle": [0, 50, 99],
+    "time_counts_per_context": [6, 5, 5],
+    "probability": "uniform over the 64 fixed rows for both fresh calibration and evaluation"
+  },
+  "action_law": {
+    "grid": "cartesian product of [-1,-float32(0.8),0,float32(0.8),1] in four coordinates, 625 commands",
+    "beta": "exact product categorical source: 0.84 at each coordinate's nearest controller atom; 0.04 at each other atom",
+    "target": "q_lambda=(1-lambda)*beta+lambda*delta_nearest_grid_fixed_actor",
+    "mixtures": [0.0, 0.5, 1.0],
+    "tie_rule": "first/lower ordered atom",
+    "weights": "exact q_lambda/beta; zero weights allowed; no ratio clipping or denominator floor",
+    "off_grid_actor": "separate structural support audit, no projection-based support claim for the deployed actor"
+  },
+  "score": {
+    "predictor": "terminal100k minimum of the two current critic heads",
+    "label": "r+(1-done)*min_Qtarget(s_next,clip(actor_target(s_next)+clip(0.2*N(0,I),-0.5,0.5),-1,1))",
+    "horizon": 100,
+    "discount": 1.0,
+    "termination": "remaining-time observation; no bootstrap at time99 transition",
+    "scale": "max(eta95(x,a),1e-6)*unit95 from frozen95k reference",
+    "definition": "abs(Y100k-Q100k)/scale; fresh identically computed scores for both banks and methods",
+    "label_noise": "fixed conditional kernel, no importance ratio assigned to clipped Gaussian label noise"
+  },
+  "calibration": {
+    "replications": 200,
+    "size": 128,
+    "posterior_draws": 1000,
+    "miscoverage": 0.1,
+    "credibility": 0.95,
+    "methods": ["uniform", "exact_categorical_iw_per_query"],
+    "coupling": "same calibration rows, scores and exponential posterior draws across both methods and all target mixtures",
+    "test_mass_uniform": 1.0,
+    "test_mass_iw": "q_lambda(query)/beta(query), per-query variant; not scalar E_target[w]",
+    "threshold": "max(weighted empirical 0.9 quantile, posterior 0.95 order statistic of 0.9 crossings with test mass at infinity)",
+    "all_zero": "explicit no-positive-weight-bank refusal; infinite interval, neutral dose1; not formula failure",
+    "guarantee": "BCA-specific Bayesian procedure evaluated empirically; no weighted-conformal frequentist theorem asserted",
+    "arithmetic": "native float64 WBCP threshold; both methods use float64 half-width and dose evaluation, not a claim of bitwise float32 deployment readout"
+  },
+  "evaluation": {
+    "queries_per_replication_per_mixture": 4096,
+    "coupling": "same query bank between methods; common state IDs, base actions, mixture uniforms and Gaussian label noise across mixture levels within a replication",
+    "independence": "new draws independent of calibration within each replicate; all draw streams independent across calibration replications",
+    "raw_records": "retain each replicate's calibration and evaluation arrays locally; portable bundle includes per-replicate paired records, identities, seeds and replay code",
+    "primary_metrics": ["coverage including vacuous intervals", "finite-interval coverage with its denominator", "finite half-width and full width", "refusal/vacuity and neutral-fallback counts", "effective sample size", "positive-weight count and no-hit indicator", "weight tails", "query mass", "context/time subgroup counts and coverage", "off-grid deployed-actor support audit"],
+    "inference_unit": "independent calibration replication (200); queries are not independent replicates for uncertainty of the procedure",
+    "interval": "mean +/- two-sided t_199 97.5% critical value times across-replication standard error; paired differences use paired replicate differences",
+    "scope": "conditional Monte Carlo uncertainty, not across-trained-seed or new-episode population uncertainty"
+  },
+  "dose": {
+    "blend": 0.5,
+    "formula": "1+0.5*half_width/(half_width+unit95) when finite and usable; otherwise1",
+    "interpretation": "diagnostic native multiplier readout only; no actor or optimizer update; finite usability is not support certification"
+  },
+  "rng": {
+    "generator": "NumPy PCG64 via SeedSequence([2026102120,replicate_id,stream_id])",
+    "base_seed": 2026102120,
+    "replicate_ids": "0 through199, all reported",
+    "streams": {"calibration_states": 1, "calibration_actions": 2, "calibration_label_noise": 3, "posterior_exponentials": 4, "evaluation_states": 5, "evaluation_base_actions": 6, "evaluation_mixture": 7, "evaluation_label_noise": 8}
+  },
+  "execution": {"backend": "Zeus local CPU", "parallel_workers": 1, "blas_threads": 1, "no_training": true, "resume": "only complete checksum-verified replication files may be reused; incomplete replication is recomputed from its fixed independent streams and recorded"},
+  "deferred": ["new trained seeds", "actor/critic retraining", "rare/zero retained-source extensions", "policy occupancy shifts", "learned density ratios", "weighted conformal reference", "true policy-Q coverage", "policy improvement", "claims about all IWBCA implementations"]
+}
