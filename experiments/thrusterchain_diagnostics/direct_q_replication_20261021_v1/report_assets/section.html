@@ -1,0 +1,295 @@
+<style>
+#direct-q-replication .fr-table{overflow-x:auto;margin:18px 0}#direct-q-replication table{min-width:760px;width:100%}
+#direct-q-replication td{vertical-align:top;overflow-wrap:anywhere}#direct-q-replication .fr-pseudo,#direct-q-replication .fr-source{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;padding:18px;background:var(--surface)}
+#direct-q-replication .fr-pseudo span,#direct-q-replication .fr-source span{display:block}#direct-q-replication .fr-pseudo b,#direct-q-replication .fr-source b{color:#167d73;display:inline-block;margin-right:1em}#direct-q-replication .fr-source{font-size:12px}
+#direct-q-replication figure{padding:12px;background:#fbfaf7;border:1px solid var(--rule);border-radius:10px}#direct-q-replication svg{width:100%;height:auto}#direct-q-replication details{margin:18px 0}#direct-q-replication .fr-meta{font-size:12px;overflow-wrap:anywhere}
+</style>
+<section id="direct-q-replication" aria-labelledby="fr-heading">
+<h2 id="fr-heading">Fresh-bank mean alignment is negative; ranking scarcely changes</h2>
+<p>This new bank tests whether the frozen uncertainty width tracks <b>relative signed value error</b>, then whether subtracting it improves ordering or action choice. It was specified after the earlier bank was inspected and frozen before its own labels. This is a descriptive frozen-model replication; earlier results remain below, unchanged and unpooled.</p>
+<div class="callout"><b>Completed:</b> 384/384 candidate continuations; 21696/21696 planned transitions; 32/32 valid states. No new training or validation rollouts. Mean width/error correlation <b>-0.111290</b>; width-minus-distance correlation <b>-0.125563</b>, interval <b>[-0.242948, -0.002111]</b>.</div>
+<figure><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 245" role="img" aria-labelledby="fr-chart-title fr-chart-desc">
+<title id="fr-chart-title">Fresh-bank alignment contrasts and ranking change</title>
+<desc id="fr-chart-desc">Points are state means; lines are descriptive95percent bootstrap intervals. Zero marks no paired difference.</desc>
+<rect width="900" height="245" fill="#fbfaf7"/>
+<line x1="749.94" y1="24" x2="749.94" y2="183" stroke="#777" stroke-dasharray="4 4"/>
+<text x="15" y="50" font-family="sans-serif" font-size="16" fill="#222">Width - distance correlation</text>
+<line x1="411.28" y1="45" x2="747.00" y2="45" stroke="#147d73" stroke-width="3"/>
+<circle cx="574.91" cy="45" r="6" fill="#147d73"/>
+<text x="15" y="105" font-family="sans-serif" font-size="16" fill="#222">Width - shuffled correlation</text>
+<line x1="359.35" y1="100" x2="770.65" y2="100" stroke="#147d73" stroke-width="3"/>
+<circle cx="565.08" cy="100" r="6" fill="#147d73"/>
+<text x="15" y="160" font-family="sans-serif" font-size="16" fill="#222">Width concordance change</text>
+<line x1="742.06" y1="155" x2="758.60" y2="155" stroke="#147d73" stroke-width="3"/>
+<circle cx="750.67" cy="155" r="6" fill="#147d73"/>
+<text x="310.00" y="210" font-family="sans-serif" font-size="14">-0.316</text>
+<text x="749.94" y="210" text-anchor="middle" font-family="sans-serif" font-size="14">0</text>
+<text x="820.00" y="210" text-anchor="end" font-family="sans-serif" font-size="14">0.050</text>
+</svg><figcaption>These endpoints answer different questions. The first two compare alignment with signed error; the third measures ranking change. Intervals are conditional state-bootstrap descriptions, not independent-training-seed evidence.</figcaption></figure>
+<p>On this fresh bank, the mean width/error relationship runs opposite to the intended relative-error penalty direction, while the change in action-ranking concordance is close to zero. No incremental benefit from adaptive width is demonstrated on this bank. This is not an impossibility result or a test of all importance-weighted BCA variants; no broad training follows from this report.</p><p>The width changes 5 commands: 4 improve, 1 is harmed and 27 are unchanged versus raw Q. Mean selected-Q change is 0.044886, interval [-0.367432, 0.421841]. The direct width-minus-distance selected-Q difference is -0.283109, interval [-0.652308, -0.009318].</p><p>The shuffled-width control has mean selected-Q change 0.370231 versus raw, despite mean concordance change -0.004298. Average pair ordering and the value of the single maximum-score choice are different endpoints. One fixed permutation is a descriptive placement control, not a randomization test.</p>
+<h3 id="fr-premise">Define the premise before the mechanism</h3>
+<p>BCA is the existing Bayesian calibration procedure. Its native intervention changes behavior-cloning strength. Here we study the proposed direct score <b>Q1 minus uncertainty width</b>, without updating either network. Earlier tests established the proposed live-width derivative mechanically; a derivative alone does not establish useful uncertainty.</p>
+<p>The primary error is <b>e = Q1 − true Q of the original actor continuation</b>. Larger relative error should receive a larger penalty if the penalty is to correct ordering. This is signed-error <b>Pearson</b> alignment; it is a different endpoint from the earlier positive-error Spearman analysis. Pearson over all 12 indexed candidates equals the normalized dot product of every i&lt;j difference, without recentering the differences. That equality is a code invariant, not a second independent piece of evidence.</p>
+<h3 id="fr-laws">Historical calibration source → new evaluator target</h3>
+<p><b>Source:</b> The historical band uses 128 pooled calibration rows: one uniformly selected transition per reserved behavior episode. Under full retention, time is uniform over 0..99 and physical states follow behavior trajectories. The 625-command product categorical behavior law gives each coordinate probability 0.84 at its mode and 0.04 at each other atom. These rows were adaptively reused; the frozen reference was last refreshed at update 95000. Its target is a noisy one-step residual for the current twin-min critic.</p><p><b>Target inputs:</b> The new bank has 32 fresh independent physical-state draws, eight per stall/monotone and low/high-load context. Times 0, 50, 99 have counts 3, 3, 2 in each context. Ten position/velocity coordinates are uniform on [-0.5, 0.5]; load is 0.3 or 1.1 and wave amplitude 0.2 has uniform phase. These reset-law states crossed with assigned times are designed queries, not states visited by the behavior or learned policy. Each state has six distinct grid commands: include the nearest-grid actor command and behavior mode when distinct, then fill by uniform grid IDs without replacement. Append the original continuous actor command and five Uniform[-1,1]^4 commands. All 12 indices remain, including cross-slot duplicates.</p><p><b>Truth target:</b> A true-Q label executes the candidate once, then follows the unchanged unsmoothed original actor to horizon 100 with discount 1 and no terminal bootstrap. It is the deterministic numerical return of this one-action deviation, not Q-star or a new policy that repeatedly selects corrected-score actions.</p>
+<p>The frozen nominal 90% setting concerns the historical one-step residual target. This replication does not test interval coverage for long-horizon Q. Conditional command support and finite width do not establish joint state/calibration coverage.</p>
+<h3 id="fr-alignment">Does the width follow relative error?</h3><div class="fr-table"><table><thead><tr><th scope="col">Endpoint</th><th scope="col">Mean</th><th scope="col">95% interval</th><th scope="col">Defined / planned states</th><th scope="col">Defined states per bootstrap draw</th><th scope="col">Undefined draws / 10000</th></tr></thead><tbody><tr><td>Width versus signed error</td><td>-0.111290</td><td>[-0.231189, 0.002985]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Distance versus signed error</td><td>0.014273</td><td>[-0.099091, 0.131228]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Shuffled width versus signed error</td><td>0.021321</td><td>[-0.065533, 0.107426]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Width minus distance correlation</td><td>-0.125563</td><td>[-0.242948, -0.002111]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Width minus shuffled correlation</td><td>-0.132611</td><td>[-0.280195, 0.014854]</td><td>32/32</td><td>32..32</td><td>0</td></tr></tbody></table></div>
+<p>Each mean uses its own defined states; each paired correlation contrast uses its pair-specific intersection. A zero centered predictor or error norm gives an undefined correlation, never an artificial zero. Paired arm means on the same intersection remain in the saved numerical results.</p>
+<h3 id="fr-ordering">Does it order the actions better?</h3>
+<p>Concordance is the fraction of comparable true action pairs ordered correctly. True differences at most 10<sup>−6</sup> are excluded; predicted differences at most 10<sup>−6</sup> earn half credit. Means give equal weight to each defined state, not to each pooled pair.</p><div class="fr-table"><table><thead><tr><th scope="col">Endpoint</th><th scope="col">Mean</th><th scope="col">95% interval</th><th scope="col">Defined / planned states</th><th scope="col">Defined states per bootstrap draw</th><th scope="col">Undefined draws / 10000</th></tr></thead><tbody><tr><td>Raw Q1 concordance</td><td>0.715814</td><td>[0.678278, 0.753309]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Raw Q1 concordance change</td><td>0.000000</td><td>[0.000000, 0.000000]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus width concordance</td><td>0.716339</td><td>[0.676493, 0.755567]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus width concordance change</td><td>0.000524</td><td>[-0.005653, 0.006214]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus matched distance concordance</td><td>0.725852</td><td>[0.686050, 0.765683]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus matched distance concordance change</td><td>0.010038</td><td>[0.005303, 0.014307]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus shuffled width concordance</td><td>0.711517</td><td>[0.673258, 0.750134]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus shuffled width concordance change</td><td>-0.004298</td><td>[-0.008129, -0.000473]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus state-constant offset concordance</td><td>0.715814</td><td>[0.678278, 0.753309]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus state-constant offset concordance change</td><td>0.000000</td><td>[0.000000, 0.000000]</td><td>32/32</td><td>32..32</td><td>0</td></tr></tbody></table></div>
+<h3 id="fr-choice">What happens when a score chooses?</h3><div class="fr-table"><table><thead><tr><th scope="col">Endpoint</th><th scope="col">Mean</th><th scope="col">95% interval</th><th scope="col">Defined / planned states</th><th scope="col">Defined states per bootstrap draw</th><th scope="col">Undefined draws / 10000</th></tr></thead><tbody><tr><td>Raw Q1 selected true Q</td><td>-107.269059</td><td>[-112.134291, -102.161364]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Raw Q1 change versus raw</td><td>0.000000</td><td>[0.000000, 0.000000]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Raw Q1 advantage versus actor</td><td>-0.318841</td><td>[-1.500248, 0.663064]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus width selected true Q</td><td>-107.224174</td><td>[-112.118974, -102.061378]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus width change versus raw</td><td>0.044886</td><td>[-0.367432, 0.421841]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus width advantage versus actor</td><td>-0.273956</td><td>[-1.412998, 0.658034]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus matched distance selected true Q</td><td>-106.941065</td><td>[-111.814667, -101.831016]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus matched distance change versus raw</td><td>0.327995</td><td>[0.036081, 0.637949]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus matched distance advantage versus actor</td><td>0.009154</td><td>[-1.152665, 0.962543]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus shuffled width selected true Q</td><td>-106.898828</td><td>[-111.773597, -101.871811]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus shuffled width change versus raw</td><td>0.370231</td><td>[0.006064, 0.808070]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus shuffled width advantage versus actor</td><td>0.051390</td><td>[-1.311780, 1.203034]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus state-constant offset selected true Q</td><td>-107.269059</td><td>[-112.134291, -102.161364]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus state-constant offset change versus raw</td><td>0.000000</td><td>[0.000000, 0.000000]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Q1 minus state-constant offset advantage versus actor</td><td>-0.318841</td><td>[-1.500248, 0.663064]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Original actor true Q</td><td>-106.950218</td><td>[-111.209363, -102.343174]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Width minus distance: selected true Q</td><td>-0.283109</td><td>[-0.652308, -0.009318]</td><td>32/32</td><td>32..32</td><td>0</td></tr><tr><td>Width minus shuffled: selected true Q</td><td>-0.325345</td><td>[-0.820429, 0.113812]</td><td>32/32</td><td>32..32</td><td>0</td></tr></tbody></table></div>
+<p>The chosen command runs once, then control returns to the original actor. The table reports both selected-value levels and paired differences against raw, distance, shuffled-width and original-actor controls. These are not returns from a new controller that repeatedly chooses the corrected score.</p>
+<div class="fr-table"><table><thead><tr><th scope="col">Score</th><th scope="col">Changed indices</th><th scope="col">Changed commands</th><th scope="col">Selected actor command</th><th scope="col">Actor restorations</th><th scope="col">Improved / harmed / unchanged versus raw</th></tr></thead><tbody><tr><td>Raw Q1</td><td>0</td><td>0</td><td>8</td><td>0</td><td>0 / 0 / 32</td></tr><tr><td>Q1 minus width</td><td>5</td><td>5</td><td>8</td><td>0</td><td>4 / 1 / 27</td></tr><tr><td>Q1 minus matched distance</td><td>4</td><td>4</td><td>8</td><td>0</td><td>4 / 0 / 28</td></tr><tr><td>Q1 minus shuffled width</td><td>6</td><td>6</td><td>8</td><td>1</td><td>4 / 2 / 26</td></tr><tr><td>Q1 minus state-constant offset</td><td>0</td><td>0</td><td>8</td><td>0</td><td>0 / 0 / 32</td></tr></tbody></table></div>
+<p>An index change can select the same command when candidates duplicate. Returning to the original actor after raw Q chose another command is restoration, not new learned-policy improvement.</p>
+<h3 id="fr-controls">Frozen controls, support and refusals</h3>
+<p>The width coefficient stays 1 and the inherited distance coefficient stays 0.519506430786272; neither is retuned. One saved within-state permutation changes width placement while preserving its indexed values. It is a placement control, not a permutation test. The state-constant subtraction preserves raw ordering.</p>
+<p>Conditional-action support counts: <code>{&quot;common_on_grid&quot;: 47, &quot;rare_on_grid&quot;: 145, &quot;unsupported&quot;: 192}</code>. Native width refusals: <b>0/384</b>. Invalid states: <b>0/32</b>. Evaluated physical/continuation failures: <b>0/384</b>; nonfinite evaluated returns: <b>0/384</b>.</p>
+<p>Common commands have β≥0.01; rare commands have 0&lt;β&lt;0.01; unsupported commands have β=0 under exact float32 atom equality. These are conditional action labels. A finite unusable width falls back to raw scoring; band refusal is not action refusal. A numeric invalidity removes the whole state from paired endpoint contributions, preserves every record and never triggers a replacement. Physical threshold events remain valid measured outcomes.</p>
+<p>Invalid-state reasons: <code>{}</code>.</p>
+<h3 id="fr-uncertainty">What the intervals can describe</h3><p>One common saved set of 10,000 bootstrap draws resamples whole states within the original context/time cells, retaining the 3/3/2 counts. Actions and action pairs are not independent replications. Each mean correlation uses its own defined-state mask; each correlation contrast uses its pair-specific intersection. The same eligibility mask is applied after drawing from all 32 original states; missing states are not replaced or resampled away. Every draw denominator is retained. Any draw with no defined contributions makes that endpoint interval unavailable. These percentile intervals are descriptive and conditional on this one checkpoint, designed state law and candidate realization; there are only 2-3 states per context/time cell. They do not quantify variation across independently trained models.</p>
+<p>No hypothesis test, independent-seed generalization, new learned-policy benefit, long-horizon Q coverage or additional penalty variant is claimed.</p>
+<h3 id="fr-stages">Trace the actual implementation</h3><pre class="fr-pseudo"><span><b>01 · Authenticate</b> Lock the existing 100k model, 95k residual reference, inherited coefficient, source and fresh inputs before labels. <a href="#fr-code-authenticate">run_replication.py:83-92</a></span>
+<span><b>02 · Design the fresh bank</b> Draw 32 new physical states; assign the same context/time law and 12 indexed candidates. <a href="#fr-code-states">replication.py:95-107</a></span>
+<span><b>03 · Fix the placement control</b> Permute the12 widths once within each state; preserve their usability flags and full produced precision. <a href="#fr-code-bank">replication.py:135-146</a></span>
+<span><b>04 · Score every command</b> Compare raw Q1, Q1-U, Q1-kD, Q1-shuffled(U), and Q1-state_mean(U). <a href="#fr-code-scores">replication.py:149-165</a></span>
+<span><b>05 · Measure the consequence</b> Execute each candidate once, then follow the unchanged single-row actor to horizon 100. <a href="#fr-code-truth">run_replication.py:95-110</a></span>
+<span><b>06 · Check relative error</b> Compute within-state Pearson(width, signed Q1 error); verify the equivalent all-pairs difference formula. <a href="#fr-code-state-metrics">replication.py:229-267</a></span>
+<span><b>07 · Check decisions</b> Retain comparable-pair counts, selected trueQ, raw/control/actor contrasts and every invalid state. <a href="#fr-code-concordance">replication.py:215-226</a></span>
+<span><b>08 · Quantify conditional variation</b> Use one saved whole-state bootstrap plan; retain endpoint masks and undefined draws. <a href="#fr-code-analysis">replication.py:298-334</a></span></pre>
+<details><summary>Exact pair denominators and undefined records</summary><div class="fr-table"><table><thead><tr><th scope="col">Score</th><th scope="col">Comparable pairs across states</th><th scope="col">True near-ties</th><th scope="col">Predicted near-ties among comparable pairs</th></tr></thead><tbody><tr><td>Raw Q1</td><td>2106</td><td>6</td><td>0</td></tr><tr><td>Q1 minus width</td><td>2106</td><td>6</td><td>0</td></tr><tr><td>Q1 minus matched distance</td><td>2106</td><td>6</td><td>0</td></tr><tr><td>Q1 minus shuffled width</td><td>2106</td><td>6</td><td>0</td></tr><tr><td>Q1 minus state-constant offset</td><td>2106</td><td>6</td><td>0</td></tr></tbody></table></div><pre>{
+  &quot;individual_rho_defined&quot;: {
+    &quot;distance&quot;: 32,
+    &quot;shuffled&quot;: 32,
+    &quot;width&quot;: 32
+  },
+  &quot;paired_rho_defined&quot;: {
+    &quot;distance&quot;: 32,
+    &quot;shuffled&quot;: 32
+  },
+  &quot;invalid_reasons&quot;: {}
+}</pre></details>
+<details><summary>Actual numbered source for each stage</summary><h4 id="fr-code-authenticate">run_replication.py:83-92 — authenticate</h4><pre class="fr-source"><span><b>0083</b> def authenticate(prepared, freeze):</span>
+<span><b>0084</b>     prepared = Path(prepared).resolve()</span>
+<span><b>0085</b>     manifest, review = R.read_json(prepared/&quot;preparation_manifest.json&quot;), R.read_json(freeze)</span>
+<span><b>0086</b>     R.require(review.get(&quot;approved_for_oracle_execution&quot;) is True, &quot;root-reviewed freeze must authorize labels&quot;)</span>
+<span><b>0087</b>     R.require(R.digest(prepared/&quot;preparation_manifest.json&quot;) == review[&quot;preparation_manifest_sha256&quot;], &quot;reviewed input manifest changed&quot;)</span>
+<span><b>0088</b>     R.require(R.source_hashes() == manifest[&quot;source_sha256&quot;] == review[&quot;source_sha256&quot;], &quot;frozen code/protocol changed&quot;)</span>
+<span><b>0089</b>     R.require(manifest[&quot;status&quot;] == &quot;prepared_no_truth_labels&quot; and manifest[&quot;truth_labels_used&quot;] == 0, &quot;preparation not outcome-free&quot;)</span>
+<span><b>0090</b>     for name, expected in manifest[&quot;artifact_sha256&quot;].items(): R.require(R.digest(prepared/name) == expected, &quot;prepared artifact changed: &quot;+name)</span>
+<span><b>0091</b>     R.require(R.authenticate_prior() == manifest[&quot;prior_validation&quot;], &quot;prior source/model/replay receipt changed&quot;)</span>
+<span><b>0092</b>     return manifest</span></pre>
+<h4 id="fr-code-states">replication.py:95-107 — generate_states</h4><pre class="fr-source"><span><b>0095</b> def generate_states():</span>
+<span><b>0096</b>     import numpy as np</span>
+<span><b>0097</b>     random = rng(1)</span>
+<span><b>0098</b>     context = np.repeat(np.arange(4, dtype=np.int64), 8)</span>
+<span><b>0099</b>     times = np.tile(np.resize(np.array([0, 50, 99], dtype=np.int64), 8), 4)</span>
+<span><b>0100</b>     states = np.empty((32, 13), np.float64)</span>
+<span><b>0101</b>     states[:, :10] = random.uniform(-.5, .5, (32, 10))</span>
+<span><b>0102</b>     states[:, 10] = np.where(context % 2 == 0, .3, 1.1)</span>
+<span><b>0103</b>     phase = random.uniform(-np.pi, np.pi, 32)</span>
+<span><b>0104</b>     states[:, 11:] = .2*np.column_stack((np.cos(phase), np.sin(phase)))</span>
+<span><b>0105</b>     regimes = context//2</span>
+<span><b>0106</b>     return dict(states=states, regimes=regimes, context=context, time=times,</span>
+<span><b>0107</b>                 observation=np.column_stack((states, regimes, (100-times)/100)).astype(np.float32))</span></pre>
+<h4 id="fr-code-bank">replication.py:135-146 — prepare_bank</h4><pre class="fr-source"><span><b>0135</b> def prepare_bank(module, engine):</span>
+<span><b>0136</b>     import numpy as np</span>
+<span><b>0137</b>     bank = generate_states()</span>
+<span><b>0138</b>     indices, _ = engine.D.behavior_parameters(bank[&quot;observation&quot;], engine.C.Objective())</span>
+<span><b>0139</b>     mode = engine.atoms[indices].astype(np.float32)</span>
+<span><b>0140</b>     bank.update(module.build_candidates(bank[&quot;observation&quot;], engine.direct_policy(bank[&quot;observation&quot;]), mode, engine.atoms, rng(2)))</span>
+<span><b>0141</b>     bank.update(read_native_outputs(engine, bank))</span>
+<span><b>0142</b>     random = rng(6)</span>
+<span><b>0143</b>     bank[&quot;permutation&quot;] = np.stack([random.permutation(12) for _ in range(32)]).astype(np.int64)</span>
+<span><b>0144</b>     bank[&quot;shuffled_width&quot;] = np.take_along_axis(bank[&quot;width&quot;], bank[&quot;permutation&quot;], axis=1)</span>
+<span><b>0145</b>     bank[&quot;shuffled_width_usable&quot;] = np.take_along_axis(bank[&quot;width_usable&quot;], bank[&quot;permutation&quot;], axis=1)</span>
+<span><b>0146</b>     return bank</span></pre>
+<h4 id="fr-code-width">replication.py:110-132 — read_native_outputs</h4><pre class="fr-source"><span><b>0110</b> def read_native_outputs(engine, bank):</span>
+<span><b>0111</b>     &quot;&quot;&quot;V2&#x27;s native readout arithmetic, preserving invalid rows for state-level refusal.&quot;&quot;&quot;</span>
+<span><b>0112</b>     import numpy as np</span>
+<span><b>0113</b>     import jax.numpy as jnp</span>
+<span><b>0114</b>     from calibration.dose import frozen_level_dose</span>
+<span><b>0115</b>     obs = np.repeat(bank[&quot;observation&quot;], 12, axis=0)</span>
+<span><b>0116</b>     actions = bank[&quot;actions&quot;].reshape(-1, 4)</span>
+<span><b>0117</b>     heads = np.asarray(engine.result.critic(obs, actions), np.float64)</span>
+<span><b>0118</b>     require(heads.shape == (384, 2), &quot;invalid critic output shape&quot;)</span>
+<span><b>0119</b>     normalized = (obs-engine.result.mean)/engine.result.std</span>
+<span><b>0120</b>     eta_jax = engine.result.models[2].apply(engine.result.state.posterior.cal_params,</span>
+<span><b>0121</b>         jnp.asarray(normalized), jnp.asarray(actions))</span>
+<span><b>0122</b>     reference = engine.result.state.posterior</span>
+<span><b>0123</b>     native = frozen_level_dose(reference, eta_jax, .5)</span>
+<span><b>0124</b>     eta, width = np.asarray(eta_jax, np.float64), np.asarray(native.width, np.float64)</span>
+<span><b>0125</b>     formula = float(reference.threshold)*float(reference.residual_scale)*np.maximum(eta, 1e-6)</span>
+<span><b>0126</b>     require(np.allclose(width, formula, atol=2e-6, rtol=2e-6, equal_nan=True), &quot;native width/formula mismatch&quot;)</span>
+<span><b>0127</b>     usable = np.asarray(native.support_mask, bool) &amp; bool(reference.ready) &amp; bool(native.inputs_valid)</span>
+<span><b>0128</b>     shape = (32, 12)</span>
+<span><b>0129</b>     return dict(q1=heads[:, 0].reshape(shape), q2=heads[:, 1].reshape(shape), eta=eta.reshape(shape),</span>
+<span><b>0130</b>         width=width.reshape(shape), width_formula=formula.reshape(shape), width_usable=usable.reshape(shape),</span>
+<span><b>0131</b>         width_refusal=(~usable | ~np.isfinite(width)).reshape(shape),</span>
+<span><b>0132</b>         native_inputs_valid=np.full(shape, bool(native.inputs_valid)))</span></pre>
+<h4 id="fr-code-scores">replication.py:149-165 — score_arrays</h4><pre class="fr-source"><span><b>0149</b> def score_arrays(q1, width, distance, usable, permutation):</span>
+<span><b>0150</b>     import numpy as np</span>
+<span><b>0151</b>     q1, width, distance = map(lambda x: np.asarray(x, float), (q1, width, distance))</span>
+<span><b>0152</b>     usable, permutation = np.asarray(usable, bool), np.asarray(permutation, int)</span>
+<span><b>0153</b>     require(q1.ndim == 2 and q1.shape == width.shape == distance.shape == usable.shape == permutation.shape, &quot;unaligned scoring arrays&quot;)</span>
+<span><b>0154</b>     require(np.all(np.sort(permutation, axis=1) == np.arange(q1.shape[1])), &quot;each shuffled width must be a permutation of indexed candidates&quot;)</span>
+<span><b>0155</b>     allowed = usable &amp; np.isfinite(width) &amp; (width &gt;= 0)</span>
+<span><b>0156</b>     shuffled, shuffled_ok = np.take_along_axis(width, permutation, axis=1), np.take_along_axis(allowed, permutation, axis=1)</span>
+<span><b>0157</b>     count = allowed.sum(axis=1, keepdims=True)</span>
+<span><b>0158</b>     offset = np.divide(np.where(allowed, width, 0).sum(axis=1, keepdims=True), count,</span>
+<span><b>0159</b>                        out=np.zeros_like(count, dtype=float), where=count &gt; 0)</span>
+<span><b>0160</b>     result = dict(raw_q=q1.copy(), live_width=q1-np.where(allowed, width, 0),</span>
+<span><b>0161</b>         matched_distance=q1-COEFFICIENT*distance, shuffled_width=q1-np.where(shuffled_ok, shuffled, 0),</span>
+<span><b>0162</b>         constant_offset=q1-offset)</span>
+<span><b>0163</b>     for i in np.flatnonzero(np.isfinite(q1).all(axis=1) &amp; np.isfinite(result[&quot;constant_offset&quot;]).all(axis=1)):</span>
+<span><b>0164</b>         require(np.array_equal(np.argsort(q1[i], kind=&quot;stable&quot;), np.argsort(result[&quot;constant_offset&quot;][i], kind=&quot;stable&quot;)), &quot;constant-offset arithmetic changed ranking&quot;)</span>
+<span><b>0165</b>     return result</span></pre>
+<h4 id="fr-code-truth">run_replication.py:95-110 — rollout_saved_inputs</h4><pre class="fr-source"><span><b>0095</b> def rollout_saved_inputs(module, engine, bank):</span>
+<span><b>0096</b>     &quot;&quot;&quot;No fixtures; only finite predeclared states, original indices retained.&quot;&quot;&quot;</span>
+<span><b>0097</b>     import numpy as np</span>
+<span><b>0098</b>     valid = R.valid_state_mask(bank)</span>
+<span><b>0099</b>     shape = (32, 12)</span>
+<span><b>0100</b>     result = dict(return_value=np.full(shape, np.nan), completed=np.zeros(shape, bool), finite=np.zeros(shape, bool),</span>
+<span><b>0101</b>         failure=np.ones(shape, bool), steps=np.zeros(shape, int), evaluated=np.zeros(shape, bool))</span>
+<span><b>0102</b>     if not valid.any(): return result</span>
+<span><b>0103</b>     selected = {key: value[valid] for key, value in bank.items()}</span>
+<span><b>0104</b>     actual = module.truth_rollouts(engine, selected)</span>
+<span><b>0105</b>     for key, value in actual.items():</span>
+<span><b>0106</b>         if key not in result:</span>
+<span><b>0107</b>             result[key] = np.full(shape, np.nan) if value.dtype.kind == &quot;f&quot; else np.zeros(shape, value.dtype)</span>
+<span><b>0108</b>         result[key][valid] = value</span>
+<span><b>0109</b>     result[&quot;evaluated&quot;][valid] = True</span>
+<span><b>0110</b>     return result</span></pre>
+<h4 id="fr-code-pearson">replication.py:192-200 — pearson</h4><pre class="fr-source"><span><b>0192</b> def pearson(x, y):</span>
+<span><b>0193</b>     import numpy as np</span>
+<span><b>0194</b>     x, y = np.asarray(x, float), np.asarray(y, float)</span>
+<span><b>0195</b>     require(x.ndim == y.ndim == 1 and x.shape == y.shape, &quot;Pearson expects aligned vectors&quot;)</span>
+<span><b>0196</b>     if not (np.isfinite(x).all() and np.isfinite(y).all()) or len(x) == 0: return None</span>
+<span><b>0197</b>     x, y = x-x.mean(), y-y.mean()</span>
+<span><b>0198</b>     denominator = np.linalg.norm(x)*np.linalg.norm(y)</span>
+<span><b>0199</b>     if denominator == 0 or not np.isfinite(denominator): return None</span>
+<span><b>0200</b>     return float(np.clip(np.dot(x, y)/denominator, -1, 1))</span></pre>
+<h4 id="fr-code-pairs">replication.py:203-212 — pairwise_pearson</h4><pre class="fr-source"><span><b>0203</b> def pairwise_pearson(x, y):</span>
+<span><b>0204</b>     &quot;&quot;&quot;Normalized dot product of i&lt;j differences, NOT re-centered differences.&quot;&quot;&quot;</span>
+<span><b>0205</b>     import numpy as np</span>
+<span><b>0206</b>     x, y = np.asarray(x, float), np.asarray(y, float)</span>
+<span><b>0207</b>     require(x.ndim == y.ndim == 1 and x.shape == y.shape, &quot;pairwise correlation expects aligned vectors&quot;)</span>
+<span><b>0208</b>     if not (np.isfinite(x).all() and np.isfinite(y).all()): return None</span>
+<span><b>0209</b>     i, j = np.triu_indices(len(x), 1); dx, dy = x[i]-x[j], y[i]-y[j]</span>
+<span><b>0210</b>     denominator = np.linalg.norm(dx)*np.linalg.norm(dy)</span>
+<span><b>0211</b>     if denominator == 0 or not np.isfinite(denominator): return None</span>
+<span><b>0212</b>     return float(np.clip(np.dot(dx, dy)/denominator, -1, 1))</span></pre>
+<h4 id="fr-code-concordance">replication.py:215-226 — concordance</h4><pre class="fr-source"><span><b>0215</b> def concordance(scores, truth):</span>
+<span><b>0216</b>     import numpy as np</span>
+<span><b>0217</b>     scores, truth = np.asarray(scores, float), np.asarray(truth, float)</span>
+<span><b>0218</b>     require(scores.shape == truth.shape and scores.ndim == 1, &quot;unaligned ranking arrays&quot;)</span>
+<span><b>0219</b>     if not (np.isfinite(scores).all() and np.isfinite(truth).all()):</span>
+<span><b>0220</b>         return dict(value=None, pairs=0, true_ties=0, predicted_ties_among_comparable=0)</span>
+<span><b>0221</b>     i, j = np.triu_indices(len(truth), 1)</span>
+<span><b>0222</b>     td, pd = truth[i]-truth[j], scores[i]-scores[j]</span>
+<span><b>0223</b>     valid, tied = np.abs(td) &gt; 1e-6, np.abs(pd) &lt;= 1e-6</span>
+<span><b>0224</b>     credit = np.where(tied, .5, np.sign(td) == np.sign(pd))</span>
+<span><b>0225</b>     return dict(value=float(credit[valid].mean()) if valid.any() else None,</span>
+<span><b>0226</b>         pairs=int(valid.sum()), true_ties=int((~valid).sum()), predicted_ties_among_comparable=int(np.sum(tied &amp; valid)))</span></pre>
+<h4 id="fr-code-state-metrics">replication.py:229-267 — state_metrics</h4><pre class="fr-source"><span><b>0229</b> def state_metrics(bank, truth, scores):</span>
+<span><b>0230</b>     import numpy as np</span>
+<span><b>0231</b>     truth = np.asarray(truth, float); n, m = truth.shape</span>
+<span><b>0232</b>     require(bank[&quot;q1&quot;].shape == truth.shape and m == 12 and all(np.asarray(scores[k]).shape == truth.shape for k in METHODS), &quot;state metric shape mismatch&quot;)</span>
+<span><b>0233</b>     reasons = invalid_state_reasons(bank, truth)</span>
+<span><b>0234</b>     rows = []</span>
+<span><b>0235</b>     for i in range(n):</span>
+<span><b>0236</b>         for method in METHODS:</span>
+<span><b>0237</b>             if not np.isfinite(scores[method][i]).all(): reasons[i].append(&quot;nonfinite_score_&quot;+method)</span>
+<span><b>0238</b>         row = dict(state_id=i, valid=not reasons[i], invalid_reasons=reasons[i],</span>
+<span><b>0239</b>             rho_width=None, rho_distance=None, rho_shuffled=None,</span>
+<span><b>0240</b>             rho_undefined_reasons={key: [&quot;state_invalid&quot;] if reasons[i] else [] for key in (&quot;width&quot;, &quot;distance&quot;, &quot;shuffled&quot;)}, methods={})</span>
+<span><b>0241</b>         if reasons[i]: rows.append(row); continue</span>
+<span><b>0242</b>         error = bank[&quot;q1&quot;][i]-truth[i]</span>
+<span><b>0243</b>         shuffled = np.asarray(bank.get(&quot;shuffled_width&quot;, np.take_along_axis(bank[&quot;width&quot;], bank[&quot;permutation&quot;], axis=1)))[i]</span>
+<span><b>0244</b>         for name, value in ((&quot;width&quot;, bank[&quot;width&quot;][i]), (&quot;distance&quot;, bank[&quot;distance&quot;][i]), (&quot;shuffled&quot;, shuffled)):</span>
+<span><b>0245</b>             row[&quot;rho_&quot;+name] = pearson(value, error)</span>
+<span><b>0246</b>             if np.linalg.norm(value-value.mean()) == 0: row[&quot;rho_undefined_reasons&quot;][name].append(&quot;zero_predictor_centered_norm&quot;)</span>
+<span><b>0247</b>             if np.linalg.norm(error-error.mean()) == 0: row[&quot;rho_undefined_reasons&quot;][name].append(&quot;zero_signed_error_centered_norm&quot;)</span>
+<span><b>0248</b>             if row[&quot;rho_&quot;+name] is None and not row[&quot;rho_undefined_reasons&quot;][name]: row[&quot;rho_undefined_reasons&quot;][name].append(&quot;nonfinite_correlation_arithmetic&quot;)</span>
+<span><b>0249</b>             pair = pairwise_pearson(value, error)</span>
+<span><b>0250</b>             row[&quot;pairwise_rho_&quot;+name] = pair</span>
+<span><b>0251</b>             require((pair is None) == (row[&quot;rho_&quot;+name] is None), &quot;correlation equivalence undefined mismatch&quot;)</span>
+<span><b>0252</b>             if pair is not None: require(abs(pair-row[&quot;rho_&quot;+name]) &lt;= 1e-12, &quot;pairwise/centered correlation mismatch&quot;)</span>
+<span><b>0253</b>         base = int(np.argmax(scores[&quot;raw_q&quot;][i])); actor = truth[i, 6]</span>
+<span><b>0254</b>         raw_actor = bool(np.array_equal(bank[&quot;actions&quot;][i, base], bank[&quot;actions&quot;][i, 6]))</span>
+<span><b>0255</b>         row.update(actor_true_q=float(actor), raw_chosen_index=base)</span>
+<span><b>0256</b>         for method in METHODS:</span>
+<span><b>0257</b>             choice = int(np.argmax(scores[method][i])); con = concordance(scores[method][i], truth[i])</span>
+<span><b>0258</b>             is_actor = bool(np.array_equal(bank[&quot;actions&quot;][i, choice], bank[&quot;actions&quot;][i, 6]))</span>
+<span><b>0259</b>             row[&quot;methods&quot;][method] = dict(concordance=con[&quot;value&quot;], comparable_pairs=con[&quot;pairs&quot;],</span>
+<span><b>0260</b>                 concordance_undefined_reason=&quot;no_comparable_true_pairs&quot; if con[&quot;value&quot;] is None else None,</span>
+<span><b>0261</b>                 true_near_ties=con[&quot;true_ties&quot;], predicted_near_ties=con[&quot;predicted_ties_among_comparable&quot;],</span>
+<span><b>0262</b>                 chosen_index=choice, chosen_true_q=float(truth[i, choice]), delta_vs_raw=float(truth[i, choice]-truth[i, base]),</span>
+<span><b>0263</b>                 advantage_vs_actor=float(truth[i, choice]-actor), changed_index=choice != base,</span>
+<span><b>0264</b>                 changed_command=not np.array_equal(bank[&quot;actions&quot;][i, choice], bank[&quot;actions&quot;][i, base]),</span>
+<span><b>0265</b>                 selected_actor_command=is_actor, actor_restoration=not raw_actor and is_actor)</span>
+<span><b>0266</b>         rows.append(row)</span>
+<span><b>0267</b>     return rows</span></pre>
+<h4 id="fr-code-draws">replication.py:270-279 — bootstrap_plan</h4><pre class="fr-source"><span><b>0270</b> def bootstrap_plan(context, times):</span>
+<span><b>0271</b>     import numpy as np</span>
+<span><b>0272</b>     context, times = np.asarray(context), np.asarray(times)</span>
+<span><b>0273</b>     require(context.shape == times.shape == (32,), &quot;bootstrap preserves original32-state design&quot;)</span>
+<span><b>0274</b>     strata = context*100+times; random = rng(7)</span>
+<span><b>0275</b>     draws = np.empty((10000, 32), np.int64)</span>
+<span><b>0276</b>     for label in np.unique(strata):</span>
+<span><b>0277</b>         ids = np.flatnonzero(strata == label)</span>
+<span><b>0278</b>         draws[:, ids] = random.choice(ids, size=(10000, len(ids)), replace=True)</span>
+<span><b>0279</b>     return draws</span></pre>
+<h4 id="fr-code-bootstrap">replication.py:282-295 — bootstrap_statistic</h4><pre class="fr-source"><span><b>0282</b> def bootstrap_statistic(values, eligible, draws):</span>
+<span><b>0283</b>     import numpy as np</span>
+<span><b>0284</b>     values, eligible, draws = np.asarray(values, float), np.asarray(eligible, bool), np.asarray(draws, int)</span>
+<span><b>0285</b>     require(values.ndim == 1 and values.shape == eligible.shape and draws.ndim == 2, &quot;unaligned bootstrap arrays&quot;)</span>
+<span><b>0286</b>     eligible = eligible &amp; np.isfinite(values)</span>
+<span><b>0287</b>     available = eligible[draws]; count = available.sum(axis=1)</span>
+<span><b>0288</b>     sums = np.where(available, values[draws], 0).sum(axis=1)</span>
+<span><b>0289</b>     means = np.divide(sums, count, out=np.full(len(draws), np.nan), where=count &gt; 0)</span>
+<span><b>0290</b>     undefined = int(np.sum(~np.isfinite(means)))</span>
+<span><b>0291</b>     return dict(mean=float(values[eligible].mean()) if eligible.any() else None, defined_states=int(eligible.sum()),</span>
+<span><b>0292</b>         planned_states=len(values), undefined_bootstrap_draws=undefined,</span>
+<span><b>0293</b>         bootstrap_defined_denominator_min=int(count.min()), bootstrap_defined_denominator_max=int(count.max()),</span>
+<span><b>0294</b>         ci95=np.quantile(means, [.025, .975], method=&quot;linear&quot;).tolist() if undefined == 0 else None,</span>
+<span><b>0295</b>         interval_status=&quot;available&quot; if undefined == 0 else &quot;unavailable_undefined_draws&quot;), means, count</span></pre>
+<h4 id="fr-code-analysis">replication.py:298-334 — analyze</h4><pre class="fr-source"><span><b>0298</b> def analyze(bank, truth, scores, draws):</span>
+<span><b>0299</b>     import numpy as np</span>
+<span><b>0300</b>     rows = state_metrics(bank, truth, scores); n = len(rows)</span>
+<span><b>0301</b>     valid = np.array([r[&quot;valid&quot;] for r in rows]); nan = lambda x: np.nan if x is None else x</span>
+<span><b>0302</b>     rhos = {key: np.array([nan(r[&quot;rho_&quot;+key]) for r in rows]) for key in (&quot;width&quot;, &quot;distance&quot;, &quot;shuffled&quot;)}</span>
+<span><b>0303</b>     rho_masks = {key: valid &amp; np.isfinite(value) for key, value in rhos.items()}</span>
+<span><b>0304</b>     rho_pair_masks = {key: rho_masks[&quot;width&quot;] &amp; rho_masks[key] for key in (&quot;distance&quot;, &quot;shuffled&quot;)}</span>
+<span><b>0305</b>     con = {key: np.array([nan(r[&quot;methods&quot;].get(key, {}).get(&quot;concordance&quot;)) for r in rows]) for key in METHODS}</span>
+<span><b>0306</b>     common_con = valid &amp; np.isfinite(np.column_stack(list(con.values()))).all(axis=1)</span>
+<span><b>0307</b>     metrics, boot = {}, {}</span>
+<span><b>0308</b>     def add(name, values, eligible):</span>
+<span><b>0309</b>         record, means, denominators = bootstrap_statistic(values, eligible, draws)</span>
+<span><b>0310</b>         metrics[name] = record; boot[name+&quot;__mean&quot;] = means; boot[name+&quot;__denominator&quot;] = denominators</span>
+<span><b>0311</b>     for name, values in rhos.items(): add(&quot;primary_rho_&quot;+name, values, rho_masks[name])</span>
+<span><b>0312</b>     for name in (&quot;distance&quot;, &quot;shuffled&quot;):</span>
+<span><b>0313</b>         add(&quot;primary_rho_width_minus_&quot;+name, rhos[&quot;width&quot;]-rhos[name], rho_pair_masks[name])</span>
+<span><b>0314</b>         add(&quot;paired_rho_width_for_&quot;+name, rhos[&quot;width&quot;], rho_pair_masks[name])</span>
+<span><b>0315</b>         add(&quot;paired_rho_&quot;+name+&quot;_for_width&quot;, rhos[name], rho_pair_masks[name])</span>
+<span><b>0316</b>     for method in METHODS:</span>
+<span><b>0317</b>         add(&quot;concordance_&quot;+method, con[method], common_con)</span>
+<span><b>0318</b>         add(&quot;primary_concordance_change_&quot;+method, con[method]-con[&quot;raw_q&quot;], common_con)</span>
+<span><b>0319</b>         for field in (&quot;chosen_true_q&quot;, &quot;delta_vs_raw&quot;, &quot;advantage_vs_actor&quot;):</span>
+<span><b>0320</b>             values = np.array([nan(r[&quot;methods&quot;].get(method, {}).get(field)) for r in rows])</span>
+<span><b>0321</b>             add(&quot;secondary_&quot;+field+&quot;_&quot;+method, values, valid)</span>
+<span><b>0322</b>     add(&quot;secondary_original_actor_true_q&quot;, np.array([nan(r.get(&quot;actor_true_q&quot;)) for r in rows]), valid)</span>
+<span><b>0323</b>     for control in (&quot;matched_distance&quot;, &quot;shuffled_width&quot;):</span>
+<span><b>0324</b>         values = np.array([nan(r[&quot;methods&quot;].get(&quot;live_width&quot;, {}).get(&quot;chosen_true_q&quot;))-nan(r[&quot;methods&quot;].get(control, {}).get(&quot;chosen_true_q&quot;)) for r in rows])</span>
+<span><b>0325</b>         add(&quot;secondary_selected_q_live_width_minus_&quot;+control, values, valid)</span>
+<span><b>0326</b>     summary = dict(descriptive_only=True, training_replications=1, planned_states=n, valid_states=int(valid.sum()),</span>
+<span><b>0327</b>         invalid_states=int((~valid).sum()), pair_common_defined_rho_states={key: int(mask.sum()) for key, mask in rho_pair_masks.items()},</span>
+<span><b>0328</b>         individually_defined_rho_states={key: int(np.sum(valid &amp; np.isfinite(value))) for key, value in rhos.items()},</span>
+<span><b>0329</b>         common_defined_concordance_states=int(common_con.sum()), metrics=metrics,</span>
+<span><b>0330</b>         counts={method: {field: sum(bool(r[&quot;methods&quot;].get(method, {}).get(field, False)) for r in rows)</span>
+<span><b>0331</b>                         for field in (&quot;changed_index&quot;, &quot;changed_command&quot;, &quot;selected_actor_command&quot;, &quot;actor_restoration&quot;)} for method in METHODS},</span>
+<span><b>0332</b>         invalid_reasons={str(r[&quot;state_id&quot;]): r[&quot;invalid_reasons&quot;] for r in rows if not r[&quot;valid&quot;]},</span>
+<span><b>0333</b>         interpretation=&quot;All intervals use one common original32-state context-time bootstrap plan; endpoint contributions use stated common masks; any undefined draw makes its interval unavailable. No p-values, winner rule or training-seed inference.&quot;)</span>
+<span><b>0334</b>     return summary, rows, boot</span></pre></details>
+<p><b>Reproduce from saved records:</b> <code>python report_assets/build_report.py</code> rebuilds this report, plot and V5 without model inference or new labels. The separate frozen <code>reproduce_analysis.py</code> reproduces statistics from saved arrays.</p>
+<p class="fr-meta">Checkpoint SHA256 <code>4088278230fc413c509e27e189daa342468cfc4fb6d2479e3e8c29e149dac3d8</code>. Protocol SHA256 <code>7583491e3bce5ff757f1eb0bfcdfd20a064ffe041771c442f2e51f8c06dcbb41</code>. Result SHA256 <code>6e815ac9fe1e86b08619a45812635fe9ea677abbd4c6cb77508617c398bd157b</code>. Static HTML/source-link checks passed. Rendered browser, navigation and runtime JavaScript QA was not performed for V5.</p>
+</section>

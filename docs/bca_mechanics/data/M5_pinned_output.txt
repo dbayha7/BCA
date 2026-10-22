@@ -1,0 +1,237 @@
+--- environment
+pinned: 3.10.20 numpy 2.2.6 jax 0.6.2 scipy 1.15.3
+67209d2 Near-80: results 20261020T115246Z
+--- input checksums (recorded held-out scores)
+db3d7356e4a009dd84ef4fe74e197a58205277ce65e2c6e93964afc69c670f26  runs/shift_explore/near80/learners/near80/stall/seed0/v6_bank_scores.npz
+a630e88ed5e82e7f8edf4a34e03a79c8d25128add505d5ccca7fb1375b4fbbaa  runs/shift_explore/near80/learners/near80/no_stall/seed0/v6_bank_scores.npz
+a93d41dba7534263bba522899f3954ec6c4808ad7eeead479817b010e0a1588c  runs/shift_explore/stage2/detect/uniform/stall/fixed/seed0/bank_scores.npz
+--- the module's own unit tests: experiments/wbcp/test_wbcp.py
+test_chunking_does_not_change_the_posterior (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_clamp_binds_when_the_posterior_selection_is_lower (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_common_weight_scale_cancels (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_crossing_counts_equality_as_covered (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_dominant_test_atom_means_nothing_is_certifiable (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_empirical_selection_excludes_the_test_atom (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_empirical_selection_keeps_exact_ties (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_exponential_sampler_equals_tilted_dirichlet (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_hpd_is_the_smallest_beta_credible_grid_point (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_huge_weights_do_not_overflow (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_input_order_is_irrelevant (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_kish_effective_sample_size (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_rejects_invalid_inputs (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_single_weighted_atom_matches_closed_form (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+test_uniform_weights_are_bq_cp (experiments.wbcp.test_wbcp.WBCPTests) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.435s
+
+OK
+--- M5_test.py, both parts, in the pinned environment
+WARNING:2026-10-20 12:35:09,725:jax._src.xla_bridge:794: An NVIDIA GPU may be present on this machine, but a CUDA-enabled jaxlib is not installed. Falling back to cpu.
+python 3.10.20; numpy 2.2.6; calibration/wbcp.py from /home/user/bca/calibration/wbcp.py
+alpha 0.1, credibility 0.95, draws 1000: a finite credible quantile needs 950 crossing draws
+
+=== Part 1: synthetic scores, truth known ===
+
+[1a] refusal by group size: share of 400 random score sets with a finite threshold, against the binomial prediction P(Binomial(1000, 1 - 0.9^n) >= 950)
+     (with equal weights, whether a draw crosses depends on the random draws only, never on the score values)
+     n =  10: finite   0.0%   predicted   0.0%   exact form: +inf
+     n =  20: finite   0.0%   predicted   0.0%   exact form: +inf
+     n =  24: finite   0.0%   predicted   0.0%   exact form: +inf
+     n =  25: finite   0.0%   predicted   0.3%   exact form: +inf
+     n =  26: finite   2.2%   predicted   3.1%   exact form: +inf
+     n =  27: finite  16.5%   predicted  15.0%   exact form: +inf
+     n =  28: finite  38.8%   predicted  40.5%   exact form: +inf
+     n =  29: finite  72.5%   predicted  70.0%   exact form: finite
+     n =  30: finite  90.0%   predicted  89.6%   exact form: finite
+     n =  31: finite  95.5%   predicted  97.6%   exact form: finite
+     n =  32: finite  99.5%   predicted  99.6%   exact form: finite
+     n =  33: finite 100.0%   predicted 100.0%   exact form: finite
+     n =  34: finite 100.0%   predicted 100.0%   exact form: finite
+     n =  36: finite 100.0%   predicted 100.0%   exact form: finite
+     n =  45: finite 100.0%   predicted 100.0%   exact form: finite
+     n = 100: finite 100.0%   predicted 100.0%   exact form: finite
+   -> 1a refusal by size matches the binomial prediction (0 at n <= 24, 1 at n >= 36): PASS
+
+[1b] the 95% credibility claim on exchangeable scores from a known law (Exponential(1), true 90% quantile ln 10 = 2.3026): over 400 calibration sets, how often does the threshold really cover 90% of the population?
+     n =  36: finite 100.0%; true coverage >= 90% in 98.0% of sets with R (plain quantile alone: 49.8%); mean true coverage 0.972 (plain 0.892); R / true 90% quantile 1.803; R is the single largest score in 100.0%
+     n = 100: finite 100.0%; true coverage >= 90% in 95.8% of sets with R (plain quantile alone: 41.8%); mean true coverage 0.948 (plain 0.890); R / true 90% quantile 1.337; R is the single largest score in  0.0%
+     n = 843: finite 100.0%; true coverage >= 90% in 97.0% of sets with R (plain quantile alone: 51.7%); mean true coverage 0.918 (plain 0.900); R / true 90% quantile 1.087; R is the single largest score in  0.0%
+   -> 1b with 95% credibility the threshold covers 90% of the population in at least 92% of sets (expected 95%): PASS
+
+[1c] stream-to-stream spread: one fixed score set, 50 random streams; how far can R move by chance?
+     n =  36: R from 3.4222 to 3.4222 (max/min - 1 = 0.000); exact form 3.4222, hit in 100.0% of streams
+     n =  45: R from 3.0472 to 3.2595 (max/min - 1 = 0.070); exact form 3.2595, hit in 64.0% of streams
+     n = 100: R from 2.7663 to 2.8574 (max/min - 1 = 0.033); exact form 2.8574, hit in 92.0% of streams
+     n = 843: R from 2.3840 to 2.4383 (max/min - 1 = 0.023); exact form 2.4119, hit in 52.0% of streams
+   -> 1c at 843 scores the threshold moves by at most 5% between streams: PASS
+
+[1d] identities: weights of 1 and test mass 1 reproduce the unweighted threshold bit for bit (40 sets); a common factor of 1,000 on weights and test mass changes nothing (40 weighted sets)
+     weights of 1 identical: 40 of 40; common factor identical: 40 of 40
+   -> 1d weights of 1 and a common factor change nothing: PASS
+
+[1e] the exact binomial form: decisions 'R is at most a claimed value' agree between the 1,000-draw threshold and the infinite-draw form (300 sets per n)
+     n =  36: decisions agree 100.0%; values equal 100.0%
+     n =  45: decisions agree 93.7%; values equal 59.7%
+     n = 100: decisions agree 99.3%; values equal 84.7%
+     n = 843: decisions agree 100.0%; values equal 59.7%
+   -> 1e decisions agree with the exact form in at least 90% of sets (99% at 843): PASS
+
+[1f] R(t) along the per-step test-mass grid (synthetic scores, strong-tilt weights on a synthetic current): the threshold must not fall as the test mass t grows, with the same draws for every t
+     monotone on the 1.01 grid (0.135 to 7.39) and the 1.05 extension (up to 1000): True; R(t = 1) = 2.9115; R(0.135) = 2.8572; R(7.39) = 2.9335; first +inf at t = 60.2; closed-form refusal point alpha/(1-alpha) * sum w = 162.4; Kish effective size 392 of 843
+   -> 1f R(t) never falls along the grid: PASS
+
+[1g] weights on exchangeable scores (the advisor's weighting question at the threshold level): 60 sets of 843 Exponential(1) scores; the strong tilt's weight shape on a synthetic current the scores do not depend on; one test mass t = the mean weight. Is the weighted threshold still valid, and how much wider is it?
+     R_weighted / R_unweighted: mean 1.030, from 0.939 to 1.197 (above 1 in 77% of sets); plain weighted / plain unweighted quantile: mean 1.000
+     Bayesian margin (credible / plain - 1): weighted 11.8%, unweighted 8.4%; Kish effective size 404 of 843
+     true coverage >= 90% in 96.7% of sets (weighted) and 93.3% (unweighted); mean true coverage 0.923 (weighted), 0.918 (unweighted)
+   -> 1g with shift weights on exchangeable scores the threshold stays valid (true coverage >= 90% in at least 92% of sets); any widening comes from the smaller effective sample, not from the scores: PASS
+
+=== Part 2: recorded ThrusterChain inputs ===
+recorded bands found: 20 near-80, 10 stage 2
+
+[2a] reproduction: 30 recorded bands, each threshold recomputed from its recorded held-out scores with the recorded key rule, against the record (float64 'refresh' block and float32 'uniform' block)
+     band                   world    seed    n   plain q   credible q   R recorded   R recomputed  eq64 eq32  margin  share<=R  share<=q
+     near-80 near80         stall      0   821    1.3634     1.4692     1.469181     1.469181   T    T     7.8%    0.918     0.900
+     near-80 near80         stall      1   814    1.3283     1.5219     1.521924     1.521924   T    T    14.6%    0.919     0.900
+     near-80 near80         stall      2   806    1.4957     1.6148     1.614827     1.614827   T    T     8.0%    0.918     0.901
+     near-80 near80         stall      3   826    1.2905     1.3466     1.346607     1.346607   T    T     4.3%    0.918     0.901
+     near-80 near80         stall      4   805    1.5234     1.6075     1.607509     1.607509   T    T     5.5%    0.919     0.901
+     near-80 near80         no_stall   0   823    1.4164     1.5332     1.533197     1.533197   T    T     8.2%    0.917     0.900
+     near-80 near80         no_stall   1   820    1.2898     1.4138     1.413837     1.413837   T    T     9.6%    0.918     0.900
+     near-80 near80         no_stall   2   814    1.4436     1.7016     1.701579     1.701579   T    T    17.9%    0.918     0.900
+     near-80 near80         no_stall   3   832    1.4835     1.5402     1.540164     1.540164   T    T     3.8%    0.918     0.900
+     near-80 near80         no_stall   4   808    1.4573     1.5858     1.585784     1.585784   T    T     8.8%    0.918     0.901
+     near-80 random_rows    stall      0   821    1.3116     1.4035     1.403463     1.403463   T    T     7.0%    0.918     0.900
+     near-80 random_rows    stall      1   814    1.3023     1.4907     1.490732     1.490732   T    T    14.5%    0.919     0.900
+     near-80 random_rows    stall      2   806    1.3338     1.4372     1.437162     1.437162   T    T     7.7%    0.918     0.901
+     near-80 random_rows    stall      3   826    1.4794     1.6382     1.638179     1.638179   T    T    10.7%    0.918     0.901
+     near-80 random_rows    stall      4   805    1.4603     1.6058     1.605837     1.605837   T    T    10.0%    0.919     0.901
+     near-80 random_rows    no_stall   0   823    1.3972     1.4644     1.464448     1.464448   T    T     4.8%    0.917     0.900
+     near-80 random_rows    no_stall   1   820    1.2133     1.3647     1.364692     1.364692   T    T    12.5%    0.918     0.900
+     near-80 random_rows    no_stall   2   814    1.3968     1.5019     1.501868     1.501868   T    T     7.5%    0.918     0.900
+     near-80 random_rows    no_stall   3   832    1.5115     1.7091     1.709077     1.709077   T    T    13.1%    0.918     0.900
+     near-80 random_rows    no_stall   4   808    1.4553     1.5547     1.554708     1.554708   T    T     6.8%    0.918     0.901
+     stage 2 uniform        stall      0   851    1.3791     1.5188     1.518778     1.518778   T    T    10.1%    0.919     0.900
+     stage 2 uniform        stall      1   848    1.3839     1.4799     1.479896     1.479896   T    T     6.9%    0.916     0.901
+     stage 2 uniform        stall      2   839    1.3748     1.5137     1.513720     1.513720   T    T    10.1%    0.918     0.901
+     stage 2 uniform        stall      3   851    1.3660     1.5007     1.500716     1.500716   T    T     9.9%    0.918     0.900
+     stage 2 uniform        stall      4   827    1.3702     1.4703     1.470309     1.470309   T    T     7.3%    0.918     0.901
+     stage 2 uniform        no_stall   0   850    1.3776     1.4750     1.474976     1.474976   T    T     7.1%    0.918     0.900
+     stage 2 uniform        no_stall   1   845    1.2899     1.4012     1.401187     1.401187   T    T     8.6%    0.918     0.901
+     stage 2 uniform        no_stall   2   838    1.4578     1.5511     1.551117     1.551117   T    T     6.4%    0.918     0.901
+     stage 2 uniform        no_stall   3   850    1.2787     1.3629     1.362860     1.362860   T    T     6.6%    0.918     0.900
+     stage 2 uniform        no_stall   4   829    1.3640     1.4910     1.491011     1.491011   T    T     9.3%    0.919     0.901
+     Bayesian margin (credible / plain - 1): 3.8% to 17.9%, mean 8.9%; the plain quantile never bound (R = credible quantile in 30 of 30)
+   -> 2a all 30 thresholds reproduce bit for bit (float64 and float32) and R = max(plain, credible) with independent order statistics: PASS
+
+[2b] stream-to-stream spread on the recorded scores: each band recomputed with 20 other random streams
+     largest relative move of R across 30 bands x 20 streams: 4.1%
+   -> 2b on about 820 real scores R moves by at most 5% between streams: PASS  (worst 4.1%)
+
+[2c] refusal on real scores: subsamples (without replacement) of a recorded score set, 400 per size, share with a finite threshold against the binomial prediction (the same curve as 1a, now on real scores)
+     near-80 near80 stall seed 0 (821 scores):
+       n = 20: finite   0.0%   predicted   0.0%
+       n = 24: finite   0.0%   predicted   0.0%
+       n = 26: finite   2.5%   predicted   3.1%
+       n = 28: finite  43.0%   predicted  40.5%
+       n = 29: finite  72.8%   predicted  70.0%
+       n = 30: finite  89.8%   predicted  89.6%
+       n = 32: finite  99.5%   predicted  99.6%
+       n = 36: finite 100.0%   predicted 100.0%
+     near-80 near80 no_stall seed 0 (823 scores):
+       n = 20: finite   0.0%   predicted   0.0%
+       n = 24: finite   0.0%   predicted   0.0%
+       n = 26: finite   3.2%   predicted   3.1%
+       n = 28: finite  42.5%   predicted  40.5%
+       n = 29: finite  73.8%   predicted  70.0%
+       n = 30: finite  89.5%   predicted  89.6%
+       n = 32: finite  99.5%   predicted  99.6%
+       n = 36: finite 100.0%   predicted 100.0%
+   -> 2c refusal on real scores follows the same binomial curve: PASS
+
+[2d] the 40 recorded certificates (near-80 run, 30; step 1, 10): the recorded share of the 1,000 draws that cross in the full-throttle group against 1 - 0.9^n_tail, and the rule 'R_tail finite iff at least 950 cross'
+     source   setting      world     seed  n_tail  share crossing  1-0.9^n  within 3 SE  R_tail   rule
+     near-80  main         no_stall    10     18      0.854       0.850   True          +inf  True
+     near-80  main         stall       13     18      0.850       0.850   True          +inf  True
+     near-80  main         stall       10     19      0.879       0.865   True          +inf  True
+     near-80  main         no_stall    12     21      0.890       0.891   True          +inf  True
+     near-80  main         stall       12     22      0.903       0.902   True          +inf  True
+     near-80  random_rows  no_stall     3     28      0.948       0.948   True          +inf  True
+     near-80  near80       no_stall     3     29      0.947       0.953   True          +inf  True
+     near-80  random_rows  stall        0     29      0.950       0.953   True         5.591  True
+     step 1   main         no_stall     3     29      0.947       0.953   True          +inf  True
+     near-80  main         stall       14     30      0.964       0.958   True         4.564  True
+     near-80  main         no_stall    14     31      0.969       0.962   True         0.752  True
+     near-80  random_rows  no_stall     0     31      0.963       0.962   True         0.199  True
+     near-80  main         no_stall    11     32      0.965       0.966   True         0.107  True
+     near-80  random_rows  no_stall     1     32      0.976       0.966   True         0.238  True
+     near-80  near80       stall        0     34      0.973       0.972   True         5.908  True
+     near-80  random_rows  stall        3     34      0.977       0.972   True         1.660  True
+     step 1   main         stall        0     35      0.970       0.975   True         5.986  True
+     near-80  main         no_stall    13     36      0.981       0.977   True         0.223  True
+     near-80  near80       no_stall     1     36      0.975       0.977   True         0.039  True
+     step 1   main         no_stall     1     36      0.975       0.977   True         0.112  True
+     near-80  near80       no_stall     0     37      0.983       0.980   True         0.033  True
+     step 1   main         no_stall     0     38      0.981       0.982   True         0.058  True
+     near-80  random_rows  stall        1     40      0.986       0.985   True         4.012  True
+     near-80  near80       stall        3     43      0.993       0.989   True         1.883  True
+     near-80  random_rows  stall        4     43      0.990       0.989   True         1.825  True
+     step 1   main         stall        3     43      0.993       0.989   True         1.578  True
+     near-80  near80       stall        1     47      0.996       0.993   True         2.531  True
+     near-80  near80       stall        4     47      0.996       0.993   True         1.376  True
+     step 1   main         stall        1     47      0.996       0.993   True         2.394  True
+     step 1   main         stall        4     47      0.996       0.993   True         1.776  True
+     near-80  random_rows  no_stall     2     48      0.993       0.994   True         0.066  True
+     near-80  near80       no_stall     2     50      0.997       0.995   True         0.127  True
+     near-80  random_rows  stall        2     52      0.997       0.996   True         3.016  True
+     step 1   main         no_stall     2     52      0.994       0.996   True         0.161  True
+     near-80  main         stall       11     53      0.997       0.996   True         2.262  True
+     near-80  random_rows  no_stall     4     56      0.997       0.997   True         0.107  True
+     near-80  near80       stall        2     57      0.995       0.998   True         3.098  True
+     step 1   main         stall        2     59      0.997       0.998   True         2.039  True
+     near-80  near80       no_stall     4     60      0.999       0.998   True         0.187  True
+     step 1   main         no_stall     4     60      0.999       0.998   True         0.024  True
+     share within 3 standard errors of 1 - 0.9^n: 40 of 40; rule 'finite iff >= 950 cross' holds: 40 of 40; infinite R_tail in 8 of 40 (group sizes [18, 18, 19, 21, 22, 28, 29, 29]); finite group sizes from 29 to 60; the rest group (n_rest 803-878) had every draw cross in all 40: True
+   -> 2d the recorded crossing shares follow 1 - 0.9^n and refusal follows the 950 rule in every certificate: PASS
+
+[2e] the refresh schedule in co-training (weighting test, exploratory rerun, seed 0, five data qualities, two arms): the unweighted threshold at each of the 18 refreshes (update 10,000, then every 5,000)
+     random/unweighted            refreshes 18, all finite True; first 1.2557, last 1.4923, min 1.2056, max 1.4923
+     random/exact_strong          refreshes 18, all finite True; first 1.2557, last 1.3806, min 1.2094, max 1.4531
+     medium-replay/unweighted     refreshes 18, all finite True; first 1.2067, last 1.4128, min 1.1858, max 1.4669
+     medium-replay/exact_strong   refreshes 18, all finite True; first 1.2067, last 1.4891, min 1.1994, max 1.4891
+     medium/unweighted            refreshes 18, all finite True; first 1.1563, last 1.4969, min 1.1563, max 1.4969
+     medium/exact_strong          refreshes 18, all finite True; first 1.1563, last 1.5465, min 1.1563, max 1.5465
+     medium-expert/unweighted     refreshes 18, all finite True; first 1.2066, last 1.3426, min 1.1871, max 1.5466
+     medium-expert/exact_strong   refreshes 18, all finite True; first 1.2066, last 1.5224, min 1.1891, max 1.5564
+     expert/unweighted            refreshes 18, all finite True; first 1.1044, last 1.2862, min 1.1044, max 1.3552
+     expert/exact_strong          refreshes 18, all finite True; first 1.1044, last 1.2940, min 1.1044, max 1.2943
+     the two arms of a quality share the first refresh's threshold exactly (identical runs until the first refresh): True
+   -> 2e every co-training refresh certified (18 of 18 in all 10 runs): PASS
+
+[2f] the four-learner study's record (standard and weighted arms): certified refreshes and the stop rule S3 (the unweighted threshold reproduced bit for bit from the bank scores at every refresh)
+     the shift-hosts branch is not reachable; skipped
+
+[2g] R(t) along the test-mass grid on recorded scores (near-80 stall seed 0; weights from the strong tilt's shape on a synthetic current: mechanics only, not a claim about the run)
+     monotone: True; R(1) = 1.3404 (recorded unweighted R 1.4692); R(0.135) = 1.3205; R(7.39) = 1.3614; first +inf at t = 54.6; closed-form refusal point 162.1; Kish effective size 389 of 821
+   -> 2g R(t) never falls along the grid on recorded scores: PASS
+
+=== Summary ===
+  PASS  1a refusal by size matches the binomial prediction (0 at n <= 24, 1 at n >= 36)
+  PASS  1b with 95% credibility the threshold covers 90% of the population in at least 92% of sets (expected 95%)
+  PASS  1c at 843 scores the threshold moves by at most 5% between streams
+  PASS  1d weights of 1 and a common factor change nothing
+  PASS  1e decisions agree with the exact form in at least 90% of sets (99% at 843)
+  PASS  1f R(t) never falls along the grid
+  PASS  1g with shift weights on exchangeable scores the threshold stays valid (true coverage >= 90% in at least 92% of sets); any widening comes from the smaller effective sample, not from the scores
+  PASS  2a all 30 thresholds reproduce bit for bit (float64 and float32) and R = max(plain, credible) with independent order statistics
+  PASS  2b on about 820 real scores R moves by at most 5% between streams
+  PASS  2c refusal on real scores follows the same binomial curve
+  PASS  2d the recorded crossing shares follow 1 - 0.9^n and refusal follows the 950 rule in every certificate
+  PASS  2e every co-training refresh certified (18 of 18 in all 10 runs)
+  PASS  2g R(t) never falls along the grid on recorded scores
+all checks: PASS  (72 s)
+table file written: /tmp/bridge/work/m5/M5_pinned_results.json
+--- exit 0
+
+__EXIT__=0

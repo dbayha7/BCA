@@ -1,0 +1,62 @@
+{
+  "native": {
+    "calibrate": {
+      "first_line": 57,
+      "last_line": 117,
+      "path": "C:\\Users\\David\\Documents\\Codex\\2026-10-20\\task\\results_20261021\\release\\ThrusterChain_results_20261021\\source\\calibration\\wbcp.py",
+      "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+    },
+    "crossings": {
+      "first_line": 43,
+      "last_line": 54,
+      "path": "C:\\Users\\David\\Documents\\Codex\\2026-10-20\\task\\results_20261021\\release\\ThrusterChain_results_20261021\\source\\calibration\\wbcp.py",
+      "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+    }
+  },
+  "stages": [
+    {
+      "id": "C1",
+      "pseudocode": "Keep zero-weight rows. Refuse unsupported queries and all-zero banks explicitly.",
+      "purpose": "Preserve support and the actual bank size"
+    },
+    {
+      "id": "C2",
+      "pseudocode": "Native: divide bank weights and query mass by the SAME maximum bank weight.",
+      "purpose": "Preserve relative query mass",
+      "source": "calibrate"
+    },
+    {
+      "id": "C3",
+      "pseudocode": "Native: select smallest score with weighted empirical tail <= alpha using rational boundary correction.",
+      "purpose": "Empirical weighted tail-risk floor",
+      "source": "calibrate"
+    },
+    {
+      "id": "C4",
+      "pseudocode": "Native: use w_i*E_i and t*E_query; choose first score reaching (1-alpha) total mass, else infinity.",
+      "purpose": "Posterior query atom",
+      "source": "crossings"
+    },
+    {
+      "id": "C5",
+      "pseudocode": "Native: R=max(empirical floor, ceil(beta*M)-th sorted posterior crossing).",
+      "purpose": "Credibility selection",
+      "source": "calibrate"
+    },
+    {
+      "id": "C6",
+      "pseudocode": "For each EXACT unique finite query mass, call native with the SAME seeded Generator or replayed exponential matrix. No grid rounding.",
+      "purpose": "Exact per-query reuse"
+    },
+    {
+      "id": "C7",
+      "pseudocode": "Half-width=R*sigma; finite dose=1+blend*U/(U+unit); refused dose=1. Count all queries.",
+      "purpose": "Matched fallback and visible refusal"
+    },
+    {
+      "id": "C8",
+      "pseudocode": "Report coverage including infinity, finite conditional coverage, usable coverage, refusal, and paired changes separately.",
+      "purpose": "Separate useful coverage from vacuous intervals"
+    }
+  ]
+}
