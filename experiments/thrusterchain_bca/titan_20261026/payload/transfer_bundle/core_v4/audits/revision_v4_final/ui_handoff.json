@@ -1,0 +1,83 @@
+{
+  "schema": "thrusterchain.ui_training_handoff.v1",
+  "source_sha256": "6f36e2714f6012fbc71a9315b19ab995f0b7d57d96026a1e2d97ef66d66d6596",
+  "revision": "20261022_v4",
+  "package_version": "0.2.0",
+  "default_mode": "strict_offline",
+  "interface_paths": {
+    "python": "thrusterchain/training_protocol.py",
+    "runner": "thrusterchain/training_runner.py",
+    "documentation": "docs/host_adapter_interface.md",
+    "contract": "contracts/training_modes_v1.json"
+  },
+  "contract_sha256": "5a991d3d9826d6b8e0633dc11376f30257e6667972dd02f9e0e4d8e7e83190dc",
+  "default_offline_budget": {
+    "updates": 1000000,
+    "batch_size": 256
+  },
+  "default_evaluation_config": {
+    "frozen_policy": true,
+    "episodes": 2,
+    "seed": 20361022,
+    "online": null
+  },
+  "offline_to_online_example": {
+    "frozen_policy": false,
+    "episodes": 2,
+    "seed": 20361022,
+    "online": {
+      "interactions": 12,
+      "updates": 6,
+      "offline_fraction": 0.5,
+      "batch_size": 16,
+      "learning_settings": {}
+    }
+  },
+  "primary_optimizer_semantics": "updates counts steps of capabilities.primary_optimizer; TD3-family primary is critic; actor/auxiliary and totals remain separate",
+  "maximum_cumulative_offline_primary_updates": 3000000,
+  "receipt_fields": {
+    "primary": "primary_optimizer",
+    "requested": "requested_primary_optimizer_updates",
+    "executed_primary": "executed_primary_optimizer_updates",
+    "total": "executed_optimizer_steps_total",
+    "per_optimizer": "optimizer_step_counts",
+    "online_requested_per_family": "requested_primary_optimizer_updates_per_family",
+    "actual_online_interactions": "adaptation_interactions",
+    "evaluation_episodes_per_family": "frozen_evaluation_episodes_per_family",
+    "mode": "mode",
+    "learning_status": "status"
+  },
+  "closed_form_methods": {
+    "closed-form-bc": {
+      "gradient_budget": "inapplicable",
+      "online_adaptation_supported": false
+    },
+    "identified_model_mpc": {
+      "gradient_budget": "inapplicable",
+      "online_adaptation_supported": false
+    }
+  },
+  "iterative_cli_adapter": {
+    "name": "affine-sgd",
+    "adapter_id": "affine_sgd_bc_protocol_v1",
+    "primary_optimizer": "affine_sgd",
+    "capabilities": "real SGD imitation protocol example; not reward-learning or neural BCA"
+  },
+  "neural_host_integration": "external adapter task; not implemented by this revision",
+  "checkpoint_persistence": {
+    "python_keyword": "checkpoint_directory",
+    "cli_and_example": "saved, readback verified, restored before any clean frozen evaluation",
+    "no_directory": "in_memory_snapshot; not a saved-file evaluation"
+  },
+  "current_results": {
+    "strict_baselines": "results/revision_v4_smoke_final",
+    "training_modes": "results/revision_v4_training_example_final"
+  },
+  "display_limits": [
+    "Software/finite-budget smoke only",
+    "No default-million or maximum-three-million run executed",
+    "Adaptive interaction returns are separate from frozen episode scores",
+    "No general Q or policy-improvement guarantee",
+    "Previous v3 explorer data and physical fixtures remain unchanged"
+  ]
+}
