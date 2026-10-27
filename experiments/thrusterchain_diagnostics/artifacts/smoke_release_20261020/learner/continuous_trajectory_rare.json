@@ -1,0 +1,54 @@
+{
+  "schema": "thrusterchain-continuous-data-v1",
+  "track": "trajectory",
+  "split": "train",
+  "seed": 20261020,
+  "random_streams": {
+    "context": [
+      20261020,
+      0,
+      0
+    ],
+    "start": [
+      20261020,
+      0,
+      1
+    ],
+    "action": [
+      20261020,
+      0,
+      2
+    ],
+    "retention": [
+      20261020,
+      0,
+      3
+    ]
+  },
+  "context_weights": [
+    [
+      0.25,
+      0.25
+    ],
+    [
+      0.25,
+      0.25
+    ]
+  ],
+  "context_mix": "overlap",
+  "objective": {
+    "horizon": 100,
+    "gamma": 1.0
+  },
+  "terminal_bootstrap": false,
+  "bootstrap_rule": "use bootstrap_mask, including zero at horizon truncation",
+  "retention": "rare",
+  "rare_probability": 0.05,
+  "action_measure": "categorical product mass, not a continuous density",
+  "initial_law": "U[-.5,.5]^10; current atom .3/1.1; wave amplitude .2, uniform phase",
+  "query_law": "declared initial law",
+  "population_visitation": "not analytically computed",
+  "generated_rows": 800,
+  "retained_rows": 382,
+  "budget_topups": 0
+}

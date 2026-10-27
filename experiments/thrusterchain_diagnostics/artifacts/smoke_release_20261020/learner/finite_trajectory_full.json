@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "track": "trajectory",
+  "seed": 20261020,
+  "split": "train",
+  "seed_provenance": {
+    "generator": "numpy.random.PCG64",
+    "seed_sequence_entropy": {
+      "start": [
+        20261020,
+        3293867793,
+        11
+      ],
+      "action": [
+        20261020,
+        3293867793,
+        23
+      ],
+      "transition": [
+        20261020,
+        3293867793,
+        37
+      ],
+      "retention": [
+        20261020,
+        3293867793,
+        53
+      ],
+      "probe": [
+        20261020,
+        3293867793,
+        71
+      ],
+      "optimization": [
+        20261020,
+        3293867793,
+        89
+      ]
+    },
+    "optimization": "reserved; no learner fitting occurs in data generation"
+  },
+  "retention_mode": "full",
+  "rare_probability": 0.05,
+  "complete_row_count": 512,
+  "retained_row_count": 512,
+  "horizon": 8,
+  "physical_observation_dimension": 3,
+  "observation_dimension": 4,
+  "observation_schema": [
+    "position",
+    "regime",
+    "load",
+    "remaining_fraction"
+  ],
+  "remaining_fraction": "(horizon-time)/horizon; next observation uses time+1",
+  "gamma": 0.98,
+  "terminal_continuation": 0.0,
+  "objective": "finite-horizon discounted reward with zero terminal continuation",
+  "bootstrap_mask_convention": "1 before the horizon; 0 on the final transition despite terminated=False",
+  "retention_rule": "pre-outcome critical(state,action); independent Bernoulli draw",
+  "retention_measure": "per-opportunity inclusion probability; action probabilities are not renormalized after retention",
+  "oracle_arrays_in_learner": false,
+  "n_episodes": 64,
+  "context_mix": "overlap",
+  "common_only": false,
+  "action_design": "independent categorical conditional on observed state and time"
+}

@@ -1,0 +1,215 @@
+{
+  "arrays_sha256": "289eea7ec3ad78636635792188f5a2b705de8abdf11ea6c3b108a45b78edf22c",
+  "bank_sha256": "22b9f166aebfe9f7226e287e307e78e5e9ef4422793520269a386a4d17bb93b1",
+  "calibration_diagnostics": {
+    "band_definition": "current twin-min Q plus/minus frozen threshold times frozen positive scale",
+    "band_refusal_rate": 0.0,
+    "band_refusal_semantics": "fraction without both a ready reference and native dose usability; no actions are refused",
+    "candidates": 6,
+    "checkpoint_update": 100000,
+    "coverage": 0.5833333333333334,
+    "coverage_claim": "empirical designed-query residual coverage only; no long-horizon Q coverage guarantee",
+    "coverage_vacuous": false,
+    "executed_policy_refusal": false,
+    "frozen_reference": "unchanged checkpoint reference; generally from update 95000 at final 100000",
+    "frozen_residual_scale": 0.9060741066932678,
+    "frozen_threshold": 1.6235495805740356,
+    "last_refresh_numerically_certified": true,
+    "last_refresh_update": 95000,
+    "noise_key_folds": [
+      2026102003,
+      1213156420
+    ],
+    "nominal_residual_coverage": 0.9,
+    "pooled": {
+      "coverage": 0.5833333333333334,
+      "infinite_half_width_fraction": 0.0,
+      "mean_absolute_residual": 3.854676553151674,
+      "mean_bc_multiplier": 1.3456931114196777,
+      "mean_finite_half_width": 2.0707619190216064,
+      "native_dose_usable_fraction": 1.0,
+      "queries": 288
+    },
+    "posterior_ready": true,
+    "query_bank_sha256": "812086a42420719546cc2d46fd490ab9494a53d01a69c5b4de3ba2c35e0bd490",
+    "query_law": "start-law physical states crossed with fixed times; not policy occupancy",
+    "query_states": 48,
+    "refusal_definition": "unready or ready infinite threshold is not a usable calibrated intervention; native fallback multiplier is one",
+    "reuse_limit": "calibration bank was reused adaptively; query coverage is empirical and not a fresh-holdout guarantee",
+    "schema": "thrusterchain-native-residual-evaluation-v1",
+    "seed": 102001,
+    "selection": "none; evaluation cannot fit, refresh, select, restart, or modify training",
+    "status": "evaluated",
+    "strata": {
+      "monotone_high": {
+        "coverage": 0.4583333333333333,
+        "infinite_half_width_fraction": 0.0,
+        "mean_absolute_residual": 5.35198489907715,
+        "mean_bc_multiplier": 1.3594934940338135,
+        "mean_finite_half_width": 2.3324649333953857,
+        "native_dose_usable_fraction": 1.0,
+        "queries": 72
+      },
+      "monotone_low": {
+        "coverage": 0.7916666666666666,
+        "infinite_half_width_fraction": 0.0,
+        "mean_absolute_residual": 1.2305983520216413,
+        "mean_bc_multiplier": 1.3341851234436035,
+        "mean_finite_half_width": 1.847340703010559,
+        "native_dose_usable_fraction": 1.0,
+        "queries": 72
+      },
+      "stall_high": {
+        "coverage": 0.2916666666666667,
+        "infinite_half_width_fraction": 0.0,
+        "mean_absolute_residual": 7.562427882519033,
+        "mean_bc_multiplier": 1.3574398756027222,
+        "mean_finite_half_width": 2.2897884845733643,
+        "native_dose_usable_fraction": 1.0,
+        "queries": 72
+      },
+      "stall_low": {
+        "coverage": 0.7916666666666666,
+        "infinite_half_width_fraction": 0.0,
+        "mean_absolute_residual": 1.27369507898887,
+        "mean_bc_multiplier": 1.3316538333892822,
+        "mean_finite_half_width": 1.8134541511535645,
+        "native_dose_usable_fraction": 1.0,
+        "queries": 72
+      }
+    },
+    "support_semantics": "native dose usability, not certified statistical or population action support",
+    "target": "current native one-step noisy TD3 target minus current twin-min Q"
+  },
+  "checkpoint": {
+    "actor_sha256": "bf70a131aef9cc62027fbfbde8484ab19deabd9006d8b343cdcb983dfaf63a07",
+    "file": "checkpoint_000100000.msgpack",
+    "sha256": "038c1662fac814630f42c0c7718da8279acb760cb0434898dd2f09351f76f17f",
+    "update": 100000
+  },
+  "continuous_optimum_status": "numerical feasible/lower and Frank-Wolfe upper return bounds",
+  "critic_diagnostics": {
+    "action_ranking": {
+      "mean_true_regret_of_predicted_best": 0.633537407254635,
+      "pairwise_accuracy_excluding_true_ties": 0.8270348837209303,
+      "predicted_best_tie_rule": "first candidate index (numpy.argmax)"
+    },
+    "bank_sha256": "812086a42420719546cc2d46fd490ab9494a53d01a69c5b4de3ba2c35e0bd490",
+    "bellman_residual": {
+      "mae": 3.8788789012867264,
+      "rmse": 6.939996601585872
+    },
+    "candidate_names": [
+      "zero",
+      "all_negative_knee",
+      "all_positive_knee",
+      "all_negative_one",
+      "all_positive_one",
+      "deployed_actor"
+    ],
+    "candidates": 6,
+    "coverage": "point Q error and one-step Bellman residual are separate; no residual or long-horizon interval coverage certificate asserted",
+    "q_error": {
+      "critic_1": {
+        "mae": 58.43426427153612,
+        "mean_error": 31.17574458131921,
+        "rmse": 113.92192308343319
+      },
+      "critic_2": {
+        "mae": 58.44542766842129,
+        "mean_error": 30.39492319831979,
+        "rmse": 113.06630159823604
+      },
+      "twin_min": {
+        "mae": 58.87095371520929,
+        "mean_error": 29.632594762756412,
+        "rmse": 113.06260797158599
+      }
+    },
+    "query_law": "start-law physical states crossed with fixed times; not policy occupancy",
+    "query_states": 48,
+    "status": "completed",
+    "target": "finite Q_t^pi: forced command, deterministic deployed policy thereafter, no terminal bootstrap"
+  },
+  "deployment": "float32 observations and commands; clipped [-1,1]; float64 actual continuous.dynamics",
+  "failure_rule": "any abs(position state[0:10:2])>3 at pre/post state; event only, episode continues to H",
+  "file": "per_start.npz",
+  "file_sha256": "f57facceaf2c38f417b5273901bf2917e556de84054ae21adc3e540007aba85b",
+  "inference": "finite shared bank sample estimates; replication unit is trained seed, not rollout",
+  "job": {
+    "arm": "bca",
+    "data_seed": 1104,
+    "job_id": "replicate_04/rare/bca",
+    "optimization_seed": 2104,
+    "replicate": 4,
+    "reservation_seed": 3104,
+    "retention": "rare"
+  },
+  "objective": {
+    "gamma": 1.0,
+    "horizon": 100,
+    "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))",
+    "terminal_bootstrap": false,
+    "terminal_reward": 0.0
+  },
+  "pooled": {
+    "completed": 400,
+    "critical_fraction": 0.40135000000000004,
+    "failure_rate": 0.0,
+    "high_action_fraction": 0.40505,
+    "mean_return": -191.13565648624132,
+    "regret_lower": 126.04288220526975,
+    "regret_upper": 126.04288220527404,
+    "return_std": 202.75139871212366,
+    "starts": 400
+  },
+  "schema": "thrusterchain-training-policy-evaluation-v1",
+  "selection": "none; terminal checkpoint primary, midpoint descriptive",
+  "split": "final",
+  "strata": {
+    "monotone_high": {
+      "completed": 100,
+      "critical_fraction": 0.8504999999999999,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.8504999999999999,
+      "mean_return": -157.36715666567906,
+      "regret_lower": 73.94672669898331,
+      "regret_upper": 73.94672669898696,
+      "return_std": 6.435285574773339,
+      "starts": 100
+    },
+    "monotone_low": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0073,
+      "mean_return": -39.3927305502667,
+      "regret_lower": 29.0245262594819,
+      "regret_upper": 29.024526259488372,
+      "return_std": 2.6483042707619973,
+      "starts": 100
+    },
+    "stall_high": {
+      "completed": 100,
+      "critical_fraction": 0.7549000000000001,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.7549000000000001,
+      "mean_return": -529.8227361224123,
+      "regret_lower": 373.33457598409154,
+      "regret_upper": 373.3345759840942,
+      "return_std": 40.56345489177087,
+      "starts": 100
+    },
+    "stall_low": {
+      "completed": 100,
+      "critical_fraction": 0.0,
+      "failure_rate": 0.0,
+      "high_action_fraction": 0.0075,
+      "mean_return": -37.96000260660725,
+      "regret_lower": 27.865699878522264,
+      "regret_upper": 27.865699878526605,
+      "return_std": 2.5838133689549307,
+      "starts": 100
+    }
+  }
+}

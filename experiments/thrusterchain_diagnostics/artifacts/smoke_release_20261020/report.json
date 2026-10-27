@@ -1,0 +1,569 @@
+{
+  "schema": "thrusterchain-diagnostics-report-v1",
+  "status": "smoke_only_no_learned_methods",
+  "runtime": {
+    "python": "3.10.11",
+    "numpy": "2.2.6",
+    "scipy": "1.15.3"
+  },
+  "budgets": {
+    "optimization_updates": 0,
+    "online_selection_steps": 0,
+    "budget_topups": 0
+  },
+  "continuous": {
+    "stall": {
+      "cost": 596.322852909255,
+      "return_value": -596.322852909255,
+      "fw_gap": 3.0065876548520107e-12,
+      "relative_fw_gap": 5.041878975766063e-15,
+      "replay_error": 5.684341886080801e-13,
+      "status": 1,
+      "iterations": 103,
+      "cap": 0.800000011920929,
+      "regime": "stall",
+      "objective": {
+        "horizon": 100,
+        "gamma": 1.0,
+        "terminal_reward": 0.0,
+        "terminal_bootstrap": false,
+        "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))"
+      },
+      "start_time": 0,
+      "solver": "bvls",
+      "return_interval": [
+        -596.322852909255,
+        -596.322852909252
+      ],
+      "certificate": "numerical Frank-Wolfe gap; floating-point, not interval arithmetic",
+      "fixed_cap_return": -762.8068362702845,
+      "regime_cap_return": -762.8068362702845
+    },
+    "monotone": {
+      "cost": 349.96802948135485,
+      "return_value": -349.96802948135485,
+      "fw_gap": 4.006400824837697e-12,
+      "relative_fw_gap": 1.1447905200869627e-14,
+      "replay_error": 9.094947017729282e-13,
+      "status": 1,
+      "iterations": 14,
+      "cap": 1.0,
+      "regime": "monotone",
+      "objective": {
+        "horizon": 100,
+        "gamma": 1.0,
+        "terminal_reward": 0.0,
+        "terminal_bootstrap": false,
+        "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))"
+      },
+      "start_time": 0,
+      "solver": "bvls",
+      "return_interval": [
+        -349.96802948135485,
+        -349.96802948135087
+      ],
+      "certificate": "numerical Frank-Wolfe gap; floating-point, not interval arithmetic",
+      "fixed_cap_return": -762.8068362702845,
+      "regime_cap_return": -432.0700512717281
+    },
+    "contract": {
+      "objective": {
+        "horizon": 100,
+        "gamma": 1.0,
+        "terminal_reward": 0.0,
+        "terminal_bootstrap": false,
+        "reward": "-(sum(state[:10]**2)+0.3*sum(action**2))"
+      },
+      "start": "deterministic high_load_start, current1.5",
+      "population_expectation": false,
+      "provenance": {
+        "adapter": "frozen-original-matrix-export-v1",
+        "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+        "source_sha256": {
+          "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+          "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa"
+        },
+        "state_dim": 13,
+        "action_dim": 4,
+        "observation_dim": 15,
+        "knee": 0.800000011920929,
+        "stall_slope": 1.5,
+        "throttle_cost": 0.3,
+        "arithmetic": "float64 fixed-column order",
+        "original_default_gamma": 0.98,
+        "diagnostic_default_gamma": 1.0,
+        "terminal_bootstrap": false
+      }
+    }
+  },
+  "finite": {
+    "controls": {
+      "raw_feedback": {
+        "value_target": "policy",
+        "query_distribution": "uniform_full_grid",
+        "returns": {
+          "proposed": -3.49063756620473,
+          "deployed": -3.49063756620473,
+          "optimal": -2.3861867756711144,
+          "baseline": -2.7143164206328287,
+          "regret": 1.1044507905336158,
+          "harm_vs_baseline": 0.7763211455719015,
+          "gain_vs_baseline": -0.7763211455719015
+        },
+        "failure": {
+          "any_visit_probability": 0.004449464615026044,
+          "expected_fraction_of_state_times": 0.0004943849572251225
+        },
+        "support": {
+          "population": {
+            "unsupported_deployed_mass": 0.35267678176444517,
+            "unsupported_action_hit_probability": 0.5,
+            "occupancy_total_variation": 0.952021629389308,
+            "max_ratio_on_supported_entries": 95.16004286868372,
+            "critical_unsupported_deployed_mass": 0.35267678176444517
+          },
+          "counts": {
+            "retained_transitions": 493,
+            "observed_time_state_action_entries": 336,
+            "critical_retained_transitions": 0,
+            "critical_observed_entries": 0,
+            "critical_unobserved_entries": 64
+          }
+        },
+        "errors": {
+          "q": null,
+          "v": null,
+          "q_supported": null,
+          "q_unsupported": null
+        },
+        "calibration": {
+          "q": null,
+          "v": null
+        },
+        "ranking": null,
+        "refusal": {
+          "decision_refusal_rate": 0.0,
+          "query_acceptance_rate": 1.0000000000000002,
+          "accepted_q_error": null,
+          "fallback_return": null
+        },
+        "decisions": {
+          "baseline_continuation_mean_disadvantage": 0.12807089312562023,
+          "baseline_continuation_harmful_policy_distribution_rate": 0.3971701738192323,
+          "baseline_continuation_harmful_action_probability": 0.3971701738192323,
+          "refused_one_step_opportunity_vs_fallback": 0.0
+        }
+      },
+      "fixed_cap": {
+        "value_target": "policy",
+        "query_distribution": "uniform_full_grid",
+        "returns": {
+          "proposed": -2.7143164206328287,
+          "deployed": -2.7143164206328287,
+          "optimal": -2.3861867756711144,
+          "baseline": -2.7143164206328287,
+          "regret": 0.3281296449617144,
+          "harm_vs_baseline": 0.0,
+          "gain_vs_baseline": 0.0
+        },
+        "failure": {
+          "any_visit_probability": 5.2242760321341564e-05,
+          "expected_fraction_of_state_times": 5.804751146827379e-06
+        },
+        "support": {
+          "population": {
+            "unsupported_deployed_mass": 0.0,
+            "unsupported_action_hit_probability": 0.0,
+            "occupancy_total_variation": 0.877905188323923,
+            "max_ratio_on_supported_entries": 113.0612795153584,
+            "critical_unsupported_deployed_mass": 0.0
+          },
+          "counts": {
+            "retained_transitions": 493,
+            "observed_time_state_action_entries": 336,
+            "critical_retained_transitions": 0,
+            "critical_observed_entries": 0,
+            "critical_unobserved_entries": 64
+          }
+        },
+        "errors": {
+          "q": null,
+          "v": null,
+          "q_supported": null,
+          "q_unsupported": null
+        },
+        "calibration": {
+          "q": null,
+          "v": null
+        },
+        "ranking": null,
+        "refusal": {
+          "decision_refusal_rate": 0.0,
+          "query_acceptance_rate": 1.0000000000000002,
+          "accepted_q_error": null,
+          "fallback_return": null
+        },
+        "decisions": {
+          "baseline_continuation_mean_disadvantage": 0.0,
+          "baseline_continuation_harmful_policy_distribution_rate": 0.0,
+          "baseline_continuation_harmful_action_probability": 0.0,
+          "refused_one_step_opportunity_vs_fallback": 0.0
+        }
+      },
+      "regime_cap": {
+        "value_target": "policy",
+        "query_distribution": "uniform_full_grid",
+        "returns": {
+          "proposed": -2.5412648621751743,
+          "deployed": -2.5412648621751743,
+          "optimal": -2.3861867756711144,
+          "baseline": -2.7143164206328287,
+          "regret": 0.15507808650405996,
+          "harm_vs_baseline": 0.0,
+          "gain_vs_baseline": 0.1730515584576544
+        },
+        "failure": {
+          "any_visit_probability": 2.612471349394685e-05,
+          "expected_fraction_of_state_times": 2.9027459437840595e-06
+        },
+        "support": {
+          "population": {
+            "unsupported_deployed_mass": 0.13935425,
+            "unsupported_action_hit_probability": 0.25,
+            "occupancy_total_variation": 0.9173912401855708,
+            "max_ratio_on_supported_entries": 113.0612795153584,
+            "critical_unsupported_deployed_mass": 0.13935425
+          },
+          "counts": {
+            "retained_transitions": 493,
+            "observed_time_state_action_entries": 336,
+            "critical_retained_transitions": 0,
+            "critical_observed_entries": 0,
+            "critical_unobserved_entries": 64
+          }
+        },
+        "errors": {
+          "q": null,
+          "v": null,
+          "q_supported": null,
+          "q_unsupported": null
+        },
+        "calibration": {
+          "q": null,
+          "v": null
+        },
+        "ranking": null,
+        "refusal": {
+          "decision_refusal_rate": 0.0,
+          "query_acceptance_rate": 1.0000000000000002,
+          "accepted_q_error": null,
+          "fallback_return": null
+        },
+        "decisions": {
+          "baseline_continuation_mean_disadvantage": 0.00438625794399764,
+          "baseline_continuation_harmful_policy_distribution_rate": 0.06162466666666665,
+          "baseline_continuation_harmful_action_probability": 0.06162466666666665,
+          "refused_one_step_opportunity_vs_fallback": 0.0
+        }
+      },
+      "optimal_evaluator_control": {
+        "value_target": "policy",
+        "query_distribution": "uniform_full_grid",
+        "returns": {
+          "proposed": -2.3861867756711144,
+          "deployed": -2.3861867756711144,
+          "optimal": -2.3861867756711144,
+          "baseline": -2.7143164206328287,
+          "regret": 0.0,
+          "harm_vs_baseline": 0.0,
+          "gain_vs_baseline": 0.3281296449617144
+        },
+        "failure": {
+          "any_visit_probability": 2.612471349394685e-05,
+          "expected_fraction_of_state_times": 2.9027459437840595e-06
+        },
+        "support": {
+          "population": {
+            "unsupported_deployed_mass": 0.08212378125,
+            "unsupported_action_hit_probability": 0.2499999999999999,
+            "occupancy_total_variation": 0.9115843136461799,
+            "max_ratio_on_supported_entries": 517.8679277362871,
+            "critical_unsupported_deployed_mass": 0.08212378125
+          },
+          "counts": {
+            "retained_transitions": 493,
+            "observed_time_state_action_entries": 336,
+            "critical_retained_transitions": 0,
+            "critical_observed_entries": 0,
+            "critical_unobserved_entries": 64
+          }
+        },
+        "errors": {
+          "q": null,
+          "v": null,
+          "q_supported": null,
+          "q_unsupported": null
+        },
+        "calibration": {
+          "q": null,
+          "v": null
+        },
+        "ranking": null,
+        "refusal": {
+          "decision_refusal_rate": 0.0,
+          "query_acceptance_rate": 1.0000000000000002,
+          "accepted_q_error": null,
+          "fallback_return": null
+        },
+        "decisions": {
+          "baseline_continuation_mean_disadvantage": 0.0,
+          "baseline_continuation_harmful_policy_distribution_rate": 0.0,
+          "baseline_continuation_harmful_action_probability": 0.0,
+          "refused_one_step_opportunity_vs_fallback": 0.0
+        }
+      }
+    },
+    "contract": {
+      "states": 36,
+      "actions": 5,
+      "config": {
+        "horizon": 8,
+        "n_positions": 9,
+        "gamma": 0.98,
+        "position_bound": 2.0,
+        "damping": 0.9,
+        "gain": 0.65,
+        "loads": [
+          0.1,
+          0.35
+        ],
+        "throttle_cost": 0.06,
+        "stall_slope": 1.5
+      },
+      "exactness": "finite model enumeration, floating-point arithmetic"
+    },
+    "high_action_witness": {
+      "stall_q_high_minus_knee": -1.2741470926780458,
+      "monotone_q_high_minus_knee": 0.5937927508058731
+    },
+    "context_vs_policy_shifts": {
+      "overlap": {
+        "context_unsupported_probability": 0.0,
+        "max_supported_context_ratio": 1.0,
+        "policy_unsupported_mass_per_step": 0.0
+      },
+      "thin": {
+        "context_unsupported_probability": 0.0,
+        "max_supported_context_ratio": 24.999999999999996,
+        "policy_unsupported_mass_per_step": 0.0
+      },
+      "zero": {
+        "context_unsupported_probability": 0.49999999999999994,
+        "max_supported_context_ratio": 0.5,
+        "policy_unsupported_mass_per_step": 0.49999999999999994
+      }
+    },
+    "synthetic_adapter_check": {
+      "value_target": "policy",
+      "query_distribution": "uniform_full_grid",
+      "returns": {
+        "proposed": -3.49063756620473,
+        "deployed": -2.7143164206328287,
+        "optimal": -2.3861867756711144,
+        "baseline": -2.7143164206328287,
+        "regret": 0.3281296449617144,
+        "harm_vs_baseline": 0.0,
+        "gain_vs_baseline": 0.0
+      },
+      "failure": null,
+      "support": null,
+      "errors": {
+        "q": {
+          "bias": 0.0,
+          "mae": 0.0,
+          "rmse": 0.0,
+          "max_absolute_error": 0.0
+        },
+        "v": null,
+        "q_supported": null,
+        "q_unsupported": null
+      },
+      "calibration": {
+        "q": {
+          "query_coverage": 1.0,
+          "nominal_level": 0.95,
+          "coverage_minus_nominal": 0.050000000000000044,
+          "mean_width": 0.19999999999999984,
+          "lower_miss_rate": 0.0,
+          "upper_miss_rate": 0.0
+        },
+        "v": null
+      },
+      "ranking": {
+        "greedy_action_regret": 0.0,
+        "greedy_nonoptimal_action_probability": 0.0,
+        "pairwise_disagreement": 0.0
+      },
+      "refusal": {
+        "decision_refusal_rate": 1.0,
+        "query_acceptance_rate": 0.0,
+        "accepted_q_error": null,
+        "fallback_return": -2.7143164206328287
+      },
+      "decisions": {
+        "baseline_continuation_mean_disadvantage": 0.0,
+        "baseline_continuation_harmful_policy_distribution_rate": 0.0,
+        "baseline_continuation_harmful_action_probability": 0.0,
+        "refused_one_step_opportunity_vs_fallback": 0.03442992099851457
+      }
+    },
+    "hidden_pair": {
+      "kernel_certificate": {
+        "kernels_equal": true,
+        "rewards_equal": true,
+        "observations_equal": true,
+        "initial_equal": true,
+        "all_common_state_action_pairs": 54,
+        "probe_kernel_max_difference": 0.6499999612569813,
+        "trajectory_laws_equal": true
+      },
+      "coupled_log_checks": {
+        "initial_law_equal": true,
+        "observation_map_equal": true,
+        "common_kernel_equal": true,
+        "common_reward_equal": true,
+        "reachable_kernel_equal": true,
+        "reachable_reward_equal": true,
+        "complete_logs_equal": true,
+        "learner_logs_equal": true,
+        "learner_metadata_equal": true,
+        "logging_actions_common_only": true,
+        "hidden_observation_dimension": true,
+        "separate_probes_reveal_kernel_difference": true
+      }
+    },
+    "rare_probe": {
+      "n_episodes": 64,
+      "horizon": 8,
+      "differing_kernel_state_action_count": 32,
+      "safe_kernel_equal": true,
+      "per_world": {
+        "stall": {
+          "no_differing_kernel_hit_probability_per_episode": 0.7230891945022777,
+          "no_differing_kernel_hit_probability_all_episodes": 9.733741051075032e-10,
+          "at_least_one_differing_kernel_hit_probability": 0.9999999990266258,
+          "observed_differing_kernel_action_count": 22,
+          "observed_episodes_with_differing_kernel_action": 20
+        },
+        "monotone": {
+          "no_differing_kernel_hit_probability_per_episode": 0.7230891945022777,
+          "no_differing_kernel_hit_probability_all_episodes": 9.733741051075032e-10,
+          "at_least_one_differing_kernel_hit_probability": 0.9999999990266258,
+          "observed_differing_kernel_action_count": 22,
+          "observed_episodes_with_differing_kernel_action": 20
+        }
+      },
+      "meaning": "Probability of selecting a state/action with a different paired kernel or reward; not guaranteed statistical identification.",
+      "method": "Finite-horizon propagation through the substochastic kernel after removing differing-kernel state/actions; independent-episode exponentiation.",
+      "probe_probability": 0.05,
+      "seed": 20261020,
+      "split": "rare_probe_log",
+      "common_support_kernel_equal": true,
+      "zero_probe_boundary": false,
+      "coupled_complete_logs_equal": false,
+      "learner_metadata_equal": true,
+      "probability_no_high_action_per_episode": 0.6634204312890623,
+      "probability_no_high_action_all_episodes": 3.930844897840318e-12
+    }
+  },
+  "data": {
+    "finite_trajectory_full": {
+      "generated_rows": 512,
+      "retained_rows": 512,
+      "critical_generated": 19,
+      "critical_retained": 19
+    },
+    "finite_fixed_full": {
+      "generated_rows": 1440,
+      "retained_rows": 1440,
+      "critical_generated": 56,
+      "critical_retained": 56
+    },
+    "finite_trajectory_rare": {
+      "generated_rows": 512,
+      "retained_rows": 494,
+      "critical_generated": 19,
+      "critical_retained": 1
+    },
+    "finite_fixed_rare": {
+      "generated_rows": 1440,
+      "retained_rows": 1385,
+      "critical_generated": 56,
+      "critical_retained": 1
+    },
+    "finite_trajectory_zero": {
+      "generated_rows": 512,
+      "retained_rows": 493,
+      "critical_generated": 19,
+      "critical_retained": 0
+    },
+    "finite_fixed_zero": {
+      "generated_rows": 1440,
+      "retained_rows": 1384,
+      "critical_generated": 56,
+      "critical_retained": 0
+    },
+    "hidden_common_log": {
+      "generated_rows": 512,
+      "retained_rows": 512,
+      "critical_generated": 0,
+      "critical_retained": 0
+    },
+    "continuous_trajectory_full": {
+      "generated_rows": 800,
+      "retained_rows": 800,
+      "critical_generated": 438,
+      "critical_retained": 438
+    },
+    "continuous_trajectory_rare": {
+      "generated_rows": 800,
+      "retained_rows": 382,
+      "critical_generated": 438,
+      "critical_retained": 20
+    },
+    "continuous_trajectory_zero": {
+      "generated_rows": 800,
+      "retained_rows": 362,
+      "critical_generated": 438,
+      "critical_retained": 0
+    },
+    "continuous_fixed_state_full": {
+      "generated_rows": 8,
+      "retained_rows": 8,
+      "critical_generated": 4,
+      "critical_retained": 4
+    },
+    "continuous_fixed_state_rare": {
+      "generated_rows": 8,
+      "retained_rows": 4,
+      "critical_generated": 4,
+      "critical_retained": 0
+    },
+    "continuous_fixed_state_zero": {
+      "generated_rows": 8,
+      "retained_rows": 4,
+      "critical_generated": 4,
+      "critical_retained": 0
+    }
+  },
+  "source_sha256": {
+    "__init__.py": "2f631689a0369949203fb2fa6bb146120d27516be94eb2ce43300535f67eaeb5",
+    "__main__.py": "986d718aedfa05c47e4177b2646c8ac0e07df937642f608212df6e5e1fd9edb0",
+    "finite.py": "a3cb9ab62fabdb39959daee48bd456c0ca34bb8d0a9153a4003c3fdf3b247f39",
+    "continuous.py": "bc20fb31f776cca523314b7a12f330065bc2c93f97ead7a3a4d9d3b1f9ab8315",
+    "data.py": "014149c93b91f71c5cc133bcf5815698c9e8b24985a881f0f49dfac0354f6e13",
+    "continuous_data.py": "f8ff7bdc898dbbc7cfa889c97c60b01cdea1360d123241756c5ff7a2d876733b",
+    "diagnostics.py": "32a29164fa105c92ea937656f7ed3485b4e5caa82f3db9a7a755ae458434c9db"
+  },
+  "elapsed_seconds": 2.8420892000140157
+}

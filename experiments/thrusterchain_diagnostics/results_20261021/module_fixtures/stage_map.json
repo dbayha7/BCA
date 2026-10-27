@@ -1,0 +1,693 @@
+{
+  "stages": [
+    {
+      "id": "W1",
+      "title": "Estimate or supply density ratios",
+      "premise": "Source and target laws are named, with common conditional outcome law.",
+      "input": "covariates and class labels / explicit laws",
+      "output": "bank ratios and query ratios",
+      "purpose": "Separate ratio arithmetic from fitted-ratio correctness.",
+      "invariant": "IID law gives ratio 1 after class-prior correction.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "w(x) = p_target(x) / p_source(x)",
+          "source_ref": {
+            "path": "experiments/shift_iw/world.py",
+            "first_line": 128,
+            "last_line": 135,
+            "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+          }
+        },
+        {
+          "line": 2,
+          "text": "Estimated w(x) = exp(classifier_log_odds(x)) * n_source/n_target",
+          "source_ref": {
+            "path": "experiments/shift_iw/classifier.py",
+            "first_line": 42,
+            "last_line": 43,
+            "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "experiments/shift_iw/world.py",
+          "first_line": 128,
+          "last_line": 135,
+          "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+        },
+        {
+          "path": "experiments/shift_iw/classifier.py",
+          "first_line": 42,
+          "last_line": 43,
+          "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+        }
+      ],
+      "fixture_ids": [
+        "known_population_ratio",
+        "iid_classifier_class_size_correction"
+      ],
+      "takeaway": "Exact ratio arithmetic passes for supplied laws; this does not certify a learned ratio."
+    },
+    {
+      "id": "W2",
+      "title": "Normalize bank and query masses together",
+      "premise": "Only a common positive scale factor is irrelevant.",
+      "input": "bank w and query t",
+      "output": "scaled w/max(w), t/max(w)",
+      "purpose": "Preserve the relative unseen-query mass.",
+      "invariant": "Scaling BOTH inputs leaves crossings, threshold and ESS unchanged.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "c = max_i w_i",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 57,
+            "last_line": 117,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        },
+        {
+          "line": 2,
+          "text": "w_i <- w_i/c; t <- t/c",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 57,
+            "last_line": 117,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ],
+      "fixture_ids": [
+        "all_one_weights_reduce_to_native",
+        "common_rescaling_invariance",
+        "bank_only_normalization_exception"
+      ],
+      "takeaway": "Finite-threshold arithmetic is identical. Refusal-policy equivalence is a separate fixture."
+    },
+    {
+      "id": "W3",
+      "title": "Check support and choose query mass",
+      "premise": "Zero support cannot be repaired by an epsilon denominator.",
+      "input": "source support, bank weights, query point/population",
+      "output": "finite query mass or upstream refusal",
+      "purpose": "Separate structural refusal from finite-bank posterior refusal.",
+      "invariant": "Target-only support is infinite ratio, never a fabricated finite weight.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "if query action has zero source support: refuse before calibration",
+          "source_ref": {
+            "path": "experiments/shift_iw/world.py",
+            "first_line": 160,
+            "last_line": 164,
+            "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+          }
+        },
+        {
+          "line": 2,
+          "text": "scalar mode uses target mean weight; per-row mode uses that row's own weight",
+          "source_ref": {
+            "path": "experiments/shift_iw/world.py",
+            "first_line": 148,
+            "last_line": 151,
+            "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "experiments/shift_iw/world.py",
+          "first_line": 160,
+          "last_line": 164,
+          "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+        },
+        {
+          "path": "experiments/shift_iw/world.py",
+          "first_line": 148,
+          "last_line": 151,
+          "sha256": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 94,
+          "last_line": 98,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ],
+      "fixture_ids": [
+        "zero_support_is_refused_not_epsilon_repaired"
+      ],
+      "takeaway": "Structural support refusal is upstream of calibration; finite positive query mass can separately cause a posterior threshold infinity."
+    },
+    {
+      "id": "W4",
+      "title": "Report weight concentration (ESS)",
+      "premise": "Kish ESS is a weight-concentration summary, not a coverage certificate.",
+      "input": "nonnegative bank weights",
+      "output": "ESS",
+      "purpose": "Make concentrated weight uncertainty visible.",
+      "invariant": "ESS=(sum w)^2/sum(w^2); uniform ESS=n and concentrated ESS approaches 1.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "ESS = (sum_i w_i)^2 / sum_i w_i^2",
+          "source_ref": {
+            "path": "experiments/shift_hosts/iw.py",
+            "first_line": 101,
+            "last_line": 104,
+            "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 101,
+          "last_line": 104,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        },
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ],
+      "fixture_ids": [
+        "concentration_ess_and_no_native_ratio_clipping"
+      ],
+      "takeaway": "Concentration reduces ESS; raising ESS by manually clipping changes the target weighting. No native clipping stage is claimed."
+    },
+    {
+      "id": "W5",
+      "title": "State clipping status explicitly",
+      "premise": "Native calibration and this IW ratio path do not clip supplied weights.",
+      "input": "supplied ratio vector",
+      "output": "same ratios up to common scale",
+      "purpose": "Avoid attributing a manually clipped sensitivity input to production code.",
+      "invariant": "Rescaling is not clipping; no ratio cap is introduced by these functions.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "No importance-weight clipping operation is present in this path",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 57,
+            "last_line": 117,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        },
+        {
+          "line": 2,
+          "text": "Manual cap experiment is a separate changed-input sensitivity control",
+          "source_ref": {
+            "path": "experiments/shift_iw/classifier.py",
+            "first_line": 45,
+            "last_line": 46,
+            "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        },
+        {
+          "path": "experiments/shift_iw/classifier.py",
+          "first_line": 45,
+          "last_line": 46,
+          "sha256": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41"
+        }
+      ],
+      "fixture_ids": [
+        "concentration_ess_and_no_native_ratio_clipping"
+      ],
+      "takeaway": "Concentration reduces ESS; raising ESS by manually clipping changes the target weighting. No native clipping stage is claimed."
+    },
+    {
+      "id": "N4",
+      "title": "Freeze residual scale and held-out scores",
+      "premise": "A frozen eta and positive residual unit are available; no scale network is trained in these fixtures.",
+      "input": "residual y-q, eta, u, random key",
+      "output": "s_i=abs(y_i-q_i)/(max(eta_i,1e-6)*u)",
+      "purpose": "Check scale/score bookkeeping separately from learning.",
+      "invariant": "IID restricts the distribution ratio, not the magnitude of these scores.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "sigma_i = max(eta_i, 1e-6) * u",
+          "source_ref": {
+            "path": "calibration/reference.py",
+            "first_line": 152,
+            "last_line": 194,
+            "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+          }
+        },
+        {
+          "line": 2,
+          "text": "s_i = abs(residual_i) / sigma_i",
+          "source_ref": {
+            "path": "calibration/reference.py",
+            "first_line": 148,
+            "last_line": 149,
+            "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+          }
+        },
+        {
+          "line": 3,
+          "text": "Freeze scale parameters and unit at refresh",
+          "source_ref": {
+            "path": "calibration/reference.py",
+            "first_line": 148,
+            "last_line": 149,
+            "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/reference.py",
+          "first_line": 152,
+          "last_line": 194,
+          "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+        },
+        {
+          "path": "calibration/reference.py",
+          "first_line": 148,
+          "last_line": 149,
+          "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+        }
+      ],
+      "fixture_ids": [
+        "iid_same_target_low_high_residual"
+      ],
+      "takeaway": "IID does not imply small normalized error or low penalty. High absolute residual with proportionally larger unit can have the same dose as the low-residual case."
+    },
+    {
+      "id": "N5",
+      "title": "Select empirical and posterior thresholds",
+      "premise": "Scores and weights frozen; posterior draw stream recorded.",
+      "input": "scores, w, t, alpha, beta, exponentials",
+      "output": "lambda_hat, lambda_hpd, R, finite/refused",
+      "purpose": "Verify threshold arithmetic against direct tail-risk enumeration.",
+      "invariant": "R=max(lambda_hat,lambda_hpd); each posterior draw includes the query atom at worst-case loss.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "lambda_hat = smallest observed score with weighted empirical tail <= alpha",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 43,
+            "last_line": 54,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        },
+        {
+          "line": 2,
+          "text": "draw mass_i = w_i E_i; unseen_mass = t E_query",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 57,
+            "last_line": 117,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        },
+        {
+          "line": 3,
+          "text": "crossing = smallest score with (tail_mass+unseen_mass)/total_mass <= alpha; else infinity",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 57,
+            "last_line": 117,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        },
+        {
+          "line": 4,
+          "text": "lambda_hpd = beta order statistic of crossings; R=max(lambda_hat,lambda_hpd)",
+          "source_ref": {
+            "path": "calibration/wbcp.py",
+            "first_line": 57,
+            "last_line": 117,
+            "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 43,
+          "last_line": 54,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        },
+        {
+          "path": "calibration/wbcp.py",
+          "first_line": 57,
+          "last_line": 117,
+          "sha256": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+        }
+      ],
+      "fixture_ids": [
+        "hand_query_atom_crossings",
+        "independent_tail_risk_posterior",
+        "controlled_iw_increase_and_decrease"
+      ],
+      "takeaway": "A sufficiently large query atom gives infinity even though all observed scores are finite."
+    },
+    {
+      "id": "W6",
+      "title": "Look up each row's threshold",
+      "premise": "Every grid point uses the same posterior draw stream.",
+      "input": "bank scores/weights, query-mass grid and row masses",
+      "output": "per-row R_i",
+      "purpose": "Keep query mass separate from calibration weight normalization.",
+      "invariant": "R(t) does not decrease; lookup rounds t upward and refuses values beyond the grid.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "tabulate R(t) on ascending mass grid with coupled random draws",
+          "source_ref": {
+            "path": "experiments/shift_hosts/iw.py",
+            "first_line": 157,
+            "last_line": 170,
+            "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+          }
+        },
+        {
+          "line": 2,
+          "text": "choose first grid mass >= query mass; take its threshold",
+          "source_ref": {
+            "path": "experiments/shift_hosts/iw.py",
+            "first_line": 180,
+            "last_line": 189,
+            "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 157,
+          "last_line": 170,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 180,
+          "last_line": 189,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ],
+      "fixture_ids": [
+        "query_mass_table_and_conservative_lookup"
+      ],
+      "takeaway": "The fixed sample demonstrates monotonic arithmetic and conservative lookup, not target-population coverage."
+    },
+    {
+      "id": "N6",
+      "title": "Convert threshold to half-width",
+      "premise": "The reference has frozen positive unit and predicted scale.",
+      "input": "R, eta, u",
+      "output": "U=R*max(eta,1e-6)*u",
+      "purpose": "Separate normalized threshold from response units.",
+      "invariant": "U is a half-width, not the full interval width 2U.",
+      "status": "SOURCE_ONLY",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "U_i = R_i * max(eta_i,1e-6) * u",
+          "source_ref": {
+            "path": "calibration/dose.py",
+            "first_line": 65,
+            "last_line": 95,
+            "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/dose.py",
+          "first_line": 65,
+          "last_line": 95,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        }
+      ],
+      "fixture_ids": [],
+      "takeaway": "Source-mapped; not a separate dynamic fixture."
+    },
+    {
+      "id": "N7",
+      "title": "Convert finite width to bounded dose",
+      "premise": "Blend is fixed in [0,1]; width and residual unit are valid.",
+      "input": "U,u,blend,usable",
+      "output": "dose and support mask",
+      "purpose": "Check penalty direction independently of coverage and host placement.",
+      "invariant": "Finite dose=1+blend*U/(U+u), lies in [1,1+blend]; native unsupported row uses dose 1.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "supported = valid and usable and finite(U)",
+          "source_ref": {
+            "path": "calibration/dose.py",
+            "first_line": 23,
+            "last_line": 62,
+            "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+          }
+        },
+        {
+          "line": 2,
+          "text": "dose = 1 + blend*U/(U+u) on supported rows; native fallback=1",
+          "source_ref": {
+            "path": "calibration/dose.py",
+            "first_line": 23,
+            "last_line": 62,
+            "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+          }
+        },
+        {
+          "line": 3,
+          "text": "stop_gradient(dose)",
+          "source_ref": {
+            "path": "calibration/dose.py",
+            "first_line": 23,
+            "last_line": 62,
+            "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/dose.py",
+          "first_line": 23,
+          "last_line": 62,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        }
+      ],
+      "fixture_ids": [
+        "native_dose_bound_direction_and_infinite_fallback"
+      ],
+      "takeaway": "Infinity is a refusal branch, not the finite-width limit 1+blend. Plot it as refusal, not as ordinary high uncertainty."
+    },
+    {
+      "id": "W7",
+      "title": "Apply explicit refusal policy",
+      "premise": "A ready reference and infinite row threshold indicate refusal.",
+      "input": "R_i, host type, most_caution flag",
+      "output": "host-specific fallback weight/dose",
+      "purpose": "Expose a policy difference that can remain even with unit ratios.",
+      "invariant": "TD3/ReBRAC/CQL: native=1, most-caution=1.5 at blend=.5; IQL has its own rule.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "if refused and most_caution: TD3/ReBRAC/CQL dose=1+blend",
+          "source_ref": {
+            "path": "experiments/shift_hosts/iw.py",
+            "first_line": 279,
+            "last_line": 312,
+            "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+          }
+        },
+        {
+          "line": 2,
+          "text": "IQL native refusal weight=0; most-caution positive-advantage weight=1",
+          "source_ref": {
+            "path": "experiments/shift_hosts/iw.py",
+            "first_line": 315,
+            "last_line": 364,
+            "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 279,
+          "last_line": 312,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 315,
+          "last_line": 364,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ],
+      "fixture_ids": [
+        "identical_thresholds_different_refusal_policy",
+        "iql_refusal_is_host_specific"
+      ],
+      "takeaway": "A penalty increase at refusal can be caused entirely by the refusal rule, even when all importance weights are one. Do not attribute it to ratio weighting."
+    },
+    {
+      "id": "N8",
+      "title": "Attach detached multiplier and assess alignment",
+      "premise": "Host placement is source-audited; these fixtures do not run a host update.",
+      "input": "dose/actor weight and known diagnostic oracle",
+      "output": "gradient check; error/harm ranking",
+      "purpose": "Distinguish arithmetic correctness from useful caution.",
+      "invariant": "Dose boundary has zero gradient; correct arithmetic alone need not rank actual error or harm.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "Use detached coefficient in the host location documented by the source audit",
+          "source_ref": {
+            "path": "calibration/dose.py",
+            "first_line": 23,
+            "last_line": 62,
+            "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+          }
+        },
+        {
+          "line": 2,
+          "text": "Compare dose/width to known absolute Q error and action disadvantage independently",
+          "source_ref": {
+            "path": "experiments/shift_hosts/iw.py",
+            "first_line": 315,
+            "last_line": 364,
+            "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/dose.py",
+          "first_line": 23,
+          "last_line": 62,
+          "sha256": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470"
+        },
+        {
+          "path": "experiments/shift_hosts/iw.py",
+          "first_line": 315,
+          "last_line": 364,
+          "sha256": "e076537f8d8b217c1c751269901d57e7e9f82b88d566624930c8bf35c4c26784"
+        }
+      ],
+      "fixture_ids": [
+        "dose_is_detached_from_width_gradient",
+        "known_oracle_alignment_and_counterexample"
+      ],
+      "takeaway": "Checks stop-gradient ownership at the dose boundary. This does not execute any host optimizer update."
+    },
+    {
+      "id": "N9",
+      "title": "Reject invalid reference inputs",
+      "premise": "Positive finite unit and valid scale/residual arrays are required.",
+      "input": "candidate refresh inputs",
+      "output": "valid flag / not-ready reference",
+      "purpose": "Keep malformed arithmetic out of deployment.",
+      "invariant": "Invalid helper refresh cannot become ready; upstream state-preservation is outside this fixture.",
+      "status": "PASS",
+      "pseudocode": [
+        {
+          "line": 1,
+          "text": "if scale/unit/residual inputs invalid: return valid=False and not-ready reference",
+          "source_ref": {
+            "path": "calibration/reference.py",
+            "first_line": 152,
+            "last_line": 194,
+            "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+          }
+        }
+      ],
+      "source_refs": [
+        {
+          "path": "calibration/reference.py",
+          "first_line": 152,
+          "last_line": 194,
+          "sha256": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b"
+        }
+      ],
+      "fixture_ids": [
+        "invalid_reference_does_not_become_ready"
+      ],
+      "takeaway": "The helper returns an invalid/not-ready reference; caller preservation of a previous state is source-audited separately."
+    },
+    {
+      "id": "N1",
+      "title": "Episode reservation",
+      "status": "UNTESTED",
+      "premise": "Handled in the source audit and frozen experiment evidence.",
+      "input": "Not executed by this fixture runner.",
+      "output": "No dynamic fixture result.",
+      "purpose": "Preserve scope and avoid claiming unexecuted verification.",
+      "invariant": "No claim of dynamic verification from this module.",
+      "pseudocode": [],
+      "source_refs": [],
+      "fixture_ids": [],
+      "takeaway": "Explicitly untested here; no fresh training or host optimizer updates."
+    },
+    {
+      "id": "N2",
+      "title": "Host Bellman target",
+      "status": "UNTESTED",
+      "premise": "Handled in the source audit and frozen experiment evidence.",
+      "input": "Not executed by this fixture runner.",
+      "output": "No dynamic fixture result.",
+      "purpose": "Preserve scope and avoid claiming unexecuted verification.",
+      "invariant": "No claim of dynamic verification from this module.",
+      "pseudocode": [],
+      "source_refs": [],
+      "fixture_ids": [],
+      "takeaway": "Explicitly untested here; no fresh training or host optimizer updates."
+    },
+    {
+      "id": "N3",
+      "title": "Scale-network learning",
+      "status": "UNTESTED",
+      "premise": "Handled in the source audit and frozen experiment evidence.",
+      "input": "Not executed by this fixture runner.",
+      "output": "No dynamic fixture result.",
+      "purpose": "Preserve scope and avoid claiming unexecuted verification.",
+      "invariant": "No claim of dynamic verification from this module.",
+      "pseudocode": [],
+      "source_refs": [],
+      "fixture_ids": [],
+      "takeaway": "Explicitly untested here; no fresh training or host optimizer updates."
+    }
+  ]
+}

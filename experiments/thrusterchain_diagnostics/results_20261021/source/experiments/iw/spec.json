@@ -1,0 +1,1102 @@
+{
+  "name": "shift_iw: importance weighting for BCA on ThrusterChain",
+  "version": 5,
+  "date": "2026-10-13",
+  "status": "pre-registration, revised after two reviews, the owner's decisions of 2026-10-13, a review of version 4, the owner's two decisions for version 5, the dataset qualities (part A) and the lower-edge use of BCA's band (part B), and a review of version 5 (see SPEC.md 'Changes after review', 'Changes in version 3', 'Changes in version 4' and 'Changes in version 5' with its part 'After a review of version 5'); written before any learning or BCA run on ThrusterChain data. Not frozen. Version 5 replaces version 4's run (version 4 never ran); its expert column is version 4's experiment. BCA on real data waits for the user's go: the approval file holds the SHA-256 of this file and of every code file the run loads from the repository (approval.holds)",
+  "sources": [
+    "iw/scout_feasibility.md",
+    "iw/scout_bca_weights.md",
+    "iw_quality/DESIGN.md (the dataset qualities, version 5)",
+    "iw/scout/v5_expert_equals_v4.json and iw/scout/v5_anchors_check.json (version 5's checks, exact simulation only)",
+    "outputs/shift/beyond-the-data/stage1/code/harness.py and spec.json (the cloud's exploratory Stage 1, read-only: the one-step oracle, the paired form (its change A1) and check (e) (its change A2); restated in shift_iw/lower_edge.py and compared with it in test_lower_edge)"
+  ],
+  "goal": [
+    "verify that BCA's band mechanics work on data where every value is known",
+    "with the test distribution known, show that weighting BCA's calibration restores coverage",
+    "show that it raises test return: through BCA's capped pull only if weighting moves BCA's dose enough to matter (R2), and through the lower edge (part B) only if weighting moves its penalty enough to matter (L2)"
+  ],
+  "world": {
+    "package": "experiments/shift (read-only, hashed)",
+    "physics": "stalling (push 0.8 at 80% throttle, 0.5 at 100%)",
+    "current_index_in_observation": 10,
+    "episode_steps": 100,
+    "starts": {
+      "floats_sd": 0.5,
+      "wave_amplitude": [
+        0.1,
+        0.4
+      ],
+      "wave_phase": [
+        0.0,
+        6.283185307179586
+      ],
+      "entered_through": "reset(options={'state': ...})"
+    }
+  },
+  "laws": {
+    "support": [
+      0.1,
+      1.1
+    ],
+    "density": "p_lambda(c) = exp(lambda c) / M(lambda), M(lambda) = (exp(1.1 lambda) - exp(0.1 lambda)) / lambda, M(0) = 1",
+    "M": {
+      "-2": 0.35396379735782396,
+      "0": 1.0,
+      "2": 3.901805370636976
+    },
+    "train": {
+      "lambda": -2.0,
+      "mean_c": 0.443
+    },
+    "tilts": {
+      "none": {
+        "lambda": -2.0,
+        "mean_c": 0.443,
+        "weight": "1",
+        "weight_const": 1.0,
+        "weight_slope_in_c": 0.0,
+        "weight_range": [
+          1.0,
+          1.0
+        ]
+      },
+      "mild": {
+        "lambda": 0.0,
+        "mean_c": 0.6,
+        "weight": "0.35396 exp(2c)",
+        "weight_const": 0.35396379735782396,
+        "weight_slope_in_c": 2.0,
+        "weight_range": [
+          0.43,
+          3.19
+        ]
+      },
+      "strong": {
+        "lambda": 2.0,
+        "mean_c": 0.757,
+        "weight": "0.090718 exp(4c)",
+        "weight_const": 0.09071795328941248,
+        "weight_slope_in_c": 4.0,
+        "weight_range": [
+          0.135,
+          7.39
+        ]
+      }
+    },
+    "kish_effective_bank_rows": {
+      "no_gap_1000_rows": {
+        "none": 1000,
+        "mild": 724,
+        "strong": 352
+      },
+      "gapped_about_843_rows": {
+        "none": 843,
+        "mild": 627,
+        "strong": 277
+      },
+      "effective_episodes_no_gap": {
+        "none": 200,
+        "mild": 145,
+        "strong": 71
+      }
+    },
+    "full_data_test_mass_closed_form": {
+      "none": 1.0,
+      "mild": 1.381097845541816,
+      "strong": 2.8414637940557546
+    }
+  },
+  "gap": {
+    "rule": "experiments/truth/gap.find_gap with shift.gap_settings(), on float64 of the float32 training-split commands (as v1)",
+    "ball_source": "the expert's ball of the same seed, for every quality (data.expert_ball: the rule on the training split of the expert's training-law log, which is version 4's log, so the ball is version 4's ball); each quality's data build simulates that log and finds the ball itself. Cut from every quality's training split and calibration bank, never from test steps",
+    "removed_from": [
+      "training split",
+      "calibration bank"
+    ],
+    "never_removed_from": [
+      "held-out split",
+      "test logs",
+      "classifier samples"
+    ],
+    "exact_ratio_outside_ball": "Z * p_test(c) / p_train(c)",
+    "exact_ratio_inside_ball": "+inf: every test step whose command lies inside the public ball is refused by both weighted arms (exact and estimated) before wbcp.calibrate is called",
+    "Z": {
+      "definition": "P_train(recorded command outside the ball)",
+      "scout_value_seed0": 0.8433,
+      "scout_se": 0.0002,
+      "computed_by": "quadrature: 41-point current grid on [0.1, 1.1], 2,000 recorder episodes per point, per data seed",
+      "note": "Z scales every bank weight and the test mass alike, so it cancels in wbcp.calibrate"
+    },
+    "test_mass_gapped": "mean of p_test(c)/p_train(c) over test-law steps outside the ball, by the same quadrature (one scalar per tilt and seed)",
+    "scout_in_ball_test_share": {
+      "none": 0.157,
+      "mild": 0.258,
+      "strong": 0.364
+    },
+    "in_ball_share_by_law": "same quadrature as Z, one value per law and seed (D1 is judged on these, not on single 300-episode logs)",
+    "scout_in_ball_test_share_by_ball": {
+      "seed0_rho0.267": {
+        "none": 0.1567,
+        "mild": 0.2582,
+        "strong": 0.3648
+      },
+      "seed1_rho0.250": {
+        "none": 0.1451,
+        "mild": 0.2457,
+        "strong": 0.3524
+      },
+      "seed2_rho0.276": {
+        "none": 0.1635,
+        "mild": 0.265,
+        "strong": 0.3708
+      },
+      "single_300_episode_log_standard_error": [
+        0.01,
+        0.012
+      ]
+    }
+  },
+  "recording_controller": {
+    "normal_driving": "command = 0.8 tanh(u / 0.8), u = -(0.25 K_s s + K_e e) + 0.3 n, n ~ N(0, I4) per step, K = recorder.textbook_gain()",
+    "hold_demand": "(K_e e)_1 = 0.910 c + 0.822 w1 - 0.320 w2",
+    "hard_water_trigger": 0.65,
+    "coin_probability": 0.5,
+    "hold_80": [
+      -0.8,
+      -0.11,
+      -0.468,
+      -0.325
+    ],
+    "hold_80_exact": "-0.8 * K[:, current] / K[0, current], thruster 1 set to exactly -0.8 (float32 -0.800000011920929)",
+    "hold_jitter_thrusters_2_to_4": 0.03,
+    "commands_rounded_to_float32": true,
+    "scout_name": "B_p0.5_t0.65 (spec 1)",
+    "scout_facts": {
+      "hold_share_of_training_rows": [
+        0.091,
+        0.105
+      ],
+      "holds_removed_by_ball": [
+        0.997,
+        0.998
+      ],
+      "ordinary_commands_removed_share_of_log": [
+        0.045,
+        0.06
+      ],
+      "exact_80_rows_left_in_training": [
+        11,
+        14
+      ],
+      "hold_minus_normal_exact_value_train_law": 0.097,
+      "hold_minus_normal_exact_value_strong_law": 0.133,
+      "stall_aware_at_80_limit_on_recorded_states_strong": 0.656
+    }
+  },
+  "qualities": {
+    "decided_by": "the owner, for version 5: five dataset qualities as in D4RL (random, medium-replay, medium, medium-expert, expert), with the design's recommended choices (iw_quality/DESIGN.md)",
+    "names": [
+      "random",
+      "medium-replay",
+      "medium",
+      "medium-expert",
+      "expert"
+    ],
+    "controller": "version 4's recording controller (world.HoldRecorder, HOLD_SPEC unchanged) for every quality; the only knob is the random share eps. The recording controller is the expert",
+    "rule_per_step": "if m < eps the command is r, uniform on [-1, 1)^4, and the step is never a hold; otherwise version 4's recording controller (the 80% hold in hard water on a fair coin, or normal driving). Commands are rounded to float32 (world.with_random)",
+    "random_share": {
+      "random": "1",
+      "medium-replay": "1 - 0.35 pick / 499 (a uniform sample of a learning curve from random at pick 0 to medium at pick 499)",
+      "medium": "0.65",
+      "medium-expert": "0.65 if pick < 250, else 0 (each episode is medium or expert with probability one half)",
+      "expert": "0"
+    },
+    "medium_random_share": 0.65,
+    "picks": 500,
+    "medium_expert_cut": 250,
+    "pick": "an integer uniform on 0...499 per episode; an episode's eps is a function of its quality and its pick only, never of c, in every log, classifier sample and quadrature base start",
+    "streams": "per log one generator default_rng([20261016, seed, tag]): the starts, noise (E, 100, 4) and coin (E, 100) as in version 4, then r (E, 100, 4) uniform on [-1, 1), m (E, 100) uniform on [0, 1) and pick (E,); every quality makes the new draws, after version 4's, so the expert is version 4's data bit for bit and one seed gives every quality the same starts, water, noise and coins",
+    "quadrature_streams": "base starts, noise and coin from tag 9 as in version 4; one pick per base start (shared by every current), then r and m per step, from a second generator default_rng([20261016, seed, 11]); so the expert's curves are version 4's",
+    "start_bank_streams": "default_rng([20261016, 1002]): noise (1000, 100, 4), coin, r, m, the same on every law's bank and for every quality; pick_j = j mod 500 (balanced: each pick exactly twice over the 1,000 starts, so a mixture's points are its expected points over the plan). Stream 1001 (version 4's recording-controller anchor) is retired",
+    "exact_weights": "the same w(c) = p_test(c) / p_train(c) for every quality: the recording controller never reads the law and the plan never reads c, so the bank and every test log sample the same mixture of random shares as the training split",
+    "expert_is_version_4": "the expert quality is version 4's data bit for bit: every array of every file version 4 writes (training-law log, test logs, classifier samples, truth rows), the ball, the quadrature and D1; version 5 adds only the all-False infos/random flag and meta fields. Shown at the small size on seed 0 against version 4's own code (iw/scout/v5_expert_equals_v4.py, output v5_expert_equals_v4.json) and tested at a tiny size (test_data, test_world)",
+    "labels": {
+      "random": "weighting only: no holds, so no gap experiment (its full-data host equals its gapped host up to 0.12-0.17% of rows); the gap mark's inside-versus-outside clause is not judged there (30-69 in-ball test steps per log). Its jobs run unchanged",
+      "medium-replay": null,
+      "medium": null,
+      "medium-expert": null,
+      "expert": "version 4's experiment"
+    },
+    "d4rl_simplifications": [
+      "D4RL's random data come from a randomly initialised policy network; here random is uniform commands, which is D4RL's own 0-point anchor",
+      "D4RL's medium is one partly trained policy; here medium is the expert with 65% of its commands replaced at random: a noisy expert, not a weaker policy",
+      "D4RL's medium-replay is the whole replay buffer up to medium; here it is a log of the same size as every other quality, whose episodes sample a learning curve from random to medium",
+      "D4RL's medium-expert holds equal amounts of medium and expert data; here each episode is one or the other with probability one half (the training split's medium share varies by about 2% around one half)",
+      "every quality has the same size, which D4RL's datasets do not"
+    ],
+    "expected_points_full_data": {
+      "source": "iw_quality/out/one_controller.json, reproduced to 0.01 return units by data.anchors (iw/scout/v5_anchors_check.json); training law / mild / strong",
+      "random": [0.0, 0.0, 0.0],
+      "medium-replay": [25.8, 24.7, 23.7],
+      "medium": [48.7, 47.0, 45.6],
+      "medium-expert": [70.0, 69.8, 69.7],
+      "expert": [93.7, 94.7, 95.3],
+      "without_the_hold": {
+        "medium-replay": [26.0, 25.0, 24.2],
+        "medium": [48.9, 47.5, 46.3],
+        "medium-expert": [69.8, 69.6, 69.6],
+        "expert": [93.1, 93.8, 94.3]
+      },
+      "zero_command": [39.8, 30.2, 23.9]
+    },
+    "expected_data": {
+      "source": "iw_quality/DESIGN.md sections 2, 4 and 5 (5 seeds, training law)",
+      "random_command_share": {"random": 1.0, "medium-replay": [0.82, 0.83], "medium": 0.65, "medium-expert": [0.32, 0.35], "expert": 0.0},
+      "hold_share": {"random": 0.0, "medium-replay": [0.016, 0.020], "medium": [0.033, 0.036], "medium-expert": [0.060, 0.071], "expert": [0.091, 0.104]},
+      "training_rows_removed": {"random": [0.0012, 0.0017], "medium-replay": [0.024, 0.028], "medium": [0.049, 0.051], "medium-expert": [0.093, 0.102], "expert": 0.15},
+      "holds_removed": [0.994, 0.999],
+      "kept_bank_rows": {"random": [997, 1000], "medium-replay": [963, 980], "medium": [933, 964], "medium-expert": [869, 924], "expert": [802, 867]},
+      "kish_rows_strong": {"random": [357, 402], "medium-replay": [341, 380], "medium": [326, 369], "medium-expert": [299, 347], "expert": [291, 328]},
+      "in_ball_steps_per_30000_step_test_log": {"random": [30, 69], "medium-replay": [752, 1930], "medium": [1476, 3707], "medium-expert": [2878, 7709], "expert": [4399, 11338]},
+      "float_radius_mean": {"random": [2.54, 2.61], "medium-replay": [2.15, 2.23], "medium": [1.80, 1.87], "medium-expert": [1.27, 1.34], "expert": [0.75, 0.76]}
+    }
+  },
+  "data_per_seed": {
+    "training_law_log": {
+      "episodes": 1000,
+      "steps": 100,
+      "splits": {
+        "training_episodes": 500,
+        "training_rows": 50000,
+        "training_rows_kept_approx_expert": 42500,
+        "calibration_episodes": 200,
+        "bank_rows": 1000,
+        "bank_rows_per_episode": 5,
+        "bank_rows_kept_approx_expert": 843,
+        "held_out_episodes": 300,
+        "held_out_steps": 30000
+      },
+      "note": "held-out split doubles as the 'none' test log"
+    },
+    "test_logs": {
+      "mild": {
+        "episodes": 300
+      },
+      "strong": {
+        "episodes": 300
+      }
+    },
+    "classifier_samples": {
+      "holds": "observations and recorded commands only (no rewards, next states or values)",
+      "training_law_episodes": 300,
+      "per_test_law_episodes": 300,
+      "second_training_law_episodes": 300,
+      "second_training_law_use": "no-tilt control in W4 (classifier fitted on two independent training-law samples)",
+      "commands_used_for": [
+        "known-ball test (refusal)",
+        "restricting the test mass to steps outside the ball"
+      ],
+      "classifier_inputs": "observations only"
+    },
+    "start_banks": {
+      "starts_per_law": 1000,
+      "laws": [
+        "none",
+        "mild",
+        "strong"
+      ],
+      "shared_by_all_seeds_and_controllers": true,
+      "shared_by_all_qualities": true
+    },
+    "per_quality": "every size above holds for every quality (one data build per quality and seed), except the two kept counts (training_rows_kept_approx_expert, bank_rows_kept_approx_expert), which are the expert's (version 4's): below expert the expert's ball removes fewer rows, so more are kept (qualities.expected_data.training_rows_removed and kept_bank_rows; measured at full size: random 49,913-49,938 training rows kept, medium 47,439-47,548, medium-expert 44,902-45,372). The training-law log, test logs and classifier samples are made at the quality",
+    "quadrature": "41 currents x 2,000 episodes, run twice per quality and seed: the expert's (version 4's, for D1, identical in every quality) and the quality's own (its single threshold's test mass and its own in-ball and hold shares, reported); for the expert they are one",
+    "exact_truth": "experiments/shift/truth.py (deterministic simulation)"
+  },
+  "host": {
+    "algorithm": "TD3+BC (algorithms/td3_bc.py via experiments/shift/learners.py)",
+    "alpha": 2.5,
+    "updates": 100000,
+    "batch_size": 256,
+    "discount": 0.98,
+    "tau": 0.005,
+    "lr": 0.0003,
+    "policy_delay": 2,
+    "target_noise": 0.2,
+    "target_noise_clip": 0.5,
+    "normalisation": "mean and SD (+0.001) of the gapped log's kept training observations (learners rule)",
+    "runs_per_seed": [
+      "gapped log (main)",
+      "full log (full-data control)"
+    ],
+    "state_used": "final snapshot (100%)"
+  },
+  "band": {
+    "where": "frozen final host critic; restates learners.bca_band under shift_iw's own approval gate and returns the fitted state",
+    "scale_fit": {
+      "function": "td3_bc_bca.fit_scale",
+      "batches": 20000,
+      "batch_size": 256,
+      "rows": "kept training rows"
+    },
+    "refresh": {
+      "function": "td3_bc_bca.refresh",
+      "rows": "kept calibration bank"
+    },
+    "bca_settings": {
+      "miscoverage": 0.1,
+      "credibility": 0.95,
+      "draws": 1000,
+      "blend": 0.5,
+      "scale_lr": 0.001,
+      "slope": 20,
+      "width_penalty": 0.005,
+      "unit_moving_average": 0.99
+    },
+    "thresholds": {
+      "unweighted": "refresh as it is",
+      "exact_weighted_per_step": "the method (the owner's decision): each step x has its own threshold R(w(x)) = wbcp.calibrate(same bank scores, same posterior stream fold_in(key, 1347375956), weights=p_test(c_j)/p_train(c_j), test_mass=w(x), alpha=0.1, beta=0.95, draws=1000), read from the table of band.per_step",
+      "estimated_weighted_per_step": "the same with the classifier's weights at the bank rows and the classifier's weight at the step as its test mass",
+      "exact_weighted_single": "version 3's single threshold, kept as a reported comparison: the same call with one test mass for every step (the mean of w over test-law steps outside the ball, by quadrature); replace threshold, lambda_hat, lambda_hpd, n_eff (float32)",
+      "estimated_weighted_single": "the same with the classifier's weights and the classifier's test mass (mean classifier weight over test-law sample steps outside the ball)"
+    },
+    "shared_scale_network": true,
+    "per_step": {
+      "decided_by": "the owner, 2026-10-13, answering 'How should weighting enter BCA's band?': 'Per-step weights (Recommended)'",
+      "method": "weighted conformal prediction (Tibshirani, Barber, Candes and Ramdas 2019): the bank weights w_j with the test step's own weight w(x) as the test mass; so the band is wider on steps whose current is common at test and rare in training",
+      "table": "R(t) is tabulated on a log-spaced grid of test masses t = grid_ratio**k (k integer) from the largest grid mass at most the smallest mass looked up to the smallest grid mass at least the largest (the kept training rows and the tilt's certified test steps: outside the ball on the gapped host, every step on the full host). 1.0 is on the grid exactly when the masses reach it; under no tilt the grid is [1.0]. Every grid point uses the same random stream",
+      "grid_ratio": 1.01,
+      "lookup": "a step uses the smallest grid mass at least its own weight; conservative, because R is non-decreasing in the test mass. A step's 'own threshold' is this looked-up (rounded-up) threshold everywhere below (coverage, refusals, W3, R2, the per-row doses). The record holds the grid, the largest relative mass gap (at most grid_ratio - 1 = 1%) and the largest relative threshold step between the grid points used (the most the lookup can raise a step's threshold above its exact one), and possibly_rounded_into_refusal: the steps whose looked-up R is +inf while the grid point below is finite, an upper bound on the steps refused only because the lookup rounded their mass up (it also counts steps whose exact R is already +inf, which the table cannot tell apart)",
+      "monotone": "with the same random stream at every test mass R(t) never falls (a heavier test atom only moves each posterior draw's crossing up); every table is checked, and a running maximum is applied if it ever falls, which is recorded (running_max_applied)",
+      "refusal": "a step whose own (looked-up) R is +inf ('cannot certify') is refused and never covered; its share is reported. Steps inside the ball are refused first, as before",
+      "no_tilt_identity": "under no tilt every weight is 1, so the per-step thresholds are the unweighted one bit for bit (mark W0)",
+      "high_current_rows_top_share": 0.1,
+      "high_current_rows": "kept training rows in the top tenth by current c (R2 reports the dose change there)",
+      "cost": "about 12 ms per wbcp.calibrate call on 843 rows; a strong-tilt table has about 400 grid points (about 5 s)"
+    }
+  },
+  "estimated_weights": {
+    "model": "logistic regression on the 13-number normalised observation, fitted by Newton's method, no penalty",
+    "classes": "training-law classifier sample (0) vs test-law classifier sample (1), 300 episodes each; for the no-tilt control, training-law sample vs the second training-law sample",
+    "correctly_specified_because": "log w is linear in c, and c is an input",
+    "weight": "exp(fitted log-odds), outside the known ball",
+    "test_mass": "per step (the method): the classifier's weight at the step's own observation; single threshold (comparison): the mean estimated weight over test-law classifier-sample steps whose recorded command lies outside the ball",
+    "refit_in_coverage": "the coverage stage refits the classifiers (deterministic) and refuses unless they equal the band record's",
+    "reported": [
+      "fitted slope on c (raw units) vs exact 0 (no tilt), 2 (mild) and 4 (strong)",
+      "rank correlation and RMS log error vs exact bank weights"
+    ],
+    "in_ball": "refused (cannot certify), by the public ball, as in the exact arm; never a weight of 0"
+  },
+  "coverage": {
+    "residual": "|y - q|, y = td3_bc_bca.native_target with a fresh key (one target-noise draw per step), q = min over critic heads",
+    "covered": "calibration.network.hard_coverage(y, q, U), U from bc_readout(...).width",
+    "groups": {
+      "held_out_training_law_outside_ball": "mechanics (M1)",
+      "held_out_training_law_inside_ball": "reported",
+      "test_outside_ball": "per tilt: covered / not covered / refused",
+      "test_inside_ball": "per tilt: refused share for both weighted arms, and unweighted coverage"
+    },
+    "arms": {
+      "gapped_host": [
+        "unweighted",
+        "exact (per step)",
+        "estimated (per step)",
+        "exact_single (comparison)",
+        "estimated_single (comparison)"
+      ],
+      "full_host": [
+        "unweighted",
+        "exact (per step)",
+        "exact_single (comparison)"
+      ]
+    },
+    "per_step_width": "U_x = R(w(x)) x unit x max(scale(s, a), 1e-6) in float32 (learners_iw.per_step_readout); a step whose own R is +inf is refused",
+    "refused_counts_as_covered": false,
+    "intervals": {
+      "within_seed": "bootstrap over whole episodes, 2000 resamples",
+      "across_seeds": "t-interval, 4 degrees of freedom"
+    },
+    "pooled": "mean of the five per-seed values",
+    "exact_error_rows": 5000,
+    "exact_error": "|q(s,a) - Q^pi(s,a)|, pi = host actor, learners.exact_q",
+    "noise_control": "truth.noise_map (target-noise spread; no critic-error information); reported pooled and within current deciles",
+    "forecast": "unweighted coverage under tilt = integral of cov(c) p_test(c) (1 - g(c)) dc / integral p_test(c) (1 - g(c)) dc, from step 3's coverage-by-current curve",
+    "exact_error_within_current": "Spearman inside each current decile of the 5,000 held-out steps, averaged over the ten deciles"
+  },
+  "room_check": {
+    "uses_bca": false,
+    "runner": "learners.ActorOnly (v1's room check), frozen final gapped critic",
+    "start": "cloned actor (learners.clone, 20,000 steps)",
+    "steps": 20000,
+    "arms": {
+      "none": "dose 1",
+      "placed": "1 + 0.5 x / (1 + x), x = 3 D_i / mean(D), D = exact over-preference (truth.py), refreshed every 4,000 steps",
+      "even": "constant dose with strength matched to 'placed' (RMS command change from 'none' on 5,000 held-out states; learners.match_even between the ladder's rungs x1.1, x1.25 and x1.5; never extrapolated)",
+      "even_x1.1": "constant dose 1.1 (learners.ROOM_EVEN_LADDER rung; for R2's slope)",
+      "even_x1.25": "constant dose 1.25 (learners.ROOM_EVEN_LADDER rung; for R2's slope)",
+      "even_x1.5": "constant dose 1.5 (learners.ROOM_EVEN_LADDER rung; for the matched arm's reach and R2's slope)"
+    },
+    "evaluated_on": [
+      "strong start bank (gate)",
+      "none start bank",
+      "mild start bank"
+    ],
+    "slope_for_R2": "least-squares slope of strong-bank return (return units) on dose over none (1.0), even x1.1, even x1.25 and even x1.5, per seed, pooled (version 5; the slope in points is reported beside it)"
+  },
+  "bca_training_arms": {
+    "runs_only_if": [
+      "the report on all five seeds says M1, R1 and R2 pass",
+      "the user has said go for the capped pull's arms on this quality (approval scope 'bca', with the quality in approval qualities.bca; a go for the lower edge does not open these arms)",
+      "the report was made by the code running now"
+    ],
+    "update": "unweighted and single threshold: learners.bca_update, placement 'own' (td3_bc_bca.update line for line), blend 0.5; per row: learners_iw.bca_update_per_row, the same update line for line except the dose (learners_iw.per_row_dose)",
+    "updates": 100000,
+    "first_refresh_after": 10000,
+    "refresh_every": 5000,
+    "weighted_refresh": "after each unchanged refresh, recompute bank scores with the same key; per row: recompute the table of R on the grid (band.per_step) with the same stream; single threshold: replace R by the exact-weighted (strong) calibrate call",
+    "per_row_dose": {
+      "declared_change": "this changes how BCA consumes its band: BCA reads one threshold for every row; the per-row arms read each training row's own threshold, width_i = R(w_i) x unit x scale network(s_i, a_i), so caution rises on rows the test law cares about (w_i = w(c_i), the row's exact strong weight; the estimated arm uses the classifier's weight at the row)",
+      "dose": "1 + 0.5 U_i / (U_i + unit) by calibration.dose.level_critic_dose (BCA's own arithmetic) for a finite R(w_i)",
+      "refusal": "a row whose R(w_i) is +inf gets the largest dose, 1 + blend = 1.5: refusal means the most caution (BCA's own readout gives such a row 1). Declared; the count of such rows is recorded at every refresh (expected 0 for the exact arm, see W3's why)",
+      "grid": "band.per_step's rule on the kept training rows' masses (grid_ratio 1.01; smallest grid mass at least the row's own)",
+      "identity": "with every weight 1 the per-row arm equals the unweighted arm bit for bit (tested)",
+      "reference": "the frozen reference keeps BCA's own unweighted threshold; the per-row dose reads only its scale network, unit and readiness"
+    },
+    "arms_per_seed": [
+      "unweighted",
+      "exact-weighted strong, per row (I1)",
+      "exact-weighted strong, single threshold (comparison, version 3's arm)"
+    ],
+    "diagnostics": [
+      "refreshes with posterior_certified False",
+      "batches with bc_support_fraction < 1",
+      "per-row arms: refused training rows per refresh, batches with refused rows, tables monotone, running maximum applied"
+    ],
+    "optional_if_user_asks": [
+      "estimated-weighted strong, per row (needs its own approval scope 'bca_estimated', naming the quality)"
+    ]
+  },
+  "lower_edge": {
+    "decided_by": "the owner, for version 5: 'Add the lower-edge use (Recommended)': a second consumer of BCA's band, next to BCA's capped pull",
+    "why": "weighting changes only the threshold R. In BCA's capped pull the width enters through the dose 1 + 0.5 U / (U + unit), which saturates, so weighting moves the dose by only about 0.005-0.03 (expected_return_effect). In the lower edge the width enters the actor's objective linearly, so per-step weighting scales the penalty at each state by R(w(c)) / R_u: 1.05-1.37 per row on version 4's synthetic gapped banks",
+    "objective": "L = -lambda * mean_i[ Q1(s_i, pi(s_i)) - k W(s_i, pi(s_i)) ] + mean_i mean_j (pi(s_i)_j - a_ij)^2, lambda = alpha / stopgrad(mean_i |Q1(s_i, pi(s_i))|) computed on Q1 alone (W never enters it)",
+    "k": 1.0,
+    "protocol": "the room check's (learners.ActorOnly): actor-only training against the frozen final gapped host critic, from the cloned actor (learners.clone, 20,000 steps), 20,000 steps in chunks of 4,000, one shared stream of batch rows default_rng([20261016, seed, 35]), Adam 3e-4, batch 256, alpha 2.5. The oracle arms run side by side (vmapped); the BCA arms run one after another, each in its own program, because on the CPU lanes of one vmapped program can round differently (one float32 step, which training amplifies), and separate programs give equal actors for equal thresholds, bit for bit, at the same cost. The cloning term is learners.actor_step's per-row form with every weight 1 (with k = 0 one step is learners.actor_step's, and a one-arm program equals a one-arm learners.ActorOnly no-caution run, bit for bit; tested. The room check's own 'none' arm, trained five arms side by side in one vectorised program, differs from it by lane rounding; no mark depends on it)",
+    "band_penalty": {
+      "W": "[U(s_i, a) - U(s_i, a_i)]_+ (the paired form): the width at the actor's command minus the width at the row's recorded command at the same state, kept only where positive",
+      "U": "R_i x (max(eta(s, a), 1e-6) x unit) in float32, BCA's arithmetic (calibration/dose.frozen_level_dose, as learners_iw.per_row_dose); eta the frozen scale network of the gapped band (band stage), unit its residual scale",
+      "R_i": "unweighted: BCA's own threshold R_u on every row; per-step weighted: the row's own R(w(c_i)) from version 4's table of R(t) (band.per_step: the band record's table, the smallest grid mass at least the row's weight), so in the paired form the penalty at each state is the unweighted one times R(w(c_i)) / R_u",
+      "cannot_certify": "a row whose R_i is +inf ('cannot certify') uses the largest finite threshold of its arm's table (for the unweighted arm, R_u): the widest band the bank still certifies, the most caution that stays finite. Declared: 'the largest finite width over the bank' is read as the largest finite threshold, so that the penalty stays a function of the command. The count of such rows is recorded per arm (expected 0 for exact weights, see W3's why). An arm whose table holds no finite threshold does not run",
+      "gradient": "only the actor's parameters are differentiated, so the penalty reaches the actor only through the scale network's command input; the scale network's parameters, the unit, R_i and U(s_i, a_i) are constants (frozen)",
+      "U_at_recorded": "U(s_i, a_i) is computed once per row with the same in-program function"
+    },
+    "paired_form_why": "the cloud's exploratory Stage 1 (outputs/shift/beyond-the-data/stage1/spec.json, change A1) found that an unpaired penalty can reward going just past 80%: the oracle's literal |delta*(s, a)| falls from 80% to 81% on 82-84% of full-throttle states and moves the best throttle past 80% more often than the critic alone. Measured from the recorded command, the penalty is 0 at a = a_i and never rewards a command for being underrated",
+    "arms": {
+      "unweighted": "R_i = R_u",
+      "exact_strong": "R_i = R(w_strong(c_i)) from the exact strong table (the improvement mark L3's arm)",
+      "exact_mild": "R_i = R(w_mild(c_i)) from the exact mild table; reported (on the mild start bank)",
+      "estimated_strong": "optional, as in version 4: R_i from the estimated strong table at the classifier's weight of the row; only if the user asks (approval scope 'bca_lower_edge_estimated', naming the quality)"
+    },
+    "planned_arms": ["unweighted", "exact_strong", "exact_mild"],
+    "optional_arms": ["estimated_strong"],
+    "runs_only_if": [
+      "the report on all five seeds says M1, L1 and L2 pass",
+      "the user has said go for the lower edge's arms on this quality (approval scope 'bca_lower_edge', with the quality in approval qualities.bca_lower_edge; a go for the capped pull ('bca') does not open these arms)",
+      "the report was made by the code running now"
+    ],
+    "gate": "every reader of the band's width in lower_edge.py (band_shared, widths_at, logged_widths, band_shape, proxy_check, the runner of kind 'band', band_arms) calls learners_iw.require_gate on the band first: scope 'band' for the band stage's proxy check, 'bca_lower_edge' (and 'bca_lower_edge_estimated' for the optional arm) for the BCA arms; and it refuses a band fitted on other data",
+    "check_e_on_band_penalty": "reported only, per arm, before training: check (e) on the band's paired penalty with the room check's no-caution actor (does BCA's width rise past 80%?)",
+    "source": "restated from outputs/shift/beyond-the-data/stage1/code/harness.py (read from the repository, never imported by the run): one_step (here with a float64 step), band_terms' main form [delta*(s, a_i) - delta*(s, a)]_+, actor_step_w (with check 3's per-row cloning form) and check (e) (oracle_shape, for any penalty, with this specification's master seed)",
+    "room_check": {
+      "uses_bca": false,
+      "approval": "none (no BCA)",
+      "oracle": "W(s_i, a) = [delta*(s_i, a_i) - delta*(s_i, a)]_+ with delta*(s, a) = r(s, a) + 0.98 min_h Q_h(s', c(s')) - min_h Q_h(s, a): (s', r) one exact float64 step of thruster_chain.dynamics_jax from the row's state (the float64 of its float32 observation), differentiable in a; c the stall-aware controller (recorder.stall_aware); Q_h the frozen gapped critic's two heads at the float32-rounded normalised state; delta*(s_i, a_i) computed once per row with the same function",
+      "float64": "the training program is traced and run under jax enable_x64: the step is float64, while the actor, the critic and Adam stay float32. Adam's bias correction is then rounded from float64, so the k = 0 arm differs from the room check's 'none' arm by rounding, which training amplifies (on synthetic arrays of the full size the largest parameter difference reached 0.13 after 20,000 steps; learners.ActorOnly itself differs this way between runs with different numbers of arms). Its largest parameter difference and its strength against 'none' are reported (check (b)); the room mark compares arms of this one program",
+      "arms": {
+        "le_none": 0.0,
+        "le_oracle": 1.0,
+        "le_oracle_x1.5": 1.5
+      },
+      "arms_meaning": "the penalty scale k of each arm, side by side in one program: no penalty (L1's baseline), the oracle at k = 1 (L1) and at k = 1.5 (L2's slope)",
+      "slope_arms": ["le_oracle", "le_oracle_x1.5"],
+      "even_pull": {
+        "rule": "even pull (the cloning term times a constant) matched blind in strength to le_oracle with learners.match_even, strengths only, before any return, never extrapolated: on the room check's rungs x1.1, x1.25 and x1.5 (their strengths from the room record) and the extra rungs below (trained here with learners.ActorOnly from the same clone and stream). Strength: the RMS command change from the room check's 'none' arm on the 5,000 evaluation states. Reported only",
+        "extra_rungs": [2.0, 3.0],
+        "why_extra_rungs": "the cloud's matched even pull sat at x1.8-1.9 (alpha 5), above the room check's top rung"
+      },
+      "start_check": "the clone reproduces the room check's clone (actor SHA-256), recorded",
+      "lock": "room_lower_edge/seed<k>/record.json holds every arm's strength, the match, checks (b) and (e) and is written before any return is computed; actors.msgpack holds the actors"
+    },
+    "check_e": {
+      "source": "the harness's check (e) (oracle_shape, its change A2), with this specification's master seed",
+      "when": "every seed, before any oracle arm is trained; the frozen critic's surface only, no return",
+      "rows": 2000,
+      "rows_rule": "full-throttle-region training rows (prepared.region: the hard-water rows), default_rng([20261016, seed, 65]).choice, sorted",
+      "actor": "the room check's no-caution ('none') actor",
+      "grid": [0.7, 0.75, 0.78, 0.79, 0.8, 0.805, 0.81, 0.82, 0.83, 0.84, 0.85, 0.86, 0.88, 0.9, 0.95, 1.0],
+      "slope_points": [0.79, 0.8, 0.805, 0.81, 0.85, 0.9],
+      "knee": 0.8,
+      "just_past": 0.81,
+      "slope_point": 0.805,
+      "max_fall_share": 0.25,
+      "rule": "thruster 1 of the actor's command is set along the actor's own push to each grid throttle (the knee itself at 80%), the other thrusters staying at the actor's command; the penalty passes when (e1) W(81%) < W(80%) on at most max_fall_share of the rows, (e2) the mean of W rises from 80% to 81%, (e3) the mean slope of W along the push at 80.5% is positive and every slope is finite, and (e4) the best grid throttle for Q1 - W lies past 80% on fewer rows than for Q1 alone",
+      "e4_not_applicable": "version 5, after review (a choice the owner confirms by approving version 5): when Q1 alone never prefers a throttle past 80% on the check's rows (share 0), there is no over-preference past 80% to remove, and the harness's strict e4 (0 is not fewer than 0) could never pass whatever the penalty does. e4 is then recorded as not applicable and passes only if Q1 - W never prefers past 80% either (the penalty creates no preference past 80%); e1-e3 still check the shape. The harness's strict e4 is recorded beside it (e4_fewer_best_past80_than_q1). The harness was built on expert data, where Q1 alone preferred past 80% on 55-62% of the rows; below expert the data hold past-80% commands, so a share of 0 is plausible",
+      "on_failure": "the oracle penalty must rise past 80%: a seed whose oracle penalty fails stops (no arm is trained), its record and the report name the sub-checks that failed, and L1 and L2 fail. On the band's penalty the check is reported only"
+    },
+    "proxy_check": {
+      "why": "L2's prediction treats BCA's unweighted lower edge as acting like the oracle penalty at k = 1. This shows how far it does, before the owner's go for the lower edge's BCA arms (a review of version 5 found nothing measured it before L2 gates)",
+      "where": "the band stage (lower_edge.proxy_check), on the frozen gapped band, approval scope 'band'; no training, no return. The gapped band stage therefore also needs the seed's room check (its record is linked)",
+      "rows": "every kept training row, at the room check's no-caution ('none') actor's command a = pi_none(s_i)",
+      "measures": "BCA's paired penalty at R_u, [U(s_i, a) - U(s_i, a_i)]_+ (float32), and the oracle's, [delta*(s_i, a_i) - delta*(s_i, a)]_+ (float64 step): the ratio of their means (band_over_oracle: BCA's effective k against the oracle's 1), their Pearson and Spearman correlations, the share of rows where each is positive; and check (e) on BCA's penalty with the same actor and rule",
+      "use": "reported beside L2 in the report (proxy_check), with a note naming the seeds where check (e) on BCA's penalty fails; no rule judges it. The owner sees it with L2 before saying go for the lower edge's BCA arms",
+      "seconds": "about 2 per gapped seed (measured 1.8 s with compilation on synthetic arrays of the full size, 42,500 rows, one CPU; no ThrusterChain data); within the band stage's budget"
+    },
+    "L2_prediction": "predicted return change = (the strong-bank return slope per unit of k between le_oracle (k = 1) and le_oracle_x1.5 (k = 1.5), per seed, mean over seeds) x (the mean over kept training rows of R_i / R_u - 1 for the per-step exact strong arm on the frozen gapped band, refusals capped as above, mean over seeds). A proxy: it treats BCA's unweighted lower edge as acting like the oracle penalty at k = 1, and per-step weighting as raising k on each row to R_i / R_u; how far BCA's lower edge acts like the oracle's is reported beside it (proxy_check). The slope is taken above k = 1, where the unweighted lower edge sits and in the direction weighting moves it, because the response to k can saturate (the cloud's half-strength oracle arm did about as well as the full one)",
+    "expected": "unknown, written before any run. Weighting raises the penalty's scale by 0.05-0.30 on average over training rows (version 4's synthetic gapped banks: per-step R / R_u 1.05-1.37 per row), against 0.005-0.03 for the capped pull's dose. So L2 passes if return rises by about 6-36 return units or more per unit of k above k = 1 (the capped pull needed 62-360 per unit of dose). The cloud's exploratory room test (alpha 5, another critic, two seeds) found the oracle lower edge recovered about 90 of 99 lost points under strong current, but its half-strength arm did about as well (81.1 against 77.6, 75.7 against 82.4 points): if return has saturated at k = 1, the slope above it is near 0 and L2 fails"
+  },
+  "evaluation": {
+    "return": "exact undiscounted 100-step return of the final actor from each fixed start (deterministic)",
+    "marks_read": "return units (the raw 100-step return); points describe the data and the learned policies and no mark reads them",
+    "points": "100 * (J - J_random) / (J_stall_aware - J_random) per bank (D4RL's scale; world.points)",
+    "anchor_0": "the random quality on the start banks with fixed streams (stream 1002, qualities.start_bank_streams); its commands rounded to float32 as in the logs",
+    "anchor_100": "stall-aware controller (textbook gain capped at 80% throttle), rolled out as in version 4",
+    "anchor_returns": {
+      "random": [-800.29, -1061.42, -1351.41],
+      "stall_aware": [-35.19, -54.66, -80.61],
+      "laws": ["none", "mild", "strong"],
+      "source": "data.anchors on the shared start banks (iw/scout/v5_anchors_check.json), equal to the design's to 0.01"
+    },
+    "reference_rows": "every quality with and without the hold (hold probability 0: the same controller driving normally instead of holding) and the zero command, on the same banks and streams",
+    "version_4_anchor_retired": "version 4's 0 point was the recording controller (stream 1001); with random as the 0 anchor the 0-100 span is 765 / 1,007 / 1,271 return units, against version 4's 48 / 54 / 60",
+    "scout_anchor_returns_version_4": {
+      "none": [
+        -84.3,
+        -36.0
+      ],
+      "mild": [
+        -109.1,
+        -55.8
+      ],
+      "strong": [
+        -140.8,
+        -81.3
+      ]
+    },
+    "controllers": [
+      "plain TD3+BC gapped",
+      "plain TD3+BC full",
+      "room-check arms",
+      "BCA unweighted (if run)",
+      "BCA exact strong per row (if run)",
+      "BCA exact strong single threshold (if run)",
+      "lower-edge room arms (le_none, le_oracle, le_oracle_x1.5, the even rungs x2 and x3, and the matched even pull)",
+      "lower-edge BCA arms (unweighted, exact strong, exact mild; estimated strong if asked), if run"
+    ]
+  },
+  "seeds": {
+    "data_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "master": 20261016,
+    "streams": "np.random.default_rng([20261016, seed, tag])"
+  },
+  "pass_marks": [
+    {
+      "id": "D1",
+      "step": 1,
+      "rule": "ball removes >= 99% of holds; Z in [0.82, 0.87] (so the no-tilt in-ball share 1 - Z is 0.13-0.18); in-ball share by each seed's quadrature in [0.23, 0.28] under mild and [0.33, 0.39] under strong",
+      "why": "confirms the design before learning; ranges cover the ball's variation across seeds (radius 0.250-0.276 gives 0.246-0.265 and 0.352-0.371); single 300-episode log shares (standard error about 0.01) are reported, not marked",
+      "gate": "if it fails, stop: the band stage refuses unless a finished report under this specification, made by the code running now, covers all five seeds and says D1 passed (run.require_design)",
+      "per_quality": "unchanged from version 4. D1 is a property of the ball, which every quality shares, so it is judged per seed on the expert's quadrature: every quality's data build computes it itself, the records are identical across qualities (the summary refuses otherwise), and every quality's band gate reads its own report. If D1 fails, every quality stops. Each quality's own share of holds removed and in-ball shares are reported",
+      "thresholds": {
+        "holds_removed_min": 0.99,
+        "Z": [
+          0.82,
+          0.87
+        ],
+        "in_ball_mild": [
+          0.23,
+          0.28
+        ],
+        "in_ball_strong": [
+          0.33,
+          0.39
+        ]
+      }
+    },
+    {
+      "id": "M1",
+      "step": 3,
+      "rule": "coverage on held-out training-law steps outside the ball: pooled in [0.89, 0.94]; no seed below 0.86",
+      "why": "R is 95% credible that coverage >= 90%; expected 0.917 at 843 bank rows, standard deviation about 0.01-0.02 per seed",
+      "thresholds": {
+        "pooled": [
+          0.89,
+          0.94
+        ],
+        "seed_floor": 0.86
+      }
+    },
+    {
+      "id": "M2",
+      "step": 3,
+      "rule": "Spearman(U, exact |q - Q^pi|) on 5,000 held-out steps outside the ball, computed inside each current decile and averaged over the ten deciles: one-sided 95% t lower bound over the 5 seeds > 0; pooled Spearman and Spearman(U, noise map), pooled and within deciles, reported",
+      "why": "width, target noise and value all grow with c, so a pooled correlation could come from c alone",
+      "thresholds": {
+        "one_sided_lower_bound_above": 0.0
+      }
+    },
+    {
+      "id": "M3",
+      "step": 3,
+      "rule": "dose follows width: with rows of finite width sorted by U (kept training rows, gapped host, unweighted R), the dose never falls by more than 1e-6; every row supported when R is finite; the raw count of falls and the largest gap from the closed form 1 + 0.5 U / (U + unit) are reported",
+      "why": "bookkeeping. BCA computes the dose in float32 under jax.jit, so between neighbouring distinct widths it can come out one float32 step (about 1.2e-7) lower: on 42,500 random widths a strict 'never falls' rule found 3-8 falls per trial. 1e-6 is about 8 float32 steps near a dose of 1.3",
+      "thresholds": {
+        "max_dose_drop": 1e-06
+      }
+    },
+    {
+      "id": "W0",
+      "step": 4,
+      "kind": "unit check, not a control",
+      "rule": "weights 1 and test mass 1 reproduce the unweighted threshold bit for bit; under no tilt the per-step table is [the unweighted threshold] on the grid [1.0], and the per-step arm's widths and outcomes equal the unweighted arm's on every certified held-out step; every seed and both hosts",
+      "why": "under no tilt every exact weight is 1, so per-step weighted equals unweighted by construction; the empirical no-tilt control is in W4",
+      "thresholds": {
+        "bit_for_bit": true
+      }
+    },
+    {
+      "id": "W1",
+      "step": 4,
+      "rule": "exact-weighted coverage on test steps outside the ball, each step at its own threshold R(w(c)): pooled in [0.89, 0.96] under mild and under strong. The single-threshold version is reported beside it",
+      "why": "expected 0.92-0.94 at 277-627 effective rows (synthetic gapped banks, strong, expected_return_effect.per_step_synthetic_calculation: per step 0.931-0.936, the single threshold within about 0.0015 of it; banks with nothing removed gave 0.929-0.936); 0.89 allows clustering (about +-0.036 per seed under strong)",
+      "thresholds": {
+        "pooled": [
+          0.89,
+          0.96
+        ]
+      }
+    },
+    {
+      "id": "W2",
+      "step": 4,
+      "rule": "strong tilt, outside the ball: unweighted pooled < 0.88",
+      "why": "0.88 is about 4 points below the unweighted no-shift expectation, beyond pooled noise (about +-0.016); with W1, weighted is then at least 1 point higher. A paired test of exact minus unweighted would only restate R_w > R_u, so the gain is reported beside its no-shift expectation (about +0.013 under strong)",
+      "thresholds": {
+        "unweighted_pooled_below": 0.88
+      }
+    },
+    {
+      "id": "W3",
+      "step": 4,
+      "rule": "both per-step weighted arms refuse 100% of in-ball test steps, every tilt and seed; outside the ball the exact arm refuses 0% and the estimated arm refuses exactly the steps whose own threshold, as looked up on the grid (rounded up, band.per_step.lookup), is +inf (that share is reported); unweighted coverage inside the ball < outside, pooled, every tilt. The single-threshold arms' refusals are reported",
+      "why": "refusal holds by construction (bookkeeping); the finding is a finite band's over-confidence on the unseen common command. Exact weights do not reach +inf here: the largest exact weight (7.39) is about 1.2% of the gapped bank's total weight (about 638: about 842 kept rows of mean strong weight about 0.76, since the ball removes mostly high-current rows); a posterior draw fails to cross only when its test atom carries more than 10% of the draw's mass, which needs an exponential draw of about 9.6 or more (probability about 8e-5 per draw), and R is +inf only when more than 5% of the 1,000 draws fail (synthetic gapped banks: no refused step or row); classifier weights are not bounded, so the estimated arm may refuse a few steps by its own looked-up threshold, which W4 then counts as not covered",
+      "inside_versus_outside_minimum": "version 5: the clause 'unweighted coverage inside the ball < outside' is judged at a tilt only if every seed's test log has at least min_in_ball_steps steps inside the ball; otherwise it reads 'not judged: too few steps inside the ball'. The refusal clauses are judged everywhere. Expected: not judged for random (30-69 in-ball steps per log), judged everywhere else (medium-replay has 752 or more)",
+      "thresholds": {
+        "refused_inside": 1.0,
+        "refused_outside": 0.0,
+        "min_in_ball_steps": 500
+      }
+    },
+    {
+      "id": "W4",
+      "step": 4,
+      "rule": "per step (each step at its own threshold): strong tilt: |estimated-weighted - exact-weighted| pooled coverage <= 0.02; no tilt (empirical control): classifier fitted on two independent training-law samples gives pooled coverage within 0.02 of unweighted; the single-threshold gaps and the classifier slope on c (vs 0, 2 and 4) are reported",
+      "why": "correctly specified model, 300 episodes a side: slope error about +-0.3; EXPERIMENTS.md entry 5 found estimated weights can lose coverage with no shift",
+      "thresholds": {
+        "max_abs_gap": 0.02
+      }
+    },
+    {
+      "id": "R1",
+      "step": 5,
+      "rule": "room check, strong start bank: placed minus none >= 1.8 in return units (the raw 100-step return; mean over seeds) with one-sided 95% t lower bound > 0. Points are reported beside it. Placed minus even caution of matched strength is reported with its interval, and the report says on which seeds the matched arm was found (matching never extrapolates beyond the top rung, x1.5)",
+      "why": "is there room for caution at all; 1.8 return units is version 4's 3 points (v1's room mark): version 4's anchors on these start banks are -140.64 (recording controller) and -80.61 under strong, so 3 points = 1.8006 return units. The same number for every quality; below expert it is under 0.5% of the distance from the data's controller to the stall-aware controller, so there R1 effectively asks 'lower bound > 0'",
+      "gate": "if it fails, BCA training arms are not run; coverage is the result",
+      "gate_choice": "confirmed by the owner on 2026-10-13 (asked what the room check should compare caution placed by the exact error against, the owner answered 'No extra caution (Recommended)'): R1 gates on placed minus none; placed minus even caution of the same strength is reported beside it. Reason: the question for the return part is whether caution of BCA's kind can raise return at all",
+      "thresholds": {
+        "min_return": 1.8,
+        "one_sided_lower_bound_above": 0.0
+      }
+    },
+    {
+      "id": "R2",
+      "step": 5,
+      "rule": "after step 4, no training: predicted return change = mean over kept training rows of (per-step exact-weighted strong dose - unweighted dose), frozen band, times the strong-bank slope of return on dose from the room check's even arms (none, x1.1, x1.25, x1.5), pooled over seeds; |predicted| >= 1.8 in return units (version 5; the points prediction is reported beside it). The per-step dose of a row is BCA's dose at the row's own threshold R(w(c_i)), and 1.5 where that threshold is +inf. Reported beside it: the mean absolute dose change, the mean change on high-current rows (top tenth by c), the count of refused rows and the single-threshold prediction",
+      "why": "weighting changes only R (per row now), so each dose moves by at most 0.125 ln(R(w_i) / R_u) for a finite R; R1 tests a dose step of about 0.3-0.4, R2 the step weighting actually makes",
+      "gate": "if it fails, BCA training arms are not run; coverage is the result; expected to fail (see expected_return_effect)",
+      "per_quality": "expected to fail for the expert, as in version 4; unknown below expert: passing needs a slope of 62-360 return units per unit of dose (1.8 over a mean dose change of 0.005-0.029); version 4's expert slope was about 5.4-6.6, but low-quality hosts sit hundreds of units below the stall-aware controller. No interval: a false pass costs only BCA compute, and the improvement mark has its own bound with Holm's correction",
+      "thresholds": {
+        "min_abs_predicted_return": 1.8
+      }
+    },
+    {
+      "id": "I1",
+      "step": 5,
+      "runs_only_if": [
+        "M1 passes",
+        "R1 passes",
+        "R2 passes",
+        "the owner says go again for the capped pull's arms on this quality (approval scope 'bca', naming the quality)"
+      ],
+      "rule": "return on the strong start bank: per-row exact-weighted (strong) BCA minus unweighted BCA, paired over seeds; each quality's report records the paired difference and its one-sided t p-value (4 degrees of freedom; p = 1 when a seed's difference is not finite, so a failed seed fails the mark and its quality stays in the family); the summary judges it with Holm's correction over its family of k qualities (pass_marks_rules.holm_families: every quality whose report allows these arms; the i-th smallest p-value passes if it and every smaller one are at most 0.05 / (k - i + 1)); with k = 1 this is version 4's one-sided 95% bound > 0. The single-threshold exact-weighted arm minus unweighted, and points, are reported beside it",
+      "why": "the goal's return part; Holm keeps the chance of any false 'improvement' across qualities at 5% (five tests at 95% each would allow up to 23%)",
+      "thresholds": {
+        "one_sided_lower_bound_above": 0.0,
+        "holm_across_qualities": true,
+        "family_alpha": 0.05
+      }
+    },
+    {
+      "id": "L1",
+      "step": 5,
+      "name": "room for the lower edge (no BCA)",
+      "rule": "lower-edge room check (lower_edge.room_check), strong start bank: le_oracle minus le_none >= 1.8 in return units (mean over seeds) with one-sided 95% t lower bound > 0; points are reported beside it. A seed whose check (e) failed fails the mark (the report names the sub-checks that failed); the seeds where check (e)'s e4 was not applicable are reported. le_oracle minus the matched even pull is reported with its interval and the seeds on which the matched arm was found",
+      "why": "is there room for a lower edge at all, given a perfect (oracle) width? The same 1.8 return units (version 4's 3 points) as R1",
+      "gate": "if it fails, the lower edge's BCA arms are not run",
+      "thresholds": {
+        "min_return": 1.8,
+        "one_sided_lower_bound_above": 0.0
+      }
+    },
+    {
+      "id": "L2",
+      "step": 5,
+      "name": "can weighting move return through the lower edge",
+      "rule": "after step 4, no BCA training: the predicted return change of lower_edge.L2_prediction; |predicted| >= 1.8 in return units. Reported beside it: the slope in points, the scale change on high-current rows (top tenth by c), the exact mild arm's scale change, the refused rows, the largest finite threshold, and the proxy check (lower_edge.proxy_check: BCA's unweighted lower edge against the oracle's, their ratio of means and correlations, and check (e) on BCA's penalty; reported only). A seed whose check (e) failed fails the mark",
+      "why": "weighting changes only R, and in the lower edge R enters linearly: the penalty's scale moves by R(w(c_i)) / R_u - 1 (0.05-0.30 on average), where the capped pull's dose moved by 0.005-0.03",
+      "gate": "if it fails, the lower edge's BCA arms are not run",
+      "per_quality": "unknown for every quality (lower_edge.expected)",
+      "thresholds": {
+        "min_abs_predicted_return": 1.8
+      }
+    },
+    {
+      "id": "L3",
+      "step": 5,
+      "name": "improvement through the lower edge",
+      "runs_only_if": [
+        "M1 passes",
+        "L1 passes",
+        "L2 passes",
+        "the owner says go again for the lower edge's arms on this quality (approval scope 'bca_lower_edge', naming the quality)"
+      ],
+      "rule": "return on the strong start bank: the per-step exact-weighted (strong) lower edge minus the unweighted lower edge, paired over seeds; each quality's report records the paired difference and its one-sided t p-value (4 degrees of freedom; p = 1 when a seed's difference is not finite); the summary judges it with Holm's correction over its own family (separate from I1's; pass_marks_rules.holm_families: every quality whose report allows the lower edge's arms); with one quality it is a one-sided 95% bound > 0. Reported beside it: the exact mild arm minus unweighted on the mild bank, the estimated arm if run, and points",
+      "why": "the goal's return part, through the lower edge",
+      "thresholds": {
+        "one_sided_lower_bound_above": 0.0,
+        "holm_across_qualities": true,
+        "family_alpha": 0.05
+      }
+    }
+  ],
+  "reported_with_expectations_no_mark": {
+    "full_data_control_coverage": "same windows as W1-W2, per step and single threshold; no refusals by the ball",
+    "forecast_vs_realised_unweighted_coverage": "reported",
+    "R_weighted_over_R_unweighted": "per tilt: the single threshold's ratio (strong expected about 1.03-1.35, expected_return_effect.expected_R_ratio_strong) and, per step, the smallest, mean and largest ratio over the certified test steps (strong: the per-step ratio spans about 6% from the lightest to the heaviest step on the gapped host, expected_return_effect)",
+    "refused_by_own_threshold": "per per-step arm and tilt, the share of certified test steps whose own (looked-up) threshold is +inf (expected 0 for the exact arm), and beside it the count of steps possibly refused only by the grid's rounding (an upper bound, band.per_step.lookup)",
+    "single_threshold_coverage": "every per-step coverage has its single-threshold version beside it (expected within about 0.0015 under strong)",
+    "exact_minus_unweighted_coverage": "reported beside its no-shift expectation (about +0.013 under strong, from the smaller effective bank alone), per step and single threshold",
+    "in_ball_share_of_each_test_log": "reported",
+    "full_data_host_minus_gapped_host_strong": "> 0 (the gap's cost) for the expert; near 0 elsewhere (the hold is worth about nothing to the behaviour below expert, and for random only 0.12-0.17% of rows differ)",
+    "per_quality_points": "each quality's points with and without the hold (the start banks' reference rows) beside its plain TD3+BC points, gapped and full, per law (the summary's table)",
+    "M2_given_float_radius": "every quality: within each current decile, the partial rank correlation of width and critic error given the float radius (the length of a step's 10 float numbers), (r_UE - r_UF r_EF) / sqrt((1 - r_UF^2)(1 - r_EF^2)) from the three Spearman correlations, averaged over deciles, with its one-sided bound over seeds. At low qualities both width and error grow with float drift, so M2 may pass from drift alone; if M2 passes but this is near 0, the report says the width follows float drift, not error beyond it",
+    "if_bca_arms_run": {
+      "bca_unweighted_minus_plain_td3bc_strong": ">= 0",
+      "exact_minus_unweighted_none_bank_points": "small by the dose bound",
+      "single_threshold_minus_unweighted_strong_points": "reported beside I1",
+      "uncertified_refreshes": 0,
+      "refused_training_rows_per_refresh": "per-row arms: expected 0 for the exact arm (see W3's why)"
+    },
+    "exact_minus_unweighted_coverage_no_shift_strong": 0.013,
+    "lower_edge": {
+      "le_oracle_minus_matched_even_strong": "reported beside L1, with the seeds where the matched arm was found",
+      "check_e": "per seed: e1-e4 (and whether e4 was not applicable), the sub-checks that failed, the mean penalty along the throttle grid, the share of states where the critic alone and Q1 - W prefer past 80%",
+      "proxy_check": "per seed, beside L2 (lower_edge.proxy_check): BCA's unweighted lower edge against the oracle's at the room check's no-caution actor (ratio of means, Pearson and Spearman correlations) and check (e) on BCA's penalty. Expected: unknown; the prediction assumes a ratio near 1",
+      "check_b": "per seed: the k = 0 arm against the room check's 'none' arm (largest parameter difference, strength)",
+      "scale_change": "per seed and table: the mean over kept training rows of R_i / R_u - 1 (exact strong, exact mild, estimated strong), on high-current rows, refused rows and the largest finite threshold",
+      "if_bca_lower_edge_arms_run": "exact mild minus unweighted on the mild bank, estimated strong minus unweighted (if run), check (e) on each arm's penalty, refused rows per arm (expected 0 for exact weights)"
+    }
+  },
+  "compute": {
+    "cpus_available": 24,
+    "cpus_used": 20,
+    "max_processes_at_once": 20,
+    "one_process_per_cpu": true,
+    "qualities": 5,
+    "process_minutes": {
+      "start_banks_and_anchors_1_run": 1,
+      "data_25_runs": 25,
+      "host_runs_50x6.5": 325,
+      "room_check_25x12_to_15": [300, 375],
+      "room_lower_edge_25x7_to_10": [175, 250],
+      "evaluation_25x2.5": 63,
+      "bands_and_coverage_50_plus_50": 100
+    },
+    "total_process_minutes": [990, 1140],
+    "total_process_hours": [16.5, 19.0],
+    "wall_clock_hours": 1.5,
+    "room_lower_edge_seconds": "measured on synthetic arrays of the full size (42,500 rows, one CPU, the spec's 20,000 steps; no ThrusterChain data): 397 without matching: the clone 20, check (e) 3, the three oracle arms side by side 286 (4.8 s per 1,000 steps per arm), the two extra even rungs 88; matching adds 0-5 rounds of one even arm (about 45 each); evaluation of up to six more actors about 30",
+    "expert_column_process_minutes": [160, 175],
+    "data_build_seconds": "about 45 per quality and seed at full size, plus about 7 for the expert's ball and about 7 per quadrature (two quadratures below expert); the start banks and anchors about 1 minute (measured 2 s for the anchors' rollouts)",
+    "bca_lower_edge_arms_if_M1_L1_and_L2_pass": {
+      "process_minutes": 14,
+      "per": "quality where M1, L1 and L2 pass and the owner says go again",
+      "runs": "5 jobs x about 2.7 minutes per quality (the three arms one after another: about 137 s of training, 20 s of cloning; measured on synthetic arrays of the full size), plus their evaluation",
+      "wall_clock_minutes": 4
+    },
+    "bca_arms_if_R1_and_R2_pass": {
+      "process_minutes": 200,
+      "per": "quality where M1, R1 and R2 pass and the owner says go again",
+      "runs": "15 x about 13 per quality (5 seeds x 3 arms; the per-row arm adds about 90 s of tables over its 19 refreshes)",
+      "wall_clock_minutes": 15,
+      "all_five_qualities_wall_clock_hours": 1.0
+    },
+    "per_step_tables": "band stage: about 15 s per gapped seed (six tables), 7 s per full seed, plus about 2 s per gapped seed for L2's proxy check (lower_edge.proxy_check); coverage stage: lookups only",
+    "order": [
+      "the owner reads iw/MARKS_FOR_USER.md and approves version 5 (or asks for changes before anything is frozen); version 5 replaces version 4's run",
+      "freeze the spec (sidecar)",
+      "approval.json written by the orchestrator from the owner's words: scope band and coverage, one file for every quality; the band stage still waits for D1 (approval.timing)",
+      "data --start-banks: one job, the shared start banks and anchors (no approval needed)",
+      "data: 25 jobs, 5 qualities x 5 seeds; each finds the expert's ball and computes D1 on the expert's quadrature itself (no approval needed)",
+      "host: 50 jobs, gapped and full (no approval needed)",
+      "room check: 25 jobs (no BCA, no approval needed)",
+      "room check for the lower edge: 25 jobs, after the room check (no BCA, no approval needed); a seed whose oracle penalty fails check (e) stops there",
+      "evaluate hosts, room arms and the lower edge's room arms: 25 jobs (no approval needed)",
+      "report per quality: D1, R1 and L1 judged, the rest pending; stop here if D1 fails (enforced: each quality's band stage refuses unless its report, made by the code running now on all five seeds, says D1 passed; D1 is the same in every quality, so every quality stops)",
+      "bands (approval 'band', and the quality's report saying D1 passed): 50 jobs; the gapped band also reads the seed's room check (L2's proxy check uses its no-caution actor)",
+      "coverage (approval 'coverage'): 50 jobs",
+      "report per quality: every mark; R2 and L2 from the frozen band (no training); then summary: one table across qualities and the claim rules",
+      "BCA arms, per quality and per kind, only after the owner says go again for that kind on that quality: the capped pull's (scope 'bca': unweighted, exact strong per row, exact strong single threshold) where M1, R1 and R2 pass; the lower edge's (scope 'bca_lower_edge'; bca-lower-edge: unweighted, exact strong, exact mild) where M1, L1 and L2 pass, after the owner has seen L2 with its proxy check; a quality the owner declines is recorded in declined.json; then evaluate, report, and summary (I1 and L3 with Holm's correction, each over its own family, judged once every member has run or was declined)"
+    ],
+    "launcher": "launch.sh: QUALITIES (default all five) multiplies the job list; one process per quality, seed and split on its own CPU; logs named by stage, quality and seed; the start banks run once; room-lower-edge and bca-lower-edge run one job per quality and seed (all its arms in one process)",
+    "room_check_arms": 5,
+    "room_lower_edge_arms": "3 oracle arms side by side, 2 extra even rungs, 0-5 matching rounds of one arm"
+  },
+  "outcomes": {
+    "M_pass": "BCA's band works on known data",
+    "M1_fail": "calibration is broken here; stop, nothing later is interpretable",
+    "M2_fail": "coverage holds, but within a current the width does not point at critic error",
+    "W1_W2_pass": "headline: under a known shift, unweighted coverage falls short and exact weights restore it",
+    "W2_fail_unweighted_ge_88": "the scale network already adapts to c; this shift does not break the band, so weighting has nothing to fix",
+    "W1_fail": "weights or test mass wrong, or bank too small; check W0",
+    "W4_fail": "estimated weights are only as good as their classifier (EXPERIMENTS.md entries 3-5)",
+    "R1_fail": "no room for caution; return cannot improve here; coverage is the result",
+    "I1_pass": "calibrating BCA to the known test law, step by step, raises test return",
+    "R2_fail": "expected: weighting, even per step, moves BCA's dose too little to change return measurably; coverage is the result",
+    "I1_fail_after_R1_R2_pass": "the predicted effect did not appear",
+    "L1_fail": "even a perfect (oracle) lower edge does not raise return here; the lower edge cannot be shown to help on this quality",
+    "L1_fail_check_e": "check (e) stopped a seed: the report names the sub-checks that failed (the oracle penalty does not rise past 80%: e1-e3; or it does not move the critic's best throttle back below 80%: e4); no arm was trained on that seed, so the lower edge was not tested there",
+    "check_e_e4_not_applicable": "the critic alone never prefers a throttle past 80% on check (e)'s rows: there is no over-preference past 80% to remove; e4 is recorded as not applicable and the arms train (e1-e3 still check the penalty's shape); L1 then says whether the oracle lower edge helps anyway",
+    "L2_fail": "weighting moves the lower edge's penalty too little to change return measurably (or return has already saturated at the unweighted penalty's scale); its BCA arms are not run",
+    "L2_pass": "weighting the band's threshold is predicted to move return through the lower edge; its BCA arms are worth training (with the owner's go)",
+    "L3_pass": "through the lower edge, calibrating BCA to the known test law, step by step, raises test return",
+    "L3_fail_after_L1_L2_pass": "the predicted effect did not appear: BCA's width is not the oracle's, or the proxy overstated it"
+  },
+  "expected_return_effect": {
+    "dose_step_bound": "|dose(R_w) - dose(R_u)| <= 0.125 ln(R_w / R_u) per row, since d dose / d ln R = 0.5 x / (1 + x)^2 <= 0.125, x = R * scale; per step R_w is the row's own R(w(c_i))",
+    "expected_R_ratio_strong": {
+      "scale_already_follows_c": [
+        1.03,
+        1.1
+      ],
+      "at_W2_edge_unweighted_0.88": [
+        1.15,
+        1.2
+      ],
+      "unweighted_0.85": [
+        1.3,
+        1.35
+      ],
+      "source": "the single threshold's R_w / R_u in per_step_synthetic_calculation: gapped host 1.055 / 1.190 / 1.317, full-data host (nothing removed) 1.036 / 1.181 / 1.308. The older values (1.05-1.1, 1.3 and 1.5) came from a cruder synthetic setting and are replaced"
+    },
+    "expected_dose_step": [
+      0.005,
+      0.03
+    ],
+    "per_step_synthetic_calculation": {
+      "source": "iw/scout/r2_per_step_expectation.py, setting 'gap' (output iw/scout/r2_per_step_expectation.txt): the gapped host that R2 and W1 are judged on. No ThrusterChain data, no network. 30 synthetic banks per scenario: 1,000 rows from the training law, each kept with probability 1 - g_in(c), where g_in(c) = clip(0.70 (c - 0.24), 0, 1) models the ball's removal (it reproduces the seed-0 ball's in-ball shares 0.157 / 0.259 / 0.364 and Z = 0.843); exact strong weights; wbcp.calibrate (0.1, 0.95, 1,000 draws); the table on the grid of ratio 1.01 (403 points, 0.135 to 7.39); 20,000 kept training rows and 40,000 strong-law test steps outside the ball, thinned the same way; the single threshold at the gapped test mass 2.29 (quadrature); the unit and W2's edge set on the gapped laws; dose 1 + 0.5 x / (1 + x) with x = R x scale (1.5 if R = +inf)",
+      "bank": {
+        "kept_rows": 842,
+        "total_strong_weight": 638,
+        "mean_strong_weight": 0.757,
+        "kish_rows": 278,
+        "heaviest_weight_share_of_total": 0.0116,
+        "exponential_draw_for_one_failed_draw_at_7.39": 9.6,
+        "probability_per_draw": 7.6e-05
+      },
+      "why_per_step_moves_little": "a step's own weight enters wbcp.calibrate only as the test atom, and the largest exact weight (7.39) is about 1.2% of the gapped bank's total weight (about 638: about 842 kept rows of mean weight about 0.76), so R moves by only about 6% (5.6-6.6%) from the lightest step to the heaviest; the bank weights, which per step and single threshold share, do almost all the work",
+      "scenarios": {
+        "scale_already_follows_c": {
+          "R_single_over_R_u": 1.055,
+          "R_per_step_over_R_u_lightest_to_heaviest": [
+            1.046,
+            1.105
+          ],
+          "mean_dose_change": 0.0052,
+          "high_current_dose_change": 0.0053,
+          "largest_dose_change_any_row": 0.0088,
+          "heaviest_row": {
+            "x_u": 3.67,
+            "dose_change": 0.0079,
+            "minus_single": 0.0037
+          },
+          "per_step_minus_single_mean_and_high_current": [
+            -0.0007,
+            0.0007
+          ],
+          "coverage_unweighted_single_per_step": [
+            0.917,
+            0.931,
+            0.931
+          ]
+        },
+        "at_W2_edge_unweighted_0.88": {
+          "R_single_over_R_u": 1.19,
+          "R_per_step_over_R_u_lightest_to_heaviest": [
+            1.173,
+            1.251
+          ],
+          "mean_dose_change": 0.0182,
+          "high_current_dose_change": 0.0203,
+          "largest_dose_change_any_row": 0.0247,
+          "heaviest_row": {
+            "x_u": 1.74,
+            "dose_change": 0.0247,
+            "minus_single": 0.0054
+          },
+          "per_step_minus_single_mean_and_high_current": [
+            -0.0012,
+            0.001
+          ],
+          "coverage_unweighted_single_per_step": [
+            0.88,
+            0.932,
+            0.933
+          ]
+        },
+        "unweighted_0.85": {
+          "R_single_over_R_u": 1.317,
+          "R_per_step_over_R_u_lightest_to_heaviest": [
+            1.299,
+            1.373
+          ],
+          "mean_dose_change": 0.0293,
+          "high_current_dose_change": 0.031,
+          "largest_dose_change_any_row": 0.0344,
+          "heaviest_row": {
+            "x_u": 1.73,
+            "dose_change": 0.0344,
+            "minus_single": 0.0043
+          },
+          "per_step_minus_single_mean_and_high_current": [
+            -0.0008,
+            0.0008
+          ],
+          "coverage_unweighted_single_per_step": [
+            0.849,
+            0.934,
+            0.936
+          ]
+        }
+      },
+      "heaviest_rows": "on the heaviest possible row (c = 1.1, w = 7.39) per-step weighting moves the dose by 0.5 x (x_w / (1 + x_w) - x_u / (1 + x_u)), x = R x the row's scale: x_u is about 3.7 when the scale already follows c (the scale at c = 1.1 is (0.3 + 2.2) / unit, about 2.1), giving 0.008, and about 1.7 in the two scenarios where the scale ignores c (scale 1), giving 0.025 and 0.034, where it is also the largest change on any row (when the scale follows c the largest, 0.009, falls on rows with x near 1). On the heaviest row that is 0.004-0.005 more than the single threshold gives it; on the strongest-current tenth of rows per step gives 0.0007-0.0010 more than the single threshold, and over all rows 0.0007-0.0012 less (most training rows are light)",
+      "refused_rows": 0,
+      "tables_monotone": true,
+      "no_gap_reference": {
+        "setting": "setting 'no-gap' of the same script (output iw/scout/r2_per_step_expectation_no_gap.txt): version 4's first calculation, for the full-data host: 843 bank rows and the training rows from the training law with nothing removed (mean weight 1, total about 843, Kish about 300), the full-data test mass 2.84. It understates the per-step effect on the gapped host and is kept only for comparison",
+        "R_single_over_R_u": [
+          1.036,
+          1.181,
+          1.308
+        ],
+        "R_per_step_spread_lightest_to_heaviest": "about 4% (3.4-3.9%)",
+        "mean_dose_change": [
+          0.0032,
+          0.018,
+          0.0286
+        ],
+        "largest_dose_change_any_row": [
+          0.0062,
+          0.0213,
+          0.0323
+        ],
+        "coverage_per_step": [
+          0.929,
+          0.934,
+          0.936
+        ]
+      }
+    },
+    "v1_points_per_unit_dose": [
+      9,
+      11
+    ],
+    "v1_source": "outputs/shift/stop-report/README.md check 3 (alpha 5, old recorder): even x1.5 / x2 / x3 over none = +5.6 / +9.4 / +17.2 points",
+    "expected_return_change_points": "under 0.4: the mean per-step dose change on the gapped host (0.005-0.029) times 9-11 points per unit of dose is 0.05-0.32 points; even the largest change on any row (0.034) times 11 is 0.38",
+    "expected_dose_step_note": "the mean per-step dose change over kept training rows in the three scenarios of per_step_synthetic_calculation (gapped host 0.005 / 0.018 / 0.029)",
+    "expectation": "R2 fails, per step as with the single threshold; the BCA training arms are not run; coverage (W1-W2) is the result",
+    "version_5_note": "these numbers are version 4's, for the expert column (version 4's points, 0 = the recording controller: 1 point = about 0.6 return units under strong, so under 0.4 points is under 0.24 return units against R2's 1.8). Below expert the slope of return on dose is unknown (qualities.expected_* and pass_marks R2.per_quality)"
+  },
+  "changes_after_review": "see SPEC.md, sections 'Changes after review' (version 2), 'Changes in version 3', 'Changes in version 4' (with its part 'After a review of version 4') and 'Changes in version 5' (with its part 'After a review of version 5')",
+  "pass_marks_rules": {
+    "per_quality": "version 5: every mark is judged separately for each quality, on that quality's five seeds, with the same numbers; nothing is pooled across qualities and no threshold differs by quality",
+    "claims": {
+      "mechanics": {
+        "marks": ["M1", "M2", "M3", "W0"],
+        "claim": "BCA's mechanics work on this quality"
+      },
+      "coverage": {
+        "marks": ["W1", "W2"],
+        "claim": "weighting restores coverage on this quality"
+      },
+      "return": {
+        "marks": ["I1"],
+        "claim": "weighting raises return on this quality (I1 after Holm's correction)"
+      },
+      "return_lower_edge": {
+        "marks": ["L3"],
+        "claim": "weighting raises return through the lower edge on this quality (L3 after Holm's correction)"
+      }
+    },
+    "claims_rule": "a claim is made for a quality only where every mark it names passes on that quality; the table across qualities describes the results and judges nothing",
+    "summary": "run.py summary: one table across qualities (the data's points with and without the hold, plain TD3+BC points, every mark's status, the claims); it refuses if a report fails its sidecar, sits in another quality's folder than the one it names, or carries another specification or other code than the code running now, different balls for a seed, or different D1 records for a seed. Marks with holm_across_qualities are judged there, by holm_families",
+    "numbers": "every pass-mark number is pass_marks[i].thresholds; run.py reads them from this file after checking its SHA-256 and holds none of its own",
+    "seeds": "a mark pooled over seeds is judged only when the report covers all five data seeds; with fewer it is 'pending' (its preview is shown)",
+    "invalid_band": "if BCA's band has no valid refresh on a seed, every mark that needs the band (M1-M3, W0-W4, R2, L2) fails on that seed; it never stays pending",
+    "records": "the report refuses when any record it judges was made by other code than the code running now; when a record names another quality or seed than the folder it was read from, or links a record outside its quality's folder (the shared start banks excepted) or of another seed (every stage record names its quality and seed); or when a record no longer matches the record it was built on (band -> host, and the room check on the gapped host; coverage -> band and host, room -> host, room_lower_edge -> host and room, bca_lower_edge -> band, host and room, evaluate -> the scored controllers' records and the start banks). The report also records whether the code running now is the code the approval names (code_is_approved, reported); the band, coverage and BCA stages refuse any other code",
+    "holm_families": {
+      "rule": "each mark with holm_across_qualities is its own family: I1 (the capped pull) and L3 (the lower edge) are corrected separately, each at 5%. A mark's family is every quality whose report allows its arms (I1: bca_allowed, that is M1, R1 and R2 pass on all five seeds; L3: bca_lower_edge_allowed, M1, L1 and L2), plus any quality where it ran. It is fixed by the marks that gate the arms, never by when the summary runs",
+      "member_p_value": "a member whose arms ran gives its one-sided p-value; a missing or non-finite p-value (a seed whose return is not finite) counts as 1, so that member fails and stays in the family",
+      "declined": "a member the owner decides not to run counts as a fail with p = 1, so declining never loosens the bar for the others. The decision is recorded only by the orchestrator from the owner's words, in runs/shift_iw_v5/declined.json with a sha256sum sidecar: {kind 'shift-iw-declined', spec_sha256, user_words_verbatim, declined: {'I1' or 'L3': [qualities]}}; the summary refuses a file that does not verify",
+      "when_judged": "only when every quality's report is complete and every member has run or was declined; until then the family's marks and the claims that name them read 'pending' (a claim made early could be withdrawn when a later member runs)"
+    }
+  },
+  "approval": {
+    "file": "runs/shift_iw_v5/approval.json with a sha256sum sidecar, written only by the orchestrator after the user has read the pass marks (run.py approval-template prints the body to fill in); one file covers every quality",
+    "layout": "runs/shift_iw_v5/<quality>/{data, host, room, room_lower_edge, band, coverage, bca, bca_lower_edge, evaluate, report}, with runs/shift_iw_v5/start_banks, approval.json, declined.json (if any) and summary shared; no stage reads another quality's records, and the report refuses a record that names another quality or seed than its folder",
+    "holds": [
+      "kind 'shift-iw-approval'",
+      "the user's words verbatim",
+      "spec_sha256: SHA-256 of this file",
+      "code_sha256: SHA-256 of every code file the run loads from the repository: experiments/shift_iw (with launch.sh) and every repository module the stage runner imports, package __init__ files included (learners_iw.CODE_FILES_REUSED: 32 files, among them runtime/networks.py, runtime/published.py, calibration/bank.py, experiments/signal/lq_harness.py and gapped_lq.py, experiments/truth/gap.py, experiments/shift/dataset.py and acceptance.py); a test checks in a fresh process that every repository module loaded is listed. Installed libraries (JAX, NumPy, SciPy, Flax, Optax) are not hashed; every stage record holds their versions",
+      "scope",
+      "qualities: for each BCA-arm scope in the scope, the qualities the user's go covers ({scope: [quality, ...]}); the stage runner refuses a quality not named"
+    ],
+    "scopes": {
+      "band": "fit BCA's band on each frozen host critic (every quality)",
+      "coverage": "coverage of every arm (every quality)",
+      "bca": "the capped pull's three co-trained arms (unweighted, exact strong per row, exact strong single threshold), only after the user's go for this kind of arm, for the qualities that go names, and only where M1, R1 and R2 pass",
+      "bca_estimated": "the capped pull's optional estimated-weighted arm (per row), only if the user asks for it, for the qualities named",
+      "bca_lower_edge": "the lower edge's three actor-only arms (unweighted, exact strong, exact mild), only after the user's own go for this kind of arm (separate from 'bca'), for the qualities that go names, and only where M1, L1 and L2 pass",
+      "bca_lower_edge_estimated": "the lower edge's optional estimated strong arm, only if the user asks for it, for the qualities named"
+    },
+    "declined": "runs/shift_iw_v5/declined.json (pass_marks_rules.holm_families.declined): the owner's decision not to run a quality's arms of one kind, written only by the orchestrator from the owner's words; the summary reads it",
+    "checked": "re-read from disk at every BCA call; any change to this file or to a listed code file voids it",
+    "timing": "the orchestrator may write it right after freezing, from the owner's approval of version 5 (version 4's 'Yes, freeze and run' does not cover version 5); each quality's band stage still refuses until that quality's first report, made by the code running now on all five seeds, says D1 passed (run.require_design), so the design check cannot be skipped"
+  }
+}
