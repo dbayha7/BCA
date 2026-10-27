@@ -1,0 +1,33 @@
+{
+  "schema": "thrusterchain.full_benchmark_spec.v1",
+  "profile": "full",
+  "cases": [
+    {"id": "random-r1", "behavior": "random", "data_seed": 2026102701, "train_seed": 2026102801},
+    {"id": "random-r2", "behavior": "random", "data_seed": 2026102702, "train_seed": 2026102802},
+    {"id": "random-r3", "behavior": "random", "data_seed": 2026102703, "train_seed": 2026102803},
+    {"id": "feedback-weak-r1", "behavior": "feedback_weak", "data_seed": 2026102701, "train_seed": 2026102801},
+    {"id": "feedback-weak-r2", "behavior": "feedback_weak", "data_seed": 2026102702, "train_seed": 2026102802},
+    {"id": "feedback-weak-r3", "behavior": "feedback_weak", "data_seed": 2026102703, "train_seed": 2026102803},
+    {"id": "feedback-strong-r1", "behavior": "feedback_strong", "data_seed": 2026102701, "train_seed": 2026102801},
+    {"id": "feedback-strong-r2", "behavior": "feedback_strong", "data_seed": 2026102702, "train_seed": 2026102802},
+    {"id": "feedback-strong-r3", "behavior": "feedback_strong", "data_seed": 2026102703, "train_seed": 2026102803},
+    {"id": "mixture-r1", "behavior": "mixed_random_strong", "data_seed": 2026102701, "train_seed": 2026102801},
+    {"id": "mixture-r2", "behavior": "mixed_random_strong", "data_seed": 2026102702, "train_seed": 2026102802},
+    {"id": "mixture-r3", "behavior": "mixed_random_strong", "data_seed": 2026102703, "train_seed": 2026102803}
+  ],
+  "methods": ["td3bc", "iql", "cql", "rebrac", "unifloral-unified"],
+  "episodes_per_dataset": 1000,
+  "critic_rounds": 1000000,
+  "chunk_critic_rounds": 10000,
+  "batch_size": 256,
+  "starts": ["recorded", "strong_current", "big_waves", "big_kicks"],
+  "shifts": ["baseline", "attenuated_thruster", "bounded_disturbance", "combined"],
+  "evaluation_seeds": [2036102701, 2036102702, 2036102703, 2036102704, 2036102705],
+  "expectations": {
+    "H1": "Expected: mean discounted frozen-policy return for strong-feedback training exceeds random training in the recorded/baseline cell, averaged across five methods and three matched dataset/training replicates. This is descriptive; collector labels do not establish the result.",
+    "H2": "Expected: the mean paired discounted-return difference strong-current minus recorded is negative, averaged across all 60 frozen policies and four dynamics scenarios, with five paired episodes per cell. This need not hold for every policy or replicate.",
+    "H3": "No directional prediction is registered for actuator attenuation or stochastic disturbances.",
+    "selection": "Final checkpoint only; no online simulator selection, no online parameter updates, no hyperparameter search.",
+    "scope": "Scenario families were inspected during development; fresh episode seeds do not establish unseen-task generalization. Three dataset/training replicates limit uncertainty resolution."
+  }
+}

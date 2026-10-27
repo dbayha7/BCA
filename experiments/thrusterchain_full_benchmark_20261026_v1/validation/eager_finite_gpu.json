@@ -1,0 +1,96 @@
+{
+  "device": "cuda:0",
+  "jax": "0.5.3",
+  "numpy": "1.26.4",
+  "precision": "highest",
+  "dataset_sha256": "711890d53f7921bc698445961a4468fc31cc27a04c3122a7bbf8aa6a0bf79f35",
+  "batch_size": 256,
+  "parity_steps": [
+    {
+      "state_bitwise_equal": true,
+      "rng_equal": true,
+      "metrics_equal": true,
+      "counters_equal": true
+    },
+    {
+      "state_bitwise_equal": true,
+      "rng_equal": true,
+      "metrics_equal": true,
+      "counters_equal": true
+    },
+    {
+      "state_bitwise_equal": true,
+      "rng_equal": true,
+      "metrics_equal": true,
+      "counters_equal": true
+    },
+    {
+      "state_bitwise_equal": true,
+      "rng_equal": true,
+      "metrics_equal": true,
+      "counters_equal": true
+    }
+  ],
+  "nonfinite_rollback": {
+    "original": {
+      "state": {
+        "raised": true,
+        "checkpoint_unchanged": true,
+        "rng_unchanged": true
+      },
+      "metrics": {
+        "raised": true,
+        "checkpoint_unchanged": true,
+        "rng_unchanged": true
+      }
+    },
+    "device": {
+      "state": {
+        "raised": true,
+        "checkpoint_unchanged": true,
+        "rng_unchanged": true
+      },
+      "metrics": {
+        "raised": true,
+        "checkpoint_unchanged": true,
+        "rng_unchanged": true
+      }
+    }
+  },
+  "timed_steps_each": 12,
+  "timings_seconds": {
+    "original": [
+      0.5556245760000138,
+      0.5272660869999299,
+      0.504507708999995,
+      0.5671728029999485,
+      0.5684690990000263,
+      0.4995479770000202,
+      0.5183514850000392,
+      0.5332736329999079,
+      0.4742409939999561,
+      0.5107381820000683,
+      0.5217851639999935,
+      0.5061420030000363
+    ],
+    "device": [
+      0.5582459460000564,
+      0.4599177630000213,
+      0.45087914399994133,
+      0.5088579629999685,
+      0.478857961000017,
+      0.4406487669999706,
+      0.5338519939999742,
+      0.5019106639999791,
+      0.4447909630000595,
+      0.4812737869999637,
+      0.4411298520000173,
+      0.4434505880000188
+    ]
+  },
+  "mean_seconds": {
+    "original": 0.5239266426666612,
+    "device": 0.4786512826666656
+  },
+  "scope": "eager adapter.update only, native learner arithmetic unchanged; includes finite checks and host metrics synchronization, excludes runner counters, checkpointing and evaluation"
+}
