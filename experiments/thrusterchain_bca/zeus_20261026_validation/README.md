@@ -1,4 +1,4 @@
-> Current handoff (2026-10-27): see [Zeus retry and preserved experiment record](HANDOFF_20261027.md). The interrupted support-shift attempt is archived by copy; the separate retry requires a process-absence check and has not started. The following notes are chronological records, not the current run status.
+> Current handoff (2026-10-27): experiment execution is moving to Titan. Zeus retry 2 was canceled after the two seed-0 warmups; no BCA policy comparison completed. See [Titan continuation proposal and preserved checkpoints](titan_continuation_20261027/PROPOSAL.md). The original supervisors remain non-resumable. The following notes are chronological records, not the current run status.
 
 # Zeus validation receipt — 2026-10-26
 
