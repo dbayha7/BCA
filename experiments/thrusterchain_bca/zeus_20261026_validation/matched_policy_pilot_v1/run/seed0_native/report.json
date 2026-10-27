@@ -1,0 +1,172 @@
+{
+  "actor_manifest": "actor_manifest.json",
+  "actor_manifest_sha256": "dd4c4ab1ef93869cc71b7e869c10e843ba1b19890622d313f457d56448511a0f",
+  "additional_updates": {
+    "actor": 1000,
+    "actor_target": 1000,
+    "aux_fit_attempts": 2000,
+    "auxiliary": 2000,
+    "critic": 2000,
+    "critic_target": 1000,
+    "outer_steps": 1000,
+    "refresh_accepted": 1,
+    "refresh_attempts": 1
+  },
+  "arm": "native",
+  "checks": {
+    "actor_reference_equal": true,
+    "finite": true,
+    "native_view_equal": true,
+    "positive_unit": true,
+    "reference_valid": true
+  },
+  "data_scope": "Original 768 logged training episodes and original 128 calibration episodes only.",
+  "elapsed_seconds": 141.73465376000001,
+  "error": null,
+  "execution_counts_known": true,
+  "final_absolute_counts": {
+    "actor": 11000,
+    "actor_target": 11000,
+    "aux_fit_attempts": 22000,
+    "auxiliary": 22000,
+    "critic": 22000,
+    "critic_budget": 22000,
+    "critic_target": 11000,
+    "last_refresh_critic": 21000,
+    "next_refresh_index": 4,
+    "outer_steps": 11000,
+    "phase": 0,
+    "reference_ready": true,
+    "refresh_accepted": 4,
+    "refresh_attempts": 4
+  },
+  "final_reference": {
+    "lambda_hat": 1.1885124444961548,
+    "lambda_hpd": 1.4930858612060547,
+    "n_eff": 128.0,
+    "ready": true,
+    "residual_scale": 2.6521096229553223,
+    "threshold": 1.4930858612060547
+  },
+  "initial_absolute_counts": {
+    "actor": 10000,
+    "actor_target": 10000,
+    "aux_fit_attempts": 20000,
+    "auxiliary": 20000,
+    "critic": 20000,
+    "critic_budget": 20000,
+    "critic_target": 10000,
+    "last_refresh_critic": 20000,
+    "next_refresh_index": 3,
+    "outer_steps": 10000,
+    "phase": 0,
+    "reference_ready": true,
+    "refresh_accepted": 3,
+    "refresh_attempts": 3
+  },
+  "initial_reference": {
+    "lambda_hat": 1.091724157333374,
+    "lambda_hpd": 1.3716533184051514,
+    "n_eff": 128.0,
+    "ready": true,
+    "residual_scale": 2.6822597980499268,
+    "threshold": 1.3716533184051514
+  },
+  "last_update_metrics": {
+    "arm": "native",
+    "auxiliary": {
+      "scale_fit_accepted": true,
+      "scale_inputs_valid": true,
+      "scale_loss": 0.010030826553702354
+    },
+    "committed": true,
+    "counts": {
+      "actor": 11000,
+      "actor_target": 11000,
+      "aux_fit_attempts": 22000,
+      "auxiliary": 22000,
+      "critic": 22000,
+      "critic_budget": 22000,
+      "critic_target": 11000,
+      "last_refresh_critic": 21000,
+      "next_refresh_index": 4,
+      "outer_steps": 11000,
+      "phase": 0,
+      "reference_ready": true,
+      "refresh_accepted": 4,
+      "refresh_attempts": 4
+    },
+    "kappa": 0.0,
+    "native": {
+      "actor_loss": 2.8725571632385254,
+      "actor_penalty_term": 0.0,
+      "bc_loss": 0.3746841847896576,
+      "critic_loss_this_call": 5.729857444763184,
+      "outer_completed": true,
+      "penalty_mean": 0.0,
+      "q_loss": 5.899990081787109,
+      "q_mean": -69.23023986816406,
+      "q_scale_coefficient": 0.03608066588640213,
+      "width_mean": 0.0
+    },
+    "refresh_due": false
+  },
+  "ledger": {
+    "attempted_uncommitted_updates": {},
+    "checkpoint_selection_reads": 0,
+    "committed_additional_updates": {
+      "actor": 1000,
+      "actor_target": 1000,
+      "aux_fit_attempts": 2000,
+      "auxiliary": 2000,
+      "critic": 2000,
+      "critic_target": 1000,
+      "outer_steps": 1000,
+      "refresh_accepted": 1,
+      "refresh_attempts": 1
+    },
+    "evaluation_episodes": 0,
+    "forced_kill_counts": "Last progress is a committed lower bound; up to 20 further critic/auxiliary dispatches may be unrecorded.",
+    "simulator_transitions": 0
+  },
+  "limitations": [
+    "Exploratory continuation from one checkpoint; two RNG streams are not independent initializations.",
+    "Calibration episodes reused; no selected-action or OOD coverage claim.",
+    "No simulator evaluation or policy advantage conclusion in this worker."
+  ],
+  "original_checkpoint_unchanged": {
+    "calibration_refreshes": 0,
+    "calibrator_updates": 0,
+    "full_state_runtime_encoding_sha256": "7be4b64d104aeb9db600a16f9692547c0172c440ddc4b6553b6987cd21a8cb2b",
+    "full_state_unchanged": true,
+    "inference_unchanged": true,
+    "optimizer_updates": 0
+  },
+  "protocol_sha256": "df37c490612e4d489a27a083305284bd4a244708735e482f0164629936465908",
+  "rng_fork": {
+    "aux_seed": 2026102683,
+    "forked_aux_rng": [
+      3596363188,
+      4074811159
+    ],
+    "forked_native_rng": [
+      2945050840,
+      3327210046
+    ],
+    "native_seed": 2026102681,
+    "operation": "fold_in saved checkpoint keys with paired stream IDs",
+    "saved_aux_rng": [
+      2792363408,
+      3268241402
+    ],
+    "saved_native_rng": [
+      981639397,
+      1793059345
+    ]
+  },
+  "run_id": "seed0_native",
+  "schema": "unifloral.matched_policy.training_result.v1",
+  "state_manifest_sha256": "f768b5550236d74ca6ade3d4b47fdeecf9081ba5603edf1388856882881a2918",
+  "status": "completed_bounded_policy_training",
+  "stream_index": 0
+}

@@ -1,0 +1,30 @@
+commit: 67209d2 Near-80: results 20261020T115246Z
+python: 3.10.20 2.2.6 0.6.2
+test_cannot_certify_gives_the_largest_finite_width (experiments.shift_iw.test_lower_edge.BandPenaltyTest) ... ok
+test_gradient_reaches_the_actor_only_through_the_scale_networks_command_input (experiments.shift_iw.test_lower_edge.BandPenaltyTest)
+With the scale network's command-input weights set to 0 the penalty no longer depends on the command, and ... ok
+test_k_zero_is_learners_actor_step_and_a_one_arm_actor_only_run_bit_for_bit (experiments.shift_iw.test_lower_edge.BandPenaltyTest)
+With k = 0 one step is learners.actor_step's, and a one-arm program equals a one-arm learners.ActorOnly ... ok
+test_per_step_R_scales_the_penalty_per_state (experiments.shift_iw.test_lower_edge.BandPenaltyTest)
+In the paired form the penalty at each state scales with that state's own R: W(R_i) = (R_i / R_u) W(R_u). ... ok
+test_weights_of_one_give_the_unweighted_arm (experiments.shift_iw.test_lower_edge.BandPenaltyTest)
+Per-step thresholds all equal to R_u: the per-step arm is the unweighted arm bit for bit. ... ok
+test_width_is_bcas_own (experiments.shift_iw.test_lower_edge.BandPenaltyTest)
+U = R x unit x max(eta, 1e-6) in float32, equal to BCA's own readout at the recorded commands. ... ok
+test_actor_step (experiments.shift_iw.test_lower_edge.HarnessTest)
+With no penalty the harness's actor_step_w (check 3's per-row cloning form) and ours are the same step; ... ok
+test_one_step_oracle (experiments.shift_iw.test_lower_edge.HarnessTest)
+delta*: the harness's float64 readout equals ours to 1e-9; its float32 in-program step is within its own ... ok
+test_k_zero_is_the_room_checks_step_up_to_adams_rounding (experiments.shift_iw.test_lower_edge.OracleTest)
+One step of the float64-step program with k = 0 equals learners.actor_step except for Adam's bias ... ok
+test_the_step_is_exact_float64 (experiments.shift_iw.test_lower_edge.OracleTest)
+The in-program delta* (float64 step under enable_x64) equals the float64 reference computed outside the ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 35.902s
+
+OK
+79.63user 9.37system 0:42.40elapsed 209%CPU (0avgtext+0avgdata 1245748maxresident)k
+976inputs+8outputs (5major+412711minor)pagefaults 0swaps
+unittest exit: 0
+

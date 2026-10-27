@@ -1,0 +1,18 @@
+{
+  "schema": "unifloral.development_mechanism.amendment.v1",
+  "base_protocol_sha256": "e2d3f63ad6f8e66cb1a0041ee4faa4955d6e551dc4cd6711478c66f79c8d200e",
+  "reason": "Additional methodology review received after the initial definition freeze but before any detailed numeric inputs were loaded for this audit",
+  "prior_definition_preserved": true,
+  "outcomes_inspected_since_initial_freeze": false,
+  "additions": {
+    "partial_pearson_additional_controls": "Also correlate U and signed error after removing both centered actor-distance and centered Q1 (equivalently Q1 margins from the state's maximum). Use a two-column least-squares projection only when both controls are full rank; otherwise record undefined. This is descriptive partial association, not trained predictive-model validation.",
+    "control_rank_relative_floor": 1e-12,
+    "q_margin_definition": "Q1(action) minus maximum Q1 in the same candidate bank; centered margins equal centered Q1",
+    "decision_event_decomposition": "For the already fixed BCA3 versus actor-distance0.1 selectors, report frequency of different selected indices, mean value gain conditional on differing indices, and unconditional mean gain. Verify unconditional mean equals disagreement frequency times conditional mean; zero differing choices gives conditional gain undefined and unconditional gain zero.",
+    "event_scope": "Different indices, not positive-return differences, define the event. Count conditional wins, losses and near-equal returns separately. Do not present enriched-event benefit as population-average benefit.",
+    "candidate_bank_informativeness": "Report per-state value range, raw-Q candidate-bank regret and positive-regret frequency, best-candidate ambiguity, fixed-method decision disagreement, and their batch/time summaries. Finite-bank limitations remain explicit.",
+    "planning_interpretation": "No practical effect threshold has been chosen. Any numeric sample counts are illustrative normal-approximation calculations from development-only variance, not a sample-size recommendation, power guarantee, or authorization to expand confirmation.",
+    "validation_if_future_model_fit": "Any future learned diagnostic model must validate by held-out state/episode groups; no learned predictive model is fitted in this descriptive audit.",
+    "stochastic_noise_distinction": "Inputs are authenticated deterministic simulator continuations under a deterministic frozen policy, so conditional Monte Carlo sampling noise is absent. This does not assert exact real arithmetic, generalize to stochastic returns, or resolve error from target-policy mismatch."
+  }
+}

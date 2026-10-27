@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thrusterchain-benchmark-numpy1-validation"
+version = "0.4.1"
+description = "Inspectable offline control benchmark and controlled coverage diagnostics"
+requires-python = ">=3.10"
+license-files = ["third_party/BCA_LICENSE.txt", "third_party/BCA_NOTICE.txt"]
+dependencies = ["numpy>=1.26,<2", "scipy>=1.13,<2", "gymnasium>=1.0,<2"]
+
+[tool.setuptools.packages.find]
+include = ["thrusterchain*"]
+
+[tool.setuptools.package-data]
+"thrusterchain.canonical" = ["*.json"]
+

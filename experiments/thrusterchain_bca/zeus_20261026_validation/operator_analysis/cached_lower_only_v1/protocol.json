@@ -1,0 +1,49 @@
+{
+  "schema": "unifloral.cached_lower_only.protocol.v1",
+  "phase": "exploratory_lower_only_ideal_penalty_feasibility",
+  "claim_scope": "privileged_cached_ideal_penalty_not_deployable_method_or_BCA_efficacy",
+  "prior_information": "Unrestricted mean-target result and existing operator diagnostics known; lower-only selector not yet evaluated. Separate authorized feasibility check, not a change to prior result.",
+  "inputs_previous_directory": "../cached_score_mechanism_v1",
+  "inputs": {
+    "protocol.json": "287c0b0dd050fa87d20ec17a36004f976d3434b7a6f617278e0b228a911f116c",
+    "FREEZE.json": "d574e7dd3ec7820889ee42a0b4209422382c1af5297f238dc05280f93b98c14e",
+    "run_cached_comparison.py": "8e0d61ccb2b06ac7357b8ed8db39e27d5f3d9273a49f0085a172e0d4ee0c411a",
+    "SELECTIONS.json": "aea6b19f67887e5183d81092c562755fb3314ed5b7ccf1ae5a74412cd004b1ab",
+    "SELECTIONS_SEALED.json": "69f8d90d175deb65e1125b9c071b87a48c7c68937e02f7aa00c82b4409bb57e8",
+    "STATE_OUTCOMES.json": "9e46f5cc7a288d259cad2f443e803bbb30880c905bcf83e43be73ad7059f3fd4",
+    "report.json": "f6005b3428575182dd21be17a2dce154b253704271df67539473ed5c51d48dde",
+    "INDEPENDENT_REVIEW.json": "53b1de1f842c4682fcabc65b72a82fc92dbf6a34980795bca8d46bbbb77dbdc1"
+  },
+  "mapping": "Use sealed float64 score vectors from the prior comparison. lower_only = minimum(Q1, mean_native_target), mathematically Q1 - maximum(Q1-mean_native_target,0). Coefficient fixed1. No new means, draws, normalization or model evaluations.",
+  "mapping_identity_check": "Compare minimum form to subtraction form within64*eps64*(1+abs(q1)+abs(target)+abs(score)); assert every score<=Q1 exactly. Selection uses minimum form.",
+  "bank": "Exact128 existing states by9 candidates, original order; both64state development batches and all15 original strata. No fitting or confirmation data.",
+  "controls": "Reuse previously verified Q1, twin_min, actor and unrestricted mean_native_target control scores/selections/outcomes unchanged; compute only lower_only new selector.",
+  "selection_ties": {
+    "atol": 1e-06,
+    "rtol": 1e-06,
+    "rule": "Lowest original index with abs(score-max(score))<=1e-6+1e-6*abs(max(score)); no recentering or V-based tiebreak. Reuse verified select helper."
+  },
+  "value_ties": "1e-6+1e-6*max(abs(V_lower_only),abs(V_Q1)); improve delta>band, harm delta<-band, otherwise inconclusive.",
+  "primary_screen": "PASS only if mean paired V gain lower_only vs Q1 > mean symmetric numerical band in BOTH development batches. Exploratory numerical direction screen, not significance or superiority.",
+  "stop_rule": "If either batch fails, STOP proposing fit of this specific nonnegative penalty. Do not tune mapping, coefficient, draws or thresholds; no expanded diagnostics. If both pass, propose only one minimal cross-batch logged-offline-transition label-fitting pilot; do not fit. The evaluator-derived candidate labels are privileged and cannot be used as evidence of offline deployability; calibration requires separate justification.",
+  "outcomes": "Reuse existing 15-stratum summary definitions: mean selected V, gainvsQ1/actor, best-of9 regret, switch/help/harm/inconclusive counts and magnitudes, numerical ambiguities. No new metric families, uncertainty resampling or fitted models.",
+  "selection_seal": "Write and hash lower_only score/selection record before reading previous STATE_OUTCOMES.json saved values for this check. Prior diagnostics/outcomes known; not blind confirmation.",
+  "budget": {
+    "new_selectors": 1,
+    "states": 128,
+    "candidates_per_state": 9,
+    "new_transitions": 0,
+    "new_full_rollouts": 0,
+    "model_forwards": 0,
+    "gpu_calls": 0,
+    "new_fits": 0,
+    "optimizer_updates": 0,
+    "calibration_updates": 0,
+    "confirmation_reads": 0,
+    "new_candidate_actions": 0,
+    "executions": 1
+  },
+  "original_BCA_unchanged": true,
+  "pilot_executed": false,
+  "full_training_hold": true
+}

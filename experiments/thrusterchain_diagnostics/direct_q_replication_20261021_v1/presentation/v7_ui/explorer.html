@@ -1,0 +1,51 @@
+<section id="results-explorer" aria-labelledby="xe-heading">
+  <div class="xe-hero panel-title" data-nav-label="Explore saved decisions">
+    <p class="xe-eyebrow">THRUSTERCHAIN / INTERACTIVE RESULTS</p>
+    <h2 id="xe-heading">Follow the score.<br>Inspect the choice.</h2>
+    <p>Explore all 32 fresh states and their 12 candidate actions. See where an uncertainty penalty helps, where it hurts, and why the average changes so little.</p>
+    <div class="xe-facts"><span>32 states</span><span>384 saved continuations</span><span>1 frozen model</span></div>
+  </div>
+  <noscript><p class="v6-note">This explorer needs JavaScript. All measured results remain available in the <a href="#direct-q-replication">fresh-state evidence tables</a>.</p></noscript>
+  <div id="xe-app" hidden>
+    <div class="xe-toolbar" aria-label="Filter the saved state bank">
+      <label for="xe-context">World &amp; load<select id="xe-context"><option value="all">All four contexts</option><option value="stall_low">Stalling · low load</option><option value="stall_high">Stalling · high load</option><option value="monotone_low">Monotone · low load</option><option value="monotone_high">Monotone · high load</option></select></label>
+      <label for="xe-time">Assigned time<select id="xe-time"><option value="all">All times</option><option value="0">0 · 100 steps remaining</option><option value="50">50 · 50 steps remaining</option><option value="99">99 · 1 step remaining</option></select></label>
+      <button id="xe-reset" type="button" class="xe-button xe-reset">Reset view</button>
+    </div>
+    <fieldset class="xe-methods"><legend>1. Choose a frozen scoring rule</legend>
+      <label><input type="radio" name="xe-method" value="raw_q"><span class="xe-method-name">Raw Q1</span><span class="xe-method-formula">Critic only</span><strong id="xe-mean-raw_q">—</strong></label>
+      <label><input type="radio" name="xe-method" value="live_width" checked><span class="xe-method-name">Subtract width</span><span class="xe-method-formula">Q1 − U</span><strong id="xe-mean-live_width">—</strong></label>
+      <label><input type="radio" name="xe-method" value="matched_distance"><span class="xe-method-name">Subtract distance</span><span class="xe-method-formula">Q1 − kD</span><strong id="xe-mean-matched_distance">—</strong></label>
+      <label><input type="radio" name="xe-method" value="shuffled_width"><span class="xe-method-name">Shuffled width</span><span class="xe-method-formula">Q1 − saved shuffle(U)</span><strong id="xe-mean-shuffled_width">—</strong></label>
+      <label><input type="radio" name="xe-method" value="constant_offset"><span class="xe-method-name">Constant offset</span><span class="xe-method-formula">Q1 − state mean(U)</span><strong id="xe-mean-constant_offset">—</strong></label>
+    </fieldset>
+    <p class="xe-muted">Each card shows mean continuation-return change versus the raw-Q1 choice for the current filter. Higher is better.</p>
+    <p id="xe-method-note" class="xe-method-note"></p>
+    <div class="xe-stats" aria-label="Summary for the selected scoring rule and filtered states">
+      <div><span>Mean return change</span><strong id="xe-gain">—</strong><small>One chosen action, then the original actor</small></div>
+      <div><span>Improved / harmed / unchanged</span><strong id="xe-outcomes">—</strong><small id="xe-count">—</small></div>
+      <div><span>Pair-ordering change</span><strong id="xe-ordering">—</strong><small>Percentage points versus raw Q1</small></div>
+    </div>
+    <p id="xe-scope" class="xe-muted"></p>
+    <div class="xe-state-header"><h3 id="xe-state-map-heading">2. Pick a state</h3><div class="xe-case-buttons"><button id="xe-case-gain" class="xe-button" type="button">Inspect largest gain</button><button id="xe-case-loss" class="xe-button" type="button">Inspect largest loss</button><button id="xe-case-same" class="xe-button" type="button">Inspect no change</button></div></div>
+    <p class="xe-muted">The initial example is state 24, the one harmful width change. Tiles show each state’s return change. “Same” means unchanged return, which can include a different command with an equal return.</p>
+    <div id="xe-state-grid" class="xe-state-grid" role="group" aria-labelledby="xe-state-map-heading"></div>
+    <div class="xe-detail" aria-labelledby="xe-detail-heading">
+      <div class="xe-detail-top"><div><p class="xe-eyebrow" id="xe-state-meta"></p><h3 id="xe-detail-heading" tabindex="-1">State details</h3></div><div class="xe-case-buttons"><button id="xe-prev" class="xe-button" type="button" aria-label="Previous filtered state">← Previous</button><button id="xe-next" class="xe-button" type="button" aria-label="Next filtered state">Next →</button></div></div>
+      <p id="xe-decision" class="xe-decision"></p>
+      <div class="xe-choice-compare"><div><span>Raw-Q1 choice</span><strong id="xe-raw-choice">—</strong><small id="xe-raw-return"></small></div><div><span id="xe-rule-label">Selected rule</span><strong id="xe-rule-choice">—</strong><small id="xe-rule-return"></small></div><div><span>Original actor’s command</span><strong id="xe-actor-choice">Candidate 6</strong><small id="xe-actor-return"></small></div></div>
+      <div class="xe-view-switch" role="group" aria-label="Candidate view"><button type="button" id="xe-view-choices" aria-pressed="true">Compare candidates</button><button type="button" id="xe-view-errors" aria-pressed="false">Explore the error signal</button></div>
+      <div id="xe-error-panel" hidden>
+        <p><b>Does a wider band accompany a larger signed error?</b> Each point is one saved candidate. A positive upward relationship is the intended penalty direction. Select a point or a candidate below to inspect it.</p>
+        <p id="xe-correlation" class="xe-muted"></p><p class="xe-muted">Blue: chosen candidate · dark: raw-Q1 choice · extra ring: original actor. Points carry candidate IDs; overlapping points remain individually accessible in the table.</p>
+        <div class="xe-plot-scroll" tabindex="0" role="region" aria-label="Width versus signed error chart; scroll horizontally on narrow screens"><svg id="xe-scatter" viewBox="0 0 680 320" role="group" aria-labelledby="xe-scatter-title xe-scatter-desc"><title id="xe-scatter-title">Uncertainty width versus signed Q error</title><desc id="xe-scatter-desc">Twelve candidates from the selected state. Horizontal position is width. Vertical position is Q1 minus measured continuation return. The candidate table and details show rounded values. The CSV download preserves full precision.</desc><g id="xe-scatter-content"></g></svg></div>
+      </div>
+      <div class="xe-table-tools"><label for="xe-sort">Sort candidates<select id="xe-sort"><option value="score">Selected score · highest first</option><option value="truth">Measured Qπ · highest first</option><option value="width">Width · smallest first</option><option value="id">Original candidate order</option></select></label><label class="xe-ingredient-toggle"><input id="xe-ingredients" type="checkbox"> Show score ingredients</label><button id="xe-export" class="xe-button" type="button">Download this state as CSV</button></div>
+      <div class="xe-table-scroll" tabindex="0" role="region" aria-labelledby="xe-table-caption"><table class="xe-candidates"><caption id="xe-table-caption">12 saved candidates · select an ID to inspect its arithmetic · higher Qπ is better</caption><thead><tr><th scope="col">Candidate</th><th scope="col" class="xe-ingredient">Raw Q1</th><th scope="col" class="xe-ingredient">Penalty</th><th scope="col">Selected score</th><th scope="col">Measured Qπ</th><th scope="col">Support</th></tr></thead><tbody id="xe-candidate-body"></tbody></table></div>
+      <div class="xe-candidate-detail" id="xe-candidate-detail"></div>
+      <p class="xe-muted">Candidate IDs stay fixed when sorted. The highest full-precision score wins; exact ties use the first original index. Candidate 6 is the original actor; duplicate commands in different slots are retained.</p>
+    </div>
+    <div class="xe-footnote"><b>What you are exploring</b><p>These controls rearrange saved measurements. They do not train a model or run a new policy. Qπ measures one candidate command followed by the unchanged actor. Filtered values are descriptive point estimates; the <a href="#fr-uncertainty">published bootstrap intervals</a> apply to the original full-bank endpoints.</p><p><a href="#fr-premise">Definitions</a> · <a href="#fr-bank-comparison">Compare the two banks</a> · <a href="#fr-choice">Full result tables</a></p></div>
+    <p id="xe-status" class="xe-sr" role="status" aria-live="polite" aria-atomic="true"></p>
+  </div>
+</section>

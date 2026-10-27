@@ -1,0 +1,718 @@
+{
+  "summary": "Independently check the near-80 results: integrity, look reproduction, the three stops, and a description of seeds 11 and 14",
+  "agentCount": 8,
+  "logs": [],
+  "result": [
+    {
+      "key": "integrity",
+      "check": {
+        "verdict": "The results hold together. Every fingerprint matches: all 2724 lines of SHA256SUMS, RESULTS.json and its sidecar, and every JSON sidecar. The ledger and status show only final states (288 done, 3 stopped, 199 skipped). The stopped phases are exactly policy.main.stall.s10, s12 and s13. The amendment was used as section 19.7 says, with no record out of place. There are three small gaps, all by design of the code: the confirmatory look's input list leaves out the status file and the ledger it also reads, the policy's own stop.json files carry no approval facts, and the 30 training manifests have no sidecar.",
+        "findings": [
+          {
+            "claim": "Every line of SHA256SUMS verifies: 2634 files present and matching, and the 90 missing ones match their copies in the run-files commit 7f0fe12",
+            "evidence": "Script /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check1.py. SHA256SUMS has 2724 lines and no duplicate names. 2634 files are present and match, with 0 mismatches. 90 files are missing, all under files/data/, and all 90 match `git show 7f0fe12:runs/shift_explore/near80/<path>`. No file under files/ is unlisted. The list of the 90 is in /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/missing_list.json.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "RESULTS.json matches its sidecar, and its sha256sums_sha256 equals the SHA-256 of SHA256SUMS",
+            "evidence": "The SHA-256 of RESULTS.json is b8202e61ee9643372ebef34802d6a5444ae8e41f315248d267b98b3ff16ed128, equal to RESULTS.json.sha256. The SHA-256 of SHA256SUMS is 37b6d14af2e345ad42e7612cfef0183f7c2cc740e54a963a145bc14a0e02624d, equal to RESULTS.json's sha256sums_sha256. RESULTS.json's files field is 2724 and its counts are done 288, skipped 199, stopped 3.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Every JSON with a .sha256 sidecar matches it, and each sidecar has the form '<digest>  <name>' that ledger.write_json_once writes",
+            "evidence": "Script check1b.py. There are 1230 .json files in SHA256SUMS. 1200 have a sidecar, all 1200 match and all use the '<hex>  <name>\\n' form (code/ledger.py line 8 and write_json_once). 1170 were read from the results folder and 30 from 7f0fe12. There are no orphan sidecars.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The 30 JSONs without a sidecar are the training-file manifests, which have none by design; each is pinned by its data record",
+            "evidence": "The 30 are the files/data/{main,near80,random_rows}/{stall,no_stall}/seed*/train.hdf5.manifest.json files, all only in 7f0fe12. They are written by the dataset writer, not write_json_once (code/settingdata.py lines 321-334, which records manifest_sha256). Script check1c.py: for all 30, the manifest's SHA-256 equals the manifest_sha256 in the one data record that names that training file (data/main/... or data/band/...data.json), and those records' sidecars match.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Commit 67209d2 holds exactly the results folder on disk and leaves out files/data/, and the 2634 present files are byte-identical to the run-files commit",
+            "evidence": "Script check1d.py: `git ls-tree -r 67209d2` of the results folder lists 2637 files, the same 2637 as on disk, with identical blob ids and no files/data/ entry. .gitignore line 7 is 'data/'. Script check1e.py compares blob ids against 7f0fe12, mapping .txt to .log and runner.txt to runner.log: 2634 of 2634 are identical. 7f0fe12 has 189 more files (169 .msgpack, 20 .npz) that SHA256SUMS does not list, as RESULTS.json's note says.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "status.json has no phase in a non-final state; the counts are 288 done, 3 stopped and 199 skipped; the stopped phases are exactly policy.main.stall.s10, s12 and s13",
+            "evidence": "Script check2.py on files/status.json: 490 phases, states {done: 288, skipped: 199, stopped: 3}, none other, and the counts field is equal. halted is null, paused is {}, over_cap is null, stop_requested is false, updated is 2026-10-20T11:52:46Z. Stopped phases: policy.main.stall.s10, policy.main.stall.s12, policy.main.stall.s13. The stop records files/stops/policy.main.stall.s10.json etc. give reason 'a built-in check failed' and detail.error 'refused: stall/seed10: arm obca_k1 is switched on but its height inf is not finite (step 1 could not certify the full-throttle group)'.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "All 199 skips are explained, and none of them ran",
+            "evidence": "From status.json notes. 190 are 'stopped before the fresh seeds by the exploratory stop rules': every near80 and random_rows phase of seeds 10-14 (18 kinds by 10) plus data_band.band.*.s10-s14. 3 are policy.main.no_stall.s10, s12 and s13 ('the actor training (policy.main.stall.sN) was stopped'). 6 are evaluate.main.stall and evaluate.main.no_stall for s10, s12 and s13. No skipped phase has a ledger folder. The exploratory rule behind the 190: files/looks/confirmatory.json, under exploratory_stops.stops.rival_unaffected, has B 4.299068660557393, minimum 5.0, passed false.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The ledger is consistent with status.json",
+            "evidence": "files/ledger/ has 291 phase folders, exactly the done and stopped phases. There are 301 attempt records: 288 done, 10 failed, 3 stopped. Every attempt has its start, usage and attempt record, each with a sidecar. There are no .signals files. Attempt numbers run from 1 with no gaps. Each phase's last attempt classification equals its status.json state.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Each of the 10 phases that failed before amendment 1 has attempt 1 failed before the amendment and attempt 2 done after it; nothing else has more than one attempt",
+            "evidence": "The 10 are critic.main.stall.s10-s14 and critic_full.x.stall.s10-s14. In ledger/<phase>/1.json: classification 'failed', why \"exit 1 without the phase's final record\", exit_code 1, started 2026-10-16T19:03:39Z, ended 2026-10-16T19:03:45Z or 19:03:46Z. In 2.json: 'done', exit 0, started 2026-10-19T20:30:22Z, ended between 2026-10-19T20:35:50Z and 20:36:02Z. Their logs (e.g. files/logs/critic.main.stall.s10.txt) show attempt 1 ending in 'TypeError: unsupported operand type(s) for +: 'int' and 'str'' and attempt 2 starting at 2026-10-19T20:30:22Z. Exactly 10 phases have more than one attempt.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The amendment's import time is 2026-10-19T20:27:47Z, and no attempt was running across it",
+            "evidence": "imported_at in /home/user/bca/outputs/shift/beyond-the-data/near80/import_near80_amendment1_52fe05b92900290b.json (its sidecar matches; SHA-256 1fa3dab9907fbd434b2a21b98d2c2a348b0b516313bfd1c0f346078b821eb330). 233 attempts started before it, and the last of them ended 2026-10-16T19:03:46Z. 68 attempts started after it, the first at 2026-10-19T20:30:22Z, and the last ended 2026-10-19T21:41:07Z. amendment_1.json's SHA-256 is 52fe05b92900290b990e27d7f5ab6351e0c6c964300e8f8bd25d03bdfa981bbf and prereg.json's is 51e677ab76c8d2f7fa7779d21db7f53bd40d42ff5e6be278d4abfb34c3396d4a, both equal to their sidecars.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Every phase record and stop record written after the import carries the full amendment block, and every record written before it carries none",
+            "evidence": "Script check4.py, comparing each record's 'written' with 2026-10-19T20:27:47Z. 67 records were written after it, all with approval.amendment exactly as expected: number 1, sha256 52fe05b92900290b990e27d7f5ab6351e0c6c964300e8f8bd25d03bdfa981bbf, commit f56a107c50b1507740db67378a8a383ed0b69877, approval_sha256 feef52fd51e47ad5c466a661dc742546910e8e12d98183aba51feb73da17192b, import_sha256 1fa3dab9907fbd434b2a21b98d2c2a348b0b516313bfd1c0f346078b821eb330, author David Bayha. They are clone 10, critic 10, critic_full 5, critic_second 10, reference_actors 10, switch 10, policy lock 4, values 4, stage lock 1 and phase stop 3. 222 records were written before it, all without an amendment block: clone 20, critic 20, critic_second 20, reference_actors 20, switch 20, v6_band 20, readouts 20, policy lock 20, values 30, data_main 20, data_band 10, fixed_checks 1, stage lock 1. All 289 carry the same parent facts: prereg 51e677ab..., approval_sha256 11e6e583af07e9847778aa32d9e54dd51164f01abad43dd08ea98fefae6951fd, import_sha256 214ed3f2cfca34c2f54e4759bf005d0a20dee8838e10725a312f433ebed3048d, commit f79b89c487525660f02008fc96e3fb7fcdd2a011, code manifest 4fc25bbad23eeee4971a575c69611068d7817cb63607a5407fc1cf74b51b8150, fixture false. Every record's attempt number and write time fall inside a done or stopped ledger attempt. There are no exceptions.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The looks and the plumbing record carry prereg.json's fingerprint only; there are no skip records",
+            "evidence": "files/looks/exploratory.json (written 2026-10-16T19:03:04Z), files/looks/confirmatory.json (written 2026-10-19T21:41:07Z) and files/plumbing/plumbing.json each have prereg_sha256 51e677ab..., no approval key, and no mention of 52fe05b92900290b anywhere. Skip records would be under skipped/<phase_id>.json (code/phases.py line 51). No such folder is in the results or in 7f0fe12: all 199 skips were decided by the runner by rule and exist only as notes in status.json and runner.txt.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The confirmatory look's 37 listed input fingerprints all match the files",
+            "evidence": "Script check5.py on looks/confirmatory.json 'inputs': 37 of 37 match. 27 were read from the results folder and 10 (the data/main data.json files) from 7f0fe12. They are data.json 10, switch.json 10, values.json 4, policy lock.json 4, policy stop.json 3, stops/*.json 3, looks/exploratory.json 1, plumbing.json 1 and stage_lock/confirmatory.json 1. exploratory_look_sha256 4851f5e6076690fab5bc8d2added210a10a047418d74a4ea462075959af1fdde equals the file's SHA-256. Every record of seeds 10-14 outside ledger/ and learners/ is listed. No input was written after the look.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The confirmatory look's input list does not include two kinds of file it also reads: the runner's status file and the ledger's attempt records",
+            "evidence": "code/pooled.py lines 739-764 read status.json with read_json_verified (for the runner's skip notes) and every ledger/<phase>/<n>.json (for the resource table), but only rd.read with keep=True and rd.keep add entries to inputs (lines 334-352). Section 19.7 says the look 'lists the fingerprint of every record it read'. status.json has since been rewritten (updated 2026-10-20T11:52:46Z), so the version the look read cannot be checked. This is the approved code's design, but it is narrower than the wording of 19.7.",
+            "status": "uncertain"
+          },
+          {
+            "claim": "The policy's own stop.json files written after the import carry prereg.json's fingerprint but no approval facts",
+            "evidence": "files/policy/main/stall/seed10/stop.json (and seed12, seed13) has kind near80-policy-stop, prereg_sha256 51e677ab..., no 'approval' key, and was written 2026-10-19T20:45:54Z (and later for s12 and s13). code/phase_main.py write_stop (lines 184-193) writes this file without facts by design. The companion phase stop records, files/stops/policy.main.stall.s1{0,2,3}.json, carry the full amendment block.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The runner ended normally at 2026-10-19T21:41:08Z with every phase done, stopped or skipped, and two later starts found nothing to do",
+            "evidence": "files/runner.txt line 1145: '2026-10-19T21:41:08Z runner ends: every phase done, stopped or skipped (288 done, 3 stopped, 199 skipped)'. Lines 1146-1149 are two restarts that ended at once with the same line, at 2026-10-20T05:13:42Z/05:13:43Z and 2026-10-20T11:52:46Z. The last matches status.json updated 2026-10-20T11:52:46Z, 7f0fe12's commit time and RESULTS.json created 2026-10-20T11:52:47Z. Earlier, line 961 reads '2026-10-16T19:03:45Z runner ends (halted): 223 done, 0 stopped, 135 skipped; unfinished: none', and line 962 shows the restart at 2026-10-19T20:30:22Z, which began with the 10 attempt-2 starts.",
+            "status": "confirmed"
+          }
+        ],
+        "problems": [
+          "The confirmatory look's 'inputs' (37 entries) leaves out status.json and the ledger attempt records, though code/pooled.py lines 739-764 read both. Section 19.7 says the look lists the fingerprint of every record it read. This is the approved code's behavior, not a sign of tampering, but the wording of 19.7 is broader than what the look records.",
+          "files/policy/main/stall/seed{10,12,13}/stop.json were written after the import (from 2026-10-19T20:45:54Z) without an approval block. This is by design (code/phase_main.py write_stop), and the matching files/stops/policy.main.stall.s*.json records carry the amendment block. It should be stated if anyone reads 19.7 as covering every file a stopped phase writes.",
+          "30 training-file manifests (files/data/*/*/seed*/train.hdf5.manifest.json, only in 7f0fe12) have no .sha256 sidecar. This is by design: each matches the manifest_sha256 in its data record. The two look .md files likewise have no sidecar and are covered only by SHA256SUMS; both match.",
+          "No skip record files exist. All 199 skips are the runner's rule decisions, recorded only as notes in status.json and runner.txt, so the rule that skip records carry prereg.json's fingerprint only has nothing to check.",
+          "files/runner.txt has timestamps out of order at the 16 October halt. Lines 951-956 read 2026-10-16T19:03:47Z, then lines 957-960 read 19:03:44Z, and line 961 ('runner ends (halted)') reads 19:03:45Z. ledger/critic_full.x.stall.s11/1.usage.json ends 2026-10-16T19:03:46Z, but the runner logged its FAILED line at 19:03:44Z. This suggests the desktop clock stepped back about 3 seconds. No record or result depends on it.",
+          "Minor wording point: PREREGISTRATION.md section 19.2 says the runner halted '16 October 2026 at 19:03:39 UTC'. runner.txt shows 19:03:39Z as the time the 10 phases started; the runner's halt line is at 2026-10-16T19:03:45Z."
+        ],
+        "scratch_files": [
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check1.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check1b.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check1c.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check1d.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check1e.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check2.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check4.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/check5.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/survey.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/attempts.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/missing_list.json"
+        ]
+      },
+      "review": {
+        "upheld": [
+          "Item 1, SHA256SUMS: it has 2724 lines with no repeated names, all under files/ and sorted. All 2634 files on disk match. The 90 missing files are all under files/data/, and all 90 match `git show 7f0fe12:runs/shift_explore/near80/<path>`. No file under files/ is left off the list. My script: /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/h1.py.",
+          "Item 1, RESULTS.json: its SHA-256 is b8202e61ee9643372ebef34802d6a5444ae8e41f315248d267b98b3ff16ed128, and RESULTS.json.sha256 holds the same digest followed by '  RESULTS.json'. The SHA-256 of SHA256SUMS is 37b6d14af2e345ad42e7612cfef0183f7c2cc740e54a963a145bc14a0e02624d, which equals RESULTS.json's sha256sums_sha256. RESULTS.json gives files 2724, counts done 288 / skipped 199 / stopped 3, finished true and halted null.",
+          "Item 1, sidecars: of the 1230 .json files, 1200 have a sidecar. All 1200 match, and all use the '<hex>  <name>\\n' form that write_json_once writes (code/ledger.py lines 115-131). 1170 were read from disk and 30 from 7f0fe12. No sidecar lacks its file, and no sidecar belongs to a non-JSON file (h2.py).",
+          "The 30 JSON files without a sidecar are the train.hdf5.manifest.json files under files/data/{main seeds 10-14, near80 seeds 0-4, random_rows seeds 0-4}. Each manifest's SHA-256 equals manifest_sha256 in exactly one data record (data/main/... or data/band/... data.json); see code/settingdata.py lines 321-334 (h3.py). They are also not in canonical JSON form, which fits their being written by the dataset writer rather than write_json_once.",
+          "Commit 67209d2 holds 2637 files under the results folder. Their names and git blob ids are identical to the 2637 files on disk, and none is under files/data/. .gitignore line 7 is 'data/'. All 2634 tracked files under files/ have the same blob ids as their counterparts in 7f0fe12, after mapping .txt to .log and runner.txt to runner.log (h4.py). Both commits are authored by David Bayha.",
+          "Item 2: status.json matches its sidecar. It has 490 phases: done 288, skipped 199, stopped 3, and nothing else. halted is null, over_cap is null, paused is {}, stop_requested is false, and updated is 2026-10-20T11:52:46Z. The stopped phases are exactly policy.main.stall.s10, policy.main.stall.s12 and policy.main.stall.s13 (h5.py).",
+          "Item 2, skips: 190 carry the note 'stopped before the fresh seeds by the exploratory stop rules'. They are 9 phase kinds (clone, critic, critic_second, evaluate, policy, readouts, reference_actors, switch, v6_band) times 2 settings (near80, random_rows) times 2 worlds times 5 seeds, plus data_band.band.{stall,no_stall}.s10-s14. Another 3 are policy.main.no_stall.s10, s12 and s13, and 6 are evaluate.main.{stall,no_stall} for s10, s12 and s13. The exploratory rule behind the 190: rival_unaffected has B 4.299068660557393, minimum 5.0, passed false, in both files/looks/exploratory.json and confirmatory.json.",
+          "Item 2, ledger: there are 291 phase folders, exactly the done and stopped phases, with no folder for any skipped phase. There are 301 attempts: 288 done, 10 failed, 3 stopped. Each has its start, usage and attempt record with sidecars, and there are no .signals files. Attempt numbers run 1..n with no gaps. Start and end times agree across start.json, usage.json and the attempt record.",
+          "Item 3: exactly 10 phases have more than one attempt: critic.main.stall.s10-s14 and critic_full.x.stall.s10-s14. Attempt 1 of each failed with exit 1 ('exit 1 without the phase's final record'), started 2026-10-16T19:03:39Z, and ended at 19:03:45Z or 19:03:46Z. Attempt 2 of each is done with exit 0, started 2026-10-19T20:30:22Z, and ended between 20:35:50Z and 20:36:02Z. The logs show TypeError: unsupported operand type(s) for +: 'int' and 'str' in attempt 1, then 'start: attempt 2' at 2026-10-19T20:30:22Z.",
+          "Item 4, import time: imported_at in import_near80_amendment1_52fe05b92900290b.json is 2026-10-19T20:27:47Z. The file's SHA-256 is 1fa3dab9907fbd434b2a21b98d2c2a348b0b516313bfd1c0f346078b821eb330 and matches its sidecar. 233 attempts started before that time, the last ending 2026-10-16T19:03:46Z. 68 started after it, the first at 2026-10-19T20:30:22Z and the last ending 2026-10-19T21:41:07Z. No attempt spans the import.",
+          "Item 4, approval facts: 289 records carry approval facts. Of the 67 written after the import, all carry an amendment block exactly equal to the expected one (number 1, sha256 52fe05b9...1bbf, commit f56a107c50b1507740db67378a8a383ed0b69877, approval_sha256 feef52fd..., import_sha256 1fa3dab9...). By kind: values 4, critic_full 5, clone 10, critic 10, critic_second 10, reference_actors 10, switch 10, policy lock 4, stage lock 1, phase stop 3. None of the 222 written before carries the block. All 289 carry identical parent facts, and I verified each fingerprint against its file: approval 11e6e583..., import 214ed3f2..., code manifest 4fc25bba..., prereg 51e677ab..., fixture false (h8.py).",
+          "Every phase record lies inside a done or stopped ledger attempt of its phase. For records with an attempt field, I checked the attempt number and the write time. The looks and the three phase stops have no attempt field, and their write times fall inside their single attempt. No record belongs to a failed attempt, and every done or stopped attempt has a record (h9.py).",
+          "Item 4, looks and plumbing: files/looks/exploratory.json (2026-10-16T19:03:04Z), files/looks/confirmatory.json (2026-10-19T21:41:07Z) and files/plumbing/plumbing.json carry prereg_sha256 51e677ab... only, with no approval key and no mention of 52fe05b9, feef52fd or 1fa3dab9. No skip records exist anywhere.",
+          "Item 5: all 37 of the confirmatory look's input fingerprints match: 27 read from disk and 10 data/main data.json files read from 7f0fe12. exploratory_look_sha256 4851f5e6...1fdde equals the file's SHA-256. No input was written after the look, and every record of seeds 10-14 outside ledger/ and learners/ is listed (h10.py).",
+          "The confirmatory look reads status.json and every ledger/<phase>/<n>.json through read_json_verified without adding them to inputs (code/pooled.py lines 736-765). The Reader adds entries only through read(keep=True) and keep() (lines 335-352).",
+          "files/policy/main/stall/seed{10,12,13}/stop.json carry prereg_sha256 and no approval key, by design (code/phase_main.py write_stop, lines 184-193). The matching files/stops/policy.main.stall.s1{0,2,3}.json carry the full amendment block.",
+          "Item 6: runner.txt line 1145 reads '2026-10-19T21:41:08Z runner ends: every phase done, stopped or skipped (288 done, 3 stopped, 199 skipped)'. Lines 1146-1149 are two restarts that ended at once with the same counts (2026-10-20T05:13:42Z/05:13:43Z and 2026-10-20T11:52:46Z). Line 961 is the 16 October halt ('runner ends (halted): 223 done, 0 stopped, 135 skipped') at 19:03:45Z, and line 962 is the 19 October restart at 20:30:22Z. The 7f0fe12 commit time is 2026-10-20 11:52:46 +0000, and RESULTS.json was created 2026-10-20T11:52:47Z.",
+          "The out-of-order times at the halt are as stated: lines 951-956 read 19:03:47Z, lines 957-960 read 19:03:44Z and line 961 reads 19:03:45Z. ledger/critic_full.x.stall.s11/1 ended 2026-10-16T19:03:46Z. Section 19.2's '19:03:39 UTC' is the start time of the 10 phases, not the halt."
+        ],
+        "refuted": [
+          {
+            "statement": "All 199 skips were decided by the runner by rule and 'exist only as notes in status.json and runner.txt'.",
+            "why": "55 of the 199 skips have no line in runner.txt at all. Its skip lines name 144 distinct phases: 135 before the halt at line 961 (matching the halt line's '135 skipped') and 9 after (the main-setting policy and evaluate phases of s10, s12 and s13). The other 55 are evaluate, policy and readouts of near80 and random_rows, plus reference_actors.near80.stall, each for seeds 10-14 (11 phase kinds by 5 seeds), all with the note 'stopped before the fresh seeds by the exploratory stop rules'. They were still waiting at the 16 October halt, and the runner's start-up on 19 October marked them skipped without logging: startup() in code/near80_runner.py lines 498-506 sets state from resolve() and never calls say(). Their only records are status.json's 'skipped' map and the confirmatory look's reported.runner_skipped. This is by design and harmless, but the statement is wrong for those 55."
+          },
+          {
+            "statement": "Because status.json has since been rewritten, 'the version the look read cannot be checked' (the look's unlisted reads of status.json and the ledger).",
+            "why": "The look records what it took from both sources, and both copies check out against the files as they stand now. Its reported.runner_skipped has 199 entries, exactly equal to the current status.json 'skipped' map filtered the way pooled.py lines 736-744 filter it. Its reported.resources counts 300 attempts with cpu_hours_total 17.036150350434795; my sum over the 300 ledger attempts that ended before the look, excluding the look's own, is 17.036150350434806 (the difference is float summation order), and the per-kind attempt counts match exactly. Neither input feeds any claim: runner_skipped is used only in 'reported' (pooled.py lines 742 and 1493), and resources only in the Markdown report (pooled.py line 1853). The bytes of the old status.json cannot be checked, but what the look used can be, and it matches. The gap against 19.7's wording is real but could not have changed a result."
+          }
+        ],
+        "missed": [
+          "Amendment code check, which the checker did not run: all 28 files that amendment_1.json lists, under /home/user/bca/outputs/shift/beyond-the-data/near80/, hash to the listed values, and code/ holds no file the amendment does not list. Changed files: PREREGISTRATION.md, approve_local_near80.py, code/approval_check.py, code/import_approval.py, code/settingdata.py, code/stubs.py, code/test_approval.py, code/test_runner.py (h12.py). The amendment's sha256 52fe05b9...1bbf matches amendment_1.json.sha256, and approval_near80_amendment1_52fe05b92900290b.json hashes to feef52fd51e47ad5c466a661dc742546910e8e12d98183aba51feb73da17192b, the value the records cite.",
+          "Second, independent hash list: 7f0fe12's tree has 2914 entries, which is 2724 + 189 model/array files + RUNFILES_SHA256SUMS at the top. The checker reported only the 189. RUNFILES_SHA256SUMS has 2913 lines, and for all 2724 paths it shares with SHA256SUMS the digests agree (h4.py).",
+          "The three policy stops follow from the switch records. files/learners/main/stall/seed{10,12,13}/switch.json have certificate on: true, tail_certified: false and height \"inf\", with n_tail 19, 22 and 18 and finite_share_tail 0.879, 0.903 and 0.85. Seeds 11 and 14 are certified, with heights 2.289130291938781 and 4.595018935203548. step2lib.py lines 353-357 (/home/user/bca/outputs/shift/beyond-the-data/restructure/step2/step2lib.py) refuse when an arm is on with a height that is not finite, which gives the exact error text in the stop records.",
+          "Outside this integrity check, but it could change what the owner is told about claim 4. The stop reason ('a built-in check failed': the arm table cannot be built from the switches) is not one of the four plumbing stops section 8.3 names: the height-0 check, a network that is not finite, an input whose fingerprint does not match, and a training file that fails its check. Section 9.5 lets a fresh seed fail claim 4 only through the gate's data checks, a 'main-setting plumbing stop', or a missing number with no failure or stop record. Section 10 says 'Nothing on seeds 10-14 stops early on an outcome. Only plumbing failures stop a seed-world.' The look counted seeds 10, 12 and 13 as failed (failed_seeds.claim_4), yet step 1's failure to certify the full-throttle group is a property of that seed's data and critic. Whether that counts as a plumbing stop is a reading question the owner should see stated, not assumed. Also, policy.main.no_stall.s10/s12/s13 were skipped because code/phases.py lines 316-317 make the no-stall actor depend on the stall actor, so neither world of those seeds has a trained actor.",
+          "Section 19.2's figure checks out: before the amendment, the 20 ledger attempts of seeds 10-14 (10 data_main done, 10 failed) total 0.11275828608388919 CPU-hours, which section 19.2 gives as 0.113.",
+          "All 301 attempts share one boot id, 36666f87-4dd7-43ce-9412-171eca6fe32b, so the machine did not reboot between 16 and 19 October. No attempt has a runner signal or a retry request, and every attempt and every record that has a mode field reads 'official' (897 records). Attempt 2 of the 10 failed phases ran with retry_request null, as section 19.5 says a plain 'run' does.",
+          "runner.txt also steps back in time at line 755 (19:02:17Z after 19:02:18Z at line 754, about 1 second), not only at the halt. Both are 16 October wall-clock steps (the runner stamps lines with time.gmtime() through ledger.utc()). No record depends on them.",
+          "amendment_1.json itself, the file the owner approved, also gives the halt as halt.utc '2026-10-16T19:03:39Z', the same wording point the checker raised for section 19.2.",
+          "Skip records exist only when a phase process itself decides to skip (code/phase_main.py write_skip, lines 174-181, called at lines 267 and 273). The runner's own skips (code/near80_runner.py lines 677-686 and start-up) write none. So 19.7's rule on skip records has nothing to apply to in this run, and that is expected."
+        ],
+        "overall": "I reproduced every fingerprint and count in the report from the files and code, with my own scripts in /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/ (h1.py-h12.py). The integrity verdict stands:\n- All 2724 lines of SHA256SUMS match: 2634 files on disk and 90 from 7f0fe12.\n- RESULTS.json, its sidecar and all 1200 JSON sidecars match.\n- status.json shows done 288, stopped 3, skipped 199, nothing else; the stopped phases are exactly policy.main.stall.s10, s12 and s13.\n- The 10 phases that failed before the amendment have attempt 1 failed and attempt 2 done; no other phase has a second attempt.\n- The 67 records written after the 2026-10-19T20:27:47Z import carry the exact amendment block, and the 222 written before carry none.\n- The looks and the plumbing record carry prereg.json's fingerprint only, and all 37 input fingerprints of the confirmatory look match.\n- The runner ended normally at 2026-10-19T21:41:08Z.\n\nTwo statements are refuted:\n- 55 of the 199 skips never appear in runner.txt. The runner set them silently at its 19 October start-up, so they exist only in status.json and the look.\n- What the look read from status.json and the ledger can be checked after all. It embeds both (199 skip notes; 300 attempts and 17.036150350434795 CPU-hours), both match the current files, and neither feeds any claim.\n\nAdded checks that strengthen the verdict: the pinned code matches amendment_1.json for all 28 files, and the owner's RUNFILES_SHA256SUMS agrees with SHA256SUMS on all 2724 shared paths.\n\nNothing found undermines the integrity of the results or the use of the amendment. One point outside this check could change how claim 4 is explained to the owner. Seeds 10, 12 and 13 stopped because step 1 could not certify the full-throttle group (height \"inf\"). That stop is not one of the four plumbing stops section 8.3 names, yet the look counted those seeds as failed for claim 4. That reading should be put to the owner plainly."
+      }
+    },
+    {
+      "key": "reproduce",
+      "check": {
+        "verdict": "Both looks reproduce exactly. The pinned code, run from a scratch copy of the run records without the runner, gives byte-identical looks/exploratory.json (SHA-256 4851f5e6...fdde) and looks/confirmatory.json (SHA-256 1edd56c8...5ca4f15b) and identical .md files. Two inputs make this exact: the official 'written' time is put back, and the ledger is limited to the attempt records that had ended before each look started. Without that limit, the only differences are in the resources table.",
+        "findings": [
+          {
+            "claim": "The run-files commit holds the same records as the results folder, so it can stand in for the output root.",
+            "evidence": "I extracted the commit with git archive 7f0fe12 -- runs/shift_explore/near80 RUNFILES_SHA256SUMS, leaving out *.msgpack and *.npz, into /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/git_tree. That gave 2724 files plus RUNFILES_SHA256SUMS. /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/compare_trees.py then found: all 2634 files under results-20261020T115246Z/files match SHA256SUMS; the 90 entries listed but absent are all under files/data/; once logs/*.txt are mapped back to *.log and runner.txt to runner.log, every one of the 2724 SHA256SUMS entries has a git file with the same SHA-256, and there are no extra files; the 90 data files from git match SHA256SUMS; every extracted file matches RUNFILES_SHA256SUMS (2913 entries; the rest are model files). Before extracting, I checked the blob IDs against the local pack indexes: every blob of 7f0fe12 was already local, so no lazy fetch could happen.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The scratch output root contains only the JSON records and their .sha256 sidecars. The look code never reads logs.",
+            "evidence": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/out holds 2430 files, all *.json and *.json.sha256 from git_tree. pooled.load_results reads stage_lock, data/main, data/band, fixed, learners/*/switch.json, policy lock.json and stop.json, eval values.json, readouts, stops/*.json, skipped/*.json, status.json, looks/exploratory.json (confirmatory look only), plumbing/plumbing.json and ledger/*/N.json. It reads no .log files. 30 data/*/train.hdf5.manifest.json files have no sidecar, but the looks do not read them.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The code that ran is the pinned code.",
+            "evidence": "prereg.json SHA-256 is 51e677ab76c8d2f7fa7779d21db7f53bd40d42ff5e6be278d4abfb34c3396d4a, matching its sidecar. amendment_1.json is 52fe05b92900290b990e27d7f5ab6351e0c6c964300e8f8bd25d03bdfa981bbf, matching its sidecar. All 28 files in amendment_1.json 'files' match on disk now, for example code/pooled.py 0c24903a... and code/claims_text.py 24f6a5c5.... All 133 repository_files in code_manifest.json match. step2lib.py is 8a2ea838..., equal to step 2's code_manifest.json entry; pooled.step2() verifies this itself when it loads the file.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "How the looks were recomputed: the same steps as run_look, calling the pinned functions directly.",
+            "evidence": "Script: /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/recompute_looks.py, run as PYTHONDONTWRITEBYTECODE=1 /tmp/claude-0/bcavenv/bin/python -I -B. /root/bcavenv does not exist; /tmp/claude-0/bcavenv, which is K.PYTHON, does. The script loads pooled with K.load_local('pooled'), as phase_main does. It reads prereg.json with P.official_prereg() and checks its constants against canonical_constants() before changing anything. It then sets near80_constants.OUT to the scratch root, in memory only, because official-mode load_results refuses any other root. Templates are default_templates('official', prereg), which is the prereg's claims_word_for_word block. Then load_results(root, group, 'official', prereg_sha256=51e677ab...), then exploratory_look or confirmatory_look, then look_md(look, sha256(canonical(look))). The look code does not ask for the approval chain, so I did not call it. Nothing was written to the repository: git status is clean and there is no new __pycache__.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "First pass, which reads the whole final ledger: the only exploratory-look differences, other than 'written', are 13, all in reported.resources.",
+            "evidence": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/report.json lists them. 11 by_phase_kind entries are absent in the official look: confirmatory/clone, critic, critic_full, critic_second, data_main, evaluate, lock, look_confirmatory, policy, reference_actors and switch. exploratory/look_exploratory is also absent. cpu_hours_total is 17.036877751940352 recomputed against 12.094227461171108 official. The cause: the official look ran at 2026-10-16T19:03:01Z, when those attempt records did not exist yet. The recomputation read 301 attempt records. The marks, brackets, validity, stops, sentences, claims, inputs (113), failed seeds and every other table are identical. 'written' is 2026-10-16T19:03:04Z official against the recompute time.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "First pass: the only confirmatory-look differences, other than 'written', are 2, both in reported.resources.",
+            "evidence": "reported.resources.by_phase_kind.confirmatory/look_confirmatory is absent in the official look; that is the look's own attempt record, which was written after the look. cpu_hours_total is 17.036877751940352 recomputed against 17.036150350434795 official. Everything else is identical, including inputs (37) and exploratory_look_sha256 4851f5e6076690fab5bc8d2added210a10a047418d74a4ea462075959af1fdde. 'written' is 2026-10-19T21:41:07Z official.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Second pass, with the ledger limited to attempts that ended before each look's own attempt started: both looks are byte-identical to the official files, and so are the markdown files.",
+            "evidence": "Script: /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/recompute_looks_timed.py. The start times come from ledger/look_<group>.x.x.<group>/1.start.json: exploratory 2026-10-16T19:03:01Z (212 of 301 attempts kept), confirmatory 2026-10-19T21:41:04Z (300 of 301 kept). With the official 'written' put back, the recomputed exploratory SHA-256 is 4851f5e6076690fab5bc8d2added210a10a047418d74a4ea462075959af1fdde, equal to the official file and its sidecar. The confirmatory SHA-256 is 1edd56c867e40cba7349505dddee0bcd814035499c7491237e938f3a5ca4f15b, also equal to file and sidecar. json_bytes_identical is true and md_identical is true for both, compared against results-20261020T115246Z/files/looks/*.md (/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed_timed/report.json).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Markdown from the first pass differs from the official .md only in the digest line, the resources rows and the total.",
+            "evidence": "diff of /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/<group>.with_official_time.md against files/looks/<group>.md. Exploratory: line 5, the JSON SHA-256 line (172abc96... against 4851f5e6...); 11 extra confirmatory/* resource rows and an exploratory/look_exploratory row; 'Total CPU-hours so far: 17.04.' against '12.09.'. Confirmatory: line 5 (2565b6c5... against 1edd56c8...) and an extra confirmatory/look_confirmatory row. The sentences, validity, stop rules, marks table, claims, failed seeds and brackets are identical.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The reproduced exploratory look stops the near-80 and random-rows settings before the fresh seeds, because the hand-set range limit's band cost is below 5.",
+            "evidence": "looks/exploratory.json: stops.rival_unaffected.B 4.299068660557393, per seed [7.688745129676946, 4.3029123576749555, 4.818530601600983, 5.007208758298788, -0.32205354446470835], passed false. stops.harm.H 95.51290218982635, P 0.691512, passed true. noise_floor.V 1.9567119432396027 (BCA's switched ramp), passed true. fresh_near80_allowed false; claim3_dropped false; unmeasured null. Exploratory outcomes: claim1 pass, claim2 pass, claim3 invalid (the hand-set range limit's band cost), claim4 pass. Marks: claim 1 net lead 42.94956031717804 over standin, even pull 100.22016236771411; claim 4 net lead 25.26754945073759 over obca_forced, even pull 100.75201631603166; claim 2 gain 8.639544529314858 (positive in 5 seeds), overshoot 0.9718112785664033; claim 3 C 1.0854525793690215, K 3. All reproduced exactly.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The reproduced confirmatory look: claims 1-3 not run, claim 4 failed because the actor-training phase stopped on seeds 10, 12 and 13.",
+            "evidence": "looks/confirmatory.json outcomes: claim1, claim2 and claim3 'not run' (reason: 'the near-80 setting did not run on these seeds'); claim4 'fail'. failed_seeds.claim_4 = {10, 12, 13: 'the actor training stopped (a built-in check failed)'}. failed_checks.claim_4 = 'its actor training phase (main setting, stalling world)'. The stop records stops/policy.main.stall.s{10,12,13}.json have reason 'a built-in check failed' and detail.error 'refused: stall/seed1X: arm obca_k1 is switched on but its height inf is not finite (step 1 could not certify the full-throttle group)'. Claim 4's pooled marks are all null, as the failed-seed rule requires. Per-seed net for seeds 11 and 14: 106.28627361825103 and 109.54471459762166; per-seed even pull: 108.22381213781182 and 105.03622605989233. All reproduced exactly.",
+            "status": "confirmed"
+          }
+        ],
+        "problems": [
+          "Exact byte reproduction needs one input that is not in the records: which ledger attempt records existed when each look ran. The final ledger also holds attempt records written after the look, so a plain recomputation differs in reported.resources: exploratory total CPU-hours 17.036877751940352 against 12.094227461171108 official; confirmatory 17.036877751940352 against 17.036150350434795. No mark, claim or sentence changes. Limiting the ledger to attempts with ended_utc before the look's started_utc (from 1.start.json) removes every difference.",
+          "The confirmatory .md's Validity section prints the near-80 conditions as 'fails': harm '-', share '-', 'Check 10 held in 0 of 5 seeds; it did not hold in 5', band cost '-'. The near-80 setting never ran on seeds 10-14 (validity.claims_2_3.check10: M 5, unknown_seeds [10, 11, 12, 13, 14]). This is what the pinned code computes and does not change any claim (claims 1-3 are 'not run'), but a reader could take it for a failure.",
+          "The task names /root/bcavenv, which does not exist. I used /tmp/claude-0/bcavenv/bin/python, which is near80_constants.PYTHON (numpy 2.2.6, Python 3.10.20).",
+          "The task says the .msgpack/.npz blobs of 7f0fe12 are not local. In fact every blob of 7f0fe12, model files included, was already in the local pack files (checked against the pack indexes, without any fetch). I excluded them from the extraction anyway.",
+          "The scratch folder near80_results/ also holds attempts.json and missing_list.json. I did not create them; another process probably wrote them. I did not read or use them.",
+          "The only change under /home/user/bca is the modification time of the /home/user/bca/.git directory (12:05:54Z), probably from the index refresh when I ran git status. No file content changed and git status is clean."
+        ],
+        "scratch_files": [
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/compare_trees.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/recompute_looks.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/recompute_looks_timed.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/git_tree",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/out",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/report.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/exploratory.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/confirmatory.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/exploratory.with_official_time.md",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed/confirmatory.with_official_time.md",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed_timed/report.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed_timed/exploratory.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed_timed/confirmatory.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed_timed/exploratory.md",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/recomputed_timed/confirmatory.md",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/tree.txt",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/packed.txt"
+        ]
+      },
+      "review": {
+        "upheld": [
+          "Main verdict: both looks reproduce byte for byte. I extracted 7f0fe12 myself with git archive, leaving out the model files, into /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/tree. I ran pooled.load_results and exploratory_look/confirmatory_look in official mode from my own script, /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/scripts/relook.py, after checking prereg constants against canonical_constants() and only then pointing K.OUT at the scratch root in memory. I cut the ledger to attempts that ended before each look started and put back the official 'written'. The result: exploratory SHA-256 4851f5e6076690fab5bc8d2added210a10a047418d74a4ea462075959af1fdde and confirmatory 1edd56c867e40cba7349505dddee0bcd814035499c7491237e938f3a5ca4f15b, equal to the files and their sidecars. Both .md files are identical (refute/timed/report.json).",
+          "The run-files commit equals the results folder. SHA256SUMS has 2724 entries. 2634 are present and match. The 90 absent ones are all under files/data/. With logs/*.txt mapped to *.log and runner.txt to runner.log, all 2724 match the git files, with no extras. RUNFILES_SHA256SUMS has 2913 entries: 2724 extracted files match, and the other 189 are model files (169 .msgpack, 20 .npz). Every object ID in the 7f0fe12 tree is in the local pack indexes (0 missing), so no lazy fetch was possible.",
+          "The look code reads only JSON records and their sidecars, never logs. With an audit hook on file opens, the two looks plus look_md opened 902 files under the root, all .json or .sha256. Outside the root they opened only step 2's step2lib.py and its code_manifest.json, plus Python and numpy. The tree has 2430 JSON and sidecar files, and 30 data/*/train.hdf5.manifest.json files have no sidecar. pooled.py does not use the approval chain.",
+          "Pinned code checks. prereg.json is 51e677ab76c8d2f7fa7779d21db7f53bd40d42ff5e6be278d4abfb34c3396d4a and amendment_1.json is 52fe05b92900290b990e27d7f5ab6351e0c6c964300e8f8bd25d03bdfa981bbf, each matching its sidecar. All 28 amendment files match on disk, all 133 repository_files in code_manifest.json match, and step2lib.py is 8a2ea838af9675aff27ee728e34ec93d7f11462e7d46aa7b745061e4dd7d6ec7, equal to step 2's manifest entry. /root/bcavenv does not exist. /tmp/claude-0/bcavenv/bin/python (K.PYTHON) is Python 3.10.20 with numpy 2.2.6.",
+          "First pass, with the full final ledger of 301 attempt records: after canonical serialization, the exploratory look has exactly 13 differences, all in reported.resources: 12 by_phase_kind entries (11 confirmatory/* and exploratory/look_exploratory) and cpu_hours_total 17.036877751940352 against 12.094227461171108. The confirmatory look has 2: the confirmatory/look_confirmatory entry and cpu_hours_total 17.036877751940352 against 17.036150350434795. Inputs (113 and 37), marks, brackets, validity, stops, sentences, claims and failed seeds are identical (refute/all/report.json).",
+          "Second pass: 212 of 301 attempts were kept for the exploratory look (cut at 2026-10-16T19:03:01Z) and 300 of 301 for the confirmatory look (cut at 2026-10-19T21:41:04Z), taken from each look's ledger/look_<group>.x.x.<group>/1.start.json.",
+          "The first-pass markdown differs exactly as reported. Exploratory: line 5's digest (172abc96d85e3ee06e9e949c0787a503309560714596b38d9e6d7440e6bbeaf1 against 4851f5e6...), 11 extra confirmatory/* resource rows, one extra exploratory/look_exploratory row, and 'Total CPU-hours so far: 17.04.' against '12.09.'. Confirmatory: line 5's digest (2565b6c511b91eb08e645ccb912d6923ebb0a91e4b91e93fc58431accdf353d0 against 1edd56c8...) and one extra confirmatory/look_confirmatory row.",
+          "Every exploratory number checks out against files/looks/exploratory.json. stops.rival_unaffected.B is 4.299068660557393, per seed [7.688745129676946, 4.3029123576749555, 4.818530601600983, 5.007208758298788, -0.32205354446470835], passed false. harm H is 95.51290218982635, P 0.691512, passed. noise_floor V is 1.9567119432396027 (BCA's switched ramp), passed. fresh_near80_allowed is false, claim3_dropped false, unmeasured null. Outcomes: claim1 pass, claim2 pass, claim3 invalid, claim4 pass. Claim 1: lead 42.94956031717804 over standin, even pull 100.22016236771411. Claim 4: lead 25.26754945073759 over obca_forced, even pull 100.75201631603166. Claim 2: gain 8.639544529314858 (positive in 5 seeds), overshoot 0.9718112785664033. Claim 3: C 1.0854525793690215, K 3.",
+          "The main confirmatory numbers check out against files/looks/confirmatory.json. Outcomes: claims 1-3 'not run', claim 4 'fail'. failed_seeds.claim_4 lists seeds 10, 12 and 13 with 'the actor training stopped (a built-in check failed)'. The stop records stops/policy.main.stall.s{10,12,13}.json carry the 'height inf is not finite' error. Claim 4's pooled marks are null. Seeds 11 and 14: net 106.28627361825103 and 109.54471459762166; even pull 108.22381213781182 and 105.03622605989233. exploratory_look_sha256 is 4851f5e6076690fab5bc8d2added210a10a047418d74a4ea462075959af1fdde.",
+          "Problems 1-4 hold. Exact bytes need the ledger cut. The confirmatory .md's Validity section prints 'fails' with '-' and 'Check 10 held in 0 of 5 seeds; it did not hold in 5' (validity.claims_2_3.check10 M 5, unknown_seeds [10, 11, 12, 13, 14]). /root/bcavenv is missing. The 7f0fe12 objects were already local.",
+          "Problem 6 holds in substance. .git/index was last written at 2026-10-20 12:01:34, so no git status after that rewrote it. Nothing outside .git changed after 12:06, git status --porcelain is empty, and no new __pycache__ exists under outputs/shift/beyond-the-data."
+        ],
+        "refuted": [
+          {
+            "statement": "Finding 2: '/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/out holds 2430 files, all *.json and *.json.sha256 from git_tree.'",
+            "why": "That folder now holds 2724 files. 294 are not JSON: 291 logs/*.txt, runner.txt and the 2 looks/*.md. Its files carry the results folder's time (11:56:29), not the git archive time (11:52:46, as in git_tree/), and its data/ files were written at 12:10. The shared near80_results/ folder is being written by other processes (scripts check1*.py, tab_*.py, data_records/, per_seed_main.*), so the folder was probably overwritten after the checker ran. That does not change any result: my own separate extraction, refute/tree, has the same 2430 JSON and sidecar files and gives the same looks. But the evidence path the report cites no longer matches its description."
+          },
+          {
+            "statement": "Finding 10: claims 1, 2 and 3 are 'not run' with the reason 'the near-80 setting did not run on these seeds'.",
+            "why": "In files/looks/confirmatory.json, outcome_reasons holds that reason only under claim3. Claims 1 and 2 have no stored reason. The 'not run' statuses themselves are right."
+          },
+          {
+            "statement": "Problem 5: the attempts.json and missing_list.json files in near80_results/ were written by another process, not by the checker.",
+            "why": "This cannot be checked from the files. They exist, with times 12:04:05 and 12:01:49. It has no bearing on the looks."
+          }
+        ],
+        "missed": [
+          "The official look JSON shows an infinite switch height as null. Step 1's switch records hold height 'inf', but pooled.plain() turns any non-finite number into null when it writes the JSON. So reported.switches in confirmatory.json shows height null for main/stall seeds 10, 12 and 13 (the infinite height that made claim 4 fail) and for main/no_stall seeds 10 and 12. exploratory.json does the same for near80/no_stall seed 3 and random_rows/no_stall seed 3. Anyone reading the look JSON sees 'not available', not 'infinite'. The checker's comparison could not see this, because both sides were serialized the same way. The switch records themselves (for example files/learners/main/stall/seed10/switch.json: on true, height 'inf', tail_certified false, finite_share_tail 0.879, n_tail 19) show the real value.",
+          "The confirmatory .md can be misread in more places than the Validity section. Its Marks table prints 'fail' for all five claim 1 (near-80) marks, both claim 2 marks and the claim 3 mark, although claims 1-3 are 'not run'. Both net-lead rows read 'net lead over not available'. The Brackets table prints S 0, N 0, K2 0, K 0 and M 5 for a setting that never ran on seeds 10-14. This is what the pinned code produces and it changes no claim, but the owner should be told to read the Claims section, not the Marks table.",
+          "The time cut is unambiguous. No attempt was running when either look started, and none ended in the same second as either start. Each look ran alone, so the second-pass filter is not a judgment call.",
+          "The pinned look code did not change between the two looks. The exploratory look ran on 2026-10-16, before amendment 1. Amendment 1 changed 8 files (PREREGISTRATION.md, approve_local_near80.py, approval_check.py, import_approval.py, settingdata.py, stubs.py, test_approval.py, test_runner.py), and pooled.py, claims_text.py and near80_constants.py are not among them. That is why today's code reproduces the 2026-10-16 look.",
+          "The check pointed at cmd_report, which runs pooled.halt_report, but the checker did not run it. I ran halt_report with write=False on my scratch root. It finds official mode and stop 'stop.rival', and gives the same five sentences as the confirmatory look: the rival stop (4.3 points, at least 5 needed), the note that the stop does not touch claim 4, and one phase-stop sentence each for seeds 10, 12 and 13 (stalling world, actor training, a built-in check failed). Nothing was written.",
+          "Disclosure about my own run: my first command ran a plain git status on /home/user/bca. .git/index stayed at 12:01:34 and git status is clean. I ran every other git command read-only, after confirming all needed objects were local. The .git directory's time changed again at 12:17:36, when I ran no git command. My files are under /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/: scripts/cmp_tree.py, scripts/relook.py, scripts/trace_reads.py, all/report.json, timed/report.json, timed/*.json and *.md, and tree/."
+        ],
+        "overall": "The checker's main conclusion stands. I rebuilt my own scratch copy of the run records from 7f0fe12 and ran the pinned pooled.py on it. Both looks come out byte for byte the same as files/looks/exploratory.json (4851f5e6076690fab5bc8d2added210a10a047418d74a4ea462075959af1fdde) and confirmatory.json (1edd56c867e40cba7349505dddee0bcd814035499c7491237e938f3a5ca4f15b), and the .md files match, once the ledger is cut at each look's start and the official 'written' time is put back. Without that cut, only reported.resources differs: exploratory total CPU-hours 17.036877751940352 against 12.094227461171108, confirmatory 17.036877751940352 against 17.036150350434795. The results stand. The exploratory look stopped the near-80 and random-rows settings because the hand-set range limit's band cost B was 4.299068660557393, below 5. The confirmatory look has claims 1-3 'not run' and claim 4 'fail', because the actor training on seeds 10, 12 and 13 refused BCA's switch, which was on with an infinite height. The corrections are small. The checker's out folder no longer matches its description, probably because another process overwrote it; this does not affect the result. The stored reason for 'not run' exists only under claim 3. The checker also missed two reporting problems the owner should hear about. The look JSON writes the infinite switch heights, the actual cause of claim 4's failure, as null. And the confirmatory .md's Marks and Brackets tables print 'fail' and zero counts for claims 1-3, which never ran."
+      }
+    },
+    {
+      "key": "stops",
+      "check": {
+        "verdict": "The three stops are not a coding bug. They are a real limit of BCA's certificate: with fewer than about 29 full-throttle rows it cannot give a finite height, whatever the scores. The approved pinned code stops on this on purpose. But the pre-registration never anticipated it and never names it as a stop, so \"claim 4 failed\" really means \"claim 4 could not be tested on seeds 10, 12 and 13\". It is not evidence against step 2's result.",
+        "findings": [
+          {
+            "claim": "Q1, the code path. The switch phase stores certificate.height as the string 'inf'. The policy phase reads it back, and step2lib.arm_table refuses because BCA's switched ramp (obca_k1) is switched on with a height that is not finite. The near-80 code turns that refusal into a phase stop with reason 'a built-in check failed'.",
+            "evidence": "learner_phases.switch -> switch_scores -> certificate_entry calls S1.certificate(tail, rest, [20261015, 9700, seed, WORLD_TAG], K.CERT) and stores the result with jsonable (inf becomes 'inf'). policy_phase.run_policy line 527 calls arm_row before any training. arm_row (lines 97-108) reads both worlds' switch.json 'entry'. arm_row_from line 115 calls S.arm_table(..., rule=K.ARM_RULE); step2lib.py lines 355-356 raise SystemExit('refused: ... switched on but its height inf is not finite (step 1 could not certify the full-throttle group)'). policy_phase.py line 116 catches SystemExit, and line 118 raises PH.PhaseStop(STOP_REASONS['check'], what='the arm table cannot be built from the switches'); phases.py line 114 defines check='a built-in check failed'. Replaying step2lib.arm_table on the committed switch entries reproduces the exact refusal text for seeds 10, 12 and 13, and builds rows for seeds 11 and 14 (scratch script replay_arm_table.py). The seed-10 stop record files/stops/policy.main.stall.s10.json holds the same error. The phase's log files/logs/policy.main.stall.s10.txt shows the stop 19 seconds after start, before any actor trained.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q1, the exact rule. The tail is certified if and only if at least 950 of the 1,000 posterior draws have a finite crossing (finite_share_tail >= 0.95). A draw is finite if and only if the Bayesian-bootstrap weight of the extra unseen-point atom, E_{n+1}/sum(E_1..E_{n+1}), is at most alpha = 0.1. That happens with probability 1 - 0.9^n_tail, which does not depend on the score values. In practice the deciding quantity is n_tail: the survivors plus the bank rows past t_lo. The cutoff is about 29 rows. This is the classic order-statistic fact that a one-sided 90%-coverage, 95%-confidence bound needs at least 29 points.",
+            "evidence": "calibration/wbcp.py: line 54 sets a crossing to np.inf when a draw never covers; line 115 sets lambda_hpd = posterior[ceil(0.95*1000)-1] = posterior[949]; line 117 sets threshold = max(lambda_hat, lambda_hpd); lines 35-36 define certified = isfinite(threshold). step1lib.py line 271 sets height = ct.threshold - cr.threshold, and line 272 sets tail_certified = ct.certified. The config is near80_constants.py line 110, CERT = dict(alpha=0.1, credibility=0.95, draws=1000, statistic_quantile=0.05, margin=0.10), the same as step 1's prespec.json 'certificate' (alpha 0.1, credibility 0.95, draws 1000, margin 0.1). Check: on an unmodified copy of wbcp.py (SHA-256 fdd36b42...889c023), with dummy scores and only the rng tags and n_tail, I recomputed finite_share_tail for all 20 main-setting seed-worlds (seeds 0-4 and 10-14, both worlds). All 20 match the files exactly, for example seed 10 stall n_tail 19 -> 0.879 and seed 13 stall n_tail 18 -> 0.85 (scratch script finite_share.py). My computed chance of certification for a given n: about 0 for n <= 23, 0.4049 at 28, 0.6999 at 29, 0.8962 at 30, 0.9755 at 31.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q1, why the switch can be on while the height is infinite. The switch and the height use different rules. The switch is on when the 5% quantile of the pairwise posterior gaps is above 0.10, and that rule counts tail draws that cannot be certified as +infinite gaps, so a small group does not keep the switch off. The height uses the 95%-credible threshold, which is infinite.",
+            "evidence": "step1lib.py line 228 (pairwise_quantile docstring: 'inf - finite = +inf') and line 267 (on=bool(q05 > margin)). Seed 10 stall: q05 1.0249972379207613 (on) and height 'inf'.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q2, main setting, stalling world, seeds 10-14 (files/learners/main/stall/seed*/switch.json, entry.certificate). Columns: on, height, tail_certified, n_tail, n_rest, finite_share_tail, R_tail, R_rest, q05.",
+            "evidence": "s10: True, 'inf', False, 19, 876, 0.879, 'inf', -0.021871961355209635, 1.0249972379207613. s11: True, 2.289130291938781, True, 53, 836, 0.997, 2.2624015522003162, -0.02672873973846457, 0.7601742672920224. s12: True, 'inf', False, 22, 872, 0.903, 'inf', -0.0341885519027727, 0.7461528718471531. s13: True, 'inf', False, 18, 857, 0.85, 'inf', -0.024500279426575844, 0.8454256594181047. s14: True, 4.595018935203548, True, 30, 850, 0.964, 4.564476976394651, -0.030541958808896652, 0.6754206860065448. n_survivors: 18, 51, 21, 18, 30. The entry certificate equals the top-level certificate in every record. All cited files pass sha256sum -c against SHA256SUMS (30 OK).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q2, main setting, no-stall world, seeds 10-14 (files/learners/main/no_stall/seed*/switch.json). Same columns.",
+            "evidence": "s10: False, 'inf', False, 18, 878, 0.854, 'inf', -0.03412922978401234, 0.033398794531823484. s11: False, 0.13446458935737482, True, 32, 836, 0.965, 0.10733347892761103, -0.027131110429763794, 0.007904334068296492. s12: False, 'inf', False, 21, 873, 0.89, 'inf', -0.030123016834259886, 0.0018749809265159456. s13: False, 0.2405336070060713, True, 36, 853, 0.981, 0.22289637565612708, -0.017637231349944216, -0.012442663908004192. s14: False, 0.774963941574093, True, 31, 851, 0.969, 0.7523452377319302, -0.0226187038421628, 0.010062013864517994.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q2, seeds 0-4. In no stalling-world seed-world was the tail uncertified with the switch on. The only uncertified tail in the main setting was no_stall seed 3, and its switch was off, so it set nothing off. Step 2's PRESPEC names this exact case.",
+            "evidence": "step1/results/results.json per_seed_world (SHA-256 e513fd19..., equal to step 2's results.json step1_results_sha256), same columns. Stall 0: True, 6.019341344833375, True, 35, 850, 0.97, 5.986495361328124, -0.03284598350525059, 1.0483887863159183. Stall 1: True, 2.420176846981054, True, 47, 846, 0.996, 2.394112224578862, -0.026064622402191873, 1.0052763032913177. Stall 2: True, 2.0646745610237147, True, 59, 839, 0.997, 2.03945281982422, -0.02522174119949483, 0.837796350717543. Stall 3: True, 1.6053499102592461, True, 43, 850, 0.993, 1.5778198337554912, -0.02753007650375494, 0.779468729496001. Stall 4: True, 1.796276783943176, True, 47, 825, 0.996, 1.776014947891234, -0.020261836051941984, 0.8516901063919065. No-stall 0: False, 0.08312661886215089, True, 38, 849, 0.981, 0.058426322937009445, -0.024700295925141447, 0.020833098888397572. No-stall 1: False, 0.15075258731841856, True, 36, 843, 0.975, 0.11152641296386534, -0.03922617435455322, 0.001848471164704435. No-stall 2: False, 0.1996879410743695, True, 52, 838, 0.994, 0.1612868785858126, -0.0384010624885569, 0.010339846611023162. No-stall 3: False, 'inf', False, 29, 849, 0.947, 'inf', -0.01965006589889562, 0.01971142768859835. No-stall 4: False, 0.037865314483640944, True, 60, 827, 0.999, 0.024317498207091504, -0.01354781627654944, -0.046827722787858406. Step 2's results.json status is 'values' in all 10 seed-worlds; replaying arm_table on step 1's results builds without refusal. step2/PRESPEC.md line 125: 'In seed 3 of the no-stall world, step 1's height is infinite, but the certificate is off, so h = 0 and nothing is refused. (The code refuses if a switched-on arm ever has an infinite height.)' pre_approval/no_training_checks_seeds0_4.json holds no certificate (nothing trained); its ball-alone gap rule n_tail (survivors) is stall 34, 45, 59, 42, 45 and no_stall 37, 34, 52, 28, 58. This run's exploratory switches for seeds 0-4: no stalling-world tail uncertified. random_rows/stall/seed0 was certified exactly at the edge (n_tail 29, finite_share_tail 0.95). near80/no_stall/seed3 (29, 0.947) and random_rows/no_stall/seed3 (28, 0.948) were uncertified but off.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q3. The fresh seeds' data are made like seeds 0-4's: same recorder, sizes 500/200/300 and stall slope 1.5. Amendment 1 did not change which rows the switch saw. I regenerated every stalling-world log independently and matched the records bit for bit.",
+            "evidence": "settingdata.fresh_settings (lines 125-129) uses A.stage0_spec, the gate's config.sizes and slope. The data records (git show 7f0fe12:runs/shift_explore/near80/data/main/<world>/seed1x/data.json) hold source 'fresh', variant 'base', stall_slope 1.5 and recorder {damping 0.25, full_throttle_probability 0.5, full_throttle_share_target 0.13, jitter 0.03, normal_driving_cap 0.8, trigger 0.565, wobble 0.3}. That is the same as runs/shift/pre/stage0_base.json 'chosen' and the gate's seed-0 record (sizes [500, 200, 300], stall_slope 1.5). The prereg's config has sizes [500, 200, 300] and stall_slope 1.5. Each record has kept_training_rows 42500, removed 7500 and bank_rows 1000, as for gate seed 0 (42500 kept; bank 851 + 149 removed). The records' 'sizes' key holds the wrapper's {chunk, starts, steps, updates}: the overwrite that amendment 1 handles. I ran dataset.generate(seed, world, spec, (500, 200, 300), 1.5) for stall seeds 10-14. Every regenerated log's array hashes equal the record's log_sha256, and both gap-removal hashes equal. Step 1's gap rule on the kept commands reproduces t_lo, survivors, n_tail and n_rest exactly. Seed 10: t_lo 0.7910101413726807, 18 survivors + 1 bank row = 19, n_rest 876. Seed 12: 21 + 1 = 22, 872. Seed 13: 18 + 0 = 18, 857. Seed 11: 51 + 2 = 53, 836. Seed 14: 30 + 0 = 30, 850 (scratch script regen_seed.py). The hash chain holds for all 10 seed-worlds: each data record's SHA-256 equals SHA256SUMS; the critic's and the second critic's training_file_check passed; the critic's prepared hashes equal the data record's; the second critic's bank and normalization hashes equal and all its checks are true; the switch's actions_sha256 equals the data record's; switch.critic_second_sha256 equals critic_second.file_sha256; t_lo, t_up and n_survivors equal the second critic's gap_rule. Every record carries amendment prefix 52fe05b92900290b (scratch script hash_chain.py).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q4. Rules that make the stop fail the seed and claim 4 (quoted from PREREGISTRATION.md).",
+            "evidence": "Section 8.3: 'Plumbing stops, per phase: the height-0 check, a non-finite network, a saved input whose fingerprint does not match, or a training file that fails its check. A stopped phase is written once and never rerun. Every mark that needs it fails.' Section 9 preamble: 'Every seed is needed. A failed or stopped seed fails every mark that needs it.' Section 9.5: 'A failed seed: a fresh seed fails claim 4 only if it fails one of the gate's own data checks (...), if it has a main-setting plumbing stop, or if its main-setting evaluation lacks a number that claim 4 reads, with no failure or stop record'. Section 9.6: 'No mark moves after its numbers exist.' and 'The four claims are read separately. None rescues another.' Section 10: 'Nothing on seeds 10-14 stops early on an outcome. Only plumbing failures stop a seed-world.' and 'For claim 4, only the gate's data checks and the main setting's own phases count (section 9.5). A failed seed is written down and never replaced'. Section 14.4 Fails: 'On fresh seeds 10-14, in the main setting, step 2's result did not hold: [clauses as in claim 1].' Section 14.1 clause: 'seed [s] failed [check] and, by the pre-set rule, counts as failing every mark'. Section 14.5: 'A phase stops: \"Seed [s], [world]: [phase] stopped ([reason]). It was not rerun. Every mark that needs it fails.\"' Section 14.6: '[check] is ... \"its [phase] phase\" for a stopped phase' and 'A number that cannot be computed, because a seed failed, a phase stopped or an arm is missing, is written \"not available\". A mark that needs it fails.' Section 17 item 9: 'Too few survivors on a fresh seed. BCA's group needs at least 9 rows. Guard: check 6; such a seed is written down and never replaced.' prereg.json kill_rules.plumbing_after_approval[3]: 'per phase: w0_check within 1e-5, finite parameters, input hashes, the training-file check; a stopped phase is never rerun and fails every mark that needs it'. The code applies this through pooled._stop_affects: any stop with setting 'main' fails claim 4 for that seed.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q4. The pre-registration did not anticipate an uncertified full-throttle group on a fresh seed. The arm-table refusal is documented as a stop only in the pinned code and in step 2's PRESPEC, never in the near-80 prose.",
+            "evidence": "Searching PREREGISTRATION.md for 'certif', 'not finite', 'non-finite', 'infinite', 'built-in', 'arm table' and 'refus' finds no rule about an uncertified group or an infinite height. 'non-finite' and 'not finite' occur only for networks. The only nearby guard is section 17 item 9, which covers fewer than 9 survivors through check 6 (the gap rule undefined -> switch off). Sections 1 (line 82) and 4.2 (line 300) expected 28-59 survivors, as seen on seeds 0-4. In prereg.json the only mention is arms.near80_both_worlds.primary.obca_k1: 'step 1's certificate (margin 0.10) on held-out scores gives the switch and height'. Where it is documented: step2lib.arm_table docstring ('Refuses (SystemExit) when an arm's switch is on and its h is not finite'); step2/PRESPEC.md line 126; step1/PRESPEC.md line 180 ('It is infinite when the full-throttle group cannot be certified'); the near-80 policy_phase.arm_row docstring ('arm_table's refusals (a switched-on arm with a non-finite height, a negative height) and a missing gap rule are recorded stops'); and test_runner.py test_arm_row (lines 1180-1190), which expects PhaseStop. These files are in the code manifest the owner approved (code_manifest_sha256 4fc25bba... in every record's approval facts).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q5. Consequences: by the runner's dependency rule, the no-stall actor training and both evaluations of seeds 10, 12 and 13 were skipped. The no-stall actor training would have hit the same refusal anyway.",
+            "evidence": "phases.needs lines 316-317: a no-stall policy phase needs the stalling world's policy phase. Lines 333-336: an evaluation needs its policy phase. rule_skip lines 524-527: a need that is stopped or skipped makes the phase skipped. runner.txt lines 1112, 1116 and 1119: 'skip policy.main.no_stall.s10/s12/s13: the actor training (policy.main.stall.sX) was stopped'. Lines 1129-1134: evaluate.main.stall.s10/12/13 skipped (policy stopped) and evaluate.main.no_stall.s10/12/13 skipped (policy skipped). status.json counts for the main setting: policy 4 done, 3 skipped, 3 stopped; evaluate 14 done, 6 skipped (seeds 0-4 and seeds 11 and 14 done). Critics, second critics, switches, clones and reference actors of both worlds, and critic_full, were done for these seeds. The confirmatory lock and look ran (they accept skipped or stopped needs). Even without the dependency, run_policy needs the stalling world's lock for the no-stall world (lines 529-530). arm_table also builds both worlds and checks the stalling world first, and the always-on ramp (obca_forced) in the no-stall world takes the stalling world's height 'inf' with its switch always on. My replay shows the same refusal. So in the main setting, any uncertified stalling-world tail stops both worlds, whether the switch is on or off.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Q6, judgment. This is a genuine result of the approved method, not a coding defect. It is also a design gap the pre-registration did not foresee. BCA's certificate cannot set a height with 18-22 full-throttle rows. Seeds 10, 12 and 13 drew fewer survivors (18, 21, 18) than any seed-world of seeds 0-4 (28-59), so they fell under the roughly 29-row cutoff. Claim 4 fails by the pinned rules, but for want of seeds, before any actor trained. It is not a refutation of step 2's result.",
+            "evidence": "For 'genuine' (not a defect): the data were made the same way and regenerate bit for bit; the certificate config and rng tags are identical to step 1's; the finite share is reproduced exactly from the tags and n_tail alone; the refusal is deliberate and tested in approved pinned code; and the cause is a mathematical property of BCA's posterior at alpha 0.1 and credibility 0.95, independent of the critic's scores. For 'design gap' (against a clean genuine reading): (a) section 10 says only plumbing failures stop a seed-world, and sections 8.3 and prereg.json list four plumbing stops. This refusal is a fifth kind ('a built-in check failed') triggered by the method's reading of the data, so calling it a 'main-setting plumbing stop' under section 9.5 stretches the prose, though the generic sentences (section 9 preamble, sections 14.5 and 14.6) and the approved code do fail the seed. (b) Restructured BCA has no defined action for 'switch on, height undefined'; seeds 0-4 never exercised it in the stalling world (closest: random_rows/stall/seed0 certified at exactly 0.95). (c) Seed 14 stall (n_tail 30) passed with my computed probability 0.8962, so this outcome was close to likely on these seeds. Any other treatment, such as capping the height or switching off, would need a labeled post-hoc amendment and could not be confirmatory.",
+            "status": "confirmed"
+          }
+        ],
+        "problems": [
+          "The pre-registration's prose and its pinned code disagree on what may stop a fresh seed. Section 10 says 'Only plumbing failures stop a seed-world', and section 8.3 and prereg.json list four plumbing stops. The approved code adds a fifth, 'a built-in check failed', and fires it on an outcome of BCA's own switch phase. The confirmatory look follows the code (pooled._stop_affects fails claim 4 for any main-setting stop).",
+          "The sentence the look writes, 'step 2's result did not hold ... seed 10 failed its actor training phase', can read as a performance failure. The actor training never began: the phase stopped at the arm table, 19 seconds after start (logs/policy.main.stall.s10.txt).",
+          "Restructured BCA (steps 1 and 2) has no rule for a switched-on certificate with an infinite height. The switch statistic counts uncertifiable draws as +infinite gaps, so a small full-throttle group tends to switch caution on while making the height infinite. Seeds 0-4 never showed this in the stalling world, so neither step 1/2 nor the near-80 pre-registration addressed it.",
+          "In the main setting, any uncertified stalling-world tail stops both worlds' actor training for that seed, even with the switch off, because the always-on ramp copies the stalling world's height. The near-80 test test_arm_row covers this; the pre-registration does not mention it.",
+          "Fresh seeds drew far fewer survivors than the pre-registration expected (stall 18, 51, 21, 18, 30 against the 28-59 stated in sections 1 and 4.2). Section 17 item 9 guards only fewer than 9 survivors.",
+          "/root/bcavenv does not exist; I used /tmp/claude-0/bcavenv (numpy 2.2.6). Reading blobs with git show touched only the mtime of /home/user/bca/.git. git status --porcelain was empty afterwards, and no other repository file changed."
+        ],
+        "scratch_files": [
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/tab_fresh.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/tab_old.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/tab_pre.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/tab_explor.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/finite_share.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/replay_arm_table.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/hash_chain.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/scripts/regen_seed.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/lib/wbcp.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/data_records/"
+        ]
+      },
+      "review": {
+        "upheld": [
+          "Q1, the code path, reproduced. The switch record stores certificate.height as 'inf' (files/learners/main/stall/seed10/switch.json, entry.certificate). policy_phase.run_policy calls arm_row at line 527, before any training. arm_row reads both worlds' switch.json 'entry'. arm_row_from (line 115) calls step2lib.arm_table, and step2lib.py lines 355-356 raise SystemExit('refused: ... switched on but its height inf is not finite ...'). policy_phase.py lines 116-118 turn this into PhaseStop(STOP_REASONS['check']), and phases.py STOP_REASONS has check='a built-in check failed'. The stop records files/stops/policy.main.stall.s10/s12/s13.json hold exactly that error text. All three hash-match SHA256SUMS.",
+          "Q1, the exact rule, reproduced independently. wbcp.py (SHA-256 fdd36b42...889c023, unchanged): line 54 makes a draw's crossing inf when it never covers; line 115 sets lambda_hpd = posterior[949]; line 117 sets threshold = max(lambda_hat, lambda_hpd); lines 35-36 define certified = isfinite(threshold). A draw is finite exactly when E_{n+1}/(E_1+...+E_{n+1}) <= 0.1, so the chance is 1 - 0.9^n, whatever the scores. Config: near80_constants.py line 110 CERT = dict(alpha=0.1, credibility=0.95, draws=1000, statistic_quantile=0.05, margin=0.10), and line 111 CERT_TAG_HEAD = (20261015, 9700), the same tags as step 1's prespec.json. I rebuilt finite_share_tail and tail_certified for all 20 main-setting seed-worlds (seeds 0-4 and 10-14, both worlds) from the rng tags and n_tail alone, using dummy scores. All 20 match the files exactly. My exact binomial chances of certification are 0.40492958851311894 at 28 rows, 0.6998533510100691 at 29, 0.8961611719685577 at 30 and 0.9755334941938961 at 31. At the seeds' own sizes the chances are 6.4e-19 (19 rows, seed 10), 1.4e-8 (22 rows, seed 12) and 7.0e-24 (18 rows, seed 13). Nuance: 'cannot give a finite height with fewer than about 29 rows' holds outright only below about 25 rows. At 26-28 rows the chance is 0.031-0.405.",
+          "Q1, why the switch can be on while the height is inf. step1lib.pairwise_quantile counts inf - finite as +inf, and line 267 sets on = q05 > margin. The height (line 271) is ct.threshold - cr.threshold. Seed 10 stall: q05 1.0249972379207613, height 'inf'.",
+          "Q2 tables for main/stall and main/no_stall, seeds 10-14. Every value (on, height, tail_certified, n_tail, n_rest, finite_share_tail, R_tail, R_rest, q05, n_survivors) matches the switch.json files exactly. In every record, entry.certificate equals the top-level certificate.",
+          "Q2, seeds 0-4. The step 1 results.json values match (SHA-256 e513fd19..., equal to step 2's step1_results_sha256). No stalling-world seed of 0-4 had an uncertified group. The only uncertified one was no_stall seed 3 (n_tail 29, finite share 0.947), with its switch off. Step 2's status is 'values' in all 10 seed-worlds. step2/PRESPEC.md describes the no_stall seed 3 case. In pre_approval/no_training_checks_seeds0_4.json the ball-alone survivors are 34, 45, 59, 42, 45 (stall) and 37, 34, 52, 28, 58 (no_stall). The exploratory switches of this run match the report, including random_rows/stall/seed0 at n_tail 29 with finite share 0.95.",
+          "Q3, same data path. I regenerated all 20 main-setting logs with dataset.generate(seed, world, stage0_base.json 'chosen', (500, 200, 300), 1.5). For seeds 10-14, every log hash and both gap-removal row hashes equal the data records. Survivors, bank rows past t_lo, n_tail and n_rest equal the switch records. Seed 10 stall: 18 survivors + 1 bank row = 19, n_rest 876. Seed 12: 21 + 1 = 22, n_rest 872. Seed 13: 18 + 0 = 18, n_rest 857. Seed 11: 51 + 2 = 53. Seed 14: 30 + 0 = 30. The same call for seeds 0-4 reproduces step 1's n_tail and n_rest in all 10 seed-worlds. Hash chain for all 10 fresh seed-worlds: data record SHA-256 is in SHA256SUMS; the critic's prepared hashes equal the data record's; the second critic's bank and normalization hashes are equal; the switch's actions_sha256 equals the training file's; switch.critic_second_sha256 equals critic_second.file_sha256; t_lo, t_up and n_survivors equal the second critic's gap_rule. Amendment 1 changed only where the log sizes are read from, not which rows the switch saw.",
+          "Q4 quotations are verbatim. Sections 8.3 (plumbing stops), 9 preamble ('A failed or stopped seed fails every mark that needs it'), 9.5, 9.6, 10 ('Only plumbing failures stop a seed-world'), 14.1, 14.4, 14.5, 14.6 and 17 item 9, plus prereg.json kill_rules.plumbing_after_approval[3]. pooled._stop_affects returns (False, True) for setting 'main', so it fails claim 4 only.",
+          "Q4, not anticipated in the near-80 text. Searching PREREGISTRATION.md for certif, infinite, not finite, refus, arm table and built-in finds no rule about an uncertified group or an infinite height. prereg.json mentions the certificate only in the obca_k1 arm description. The refusal is documented only in step2lib.arm_table's docstring, step2/PRESPEC.md, step1/PRESPEC.md ('infinite when the full-throttle group cannot be certified'), policy_phase.arm_row's docstring and test_runner.test_arm_row (lines 1156-1190, which expects PhaseStop).",
+          "Q5, consequences. runner.txt lines 1112, 1116 and 1119 skip policy.main.no_stall.s10/s12/s13. Lines 1129-1134 skip both worlds' evaluations of seeds 10, 12 and 13. phases.needs line 316-317 makes the no-stall policy need the stalling policy. In status.json, data, critics, second critics, switches, clones, reference actors and critic_full.x.stall.s10-s14 are all 'done'. Because obca_forced takes the stalling world's height with its switch always on, any uncertified stalling-world group stops both worlds in the main setting, even with the switch off.",
+          "Q6, judgment. This is a genuine result of the pre-registered method, not a code defect. The data path is bit-identical to the gate's. The certificate's tags and config are step 1's. The outcome is fixed by the row count alone, and the refusal is deliberate, documented in step 2 and tested. It is also a design gap: the near-80 text never names this stop, and section 10 says only plumbing failures stop a seed-world. Also confirmed: the seed-10 phase log shows the stop 19 seconds after start (16:45:35 to 16:45:54); /root/bcavenv does not exist; git status was clean."
+        ],
+        "refuted": [
+          {
+            "statement": "Q3 evidence: 'Every record carries amendment prefix 52fe05b92900290b.'",
+            "why": "This is false for the 10 data records. git show 7f0fe12:runs/shift_explore/near80/data/main/<world>/seed1x/data.json shows them written 2026-10-16T19:03Z, before amendment 1. Their approval block has no 'amendment' field. Only the critic, second-critic and switch records (written 2026-10-19, critic attempt 2) carry prefix 52fe05b92900290b. The hash chain itself still holds, so the conclusion does not change."
+          }
+        ],
+        "missed": [
+          "The stop was foreseeable from data already on disk before the pre-registration. The gate's own base-world records (/home/user/bca/runs/shift/pre/data/base/stall/seed*/record.json, world_card.kept_past80_rows) cover 30 stalling-world seeds. All share the same recorder, stall slope 1.5 and sizes [500, 200, 300], and the files are dated 2026-10-12. Their survivor counts run from 11 to 60. Seven of the 30 are below 28: seed 103: 21, 106: 26, 107: 23, 112: 11, 118: 22, 901: 15, 902: 18. Seeds 0-4 (34-59) sat at the high end, and the pre-registration's '28-59 per seed and world' (sections 1 and 4.2) came from them alone. Using those 30 counts and the exact certification chance, I estimate a 0.22-0.24 chance per fresh seed of an uncertified stalling-world group, and 0.71-0.75 that at least one of five fresh seeds would stop (scratch script prior.py). So the fresh seeds were not unusual. The checker's 'fresh seeds drew far fewer survivors than expected' is true against the pre-registration's text, but not against the generator.",
+          "Seeds 11 and 14 ran fully, and files/looks/confirmatory.json (marks.claim4, reported.nets.main) holds their per-seed claim-4 values. BCA's net: 106.28627361825103 and 109.54471459762166. Best world-blind rival (obca_forced): 76.57983041836232 and 81.45697043443035, so leads of about 29.7 and 28.1 (my subtraction). Keeps the gain: recorded 8.963949952217746 and 8.121280788357168, big waves 19.99668080251169 and 22.455627638221102, big kicks 20.658932936411844 and 23.028841177585186. Beats the even pull: 108.22381213781182 and 105.03622605989233. Every per-seed value clears step 2's margins (10, -3, 15). This is not a claim, since the marks are pooled over all five seeds, but it bears directly on 'not evidence against step 2's result'. The checker did not report it.",
+          "Direct proof that the fresh path equals the seeds 0-4 path: files/plumbing/plumbing.json fresh_path = {stall: true, no_stall: true}. settingdata.fresh_path_check requires fresh_seed_data(0) to reproduce the gate's seed-0 log hashes, ball and both removals' kept-row and bank-row hashes. My regeneration of seed 0 stall also gives kept_rows 56327c01... and bank_rows 0bbfaff6..., equal to the gate seed-0 record.",
+          "Claim 4's failure does not depend on whether this stop counts as a 'plumbing stop' under section 9.5. Section 14.6 says a number that cannot be computed because 'a phase stopped' is 'not available' and 'a mark that needs it fails'. The marks are pooled over seeds 10-14, and section 9 says 'Every seed is needed'. So the wording ambiguity affects only how the failure is described, not the outcome.",
+          "The pinned code treats this case differently by setting. The random-rows setting has a fallback (policy_phase.primary_row) for an uncertified stalling-world height with the switch off. The main and near-80 settings have none, so their whole seed stops. The fallback would not have rescued seeds 10, 12 and 13, whose stalling-world switches were on, but it shows the code's author foresaw infinite stalling-world heights.",
+          "Section 17 item 9 of the pre-registration ('Too few survivors... needs at least 9 rows') is the guard that was set at the wrong level. 9 rows is the gap rule's own minimum (step1lib.gap_rule min_tail=9). The certificate needs about 29 rows to be likely certified.",
+          "Unverified lead, which could not be checked because the scratch runs were deleted. Section 19.6 says the amendment session rebuilt seed 10's real data and ran its phases, policy included, with stand-in learners. stubs.py does not replace step1lib.certificate. The refusal depends only on the row count, and the always-on ramp copies the stalling world's height. So if that scratch run reached the main or near-80 policy phase, it should have hit this same refusal before amendment 1 was approved. Section 19.6 does not mention it."
+        ],
+        "overall": "The checker's report holds up. I rebuilt every key number independently. The certificate's finite share and certified flag for all 20 main-setting seed-worlds came from the rng tags and row counts alone, and all 20 match the files. All 20 main-setting logs were regenerated with the gate's generator. For seeds 10-14 the log, kept-row and bank-row hashes equal the records, and the survivor and row counts equal the switch records. The same call reproduces step 1's counts for seeds 0-4. The refusal path, its constants and the skipped phases match the code, the stop records and runner.txt.\n\nOne factual slip: the data records do not carry the amendment prefix; only the critic, second-critic and switch records do. It changes nothing.\n\nThe judgment stands. The three stops are a genuine, deliberate consequence of the approved method, not a coding defect. BCA's certificate at alpha 0.1 and credibility 0.95 essentially cannot certify a full-throttle group of 18-22 rows. In the main setting, the always-on ramp then makes the arm table refuse for the whole seed. The near-80 pre-registration never names this stop, so it is a design gap. Claim 4 fails by the pinned rules either way, because the pooled marks need all five seeds.\n\nThe owner should also be told two things the checker missed:\n1. The stop was foreseeable. The gate's own records for 30 seeds, written before the pre-registration, show survivor counts of 11-60, with 7 of 30 below 28. My estimate is a 0.71-0.75 chance that at least one of five fresh seeds would stop. Seeds 0-4 were simply at the high end.\n2. On the two fresh seeds that did run (11 and 14), every per-seed claim-4 value clears step 2's margins by a wide gap. For example, BCA's net beats the always-on ramp by about 29.7 and 28.1, against a margin of 10. So the stops are evidence about where the method can be applied, not against its performance.\n\nScratch scripts are in /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/v2/ (fs.py, regen.py, chain.py, prior.py, tab.py, old.py)."
+      }
+    },
+    {
+      "key": "describe",
+      "check": {
+        "verdict": "Description only, not a claim. On fresh seeds 11 and 14, the only two whose stalling-world switch got a finite height, the main setting's numbers look like seeds 0-4. Run through the pinned code one seed at a time, each seed meets all three claim-4 marks: net lead 29.70644319988871 and 28.087744163191317 over the always-on ramp, gain kept in the other three situations, and a lead of 108.22381213781182 and 105.03622605989233 over the matched even pull. Seeds 10, 12 and 13 have critics, clones, switches and trained reference actors, but no actor-training lock and no evaluation at all, the reference actors included. The confirmatory look records claim 4 as failed by the pre-set rule. Because 11 and 14 are the seeds where the certificate succeeded, their numbers are a selected subset and say nothing about the claim.",
+        "findings": [
+          {
+            "claim": "The points scale is not 'no caution = 0'. On it, 0 is the recording controller (the one whose logs make the training data) and 100 is the world's top scripted controller. That is the stall-aware controller in the stalling world and the rising-thrust controller in the no-stall world. The no-caution controller can therefore score below 0, as it does in strong current in the stalling world.",
+            "evidence": "/home/user/bca/experiments/shift/truth.py lines 339-354: anchors() takes the recording controller's and the top controller's mean return on the bank as 0 and 100 points, and points() = 100 (J - J_recording) / (J_top - J_recording). /home/user/bca/experiments/shift/recorder.py lines 270-272: top_anchor() is stall_aware in the stalling world and rising_thrust otherwise. PREREGISTRATION.md lines 125-128 say the same. The evaluation records already hold numbers on this scale: code/evaluate_phase.py line 78 calls TR.points(rec.J, anchors[s]).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "How the code turns the evaluations into the table and the marks. The 'Points in strong current' tables (pooled.py look_md, lines 1833-1843) come from reported(R) (lines 1433-1442). That function calls pooled_arm on the unfiltered numbers, and step2lib.mean_or_none returns no value when any seed is missing. This is why the confirmatory main-setting table shows '-' everywhere, even though seeds 11 and 14 have numbers. The claim-4 marks come from marks(R, 'main') (lines 1064-1085) through step2lib.go_no_go. The net lead is the pooled net of BCA's switched ramp minus the largest pooled net among the five world-blind rivals, and that rival is chosen on pooled means, so the code defines no per-seed net lead. 'Keeps the gain' is the paired difference of BCA's switched ramp minus no caution in recorded conditions, big waves and big kicks in the stalling world. The even-pull mark is BCA's switched ramp minus the matched even pull in strong current in the stalling world. Every one of these functions takes a seeds list, so I ran them with seeds=[11] and with seeds=[14]. For a single seed the 'mean' is that seed's value, and the best rival is the one with the highest net on that seed alone.",
+            "evidence": "/home/user/bca/outputs/shift/beyond-the-data/near80/code/pooled.py lines 819-826, 872-881, 1064-1085, 1409-1442, 1833-1843. /home/user/bca/outputs/shift/beyond-the-data/restructure/step2/step2lib.py lines 406-460 (mean_or_none, pts_of, net, paired, go_no_go).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "My read-only reader matches the official looks exactly. Run on a scratch copy of the gathered results, pooled.load_results reproduces both official looks' claim-4 marks and both main-setting points tables with 0 differences, comparing floats for exact equality. The scratch copy is files/ plus the 90 data files restored from 7f0fe12, and all 2724 files match SHA256SUMS. The per-seed numbers below therefore come from the same inputs and code as the official looks.",
+            "evidence": "Script /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/per_seed_main.py, output /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/per_seed_main.json: confirmatory_reproduces_look n_differences 0, exploratory_reproduces_look n_differences 0. Inputs: SHA256SUMS lists 2724 entries; sha256sum -c gives 2634 OK in files/ and 90 missing under files/data/. Those 90 were restored with 'GIT_NO_LAZY_FETCH=1 git show 7f0fe12:runs/shift_explore/near80/<path>' (the blobs were already local, so nothing was fetched), after which all 2724 matched. Official mode reads only K.OUT, so K.OUT was pointed at the scratch copy in memory; no file was edited. confirmatory.json SHA-256 1edd56c867e40cba... and exploratory.json SHA-256 4851f5e6076690fa... match their sidecars and the digests printed in the .md files. prereg.json starts 51e677ab76c8d2f7 and amendment_1.json starts 52fe05b92900290b.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Seed 11, main setting, points in strong current for every arm (stalling world / no-stall world). No caution -17.17194613801814 / 90.3864773912334. Cloned actor 32.791714366164896 / -30.85636032146413. Full-log controller 80.73368372273202 / not an arm in the no-stall world. Plumbing check -17.17194613801814 / 90.3864773912334. BCA's switched ramp 89.11432748023289 / 90.3864773912334. Ramp at twice BCA's height 87.8696939386189 / 90.3864773912334. Always-on ramp 89.11432748023289 / 60.68003419134468. BCA's switch with height 1.0 68.3776149552203 / 90.3864773912334. Split-conformal switch 61.506138114595764 / 90.3864773912334. Rank-test switch 26.436192276320224 / 90.3864773912334. Perfect band 81.42017937703646 / 88.49776757577419. Hand-set range limit 91.43716180287275 / 45.759962745882206. Matched even pull -19.109484657578925 / 79.08676807325712. Matched push-less penalty -15.765060198451424 / 83.54354798739006. First matched random surface -15.481032602002475 / 83.76461025996248. Second matched random surface -16.608456040086946 / 73.79767755290666. Matched range limit 76.32275494909435 / 60.859143037213094.",
+            "evidence": "From files/eval/main/stall/seed11/values.json (SHA-256 f771ead68e6d9cd1..., matches its sidecar) and files/eval/main/no_stall/seed11/values.json (d8f772c61e9f785d...), read through pooled.load_results and pooled.pooled_arm with seeds=[11]. The same per-seed values appear in files/looks/confirmatory.json under reported.measures.points.main.<world>.<arm>.strong_current.per_seed (position 2). Matched strengths from arm_ids: even_pull@0.8924048394, standin:range_hinge@2.001306382, random_1@0.7918798391, random_2@0.865788778. In the stalling world BCA's switched ramp equals the always-on ramp (switch on). In the no-stall world it equals no caution (switch off).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Seed 14, main setting, points in strong current for every arm (stalling world / no-stall world). No caution -13.538972918062665 / 95.17494886469784. Cloned actor 56.112879465825 / -23.21507368572724. Full-log controller 84.77199283175791 / not an arm. Plumbing check -13.538972918062665 / 95.17494886469784. BCA's switched ramp 96.005741679559 / 95.17494886469784. Ramp at twice BCA's height 97.72796880549173 / 95.17494886469784. Always-on ramp 96.005741679559 / 67.08720470150652. BCA's switch with height 1.0 74.6686525271319 / 95.17494886469784. Split-conformal switch 70.59655086372135 / 95.17494886469784. Rank-test switch 48.93999500546524 / 94.04611783505018. Perfect band 84.74980803309299 / 94.5418490111881. Hand-set range limit 96.44745534952584 / 64.51236623203245. Matched even pull -9.03048438033333 / 84.88801077448582. Matched push-less penalty -8.510877401102094 / 89.85851956399522. First matched random surface -25.30431771660064 / 88.24731106302397. Second matched random surface -19.02475556829774 / 93.87997692404184. Matched range limit 92.40550183392276 / 67.65443615020313.",
+            "evidence": "From files/eval/main/stall/seed14/values.json (88c6261f6c96be0b...) and files/eval/main/no_stall/seed14/values.json (3cee1cefd3946cca...), both matching their sidecars, through pooled.pooled_arm with seeds=[14]. They also appear in confirmatory.json reported.measures.points.main (per_seed position 5). Matched strengths: even_pull@1.095163772, standin:range_hinge@3.386655902, random_1@1.382113661, random_2@1.426870099.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Seed 11, claim-4 quantities computed per seed with the pinned functions. BCA's net across worlds is 106.28627361825103: 106.28627361825103 gained in the stalling world and 0.0 lost in the no-stall world. Nets of the world-blind rivals: matched range limit 63.967366733092184, matched even pull -13.237247837537065, first random surface -4.930953595255254, second random surface -16.025309740395542, always-on ramp 76.57983041836232. The best of these is the always-on ramp, so the net lead is 29.70644319988871 (needed 10). Keeps the gain: recorded 8.963949952217746, big waves 19.99668080251169, big kicks 20.658932936411844 (each needed -3 or more). Beats the matched even pull by 108.22381213781182 (needed 15). Run on this seed alone, go_no_go marks all three as met.",
+            "evidence": "step2lib.go_no_go(R.m['points']['main'], [11], pooled.GO_RULE) and pooled.marks with seeds=[11], in per_seed_main.py, output in per_seed_main.json under confirmatory_per_seed.11. The file already holds BCA's per-seed net (106.28627361825103), the keeps values and the even-pull value: files/looks/confirmatory.json marks.claim4.net_lead.per_seed, keeps.<situation>.per_seed and even_pull.per_seed (position 2). The net lead and the rival nets are not in any file; I computed them.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Seed 14, claim-4 quantities computed per seed. BCA's net is 109.54471459762166: 109.54471459762166 gained in the stalling world and 0.0 lost in the no-stall world. Rival nets: matched range limit 78.42396203749071, matched even pull -5.778449552482684, first random surface -18.69298260021184, second random surface -6.780754590891071, always-on ramp 81.45697043443035. The best is the always-on ramp, so the net lead is 28.087744163191317 (needed 10). Keeps the gain: recorded 8.121280788357168, big waves 22.455627638221102, big kicks 23.028841177585186. Beats the matched even pull by 105.03622605989233. All three marks are met on this seed alone.",
+            "evidence": "Same method with seeds=[14]; per_seed_main.json confirmatory_per_seed.14. The per-seed net, keeps and even-pull values match files/looks/confirmatory.json marks.claim4.*.per_seed (position 5).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Compared with the exploratory main-setting table on seeds 0-4, the two fresh seeds fall inside or near the range of those seeds, with the same pattern. In the stalling world, BCA's switched ramp scores 89.11432748023289 and 96.005741679559, against an exploratory mean of 88.6 and a per-seed range of 79.4365 to 94.1673. No caution scores -17.17194613801814 and -13.538972918062665, against a mean of -14.3. In the no-stall world BCA equals no caution on every seed. The always-on ramp loses the most there: 60.68003419134468 and 67.08720470150652, against a mean of 69.7. The hand-set range limit loses even more in that world: 45.759962745882206 and 64.51236623203245, against 64.0. The always-on ramp is the best world-blind rival on both fresh seeds, and on seeds 0, 1, 3 and 4. The pooled exploratory lead is 25.3 over the always-on ramp. The single-seed leads are 19.362317056602492 to 32.907289573293326 on seeds 0-4, and 29.70644319988871 and 28.087744163191317 on seeds 11 and 14. The even-pull values on seeds 0-4 run from 83.65815872993319 to 111.43600440542765 (pooled 100.8), against 108.22381213781182 and 105.03622605989233. 'Keeps the gain' on seeds 0-4 is 6.7029922396265675 to 9.10884745705033 in recorded conditions, 19.059505432588082 to 23.479213342380035 in big waves and 17.358625198511703 to 23.737855833573093 in big kicks (pooled 8.0, 21.2 and 19.8). The fresh seeds are similar. One difference in the source: seeds 0-4 in the main setting are step 2's saved actors (source 'step2_saved'), while seeds 11 and 14 were trained in this run (source 'trained').",
+            "evidence": "files/looks/exploratory.md main-setting table and Marks table (rounded by the .md). Exact values from files/looks/exploratory.json: claim-4 lead 25.26754945073759, BCA's net 102.9296666553158, always-on ramp's net 77.66211720457821, even pull 100.75201631603166, keeps 8.040184342439588 / 21.238906753003356 / 19.838323921451295. Stalling-world means: obca_k1 88.64223303394218, none -14.287433621373614, range_hinge 93.13539469280951. No-stall means: obca_forced 69.67554243604164, range_hinge 64.01772988777967. Per-seed values for 0-4 computed with the same single-seed method: per_seed_main.json exploratory_per_seed. On seed 2 the best rival is the matched range limit (net 81.65870379113106). The source field is in eval/main/*/seed0..4/values.json ('step2_saved', 'equal to step 2's, exactly') and in eval/main/*/seed11,14/values.json ('trained', bank_size 1000).",
+            "status": "confirmed"
+          },
+          {
+            "claim": "What the confirmatory stage recorded for each fresh seed. Seeds 10, 12 and 13: the stalling-world actor training (policy.main.stall.sN) stopped with 'a built-in check failed'. The detail reads 'refused: stall/seedN: arm obca_k1 is switched on but its height inf is not finite (step 1 could not certify the full-throttle group)' and the arm table could not be built. The no-stall actor training and the evaluations in both worlds were skipped because the stalling-world phase had stopped. By the pre-set rule each of these seeds 'counts as failing every mark' of claim 4. Seeds 11 and 14: data, critics, clone, switch, reference actors, actor training (stalling world about 2537.8 s and 2460.3 s; no-stall world 582.3 s and 537.5 s) and evaluation in both worlds all finished. Nothing else on seeds 10-14 ran: the near-80 and random-rows phases were skipped ('stopped before the fresh seeds by the exploratory stop rules'). Claims 1-3 are 'not run' and claim 4 is 'fail'. Every pooled number in the look is '-'.",
+            "evidence": "files/stops/policy.main.stall.s10.json, s12.json and s13.json, and files/policy/main/stall/seed10,12,13/stop.json (written 2026-10-19T20:45:54Z, 20:50:24Z and 20:50:42Z). Phase states and notes in files/status.json (counts done 288, skipped 199, stopped 3). Ledger: files/ledger/policy.main.stall.s10/1.json classifies the attempt as 'stopped', exit 2, 'never rerun'. files/looks/confirmatory.md: Sentences, Claims, Failed seeds and Stopped phases sections. confirmatory.json failed_seeds.claim_4 lists 10, 12 and 13.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "What exists for seeds 10, 12 and 13, in both worlds. The results folder holds the main-data record, the critic, the second critic, the cloned actor, the reference actors (stalling world: no caution and full-log; no-stall world: no caution only, each 'failed: false', 20000 steps), the switch record, and the full-log critic (stalling world only). All of these are JSON records with SHA-256 sidecars. The parameter files (.msgpack) for those learners are only in the run-files commit 7f0fe12, not in the results folder. What does not exist: any actor-training lock or trained policy actors (BCA's ramps, the hand-set range limit, the matched rivals, the perfect band), any no-stall actor-training output, and any evaluation (eval/main/*/seed10,12,13 is absent).",
+            "evidence": "Listings of files/learners/main/{stall,no_stall}/seed{10,12,13}/ (clone, critic, critic_second, reference_actors, switch .json) and files/learners/full/stall/seed{10,12,13}/critic.json. files/policy/main/stall/seed{10,12,13}/ holds only stop.json, and policy/main/no_stall/seed{10,12,13} is absent. 'git ls-tree 7f0fe12' shows learners/.../seed10/{clone,critic,critic_second,reference_actors}.msgpack, and policy/main/*/seed{11,14}/actors.msgpack plus lock.json only for seeds 11 and 14. The reference_actors.json names fields are ['full_none','none'] in the stalling world and ['none'] in the no-stall world.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "The reference actors of seeds 10, 12 and 13 (the controller trained without caution and the full-log controller) were trained but never evaluated. No points exist for them in any world or situation. The evaluate phase scores the actors listed in the actor-training lock, no lock exists for these seeds, and evaluate.main.*.s10/s12/s13 were skipped. Their reference_actors.json records hold only the actors' SHA-256, training-file checks and timings, with no returns or points.",
+            "evidence": "code/evaluate_phase.py docstring lines 3-11 ('for every scored actor of the lock'). status.json: evaluate.main.stall.s10 'skipped: the actor training (policy.main.stall.s10) was stopped', and evaluate.main.no_stall.s10 'skipped: the actor training (policy.main.no_stall.s10) was skipped'; the same for 12 and 13. grep for 'points' or '\"J\"' in every seed10/12/13 JSON record under files/ found nothing.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "Seeds 11 and 14 are the two seeds where the stalling-world certificate succeeded, so their numbers are a selected subset and say nothing about claim 4. The selection is tied to the data. On 11 and 14 the full-throttle group had 53 and 30 rows, with a tail-certified share of 0.997 and 0.964, giving finite heights of 2.289130291938781 and 4.595018935203548. On 10, 12 and 13 the group had 19, 22 and 18 rows, tail_certified was false (finite share 0.879, 0.903 and 0.85) and the height was inf. The pre-set rule counts the three stopped seeds as failing every mark, and pooling over all five seeds is what the claim reads, so claim 4 failed. Nothing above is a claim.",
+            "evidence": "files/learners/main/stall/seed{10..14}/switch.json certificate: on true for all five. Heights: inf, 2.289130291938781, inf, inf, 4.595018935203548. tail_certified: false, true, false, false, true. n_tail: 19, 53, 22, 18, 30. finite_share_tail: 0.879, 0.997, 0.903, 0.85, 0.964. confirmatory.md: claim4: fail.",
+            "status": "confirmed"
+          },
+          {
+            "claim": "In the no-stall world the switch was off on all five fresh seeds. Its height was also inf on seeds 10 and 12 (tail not certified), and finite on 11, 13 and 14 (0.13446458935737482, 0.2405336070060713, 0.774963941574093). The no-stall actor training on 10, 12 and 13 was skipped because the stalling-world phase stopped, so it is not known whether it would have run.",
+            "evidence": "files/learners/main/no_stall/seed{10..14}/switch.json certificate fields; status.json notes for policy.main.no_stall.s10/s12/s13.",
+            "status": "confirmed"
+          }
+        ],
+        "problems": [
+          "The task brief assumed the points scale runs from 0 = the controller trained without caution. The code sets 0 = the recording controller and 100 = the world's top scripted controller (stall-aware in the stalling world, rising-thrust in the no-stall world), so no caution scores below 0 in strong current in the stalling world.",
+          "The code defines no per-seed net lead: it chooses the best world-blind rival on pooled nets. The per-seed leads I report (29.70644319988871 and 28.087744163191317) come from step2lib.go_no_go run on one seed, which picks that seed's best rival. On seeds 11 and 14 that rival is the always-on ramp in both cases.",
+          "confirmatory.json already holds per-seed values for seeds 11 and 14: BCA's net, the three keeps values and the even pull under marks.claim4, and every arm's points under reported.measures. confirmatory.md shows only '-', because mean_or_none returns no value when any seed is missing.",
+          "The pinned reader cannot read the gathered results folder as it is. Official mode accepts only runs/shift_explore/near80, and the 90 data/ files are missing from commit 67209d2 because of .gitignore line 7. I pointed K.OUT at a scratch copy in memory and restored the data files from 7f0fe12, with GIT_NO_LAZY_FETCH=1 so nothing was fetched or written into the repository's .git.",
+          "The learners' parameter files (.msgpack) for every seed are only in the run-files commit 7f0fe12. The results folder and commit 67209d2 hold only the JSON records.",
+          "Side note, outside the claim: every stalling-world critic and full-log critic phase on seeds 10-14 failed its first attempt after about 6.6 s on 2026-10-16 with 'TypeError: unsupported operand type(s) for +: int and str', and finished on attempt 2 on 2026-10-19. That timing fits the amendment-1 sizes fix (files/logs/critic.main.stall.s10.txt and files/ledger/critic.main.stall.s10/1.json).",
+          "Nothing in /home/user/bca changed: git status is empty. The two __pycache__ folders under beyond-the-data (stage2_v7/code and stage2_gpu/lib) date from 2026-10-14 and were not created by this check."
+        ],
+        "scratch_files": [
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/per_seed_main.py",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/per_seed_main.json",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/per_seed_main.err",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/out",
+          "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/sums_out.txt"
+        ]
+      },
+      "review": {
+        "upheld": [
+          "Points scale: 0 is the recording controller and 100 is the world's top scripted controller, not the controller trained without caution. The top controller is stall-aware in the stalling world and rising-thrust in the no-stall world (experiments/shift/truth.py anchors() and points(); recorder.py top_anchor(); PREREGISTRATION.md lines 125-126). So no caution scores below 0 in strong current in the stalling world (seed 11: -17.17194613801814, seed 14: -13.538972918062665).",
+          "Seed 11, main setting, strong-current points for all 17 arms in both worlds: every value matches exactly, compared as floats. I read them directly from files/eval/main/{stall,no_stall}/seed11/values.json (SHA-256 f771ead68e6d9cd1... and d8f772c61e9f785d..., both matching their sidecars) and again through the pinned pooled.py. They also equal confirmatory.json reported.measures.points.main per_seed position 2.",
+          "Seed 14, the same check for all 17 arms in both worlds: every value matches exactly (files/eval/main/*/seed14/values.json, SHA-256 88c6261f6c96be0b... and 3cee1cefd3946cca...). They equal confirmatory.json per_seed position 5. The matched strengths in arm_ids also match: even_pull@1.095163772, standin:range_hinge@3.386655902, random_1@1.382113661, random_2@1.426870099.",
+          "Seed 11 claim-4 quantities, reproduced exactly three ways: by hand from values.json, with step2lib.go_no_go on seeds=[11], and with pooled.marks on a one-seed copy. BCA's net is 106.28627361825103 (gain 106.28627361825103, loss 0.0). Rival nets: matched range limit 63.967366733092184, matched even pull -13.237247837537065, first random surface -4.930953595255254, second random surface -16.025309740395542, always-on ramp 76.57983041836232. Lead over the always-on ramp: 29.70644319988871. Keeps the gain: 8.963949952217746, 19.99668080251169 and 20.658932936411844. Even pull: 108.22381213781182. All three marks are met when the rule is applied to this seed alone.",
+          "Seed 14 claim-4 quantities, reproduced exactly the same three ways. BCA's net is 109.54471459762166. Rival nets: 78.42396203749071, -5.778449552482684, -18.69298260021184, -6.780754590891071 and 81.45697043443035. Lead over the always-on ramp: 28.087744163191317. Keeps the gain: 8.121280788357168, 22.455627638221102 and 23.028841177585186. Even pull: 105.03622605989233. All three marks are met on this seed alone.",
+          "The code defines no per-seed net lead: go_no_go picks the best world-blind rival on pooled nets. The per-seed leads come from running the pooled rule on one seed. BCA's per-seed net, the three keeps values and the even-pull values are already in files/looks/confirmatory.json under marks.claim4.*.per_seed. confirmatory.md shows '-' because step2lib.mean_or_none returns no value when any seed is missing.",
+          "The reader reproduces the official looks. I copied files/ to scratch and restored the 90 data/ files from 7f0fe12 with GIT_NO_LAZY_FETCH=1; all 2724 entries in SHA256SUMS then check OK. I pointed K.OUT at the copy in memory and rebuilt both looks entirely, not only the claim-4 parts. Every field equals the official confirmatory.json and exploratory.json except reported.resources, and those differ only because ledger attempts were added after each look was written.",
+          "Exploratory comparison numbers (files/looks/exploratory.json and exploratory.md) are all correct. Lead 25.26754945073759 over the always-on ramp. BCA's net 102.9296666553158. Always-on ramp net 77.66211720457821. Even pull 100.75201631603166. Keeps 8.040184342439588, 21.238906753003356 and 19.838323921451295. Stalling-world means: BCA 88.64223303394218, no caution -14.287433621373614. No-stall means: always-on ramp 69.67554243604164, hand-set range limit 64.01772988777967. The best rival on seed 2 is the matched range limit (81.65870379113106). Seeds 0-4 come from step 2's saved actors ('step2_saved'); seeds 11 and 14 were trained in this run ('trained'), and both groups used a bank of 1000 starts.",
+          "Per-seed ranges of the claim-4 quantities on seeds 0-4 are exact. Lead: 19.362317056602492 to 32.907289573293326. Even pull: 83.65815872993319 to 111.43600440542765. Keeps, recorded conditions: 6.7029922396265675 to 9.10884745705033. Big waves: 19.059505432588082 to 23.479213342380035. Big kicks: 17.358625198511703 to 23.737855833573093. The fresh seeds' claim-4 quantities, and BCA's nets 106.28627361825103 and 109.54471459762166, fall inside the seeds 0-4 ranges (nets 90.08715786921425 to 115.65286105076069). In the no-stall world BCA equals no caution on seeds 0-4, 11 and 14.",
+          "Seeds 10, 12 and 13: policy.main.stall.sN stopped with 'a built-in check failed'. The detail reads: 'refused: stall/seedN: arm obca_k1 is switched on but its height inf is not finite (step 1 could not certify the full-throttle group)'. Records: files/stops/policy.main.stall.s10, s12, s13.json and files/policy/main/stall/seedN/stop.json, written 2026-10-19T20:45:54Z, 20:50:24Z and 20:50:42Z. The refusal comes from step2lib.arm_table. The ledger classifies each attempt as 'stopped', exit code 2, never rerun. status.json shows the no-stall actor training skipped because the stalling-world phase stopped, and both evaluations skipped. Counts: done 288, skipped 199, stopped 3. confirmatory.json failed_seeds.claim_4 lists 10, 12 and 13. Claims 1-3 are 'not run' and claim 4 is 'fail'.",
+          "On seeds 10-14, every near-80 and random-rows phase is skipped in status.json, the near-80 band data included. On seeds 11 and 14 the main-setting data, critics, second critic, full-log critic, clone, switch, reference actors, actor training and evaluation are all done in both worlds.",
+          "Seeds 10, 12 and 13 have JSON records for the critic, second critic, clone, reference actors and switch in both worlds, plus the full-log critic in the stalling world. Their parameter files (.msgpack) are only in 7f0fe12. There is no lock and no actors.msgpack for these seeds; those exist only for seeds 11 and 14. There is no no-stall policy folder and no eval folder for seeds 10, 12 or 13.",
+          "The reference actors of seeds 10, 12 and 13 were trained but never evaluated. reference_actors.json names ['full_none','none'] in the stalling world and ['none'] in the no-stall world, with failed false and 20000 steps. No 'points' or 'J' appears in any of their learner or policy records. The evaluation phases were skipped, and evaluate_phase scores only the actors of a lock.",
+          "Switch records (files/learners/main/stall/seed10-14/switch.json): the switch is on in all five seeds. Heights: inf, 2.289130291938781, inf, inf, 4.595018935203548. tail_certified: false, true, false, false, true. n_tail: 19, 53, 22, 18, 30. finite_share_tail: 0.879, 0.997, 0.903, 0.85, 0.964. In the no-stall world the switch is off in all five. Heights there are inf on seeds 10 and 12, and finite on 11, 13 and 14 (0.13446458935737482, 0.2405336070060713, 0.774963941574093).",
+          "Seeds 11 and 14 are the only two fresh seeds whose stalling-world switch got a finite height, so their numbers are a selected subset and say nothing about claim 4. Claim 4 failed by the pre-set rule.",
+          "Side note on the critics: on seeds 10-14, the first attempts of the stalling-world critic and the full-log critic failed after about 6.6 s with 'TypeError: unsupported operand type(s) for +: int and str'. All of them finished on attempt 2. These are exactly the cleared_failures listed in amendment_1.json.",
+          "Repository untouched: git status is empty, and no new __pycache__ folder appeared."
+        ],
+        "refuted": [
+          {
+            "statement": "What exists for seeds 10, 12 and 13: 'The results folder holds the main-data record, the critic, ...'",
+            "why": "Only partly true. The committed results folder (commit 67209d2) has no files/data/ directory at all. The main-data records data/main/{stall,no_stall}/seed10,12,13/data.json are listed in SHA256SUMS but are missing from the folder because of .gitignore line 7 ('data/'). They exist only in run-files commit 7f0fe12, or in a scratch copy restored from it. The critic, clone, switch and reference-actor JSON records are in the folder as stated. The data records themselves carry no failure: seed_failed_reason is null for seeds 10-14 in both worlds."
+          },
+          {
+            "statement": "Comparison with seeds 0-4: 'the two fresh seeds fall inside or near the range of those seeds, with the same pattern ... The fresh seeds are similar.'",
+            "why": "This holds for the claim-4 quantities, but not for the arms in general. Ranges are each arm's per-seed values on seeds 0-4, from files/eval/main/*/seed0-4/values.json. (1) The split-conformal switch in the stalling world is below the range on both fresh seeds: 61.506138114595764 and 70.59655086372135, against 75.88801272318489 to 90.46943103346254. (2) On seed 11, every arm in the no-stall world except the cloned actor is below the range. Examples: no caution and BCA 90.3864773912334 (seed 0-4 minimum 94.13420591587038); hand-set range limit 45.759962745882206 (minimum 61.25580024751068); second random surface 73.79767755290666 (minimum 91.3469495671887); first random surface 83.76461025996248 (minimum 91.77770211092371). (3) The cloned actor in the stalling world on seed 11 is 32.791714366164896, against 47.629765825371145 to 61.7620945534591. (4) On seed 14, BCA and the always-on ramp in the stalling world, 96.005741679559, are above the range maximum of 94.16733080834582. The ordering of the arms is similar; 'similar' and 'inside or near' overstate it for seed 11."
+          },
+          {
+            "statement": "Reported numbers 'per-seed range of 79.4365 to 94.1673' and policy times 'about 2537.8 s and 2460.3 s; 582.3 s and 537.5 s'.",
+            "why": "These round numbers the checker did not compute, which the hard rules forbid. The file values are 79.43648562710042 (seed 4) and 94.16733080834582 (seed 1), from eval/main/stall/seed4 and seed1 values.json. The lock.json phase_seconds are 2537.741239266994, 2460.343437426025, 582.2462945129955 and 537.5080494350404. The ledger 1.json seconds are 2537.7534247409785, 2460.349140539998, 582.2501853320282 and 537.5110964830383. '2537.8' matches the ledger figure rounded, not the lock's. The checker named neither source."
+          }
+        ],
+        "missed": [
+          "Not every number in the confirmatory look is '-'. Its validity section says 'Check 10 held in 0 of 5 seeds; it did not hold in 5 (at most 1): fails', with bracket M = 5. Check 10 was never computed on seeds 10-14, because the near-80 band data were skipped. confirmatory.json validity.claims_2_3.check10 shows failed_seeds [] and unknown_seeds [10, 11, 12, 13, 14], and pooled.check10_counts counts unknown seeds as not holding. The other validity lines (harm, past-80 share, band cost) also read 'fails' for settings that did not run. Claim 4's own validity has passed: true. None of this changes an outcome, but the owner could misread it as five check-10 failures.",
+          "The confirmatory brackets show V = 2.0 and arm = BCA's switched ramp. That V is copied from the exploratory look (1.9567119432396027, seeds 0-4) and is not a fresh-seed number. The other non-dash brackets are counts: S 0, N 0, K2 0, K 0.",
+          "Context for the selection: on seeds 0-4 in the main setting, step 1's certificates (outputs/shift/beyond-the-data/restructure/step1/results/results.json, which matches its SHA256SUMS) show stalling-world full-throttle groups of 35, 47, 59, 43 and 47 rows. All were tail-certified, with finite share 0.97, 0.996, 0.997, 0.993 and 0.996, and finite heights. The three stopped fresh seeds had 19, 22 and 18 rows, fewer than any of seeds 0-4. Seed 14 was certified with 30 rows, also fewer than any of seeds 0-4. An infinite height alone does not stop a phase: on seed 3 the no-stall height was inf with the switch off, and that is allowed. Only a switch that is on with an infinite height stops the phase.",
+          "This stop is a pre-registered rule, not a code fault. step2lib.arm_table refuses any arm that is switched on with a non-finite height. PREREGISTRATION.md section 8.3 says a stopped phase is written once and never rerun, and every mark that needs it fails.",
+          "Stronger evidence than the checker gave: rebuilding both entire looks in memory with the pinned pooled.py on the restored copy gives the official JSON in every field except reported.resources. A comparison limited to the claim-4 marks and the main tables would not show this."
+        ],
+        "overall": "The checker's report holds on substance. I re-derived every number for seeds 11 and 14 in two ways, by reading values.json directly with hand-written arithmetic and through the pinned pooled.py and step2lib functions, and each matches exactly. That covers all 17 arms in both worlds, each seed's net, the rival nets, the lead over the always-on ramp, the keeps values and the even pull. The points scale correction is right: 0 is the recording controller and 100 the world's top scripted controller. The stop facts for seeds 10, 12 and 13 are right: no lock, no evaluation, and reference actors trained but never scored. The certificate details and the 'selected subset, says nothing about the claim' framing are also right. Claim 4 failed by the pre-set rule, and nothing I found changes what the owner should be told. Three corrections are needed. The main-data records of seeds 10-14 are not in the committed results folder; they are only in 7f0fe12, because .gitignore excludes data/. The statement that the fresh seeds are 'similar' holds for the claim-4 quantities but not for every arm: seed 11's no-stall scores and the split-conformal switch fall outside the seeds 0-4 range. Some file numbers were rounded against the rules. The checker also missed that the confirmatory look's validity section records 'Check 10 ... did not hold in 5' (M = 5) for seeds whose near-80 data were never generated, and that V = 2.0 there is the exploratory value. My scripts and outputs: /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute_ps/direct.py and direct.json, /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute_ps/via_pooled.py and via_pooled.json, and the verified copy at /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute_ps/copy."
+      }
+    }
+  ],
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Check"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Refute"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "check:integrity",
+      "phaseIndex": 1,
+      "phaseTitle": "Check",
+      "agentId": "a137b585f5dcf5309",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792497680607,
+      "queuedAt": 1792497680548,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "The results hold together. Every fingerprint matches: all 2…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792498113800,
+      "tokens": 209595,
+      "toolCalls": 51,
+      "durationMs": 433192,
+      "resultPreview": "{\"verdict\":\"The results hold together. Every fingerprint matches: all 2724 lines of SHA256SUMS, RESULTS.json and its sidecar, and every JSON sidecar. The ledger and status show only final states (288 done, 3 stopped, 199 skipped). The stopped phases are exactly policy.main.stall.s10, s12 and s13. The amendment was used as section 19.7 says, with no record out of place. There are three small gaps, …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "check:reproduce",
+      "phaseIndex": 1,
+      "phaseTitle": "Check",
+      "agentId": "a12900f5f1db0d3a6",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792497680607,
+      "queuedAt": 1792497680548,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Both looks reproduce exactly. The pinned code, run from a s…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792498035927,
+      "tokens": 206680,
+      "toolCalls": 41,
+      "durationMs": 353011,
+      "resultPreview": "{\"verdict\":\"Both looks reproduce exactly. The pinned code, run from a scratch copy of the run records without the runner, gives byte-identical looks/exploratory.json (SHA-256 4851f5e6...fdde) and looks/confirmatory.json (SHA-256 1edd56c8...5ca4f15b) and identical .md files. Two inputs make this exact: the official 'written' time is put back, and the ledger is limited to the attempt records that ha…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "check:stops",
+      "phaseIndex": 1,
+      "phaseTitle": "Check",
+      "agentId": "a04cc38db55ed5128",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792498038132,
+      "queuedAt": 1792497680548,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "The three stops are not a coding bug. They are a real limit…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792498881888,
+      "tokens": 310142,
+      "toolCalls": 85,
+      "durationMs": 843754,
+      "resultPreview": "{\"verdict\":\"The three stops are not a coding bug. They are a real limit of BCA's certificate: with fewer than about 29 full-throttle rows it cannot give a finite height, whatever the scores. The approved pinned code stops on this on purpose. But the pre-registration never anticipated it and never names it as a stop, so \\\"claim 4 failed\\\" really means \\\"claim 4 could not be tested on seeds 10, 12 a…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "check:describe",
+      "phaseIndex": 1,
+      "phaseTitle": "Check",
+      "agentId": "a2b8c7be6120e70c8",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792498116156,
+      "queuedAt": 1792497680549,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Description only, not a claim. On fresh seeds 11 and 14, th…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792498498466,
+      "tokens": 234882,
+      "toolCalls": 49,
+      "durationMs": 382309,
+      "resultPreview": "{\"verdict\":\"Description only, not a claim. On fresh seeds 11 and 14, the only two whose stalling-world switch got a finite height, the main setting's numbers look like seeds 0-4. Run through the pinned code one seed at a time, each seed meets all three claim-4 marks: net lead 29.70644319988871 and 28.087744163191317 over the always-on ramp, gain kept in the other three situations, and a lead of 10…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "refute:reproduce",
+      "phaseIndex": 2,
+      "phaseTitle": "Refute",
+      "agentId": "a5f1e9e67eecbb5e5",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792498500563,
+      "queuedAt": 1792498038207,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "The checker's main conclusion stands. I rebuilt my own scra…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792498933675,
+      "tokens": 204199,
+      "toolCalls": 39,
+      "durationMs": 433111,
+      "resultPreview": "{\"upheld\":[\"Main verdict: both looks reproduce byte for byte. I extracted 7f0fe12 myself with git archive, leaving out the model files, into /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/tree. I ran pooled.load_results and exploratory_look/confirmatory_look in official mode from my own script, /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16a…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "refute:integrity",
+      "phaseIndex": 2,
+      "phaseTitle": "Refute",
+      "agentId": "a413f13702badeee8",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792498885986,
+      "queuedAt": 1792498116214,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "I reproduced every fingerprint and count in the report from…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792499428981,
+      "tokens": 237436,
+      "toolCalls": 59,
+      "durationMs": 542992,
+      "resultPreview": "{\"upheld\":[\"Item 1, SHA256SUMS: it has 2724 lines with no repeated names, all under files/ and sorted. All 2634 files on disk match. The 90 missing files are all under files/data/, and all 90 match `git show 7f0fe12:runs/shift_explore/near80/<path>`. No file under files/ is left off the list. My script: /tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/near80_results/refute/…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "refute:describe",
+      "phaseIndex": 2,
+      "phaseTitle": "Refute",
+      "agentId": "a3245eaa6f293e830",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792498935677,
+      "queuedAt": 1792498500640,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "The checker's report holds on substance. I re-derived every…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792499354334,
+      "tokens": 225940,
+      "toolCalls": 55,
+      "durationMs": 418656,
+      "resultPreview": "{\"upheld\":[\"Points scale: 0 is the recording controller and 100 is the world's top scripted controller, not the controller trained without caution. The top controller is stall-aware in the stalling world and rising-thrust in the no-stall world (experiments/shift/truth.py anchors() and points(); recorder.py top_anchor(); PREREGISTRATION.md lines 125-126). So no caution scores below 0 in strong curr…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "refute:stops",
+      "phaseIndex": 2,
+      "phaseTitle": "Refute",
+      "agentId": "a2350301a0615346a",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1792499357420,
+      "queuedAt": 1792498886087,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "The checker's report holds up. I rebuilt every key number i…",
+      "promptPreview": "Context. The near-80 study (version 8) has finished on the owner's desktop. Its results were gathered into\n/home/user/bca/outputs/shift/beyond-the-data/near80/results-20261020T115246Z (SHA256SUMS lists 2724 files under files/; RESULTS.json summarizes). The owner committed them as commit 67209d2\non branch claude/main-bca-connection-x4o46s in /home/user/bca. .gitignore line 7 (\"data/\") left 90 files…",
+      "promptFramed": true,
+      "lastProgressAt": 1792500248866,
+      "tokens": 267798,
+      "toolCalls": 71,
+      "durationMs": 891445,
+      "resultPreview": "{\"upheld\":[\"Q1, the code path, reproduced. The switch record stores certificate.height as 'inf' (files/learners/main/stall/seed10/switch.json, entry.certificate). policy_phase.run_policy calls arm_row at line 527, before any training. arm_row reads both worlds' switch.json 'entry'. arm_row_from (line 115) calls step2lib.arm_table, and step2lib.py lines 355-356 raise SystemExit('refused: ... switch…"
+    }
+  ],
+  "totalTokens": 1896672,
+  "totalToolCalls": 450
+}

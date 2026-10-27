@@ -1,0 +1,85 @@
+{
+  "schema": "unifloral.cached_score_mechanism.protocol.v1",
+  "phase": "exploratory_development_mechanism_only",
+  "claim_scope": "cached_first_action_selection_not_policy_training_or_scientific_superiority",
+  "prior_information": "Operator audit correlations and magnitudes known; these fixed selector outcomes have not been computed for this investigation.",
+  "inputs": {
+    "raw_banks.json": "2c24e5844d6d38ffd26c1a662b149fb7b453ce8cacce1eb429c008152d6c6e7e",
+    "raw_banks.npz": "cb87c6fe809e94d38715fc45df07605a386222fb9bc2c9a33059c708463d576b",
+    "report.json": "c11b32408b59815cb7a75585b9c3aeacb97655827e40ab1110250a981adcefd7",
+    "checks.json": "2f8afe4e1057f7a6bc84405039090fa6a9ff350d03dfdce3b2e696e0830ed529"
+  },
+  "input_results_directory": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_operator_alignment_v1/results_20261026T221700_762125Z",
+  "checkpoint_state_sha256": "874d65b7f4dcb5ec285a0d4360439c73a787b5e8c567ff7c0138e0c1e22948e8",
+  "native_source_sha256": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+  "bank": "development only; original order, all 128 states, 9 actions each, 2 batches, times0/25/50/75; no fitting or confirmation arrays decoded",
+  "smoothing_seeds": [
+    2026103041,
+    2026103042,
+    2026103043,
+    2026103044
+  ],
+  "methods": {
+    "q1": "Cached audited development.q_current[:,0], converted float32 to float64; no new forward.",
+    "twin_min": "min of the two cached audited current Q heads after exact float64 conversion.",
+    "actor": "Original frozen actor candidate index0; verify actions[9*g] exactly equals saved_actor_actions[g]. No score optimization.",
+    "mean_native_target": "Arithmetic mean in float64 over the four cached native_y float32 draws in recorded order, converted before mean. No recomputation, draw choice, fitting, or smoothing resampling."
+  },
+  "penalty_scope": "Original BCA score remains Q1-kappa*U with live action gradient in actor objective; these four controls isolate operator relationship. No BCA coefficient, method, critic prediction, critic target or training configuration is changed. Native target is privileged evaluator-derived information, not a deployable score.",
+  "selection_ties": {
+    "atol": 1e-06,
+    "rtol": 1e-06,
+    "rule": "Choose lowest original candidate index among abs(score-max(score)) <= atol+rtol*abs(max(score)). Preserve exact argmax, all near-max indices, ambiguity and top-two score gap. No recentering and no V-based tie break."
+  },
+  "value_ties": {
+    "atol": 1e-06,
+    "rtol": 1e-06,
+    "rule": "epsilon(method,control)=atol+rtol*max(abs(V_method),abs(V_control)); improve if delta>epsilon, harm if delta<-epsilon; otherwise numerically inconclusive."
+  },
+  "primary_comparison": "mean_native_target vs q1; mean paired saved-V gain separately in each development batch.",
+  "stopping_screen": "PASS only if mean(V_mean_native_target-V_q1)>mean(epsilon(mean_native_target,q1)) in BOTH batches. Numerical exploratory direction screen, not a confidence bound or scientific superiority claim. If either fails STOP this operator-replacement branch; no threshold/draw/control changes or serial diagnostic expansion.",
+  "controls": "twin_min and actor are descriptive fixed controls; do not promote best control or use them to replace primary screen.",
+  "outcomes": [
+    "equal-state mean selected V",
+    "mean paired gain vs q1 and actor",
+    "candidate-bank regret=max(saved V over9)-selected V",
+    "selected action index and all scores per state",
+    "switch rate vsq1",
+    "harmful/beneficial/inconclusive switches and magnitudes vsq1",
+    "numerical score ambiguities"
+  ],
+  "strata": [
+    "overall",
+    "development_1",
+    "development_2",
+    "time0",
+    "time25",
+    "time50",
+    "time75",
+    "development_1/time0",
+    "development_1/time25",
+    "development_1/time50",
+    "development_1/time75",
+    "development_2/time0",
+    "development_2/time25",
+    "development_2/time50",
+    "development_2/time75"
+  ],
+  "aggregation": "Equal-state descriptive means; no bootstrap/CI/significance claims, independent-action inflation, outcome filters or favorable strata selection.",
+  "budget": {
+    "states": 128,
+    "candidates_per_state": 9,
+    "new_transitions": 0,
+    "new_full_rollouts": 0,
+    "model_forwards": 0,
+    "gpu_calls": 0,
+    "new_fits": 0,
+    "optimizer_updates": 0,
+    "calibration_updates": 0,
+    "confirmation_reads": 0,
+    "new_candidate_actions": 0,
+    "executions": 1
+  },
+  "full_training_hold": true,
+  "pilot_executed": false
+}

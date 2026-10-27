@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "status": "v1-candidate",
+  "contract_id": "thrusterchain.training-modes.v1",
+  "module": "thrusterchain.training_protocol",
+  "configuration_fields": {
+    "offline": ["updates", "batch_size"],
+    "evaluation": ["frozen_policy", "episodes", "seed", "online"],
+    "online": ["interactions", "updates", "offline_fraction", "batch_size", "learning_settings"]
+  },
+  "offline_budget": {
+    "default_optimizer_steps": 1000000,
+    "maximum_optimizer_steps": 3000000,
+    "minimum_optimizer_steps": 0,
+    "default_batch_size": 256,
+    "integer_validation": "Python int only; reject bool, float, string and numpy integer scalar",
+    "budget_unit": "primary_optimizer_updates",
+    "td3_family_primary_optimizer": "critic",
+    "semantics": "Budget counts exactly one declared primary optimizer.step() per update; scheduled actor/auxiliary calls count separately in total steps and per-optimizer counts",
+    "atomic_update_required": true,
+    "overshoot_allowed": false,
+    "excluded_from_step_count": ["sampling", "gradient_accumulation", "target_polyak_update", "rng_advance", "validation", "inference"],
+    "closed_form_budget": "inapplicable; zero actual optimizer steps; no artificial repeat loops"
+  },
+  "evaluation": {
+    "frozen_policy_default": true,
+    "default_episodes": 2,
+    "default_seed": 20361022,
+    "frozen_rejects_any_online_budget": true,
+    "unfrozen_requires_explicit_online_budget": true,
+    "final_scoring_policy": "frozen snapshot after the declared adaptation phase",
+    "validate_before_collection_or_output": true
+  },
+  "online_budget": {
+    "required_explicit_fields": ["interactions", "updates", "offline_fraction", "batch_size", "learning_settings"],
+    "interactions_and_updates": "nonnegative Python int, not bool or float",
+    "batch_size": "positive Python int, not bool or float",
+    "offline_fraction": "finite Python number in [0, 1]",
+    "learning_settings": "explicit finite JSON-compatible dict; host validates supported fields",
+    "positive_updates_require_positive_interactions": true,
+    "zero_interactions_zero_updates": "no_adaptation",
+    "positive_interactions_zero_updates": "collection_without_parameter_updates",
+    "offline_maximum_does_not_imply_online_default_or_limit": true,
+    "settings_override_method": "configure_learning_settings",
+    "override_preserves": ["model", "optimizer_state", "optimizer_counters", "target_networks", "rng", "preprocessing"],
+    "override_receipt": ["learning_settings_before_sha256", "learning_settings_after_sha256"]
+  },
+  "adapter": {
+    "capability_fields": ["adapter_id", "fit_semantics", "supports_online", "primary_optimizer"],
+    "primary_optimizer": "required nonempty optimizer counter key for optimizer_steps semantics; None for closed_form",
+    "readonly_lightweight_properties": ["optimizer_steps", "optimizer_step_counts"],
+    "full_checkpoint_frequency": "phase boundaries; never serialize a full neural checkpoint per atomic update",
+    "fit_semantics": ["optimizer_steps", "closed_form"],
+    "methods": ["initialize", "update", "act", "checkpoint", "restore", "freeze"],
+    "online_extension_methods": ["configure_learning_settings"],
+    "update_primary_optimizer_steps": 1,
+    "update_auxiliary_optimizer_steps": "according to declared host schedule; count separately without consuming primary budget",
+    "preserve_unknown_checkpoint_metadata": true,
+    "initialization_optimizer_steps": 0,
+    "protocol_types": ["LearnerAdapter", "OnlineLearnerAdapter", "FrozenAdapterPolicy"],
+    "builtin_closed_form_bc_online_supported": false,
+    "builtin_closed_form_identification_online_supported": false,
+    "affine_sgd_reference_scope": "real SGD plumbing reference, not neural BCA or a host neural learner"
+  },
+  "transitions": {
+    "fields": ["observations", "actions", "rewards", "next_observations", "terminated", "truncated", "bootstrap_mask", "origin", "group_ids"],
+    "actions": "actual executed actions after action transforms",
+    "bootstrap_mask": "1 - terminated; time-limit truncation alone bootstraps",
+    "origin": {"offline": 0, "online": 1},
+    "group_ids": "integer or fixed-width string identifiers preserving group provenance",
+    "immutable_bytes_backed_arrays": true,
+    "helpers": ["select", "concat"]
+  },
+  "checkpoint": {
+    "format": "thrusterchain.learner-checkpoint",
+    "schema_version": 1,
+    "required_components": ["model", "optimizer", "target_networks", "rng", "preprocessing"],
+    "components": "immutable bytes with SHA-256 hashes",
+    "not_applicable_declaration": "metadata.not_applicable_components; explicit component bytes with reason still required",
+    "counts": "nonnegative Python ints; optimizer_steps is TOTAL=sum(optimizer_step_counts); primary count is optimizer_step_counts[metadata.primary_optimizer]",
+    "primary_optimizer_declaration": "metadata.primary_optimizer for optimizer-based hosts; must agree with capabilities.primary_optimizer",
+    "primary_properties": ["primary_optimizer", "primary_optimizer_steps"],
+    "initial_metadata_required_by_host_contract": ["training_config", "dataset_lineage"],
+    "metadata": "internally immutable canonical JSON; public property returns defensive deep copy",
+    "serialization": "versioned JSON and base64, no pickle; reject duplicate keys; verify payload and component digests",
+    "save": "exclusive create; never overwrite an existing destination",
+    "resumption": "retain model, every optimizer, targets, all RNGs including sampler, preprocessing, action transforms, learning schedules and lineage",
+    "integrity_limit": "presence and hashes are cooperative integrity, not proof of completeness or truthfulness"
+  },
+  "receipt_requirements": {
+    "separate_requested_and_actual": true,
+    "common_budget_fields": ["primary_optimizer", "requested_primary_optimizer_updates", "budget.requested.updates", "executed_primary_optimizer_updates", "executed_optimizer_steps_total", "optimizer_step_counts"],
+    "offline_actual_count_paths": ["budget.executed.primary_optimizer_updates", "budget.executed.optimizer_steps_total", "environment_interactions", "optimizer_step_counts", "optimizer_step_deltas"],
+    "online_actual_count_paths": ["budget.executed_per_family", "adaptation_interactions", "executed_primary_optimizer_updates", "executed_optimizer_steps_total", "optimizer_step_counts"],
+    "online_scope": "budget.requested and requested_primary_optimizer_updates_per_family are per family; top-level requested_primary_optimizer_updates and executed counters aggregate families",
+    "resumption_counts": "report both checkpoint cumulative totals and newly executed steps",
+    "mixture": "report requested offline fraction and actual offline/online sample counts",
+    "no_adaptation_must_be_labeled": true
+  },
+  "frozen_boundary": {
+    "policy_methods": ["act(observation)", "state_bytes()"],
+    "state_bytes_includes": ["inference_parameters", "preprocessing", "action_transforms", "relevant_rng_state"],
+    "before_after_digest_check": true,
+    "runner_checkpoint_directory": "optional run_mode keyword; CLI and shipped example provide it",
+    "saved_checkpoint_evaluation": "save all scenario endpoints exclusively, reload and verify digests, restore loaded state before any frozen evaluation",
+    "saved_checkpoint_receipt": {
+      "checkpoint_persistence": "saved_and_reloaded",
+      "persisted_before_frozen_evaluation": true,
+      "evaluation_checkpoint_source": "reloaded_verified_checkpoint"
+    },
+    "without_checkpoint_directory": "Python test path reports in_memory_snapshot; does not claim saved-checkpoint evaluation",
+    "act_io_allowed": false,
+    "guard": "cooperative InferenceGuard hooks for supported training, collection and Python write paths",
+    "checkpoint_io": "save, reload, verify and restore before the frozen guard starts",
+    "artifact_writes": "result artifacts after guarded rollout; endpoint checkpoints before the frozen guard starts",
+    "arbitrary_code_purity_proven": false,
+    "known_limits": ["undeclared_state", "transient_reverted_mutations", "preimported_io_aliases", "native_calls", "threads", "subprocesses", "read_io"]
+  }
+}

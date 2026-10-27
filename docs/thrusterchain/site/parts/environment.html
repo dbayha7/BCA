@@ -1,0 +1,97 @@
+<section class="part" id="part-environment" data-title="Environment explorer">
+  <header>
+    <p class="eyebrow">Part 2 · The benchmark, from the canonical contract</p>
+    <h1>ThrusterChain, step by step</h1>
+    <p class="lede">Five floats sit on a chain in moving water. Four thrusters, one between each pair of floats, push on the speeds of their two neighbors. The goal is to keep every float's position and speed near zero while spending as little throttle as possible, for exactly 100 steps. Everything on this page comes from the frozen benchmark contract (ThrusterChain core v4) that the Unifloral-era experiments used; the units are dimensionless model units, one transition per step.</p>
+  </header>
+
+  <section class="sec" id="env-watch">
+    <h2>Watch one episode</h2>
+    <p>Five floats sit in a row across a channel; the water flows down the screen and pushes every float downstream, below the dashed rest line, while the four thrusters between neighboring floats push back upstream. The model has one spatial axis per float, so "position" means how far downstream of rest it sits. These five episodes were exported by the canonical plant and are replayed here as saved sequences; no simulation runs in the browser. They are demonstrations of the physics, not policy results: a zero command, a fixed command that counters the current, a command past the stall knee in the stalling world, the same command in the no-stall world, and a pulsed command.</p>
+    <div class="controls">
+      <label>Episode<select id="tr-select"></select></label>
+      <label style="flex:1 1 220px">Step <span id="t-label">0</span><input type="range" id="t-slider" min="0" max="100" value="0" aria-label="Step"></label>
+      <div class="seg"><button class="btn" id="back" type="button">← Step</button><button class="btn primary" id="play" type="button" aria-pressed="false">Play</button><button class="btn" id="fwd" type="button">Step →</button></div>
+    </div>
+    <div class="sim-wrap"><div class="sim-stage" id="sim-stage" aria-live="off"></div></div>
+    <div class="readout">
+      <div><span>step t</span><strong id="ro-t">0</strong></div>
+      <div><span>float cost Σ s²</span><strong id="ro-cost">0</strong></div>
+      <div><span>energy 0.3 Σ a²</span><strong id="ro-energy">0</strong></div>
+      <div><span>reward r_t</span><strong id="ro-r">0</strong></div>
+      <div><span>discounted return so far</span><strong id="ro-G">0</strong></div>
+    </div>
+    <div class="tbl-wrap"><table><caption>The five exported demonstrations. Replay error is the largest difference between the saved next state and the frozen-matrix formula over all 100 steps, checked at build time.</caption><thead><tr><th>Episode</th><th>World</th><th class="num">Discounted return (0.98)</th><th class="num">Undiscounted sum</th><th class="num">Max replay error</th></tr></thead><tbody id="tr-table"></tbody></table></div>
+  </section>
+
+  <section class="sec" id="env-step">
+    <h2>One step, worked with the real numbers</h2>
+    <p>Pick a float and, if you like, move a command slider. The panel recomputes a single transition from the saved state with the frozen plant matrices: command → thrust (with the stall), the reward on the state before the step, and the next position and speed of the chosen float. With the saved command the result matches the exported next state exactly.</p>
+    <div class="controls">
+      <label>Float<select id="w-float"><option value="0">float 1</option><option value="1">float 2</option><option value="2">float 3</option><option value="3">float 4</option><option value="4">float 5</option></select></label>
+      <label>a1 <span id="cmdv1"></span><input type="range" id="cmd1" min="-1" max="1" step="0.01"></label>
+      <label>a2 <span id="cmdv2"></span><input type="range" id="cmd2" min="-1" max="1" step="0.01"></label>
+      <label>a3 <span id="cmdv3"></span><input type="range" id="cmd3" min="-1" max="1" step="0.01"></label>
+      <label>a4 <span id="cmdv4"></span><input type="range" id="cmd4" min="-1" max="1" step="0.01"></label>
+      <button class="btn" id="w-reset" type="button">Back to the saved command</button>
+    </div>
+    <div id="w-out"></div>
+    <p class="note">The matrix <code>A</code> couples the ten float coordinates to one another (each float is a lightly damped oscillator; neighbors interact weakly), keeps the current constant and rotates the two wave coordinates by 0.27 radians per step. <code>B</code> puts each thruster's effective thrust, times 0.3, on the speed rows of its two neighboring floats. The water's push, <code>0.3·(current + wave1)</code>, lands on every speed row. The exact matrices are in <code>contracts/dynamics_fixtures.json</code> and are embedded in this page.</p>
+  </section>
+
+  <section class="sec" id="env-state">
+    <h2>State and observation</h2>
+    <p>The exact state has 13 float64 numbers: for each of the five floats a position <code>p</code> and a speed <code>v</code>, then the current <code>c</code> and two wave coordinates <code>w1, w2</code>. The policy and the critic do not see that exact state. They see a 14-number float32 <em>observation</em>: the same 13 values rounded to single precision, plus the remaining fraction of the episode <code>(100 − t)/100</code>, so the horizon is never hidden.</p>
+    <div class="tbl-wrap"><table><caption>Observation coordinates and their declared bounds (environment_contract.json). Only the current and the waves are outside the controller's power: commands cannot change them.</caption>
+      <thead><tr><th>#</th><th>Name</th><th>Meaning</th><th class="num">Low</th><th class="num">High</th><th>Actuated?</th></tr></thead>
+      <tbody>
+        <tr><td>1–10</td><td>p1, v1, …, p5, v5</td><td>position and speed of each float</td><td class="num">−300</td><td class="num">300</td><td>yes, through the thrusters</td></tr>
+        <tr><td>11</td><td>current</td><td>steady water flow, constant within an episode</td><td class="num">0</td><td class="num">1.5</td><td>no</td></tr>
+        <tr><td>12–13</td><td>wave1, wave2</td><td>a rotating pair; wave1 is the part that pushes; amplitude is constant</td><td class="num">−1</td><td class="num">1</td><td>no</td></tr>
+        <tr><td>14</td><td>remaining fraction</td><td>(100 − t)/100, from 1.0 at the start to 0.01 before the last step</td><td class="num">0</td><td class="num">1</td><td>no, it is the clock</td></tr>
+      </tbody></table></div>
+    <p>Networks normalize each observation coordinate by the training set's mean and standard deviation (plus 0.001) before using it. The benchmark declares that exact states, pushes, thrusts and stall flags are diagnostic channels only: a method that used them would be in a different information tier.</p>
+  </section>
+
+  <section class="sec" id="env-actions">
+    <h2>Actions, thrust and the stall</h2>
+    <p>An action is four commands in [−1, 1], one per thruster, cast to float32 and clipped before the plant sees them. In the <b>stalling world</b> (the one the data were recorded in) a command past the knee at 0.8 produces <em>less</em> thrust, not more: <code>thrust = clip(a, −0.8, 0.8) − 1.5·sign(a)·max(|a| − 0.8, 0)</code>, so full throttle gives 0.5. The energy cost always uses the command itself, so pushing past the knee costs more and achieves less. The <b>no-stall world</b> is identical up to 0.8 and linear beyond it; it is a separate configured task, and no observation bit says which world you are in.</p>
+    <figure><div id="stall-curve"></div><figcaption>Effective thrust against the command in both worlds, and the energy cost 0.3 a². The knee is float32(0.8) exactly; a command of exactly 0.8 does not stall.</figcaption></figure>
+    <p>This is why the data's action support matters. A critic that has rarely seen commands beyond 0.8 cannot know that they achieve less; an optimistic value there is exactly the kind of error BCA is meant to penalize. Whether the recorded data actually lack such commands depends on the collection law described below.</p>
+  </section>
+
+  <section class="sec" id="env-reward">
+    <h2>Reward, return and the end of the episode</h2>
+    <div class="formula">r_t = −( Σ_{j=1..10} s_j² + 0.3 · Σ_{k=1..4} a_k² )        state before the step, command after float32 clipping
+G_t = Σ_{k=0}^{99−t} 0.98^k · r_{t+k}                   the finite objective: 100 decisions, discount 0.98, no terminal value</div>
+    <p>The hundredth transition ends the task: <code>terminated = true</code>, bootstrap mask 0, continuation value 0. The remaining-time coordinate makes this a proper finite-horizon problem rather than a time limit hidden from the learner. The simulator reference V used in all Unifloral-era diagnostics is exactly this objective from the queried time onward, following a frozen actor.</p>
+  </section>
+
+  <section class="sec" id="env-starts">
+    <h2>Start laws and the shift families</h2>
+    <p>A reset draws the ten float coordinates from a Gaussian with spread "kick", the current uniformly from a range, the wave amplitude uniformly from a range with a uniform phase. Four laws exist. The data and every Unifloral-era pilot used the <b>recorded</b> law; the three shifted families are held out of data collection and have not been used in any Unifloral-era result on this machine. State-distribution shift is therefore defined but not yet tested here.</p>
+    <figure><div id="start-laws"></div><figcaption>Blue: the recorded law. Orange: the coordinate each shifted family changes. Strong current moves the current to 0.7–1.1; big waves move the amplitude to 0.4–0.7; big kicks triple the start spread to 1.5.</figcaption></figure>
+    <div class="tbl-wrap"><table><thead><tr><th>Family</th><th>Current</th><th>Wave amplitude</th><th>Start spread</th><th>Used where</th></tr></thead><tbody>
+      <tr><td>recorded</td><td>0.1–0.7</td><td>0.1–0.4</td><td>0.5</td><td>data collection; development banks; pilot evaluations (32 fresh nominal starts)</td></tr>
+      <tr><td>strong current</td><td>0.7–1.1</td><td>0.1–0.4</td><td>0.5</td><td>defined; not used in Unifloral-era results here</td></tr>
+      <tr><td>big waves</td><td>0.1–0.7</td><td>0.4–0.7</td><td>0.5</td><td>defined; not used</td></tr>
+      <tr><td>big kicks</td><td>0.1–0.7</td><td>0.1–0.4</td><td>1.5</td><td>defined; not used</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="sec" id="env-collection">
+    <h2>How the data were collected, and what "support" means here</h2>
+    <h3>The recording controller is a box sampler</h3>
+    <p>The recorder does not try to solve the task. At every step it draws a command from two boxes: with probability ε it draws the first coordinate <code>a1</code> uniformly from (0.5, 1] (a region of volume 4), otherwise uniformly from [−1, 0.5] (volume 12); the other three coordinates are uniform on [−1, 1]. With ε = 0.25 the result is uniform over the whole cube, so the recorded data cover every command, including the stall region past 0.8. The density is known exactly, which is what the benchmark's weighted diagnostics need. The dataset used by the checkpoint and the pilots is one such recording of 1,280 episodes of 100 steps, split into 768 training episodes, 256 tuning-validation episodes (128 of which supply BCA's one-row-per-episode calibration bank), 128 selection episodes and 128 final-calibration episodes that remain unread.</p>
+    <h3>The support restriction used by the pilot</h3>
+    <p>To create a real action gap without changing the plant, the support pilot keeps only logged transitions whose executed first coordinate satisfies <code>a1 ≤ 0.5</code>: <span class="man" data-man="zeus_support_shift_attempt_2|Restricted training rows (a0 <= 0.5) of 76,800"></span> of the 76,800 training rows remain, 62 to 89 per episode. The matched "broad" condition keeps the same number of rows per episode drawn from the full pool, so update counts and source-pool sizes match and only the support differs. The protocol is careful about what this is: a count-matched, action-conditioned restriction of logged transitions, not a pure action-only intervention, because retained states come from trajectories whose earlier actions could be excluded.</p>
+    <h3>Three things that are easy to confuse</h3>
+    <div class="tbl-wrap"><table><thead><tr><th>Notion</th><th>What changes</th><th>Where it appears here</th></tr></thead><tbody>
+      <tr><td><b>Observed state shift</b></td><td>the start law (current, waves, kick) differs from the recorded one</td><td>defined by the three shifted families; not yet exercised in Unifloral-era results</td></tr>
+      <tr><td><b>Action-support shift</b></td><td>the logged actions never (or rarely) include a region the policy may want</td><td>the a1 ≤ 0.5 restriction; a global cutoff, not a state-conditioned density label</td></tr>
+      <tr><td><b>Forced diagnostic actions</b></td><td>nine candidates imposed at a state to see which one a score prefers</td><td>the development banks and the Zeus cached comparisons</td></tr>
+      <tr><td><b>Policy-selected actions</b></td><td>the trained actor chooses freely for 100 steps</td><td>the matched-policy pilot; the support pilot's planned evaluation</td></tr>
+    </tbody></table></div>
+    <p class="note">The pilot's protocol adds a further caution: if neither simple baseline ever visits the excluded region in a restricted cell, the extrapolation mechanism is untested there even if returns improve. The user's report of the Titan completion says exactly that happened; it is recorded as unverified here.</p>
+  </section>
+</section>

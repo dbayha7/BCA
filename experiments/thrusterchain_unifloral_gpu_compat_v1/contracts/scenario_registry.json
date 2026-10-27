@@ -1,0 +1,123 @@
+{
+  "schema": "thrusterchain.scenario-registry.v1",
+  "environment_version": "thrusterchain-benchmark 0.1.0 finite_horizon adapter",
+  "entry_point": "thrusterchain.environment:ThrusterChainEnv",
+  "is_gymnasium_registered_id": false,
+  "canonical_physics_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+  "regular_worlds": [
+    "stall",
+    "no_stall"
+  ],
+  "regular_offline_collection_family": "recorded",
+  "regular_evaluation_families": [
+    "recorded",
+    "strong_current",
+    "big_waves",
+    "big_kicks"
+  ],
+  "role_of_existing_families": "pre-existing development families; held out of this run's offline training and selection, not scientifically unseen benchmark families",
+  "regular_information_tier": "observation14 only for policy and identified model; exact float64 info states are audit/replay diagnostics",
+  "regular_action_coverage": [
+    {
+      "id": "broad",
+      "epsilon": 0.25
+    },
+    {
+      "id": "rare",
+      "epsilon": 0.01
+    },
+    {
+      "id": "absent",
+      "epsilon": 0
+    }
+  ],
+  "diagnostics": [
+    {
+      "id": "state_broad__action_broad",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "broad",
+      "action_coverage": "broad",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_broad__action_rare",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "broad",
+      "action_coverage": "rare",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_broad__action_absent",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "broad",
+      "action_coverage": "absent",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_rare__action_broad",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "rare",
+      "action_coverage": "broad",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_rare__action_rare",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "rare",
+      "action_coverage": "rare",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_rare__action_absent",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "rare",
+      "action_coverage": "absent",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_absent__action_broad",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "absent",
+      "action_coverage": "broad",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_absent__action_rare",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "absent",
+      "action_coverage": "rare",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    },
+    {
+      "id": "state_absent__action_absent",
+      "collection": "independent_terminal_reset_queries",
+      "state_coverage": "absent",
+      "action_coverage": "absent",
+      "exact_density_capability": "requested state/action design only",
+      "definition": "coverage_contract.json"
+    }
+  ],
+  "selection": "train-only fitting; offline validation/selection; freeze receipt before final simulator returns",
+  "reference_access": {
+    "true_model": "evaluator privileged",
+    "identified_model": "train-only public observation/executed action and declared known reward/actuator structure"
+  },
+  "extension_status": {
+    "data_quantity": "API accepts counts; research sweep not run",
+    "behavior_quality": "not implemented",
+    "dynamics_perturbation": "canonical stall/no_stall and documented slope3 available; no new robustness study",
+    "actuator_lag_or_dropout": "not implemented",
+    "observation_noise_delay": "not implemented",
+    "sealed_new_final_family": "not supplied; no scientifically untouched-family claim"
+  },
+  "license_status": "upstream LICENSE/NOTICE retained under third_party; institutional licensing review remains open",
+  "scientific_status": "software integration and diagnostic smoke; multi-method neural research study not complete"
+}

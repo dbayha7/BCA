@@ -1,0 +1,245 @@
+{
+  "name": "coherent_q_and_width_scale_with_native_epsilon",
+  "category": "scale",
+  "status": "pass",
+  "details": {
+    "fixed_state_results": [
+      {
+        "scale": 0.1,
+        "width_ratio_expected": 0.1,
+        "width_mean": 0.3315567076206207,
+        "q_scale_coefficient": 57.756568908691406,
+        "native_epsilon": 1e-07,
+        "mean_abs_unscaled_q1": 0.432850182056427,
+        "penalty_ratio_including_native_epsilon": 0.9999978542327881,
+        "penalty_loss_error": 0.0,
+        "penalty_gradient_error": 2.384185791015625e-07,
+        "penalty_gradient_norm": 6.8699721740424025,
+        "actual_aux_target_scale_error": 1.4901161193847656e-08,
+        "actual_min_q_residual_scale_error": 2.9802322387695312e-08,
+        "dimensionless_score_invariance_error": 4.76837158203125e-07,
+        "actual_soft_coverage_invariance_error": 2.541098841762901e-20,
+        "ema_unit": 0.10082951933145523,
+        "ema_unit_minus_scaled_baseline": 0.0,
+        "ema_std_floor_active": false
+      },
+      {
+        "scale": 1.0,
+        "width_ratio_expected": 1.0,
+        "width_mean": 3.3155672550201416,
+        "q_scale_coefficient": 5.775669097900391,
+        "native_epsilon": 1e-07,
+        "mean_abs_unscaled_q1": 0.432850182056427,
+        "penalty_ratio_including_native_epsilon": 1.0,
+        "penalty_loss_error": 0.0,
+        "penalty_gradient_error": 0.0,
+        "penalty_gradient_norm": 6.869987400493749,
+        "actual_aux_target_scale_error": 0.0,
+        "actual_min_q_residual_scale_error": 0.0,
+        "dimensionless_score_invariance_error": 0.0,
+        "actual_soft_coverage_invariance_error": 0.0,
+        "ema_unit": 1.0082951784133911,
+        "ema_unit_minus_scaled_baseline": 0.0,
+        "ema_std_floor_active": false
+      },
+      {
+        "scale": 10.0,
+        "width_ratio_expected": 10.0,
+        "width_mean": 33.15567398071289,
+        "q_scale_coefficient": 0.5775671005249023,
+        "native_epsilon": 1e-07,
+        "mean_abs_unscaled_q1": 0.432850182056427,
+        "penalty_ratio_including_native_epsilon": 1.000000238418579,
+        "penalty_loss_error": 1.9073486328125e-06,
+        "penalty_gradient_error": 2.682209014892578e-07,
+        "penalty_gradient_norm": 6.869989601126748,
+        "actual_aux_target_scale_error": 3.814697265625e-06,
+        "actual_min_q_residual_scale_error": 3.814697265625e-06,
+        "dimensionless_score_invariance_error": 4.76837158203125e-07,
+        "actual_soft_coverage_invariance_error": 1.868022623563356e-27,
+        "ema_unit": 10.082951545715332,
+        "ema_unit_minus_scaled_baseline": 0.0,
+        "ema_std_floor_active": false
+      }
+    ],
+    "analytic_epsilon_examples": [
+      {
+        "mean_abs_q": 0.0,
+        "scale": 0.1,
+        "q_scale_coefficient": 25000000.0,
+        "penalty_ratio": 0.1
+      },
+      {
+        "mean_abs_q": 0.0,
+        "scale": 1.0,
+        "q_scale_coefficient": 25000000.0,
+        "penalty_ratio": 1.0
+      },
+      {
+        "mean_abs_q": 0.0,
+        "scale": 10.0,
+        "q_scale_coefficient": 25000000.0,
+        "penalty_ratio": 10.0
+      },
+      {
+        "mean_abs_q": 1e-09,
+        "scale": 0.1,
+        "q_scale_coefficient": 24975024.975024976,
+        "penalty_ratio": 0.10089910089910091
+      },
+      {
+        "mean_abs_q": 1e-09,
+        "scale": 1.0,
+        "q_scale_coefficient": 24752475.247524753,
+        "penalty_ratio": 1.0
+      },
+      {
+        "mean_abs_q": 1e-09,
+        "scale": 10.0,
+        "q_scale_coefficient": 22727272.72727273,
+        "penalty_ratio": 9.181818181818182
+      },
+      {
+        "mean_abs_q": 1e-07,
+        "scale": 0.1,
+        "q_scale_coefficient": 22727272.72727273,
+        "penalty_ratio": 0.18181818181818182
+      },
+      {
+        "mean_abs_q": 1e-07,
+        "scale": 1.0,
+        "q_scale_coefficient": 12500000.0,
+        "penalty_ratio": 1.0
+      },
+      {
+        "mean_abs_q": 1e-07,
+        "scale": 10.0,
+        "q_scale_coefficient": 2272727.2727272725,
+        "penalty_ratio": 1.818181818181818
+      },
+      {
+        "mean_abs_q": 1.0,
+        "scale": 0.1,
+        "q_scale_coefficient": 24.999975000025,
+        "penalty_ratio": 0.9999991000009001
+      },
+      {
+        "mean_abs_q": 1.0,
+        "scale": 1.0,
+        "q_scale_coefficient": 2.499999750000025,
+        "penalty_ratio": 1.0
+      },
+      {
+        "mean_abs_q": 1.0,
+        "scale": 10.0,
+        "q_scale_coefficient": 0.24999999750000004,
+        "penalty_ratio": 1.0000000899999992
+      }
+    ],
+    "analytic_ema_std_floor_examples": [
+      {
+        "residual_std": 0.0,
+        "scale": 0.1,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 1e-07
+      },
+      {
+        "residual_std": 0.0,
+        "scale": 1.0,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 1e-06
+      },
+      {
+        "residual_std": 0.0,
+        "scale": 10.0,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 9.999999999999999e-06
+      },
+      {
+        "residual_std": 1e-08,
+        "scale": 0.1,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 1e-07
+      },
+      {
+        "residual_std": 1e-08,
+        "scale": 1.0,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 1e-06
+      },
+      {
+        "residual_std": 1e-08,
+        "scale": 10.0,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 9.999999999999999e-06
+      },
+      {
+        "residual_std": 1e-06,
+        "scale": 0.1,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 1e-07
+      },
+      {
+        "residual_std": 1e-06,
+        "scale": 1.0,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 1e-06,
+        "coherent_expected_floor_term": 1e-06
+      },
+      {
+        "residual_std": 1e-06,
+        "scale": 10.0,
+        "unscaled_floor_term": 1e-06,
+        "scaled_floor_term": 9.999999999999999e-06,
+        "coherent_expected_floor_term": 9.999999999999999e-06
+      },
+      {
+        "residual_std": 0.001,
+        "scale": 0.1,
+        "unscaled_floor_term": 0.001,
+        "scaled_floor_term": 0.0001,
+        "coherent_expected_floor_term": 0.0001
+      },
+      {
+        "residual_std": 0.001,
+        "scale": 1.0,
+        "unscaled_floor_term": 0.001,
+        "scaled_floor_term": 0.001,
+        "coherent_expected_floor_term": 0.001
+      },
+      {
+        "residual_std": 0.001,
+        "scale": 10.0,
+        "unscaled_floor_term": 0.001,
+        "scaled_floor_term": 0.01,
+        "coherent_expected_floor_term": 0.01
+      }
+    ],
+    "native_zero_q_coefficient": 25000000.0,
+    "zero_and_near_zero_q_behavior": "Native epsilon yields finite coefficient amplification; no new rejection or denominator normalization",
+    "initial_residual_unit": 1.0,
+    "scale_caveats": [
+      "Initial residual unit stays 1 unless explicitly transformed.",
+      "The fixed 1e-6 residual-std floor can break coherent EMA scaling.",
+      "The native 1e-7 Q denominator epsilon breaks exact penalty scale invariance."
+    ],
+    "scope": "Fixed-state Q outputs, diagnostic rewards and residual unit scaled coherently; actual auxiliary target/coverage functions evaluated without fitting, refresh or optimizer updates",
+    "normalization_decision": "Unresolved; fixed-state identities do not establish cross-environment robustness"
+  },
+  "work_ledger_after": {
+    "auxiliary_attempts": 4,
+    "auxiliary_returned_step_increments": 3,
+    "refresh_calls": 3,
+    "refresh_inputs_accepted": 3,
+    "primary_critic_updates": 0,
+    "actor_updates": 0,
+    "environment_rollouts": 0
+  }
+}

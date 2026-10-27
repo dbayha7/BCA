@@ -1,0 +1,65 @@
+{
+  "schema": "unifloral.bca_one_sided.implementation_review.v1",
+  "status": "pass_static_review_and_synthetic_fixtures",
+  "reviewed_utc": "2026-10-26T23:12:31.408440+00:00",
+  "reviewed_file_sha256": {
+    "worker.py": "4d9976554929965f81373f97776f1a6f32c320dbf63eb1067e76cce448b8e0e7",
+    "restore_logged.py": "4a2e4c6e70da2ea335bb8685623a8370216a554427fc13521eb80c625b247c9b",
+    "launch.py": "3a0e903c8e148100c4c8acfd2138b8cb478d9a559c62402c2a2884d76bae0b5d",
+    "protocol.json": "a4a507a67f47c7bdac2a75f279801b33086a452b29679c5ea04eef190f0f299b",
+    "logged_data.py": "2f0e7a6507617157ca5c6ebf616041bab0f71c2fb07b3fd84856b6102847fd0f",
+    "one_sided_math.py": "fcb8f9e2225d6ca3956189bdc14d5f8315c13b10f7b220ea523859242cc68127"
+  },
+  "blockers": [],
+  "synthetic_evidence": {
+    "math_review_sha256": "e07a9bc016e93cfc7f53cf24158a28cd485aee29802a241b16fb62b6f8ddd98b",
+    "math_tests_passed": 16,
+    "launch_tests_sha256": "03462a3b97088e830fb7569ea8edcb5d3ef60ff40e34fd691ad27c1d41fbe41f",
+    "launch_fixture_receipt": {
+      "schema": "unifloral.bca_one_sided.launch_fixtures.v1",
+      "status": "pass",
+      "utc": "2026-10-26T23:11:33.807198+00:00",
+      "tests_run": 5,
+      "failures": 0,
+      "seconds": 0.347,
+      "scope": "Synthetic reservation, successful/failed/timeout child processes and mocked interruption cleanup only; no real model, fitting or calibration.",
+      "tests_sha256": "c48295478d30e4d3b6abe4cc7d2b8c6da0084b783968630a7da5b7372a99dd73",
+      "launch_sha256": "3a0e903c8e148100c4c8acfd2138b8cb478d9a559c62402c2a2884d76bae0b5d",
+      "post_fixture_change": "Added caught JSONDecodeError/OSError for interrupted partial worker report; static review required, no process-control change."
+    },
+    "scope": "Math fixtures ran on native Windows Python3.10.11/JAX0.6.2 CPU. Launcher fixtures were run by parent; reviewed their receipt. Partial-report JSON catch received static review after those fixtures; no rerun requested."
+  },
+  "verified_boundaries": [
+    "Only copied warm-started local auxiliary parameters enter the 128-step fresh-Adam optimizer; Q1, native targets, unit and bootstrap weights are stopped in scale_loss.",
+    "Original actor/current critics/target networks, original auxiliary/reference, optimizer state, RNG and normalization are retained and checked by full-state restoration/snapshot comparisons.",
+    "Portable restore retains canonical state, committed bindings, exact export/parameter/reference and fitting-row identity checks. Role-filtered template retains full original training normalization.",
+    "Logged fitting/calibration/validation groups are disjoint; selection and final-calibration transition rows are not numerically decoded. Reused original calibration episodes are explicitly exploratory.",
+    "Fit labels use one prespecified native-law smoothing draw per logged bank, never evaluator candidate targets or saved continuation V.",
+    "Exactly one pinned WBCP calibration follows auxiliary fitting. New parameters/reference and then all development selections are sealed before V decoding.",
+    "Bayesian and ordinary thresholds share one fitted local scale; matched effective-coefficient controls preserve that distinction. Actor-distance coefficient .1 and original factor are explicit; frozen actor is fixed index0.",
+    "Promising utility requires nonzero finite Bayesian threshold and separate Q1/original-BCA pair-specific numerical bands passed in both batches; zero threshold is degenerate, infinity is explicit refusal.",
+    "Launcher uses an exclusive persistent reservation, refuses prior evidence, checks scoped processes, pins isolated environment, and applies a 300-second owned-child watchdog.",
+    "Timeout or supervisor interruption kills/waits for the owned child/process group. Spawn/cleanup failure and partial worker JSON retain terminal uncertainty and prohibit automatic retry."
+  ],
+  "resolved_findings": [
+    "Restored original width_penalty=.005; beta20 and learning rate.001 unchanged.",
+    "Pinned source-order float32 y/unit-Q1/unit+eta objective.",
+    "Restored actor-distance coefficient.1 and added frozen actor control.",
+    "Added both-control/both-batch utility condition, stratum sizes and zero-threshold degeneration.",
+    "Added interruption cleanup and partial-report JSON error handling."
+  ],
+  "limits": [
+    "This is preparation evidence, not a real logged auxiliary fit/calibration result or proof of BCA improvement.",
+    "GPU restoration/runtime/Flax integration and the 128-update scientific worker remain pending the single manual user launch.",
+    "Synthetic test success does not establish exchangeability, dependence control, shift robustness, true-return coverage or selected-action guarantees.",
+    "Preflight must verify the final prepared manifest includes these exact reviewed sources and evidence; any later source edit invalidates this review.",
+    "JAX frozen_radius unusable placeholders must never be consumed as an unpenalized fallback; compiled scale_loss nonfinite loss/gradients must reject optimizer commit."
+  ],
+  "real_fitting_executed_during_review": false,
+  "real_calibration_executed_during_review": false,
+  "actor_updates_during_review": 0,
+  "critic_updates_during_review": 0,
+  "new_simulator_transitions": 0,
+  "full_training_hold": true,
+  "manual_execution_status": "pending; no WSL command attempted by reviewer"
+}

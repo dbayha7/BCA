@@ -1,0 +1,99 @@
+<section class="part" id="part-setup" data-title="Experimental setup">
+  <header>
+    <p class="eyebrow">Part 4 · Protocols, budgets and fairness rules</p>
+    <h1>How each question was tested</h1>
+    <p class="lede">Every Unifloral-era experiment freezes its protocol before labels exist, records exactly how much model and simulator work it used, and states what it can and cannot establish. This part walks the chain in order; the Results part shows what each produced.</p>
+  </header>
+
+  <section class="sec" id="setup-chain">
+    <h2>The chain of experiments</h2>
+    <div class="tbl-wrap"><table><thead><tr><th>#</th><th>Experiment</th><th>Machine, date</th><th>Asks</th><th>Status</th></tr></thead><tbody>
+      <tr><td>1</td><td>Unifloral parity and BCA pipeline validation</td><td>Titan, 23 Oct</td><td>Is the host exact? Does BCA enter only the actor objective?</td><td><span class="pill validation_passed">validation passed</span></td></tr>
+      <tr><td>2</td><td>20,000-update checkpoint, κ = 0</td><td>Titan, 23 Oct</td><td>One trained native model with a fitted, calibrated auxiliary</td><td><span class="pill completed">completed</span></td></tr>
+      <tr><td>3</td><td>Development bank 1 (64 states)</td><td>Titan, 24 Oct</td><td>Does <code>Q1 − κU</code> choose better forced candidates?</td><td><span class="pill completed">completed</span></td></tr>
+      <tr><td>4</td><td>Development bank 2 (64 new states), contrast-matched controls</td><td>Titan, 26 Oct</td><td>Same, against matched distance and disagreement controls</td><td><span class="pill completed">completed</span></td></tr>
+      <tr><td>5</td><td>Mechanism audit and decision-utility diagnostics (saved banks)</td><td>Titan CPU, 26 Oct</td><td>Does the width point toward the better action?</td><td><span class="pill completed">completed</span></td></tr>
+      <tr><td>6</td><td>Operator-alignment audit</td><td>Zeus GPU, 26 Oct</td><td>Does <code>U</code> track its residual; does the residual track signed error?</td><td><span class="pill completed">completed</span></td></tr>
+      <tr><td>7</td><td>Cached privileged comparisons</td><td>Zeus CPU, 26 Oct</td><td>Are better choices available in these banks at all?</td><td><span class="pill completed">completed</span></td></tr>
+      <tr><td>8</td><td>One-sided BCA auxiliary pilot</td><td>Zeus GPU, 26 Oct</td><td>Does a one-sided band rank better?</td><td><span class="pill completed_screen_failed">screen failed</span></td></tr>
+      <tr><td>9</td><td>Matched-policy continuation pilot</td><td>Zeus GPU, 26–27 Oct</td><td>Does training with the penalty raise return?</td><td><span class="pill completed">completed, screen passed</span></td></tr>
+      <tr><td>10</td><td>Fresh-initialization support pilot, attempts 1 and 2</td><td>Zeus GPU, 27 Oct</td><td>Does the benefit repeat from independent seeds under an action gap?</td><td><span class="pill interrupted">interrupted</span> <span class="pill stopped">stopped</span></td></tr>
+      <tr><td>11</td><td>Titan continuation; held-out evaluation; OOD diagnostic; adaptive signal</td><td>Titan, 27 Oct</td><td>Continuation and newer diagnostics</td><td><span class="pill proposed">proposed</span> <span class="pill unavailable_here">unavailable here</span></td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="sec" id="setup-checkpoint">
+    <h2>The checkpoint (κ = 0)</h2>
+    <dl class="kv">
+      <dt>Data roles</dt><dd>768 training episodes for minibatches; 128 held-out calibration rows, one per tuning-validation episode; selection and final-calibration splits never read.</dd>
+      <dt>Schedule</dt><dd>20,000 critic updates = 10,000 outer steps; one auxiliary fit per critic update; calibration refresh at 10,000, 15,000 and 20,000; all accepted.</dd>
+      <dt>Seeds</dt><dd>native 2026102302, auxiliary 2026102361.</dd>
+      <dt>What it is</dt><dd>a native Unifloral policy whose auxiliary model was trained alongside but never consumed. Every diagnostic and both pilots start from it.</dd>
+      <dt>What it is not</dt><dd>a policy trained with BCA; a converged policy; a model selected by evaluation.</dd>
+    </dl>
+  </section>
+
+  <section class="sec" id="setup-banks">
+    <h2>The development banks: forced probes at saved states</h2>
+    <ul>
+      <li><b>States.</b> 64 recorded-family episodes per batch, one query each at time 0, 25, 50 or 75 (16 per time), reached by the frozen actor's own prefix. Batch 1 seeds 2026102400–2026102463; batch 2 seeds 2026102700–2026102763; confirmation seeds 2026102500–2026102563 untouched.</li>
+      <li><b>Candidates.</b> Nine per state: the frozen actor's action, the zero command and seven seeded uniform commands, deduplicated after float32 deployment. Every selector sees the same bank.</li>
+      <li><b>Reference V.</b> The candidate once, then the same frozen actor to the end of the 100-step horizon, discount 0.98, exact float64 state, no terminal bootstrap. Deterministic, so no sampling error; the same frozen actor continues every candidate, so V is this checkpoint's own-policy value.</li>
+      <li><b>Sealed order.</b> All scores and selections are hashed before any continuation return is computed.</li>
+      <li><b>Endpoints.</b> Paired first-action gain in V over raw <code>Q1</code> (primary); candidate-bank regret, gain over the actor and improved/harmed counts (secondary). Intervals: 2,000 bootstrap draws over episodes, stratified by query time, pointwise 95%, not corrected for the 31 selectors.</li>
+      <li><b>Controls.</b> Batch 1 used RMS-matched disagreement and actor-distance penalties; batch 2 used contrast-matched factors fixed from the 256-row fitting bank (BCA 31.37, disagreement 4.93, actor distance 19.30). Strength grid 0, 0.03, 0.1, 0.3, 1, 3, 10 for every family.</li>
+      <li><b>Budget actually used per batch.</b> 576 continuations, 36,000 transitions, zero optimizer or calibration updates.</li>
+    </ul>
+    <div class="callout"><p><b>Why "inconclusive" is a possible verdict.</b> If raw <code>Q1</code> already picks the best candidate at a state, no score can improve it there. Regret of raw <code>Q1</code> is therefore reported first: a bank without raw mistakes cannot test correction ability. In both batches raw <code>Q1</code> had mean regret above one return unit and made a wrong pick in most states, so opportunities existed.</p></div>
+  </section>
+
+  <section class="sec" id="setup-operator">
+    <h2>The operator-alignment audit</h2>
+    <p>One evaluator step per saved candidate (1,152 transitions), four prespecified smoothing draws, and the algebraic decomposition of the signed error against the saved reference:</p>
+    <div class="formula">y_j = r + 0.98·(1 − done)·min(Q1_target, Q2_target)(s', a'_j)      four draws j
+R_j = min(Q1, Q2) − y_j        signed native residual     (U is calibrated to |R|)
+H   = Q1 − min(Q1, Q2)         critic-head gap
+G_j = y_j − V                  target-versus-continuation gap
+E   = Q1 − V = R_j + H + G_j   signed Q1 error against the simulator reference</div>
+    <p>The reported correlations are Pearson within each state's nine candidates, averaged over states, then over draws. That is the decision-relevant question: can the width tell the actions at one state apart? Containment <code>|R| ≤ U</code> is reported separately because it can be high while discrimination is poor.</p>
+  </section>
+
+  <section class="sec" id="setup-pilot">
+    <h2>The matched-policy continuation pilot</h2>
+    <dl class="kv">
+      <dt>Start</dt><dd>the exact 20k checkpoint, including optimizers, targets, scale network, unit, posterior and RNG.</dd>
+      <dt>Arms</dt><dd>native (κ 0); original BCA (κ 3, live action gradient); actor-distance control (<code>0.1 × 19.296 × mean((a − π_20k(s))²)</code>).</dd>
+      <dt>Streams</dt><dd>two replay/noise streams (seeds 2026102681/2026102683 and 2026102682/2026102684), paired across arms. Both continue one trained initialization.</dd>
+      <dt>Work per run</dt><dd>2,000 critic, 1,000 actor, 2,000 auxiliary updates, one refresh at absolute critic 21,000. All arms do the same auxiliary work.</dd>
+      <dt>Evaluation</dt><dd>once, after all six runs: 7 policies × 32 fresh nominal reset seeds (2026102800–2026102831), 224 episodes, 22,400 transitions; float64 discounted return with no terminal bootstrap.</dd>
+      <dt>Screen</dt><dd>BCA's mean paired gain over native and over distance must exceed a 10⁻⁶ numerical band in each stream; a direction screen, not a significance test.</dd>
+      <dt>Intervals</dt><dd>2,000 paired episode bootstrap draws, conditional on the fixed final actors; they do not estimate training-seed variation.</dd>
+    </dl>
+  </section>
+
+  <section class="sec" id="setup-support">
+    <h2>The fresh-initialization support pilot</h2>
+    <p>This is the experiment designed to address the pilot's two limitations at once: independent initializations and an explicit action gap. Approved scope, frozen on 27 October 03:08 UTC:</p>
+    <ul>
+      <li><b>Conditions.</b> Restricted: keep logged transitions with executed <code>a1 ≤ 0.5</code> (57,752 of 76,800 rows). Broad, count matched: the same number of intact rows per episode from the full pool (14,269 of them above 0.5). Identical row plans across seeds.</li>
+      <li><b>Seeds.</b> Fresh initializations 2026103001 and 2026103002, paired across conditions; auxiliary 2026103011 and 2026103012. Normalization statistics fitted per condition on its retained training observations and frozen.</li>
+      <li><b>Shared warmup.</b> 10,000 critic, 5,000 actor, 10,000 auxiliary updates per cell, first calibration at 10,000.</li>
+      <li><b>Branches.</b> From each warmup: native; BCA κ 3; distance control with coefficient <code>c = G_B / G_D</code>, the ratio of RMS action-gradient norms of <code>3U</code> and <code>D</code> on 768 logged probes, computed once before branching. Each branch: 2,000 critic, 1,000 actor, 2,000 auxiliary updates, one calibration at 11,000.</li>
+      <li><b>Evaluation.</b> Twelve final policies plus four untrained reference actors on the same 32 nominal starts; record the fraction of chosen actions above 0.5 + 10⁻⁶ (actual extrapolation exposure).</li>
+      <li><b>Gates.</b> Learning: native must beat its untrained reference in all four cells, else "inadequate learning for this budget". Go: BCA beats native and distance in all eight comparisons. A restricted-cell win with no baseline visiting the excluded region is labeled "mechanism untested".</li>
+      <li><b>Budget.</b> 64,000 critic, 32,000 actor, 64,000 auxiliary updates, 16 calibrations, 512 episodes, 150 minutes.</li>
+    </ul>
+    <p><b>What happened on Zeus.</b> Attempt 1 was stopped by the user during the first warmup (last saved 200 critic updates). Attempt 2 completed the two seed-0 warmups (10,000 critic updates each, sealed) and was canceled during the third; no branch trained and no evaluation ran. A Titan continuation importing the two sealed warmups was proposed with a 7,594-second ceiling. The user reports a completed Titan run whose learning gate passed and whose BCA gate failed, with restricted policies never selecting beyond the cutoff; that report is unavailable here and is shown as such.</p>
+  </section>
+
+  <section class="sec" id="setup-fairness">
+    <h2>Fairness and validity rules used throughout</h2>
+    <ul>
+      <li>Benchmark conditions come from environment mechanisms (the stall knee, the a1 cutoff, the start laws), never from BCA's performance.</li>
+      <li>Every arm receives the same data rows, the same optimizer budgets, the same auxiliary work and the same evaluation seeds. Controls are strength matched by a rule fixed before labels.</li>
+      <li>A bank without raw-Q mistakes is inconclusive for correction ability; a bank with mistakes that the penalty fails to fix is informative negative evidence. Regret of raw <code>Q1</code> is always reported.</li>
+      <li>Development banks are reused and known; nothing on them is confirmation. Confirmation seeds remain untouched.</li>
+      <li>Calibration of residuals is never read as a guarantee about true Q error, selected actions, shifted starts or return.</li>
+    </ul>
+  </section>
+</section>

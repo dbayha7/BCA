@@ -1,0 +1,616 @@
+{
+ "label": "EXPLORATORY: arms A/B/C and result F's no-band control; seen seeds 0-4; pass marks frozen in routes2/arms/PASSMARKS_arms_ABC_and_F_control.md (SHA-256 a073be97003938c112e9ba77581a311e812fe5851f7e64211a11fb4bf47d9ecf) before this code was written",
+ "exploratory": true,
+ "passmarks_sha256": "a073be97003938c112e9ba77581a311e812fe5851f7e64211a11fb4bf47d9ecf",
+ "arm": "eval_C",
+ "quality": "expert",
+ "seed": 0,
+ "smoke_test": null,
+ "spec_sha256": "a71af9bd2e51740e481337198e63ec04196b631e3bcd729d3eb2073a589ce0b6",
+ "code_sha256": {
+  "experiments/shift_iw/__init__.py": "fcf4193aba1b22f438a8004409f6b7e4f688ce98407db7f58c070b26380353c2",
+  "experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48",
+  "experiments/shift_iw/data.py": "1965071f660f9e698f77da15b0b14c0b7288feb71f119f49c843f93df5906e67",
+  "experiments/shift_iw/coverage.py": "4d8b7b70f2ea17a7092d207b1c48f34c78ee2d8738c3b91fecbb5eddd92480e1",
+  "experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+  "experiments/shift_iw/learners_iw.py": "38633ab06fa8078d703bce1fd4330b07e1d09a32f5ae883438902ac685dd7f3c",
+  "experiments/shift_iw/lower_edge.py": "49835423dbb9923946ab61801e2a038964431592ca27ef68fe9d4fc2d593a697",
+  "experiments/shift_iw/run.py": "9e603b305ca249a66e147df703cbc2ecc7fab261627d04226c8bfe32b45e6e24",
+  "experiments/shift_iw/launch.sh": "19586f0348db903f5db7fe75d2c7b749e7daeb12bce36d143e8ca9893e604166",
+  "algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71"
+ },
+ "this_code": {
+  "common.py": "4beab712c5acc612a3c61868e87d7905c2003f8440b42d66c97072285e728d97",
+  "arm_a.py": "0002058e4bb90dca4493fc767d61fe00313682b6d0468ba3f4afcb787164bfe1",
+  "arm_b.py": "c09398b71c53038c0e4922752110bcc853b593cd79492feeddd041ca7b7fc7ea",
+  "arm_c.py": "c335f3f21ade6944e72383e2b7e7728b48057a07d7586532d857effbc0624443",
+  "arm_f0.py": "e5c4531d0f7cc2bc32611e636c9fb5d4dba3bf228cc53aa642cbe5e3056bc193",
+  "gates.py": "4b71d3cc8a761b2fc22e03e5f21757601bb74f22dbee710a960f2181422568ca",
+  "checks.py": "f6d387e531cdda728cd00bf3776c6d4b3a8abe123a11ac0aec2ddc98d9719843",
+  "screen.py": "bf89abbe375a89b269e7e7b0e505550ebeb3c171dabdb05fd601bf8b406a632a",
+  "kills.py": "1e35816ba44793661fdca1f97375b7c172fb73af39300128e790a794ff6b1ce8",
+  "score.py": "261e0b6dad33a2544ab93df685f57292d4cc729ad02ea5bab9b2172aac1bf9f4",
+  "rt.py": "e994ee4471a53a08d05c292d85fc72ab3c23a53b56855f912e3f17109652040e",
+  "test_arms.py": "88e0fe024db3ff92098c171013097e5dba1dbd366bfa20f19df4a0887ced5805"
+ },
+ "reused_files_sha256": {
+  "sandbox:experiments/shift_iw/__init__.py": "fcf4193aba1b22f438a8004409f6b7e4f688ce98407db7f58c070b26380353c2",
+  "sandbox:experiments/shift_iw/world.py": "7bd80da0b4430b305490ae8dd2dde90f9a08cec7a3a633d30ae5d3cc92088a48",
+  "sandbox:experiments/shift_iw/data.py": "1965071f660f9e698f77da15b0b14c0b7288feb71f119f49c843f93df5906e67",
+  "sandbox:experiments/shift_iw/coverage.py": "4d8b7b70f2ea17a7092d207b1c48f34c78ee2d8738c3b91fecbb5eddd92480e1",
+  "sandbox:experiments/shift_iw/classifier.py": "3e107564d08e7aec64a6b41952656a26493ac32abb1e4e1127654897b554fe41",
+  "sandbox:experiments/shift_iw/learners_iw.py": "38633ab06fa8078d703bce1fd4330b07e1d09a32f5ae883438902ac685dd7f3c",
+  "sandbox:experiments/shift_iw/lower_edge.py": "49835423dbb9923946ab61801e2a038964431592ca27ef68fe9d4fc2d593a697",
+  "sandbox:experiments/shift_iw/run.py": "9e603b305ca249a66e147df703cbc2ecc7fab261627d04226c8bfe32b45e6e24",
+  "sandbox:experiments/shift_iw/launch.sh": "19586f0348db903f5db7fe75d2c7b749e7daeb12bce36d143e8ca9893e604166",
+  "sandbox:algorithms/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sandbox:algorithms/td3_bc.py": "bf95a54dcb7402cca6533bcb0cb7c5ed5a383ef2e71a8c118e24b67310300bb8",
+  "sandbox:algorithms/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+  "sandbox:calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sandbox:calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+  "sandbox:calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+  "sandbox:calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "sandbox:calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "sandbox:calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+  "sandbox:experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "sandbox:experiments/shift/acceptance.py": "65993c94d1b6be3299f8a56fdeba335af7469f9512cb781444d1c48833bf3f69",
+  "sandbox:experiments/shift/dataset.py": "3e0193bd82bdae7c535e91824f0f114c436d50ffc1c54ef8504694d27fec950f",
+  "sandbox:experiments/shift/detection.py": "9b1f5921feeec6d8771269a5ad80ca2f8877049d79bffd02b440718fd51112d9",
+  "sandbox:experiments/shift/learners.py": "82b07382438485de886b708c5d0d2a85cb2a2b3901d96fb7c0e7416e8ef6d96a",
+  "sandbox:experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "sandbox:experiments/shift/shift.py": "926ae4742f59cbe70ca64633480fd964d1e553a43dea8b2b316b7ddf9362848c",
+  "sandbox:experiments/shift/stage0.py": "ebd9b45d8df6918f5969359273914732e27bc1a1a68544f0352cb88dbfb374e0",
+  "sandbox:experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "sandbox:experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "sandbox:experiments/signal/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sandbox:experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "sandbox:experiments/signal/glq_match.py": "75c50e7b3f0fb51176ae88f4921a4d56455d77c82eed2e3664c426ba88c8968c",
+  "sandbox:experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b",
+  "sandbox:experiments/truth/__init__.py": "6a0bcb27d8e8121379da5e3a087c72308a98c0bfcf02b62510001836d7214f87",
+  "sandbox:experiments/truth/gap.py": "9f2a216c0d2e4181f57bf683f25f4e0ce93d6dfcd3d68754beab8ea486035d6b",
+  "sandbox:experiments/truth/labeller.py": "e75c9497f0c900df7d05c3d8fde9030a55c4878a384a9215d438462f8af53b6c",
+  "sandbox:experiments/truth/pools.py": "901a30262dfb0644ae6152757e1cfe23af12d7405c3e6228581a7886114cdead",
+  "sandbox:experiments/truth/state_restore.py": "a162e9cc9cbaf4ee4894914c1ecdeedd95dca5e499231af46f6493b171488195",
+  "sandbox:runtime/__init__.py": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+  "sandbox:runtime/networks.py": "8e04e3eb6483ec35f73a49467cea870df2d2b9b131169a79b07f57ee9a67c607",
+  "sandbox:runtime/published.py": "e23c77a03fca5dd3359d3627f8dc3157dab45b37c92829fcb4dc8c8bba06fc4e",
+  "sandbox:runtime/rewards.py": "95d0f45540eb6b9976d84ba4ada61898c2a374e0245da871cb9f756a6dacbb71",
+  "repository:outputs/shift_iw/explore/channel/command_le_train_f1.py": "f3f3b7349efc9c8640612f98f395cc617949f967847016394094a204bb46c635",
+  "repository:outputs/shift_iw/explore/channel/command_le_train.py": "c91f4608888672df392746149cf9082e4c48a965e7a973bf8f8fd9cfa117d3ef",
+  "repository:outputs/shift_iw/explore/channel/command_band_check.py": "3c4d4dfa41ee804a3d2e88f556ae7a7f835ae8a01d7b972d9944e389ec148ca0",
+  "repository:outputs/shift_iw/explore/channel/PASSMARKS_fallback_rerun.md": "8b8f7a27907fc9118079d268244cb1d277c582809547cd5eff7734e7d77e649f",
+  "scratchpad:sit4/situations.py (restated in score.py)": "0864f88a6e175e5baf3aa26c0746d822e2c7aaff4db8e89dcd9ffd7e106a9609"
+ },
+ "software": {
+  "python": "3.10.20",
+  "numpy": "2.2.6",
+  "jax": "0.6.2",
+  "flax": "0.10.7",
+  "optax": "0.2.8",
+  "scipy": "1.15.3",
+  "machine": "vm",
+  "affinity": [
+   1
+  ],
+  "omp": "1",
+  "xla_flags": "--xla_cpu_max_isa=AVX2",
+  "openblas": "Haswell"
+ },
+ "started_at": "2026-10-17T05:53:19+0000",
+ "kills_sha256": "96db647e112998fddd0fe85a6dbad61c955e797478372d03cf833d576ad5e61f",
+ "arm_record_sha256": "e9101a2f9a48cd1837ccfb0c346a8b560fb09c68976f9dbf298b03dc0f372699",
+ "status": "finished",
+ "evaluations": {
+  "rho1": {
+   "none": {
+    "J": -66.68824624736061,
+    "J_se": 3.0432888291306393,
+    "points": 95.88351621598717,
+    "points_se": 0.3977659370142857,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -121.24608073644652,
+    "J_se": 4.381991369062053,
+    "points": 93.38567136547407,
+    "points_se": 0.43525612820741716,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -198.06062841768446,
+    "J_se": 5.166663689332983,
+    "points": 90.75810799726354,
+    "points_se": 0.4065685442837022,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5": {
+   "none": {
+    "J": -68.22803687257631,
+    "J_se": 3.200235068875743,
+    "points": 95.68226148952742,
+    "points_se": 0.4182792276081704,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -126.65507632495894,
+    "J_se": 4.526021653238148,
+    "points": 92.84840456618988,
+    "points_se": 0.44956242380573996,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -206.9780104438021,
+    "J_se": 5.2578487727161605,
+    "points": 90.05639268402075,
+    "points_se": 0.4137439651821103,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+bca": {
+   "none": {
+    "J": -37.63882006703829,
+    "J_se": 0.9690364929319479,
+    "points": 99.68035341189803,
+    "points_se": 0.12665564468365725,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.41143882745762,
+    "J_se": 1.3462432978061087,
+    "points": 99.92492005992364,
+    "points_se": 0.13372017333609995,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.41477769856344,
+    "J_se": 1.574532171009206,
+    "points": 100.17312749173699,
+    "points_se": 0.12390108804966832,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+wmedian": {
+   "none": {
+    "J": -37.579647434770145,
+    "J_se": 0.9682692288389316,
+    "points": 99.68808743217716,
+    "points_se": 0.12655536122782002,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.32969903121661,
+    "J_se": 1.3450172029827272,
+    "points": 99.9330391419199,
+    "points_se": 0.1335983873167554,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.30779834781757,
+    "J_se": 1.5730343826031739,
+    "points": 100.18154577508508,
+    "points_se": 0.12378322598461022,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+wmean": {
+   "none": {
+    "J": -37.579647434770145,
+    "J_se": 0.9682692288389316,
+    "points": 99.68808743217716,
+    "points_se": 0.12655536122782002,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.32969903121661,
+    "J_se": 1.3450172029827272,
+    "points": 99.9330391419199,
+    "points_se": 0.1335983873167554,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.30779834781757,
+    "J_se": 1.5730343826031739,
+    "points": 100.18154577508508,
+    "points_se": 0.12378322598461022,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+sign": {
+   "none": {
+    "J": -37.63882006703829,
+    "J_se": 0.9690364929319479,
+    "points": 99.68035341189803,
+    "points_se": 0.12665564468365725,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.41143882745762,
+    "J_se": 1.3462432978061087,
+    "points": 99.92492005992364,
+    "points_se": 0.13372017333609995,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.41477769856344,
+    "J_se": 1.574532171009206,
+    "points": 100.17312749173699,
+    "points_se": 0.12390108804966832,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+wttest": {
+   "none": {
+    "J": -37.60561512892029,
+    "J_se": 0.9685967795429855,
+    "points": 99.68469338554681,
+    "points_se": 0.12659817297525278,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.365476334732186,
+    "J_se": 1.34555668776849,
+    "points": 99.92948544012216,
+    "points_se": 0.133651973469557,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.35479794164047,
+    "J_se": 1.5736904682779345,
+    "points": 100.17784734267464,
+    "points_se": 0.12383485384617658,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+wbernstein": {
+   "none": {
+    "J": -38.21032512823128,
+    "J_se": 0.9794309378051472,
+    "points": 99.60565618171802,
+    "points_se": 0.12801422625013725,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -56.20235082871368,
+    "J_se": 1.3620571244184203,
+    "points": 99.84636004772236,
+    "points_se": 0.13529093520295674,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -79.48973166071978,
+    "J_se": 1.594085685947298,
+    "points": 100.08853857830175,
+    "points_se": 0.1254397684403473,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+range_limit": {
+   "none": {
+    "J": -39.11646466816427,
+    "J_se": 1.078466813586842,
+    "points": 99.48722133592979,
+    "points_se": 0.14095847838659628,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -58.84321556301868,
+    "J_se": 1.510629467118666,
+    "points": 99.58404721719317,
+    "points_se": 0.15004838614158236,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -84.72313869475413,
+    "J_se": 1.7756462730192129,
+    "points": 99.67671795141166,
+    "points_se": 0.13972690381893288,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+shuffled": {
+   "none": {
+    "J": -37.681394958713895,
+    "J_se": 0.9695796690250335,
+    "points": 99.67478876042016,
+    "points_se": 0.12672663924242597,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.46961675660225,
+    "J_se": 1.3471113341833398,
+    "points": 99.91914134014674,
+    "points_se": 0.13380639398805383,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.4908901706874,
+    "J_se": 1.5756394566538012,
+    "points": 100.16713814564172,
+    "points_se": 0.12398822116684001,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+matched_global": {
+   "none": {
+    "J": -38.41827009070152,
+    "J_se": 1.0354230688121422,
+    "points": 99.57847722254313,
+    "points_se": 0.13533254656276636,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -57.354786584310204,
+    "J_se": 1.446237537096303,
+    "points": 99.73189046466243,
+    "points_se": 0.14365243968965322,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -82.09934667903008,
+    "J_se": 1.6973394078005861,
+    "points": 99.88318606400402,
+    "points_se": 0.13356487932620512,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+knee_clip": {
+   "none": {
+    "J": -37.56498382808753,
+    "J_se": 0.9680257442674022,
+    "points": 99.69000400453675,
+    "points_se": 0.1265235371473003,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.312470619308144,
+    "J_se": 1.344694855910474,
+    "points": 99.93475041226044,
+    "points_se": 0.13356636910247993,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.28569082239552,
+    "J_se": 1.5726468216270983,
+    "points": 100.18328543242859,
+    "points_se": 0.12375272852796533,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho1+bca_built_for_rho1": {
+   "none": {
+    "J": -41.46529316465812,
+    "J_se": 1.0044237475113884,
+    "points": 99.18022320980693,
+    "points_se": 0.13128085289308478,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -59.94177054008257,
+    "J_se": 1.3833338546796292,
+    "points": 99.47492952487735,
+    "points_se": 0.1374043184697041,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -83.53670514311898,
+    "J_se": 1.6092603257599116,
+    "points": 99.77007927527207,
+    "points_se": 0.12663387194497083,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "rho0.5+B_host_map": {
+   "none": {
+    "J": -37.681394958713895,
+    "J_se": 0.9695796690250335,
+    "points": 99.67478876042016,
+    "points_se": 0.12672663924242597,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -55.46961675660225,
+    "J_se": 1.3471113341833398,
+    "points": 99.91914134014674,
+    "points_se": 0.13380639398805383,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -78.4908901706874,
+    "J_se": 1.5756394566538012,
+    "points": 100.16713814564172,
+    "points_se": 0.12398822116684001,
+    "finite": true,
+    "starts": 1000
+   }
+  },
+  "host": {
+   "none": {
+    "J": -68.86665419640265,
+    "J_se": 3.160749088195155,
+    "points": 95.59879250828125,
+    "points_se": 0.41311830500562235,
+    "finite": true,
+    "starts": 1000
+   },
+   "mild": {
+    "J": -125.25479914596725,
+    "J_se": 4.486398146391756,
+    "points": 92.98749183770944,
+    "points_se": 0.4456266848406373,
+    "finite": true,
+    "starts": 1000
+   },
+   "strong": {
+    "J": -204.42670860593125,
+    "J_se": 5.282895699078296,
+    "points": 90.25715649150315,
+    "points_se": 0.41571492613527994,
+    "finite": true,
+    "starts": 1000
+   }
+  }
+ },
+ "situations": {
+  "rho0.5+bca": {
+   "recorded": {
+    "J": -30.107146916539598,
+    "se": 0.38617309029972136,
+    "Jd": -19.736639913185172,
+    "points": 99.44624722512644,
+    "points_se": 0.0570682907152119,
+    "finite": true
+   },
+   "big_kicks": {
+    "J": -171.87239023593062,
+    "se": 2.8023997915603522,
+    "Jd": -147.41027076496312,
+    "points": 99.0690526435422,
+    "points_se": 0.3117711927593462,
+    "finite": true
+   },
+   "big_waves": {
+    "J": -40.95930064203354,
+    "se": 0.4701285906276966,
+    "Jd": -24.80206942260555,
+    "points": 99.47528681764591,
+    "points_se": 0.05172062666786132,
+    "finite": true
+   },
+   "strong_current": {
+    "J": -99.37285015839315,
+    "se": 1.3622595614046202,
+    "Jd": -51.45959243154174,
+    "points": 100.28901724979862,
+    "points_se": 0.08903701712770343,
+    "finite": true
+   }
+  },
+  "rho1": {
+   "recorded": {
+    "J": -36.114068546793554,
+    "se": 0.5660301969291114,
+    "Jd": -23.190885671526804,
+    "points": 98.55855007970192,
+    "points_se": 0.08364740227463353,
+    "finite": true
+   },
+   "big_kicks": {
+    "J": -215.05485334086592,
+    "se": 3.81240891907232,
+    "Jd": -178.8116697833627,
+    "points": 94.26493865914311,
+    "points_se": 0.4241362276592752,
+    "finite": true
+   },
+   "big_waves": {
+    "J": -59.020786893234096,
+    "se": 1.0365999223904068,
+    "Jd": -33.73513986851297,
+    "points": 97.48827431492232,
+    "points_se": 0.11404028314531042,
+    "finite": true
+   },
+   "strong_current": {
+    "J": -267.49719622656903,
+    "se": 4.505507262799739,
+    "Jd": -126.9841935885874,
+    "points": 89.30044304223618,
+    "points_se": 0.2944790689619101,
+    "finite": true
+   }
+  }
+ },
+ "seconds": 46.34379278799952,
+ "situation_anchors": {
+  "recorded": {
+   "random": -703.0459037698351,
+   "top": -26.359979835574777
+  },
+  "big_kicks": {
+   "random": -1062.3686866421401,
+   "top": -163.50443726824008
+  },
+  "big_waves": {
+   "random": -945.1667591902067,
+   "top": -36.18977860031421
+  },
+  "strong_current": {
+   "random": -1633.7871540030635,
+   "top": -103.7947920051683
+  }
+ },
+ "finished_at": "2026-10-17T05:54:05+0000"
+}

@@ -1,0 +1,783 @@
+{
+  "case": {
+    "behavior": "random",
+    "data_seed": 2026102701,
+    "id": "random-r1",
+    "train_seed": 2026102801
+  },
+  "checkpoint_sha256": "250bfdecb830c1ef67369904d407aca4c9ab6738d71a92073b450ba7079307eb",
+  "dataset_sha256": "95c1ccf88524ea9e10f6fbf94012ec69272cea567e43c0d7d75b380a61623210",
+  "method": "unifloral-unified",
+  "schema": "thrusterchain.study_evaluation.v1",
+  "selection_interactions": 0,
+  "starts": {
+    "big_kicks": {
+      "canonical_provenance": {
+        "load_strategy": "Execute allowlisted AST definitions from unchanged canonical source; replace only repository imports with local standard dependencies and frozen Stage0 plant dependency. Exclude registration side effects.",
+        "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+        "plant_artifact": "plant.json",
+        "plant_sha256": "4aa14e6eba522074a72755c06cb03318aee4ba6799ab57ea2fa02e9b77fca735",
+        "schema_version": 1,
+        "sources": [
+          {
+            "bytes": 23731,
+            "original_path": "experiments/shift/thruster_chain.py",
+            "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+            "vendored_path": "thrusterchain/canonical/thrusterchain.py"
+          },
+          {
+            "bytes": 60931,
+            "original_path": "experiments/signal/gapped_lq.py",
+            "sha256": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+            "vendored_path": "thrusterchain/canonical/gapped_lq.py"
+          }
+        ]
+      },
+      "environment_source_sha256": "da4ef118e705d8ceb3b7f622c0dade4d71185097dc0bf31112521e79caf5ee0c",
+      "environment_steps": 400,
+      "episodes_total": 4,
+      "inference_audit": {
+        "all_file_writes_monitored": false,
+        "arbitrary_code_inference_purity_verified": false,
+        "context_guard_activated": true,
+        "counter_semantics": {
+          "dataset_collection_calls": "Calls through the patched datasets.generate_dataset attribute",
+          "forbidden_api_calls": "Benchmark hooks using this guard's context-local ledger; separately owned evaluator ledgers are not merged",
+          "training_calls": "Calls through the patched regular.train_behavior_cloning attribute",
+          "write_attempts": "Write-mode calls through supported patched lookups while this guard is active"
+        },
+        "dataset_collection_calls": 0,
+        "forbidden_api_calls": 0,
+        "guarantee": "Supported instrumented calls are refused; no OS sandbox or arbitrary-code purity guarantee",
+        "read_io_monitored": false,
+        "scope": "Cooperative instrumentation of supported benchmark entry points and Python file-write lookups",
+        "supported_write_lookups": [
+          "builtins.open",
+          "io.open",
+          "os.open",
+          "pathlib.Path.open"
+        ],
+        "training_calls": 0,
+        "unsupported_monitoring": [
+          "read_io",
+          "preimported_file_io_aliases",
+          "already_open_file_handles",
+          "native_calls",
+          "threads",
+          "subprocesses",
+          "transient_state_adaptation",
+          "arbitrary_external_training"
+        ],
+        "write_attempts": 0,
+        "zero_counter_interpretation": "Zero means no attempt observed through this guard's instrumented paths; it does not establish absence of I/O, data access, or adaptation"
+      },
+      "numpy_version": "1.26.4",
+      "paired_episode_seeds": true,
+      "partition_and_holdout_status": "declarations only; source history and prior exposure not attested",
+      "partitions": {
+        "dataset": [
+          7605961319937757,
+          61317157995984374,
+          1610461650420771903,
+          3857774925260652888,
+          3935810169272425019,
+          4946546839354609439,
+          7589736108468810961,
+          7950018314893260602,
+          7971105565705902471,
+          9070572472008045803
+        ],
+        "final": [
+          2036102701
+        ],
+        "selection": []
+      },
+      "physics": {
+        "stall": true,
+        "stall_slope": 1.5
+      },
+      "policy_sha256_after": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_sha256_before": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_task_semantics_attested": false,
+      "policy_task_semantics_declared": "finite_horizon",
+      "purpose": "final",
+      "random_streams": {
+        "bit_generator": "PCG64",
+        "noise_spawn_key": [
+          5102
+        ],
+        "reset_seed_mapping": "first uint64 masked to 63 bits",
+        "reset_spawn_key": [
+          5101
+        ],
+        "seed_sequence": "numpy.random.SeedSequence",
+        "subsequent_episode_spawn_key": [
+          5100
+        ]
+      },
+      "scenario_schema": "thrusterchain.shift_scenarios.v1",
+      "scenario_source_sha256": "57b8824af65c7a6fff1445fafcf9f8f4a3db7315f45e84aa2c2d7dd4a0e96626",
+      "scenarios": {
+        "attenuated_thruster": {
+          "episodes": [
+            {
+              "discounted_return": -529.450666950561,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -945.4152548885013,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "baseline": {
+          "episodes": [
+            {
+              "discounted_return": -539.4144383388053,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -965.4541892698074,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "bounded_disturbance": {
+          "episodes": [
+            {
+              "discounted_return": -542.0696646785822,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -974.5382813292247,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        },
+        "combined": {
+          "episodes": [
+            {
+              "discounted_return": -532.1461514877444,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -954.5275822952543,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        }
+      },
+      "schema": "thrusterchain.shift_evaluation.v1",
+      "start_law": "big_kicks",
+      "uncertainty": "episodes are conditional on one fixed policy; training-seed uncertainty not measured"
+    },
+    "big_waves": {
+      "canonical_provenance": {
+        "load_strategy": "Execute allowlisted AST definitions from unchanged canonical source; replace only repository imports with local standard dependencies and frozen Stage0 plant dependency. Exclude registration side effects.",
+        "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+        "plant_artifact": "plant.json",
+        "plant_sha256": "4aa14e6eba522074a72755c06cb03318aee4ba6799ab57ea2fa02e9b77fca735",
+        "schema_version": 1,
+        "sources": [
+          {
+            "bytes": 23731,
+            "original_path": "experiments/shift/thruster_chain.py",
+            "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+            "vendored_path": "thrusterchain/canonical/thrusterchain.py"
+          },
+          {
+            "bytes": 60931,
+            "original_path": "experiments/signal/gapped_lq.py",
+            "sha256": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+            "vendored_path": "thrusterchain/canonical/gapped_lq.py"
+          }
+        ]
+      },
+      "environment_source_sha256": "da4ef118e705d8ceb3b7f622c0dade4d71185097dc0bf31112521e79caf5ee0c",
+      "environment_steps": 400,
+      "episodes_total": 4,
+      "inference_audit": {
+        "all_file_writes_monitored": false,
+        "arbitrary_code_inference_purity_verified": false,
+        "context_guard_activated": true,
+        "counter_semantics": {
+          "dataset_collection_calls": "Calls through the patched datasets.generate_dataset attribute",
+          "forbidden_api_calls": "Benchmark hooks using this guard's context-local ledger; separately owned evaluator ledgers are not merged",
+          "training_calls": "Calls through the patched regular.train_behavior_cloning attribute",
+          "write_attempts": "Write-mode calls through supported patched lookups while this guard is active"
+        },
+        "dataset_collection_calls": 0,
+        "forbidden_api_calls": 0,
+        "guarantee": "Supported instrumented calls are refused; no OS sandbox or arbitrary-code purity guarantee",
+        "read_io_monitored": false,
+        "scope": "Cooperative instrumentation of supported benchmark entry points and Python file-write lookups",
+        "supported_write_lookups": [
+          "builtins.open",
+          "io.open",
+          "os.open",
+          "pathlib.Path.open"
+        ],
+        "training_calls": 0,
+        "unsupported_monitoring": [
+          "read_io",
+          "preimported_file_io_aliases",
+          "already_open_file_handles",
+          "native_calls",
+          "threads",
+          "subprocesses",
+          "transient_state_adaptation",
+          "arbitrary_external_training"
+        ],
+        "write_attempts": 0,
+        "zero_counter_interpretation": "Zero means no attempt observed through this guard's instrumented paths; it does not establish absence of I/O, data access, or adaptation"
+      },
+      "numpy_version": "1.26.4",
+      "paired_episode_seeds": true,
+      "partition_and_holdout_status": "declarations only; source history and prior exposure not attested",
+      "partitions": {
+        "dataset": [
+          7605961319937757,
+          61317157995984374,
+          1610461650420771903,
+          3857774925260652888,
+          3935810169272425019,
+          4946546839354609439,
+          7589736108468810961,
+          7950018314893260602,
+          7971105565705902471,
+          9070572472008045803
+        ],
+        "final": [
+          2036102701
+        ],
+        "selection": []
+      },
+      "physics": {
+        "stall": true,
+        "stall_slope": 1.5
+      },
+      "policy_sha256_after": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_sha256_before": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_task_semantics_attested": false,
+      "policy_task_semantics_declared": "finite_horizon",
+      "purpose": "final",
+      "random_streams": {
+        "bit_generator": "PCG64",
+        "noise_spawn_key": [
+          5102
+        ],
+        "reset_seed_mapping": "first uint64 masked to 63 bits",
+        "reset_spawn_key": [
+          5101
+        ],
+        "seed_sequence": "numpy.random.SeedSequence",
+        "subsequent_episode_spawn_key": [
+          5100
+        ]
+      },
+      "scenario_schema": "thrusterchain.shift_scenarios.v1",
+      "scenario_source_sha256": "57b8824af65c7a6fff1445fafcf9f8f4a3db7315f45e84aa2c2d7dd4a0e96626",
+      "scenarios": {
+        "attenuated_thruster": {
+          "episodes": [
+            {
+              "discounted_return": -372.29666273405394,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -902.7736317148003,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "baseline": {
+          "episodes": [
+            {
+              "discounted_return": -380.94223955351003,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -923.3838486160674,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "bounded_disturbance": {
+          "episodes": [
+            {
+              "discounted_return": -379.9219948347548,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -930.8510198720753,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        },
+        "combined": {
+          "episodes": [
+            {
+              "discounted_return": -371.33886160795174,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -910.2558413086679,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        }
+      },
+      "schema": "thrusterchain.shift_evaluation.v1",
+      "start_law": "big_waves",
+      "uncertainty": "episodes are conditional on one fixed policy; training-seed uncertainty not measured"
+    },
+    "recorded": {
+      "canonical_provenance": {
+        "load_strategy": "Execute allowlisted AST definitions from unchanged canonical source; replace only repository imports with local standard dependencies and frozen Stage0 plant dependency. Exclude registration side effects.",
+        "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+        "plant_artifact": "plant.json",
+        "plant_sha256": "4aa14e6eba522074a72755c06cb03318aee4ba6799ab57ea2fa02e9b77fca735",
+        "schema_version": 1,
+        "sources": [
+          {
+            "bytes": 23731,
+            "original_path": "experiments/shift/thruster_chain.py",
+            "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+            "vendored_path": "thrusterchain/canonical/thrusterchain.py"
+          },
+          {
+            "bytes": 60931,
+            "original_path": "experiments/signal/gapped_lq.py",
+            "sha256": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+            "vendored_path": "thrusterchain/canonical/gapped_lq.py"
+          }
+        ]
+      },
+      "environment_source_sha256": "da4ef118e705d8ceb3b7f622c0dade4d71185097dc0bf31112521e79caf5ee0c",
+      "environment_steps": 400,
+      "episodes_total": 4,
+      "inference_audit": {
+        "all_file_writes_monitored": false,
+        "arbitrary_code_inference_purity_verified": false,
+        "context_guard_activated": true,
+        "counter_semantics": {
+          "dataset_collection_calls": "Calls through the patched datasets.generate_dataset attribute",
+          "forbidden_api_calls": "Benchmark hooks using this guard's context-local ledger; separately owned evaluator ledgers are not merged",
+          "training_calls": "Calls through the patched regular.train_behavior_cloning attribute",
+          "write_attempts": "Write-mode calls through supported patched lookups while this guard is active"
+        },
+        "dataset_collection_calls": 0,
+        "forbidden_api_calls": 0,
+        "guarantee": "Supported instrumented calls are refused; no OS sandbox or arbitrary-code purity guarantee",
+        "read_io_monitored": false,
+        "scope": "Cooperative instrumentation of supported benchmark entry points and Python file-write lookups",
+        "supported_write_lookups": [
+          "builtins.open",
+          "io.open",
+          "os.open",
+          "pathlib.Path.open"
+        ],
+        "training_calls": 0,
+        "unsupported_monitoring": [
+          "read_io",
+          "preimported_file_io_aliases",
+          "already_open_file_handles",
+          "native_calls",
+          "threads",
+          "subprocesses",
+          "transient_state_adaptation",
+          "arbitrary_external_training"
+        ],
+        "write_attempts": 0,
+        "zero_counter_interpretation": "Zero means no attempt observed through this guard's instrumented paths; it does not establish absence of I/O, data access, or adaptation"
+      },
+      "numpy_version": "1.26.4",
+      "paired_episode_seeds": true,
+      "partition_and_holdout_status": "declarations only; source history and prior exposure not attested",
+      "partitions": {
+        "dataset": [
+          7605961319937757,
+          61317157995984374,
+          1610461650420771903,
+          3857774925260652888,
+          3935810169272425019,
+          4946546839354609439,
+          7589736108468810961,
+          7950018314893260602,
+          7971105565705902471,
+          9070572472008045803
+        ],
+        "final": [
+          2036102701
+        ],
+        "selection": []
+      },
+      "physics": {
+        "stall": true,
+        "stall_slope": 1.5
+      },
+      "policy_sha256_after": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_sha256_before": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_task_semantics_attested": false,
+      "policy_task_semantics_declared": "finite_horizon",
+      "purpose": "final",
+      "random_streams": {
+        "bit_generator": "PCG64",
+        "noise_spawn_key": [
+          5102
+        ],
+        "reset_seed_mapping": "first uint64 masked to 63 bits",
+        "reset_spawn_key": [
+          5101
+        ],
+        "seed_sequence": "numpy.random.SeedSequence",
+        "subsequent_episode_spawn_key": [
+          5100
+        ]
+      },
+      "scenario_schema": "thrusterchain.shift_scenarios.v1",
+      "scenario_source_sha256": "57b8824af65c7a6fff1445fafcf9f8f4a3db7315f45e84aa2c2d7dd4a0e96626",
+      "scenarios": {
+        "attenuated_thruster": {
+          "episodes": [
+            {
+              "discounted_return": -289.35809312404854,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -658.582299237848,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "baseline": {
+          "episodes": [
+            {
+              "discounted_return": -296.3955651354081,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -674.7249271259715,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "bounded_disturbance": {
+          "episodes": [
+            {
+              "discounted_return": -295.2731230435756,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -677.7607953298119,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        },
+        "combined": {
+          "episodes": [
+            {
+              "discounted_return": -288.2836592800669,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -661.6238000694403,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        }
+      },
+      "schema": "thrusterchain.shift_evaluation.v1",
+      "start_law": "recorded",
+      "uncertainty": "episodes are conditional on one fixed policy; training-seed uncertainty not measured"
+    },
+    "strong_current": {
+      "canonical_provenance": {
+        "load_strategy": "Execute allowlisted AST definitions from unchanged canonical source; replace only repository imports with local standard dependencies and frozen Stage0 plant dependency. Exclude registration side effects.",
+        "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+        "plant_artifact": "plant.json",
+        "plant_sha256": "4aa14e6eba522074a72755c06cb03318aee4ba6799ab57ea2fa02e9b77fca735",
+        "schema_version": 1,
+        "sources": [
+          {
+            "bytes": 23731,
+            "original_path": "experiments/shift/thruster_chain.py",
+            "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+            "vendored_path": "thrusterchain/canonical/thrusterchain.py"
+          },
+          {
+            "bytes": 60931,
+            "original_path": "experiments/signal/gapped_lq.py",
+            "sha256": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+            "vendored_path": "thrusterchain/canonical/gapped_lq.py"
+          }
+        ]
+      },
+      "environment_source_sha256": "da4ef118e705d8ceb3b7f622c0dade4d71185097dc0bf31112521e79caf5ee0c",
+      "environment_steps": 400,
+      "episodes_total": 4,
+      "inference_audit": {
+        "all_file_writes_monitored": false,
+        "arbitrary_code_inference_purity_verified": false,
+        "context_guard_activated": true,
+        "counter_semantics": {
+          "dataset_collection_calls": "Calls through the patched datasets.generate_dataset attribute",
+          "forbidden_api_calls": "Benchmark hooks using this guard's context-local ledger; separately owned evaluator ledgers are not merged",
+          "training_calls": "Calls through the patched regular.train_behavior_cloning attribute",
+          "write_attempts": "Write-mode calls through supported patched lookups while this guard is active"
+        },
+        "dataset_collection_calls": 0,
+        "forbidden_api_calls": 0,
+        "guarantee": "Supported instrumented calls are refused; no OS sandbox or arbitrary-code purity guarantee",
+        "read_io_monitored": false,
+        "scope": "Cooperative instrumentation of supported benchmark entry points and Python file-write lookups",
+        "supported_write_lookups": [
+          "builtins.open",
+          "io.open",
+          "os.open",
+          "pathlib.Path.open"
+        ],
+        "training_calls": 0,
+        "unsupported_monitoring": [
+          "read_io",
+          "preimported_file_io_aliases",
+          "already_open_file_handles",
+          "native_calls",
+          "threads",
+          "subprocesses",
+          "transient_state_adaptation",
+          "arbitrary_external_training"
+        ],
+        "write_attempts": 0,
+        "zero_counter_interpretation": "Zero means no attempt observed through this guard's instrumented paths; it does not establish absence of I/O, data access, or adaptation"
+      },
+      "numpy_version": "1.26.4",
+      "paired_episode_seeds": true,
+      "partition_and_holdout_status": "declarations only; source history and prior exposure not attested",
+      "partitions": {
+        "dataset": [
+          7605961319937757,
+          61317157995984374,
+          1610461650420771903,
+          3857774925260652888,
+          3935810169272425019,
+          4946546839354609439,
+          7589736108468810961,
+          7950018314893260602,
+          7971105565705902471,
+          9070572472008045803
+        ],
+        "final": [
+          2036102701
+        ],
+        "selection": []
+      },
+      "physics": {
+        "stall": true,
+        "stall_slope": 1.5
+      },
+      "policy_sha256_after": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_sha256_before": "6e2319176c7c20363c229a69e3ad16f114683a6dc25971315f2b47064e326e00",
+      "policy_task_semantics_attested": false,
+      "policy_task_semantics_declared": "finite_horizon",
+      "purpose": "final",
+      "random_streams": {
+        "bit_generator": "PCG64",
+        "noise_spawn_key": [
+          5102
+        ],
+        "reset_seed_mapping": "first uint64 masked to 63 bits",
+        "reset_spawn_key": [
+          5101
+        ],
+        "seed_sequence": "numpy.random.SeedSequence",
+        "subsequent_episode_spawn_key": [
+          5100
+        ]
+      },
+      "scenario_schema": "thrusterchain.shift_scenarios.v1",
+      "scenario_source_sha256": "57b8824af65c7a6fff1445fafcf9f8f4a3db7315f45e84aa2c2d7dd4a0e96626",
+      "scenarios": {
+        "attenuated_thruster": {
+          "episodes": [
+            {
+              "discounted_return": -761.6066242577111,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -1736.660676194568,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "baseline": {
+          "episodes": [
+            {
+              "discounted_return": -783.3249996548947,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -1786.0823445103188,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.0
+          }
+        },
+        "bounded_disturbance": {
+          "episodes": [
+            {
+              "discounted_return": -779.4902680722887,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -1784.9144654728536,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        },
+        "combined": {
+          "episodes": [
+            {
+              "discounted_return": -757.9011508083272,
+              "episode_seed": 2036102701,
+              "reset_seed": 3819308395361580807,
+              "return": -1735.6194658810239,
+              "steps": 100
+            }
+          ],
+          "specification": {
+            "command_multiplier": [
+              0.55,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "disturbance_bound": 0.02
+          }
+        }
+      },
+      "schema": "thrusterchain.shift_evaluation.v1",
+      "start_law": "strong_current",
+      "uncertainty": "episodes are conditional on one fixed policy; training-seed uncertainty not measured"
+    }
+  }
+}

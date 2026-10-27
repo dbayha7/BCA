@@ -1,0 +1,26 @@
+{
+  "schema": "bca.user_reported_process_observation.v1",
+  "reported_utc": "2026-10-27T04:10:00Z",
+  "timestamp_precision": "minute",
+  "source": "trusted_user_terminal_report",
+  "command": "wsl -d Ubuntu -- ps -p 372,486 -o pid,ppid,lstart,etime,stat,args",
+  "reported_stdout": "PID PPID STARTED ELAPSED STAT COMMAND (header only; no process entries)",
+  "recorded_origin_pids": [
+    {
+      "pid": 372,
+      "role": "supervisor",
+      "status": "absent"
+    },
+    {
+      "pid": 486,
+      "role": "worker",
+      "status": "absent"
+    }
+  ],
+  "global_scoped_process_absence_verified": false,
+  "exact_prior_final_counts_known": false,
+  "classification_unchanged": "user_interrupted_due_to_utilization_concern",
+  "systemd_user_session_warning_reported": true,
+  "warning_interpretation": "The ps command produced its table header; no system configuration changes or assistant-side WSL retry occurred.",
+  "launch_still_requires_fresh_scoped_process_check": true
+}

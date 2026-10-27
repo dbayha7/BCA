@@ -1,0 +1,86 @@
+{
+  "additional_actor_updates": 1,
+  "additional_critic_updates": 2,
+  "allowed_compatibility_deltas": {
+    "pyproject.toml": "d4ec261ac27d6b3ddd461523b9647ddba39de413e8a3ee426a5f6ab068ef0596",
+    "requirements-tested.txt": "a7459084eac39a8eda4e55e3250e093aa71ab0cc817bc502b96744f7226897f4",
+    "tests/test_wheel_notices.py": "992a37f1afacfeb24bd6f7aa54c9bb85842125d20086a8b33df3deab34210079"
+  },
+  "backend": "gpu",
+  "baseline_source_sha256": "e2f4e56c0cafee494145c292781ac4b9fd4761fa1463c9ebead68e6418d9a7e5",
+  "comparison": {
+    "atol": 0.0001,
+    "gradient_atol": 0.001,
+    "gradient_rtol": 0.03,
+    "rtol": 0.005
+  },
+  "dataset_sha256": "157f788fbe560fb62c0329a13cf72410c3842b37fe06cec45bb2226bd6f354ca",
+  "debug_only": false,
+  "devices": [
+    "cuda:0"
+  ],
+  "finite_difference": {
+    "atol": 0.001,
+    "rtol": 0.03,
+    "steps": [
+      0.001,
+      0.002
+    ]
+  },
+  "fixture_rows": [
+    0,
+    1,
+    99,
+    102,
+    199
+  ],
+  "harness_sha256": "761331b0f29e1b3ad8a62847ff3f657db2c47d8cbb86064b3bff70eef81837f3",
+  "initial_checkpoint_file_sha256": "caa701208c5f4825d7b44b1c16db6e909424c16ade3b5a83a06afb86f2e04e0f",
+  "jax_platforms": "cuda",
+  "measured": {
+    "action_gradient": [
+      -0.008698174729943275,
+      -0.003947701305150986,
+      0.004447866231203079,
+      0.0008712309645488858
+    ],
+    "actor_update_norm": 0.06240506642445325,
+    "critic_first_q": 0.028305331245064735,
+    "critic_update_norm": 0.19152231750185186,
+    "directional_derivative": -0.008698174729943275,
+    "finite_difference": [
+      -0.008698551915585995,
+      -0.008676200173795223
+    ],
+    "metrics": {
+      "abs_actor_q": 0.024074384942650795,
+      "actor_loss": -1.3218563795089722,
+      "actor_q": 0.024074384942650795,
+      "bc_coef": 1.0,
+      "bc_loss": 1.1781331300735474,
+      "critic_loss": 94.1021957397461,
+      "critic_next_v": -0.005622388329356909,
+      "entropy_loss": 0.0,
+      "q_loss": -0.024074384942650795
+    }
+  },
+  "mode": "gpu",
+  "pinned_source_sha256": "14a9bcdbc6d96fad85544a9d98957e98a7e46db13b89d74d54e3c5ce246517c8",
+  "precision": "highest",
+  "runtime": {
+    "constraint_check_scope": "JAX and NumPy upper bounds only; other upstream requirements are not certified",
+    "distrax": "0.1.5",
+    "flax": "0.10.4",
+    "jax": "0.5.3",
+    "jaxlib": "0.5.3",
+    "numpy": "1.26.4",
+    "optax": "0.2.4",
+    "tensorflow_probability": "0.25.0",
+    "upstream_constraints_met": true
+  },
+  "schema": "thrusterchain.unified_bounded_device_validation.v1",
+  "scope": "bounded computational checks only; no full training or scientific performance claim",
+  "source_sha256": "72ee69256129c9d48216acc69a505c87575e7f9016b912f14f664dfd09cf4abc",
+  "status": "bounded_tests_passed",
+  "unified_tests_passed": 4
+}

@@ -1,0 +1,43 @@
+2026-10-16T19:03:39Z start: attempt 1 of critic.main.stall.s11 on processor 2
+15:03:39 critic.main.stall.s11: official -> /home/user/bca/runs/shift_explore/near80; processor [2]; attempt 1
+Traceback (most recent call last):
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/phase_main.py", line 377, in main
+    code = run_phase(a, key, out_root, n, t0)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/phase_main.py", line 286, in run_phase
+    rec = dispatch(run, fresh_path=a.fresh_path)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/phase_main.py", line 228, in dispatch
+    passed, detail, prep = SD.check_training_file(run, k.setting, ctx0.seed(k.world), ctx0.learn)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 539, in seed
+    self._sd[world] = seed_data(self.rep, world, self.out_root, self.run)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 269, in seed_data
+    return FreshSeed(seed, world, rec)
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 229, in __init__
+    lg = fresh_log(seed, world, spec, tuple(record["sizes"]), record["stall_slope"])
+  File "/home/user/bca/outputs/shift/beyond-the-data/near80/code/settingdata.py", line 135, in fresh_log
+    return DS.generate(int(seed), world, spec, tuple(sizes), slope)
+  File "/home/user/bca/experiments/shift/dataset.py", line 179, in generate
+    E, L = int(sum(sizes)), physics.length
+TypeError: unsupported operand type(s) for +: 'int' and 'str'
+2026-10-19T20:30:22Z start: attempt 2 of critic.main.stall.s11 on processor 2
+16:30:23 critic.main.stall.s11: official -> /home/user/bca/runs/shift_explore/near80; processor [2]; attempt 2
+16:30:57 stall-aware controller critic rep 11: update 5000/100000, critic loss 0.05245
+16:31:12 stall-aware controller critic rep 11: update 10000/100000, critic loss 0.07924
+16:31:27 stall-aware controller critic rep 11: update 15000/100000, critic loss 0.08626
+16:31:43 stall-aware controller critic rep 11: update 20000/100000, critic loss 0.08465
+16:31:57 stall-aware controller critic rep 11: update 25000/100000, critic loss 0.08225
+16:32:12 stall-aware controller critic rep 11: update 30000/100000, critic loss 0.07995
+16:32:27 stall-aware controller critic rep 11: update 35000/100000, critic loss 0.07746
+16:32:42 stall-aware controller critic rep 11: update 40000/100000, critic loss 0.07703
+16:32:58 stall-aware controller critic rep 11: update 45000/100000, critic loss 0.07498
+16:33:12 stall-aware controller critic rep 11: update 50000/100000, critic loss 0.07495
+16:33:27 stall-aware controller critic rep 11: update 55000/100000, critic loss 0.07243
+16:33:42 stall-aware controller critic rep 11: update 60000/100000, critic loss 0.07195
+16:33:57 stall-aware controller critic rep 11: update 65000/100000, critic loss 0.07061
+16:34:13 stall-aware controller critic rep 11: update 70000/100000, critic loss 0.0702
+16:34:29 stall-aware controller critic rep 11: update 75000/100000, critic loss 0.06891
+16:34:46 stall-aware controller critic rep 11: update 80000/100000, critic loss 0.06947
+16:35:03 stall-aware controller critic rep 11: update 85000/100000, critic loss 0.06913
+16:35:19 stall-aware controller critic rep 11: update 90000/100000, critic loss 0.0693
+16:35:36 stall-aware controller critic rep 11: update 95000/100000, critic loss 0.06719
+16:35:51 stall-aware controller critic rep 11: update 100000/100000, critic loss 0.06696
+16:35:51 critic.main.stall.s11: done (335s)

@@ -1,0 +1,180 @@
+{
+ "medium-expert": {
+  "files": {
+   "arm_A_actors": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5_explore/arms_abc_f0/A/medium-expert/seed0/actors_final.msgpack",
+   "arm_A_actors_sha_ok": true,
+   "le_actors": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5/medium-expert/room_lower_edge/seed0/actors.msgpack",
+   "le_actors_sha_ok": true,
+   "room_actors": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5/medium-expert/room/seed0/actors.msgpack",
+   "room_actors_sha_ok": true
+  },
+  "protocol": {
+   "clone_sha256": {
+    "arm_A": "f87093cad7a4cdb3f3aaf162bdb2b7929ed1be09d8adb8284af6743d6f9cde7d",
+    "le_none": "f87093cad7a4cdb3f3aaf162bdb2b7929ed1be09d8adb8284af6743d6f9cde7d",
+    "le_clone_record": "f87093cad7a4cdb3f3aaf162bdb2b7929ed1be09d8adb8284af6743d6f9cde7d",
+    "resultF_fact": "f87093cad7a4cdb3f3aaf162bdb2b7929ed1be09d8adb8284af6743d6f9cde7d"
+   },
+   "rows_sha256": {
+    "arm_A": "c837711bb99631f8a450fec18b2775aa77253e0ad19ec1e19e744e923d5a495c",
+    "le_none": "c837711bb99631f8a450fec18b2775aa77253e0ad19ec1e19e744e923d5a495c"
+   },
+   "steps": {
+    "arm_A": "5 chunks x 4,000 (record chunk_metrics: 5 chunks)",
+    "le_none": "20000 in chunks of 4000"
+   },
+   "program": {
+    "arm_A": "learners.ActorOnly.program (float32 step), 12 arms vmapped side by side (none, A1, margin0, plain_1s, plain_2s, plain_4s, matched_share, untargeted, shuffled_band, even_x1.33, A1_IW, A1c)",
+    "le_none": "lower_edge.Runner kind 'oracle': one float64-step program under jax enable_x64 (Adam's bias correction in float64, then rounded), 3 arms vmapped (le_none, le_oracle, le_oracle_x1.5)"
+   },
+   "penalty": {
+    "arm_A": "none: Arm('none', 'even', 1.0), cloning weight 1 on every row, no penalty term",
+    "le_none": "k = 0.0 times the exact one-step oracle width W (the term is multiplied by 0)"
+   },
+   "alpha": "both runners take settings.alpha (2.5); the first chunk's lambda agrees to about 1e-6",
+   "first_chunk_metrics": {
+    "names": [
+     "actor_loss",
+     "q_mean",
+     "lambda",
+     "bc"
+    ],
+    "arm_A": [
+     2.6798595271110535,
+     -40.81124367332458,
+     0.061467055837623776,
+     0.17985952398180963
+    ],
+    "le_none": [
+     2.6798558616638184,
+     -40.81131973171234,
+     0.06146695339120924,
+     0.17985586066171527
+    ]
+   }
+  },
+  "params": {
+   "armA_none_vs_le_none": {
+    "bit_identical": false,
+    "max_abs_param_diff": 0.05247902870178223
+   },
+   "armA_none_vs_room_none": {
+    "bit_identical": true,
+    "max_abs_param_diff": 0.0
+   },
+   "le_none_vs_room_none": {
+    "bit_identical": false,
+    "max_abs_param_diff": 0.05247902870178223
+   },
+   "le_record_check_b": 0.05247902870178223
+  },
+  "scores": {
+   "arm_A_none": {
+    "none": 96.37806448048352,
+    "mild": 94.87035562378132,
+    "strong": 93.22351768812995
+   },
+   "le_none": {
+    "none": 96.3706661904415,
+    "mild": 94.86689233685556,
+    "strong": 93.2300557566848
+   },
+   "arm_A_none_J_strong": -166.73025889396484,
+   "le_none_J_strong": -166.64717326947252,
+   "strong_points_diff_A_minus_le": -0.006538068554860388,
+   "sources": {
+    "arm_A": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5_explore/arms_abc_f0/eval/A/medium-expert/seed0/record.json",
+    "le_none": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/resultF/results/scores_seed0.json"
+   }
+  }
+ },
+ "expert": {
+  "files": {
+   "arm_A_actors": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5_explore/arms_abc_f0/A/expert/seed0/actors_final.msgpack",
+   "arm_A_actors_sha_ok": true,
+   "le_actors": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5/expert/room_lower_edge/seed0/actors.msgpack",
+   "le_actors_sha_ok": true,
+   "room_actors": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5/expert/room/seed0/actors.msgpack",
+   "room_actors_sha_ok": true
+  },
+  "protocol": {
+   "clone_sha256": {
+    "arm_A": "73e03006c0f672ef35335d2a78144dfb6e14edac55ddcb6bef2a13badb878715",
+    "le_none": "73e03006c0f672ef35335d2a78144dfb6e14edac55ddcb6bef2a13badb878715",
+    "le_clone_record": "73e03006c0f672ef35335d2a78144dfb6e14edac55ddcb6bef2a13badb878715",
+    "resultF_fact": "73e03006c0f672ef35335d2a78144dfb6e14edac55ddcb6bef2a13badb878715"
+   },
+   "rows_sha256": {
+    "arm_A": "062ebb7ab80d685a0612b0b030f0c540b6dcbce710387e156c385d7d8dc121c2",
+    "le_none": "062ebb7ab80d685a0612b0b030f0c540b6dcbce710387e156c385d7d8dc121c2"
+   },
+   "steps": {
+    "arm_A": "5 chunks x 4,000 (record chunk_metrics: 5 chunks)",
+    "le_none": "20000 in chunks of 4000"
+   },
+   "program": {
+    "arm_A": "learners.ActorOnly.program (float32 step), 12 arms vmapped side by side (none, A1, margin0, plain_1s, plain_2s, plain_4s, matched_share, untargeted, shuffled_band, even_x1.33, A1_IW, A1c)",
+    "le_none": "lower_edge.Runner kind 'oracle': one float64-step program under jax enable_x64 (Adam's bias correction in float64, then rounded), 3 arms vmapped (le_none, le_oracle, le_oracle_x1.5)"
+   },
+   "penalty": {
+    "arm_A": "none: Arm('none', 'even', 1.0), cloning weight 1 on every row, no penalty term",
+    "le_none": "k = 0.0 times the exact one-step oracle width W (the term is multiplied by 0)"
+   },
+   "alpha": "both runners take settings.alpha (2.5); the first chunk's lambda agrees to about 1e-6",
+   "first_chunk_metrics": {
+    "names": [
+     "actor_loss",
+     "q_mean",
+     "lambda",
+     "bc"
+    ],
+    "arm_A": [
+     2.5633264772295954,
+     -19.133744647502898,
+     0.1308071691468358,
+     0.06332647608872503
+    ],
+    "le_none": [
+     2.5633291100859643,
+     -19.133728290081024,
+     0.1308072776142508,
+     0.06332911169156433
+    ]
+   }
+  },
+  "params": {
+   "armA_none_vs_le_none": {
+    "bit_identical": false,
+    "max_abs_param_diff": 0.0706954300403595
+   },
+   "armA_none_vs_room_none": {
+    "bit_identical": true,
+    "max_abs_param_diff": 0.0
+   },
+   "le_none_vs_room_none": {
+    "bit_identical": false,
+    "max_abs_param_diff": 0.0706954300403595
+   },
+   "le_record_check_b": 0.0706954300403595
+  },
+  "scores": {
+   "arm_A_none": {
+    "none": 95.88351621598717,
+    "mild": 93.38567136547407,
+    "strong": 90.75810799726354
+   },
+   "le_none": {
+    "none": 95.8853719847193,
+    "mild": 93.38114615799248,
+    "strong": 90.74776384221101
+   },
+   "arm_A_none_J_strong": -198.06062841768446,
+   "le_none_J_strong": -198.19208170165854,
+   "strong_points_diff_A_minus_le": 0.010344155052521842,
+   "sources": {
+    "arm_A": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/iw_rerun/repo/runs/shift_iw_v5_explore/arms_abc_f0/eval/A/expert/seed0/record.json",
+    "le_none": "/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad/resultF/results/scores_seed0.json"
+   }
+  }
+ }
+}
