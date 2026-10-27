@@ -93,28 +93,36 @@
     function drawSim() {
       const T = tr(), x = T.states[sim.t], a = sim.t < 100 ? T.actions[sim.t] : T.actions[99], u = sim.t < 100 ? T.thrust[sim.t] : T.thrust[99];
       const stall = T.world === 'stall';
-      const W = 760, H = 300, base = 150, px = 42;
-      let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Five floats, four thrusters and the water at step ${sim.t}">`;
-      // water band with current arrow and wave
+      // Convention of the earlier page: five floats sit in a row ACROSS the channel; the water flows DOWN the screen
+      // and pushes every float downstream (below the dashed rest line). Positions are the one axis of the model.
+      const W = 760, H = 360, rest = 170, px = 42;
       const c = x[10], w1 = x[11];
-      s += `<rect x="0" y="${base + 50}" width="${W}" height="${H - base - 50}" fill="var(--water)" opacity=".18"/>`;
-      let wave = ''; for (let i = 0; i <= 38; i++) { const xx = i * 20; const yy = base + 50 + 10 * (w1) * Math.sin(xx / 60 + sim.t * 0.27); wave += (i ? 'L' : 'M') + xx + ' ' + yy.toFixed(1) + ' '; }
-      s += `<path d="${wave}" fill="none" stroke="var(--water)" stroke-width="2"/>`;
-      const arrow = 60 + 90 * c; s += `<line x1="${W / 2 - arrow / 2}" y1="${H - 24}" x2="${W / 2 + arrow / 2}" y2="${H - 24}" stroke="var(--water)" stroke-width="4" marker-end="url(#arr)"/><text class="svg-label" x="${W / 2}" y="${H - 32}" text-anchor="middle">current ${c.toFixed(2)}, wave ${w1.toFixed(3)} (push on every float: ${(c + w1).toFixed(3)})</text>`;
+      let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Five floats across a channel at step ${sim.t}; the water flows down the screen">`;
       s += `<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--water)"/></marker></defs>`;
-      // floats
-      const fx = i => 100 + i * 140 + x[2 * i] * px;
-      for (let i = 0; i < 4; i++) { const x1 = fx(i), x2 = fx(i + 1); const mx = (x1 + x2) / 2; const cmd = a[i], th = u[i]; const stalled = stall && Math.abs(cmd) > KNEE;
-        s += `<line x1="${x1}" y1="${base}" x2="${x2}" y2="${base}" stroke="var(--rule-strong)" stroke-width="2"/>`;
-        s += `<rect class="thruster ${stalled ? 'stalled' : ''}" x="${mx - 14}" y="${base - 12}" width="28" height="24" rx="4"/>`;
-        s += `<rect class="bar-bg" x="${mx - 30}" y="${base + 20}" width="60" height="7"/><rect class="bar ${stalled ? 'stalled' : ''}" x="${mx + (cmd < 0 ? 30 * cmd : 0)}" y="${base + 20}" width="${Math.abs(30 * cmd)}" height="7"/>`;
-        s += `<rect class="bar-bg" x="${mx - 30}" y="${base + 30}" width="60" height="7"/><rect class="bar ${stalled ? 'stalled' : ''}" x="${mx + (th < 0 ? 30 * th : 0)}" y="${base + 30}" width="${Math.abs(30 * th)}" height="7" opacity=".6"/>`;
-        s += `<text class="svg-label" x="${mx}" y="${base - 18}" text-anchor="middle">a${i + 1} ${cmd.toFixed(2)}${stalled ? ' stall' : ''}</text>`; }
-      for (let i = 0; i < 5; i++) { const cx = fx(i); s += `<circle class="float" cx="${cx}" cy="${base}" r="16"/><text class="svg-label" x="${cx}" y="${base + 4}" text-anchor="middle">${i + 1}</text>`;
-        const v = x[2 * i + 1]; s += `<line x1="${cx}" y1="${base - 28}" x2="${cx + 40 * v}" y2="${base - 28}" stroke="var(--ink-2)" stroke-width="2"/>`;
-        s += `<text class="svg-label" x="${cx}" y="${base + 58}" text-anchor="middle">p ${x[2 * i].toFixed(2)}  v ${v.toFixed(2)}</text>`; }
+      // water: whole channel tinted, flow lines moving downward with the wave
+      s += `<rect x="0" y="50" width="${W}" height="${H - 50}" fill="var(--water)" opacity=".14"/>`;
+      for (let i = 0; i < 7; i++) { const xx = 60 + i * 110; const phase = (sim.t * 9 + i * 23) % 60; for (let k = 0; k < 5; k++) { const yy = 60 + k * 60 + phase; if (yy < H - 20) s += `<line x1="${xx}" y1="${yy}" x2="${xx}" y2="${yy + 18 + 30 * c}" stroke="var(--water)" stroke-width="2" opacity=".45"/>`; } }
+      const arrow = 40 + 70 * (c + w1);
+      s += `<line x1="${W - 40}" y1="${70}" x2="${W - 40}" y2="${70 + Math.max(10, arrow)}" stroke="var(--water)" stroke-width="4" marker-end="url(#arr)"/>`;
+      s += `<text class="svg-label" x="${W - 48}" y="64" text-anchor="end">push on every float: current ${c.toFixed(2)} + wave ${w1.toFixed(3)} = ${(c + w1).toFixed(3)}</text>`;
+      // rest line
+      s += `<line x1="40" y1="${rest}" x2="${W - 70}" y2="${rest}" stroke="var(--ink-2)" stroke-dasharray="6 5"/><text class="svg-label" x="42" y="${rest - 6}">rest (position 0); downstream is down</text>`;
+      const fx = i => 100 + i * 135, fy = i => rest + x[2 * i] * px;
+      // chain links and thrusters between neighbors
+      for (let i = 0; i < 4; i++) { const x1 = fx(i), y1 = fy(i), x2 = fx(i + 1), y2 = fy(i + 1); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2; const cmd = a[i], th = u[i]; const stalled = stall && Math.abs(cmd) > KNEE;
+        s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--rule-strong)" stroke-width="2"/>`;
+        s += `<rect class="thruster ${stalled ? 'stalled' : ''}" x="${mx - 12}" y="${my - 14}" width="24" height="28" rx="4"/>`;
+        // thrust arrow: positive thrust pushes its two floats upstream (negative position), i.e. up the screen
+        s += `<line x1="${mx}" y1="${my}" x2="${mx}" y2="${my - 40 * th}" stroke="${stalled ? 'var(--stall)' : 'var(--accent)'}" stroke-width="3"/>`;
+        s += `<text class="svg-label" x="${mx}" y="${H - 46}" text-anchor="middle">a${i + 1} ${cmd.toFixed(2)}${stalled ? ' stall' : ''}</text>`;
+        s += `<rect class="bar-bg" x="${mx - 30}" y="${H - 40}" width="60" height="7"/><rect class="bar ${stalled ? 'stalled' : ''}" x="${mx + (cmd < 0 ? 30 * cmd : 0)}" y="${H - 40}" width="${Math.abs(30 * cmd)}" height="7"/>`;
+        s += `<rect class="bar-bg" x="${mx - 30}" y="${H - 30}" width="60" height="7"/><rect class="bar ${stalled ? 'stalled' : ''}" x="${mx + (th < 0 ? 30 * th : 0)}" y="${H - 30}" width="${Math.abs(30 * th)}" height="7" opacity=".6"/>`; }
+      for (let i = 0; i < 5; i++) { const cx = fx(i), cy = fy(i); const v = x[2 * i + 1];
+        s += `<circle class="float" cx="${cx}" cy="${cy}" r="16"/><text class="svg-label" x="${cx}" y="${cy + 4}" text-anchor="middle">${i + 1}</text>`;
+        s += `<line x1="${cx + 24}" y1="${cy}" x2="${cx + 24}" y2="${cy + 40 * v}" stroke="var(--ink-2)" stroke-width="2"/>`;
+        s += `<text class="svg-label" x="${cx}" y="${H - 8}" text-anchor="middle">p ${x[2 * i].toFixed(2)}  v ${v.toFixed(2)}</text>`; }
       s += `<text class="svg-title" x="12" y="22">step ${sim.t} of 100 · remaining fraction ${((100 - sim.t) / 100).toFixed(2)} · ${stall ? 'stalling world' : 'no-stall world'}</text>`;
-      s += `<text class="svg-label" x="12" y="40">top bar: command; lower bar: effective thrust (orange when the command is past the 0.8 knee)</text>`;
+      s += `<text class="svg-label" x="12" y="40">floats drift down with the water; a thruster's arrow is its real push (up = upstream); bars at the bottom: command, then effective thrust (orange past the 0.8 knee)</text>`;
       s += '</svg>';
       $('#sim-stage').innerHTML = s;
       const r = sim.t < 100 ? T.rewards[sim.t] : null; let G = 0; for (let k = 0; k < sim.t; k++) G += Math.pow(GAMMA, k) * T.rewards[k];
