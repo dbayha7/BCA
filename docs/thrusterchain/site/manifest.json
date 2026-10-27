@@ -1,0 +1,1002 @@
+{
+  "schema": "thrusterchain-site-manifest-v1",
+  "as_of": "2026-10-27 (checkout adf51269, branch codex/thrusterchain-bca-handoff-20261026, machine Zeus)",
+  "rules": [
+    "Every headline number is resolved at build time from the cited source file: 'path' is a JSON path inside a JSON file; 'text' must occur verbatim in a Markdown/CSV file. A number that cannot be resolved makes the build fail; it is never typed in by hand.",
+    "Status labels follow the files' own wording. 'completed_screen_failed' means the run finished and its prespecified screen failed. 'unavailable_here' means the evidence is not present on this machine and nothing about it is verified here.",
+    "Era labels: unifloral_titan and unifloral_zeus use the pinned Unifloral TD3+BC host (td3_bc.py sha256 6f5ab6f9...). corl_host pages use the repository's earlier CORL-derived host and are archived, not part of this interface's evidence."
+  ],
+  "experiments": [
+    {
+      "id": "benchmark_builds_20261022",
+      "title": "ThrusterChain benchmark package builds v1 to v4 (Codex task folder)",
+      "status": "validation_passed",
+      "era": "benchmark_software",
+      "era_label": "Benchmark software, host neutral",
+      "machine": "Zeus",
+      "dates": "22 Oct 2026",
+      "question": "The core v4 benchmark that the Unifloral-era experiments import: contracts, reference controllers (random, behavior cloning, privileged and identified-model planners) and smoke runs. Not a BCA result.",
+      "headline": [
+        {
+          "label": "v4 full pinned test suite, tests run",
+          "source": "C:/Users/David/Documents/Codex/2026-10-22/task/thrusterchain_benchmark_20261022_v4/audits/revision_v4_final/full_suite_attempt02/receipt.json",
+          "path": "tests_run"
+        },
+        {
+          "label": "v1 smoke, behavior cloning raw mean return by family (recorded, strong current, big waves, big kicks)",
+          "source": "C:/Users/David/Documents/Codex/2026-10-22/task/thrusterchain_benchmark_20261022_v1/MEETING_REPORT.md",
+          "text": "| Offline BC | -325.87 | -1273.92 | -520.80 | -967.53 |"
+        },
+        {
+          "label": "v1 smoke, privileged true-model planner",
+          "source": "C:/Users/David/Documents/Codex/2026-10-22/task/thrusterchain_benchmark_20261022_v1/MEETING_REPORT.md",
+          "text": "| True-model MPC | -30.16 | -89.59 | -40.15 | -261.80 |"
+        },
+        {
+          "label": "Smoke profile: training episodes / evaluation episodes per family",
+          "source": "C:/Users/David/Documents/Codex/2026-10-22/task/thrusterchain_benchmark_20261022_v4/results/revision_v4_smoke_final/benchmark_results.json",
+          "path": "training_episodes",
+          "pair_path": "evaluation_episodes_per_family"
+        }
+      ],
+      "plain": "Software integration and a small smoke profile with two evaluation seeds per family; the package's own README says no nine-cell neural benchmark and no BCA integration is claimed.",
+      "sources": [
+        "C:/Users/David/Documents/Codex/2026-10-22/task/thrusterchain_benchmark_20261022_v4/REVISION_V4.md",
+        "C:/Users/David/Documents/Codex/2026-10-22/task/thrusterchain_benchmark_20261022_v1/MEETING_REPORT.md"
+      ]
+    },
+    {
+      "id": "titan_unifloral_td3bc_validation_v1",
+      "title": "Unifloral TD3+BC parity validation",
+      "status": "validation_passed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan GPU",
+      "dates": "23 Oct 2026",
+      "question": "Does the phase-aware candidate reproduce the pinned Unifloral TD3+BC train step exactly before anything is added to it?",
+      "headline": [
+        {
+          "label": "Parity receipt status",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_td3bc_validation_v1/results_20261023T162222_095882Z/parity.json",
+          "path": "parity.passed"
+        },
+        {
+          "label": "Native source sha256",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_td3bc_validation_v1/native_loader.py",
+          "text": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee"
+        }
+      ],
+      "plain": "Software check. The hash-checked Unifloral TD3+BC definitions and the one-critic-per-call candidate that the later experiments drive produce identical states, so what follows runs on the real Unifloral host.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_td3bc_validation_v1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_td3bc_validation_v1/results_20261023T162222_095882Z/parity.json"
+      ]
+    },
+    {
+      "id": "titan_unifloral_bca_pipeline_validation_v1",
+      "title": "BCA pipeline validation on the Unifloral host (19 checks)",
+      "status": "validation_passed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan GPU",
+      "dates": "23 Oct 2026",
+      "question": "Do the auxiliary fit, the calibration refresh, the frozen reference and the actor-side penalty behave as specified, and does kappa = 0 reproduce the host bit for bit?",
+      "headline": [
+        {
+          "label": "Checks passed",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json",
+          "path": "check_count"
+        },
+        {
+          "label": "Overall status",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json",
+          "path": "status"
+        },
+        {
+          "label": "kappa 0 actor-gradient error versus native",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json",
+          "path": "checks[6].details.native_actor_gradient_max_abs_error"
+        },
+        {
+          "label": "Gradient through the frozen reference",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json",
+          "path": "checks[14].details.actual_actor_reference_gradient_norm"
+        },
+        {
+          "label": "Same gradient with the freeze removed",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json",
+          "path": "checks[14].details.unblocked_calibrator_parameter_gradient_norm",
+          "round": 3
+        },
+        {
+          "label": "Test-snapshot threshold R (manual early refresh, 128 scores)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json",
+          "path": "checks[3].details.diagnostics.threshold",
+          "round": 4
+        }
+      ],
+      "plain": "Software check on a fresh snapshot, not an efficacy result. It establishes that the penalty enters only the actor objective, that the action gradient through the width is live while the reference is frozen, and that resume is byte exact.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_bca_pipeline_validation_v1/results_20261023T171638_093548Z/pipeline_checks_summary.json"
+      ]
+    },
+    {
+      "id": "titan_unifloral_checkpoint_v1",
+      "title": "The 20,000-update Unifloral checkpoint (kappa 0, live auxiliary fits)",
+      "status": "completed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan GPU",
+      "dates": "23 Oct 2026",
+      "question": "Train one native Unifloral TD3+BC actor-critic on the recorded data while fitting and calibrating BCA's auxiliary model alongside, with no penalty applied.",
+      "headline": [
+        {
+          "label": "Critic updates",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/report.json",
+          "path": "counts.critic"
+        },
+        {
+          "label": "Actor updates",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/report.json",
+          "path": "counts.actor"
+        },
+        {
+          "label": "Auxiliary fits",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/report.json",
+          "path": "counts.auxiliary"
+        },
+        {
+          "label": "Calibration refreshes accepted",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/report.json",
+          "path": "counts.refresh_accepted"
+        },
+        {
+          "label": "Training status",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/report.json",
+          "path": "status"
+        },
+        {
+          "label": "Export recovery status",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_export_recovery_v2/recovery_20261023T214750_256386Z/report.json",
+          "path": "status"
+        }
+      ],
+      "plain": "The one trained model every later diagnostic and pilot starts from. Its first export was blocked by a seed-domain check and recovered exactly on the same day. Its own calibration threshold at update 20,000 is inside the runtime assets and is not shown here.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/README.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/MODEL_IDENTITY.md"
+      ]
+    },
+    {
+      "id": "titan_development_bank_1",
+      "title": "Frozen-checkpoint decision diagnostic, development batch 1 (64 states)",
+      "status": "completed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan GPU",
+      "dates": "24 Oct 2026",
+      "question": "On a fixed bank of nine candidate actions per state, does Q1 - kappa U pick higher simulator-reference actions than raw Q1, the actor's own action or simple controls?",
+      "headline": [
+        {
+          "label": "Q1 - 3U mean paired gain over raw Q1",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/diagnostic.json",
+          "path": "analysis.methods.bca_kappa_3.gain_vs_raw_q.mean",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Q1 - 3U improved / harmed states",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/diagnostic.json",
+          "path": "analysis.methods.bca_kappa_3.improved_vs_raw_q_count",
+          "pair_path": "analysis.methods.bca_kappa_3.harmed_vs_raw_q_count"
+        },
+        {
+          "label": "Raw Q1 candidate-bank regret",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/diagnostic.json",
+          "path": "analysis.methods.raw_q.candidate_bank_regret.mean",
+          "round": 4
+        },
+        {
+          "label": "Actor's own action, gain over raw Q1",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/diagnostic.json",
+          "path": "analysis.methods.actor.gain_vs_raw_q.mean",
+          "round": 4,
+          "sign": true
+        },
+        {
+          "label": "Mean signed Q1 error (Q1 - V) over 576 candidates",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/diagnostic.json",
+          "path": "analysis.q1_errors.mean_signed_error.mean",
+          "round": 3,
+          "unit": "return units",
+          "sign": true
+        }
+      ],
+      "plain": "A forced-probe diagnostic: candidates are imposed, not chosen by a policy. The pointwise interval for every penalty strength includes zero. Decision advantage was not established.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/diagnostic.json"
+      ]
+    },
+    {
+      "id": "titan_development_bank_2",
+      "title": "Frozen-checkpoint strength comparison, development batch 2 (64 states)",
+      "status": "completed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan GPU",
+      "dates": "26 Oct 2026",
+      "question": "Same question on 64 new development starts, with contrast-matched actor-distance and head-disagreement controls across seven strengths.",
+      "headline": [
+        {
+          "label": "Q1 - 3U mean paired gain over raw Q1",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/diagnostic.json",
+          "path": "analysis.methods.bca_kappa_3.gain_vs_raw_q.mean",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Q1 - 3U improved / harmed states",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/diagnostic.json",
+          "path": "analysis.methods.bca_kappa_3.improved_vs_raw_q_count",
+          "pair_path": "analysis.methods.bca_kappa_3.harmed_vs_raw_q_count"
+        },
+        {
+          "label": "Contrast-matched actor-distance control (kappa 0.1), gain over raw Q1",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/diagnostic.json",
+          "path": "analysis.methods[\"contrast_actor_distance_kappa_0.1\"].gain_vs_raw_q.mean",
+          "round": 4,
+          "sign": true
+        },
+        {
+          "label": "Mean signed Q1 error (Q1 - V) over 576 candidates",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/diagnostic.json",
+          "path": "analysis.q1_errors.mean_signed_error.mean",
+          "round": 3,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Mean positive optimism max(Q1 - V, 0)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/diagnostic.json",
+          "path": "analysis.q1_errors.mean_positive_optimism.mean",
+          "round": 3,
+          "unit": "return units"
+        }
+      ],
+      "plain": "The checkpoint overestimates most candidates by a wide margin. Penalizing with 3U moves a handful of choices; a cheap actor-distance control at strength 0.1 gains about as much. No strength was selected.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/PREREGISTERED_CHECKS.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/diagnostic.json"
+      ]
+    },
+    {
+      "id": "titan_development_mechanism_audit_v1p1",
+      "title": "Saved-bank mechanism audit: does the width point toward the better action?",
+      "status": "completed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan CPU (saved arrays)",
+      "dates": "26 Oct 2026",
+      "question": "Among states where raw Q1 picked a worse candidate, does a larger width sit on the worse action (supporting the switch) or on the better one (opposing it)?",
+      "headline": [
+        {
+          "label": "Batch 1: states where raw Q1 had positive regret",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.by_batch.development_1.decision_direction.all_positive_regret_representatives.state_count"
+        },
+        {
+          "label": "Batch 1: width supports the better candidate",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.by_batch.development_1.decision_direction.all_positive_regret_representatives.u_direction.supports_better_candidate"
+        },
+        {
+          "label": "Batch 1: width opposes the better candidate",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.by_batch.development_1.decision_direction.all_positive_regret_representatives.u_direction.opposes_better_candidate"
+        },
+        {
+          "label": "Batch 2: states where raw Q1 had positive regret",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.by_batch.development_2.decision_direction.all_positive_regret_representatives.state_count"
+        },
+        {
+          "label": "Batch 2: width supports the better candidate",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.by_batch.development_2.decision_direction.all_positive_regret_representatives.u_direction.supports_better_candidate"
+        },
+        {
+          "label": "Batch 2: width opposes the better candidate",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.by_batch.development_2.decision_direction.all_positive_regret_representatives.u_direction.opposes_better_candidate"
+        },
+        {
+          "label": "Overall: states where raw Q1 had positive regret",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.overall.decision_direction.positive_regret_states"
+        },
+        {
+          "label": "Overall: width supports the better candidate",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.overall.decision_direction.unambiguous_best_positive_regret.u_direction.supports_better_candidate"
+        },
+        {
+          "label": "Overall: width opposes the better candidate",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.overall.decision_direction.unambiguous_best_positive_regret.u_direction.opposes_better_candidate"
+        },
+        {
+          "label": "Within-state Pearson, U versus signed Q1 error",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.overall.relationships.u.signed_error.pearson.mean_over_defined_states",
+          "round": 4,
+          "sign": true
+        },
+        {
+          "label": "Within-state Pearson, U versus candidate-bank regret",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.overall.relationships.u.candidate_regret.pearson.mean_over_defined_states",
+          "round": 4,
+          "sign": true
+        },
+        {
+          "label": "Pairwise sign agreement of U with the signed-error contrast (0.5 = chance)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json",
+          "path": "analysis.overall.pairwise.u.equal_state_mean_correct_rate_among_comparable",
+          "round": 4,
+          "sign": true
+        }
+      ],
+      "plain": "Descriptive direction evidence on the saved banks. The sign of the width contrast between the raw pick and the better candidate is what a correction would need; here it more often points the wrong way.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_mechanism_audit_v1p1/results_20261026T203815_618153Z/audit.json"
+      ]
+    },
+    {
+      "id": "titan_grouped_width_validation_v1",
+      "title": "Grouped width validation: does the width add held-out predictive information?",
+      "status": "completed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan CPU (saved arrays)",
+      "machine": "Titan CPU (saved arrays)",
+      "dates": "26 Oct 2026",
+      "question": "With all candidates of an episode grouped into one fold, does adding the training-residualized width to a base predictor of the Q1-minus-V discrepancy lower held-out error, compared with a permuted-width control?",
+      "headline": [
+        {
+          "label": "Held-out MSE reduction from adding the width (8-fold, grouped by episode)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json",
+          "path": "analysis.cv.primary.mean",
+          "round": 4,
+          "sign": true
+        },
+        {
+          "label": "Same for a within-episode permuted width (negative control)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json",
+          "path": "analysis.cv.overall.base_minus_permuted_width_mse",
+          "round": 4
+        },
+        {
+          "label": "Held-out MSE, base model",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json",
+          "path": "analysis.cv.overall.model_mse.base",
+          "round": 3
+        },
+        {
+          "label": "Held-out MSE, base plus residual width",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json",
+          "path": "analysis.cv.overall.model_mse.base_plus_residual_width",
+          "round": 3
+        },
+        {
+          "label": "Batch 1 / batch 2 reduction",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json",
+          "path": "analysis.cv.by_batch.development_1.base_minus_width_mse",
+          "pair_path": "analysis.cv.by_batch.development_2.base_minus_width_mse"
+        },
+        {
+          "label": "Pairwise ranking score change, width minus base",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json",
+          "path": "analysis.cv.overall.paired_ranking_differences.base_plus_residual_width_minus_base.equal_episode_mean",
+          "round": 4,
+          "sign": true
+        }
+      ],
+      "plain": "The width carries some information about where Q1 is off, beyond a base predictor, and a shuffled width carries none. This is predictive association, not a decision result.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_grouped_width_validation_v1/results_20261026T204745_262478Z/checks.json"
+      ]
+    },
+    {
+      "id": "titan_development_decision_utility_v1",
+      "title": "Decision utility of the width's predictive information (out-of-fold)",
+      "status": "completed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan CPU (saved arrays)",
+      "machine": "Titan CPU (saved arrays)",
+      "dates": "26 Oct 2026",
+      "question": "If the out-of-fold corrected scores are used to choose candidates, does the one that uses the width choose better than the one that does not?",
+      "headline": [
+        {
+          "label": "Mean paired gain, corrected-with-width minus corrected-without",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json",
+          "path": "analysis.cv.primary.mean",
+          "round": 4,
+          "unit": "return units",
+          "ci_path": "analysis.cv.primary.conditional_percentile_ci95",
+          "sign": true
+        },
+        {
+          "label": "Episodes where the two corrected scores disagree (of 128)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json",
+          "path": "analysis.cv.overall.decision_disagreement.different_index_episodes"
+        },
+        {
+          "label": "Wins / losses among those disagreements",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json",
+          "path": "analysis.cv.overall.decision_disagreement.conditional_return_counts.win",
+          "pair_path": "analysis.cv.overall.decision_disagreement.conditional_return_counts.loss"
+        },
+        {
+          "label": "Batch 1 / batch 2 primary gain",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json",
+          "path": "analysis.cv.by_batch.development_1.primary_mean_gain",
+          "pair_path": "analysis.cv.by_batch.development_2.primary_mean_gain"
+        },
+        {
+          "label": "Mean selected V, original BCA kappa 3 (reference row)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json",
+          "path": "analysis.cv.overall.methods.bca_kappa_3.mean_selected_value",
+          "round": 3
+        },
+        {
+          "label": "Mean selected V, corrected with width",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json",
+          "path": "analysis.cv.overall.methods.corrected_width.mean_selected_value",
+          "round": 3
+        }
+      ],
+      "plain": "The interval of the primary gain includes zero and the disagreements split almost evenly. Predictive association did not turn into better choices on these banks.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_development_decision_utility_v1/results_20261026T205427_503142Z/checks.json"
+      ]
+    },
+    {
+      "id": "titan_scale_gradient",
+      "title": "Scale and gradient audit of the width against Q1 on the fitting bank",
+      "status": "validation_passed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan GPU",
+      "machine": "Titan GPU",
+      "dates": "26 Oct 2026",
+      "question": "How large is the width's variation across candidate actions compared with Q1's, and how much of the actor gradient does the penalty supply at kappa 1?",
+      "headline": [
+        {
+          "label": "Action-centered RMS contrast of Q1 across candidates",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/results_20261026T021136_510051Z/checks.json",
+          "path": "checks[1].details.statistics.q1.centered_rms",
+          "round": 3
+        },
+        {
+          "label": "Action-centered RMS contrast of U across candidates",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/results_20261026T021136_510051Z/checks.json",
+          "path": "checks[1].details.statistics.actual_u.centered_rms",
+          "round": 3
+        },
+        {
+          "label": "Raw RMS of U (its level)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/results_20261026T021136_510051Z/checks.json",
+          "path": "checks[1].details.statistics.actual_u.raw_rms",
+          "round": 3
+        },
+        {
+          "label": "Penalty-to-Q actor-gradient norm ratio at kappa 1, raw U (32 rows)",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/results_20261026T021136_510051Z/checks.json",
+          "path": "checks[3].details.grid[4].parameter_q_vs_penalty.right_to_left_norm_ratio",
+          "round": 4
+        },
+        {
+          "label": "Gradient through the frozen reference / through the live action",
+          "source": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/results_20261026T021136_510051Z/checks.json",
+          "path": "checks[4].details.all_reference_gradient_norm",
+          "pair_path": "checks[4].details.action_gradient_norm"
+        }
+      ],
+      "plain": "The width is about 5 Q-units high but varies by only about 0.15 across a state's candidates, thirty times less than Q1 itself varies; at kappa 1 its gradient is about 4% of Q1's. That is why small strengths change nothing and large ones act like a constant shift.",
+      "sources": [
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/README.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/PSEUDOCODE.md",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_scale_gradient_validation_v1/results_20261026T021136_510051Z/checks.json"
+      ]
+    },
+    {
+      "id": "titan_operator_alignment_and_zeus_analysis",
+      "title": "Frozen operator-alignment audit and its Zeus analysis",
+      "status": "completed",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus GPU",
+      "machine": "Zeus (WSL GPU) and Zeus CPU",
+      "dates": "26 Oct 2026",
+      "question": "Within a state's nine candidates, does the width track its own native residual, and does that residual track the signed Q1 error against the simulator?",
+      "headline": [
+        {
+          "label": "Within-state corr(U, |native residual|), four-draw mean",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/summary.json",
+          "path": "development_draw_summary.relationships.u_abs_residual.mean",
+          "round": 6
+        },
+        {
+          "label": "Within-state corr(|native residual|, signed Q1 error)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/summary.json",
+          "path": "development_draw_summary.relationships.abs_residual_signed_error.mean",
+          "round": 6,
+          "sign": true
+        },
+        {
+          "label": "Within-state corr(U, signed Q1 error)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/summary.json",
+          "path": "development_draw_summary.relationships.u_signed_error.mean",
+          "round": 6,
+          "sign": true
+        },
+        {
+          "label": "Residual containment |R| <= U on the development bank",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/summary.json",
+          "path": "development_draw_summary.radius_containment.mean",
+          "round": 4
+        },
+        {
+          "label": "One-step evaluator transitions used",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/summary.json",
+          "path": "ledger.transition_rows_completed"
+        }
+      ],
+      "plain": "High containment coexists with almost no within-state discrimination between actions. The band covers its own residual but does not rank candidates by their true error.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/RESULTS.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/summary.json",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_operator_alignment_v1/results_20261026T221700_762125Z/report.json"
+      ]
+    },
+    {
+      "id": "zeus_cached_score_mechanism_v1",
+      "title": "Cached target/action-scoring comparison (privileged controls)",
+      "status": "completed",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus CPU",
+      "machine": "Zeus CPU (saved arrays)",
+      "dates": "26 Oct 2026",
+      "question": "On the same 128-state bank, do fixed control scores that use evaluator-derived information pick better actions than Q1?",
+      "headline": [
+        {
+          "label": "Mean-native-target selector, gain over Q1, batch 1",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/report.json",
+          "path": "primary_screen[0].mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Mean-native-target selector, gain over Q1, batch 2",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/report.json",
+          "path": "primary_screen[1].mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Overall row from the report",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/RESULTS.md",
+          "text": "| Mean native target | -53.734736 | +0.292847 | 0.816420 | 59 | 38 / 21 |"
+        },
+        {
+          "label": "Decision",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/report.json",
+          "path": "decision"
+        }
+      ],
+      "plain": "A privileged control, not a deployable method: it needs the evaluator's reward and next state. It shows that better choices exist in these banks, so a test on them is not vacuous.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/RESULTS.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/report.json"
+      ]
+    },
+    {
+      "id": "zeus_cached_lower_only_v1",
+      "title": "Lower-only ideal-penalty feasibility (privileged control)",
+      "status": "completed",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus CPU",
+      "machine": "Zeus CPU (saved arrays)",
+      "dates": "26 Oct 2026",
+      "question": "Can lowering scores alone, never raising them, improve choices on these banks?",
+      "headline": [
+        {
+          "label": "Gain over Q1, batch 1",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_lower_only_v1/report.json",
+          "path": "primary_screen[0].mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Gain over Q1, batch 2",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_lower_only_v1/report.json",
+          "path": "primary_screen[1].mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Overall row from the report",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_lower_only_v1/RESULTS.md",
+          "text": "| **Lower-only ideal penalty** | **+0.197424** | **0.911843** | **42** | **26 / 16** |"
+        }
+      ],
+      "plain": "Feasibility only: a penalty that only subtracts can help here if it subtracts the right amounts. Whether a learned, calibrated width can do that is the open question.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_lower_only_v1/RESULTS.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_lower_only_v1/report.json"
+      ]
+    },
+    {
+      "id": "zeus_bca_one_sided_v1",
+      "title": "One-sided BCA auxiliary pilot",
+      "status": "completed_screen_failed",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus GPU",
+      "machine": "Zeus (WSL GPU)",
+      "dates": "26 Oct 2026",
+      "question": "Does refitting the scale network to a one-sided event (y >= Q1 - U) and recalibrating give a better frozen ranking than original BCA?",
+      "headline": [
+        {
+          "label": "Screen outcome (report wording)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run_analysis/RESULTS.md",
+          "text": "The prespecified exploratory utility screen **failed**"
+        },
+        {
+          "label": "Auxiliary updates on the warm-start copy",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "settings.auxiliary_updates"
+        },
+        {
+          "label": "Penalty coefficient",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "settings.kappa"
+        },
+        {
+          "label": "One-sided calibrated threshold (posterior)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "calibration.threshold",
+          "round": 4
+        },
+        {
+          "label": "Empirical quantile before the Bayesian clamp",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "calibration.empirical_threshold",
+          "round": 4
+        },
+        {
+          "label": "Posterior draws / finite crossings",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "calibration.posterior_draws",
+          "pair_path": "calibration.finite_posterior_crossings"
+        },
+        {
+          "label": "One-sided variant, gain over Q1, all 128 states",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "development_strata[2].mean_gain_vs_q1",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "One-sided variant, helpful / harmful switches",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "development_strata[2].helpful_switches",
+          "pair_path": "development_strata[2].harmful_switches"
+        },
+        {
+          "label": "Batch 1: one-sided minus original BCA (kappa 1)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "primary_batch_rows[0].mean_gain_vs_original_bca",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Batch 2: one-sided minus original BCA (the failed condition)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "primary_batch_rows[1].mean_gain_vs_original_bca",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Original BCA (kappa 1), gain over Q1, all 128 states",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+          "path": "development_strata[1].mean_gain_vs_q1",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        }
+      ],
+      "plain": "A variant, kept separate from original BCA. It improved saved action value over Q1 in both batches but lost to original BCA in batch 2, so it was not promoted.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run_analysis/RESULTS.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json"
+      ]
+    },
+    {
+      "id": "zeus_matched_policy_pilot_v1",
+      "title": "Matched-policy continuation pilot",
+      "status": "completed",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus GPU",
+      "machine": "Zeus (WSL GPU)",
+      "dates": "26-27 Oct 2026",
+      "question": "Starting from the one 20k checkpoint, does 2,000 more critic updates with the kappa-3 penalty in the actor objective beat the same continuation without it, and beat a fixed actor-distance control, on fresh nominal starts?",
+      "headline": [
+        {
+          "label": "Stream 0: BCA gain over native continuation",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run/evaluation/report.json",
+          "path": "comparisons_by_continuation_stream.0.native.mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "ci_path": "comparisons_by_continuation_stream.0.native.mean_gain_episode_paired_bootstrap_95pct",
+          "sign": true
+        },
+        {
+          "label": "Stream 1: BCA gain over native continuation",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run/evaluation/report.json",
+          "path": "comparisons_by_continuation_stream.1.native.mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "ci_path": "comparisons_by_continuation_stream.1.native.mean_gain_episode_paired_bootstrap_95pct",
+          "sign": true
+        },
+        {
+          "label": "Stream 0: BCA gain over distance control",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run/evaluation/report.json",
+          "path": "comparisons_by_continuation_stream.0.distance.mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Stream 1: BCA gain over distance control",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run/evaluation/report.json",
+          "path": "comparisons_by_continuation_stream.1.distance.mean_gain",
+          "round": 4,
+          "unit": "return units",
+          "sign": true
+        },
+        {
+          "label": "Episodes evaluated (7 policies x 32 starts)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run/evaluation/report.json",
+          "path": "counts.completed_episodes"
+        },
+        {
+          "label": "Decision",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/RUN_RESULT.json",
+          "path": "decision"
+        },
+        {
+          "label": "Wall time",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/RUN_RESULT.json",
+          "path": "elapsed_seconds",
+          "round": 1,
+          "unit": "s"
+        }
+      ],
+      "plain": "The one positive policy-return result. Two continuation streams from a single trained checkpoint on 32 shared nominal starts, so it is not independent-seed evidence and not an out-of-distribution test.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run_analysis/RESULTS.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run/evaluation/report.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/protocol.json"
+      ]
+    },
+    {
+      "id": "zeus_support_shift_attempt_1",
+      "title": "Fresh-initialization action-support pilot, attempt 1",
+      "status": "interrupted",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus GPU",
+      "machine": "Zeus (WSL GPU)",
+      "dates": "27 Oct 2026, 03:08-03:34 UTC",
+      "question": "Does the kappa-3 benefit repeat from independent fresh initializations when the logged first action coordinate is restricted to a0 <= 0.5, against native and a gradient-matched distance control?",
+      "headline": [
+        {
+          "label": "Last saved critic updates (lower bound)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "retry_lineage.prior_attempt_last_committed_ledger.committed_additional_updates.critic"
+        },
+        {
+          "label": "Last saved actor updates (lower bound)",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "retry_lineage.prior_attempt_last_committed_ledger.committed_additional_updates.actor"
+        },
+        {
+          "label": "Why it stopped",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "retry_lineage.origin_classification"
+        }
+      ],
+      "plain": "Stopped by the user over 100% GPU utilization during the first warmup. No calibration, evaluation or BCA result exists from it; its snapshot is archived.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1/PROTOCOL.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/HANDOFF_20261027.md"
+      ]
+    },
+    {
+      "id": "zeus_support_shift_attempt_2",
+      "title": "Fresh-initialization action-support pilot, attempt 2 (retry)",
+      "status": "stopped",
+      "era": "unifloral_zeus",
+      "era_label": "Unifloral host, Zeus GPU",
+      "machine": "Zeus (WSL GPU)",
+      "dates": "27 Oct 2026, 04:21-04:46 UTC",
+      "question": "Same protocol, byte-identical, as a separately recorded retry.",
+      "headline": [
+        {
+          "label": "Status",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "status"
+        },
+        {
+          "label": "Seed-0 broad warmup critic updates",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "jobs[0].ledger.committed_additional_updates.critic"
+        },
+        {
+          "label": "Seed-0 restricted warmup critic updates",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "jobs[1].ledger.committed_additional_updates.critic"
+        },
+        {
+          "label": "Third job",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "jobs[2].error"
+        },
+        {
+          "label": "Restricted training rows (a0 <= 0.5) of 76,800",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1/SUPPORT_COUNTS.json",
+          "path": "train.retained_rows"
+        },
+        {
+          "label": "Elapsed",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+          "path": "elapsed_seconds",
+          "round": 1,
+          "unit": "s"
+        }
+      ],
+      "plain": "Two of four warmups completed and were sealed; the user canceled the third. No policy branch or evaluation ran, so no BCA comparison exists from Zeus. Execution was then proposed to move to Titan.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/RUN_RESULT.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/README.md",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1/SUPPORT_COUNTS.json"
+      ]
+    },
+    {
+      "id": "titan_continuation_20261027",
+      "title": "Titan continuation of the support pilot",
+      "status": "proposed",
+      "era": "unifloral_titan",
+      "era_label": "Unifloral host, Titan",
+      "machine": "Titan (proposed)",
+      "dates": "27 Oct 2026",
+      "question": "Import the two sealed seed-0 warmups, run the two seed-1 warmups, all twelve branches and the final evaluation on Titan.",
+      "headline": [
+        {
+          "label": "Proposed new critic updates",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/titan_continuation_20261027/PROPOSAL.md",
+          "text": "| Critic updates | 44,000 |"
+        },
+        {
+          "label": "Proposed stage ceiling",
+          "source": "experiments/thrusterchain_bca/zeus_20261026_validation/titan_continuation_20261027/PROPOSAL.md",
+          "text": "7,594 seconds (126 minutes 34 seconds)"
+        }
+      ],
+      "plain": "A proposal with a budget, not a run. Whether it ran on Titan after this checkout is not visible on this machine; see the next entries.",
+      "sources": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/titan_continuation_20261027/PROPOSAL.md"
+      ]
+    },
+    {
+      "id": "titan_timeout_recovery_20261027_v1",
+      "title": "Support-shift pilot completion on Titan (reported)",
+      "status": "unavailable_here",
+      "era": "titan_only_unverified",
+      "era_label": "Titan only, unverified here",
+      "machine": "Titan",
+      "dates": "27 Oct 2026 (reported)",
+      "question": "Did the support-shift pilot finish on Titan, and did BCA pass its advancement screen?",
+      "headline": [],
+      "reported": "Reported by the user on 27 Oct: the training pilot completed, its learning check passed, BCA's advancement criterion failed, and the restricted-data policies did not select actions beyond the restricted cutoff, so the action-extrapolation mechanism was not activated. The folder titan_timeout_recovery_20261027_v1 is not present on this machine.",
+      "plain": "Unavailable on this machine. The statement above is the user's report and is shown as such, not as verified evidence.",
+      "sources": []
+    },
+    {
+      "id": "unifloral_explicit_ood_diagnostic_v1",
+      "title": "Explicit OOD diagnostic (reported)",
+      "status": "unavailable_here",
+      "era": "titan_only_unverified",
+      "era_label": "Titan only, unverified here",
+      "machine": "Titan",
+      "dates": "27 Oct 2026 (reported)",
+      "question": "Under explicit out-of-distribution probes, does subtracting the penalty reduce overestimation and change candidate choices?",
+      "headline": [],
+      "reported": "Reported by the user: reduced overestimation after subtracting the penalty, earlier candidate-bank choices unchanged, some actions became more underestimated. Folder not present on this machine.",
+      "plain": "Unavailable on this machine.",
+      "sources": []
+    },
+    {
+      "id": "bca_adaptive_signal_recovery_v1",
+      "title": "Adaptive signed-signal screen and recovery (reported)",
+      "status": "unavailable_here",
+      "era": "titan_only_unverified",
+      "era_label": "Titan only, unverified here",
+      "machine": "Titan",
+      "dates": "27 Oct 2026 (reported)",
+      "question": "Can a signed adaptive signal detect underestimation as well as overestimation?",
+      "headline": [],
+      "reported": "Reported by the user: development evaluation on 48 probes across 16 states, all overestimated; the signal abstained everywhere; held-out test states were not used. This did not establish adaptivity or underestimation detection. Folders bca_adaptive_signal_screen_v1 and bca_adaptive_signal_recovery_v1 are not present on this machine.",
+      "plain": "Unavailable on this machine. A proposal-stage candidate, distinct from original BCA.",
+      "sources": []
+    },
+    {
+      "id": "bca_direct_heldout_v1",
+      "title": "Direct held-out BCA evaluation, 64 action banks (reported)",
+      "status": "unavailable_here",
+      "era": "titan_only_unverified",
+      "era_label": "Titan only, unverified here",
+      "machine": "Titan",
+      "dates": "27 Oct 2026 (reported)",
+      "question": "On 32 shared held-out starting states and two checkpoints, does original BCA fix raw Q1's wrong choices?",
+      "headline": [],
+      "reported": "Reported by the user: 64 action banks; raw Q selected a suboptimal candidate in 25 banks; BCA changed three choices, one improved and two worsened; decision advantage over raw Q and controls was not established; the fixed detection check was inconclusive because error-class coverage was insufficient; among the 25 wrong-choice banks the penalty contrast favored the better action in nine and pointed the wrong way in sixteen. Descriptive findings, not a tuning dataset. Folder not present on this machine.",
+      "plain": "Unavailable on this machine.",
+      "sources": []
+    },
+    {
+      "id": "stall_boundary_validity_assay",
+      "title": "Stall-boundary benchmark-validity assay",
+      "status": "prepared_unrun",
+      "era": "titan_only_unverified",
+      "era_label": "Titan only, unverified here",
+      "machine": "Titan",
+      "dates": "27 Oct 2026 (reported)",
+      "question": "Does the benchmark expose a meaningful value gap at the stall boundary independent of any method?",
+      "headline": [],
+      "reported": "Reported by the user as prepared but not confirmed run. No receipt is present on this machine, so it is shown as prepared, not running and not completed.",
+      "plain": "Prepared, no run receipt.",
+      "sources": []
+    },
+    {
+      "id": "corl_archived_pages",
+      "title": "Earlier-host pages (CORL-derived TD3+BC), archived",
+      "status": "historical_page_content",
+      "era": "corl_host",
+      "era_label": "CORL-derived host, archived",
+      "machine": "Zeus / cloud",
+      "dates": "13-21 Oct 2026",
+      "question": "Earlier ThrusterChain page, diagnostics pages v3-v7 with the saved-bank Explorer, and the BCA mechanics page. They report the repository's CORL-derived host, a 100k-update checkpoint and a gamma-1 oracle, so they are preserved untouched but excluded from this interface's evidence.",
+      "headline": [],
+      "plain": "Kept on disk exactly as delivered; not merged here because the host is not Unifloral.",
+      "sources": [
+        "docs/thrusterchain/thrusterchain.html",
+        "experiments/thrusterchain_diagnostics/direct_q_replication_20261021_v1/presentation/ThrusterChain_diagnostics_results_v7_interactive.html",
+        "experiments/thrusterchain_diagnostics/direct_q_replication_20261021_v1/presentation/v7_ui/explorer.html",
+        "docs/bca_mechanics/index.html"
+      ]
+    }
+  ]
+}

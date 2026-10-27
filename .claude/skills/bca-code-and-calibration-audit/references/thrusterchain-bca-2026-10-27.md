@@ -1,0 +1,10 @@
+# ThrusterChain BCA reference — observed 2026-10-27, reverify
+
+This is a historical orientation, not an instruction to reuse files, states or test data. Inspect current source and receipts before treating any detail as current.
+
+- The studied host was standalone UniFloral TD3+BC, revision `f2dc1278eae18ed3e22c92255119c54885414d17`, not the earlier CORL adapter. A fixed direct candidate used actor score `Q1(s, pi(s)) - kappa * U(s, pi(s))` while retaining the native imitation term and critic TD loss. Confirm coefficient, reductions and normalization at the actual caller.
+- The reused width pipeline calibrated an absolute one-step twin-min TD-residual proxy, not a bound on Q1's true error. Calibration used Bayesian bootstrap masses, not a critic ensemble; the deployed threshold and caller's weighting must be verified in source. `alpha` miscoverage, posterior credibility `beta`, sigmoid sharpness and TD3's coefficient are distinct quantities.
+- With a tested frozen held-out candidate bank, the adjustment reduced aggregate positive Q error but did not establish reliable decisions: raw Q picked a suboptimal candidate in 25/64 banks; BCA changed three choices, one better and two worse. Actions within a state and states shared by checkpoints are dependent. This is a dated result for that particular design, not a general efficacy or failure claim.
+- The restricted replay's first-action-coordinate cutoff was a global support condition. It did not prove a state-conditioned local support label or guarantee that a freely selected policy action entered the gap. Simulator Q reference used the checkpoint's frozen policy, whereas native TD used a smoothed target and twin minimum.
+- Relevant historical leads, if present: `unifloral_td3bc_validation_v1/candidate.py`, `unifloral_bca_pipeline_validation_v1/uncertainty_source/`, `bca_direct_heldout_v1/protocol.json` and `reservation/worker_report.json`. Absence or a changed hash means inspect the current project instead of assuming equivalence.
+
