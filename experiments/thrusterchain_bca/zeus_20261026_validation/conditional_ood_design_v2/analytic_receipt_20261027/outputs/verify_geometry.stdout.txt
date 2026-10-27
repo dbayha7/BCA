@@ -1,0 +1,77 @@
+knee 0.800000011920929 gamma 0.98 H 100
+B rows 1,3 col 0: 0.3 0.3  A[1,10],A[1,11]: 0.3 0.3
+A[10,10] 1.0 wave block [[ 0.9637709  -0.26673144]
+ [ 0.26673144  0.9637709 ]]
+S_0[0,0] curvature: 0.6723058136316449  delta-cost for 0.05: 0.0016807645340791125  for 0.10: 0.00672305813631645
+slope one unit off optimum (2*S00): 1.3446116272632898
+a0* coefficients on (c,w1,w2) at t=0: -0.9101883050368036 -0.8217171837496187 0.32030234280850084
+||K0 row0 floats||: 1.5306091011143383  SD of float term at t=0 with kick 0.5: 0.7653045505571692
+gain at t=99 (c,w1,w2): [-0. -0. -0.]  norm floats 0.0
+t=10 a0* coeffs (c,w1,w2): [-0.91018905 -0.82171946  0.32030089]
+t=50 a0* coeffs (c,w1,w2): [-0.91037933 -0.82182187  0.32070123]
+t=90 a0* coeffs (c,w1,w2): [-0.87461872 -0.78212411  0.21460063]
+t=98 a0* coeffs (c,w1,w2): [-0.32173883 -0.32173883 -0.        ]
+g where floats-at-rest a0*=-k if all g is current: 0.8789390145905916  if g split c=0.4 rest wave: 0.930504531884094
+Var thrust(a), a~U[-1,1]: 0.2566880662862192
+t=0: SD float-driven a0* 0.765; per-coordinate float SD range 0.50-0.50
+t=10: SD float-driven a0* 1.489; per-coordinate float SD range 0.42-0.78
+t=25: SD float-driven a0* 1.508; per-coordinate float SD range 0.38-0.88
+t=50: SD float-driven a0* 1.351; per-coordinate float SD range 0.37-0.90
+t=75: SD float-driven a0* 1.358; per-coordinate float SD range 0.37-0.84
+t=90: SD float-driven a0* 1.250; per-coordinate float SD range 0.37-0.82
+t=99: SD float-driven a0* 0.000; per-coordinate float SD range 0.37-0.83
+P(g>=0.4) recorded = 0.4997
+P(g>=0.5) recorded = 0.3540
+P(g>=0.7) recorded = 0.1327
+P(g>=0.8) recorded = 0.0620
+P(g>=0.9) recorded = 0.0209
+P(g>=1.0) recorded = 0.0035
+P(0.9375<=g<=1.0625) recorded: 0.011896
+P(g>=0.4 | strong current): 0.9948375  P(g>=0.9375|strong): 0.43726125
+P(episode always g>=0.4)=P(c-A>=0.4): 0.11093475  P(always g<0.4)=P(c+A<0.4): 0.111188
+-- float SD 0.765
+g=0.4: P(a0*<=-k)=0.285  P(|a0*+k|<=0.05)=0.044
+g=0.6: P(a0*<=-k)=0.366  P(|a0*+k|<=0.05)=0.049
+g=0.8: P(a0*<=-k)=0.453  P(|a0*+k|<=0.05)=0.052
+g=1.0: P(a0*<=-k)=0.541  P(|a0*+k|<=0.05)=0.052
+-- float SD 1.150
+g=0.4: P(a0*<=-k)=0.352  P(|a0*+k|<=0.05)=0.032
+g=0.6: P(a0*<=-k)=0.409  P(|a0*+k|<=0.05)=0.034
+g=0.8: P(a0*<=-k)=0.469  P(|a0*+k|<=0.05)=0.035
+g=1.0: P(a0*<=-k)=0.528  P(|a0*+k|<=0.05)=0.035
+P(g>=0.4) marginal by t (first 5): [0.50035  0.50076  0.499845 0.500235 0.499615]  mean n_e: 49.942115
+P(n_e=0): 0.111165  P(n_e=100): 0.111095
+h=0.025: expected hole rows 960; P(episode zero hole rows)=0.370
+h=0.05: expected hole rows 1920; P(episode zero hole rows)=0.212
+h=0.1: expected hole rows 3840; P(episode zero hole rows)=0.137
+h=0.05 high-side strata: mean rows 4.99; P(n=1)=0.0495; P(n=2)=0.0569; expected zero-retention strata among 7680 = 20.16 (high side only matters)
+h=0.05 low-side strata: mean rows 5.01; P(n=1)=0.0494; P(n=2)=0.0568; expected zero-retention strata among 7680 = 20.14 (high side only matters)
+P(bin has n_high=1): 0.049479  expected number of such strata in 7680 bins: 379.99872
+expected removed rows per high-side stratum with n>0: 0.3241453737574089
+expected zero-retention high strata = 20.15611149085247
+h=0.025 edge -0.825000012: lattice |a0+k| -> ['0.025000036', '0.024999976', '0.024999917']
+h=0.025 edge -0.775000012: lattice |a0+k| -> ['0.024999917', '0.024999976', '0.025000036']
+h=0.05 edge -0.850000012: lattice |a0+k| -> ['0.050000072', '0.050000012', '0.049999952']
+h=0.05 edge -0.750000012: lattice |a0+k| -> ['0.049999952', '0.050000012', '0.050000072']
+h=0.1 edge -0.900000012: lattice |a0+k| -> ['0.100000083', '0.100000024', '0.099999964']
+h=0.1 edge -0.700000012: lattice |a0+k| -> ['0.099999964', '0.100000024', '0.100000083']
+float32 ulp near 0.8: 5.960464477539063e-08
+expected rows within one ulp of either edge (all rows): 0.0091552734375  joint with g>=0.4: 0.00457763671875
+LS counter per unit g: [-0.8 -0.4 -0.4 -0.8]
+thruster 1 at -k on v1,v2: -0.24000000357627868  water push per unit g on each speed: 0.3
+candidates in band (|a0+k|<=0.05): 47  of 1152  random-only: 47
+in-band at g>=0.4: n 25  signed error q1-v min/max: -6.542093786214052 81.95917184369456  negatives: 1
+in-band at g<0.4: n 22  err min/max -29.77642159617598 70.0113714594942  negatives at t: [50. 50. 75. 75.  0. 25. 50.]
+ state 49 group 49 t=25 g=0.553 a0=-0.7684 q1-v=81.6
+ state 49 group 49 t=25 g=0.553 a0=-0.8365 q1-v=82.0
+ state 73 group 73 t=25 g=0.710 a0=-0.7680 q1-v=76.8
+actor a0 min/mean/max: -0.4828206 -0.04909190625 0.5214592  within 0.05 of -k: 0  <=-0.7: 0
+corr(a0,g) -0.6785053518738747  corr(a0,t) -0.05224451419389603
+g>=0.7 states: 16  mean a0 -0.27641133124999995  min -0.4828206  nearest actor a0 to -k: 0.31717941192092897
+g in [-9,0.4): n=69 mean best a0=-0.339
+g in [0.4,0.7): n=43 mean best a0=-0.512
+g in [0.7,9): n=16 mean best a0=-0.600
+v range across 9 candidates per state: median 5.973124412662813  max 25.49278848766565  min 1.7579077363691553
+bank g>=0.4 share: 0.4609375  g>=0.7 share: 0.125
+thrust(-0.75),(-0.8),(-0.85): -0.75 -0.8 -0.7250000298023225  midpoint interp: -0.7375000149011612
+demo counter_current start state c,w: [0.4, 0.2, 0.0]  return -53.200421396547

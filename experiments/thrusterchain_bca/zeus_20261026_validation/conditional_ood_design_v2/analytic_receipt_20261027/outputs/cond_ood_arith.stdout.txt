@@ -1,0 +1,45 @@
+observation bounds: {'low': [-300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, 0.0, -1.0, -1.0, 0.0], 'high': [300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 1.5, 1.0, 1.0, 1.0]}
+P(g>=0.4) recorded law = 0.5000; strong current = 0.9948; low-load fraction under strong = 0.0052
+note: phase uniform + rotation-invariant waves => same marginal at every t; current constant
+h=0.025: band a0 in [-0.825,-0.775] P(band)=0.025; ring len=0.050 P(ring)=0.025; E[hole rows] train=960 cal=160 per10stepbin=96; E[ring rows at high load] train=960; E[band rows at LOW load, retained] train=960
+h=0.05: band a0 in [-0.850,-0.750] P(band)=0.050; ring len=0.100 P(ring)=0.050; E[hole rows] train=1920 cal=320 per10stepbin=192; E[ring rows at high load] train=1920; E[band rows at LOW load, retained] train=1920
+h=0.1: band a0 in [-0.900,-0.700] P(band)=0.100; ring len=0.200 P(ring)=0.100; E[hole rows] train=3840 cal=640 per10stepbin=384; E[ring rows at high load] train=3840; E[band rows at LOW load, retained] train=3840
+h=0.025: expected share of episodes with >=1 hole row ~ 0.631; share of episodes with zero high-load rows = 0.111
+h=0.05: expected share of episodes with >=1 hole row ~ 0.789; share of episodes with zero high-load rows = 0.111
+h=0.1: expected share of episodes with >=1 hole row ~ 0.863; share of episodes with zero high-load rows = 0.111
+episode share with zero high-load rows (c+A<0.4): 0.111
+thrust(a) for uniform a: mean=0.0000 var=0.2567
+coord  predicted_std(linear plant, recorder)  receipt_std
+p1          0.862    0.872
+v1          0.762    0.767
+p2          0.800    0.797
+v2          0.849    0.845
+p3          0.705    0.702
+v3          0.693    0.692
+p4          0.587    0.593
+v4          0.595    0.601
+p5          0.386    0.386
+v5          0.397    0.397
+current     0.173    0.177
+wave1       0.187    0.189
+wave2       0.187    0.188
+time  P(RMS<=0.5 | same t)  E[other-episode points within]  RMS radius for 8 episodes  RMS radius for p=64/7680
+t=  0  5.90e-04  0.453  0.670  0.654
+t=  5  5.25e-04  0.403  0.675  0.659
+t= 25  3.90e-04  0.299  0.706  0.688
+t= 50  2.25e-04  0.173  0.715  0.698
+t= 75  3.70e-04  0.284  0.707  0.692
+t= 95  3.55e-04  0.272  0.710  0.693
+L-inf 0.05 box in 4 actions: P per row=6.25e-06; E rows in 76,800 = 0.48; at high load & one 10-step bin = 0.0240
+a0:      thrust   0.3*a0^2
+ -1.00  -0.5000  0.3000
+ -0.90  -0.6500  0.2430
+ -0.85  -0.7250  0.2167
+ -0.80  -0.8000  0.1920
+ -0.75  -0.7500  0.1687
+ -0.70  -0.7000  0.1470
+ -0.60  -0.6000  0.1080
+  0.00   0.0000  0.0000
+continuation=zero: n_states=100  v(-0.8)-v(-0.7): mean +0.505 [-1.957,+2.464]; v(-0.8)-v(-0.9): mean +0.896; v(-0.8)-v(-0.6): mean +1.070; bank spread over 6 a0 values: mean 1.756 max 4.988
+continuation=pd: n_states=100  v(-0.8)-v(-0.7): mean -0.267 [-2.715,+1.453]; v(-0.8)-v(-0.9): mean -0.261; v(-0.8)-v(-0.6): mean -0.473; bank spread over 6 a0 values: mean 1.292 max 5.369
+reference: development-bank mean |Q1 - v| = 36.0 (development_1) / 29.4 (development_2); within-state v spread median 5.97 across 9 mixed candidates

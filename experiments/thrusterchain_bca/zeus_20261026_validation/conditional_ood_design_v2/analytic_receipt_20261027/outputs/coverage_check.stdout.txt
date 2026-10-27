@@ -1,0 +1,44 @@
+== receipt hash check ==
+  files listed: 15  mismatches: 0
+  dataset present: True  bytes: 25253032
+  dataset sha256 matches: True
+  draft sha256 matches: True 26041
+
+== plant facts from environment.json ==
+  physics: {'stall': True, 'stall_slope': 1.5, 'knee': 0.800000011920929, 'gain': 0.3, 'throttle_cost': 0.3, 'wave_turn': 0.27, 'gamma': 0.98, 'length': 100}
+  reset start_laws: {"recorded": {"current": [0.1, 0.7], "wave": [0.1, 0.4], "kick": 0.5}, "strong_current": {"current": [0.7, 1.1], "wave": [0.1, 0.4], "kick": 0.5}, "big_waves": {"current": [0.1, 0.7], "wave": [0.4, 0.7], "kick": 0.5}, "big_kicks": {"current": [0.1, 0.7], "wave": [0.1, 0.4], "kick": 1.5}}
+  observation_bounds: {'low': [-300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, -300.0, 0.0, -1.0, -1.0, 0.0], 'high': [300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 1.5, 1.0, 1.0, 1.0]}
+  A shape (13, 13)  B shape (13, 4)
+  dynamics.v: [0,1,0,1,0,1,0,1,0,1]
+  dynamics.B1: B1[2*k+1,k]=B1[2*(k+1)+1,k]=1 for k=0..3; other entries zero
+  equations: {'s_next': 'A10*s + 0.3*B1*thrust(a) + 0.3*v*(c+w1)', 'current_next': 'c', 'wave_next': '[[cos(0.27),-sin(0.27)],[sin(0.27),cos(0.27)]] * [w1,w2]', 'thrust_stall': 'clip(a,-k,k) - slope*sign(a)*max(abs(a)-k,0)', 'thrust_no_stall': 'a', 'reward': '-(sum_{j=0..9} s_j^2 + 0.3*sum_{k=0..3} a_k^2)'}
+
+== action-band share under the uniform recorder (density 1/16 on [-1,1]^4) ==
+  h=0.025: a0 in [-0.8250,-0.7750]  share=0.0250  rows/76800=1920  per 100-step episode=2.5
+  h=0.05: a0 in [-0.8500,-0.7500]  share=0.0500  rows/76800=3840  per 100-step episode=5.0
+  h=0.1: a0 in [-0.9000,-0.7000]  share=0.1000  rows/76800=7680  per 100-step episode=10.0
+
+== P(g >= 0.4) where g = c + w1, c~U[0.1,0.7], w1 = A cos(phi), A~U[0.1,0.4], phi~U[0,2pi) ==
+  threshold 0.3: P = 0.6457
+  threshold 0.4: P = 0.5000
+  threshold 0.5: P = 0.3543
+  per-step marginal equals the t=0 law (uniform phase is rotation invariant), so the step share with g>=0.4 is also 0.5
+  BUT within an episode g is deterministic in t: an episode with c + A < 0.4 (c < 0.4 - A) never reaches high load.
+  episodes that ever reach g>=0.4: 0.8889; never: 0.1111; always (c - A >= 0.4): 0.1117
+  wave period = 2pi/0.27 = 23.27 steps, so within 100 steps each episode sees ~4.3 wave cycles
+
+== joint expectations (action and state independent under the recorder) ==
+  h=0.025: expected hole rows in train pool = 960 of 76,800 (1.25%); expected per episode = 1.25
+  h=0.05: expected hole rows in train pool = 1920 of 76,800 (2.50%); expected per episode = 2.50
+  h=0.1: expected hole rows in train pool = 3840 of 76,800 (5.00%); expected per episode = 5.00
+  expected hole rows among the 128 calibration episodes (12,800 rows): 320.0
+  expected calibration episodes with at least one hole row (h=0.05):  cannot be closed-form without g(t) per episode; upper bound = episodes that ever reach g>=0.4 = 113.8
+  h=0.025: P(an episode has no hole row) = 0.369; expected calibration episodes (of 128) with no eligible hole row = 47.2; mean high-load steps per episode = 50.1
+  h=0.05: P(an episode has no hole row) = 0.211; expected calibration episodes (of 128) with no eligible hole row = 26.9; mean high-load steps per episode = 50.1
+  h=0.1: P(an episode has no hole row) = 0.137; expected calibration episodes (of 128) with no eligible hole row = 17.5; mean high-load steps per episode = 50.1
+  share of steps with g>=0.4 (MC over start law, deterministic wave): 0.501
+
+== one-step physics check: effect of thruster 1 at high load ==
+  v: None
+  B1:
+ None

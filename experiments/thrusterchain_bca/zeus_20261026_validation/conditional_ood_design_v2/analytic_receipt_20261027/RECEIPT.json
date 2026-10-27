@@ -1,0 +1,304 @@
+{
+  "schema": "bca.review_analytic_receipt.v1",
+  "purpose": "Reproduce the analytic figures in ../REVIEW_20261027.md from saved scripts (closed-form and Monte Carlo arithmetic only).",
+  "utc_started": "2026-10-27T19:55:10Z",
+  "interpreter": "C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe",
+  "python": "3.10.11",
+  "numpy": "2.2.6",
+  "flags": [
+    "-I",
+    "-B"
+  ],
+  "cwd": "C:\\Users\\David\\dev\\BCA",
+  "read_only": {
+    "simulator_package_imported": false,
+    "dataset_arrays_decoded": false,
+    "dataset_file_hashed_only": true,
+    "protected_splits_read": false,
+    "training_or_fitting": false
+  },
+  "inputs": [
+    {
+      "path": "docs/thrusterchain/site/data/environment.json",
+      "bytes": 158004,
+      "sha256": "213b788efbcbae814ff559254b940d9ecd1429e0c53bef00ac085a4adf0d4025"
+    },
+    {
+      "path": "docs/thrusterchain/site/data/results.json",
+      "bytes": 626882,
+      "sha256": "aa793310e2e0613f3868424fd09f02913913e75bec2a2d059e0abf669fd2240b"
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/transfer_bundle/research_runs/pilot_20261023T115408Z/regular_1280_2026102301.npz",
+      "bytes": 25253032,
+      "sha256": "4c857aaa0373bee4c74db33036303b4cf75c703b289a459525f75090741f3226"
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/bindings.json",
+      "bytes": 11107,
+      "sha256": "35adffbcfbde2bc06cab8cd36776b959d2e9d430f9dc1b6144eff225dea35754"
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json",
+      "bytes": 27563,
+      "sha256": "4ad0e63219909bd1fa6504395c824794d92fc08fd8fd6678f87ff084d6abf82e"
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_design_v1/SOURCE_RECEIPT.json",
+      "bytes": 5003,
+      "sha256": "35bc705487eefe0fa97c9d6204090bedaa24413575a34541671920c5e25641c1"
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/run/seed0_restricted/warmup/data_receipt.json",
+      "bytes": 15454,
+      "sha256": "f68500b7f64ef771e4a2bb49b1457927c90d6d230cef08bfafbf910f93070ee1"
+    }
+  ],
+  "runs": [
+    {
+      "script": "scripts/coverage_check.py",
+      "script_sha256": "f5a0407e60a3fb0d20213a76ac3801725f29dfd1b4416a0ba3ca06a9e01265af",
+      "args": [],
+      "hard_coded_reads": [
+        "docs/thrusterchain/site/data/environment.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_design_v1/SOURCE_RECEIPT.json",
+        "experiments/thrusterchain_bca/titan_20261026/payload/transfer_bundle/research_runs/pilot_20261023T115408Z/regular_1280_2026102301.npz"
+      ],
+      "supports": "receipt hashes; band shares; P(g>=0.4); hole rows; episodes without hole rows",
+      "exit_code": 0,
+      "seconds": 0.35,
+      "stdout": "outputs/coverage_check.stdout.txt",
+      "stdout_sha256": "9f35994d532ed1ea977f07932389acacffbdfa7ecf6e668bce4d27cddb96aa0d",
+      "stderr": "outputs/coverage_check.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/prob.py",
+      "script_sha256": "a6a9ba97a616eb157a5210a90b97a9c4b9ef46ee1558a1625b63d4b2d7dc3b68",
+      "args": [],
+      "hard_coded_reads": [],
+      "supports": "P(g>=thr) by quadrature; strong-current share; float32 band edges; episodes always high/low",
+      "exit_code": 0,
+      "seconds": 4.25,
+      "stdout": "outputs/prob.stdout.txt",
+      "stdout_sha256": "17e6bb94b04f90646d0b7181b493d35a0c49c4e5fae6a808aa2a1185c05d7d11",
+      "stderr": "outputs/prob.stderr.txt",
+      "stderr_bytes": 1478
+    },
+    {
+      "script": "scripts/arith.py",
+      "script_sha256": "0a2aad3105c20bd6051082b2694b4aff26d0aca14ad6edbf45c835c6eb00c3aa",
+      "args": [],
+      "hard_coded_reads": [],
+      "supports": "P(g>=0.4); hole rows; calibration rows in hole; band binomials; 4-D ball",
+      "exit_code": 0,
+      "seconds": 2.46,
+      "stdout": "outputs/arith.stdout.txt",
+      "stdout_sha256": "b2f5d884c05249c2376d1d66f6a9e69ad8fd45d5c0cda361c231c49e4ec8e6c8",
+      "stderr": "outputs/arith.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/a2.py",
+      "script_sha256": "e461739198a1f1dfce8c4421efa19c2efb8ad73980e924aa34bfb2ee51a52340",
+      "args": [],
+      "hard_coded_reads": [],
+      "supports": "P(all three a0 bands nonempty); training-time extrapolation",
+      "exit_code": 0,
+      "seconds": 0.07,
+      "stdout": "outputs/a2.stdout.txt",
+      "stdout_sha256": "81aa653d7f43e4d2388ac4c40516b596bd9ba939746ff3d4702e6d05c6bb490d",
+      "stderr": "outputs/a2.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/verify_geometry.py",
+      "script_sha256": "73a0ba5b8efff5cb8589e7372e3ee975038478d9a312865f4d63aeb2e8e1d6a2",
+      "args": [],
+      "hard_coded_reads": [
+        "docs/thrusterchain/site/data/environment.json",
+        "docs/thrusterchain/site/data/results.json"
+      ],
+      "supports": "LQ curvature; P(a0*<=-k|g); least-squares counter; development-bank band errors and actor range",
+      "exit_code": 0,
+      "seconds": 1.76,
+      "stdout": "outputs/verify_geometry.stdout.txt",
+      "stdout_sha256": "7915dec74c3e27f447dc8ac36fc87072c4e7ea4ca34474494c8ec70147bde7cc",
+      "stderr": "outputs/verify_geometry.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/verify_findings.py",
+      "script_sha256": "9edb4017ca4cb183939c665ea576ce248cbe892a31e03db0bfd761a72d8fc07c",
+      "args": [],
+      "hard_coded_reads": [
+        "docs/thrusterchain/site/data/environment.json",
+        "docs/thrusterchain/site/data/results.json"
+      ],
+      "supports": "covariance vs receipt std; neighbour radius; value gaps under neutral continuations",
+      "exit_code": 0,
+      "seconds": 2.91,
+      "stdout": "outputs/verify_findings.stdout.txt",
+      "stdout_sha256": "f9896d547c5106feae4b61609c873358317cd2c2625e44ab41e14a623ac539f2",
+      "stderr": "outputs/verify_findings.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/indep_check.py",
+      "script_sha256": "e70e7372be77f3af332131aab1c3555a124c17320b56b07ec6f9ecd08425da6d",
+      "args": [
+        "docs/thrusterchain/site/data/environment.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "depth shares; strong-current load; per-bin radius quantiles; LQ pinned-optimum shares",
+      "exit_code": 0,
+      "seconds": 18.43,
+      "stdout": "outputs/indep_check.stdout.txt",
+      "stdout_sha256": "379fd9e30f9797494dcd68366fdd89c20001e1390a333e27fba0d1cde6fe2b88",
+      "stderr": "outputs/indep_check.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/geom.py",
+      "script_sha256": "28f376093f0f9cf0c2f7c31e235a4a1b0f12be38f1cb8e7a72a284889235e357",
+      "args": [
+        "docs/thrusterchain/site/data/environment.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "per-bin coverage; binomials; float32 edges; pair-distance probabilities",
+      "exit_code": 0,
+      "seconds": 3.93,
+      "stdout": "outputs/geom.stdout.txt",
+      "stdout_sha256": "763be97fc6bec4f898ad300656b1664a2acf3f3a818ea7e37c8635a6858b2d3c",
+      "stderr": "outputs/geom.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/geom2.py",
+      "script_sha256": "e69576bc9448bc531869833305f6bd1560a3d86c8a45aef8bb9e0038f4840834",
+      "args": [
+        "docs/thrusterchain/site/data/environment.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "LQ a0* among high-load states; same-side radius quantiles",
+      "exit_code": 0,
+      "seconds": 14.09,
+      "stdout": "outputs/geom2.stdout.txt",
+      "stdout_sha256": "ef2cb2a17c03c5a47a4866dbd1a1bd2ad36edf3d18e6d34217b482cbb968d75e",
+      "stderr": "outputs/geom2.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/lq2.py",
+      "script_sha256": "a57aa21bdd7a2cff7f30acadcad19b477d47c59d6541ce2002d34b88dd39bc4b",
+      "args": [
+        "docs/thrusterchain/site/data/environment.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "LQ curvature cross-check; float-driven a0* spread",
+      "exit_code": 0,
+      "seconds": 0.21,
+      "stdout": "outputs/lq2.stdout.txt",
+      "stdout_sha256": "c6894eba4c9618ecb73958c6cd8729fe32703ec3d54601c7f565c9d2eb7834b4",
+      "stderr": "outputs/lq2.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/cond_ood_arith.py",
+      "script_sha256": "012aa367f3c233de1cc05947604485384a0823eab1003ad12601e211fda7d804",
+      "args": [],
+      "hard_coded_reads": [
+        "docs/thrusterchain/site/data/environment.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json"
+      ],
+      "supports": "load shares; ring/band rows; covariance; radius; value gaps (second implementation)",
+      "exit_code": 0,
+      "seconds": 2.41,
+      "stdout": "outputs/cond_ood_arith.stdout.txt",
+      "stdout_sha256": "0c346fc8bfa202c88c379c78e7703091665f36f62de333085d589d65f84b7134",
+      "stderr": "outputs/cond_ood_arith.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/bank.py",
+      "script_sha256": "62b65891281c02aa2d259081511cd284ec66c05e31b640f236365cdb283297ee",
+      "args": [
+        "docs/thrusterchain/site/data/results.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "development-bank actor a0 range; in-band candidates",
+      "exit_code": 0,
+      "seconds": 0.18,
+      "stdout": "outputs/bank.stdout.txt",
+      "stdout_sha256": "0a174980a7e152573a150037f18bdbe72a91f445efcdc8dbc3911101a341481f",
+      "stderr": "outputs/bank.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/cal.py",
+      "script_sha256": "29655c1c0b1bf3e566e47b21d19303967f092efa43985da99bbf7cde1efea511",
+      "args": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "calibration episode identity",
+      "exit_code": 1,
+      "seconds": 0.09,
+      "stdout": "outputs/cal.stdout.txt",
+      "stdout_sha256": "42638c5af61fdbce91b62f7ced15205873647a0b96c0eeef033b8fc02cfe1c8b",
+      "stderr": "outputs/cal.stderr.txt",
+      "stderr_bytes": 585
+    },
+    {
+      "script": "scripts/cal2.py",
+      "script_sha256": "8ed02afbb365b3713ff01f87f389cbea106e6e228bdd59c4ed9f8eadf2ed9a1e",
+      "args": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "calibration overlap checks",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "stdout": "outputs/cal2.stdout.txt",
+      "stdout_sha256": "ea8c49021208e2295e0ba4a4b4b3a652b207e6518e826abdce69add5f5e2cc7b",
+      "stderr": "outputs/cal2.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/cmp.py",
+      "script_sha256": "16d1b5211b6801430e5a1c1b39e56eabf5df843bec4d69d7d68d6a8621dd47fb",
+      "args": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json",
+        "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/train_20261023T183248_552877Z/bindings.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "calibration rows equal bindings split receipt",
+      "exit_code": 0,
+      "seconds": 0.09,
+      "stdout": "outputs/cmp.stdout.txt",
+      "stdout_sha256": "8d0733fd9d7e4424162aa485397ff1410c172fae928348a5f1e1c070fa0c0923",
+      "stderr": "outputs/cmp.stderr.txt",
+      "stderr_bytes": 0
+    },
+    {
+      "script": "scripts/ss2.py",
+      "script_sha256": "00671680e7c487a72427a5217f906542107b73a6f86a0ff6b4e1aa76ecc74853",
+      "args": [
+        "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json",
+        "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1_retry_20261027/run/seed0_restricted/warmup/data_receipt.json"
+      ],
+      "hard_coded_reads": [],
+      "supports": "support-shift retry used the same calibration episodes",
+      "exit_code": 0,
+      "seconds": 0.08,
+      "stdout": "outputs/ss2.stdout.txt",
+      "stdout_sha256": "bd98e873c751164decfe79682ee2c72fb737416424889d3fc0ff900194484f3c",
+      "stderr": "outputs/ss2.stderr.txt",
+      "stderr_bytes": 0
+    }
+  ],
+  "utc_finished": "2026-10-27T19:56:01Z"
+}
