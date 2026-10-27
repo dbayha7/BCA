@@ -1,0 +1,62 @@
+{
+  "schema": "unifloral.bca_one_sided.synthetic_math_review.v1",
+  "status": "pass",
+  "utc": "2026-10-26T23:01:34.852361+00:00",
+  "tests_run": 16,
+  "failures": 0,
+  "errors": 0,
+  "source_sha256": {
+    "one_sided_math.py": "fcb8f9e2225d6ca3956189bdc14d5f8315c13b10f7b220ea523859242cc68127",
+    "test_one_sided_math.py": "30171648b422b81cd1a76070080923075106437642d03bb7b3955194c87dfc98",
+    "pinned_wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+  },
+  "runtime": {
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "jax": "0.6.2",
+    "numpy": "2.2.6",
+    "backend": "cpu",
+    "devices": [
+      "TFRT_CPU_0"
+    ],
+    "jax_enable_x64": false
+  },
+  "retained_defaults": {
+    "alpha": 0.1,
+    "posterior_credibility": 0.95,
+    "posterior_draws": 1000,
+    "cal_beta": 20.0,
+    "width_penalty": 0.005,
+    "cal_lr": 0.001,
+    "eta_output": "softplus(log_eta)+.01",
+    "public_eta_floor": 1e-06
+  },
+  "gradient_contract": "scale_loss trains eta only; Q1, target, unit and bootstrap weights stopped. frozen_radius stops parameter leaves/unit/threshold and preserves action derivatives.",
+  "refusal_contract": "Infinite/invalid JAX references return finite zero placeholders and usable=False/valid=False; callers MUST reject actor updates. NumPy radius raises CalibrationRefusal. Threshold zero is usable.",
+  "unit_contract": "No EMA update in primitives; caller supplies fixed original residual unit.",
+  "limitations": [
+    "Synthetic CPU fixtures only; no logged data, real checkpoint/model or operational calibration bank loaded.",
+    "Only pinned pure wbcp.py was imported for synthetic posterior fixtures; no historical host/learner code imported.",
+    "One synthetic gradient update checks auxiliary arithmetic only; no real auxiliary, actor or critic training occurred.",
+    "Under jit invalid scale_loss numeric inputs produce nonfinite loss; the runner must reject nonfinite loss or gradient before optimizer commit.",
+    "No BCA efficacy, logged-data calibration, exchangeability, shift robustness or action-selection guarantee is established."
+  ],
+  "real_bank_reads": 0,
+  "real_fits": 0,
+  "real_calibrations": 0,
+  "model_forwards_on_real_data": 0,
+  "actor_updates": 0,
+  "critic_updates": 0,
+  "static_transformation_review": {
+    "scanner": "jax-transformation-audit/scripts/audit_jax.py --all-functions",
+    "finding_count": 42,
+    "parse_errors": 0,
+    "confirmed_defects": 0,
+    "triage": [
+      "NumPy-only directional_scores/radius and their validation helpers are outside JAX transforms.",
+      "JAX vector rank/dtype/shape branches inspect static metadata.",
+      "alpha, beta and width_penalty must be Python-static configuration; default/frozen JSON numeric constants are supported.",
+      "Eager numeric-domain conversion is guarded against Tracer values; traced calls return explicit nonfinite loss on invalid numeric domain.",
+      "frozen_radius dynamic validity uses lax.cond and passed synthetic jit/gradient refusal checks."
+    ]
+  }
+}
