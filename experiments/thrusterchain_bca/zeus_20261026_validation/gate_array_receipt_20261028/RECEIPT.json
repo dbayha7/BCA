@@ -1,0 +1,1067 @@
+{
+  "schema": "bca.gate_array_receipt.v3",
+  "purpose": "Pin the six saved run arrays of the two completed conditional-hole gates and check them against each gate's run record, code invariants and frozen value analysis.",
+  "created_utc": "2026-10-28T22:11:58Z",
+  "head_commit": "e786f95025bccbd46dc4371228aa33621eac2c0b",
+  "script": {
+    "path": "experiments/thrusterchain_bca/zeus_20261026_validation/gate_array_receipt_20261028/check_arrays.py",
+    "sha256": "db8de2f5424a047d846c116051513bb5dfefa19d3e822f0d45cf2e75ba299c25"
+  },
+  "runtime": {
+    "python": "3.10.11",
+    "numpy": "2.2.6",
+    "platform": "Windows-10-10.0.26300-SP0",
+    "isolated": true,
+    "dont_write_bytecode": true
+  },
+  "pass_rule": "Floats: |reported - recomputed| <= 1e-12 * max(1, |reported|), fixed before the first run. Made stricter after review: integers, booleans, strings, None, dict keys and list lengths exact; an integer paired with a float is a mismatch; NaN never matches; an infinity matches only itself.",
+  "read_only": {
+    "measured": {
+      "simulator_or_learner_modules_loaded": [],
+      "gate_folders_untouched": true
+    },
+    "by_construction": "The script opens no dataset file and no protected split, trains or fits nothing, and writes only experiments/thrusterchain_bca/zeus_20261026_validation/gate_array_receipt_20261028/RECEIPT.json."
+  },
+  "gate_folders": {
+    "conditional_ood_gate_v1_retry_20261028": {
+      "same_files_and_hashes_before_and_after": true,
+      "files_on_disk_are_exactly_the_tracked_files": true,
+      "no_untracked_directories": true,
+      "no_pycache": true,
+      "git_status_clean_including_ignored": true,
+      "files": 32
+    },
+    "conditional_ood_gate_central_quartile_v1": {
+      "same_files_and_hashes_before_and_after": true,
+      "files_on_disk_are_exactly_the_tracked_files": true,
+      "no_untracked_directories": true,
+      "no_pycache": true,
+      "git_status_clean_including_ignored": true,
+      "files": 33
+    }
+  },
+  "gates": [
+    {
+      "gate": "conditional_ood_gate_v1_retry_20261028",
+      "decision_recorded": "failed_development_design_gate",
+      "records": {
+        "report.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/run/report.json",
+          "bytes": 237628,
+          "sha256": "03e17545ab32c5629b396fc5e2d4ac2b33382545244672cc34f2b0488a6b0c24",
+          "git_blob_at_head": "a35b70d118d6ed89b635d0b9428160025d7c342c"
+        },
+        "RESULT.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/run/RESULT.json",
+          "bytes": 2180,
+          "sha256": "fb6e2d7cf5ccebd375bbcee1b8cb76d1d61ff1dbcaef64a41c451ac5417ea49e",
+          "git_blob_at_head": "bc491978431371d7c780360fad3f86f830541319"
+        },
+        "PREPARED.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/PREPARED.json",
+          "bytes": 30885,
+          "sha256": "78f2771a8cc2dc863bb1b984ead4f99114aa0192f75d01e9d91d702e5c7ed47d",
+          "git_blob_at_head": "bfdb52754512348d666e38b12a7201cea35d854f"
+        },
+        "contract.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/contract.json",
+          "bytes": 8594,
+          "sha256": "7b27bcd379f30b3b627f1fcdd91ec9b3537d06cd1a31bbd0855faa4eba94d877",
+          "git_blob_at_head": "a9c63edee5976fbe55e22bf638c919adb73e8b77"
+        }
+      },
+      "frozen_code": {
+        "geometry": {
+          "sha256": "c3dd51fe0084147f82e2404c551dd1ff3b3e991d600dec119c4bad4fd82e9658",
+          "prepared_sha256": "c3dd51fe0084147f82e2404c551dd1ff3b3e991d600dec119c4bad4fd82e9658"
+        },
+        "reference": {
+          "sha256": "0cd93c6975697cdc6250ffb045c1434b496ecd11b896234d8f806d7a908b68f9",
+          "prepared_sha256": "0cd93c6975697cdc6250ffb045c1434b496ecd11b896234d8f806d7a908b68f9"
+        },
+        "analysis": {
+          "sha256": "3e47db9cb3b9f5aa426cc8790061659789cfe363915890961d33d85a238decd1",
+          "prepared_sha256": "3e47db9cb3b9f5aa426cc8790061659789cfe363915890961d33d85a238decd1"
+        }
+      },
+      "arrays": {
+        "prelabel_probes.npz": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/run/prelabel_probes.npz",
+          "bytes": 16337,
+          "sha256": "193ae58f492cb40a401a28aadc89e306c26c772ef3f97ea7a178a4fc64745406",
+          "git_blob_at_head": "bef28dcdff85dca4f2484a871a8e0c92609a8490",
+          "modified_utc": "2026-10-28T15:33:56.904564500Z",
+          "modified_local_with_offset": "2026-10-28T11:33:56.904564-04:00",
+          "members": {
+            "states": {
+              "dtype": "float64",
+              "shape": [
+                64,
+                13
+              ]
+            },
+            "times": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            },
+            "observations": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                14
+              ]
+            },
+            "actions": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6,
+                4
+              ]
+            },
+            "q": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6,
+                2
+              ]
+            },
+            "episode_ids": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            },
+            "episode_seeds": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            }
+          }
+        },
+        "candidate_values.npz": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/run/candidate_values.npz",
+          "bytes": 13888,
+          "sha256": "fe5602dfafe44b43618f2ceaabf1cdab178f615804a33fa4e86ffe87b8c2f146",
+          "git_blob_at_head": "8fefaafa1ce7dfd14ae3e1ce05e7b0178ec6452d",
+          "modified_utc": "2026-10-28T15:33:58.092601500Z",
+          "modified_local_with_offset": "2026-10-28T11:33:58.092602-04:00",
+          "members": {
+            "values": {
+              "dtype": "float64",
+              "shape": [
+                64,
+                6
+              ]
+            },
+            "q1": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6
+              ]
+            },
+            "actions": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6,
+                4
+              ]
+            },
+            "states": {
+              "dtype": "float64",
+              "shape": [
+                64,
+                13
+              ]
+            },
+            "times": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            },
+            "episode_ids": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            }
+          }
+        },
+        "free_policy.npz": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_v1_retry_20261028/run/free_policy.npz",
+          "bytes": 102255,
+          "sha256": "d1bb867cc63c4117602f0e1662a817468ccece198c6a2697e8c2e2a5e1f76107",
+          "git_blob_at_head": "c74478639eaf0fa830e48927c7ea219523306a08",
+          "modified_utc": "2026-10-28T15:33:59.416598800Z",
+          "modified_local_with_offset": "2026-10-28T11:33:59.416599-04:00",
+          "members": {
+            "observations": {
+              "dtype": "float32",
+              "shape": [
+                16,
+                100,
+                14
+              ]
+            },
+            "actions": {
+              "dtype": "float32",
+              "shape": [
+                16,
+                100,
+                4
+              ]
+            },
+            "returns": {
+              "dtype": "float64",
+              "shape": [
+                16
+              ]
+            },
+            "episode_seeds": {
+              "dtype": "int64",
+              "shape": [
+                16
+              ]
+            }
+          }
+        }
+      },
+      "checks": [
+        {
+          "group": "provenance",
+          "check": "report.json is the report whose hash the supervisor recorded in RESULT.json",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "PREPARED.json is the manifest the worker verified before and after the run",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "contract.json is the contract the run recorded",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "every file of this gate folder pinned in PREPARED.json still has its pinned hash",
+          "passed": true,
+          "detail": {
+            "pinned_in_folder": 14,
+            "differing": []
+          }
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: the SHA-256 equals the hash pinned in this script and the README",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: the committed blob equals the file on disk",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: unchanged since commit e0a0777c first recorded it",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: member names, shapes and data types are as worker.py writes them",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: every floating-point member is finite",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: the SHA-256 equals the hash pinned in this script and the README",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: the committed blob equals the file on disk",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: unchanged since commit e0a0777c first recorded it",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: member names, shapes and data types are as worker.py writes them",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: every floating-point member is finite",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: the SHA-256 equals the hash pinned in this script and the README",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: the committed blob equals the file on disk",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: unchanged since commit e0a0777c first recorded it",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: member names, shapes and data types are as worker.py writes them",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: every floating-point member is finite",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values q1 equals the first critic head in prelabel_probes, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values actions equal prelabel_probes actions, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values states equal prelabel_probes states, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values times equal prelabel_probes times, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values episode_ids equal prelabel_probes episode_ids, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe times equal report data_identity probe_times",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe times follow the contract's cycle 0, 25, 50, 75 over 64 anchors",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe episode IDs equal report data_identity probe_group_ids",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe episode seeds equal report data_identity probe_seeds",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "free-play start seeds are the first 16 anchor episode seeds, as the worker draws them",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "RESULT.json's free-play count agrees with the fixed 16 x 100 array shape",
+          "passed": true,
+          "detail": 1600
+        },
+        {
+          "group": "provenance",
+          "check": "geometry.py executed here is the frozen copy pinned in PREPARED.json",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "reference.py executed here is the frozen copy pinned in PREPARED.json",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "analysis.py executed here is the frozen copy pinned in PREPARED.json",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "anchor observations equal reference.observation(states, times), bit for bit",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "every free-play episode's time column runs 1.00, 0.99, ... 0.01 in order",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "free-play first observations equal the anchor observations recorded at time 0 for the same episode",
+          "passed": true,
+          "detail": {
+            "anchors_compared": 4
+          }
+        },
+        {
+          "group": "invariants",
+          "check": "candidate slots 1 to 5 use the gate's fixed first commands",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "every candidate slot keeps the actor's other three commands",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "the report's reset_scope is the exact string reference.free_policy_rollouts returns",
+          "passed": true
+        },
+        {
+          "group": "reanalysis",
+          "check": "rerunning the frozen value analysis on the arrays reproduces report.json 'values'",
+          "passed": true
+        },
+        {
+          "group": "controls",
+          "check": "a change of 1e-9 to one true return is caught",
+          "passed": true,
+          "detail": {
+            "mismatched_values": 5
+          }
+        },
+        {
+          "group": "controls",
+          "check": "each of 10 draws of random analysis inputs fails to reproduce the report",
+          "passed": true,
+          "detail": {
+            "values_compared": 4267,
+            "mismatches_per_draw": [
+              2719,
+              2686,
+              2675,
+              2651,
+              2687,
+              2675,
+              2651,
+              2664,
+              2675,
+              2648
+            ],
+            "changed_in_at_least_one_draw": 3120
+          }
+        }
+      ],
+      "reanalysis": {
+        "exact_values": 2041,
+        "float_values": 2226,
+        "floats_not_bitwise_equal": 0,
+        "max_abs_float_difference": 0.0,
+        "mismatches": []
+      },
+      "controls": {
+        "one_return_nudged_by_1e-9": {
+          "mismatches": 5
+        },
+        "random_analysis_inputs": {
+          "draws": 10,
+          "mismatches_per_draw": [
+            2719,
+            2686,
+            2675,
+            2651,
+            2687,
+            2675,
+            2651,
+            2664,
+            2675,
+            2648
+          ],
+          "values_changed_in_at_least_one_draw": 3120,
+          "meaning": "A lower bound on the values that depend on the data. The rest are constants or agreed by chance in every draw."
+        }
+      },
+      "headline_reproduced": {
+        "value_decision_passed": false,
+        "high_load_anchors": 29,
+        "high_load_anchors_with_practical_gap": 8,
+        "free_play_high_load_steps": 927,
+        "free_play_hole_entries": 0,
+        "free_play_episodes_with_entry": 0,
+        "free_play_episodes": 16,
+        "actor_command_in_hole_at_anchors": 2,
+        "error_cells": {
+          "high_inside_band": {
+            "rows": 89,
+            "mae": 21.725838490655818,
+            "mean_signed_error": 18.089796017083327
+          },
+          "high_outside_band": {
+            "rows": 85,
+            "mae": 22.30003440517516,
+            "mean_signed_error": 18.720979492318232
+          },
+          "low_inside_band": {
+            "rows": 105,
+            "mae": 19.322510798695127,
+            "mean_signed_error": 11.53274565526599
+          },
+          "low_outside_band": {
+            "rows": 105,
+            "mae": 19.650173722087526,
+            "mean_signed_error": 12.317670646813987
+          }
+        },
+        "raw_q1_choice": {
+          "improved": 34,
+          "worsened": 6,
+          "tied": 24,
+          "mean_regret": 0.7644518696901981
+        }
+      },
+      "pinned_by_hash_only": [
+        "The second critic head, Q2.",
+        "The float64 states beyond their float32 rounding, which the observation rule ties.",
+        "The 11 state and observation coordinates other than the two load terms, beyond the observation and start-state rules.",
+        "The two load terms, at the anchors and in free play, beyond which side of the 0.4 cutoff each falls on.",
+        "Every first command (the actor's at the anchors, and every free-play step), beyond which side of the band edges it falls on.",
+        "The actor's other three commands: at the anchors, beyond their being the same in every slot; in free play, not checked at all.",
+        "Which free-play trajectory belongs to which seed and return, beyond the four episodes tied to an anchor at time 0 (0, 4, 8 and 12) and the per-episode hole counts.",
+        "The order of steps within free play, beyond the time column."
+      ],
+      "not_checked_here": "The support test needs training rows (its record is geometry.json), so the overall gate decision is not recomputed."
+    },
+    {
+      "gate": "conditional_ood_gate_central_quartile_v1",
+      "decision_recorded": "passed_development_design_gate",
+      "records": {
+        "report.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/run/report.json",
+          "bytes": 241431,
+          "sha256": "91833bd4acf5a7657b2d43751c3800ffbe7b6b60c4c7c2573202b88faa522743",
+          "git_blob_at_head": "0a1d599fd84cc42c7b207ce9a0d72592cdd4b4ef"
+        },
+        "RESULT.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/run/RESULT.json",
+          "bytes": 2302,
+          "sha256": "4fbdba889d7508ebf4c878773c06e9affc0c43072e9fa1f6ccace17e4a28f005",
+          "git_blob_at_head": "e84d15918c74cddfaae907b6c6e31ce4ec9d4e37"
+        },
+        "PREPARED.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/PREPARED.json",
+          "bytes": 31120,
+          "sha256": "a4b8b0fec728afad0d6cc582bc376f40d1eed0b6f201353d865608c0352ae6d4",
+          "git_blob_at_head": "90bf1aa40858ca3973bc14159b09dea24ff051ae"
+        },
+        "contract.json": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/contract.json",
+          "bytes": 14017,
+          "sha256": "8e2fc50218391656976f81c4e52d7015925388565afb6716d963a44e8510d8e0",
+          "git_blob_at_head": "fd969ecc828efe77d74ec437106ad766e0af50d1"
+        }
+      },
+      "frozen_code": {
+        "geometry": {
+          "sha256": "4ddcd2b53d338e556bd9136f0d572e19988f1b04524b9e7ba278006b04a113ca",
+          "prepared_sha256": "4ddcd2b53d338e556bd9136f0d572e19988f1b04524b9e7ba278006b04a113ca"
+        },
+        "reference": {
+          "sha256": "d4c188ecd14ac165445060f8c2ef8bc07d20a828a0c960fd1ed90a371d485853",
+          "prepared_sha256": "d4c188ecd14ac165445060f8c2ef8bc07d20a828a0c960fd1ed90a371d485853"
+        },
+        "analysis": {
+          "sha256": "b023a37bf669a20350a834bf7006ac8aba26933e3ba8c00978cace0b31bbccc9",
+          "prepared_sha256": "b023a37bf669a20350a834bf7006ac8aba26933e3ba8c00978cace0b31bbccc9"
+        }
+      },
+      "arrays": {
+        "prelabel_probes.npz": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/run/prelabel_probes.npz",
+          "bytes": 16279,
+          "sha256": "8d8dcccbacad4ec5b892065653a296eaf56160a9f191ad5b1138177d55933ba3",
+          "git_blob_at_head": "644f1d3b23b25234c20bd360c2e6061d4eae4fa8",
+          "modified_utc": "2026-10-28T17:35:12.077245800Z",
+          "modified_local_with_offset": "2026-10-28T13:35:12.077246-04:00",
+          "members": {
+            "states": {
+              "dtype": "float64",
+              "shape": [
+                64,
+                13
+              ]
+            },
+            "times": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            },
+            "observations": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                14
+              ]
+            },
+            "actions": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6,
+                4
+              ]
+            },
+            "q": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6,
+                2
+              ]
+            },
+            "episode_ids": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            },
+            "episode_seeds": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            }
+          }
+        },
+        "candidate_values.npz": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/run/candidate_values.npz",
+          "bytes": 13844,
+          "sha256": "1b80f960dd66332c040b83f3c7871dec76822cffaa290acee9fffd6db9869933",
+          "git_blob_at_head": "c5e6b49a7489858ecf2acf54f0ae1351f215e168",
+          "modified_utc": "2026-10-28T17:35:12.955653700Z",
+          "modified_local_with_offset": "2026-10-28T13:35:12.955654-04:00",
+          "members": {
+            "values": {
+              "dtype": "float64",
+              "shape": [
+                64,
+                6
+              ]
+            },
+            "q1": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6
+              ]
+            },
+            "actions": {
+              "dtype": "float32",
+              "shape": [
+                64,
+                6,
+                4
+              ]
+            },
+            "states": {
+              "dtype": "float64",
+              "shape": [
+                64,
+                13
+              ]
+            },
+            "times": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            },
+            "episode_ids": {
+              "dtype": "int64",
+              "shape": [
+                64
+              ]
+            }
+          }
+        },
+        "free_policy.npz": {
+          "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_gate_central_quartile_v1/run/free_policy.npz",
+          "bytes": 102414,
+          "sha256": "f7e3b7df58c3b45b29440bcce2f5fdb7c63302cc73be80abab50b27a66762c1f",
+          "git_blob_at_head": "e1e08fd0a9462694550ab510d7d5b7c44551d2ae",
+          "modified_utc": "2026-10-28T17:35:14.050414900Z",
+          "modified_local_with_offset": "2026-10-28T13:35:14.050415-04:00",
+          "members": {
+            "observations": {
+              "dtype": "float32",
+              "shape": [
+                16,
+                100,
+                14
+              ]
+            },
+            "actions": {
+              "dtype": "float32",
+              "shape": [
+                16,
+                100,
+                4
+              ]
+            },
+            "returns": {
+              "dtype": "float64",
+              "shape": [
+                16
+              ]
+            },
+            "episode_seeds": {
+              "dtype": "int64",
+              "shape": [
+                16
+              ]
+            }
+          }
+        }
+      },
+      "checks": [
+        {
+          "group": "provenance",
+          "check": "report.json is the report whose hash the supervisor recorded in RESULT.json",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "PREPARED.json is the manifest the worker verified before and after the run",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "contract.json is the contract the run recorded",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "every file of this gate folder pinned in PREPARED.json still has its pinned hash",
+          "passed": true,
+          "detail": {
+            "pinned_in_folder": 15,
+            "differing": []
+          }
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: the SHA-256 equals the hash pinned in this script and the README",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: the committed blob equals the file on disk",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: unchanged since commit fe751257 first recorded it",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: member names, shapes and data types are as worker.py writes them",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "prelabel_probes.npz: every floating-point member is finite",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: the SHA-256 equals the hash pinned in this script and the README",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: the committed blob equals the file on disk",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: unchanged since commit fe751257 first recorded it",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: member names, shapes and data types are as worker.py writes them",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "candidate_values.npz: every floating-point member is finite",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: the SHA-256 equals the hash pinned in this script and the README",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: the committed blob equals the file on disk",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: unchanged since commit fe751257 first recorded it",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: member names, shapes and data types are as worker.py writes them",
+          "passed": true
+        },
+        {
+          "group": "arrays",
+          "check": "free_policy.npz: every floating-point member is finite",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values q1 equals the first critic head in prelabel_probes, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values actions equal prelabel_probes actions, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values states equal prelabel_probes states, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values times equal prelabel_probes times, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "candidate_values episode_ids equal prelabel_probes episode_ids, bit for bit",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe times equal report data_identity probe_times",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe times follow the contract's cycle 0, 25, 50, 75 over 64 anchors",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe episode IDs equal report data_identity probe_group_ids",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "probe episode seeds equal report data_identity probe_seeds",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "free-play start seeds are the first 16 anchor episode seeds, as the worker draws them",
+          "passed": true
+        },
+        {
+          "group": "identity",
+          "check": "RESULT.json's free-play count agrees with the fixed 16 x 100 array shape",
+          "passed": true,
+          "detail": 1600
+        },
+        {
+          "group": "provenance",
+          "check": "geometry.py executed here is the frozen copy pinned in PREPARED.json",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "reference.py executed here is the frozen copy pinned in PREPARED.json",
+          "passed": true
+        },
+        {
+          "group": "provenance",
+          "check": "analysis.py executed here is the frozen copy pinned in PREPARED.json",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "anchor observations equal reference.observation(states, times), bit for bit",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "every free-play episode's time column runs 1.00, 0.99, ... 0.01 in order",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "free-play first observations equal the anchor observations recorded at time 0 for the same episode",
+          "passed": true,
+          "detail": {
+            "anchors_compared": 4
+          }
+        },
+        {
+          "group": "invariants",
+          "check": "candidate slots 1 to 5 use the gate's fixed first commands",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "every candidate slot keeps the actor's other three commands",
+          "passed": true
+        },
+        {
+          "group": "invariants",
+          "check": "the report's reset_scope is the exact string reference.free_policy_rollouts returns",
+          "passed": true
+        },
+        {
+          "group": "reanalysis",
+          "check": "rerunning the frozen value analysis on the arrays reproduces report.json 'values'",
+          "passed": true
+        },
+        {
+          "group": "controls",
+          "check": "a change of 1e-9 to one true return is caught",
+          "passed": true,
+          "detail": {
+            "mismatched_values": 5
+          }
+        },
+        {
+          "group": "controls",
+          "check": "each of 10 draws of random analysis inputs fails to reproduce the report",
+          "passed": true,
+          "detail": {
+            "values_compared": 4267,
+            "mismatches_per_draw": [
+              2684,
+              2714,
+              2673,
+              2678,
+              2702,
+              2686,
+              2641,
+              2689,
+              2668,
+              2708
+            ],
+            "changed_in_at_least_one_draw": 3146
+          }
+        }
+      ],
+      "reanalysis": {
+        "exact_values": 2041,
+        "float_values": 2226,
+        "floats_not_bitwise_equal": 0,
+        "max_abs_float_difference": 0.0,
+        "mismatches": []
+      },
+      "controls": {
+        "one_return_nudged_by_1e-9": {
+          "mismatches": 5
+        },
+        "random_analysis_inputs": {
+          "draws": 10,
+          "mismatches_per_draw": [
+            2684,
+            2714,
+            2673,
+            2678,
+            2702,
+            2686,
+            2641,
+            2689,
+            2668,
+            2708
+          ],
+          "values_changed_in_at_least_one_draw": 3146,
+          "meaning": "A lower bound on the values that depend on the data. The rest are constants or agreed by chance in every draw."
+        }
+      },
+      "headline_reproduced": {
+        "value_decision_passed": true,
+        "high_load_anchors": 23,
+        "high_load_anchors_with_practical_gap": 20,
+        "free_play_high_load_steps": 773,
+        "free_play_hole_entries": 576,
+        "free_play_episodes_with_entry": 14,
+        "free_play_episodes": 16,
+        "actor_command_in_hole_at_anchors": 8,
+        "error_cells": {
+          "high_inside_band": {
+            "rows": 77,
+            "mae": 24.304246448989886,
+            "mean_signed_error": 22.218686811150388
+          },
+          "high_outside_band": {
+            "rows": 61,
+            "mae": 24.063447533432285,
+            "mean_signed_error": 22.724702577609044
+          },
+          "low_inside_band": {
+            "rows": 147,
+            "mae": 21.615175733511624,
+            "mean_signed_error": 13.646981965823967
+          },
+          "low_outside_band": {
+            "rows": 99,
+            "mae": 20.79824355653998,
+            "mean_signed_error": 10.4210458209239
+          }
+        },
+        "raw_q1_choice": {
+          "improved": 29,
+          "worsened": 16,
+          "tied": 19,
+          "mean_regret": 0.3979775981364473
+        }
+      },
+      "pinned_by_hash_only": [
+        "The second critic head, Q2.",
+        "The float64 states beyond their float32 rounding, which the observation rule ties.",
+        "The 11 state and observation coordinates other than the two load terms, beyond the observation and start-state rules.",
+        "The two load terms, at the anchors and in free play, beyond which side of the 0.4 cutoff each falls on.",
+        "Every first command (the actor's at the anchors, and every free-play step), beyond which side of the band edges it falls on.",
+        "The actor's other three commands: at the anchors, beyond their being the same in every slot; in free play, not checked at all.",
+        "Which free-play trajectory belongs to which seed and return, beyond the four episodes tied to an anchor at time 0 (0, 4, 8 and 12) and the per-episode hole counts.",
+        "The order of steps within free play, beyond the time column."
+      ],
+      "not_checked_here": "The support test needs training rows (its record is geometry.json), so the overall gate decision is not recomputed."
+    }
+  ],
+  "limits": "This fixes the arrays' bytes as they are now. It cannot prove after the fact that prelabel_probes.npz was written before the reference values, or that nothing changed in the hours between the run and the commits that first recorded the arrays. The modified times agree with the write order, but they are descriptive only and can be changed.",
+  "passed": true
+}
