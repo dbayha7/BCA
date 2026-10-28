@@ -1,0 +1,40 @@
+# Conditional OOD design gate v2 (corrected copy of v1)
+
+**What v2 changes.** Gate v1's first attempt stopped after 37 seconds in its source-identity phase. It decoded no data,
+made no simulator step and reached no decision. Two software defects caused it, and v2 fixes only those:
+
+- `reference.py`, `authenticate_core`: v1 read `core.canonical.__file__`. The pinned loader builds that module in memory
+  with `types.ModuleType`, so the attribute does not exist. v2 hashes the source file that the executed `dynamics`
+  function was compiled from, which is the same file v1 meant to hash.
+- `worker.py`, the crash handler: v1 called `type(exc).__name()`, which raised a second error and hid the first. v2
+  uses `type(exc).__name__`.
+
+`test_v2_fixes.py` adds one regression test for each fix. Everything below is v1's protocol, unchanged. The contract
+differs from v1 only in its `authorization` and new `lineage` fields. v1, its frozen files and its attempt record stay
+untouched in `../conditional_ood_gate_v1/`.
+
+This separately authorized development gate applies the v3 reconciliation. It does not edit the v2 blank decision form, reset an old reservation, release a training hold, or authorize the multi-hour efficacy matrix. Existing analytic-receipt edits are preserved. The user's later instruction to apply fixes and run the next gate authorizes this separate numerical contract. All thresholds are selected before any new gate arrays or outcomes are decoded.
+
+The question is whether the original negative-throttle band is a usable conditional action-support intervention with practical value separation and free-policy exposure. No BCA output selects the region. The pinned Titan UniFloral checkpoint, actor, critic, normalization and original BCA reference remain immutable. The only uncertainty-width forward pass is the existing loader's two-row consistency check.
+
+The exact machine-readable specification is `contract.json`, authenticated by `DECISION_FROZEN.json`. `PREPARED.json` separately authenticates executable sources and input files. Neither is silently regenerated after reservation. Each attempted run has one persistent `run/` directory, even after failure, timeout or interruption. There is no automatic retry.
+
+## Fixed screen
+
+- Keep the original band, load threshold and standardized RMS radius 0.5. Use the nearest 64 original training rows in the same ten-step time bin and load side, excluding the anchor's whole episode; tie by source row ID. Standardization uses original training physical observations only. Support is checked before and after full, hole and per-episode/time/load-stratified random removal. Report cross-load neighbors separately.
+- Require 32 nearby rows from eight episodes, two original band rows from two episodes, and two retained rows from two episodes in each adjacent band. At least 80% of anchors in each load side must pass, with at least 16 anchors on each side. Global and balance criteria are in the contract. These are engineering adequacy thresholds, not calibrated confidence claims. Marginal first-action occupancy does not certify joint support at the other three fixed action coordinates.
+- Name all four within-model cells: high/low load crossed with inside/outside band. Low-load band labels remain. Low versus high load changes dynamics; this contrast does not causally isolate removed labels. No newly hole-trained critic exists in this gate, so the missing-label effect remains untestable here.
+- Keep existing calibration rows outside the hole. Replace an excluded row once, uniformly among eligible rows in its original episode, using a separate fixed stream. Share those rows across prospective conditions; describe the full control as full replay with hole-excluding calibration. Stop on an empty eligible episode. No calibration is fitted; a handful of excluded rows cannot establish conditional coverage.
+- Use 64 existing development validation episodes, one anchor each at cyclic times 0/25/50/75. Restore exact state/time by recorded-prefix replay, checking every observation. Evaluate six actions sharing the actor's other three coordinates: actor, left neighboring-band center, lower interior edge, band center, upper interior edge, right neighboring-band center. Continue the original actor to step100 with gamma0.98 and no terminal bootstrap. Report within-band spread and center-to-neighbor full-return differences separately.
+- Practical value separation requires a center-to-flank difference of at least one return unit at 25% of high-load anchors. Run the actor freely for 16 full episodes from the first16 same development starts: require at least100 high-load steps, 1% entry and entry in two episodes. Forced candidates and free-policy visits have separate denominators. These starts are reused development, not fresh confirmation.
+- Report raw Q1 error counts, signed magnitudes, MAE and candidate decision regret with `tau(v)=1e-4+1e-5*abs(v)`. Do not infer signed error from density, residual width or action novelty. No adjusted BCA score is examined in this method-neutral gate.
+
+The three scientific components finish once even if geometry fails, to distinguish unsupported geometry, a small value gap and absent policy exposure. An integrity, runtime or resource violation stops immediately. Any scientific criterion failure remains a failed design gate. A pass only permits proposing a separate training study; it is not BCA efficacy.
+
+## Budget and later training boundary
+
+Maximum: 900 wall-clock seconds including imports and compilation; 28,104 simulator transitions = 2,400 prefix + 24,000 candidate continuations + 1,600 free actor + 104 parity checks. There are at most384 candidate values,81 resets,30,000 actor forward rows,386 critic forward rows and two loader width-check rows. All critic/actor/auxiliary/calibration updates are zero. At most960 permitted source episodes (96,000 logged transition tuples) are decoded; protected roles stay opaque. Timeout/interrupt preserves the report and charges attempted dispatches conservatively.
+
+Later training must extend the existing `support_shift_pilot_v1/runtime.py` 10k fork. It must not reinitialize a purported continuation or rebuild the host. The proposed primary comparison is the hole-minus-random interaction in native-versus-BCA own-policy MAE improvement at20k, with a separate same-critic panel. Three independent initialization seeds and one-return-unit improvement in each are a minimal exploratory replication rule, not inferential proof. Seed identities, full budgets and execution require a separate approved specification; this gate allocates no training seeds or updates.
+
+Preparation tests use synthetic arrays and toy dynamics only. Real canonical parity, frozen-model inference and the gate execute only inside the reserved runtime worker. The assistant-side WSL denial is not retried; a prepared manual command is the supported route while that denial remains active.
