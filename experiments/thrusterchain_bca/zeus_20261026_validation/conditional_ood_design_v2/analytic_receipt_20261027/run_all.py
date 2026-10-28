@@ -61,7 +61,7 @@ def main():
         "purpose": "Reproduce the analytic figures in ../REVIEW_20261027.md from saved scripts (closed-form and Monte Carlo arithmetic only).",
         "utc_started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "interpreter": py, "python": platform.python_version(), "numpy": numpy_version,
-        "flags": ["-I", "-B"], "cwd": str(REPO),
+        "flags": ["-I", "-B", "-X", "utf8"], "cwd": str(REPO),
         "read_only": {"simulator_package_imported": False, "dataset_arrays_decoded": False,
                       "dataset_file_hashed_only": True, "protected_splits_read": False, "training_or_fitting": False},
         "inputs": [{"path": p, "bytes": (REPO / p).stat().st_size, "sha256": sha(REPO / p)} for p in inputs],
@@ -69,7 +69,8 @@ def main():
     }
     for name, args, reads, supports in RUNS:
         script = SCRIPTS / name
-        cmd = [py, "-I", "-B", str(script)] + [str(REPO / a) for a in args]
+        # -X utf8: printing only; the Windows console code page cannot encode symbols some scripts print.
+        cmd = [py, "-I", "-B", "-X", "utf8", str(script)] + [str(REPO / a) for a in args]
         t0 = time.perf_counter()
         proc = subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace")
         dt = time.perf_counter() - t0
