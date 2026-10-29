@@ -1,0 +1,21 @@
+{
+  "schema": "bca.central_quartile.evaluation_rerun_checks.v1",
+  "outcome_blind": true,
+  "scientific_execution_during_preparation": false,
+  "checks": [
+    {
+      "environment": "Windows py -3.10",
+      "command": "py -3.10 -B -m unittest test_rerun_writes test_rerun_gate test_rerun_routing test_rerun_worker_flow test_rerun_launch test_rerun_real_inputs",
+      "result": "37 tests passed, including a real Windows share-mode lock reproduction"
+    },
+    {
+      "environment": "WSL Ubuntu isolated bca-operator-audit-20261026 Python",
+      "command": "python -B -m unittest test_rerun_writes test_rerun_gate test_rerun_routing test_rerun_worker_flow test_rerun_launch test_rerun_real_inputs test_evaluate_worker test_evaluation",
+      "result": "64 tests passed with one Windows-only lock test skipped"
+    }
+  ],
+  "limitations": [
+    "The real GPU evaluation entry and numerical reproduction have not been run.",
+    "An earlier Windows run of the larger suite had one error because that Python environment lacks flax; the isolated WSL environment passed that test."
+  ]
+}

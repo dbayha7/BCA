@@ -1,0 +1,159 @@
+{
+  "backend": "cpu",
+  "caps": {
+    "jax_dynamics_rows": 32,
+    "numpy_dynamics_rows": 128
+  },
+  "checks": {
+    "action_clipping_consistency": {
+      "passed": true,
+      "rows": 3,
+      "tolerance": 0.0
+    },
+    "archival_numpy_parity": {
+      "cases": 10,
+      "max_reward_residual": 0.0,
+      "max_state_residual": 0.0,
+      "passed": true,
+      "tolerance": 0.0
+    },
+    "current_and_wave_invariants": {
+      "current_exact": true,
+      "max_wave_squared_amplitude_residual": 0.0,
+      "note": "Wave norm invariant, not energy conservation of driven/damped float coordinates",
+      "passed": true,
+      "tolerance": 5e-16
+    },
+    "jax64_numpy_parity": {
+      "dtype": "float64",
+      "max_residual": 0.0,
+      "passed": true,
+      "rows": 3,
+      "tolerance": 2e-13
+    },
+    "jax_jvp_finite_difference_smooth": {
+      "directions": 1,
+      "epsilon_checks": [
+        {
+          "epsilon": 0.0001,
+          "max_residual": 5.022648963404208e-13
+        },
+        {
+          "epsilon": 1e-05,
+          "max_residual": 1.726152554226701e-11
+        },
+        {
+          "epsilon": 1e-06,
+          "max_residual": 1.825788409348661e-10
+        }
+      ],
+      "note": "Smooth interior fixture; derivatives at clipping/stall cusps are not uniquely defined",
+      "passed": true,
+      "tolerance": 2e-08,
+      "zero_throttle_slope": 1.0
+    },
+    "last_action_incentive": {
+      "note": "At t99, Qpi=r; no terminal state cost/bootstrap. Earlier control can improve future state costs.",
+      "passed": true,
+      "terminal_q_improvement": 0.3000000000000007
+    },
+    "matrix_stability_and_bound": {
+      "conservative_float_radius_bound": 256.3695957097859,
+      "declared_observation_limit": 300.0,
+      "note": "Physical10D subsystem is contractive; current/wave augmented modes are neutral, not contractive",
+      "passed": true,
+      "per_step_input_bound": 2.8183188033498467,
+      "physical_matrix_norm2": 0.9871084566407397,
+      "physical_matrix_spectral_radius": 0.9816589938555739,
+      "power_sum_1000": 55.483287947508025,
+      "tail_upper_bound": 7.151959186069537e-07
+    },
+    "post_knee_dominance": {
+      "cases": [
+        {
+          "equivalent_unstalled": 0.5000001192092896,
+          "formula_residual": 1.7763568394002505e-15,
+          "post_knee": 0.9999999403953552,
+          "reward_improvement": 0.22499992847442485,
+          "successor_max_residual": 0.0
+        },
+        {
+          "equivalent_unstalled": -0.6499999761581421,
+          "formula_residual": 1.7763568394002505e-15,
+          "post_knee": -0.9000000357627869,
+          "reward_improvement": 0.11625002861023148,
+          "successor_max_residual": 0.0
+        }
+      ],
+      "note": "These float32-representable twins have equal successors and future return. Arbitrary continuous-thrust twins may round at deployment; no universal exact quantized-action dominance claim.",
+      "passed": true
+    },
+    "reward_prestate_and_command": {
+      "actual": -26.2,
+      "expected": -26.2,
+      "note": "Reward uses current state and clipped command, not next state or diminished thrust",
+      "passed": true
+    },
+    "scalar_batch_bitwise": {
+      "passed": true,
+      "rows": 8,
+      "tolerance": 0.0
+    },
+    "thrust_boundaries": {
+      "inputs": [
+        0.0,
+        0.8000000119209288,
+        0.800000011920929,
+        0.8000000119209291,
+        1.0,
+        -0.800000011920929,
+        -1.0
+      ],
+      "passed": true,
+      "thrust": [
+        0.0,
+        0.8000000119209288,
+        0.800000011920929,
+        0.8000000119209287,
+        0.5000000298023224,
+        -0.800000011920929,
+        -0.5000000298023224
+      ],
+      "tolerance": 0.0
+    }
+  },
+  "counts": {
+    "dataset_rows_decoded": 0,
+    "environments_constructed": 0,
+    "jax_dynamics_rows": 4,
+    "model_calls": 0,
+    "numpy_dynamics_rows": 52,
+    "optimizer_updates": 0,
+    "resets": 0,
+    "rollout_episodes": 0
+  },
+  "finished_utc": "2026-10-28T18:10:28.142438+00:00",
+  "fixture_sha256": "bf51b18e08cdcd003ca79fe70fcb1fe4ae73d6a22eb468d9684985716a32bd8f",
+  "gymnasium": "Test-only class/space names; environment instantiation explicitly prohibited",
+  "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+  "physics": {
+    "gain": 0.3,
+    "gamma": 0.98,
+    "knee": 0.800000011920929,
+    "length": 100,
+    "stall": true,
+    "stall_slope": 1.5,
+    "throttle_cost": 0.3,
+    "wave_turn": 0.27
+  },
+  "schema": "bca.environment_pure_physics_audit.v1",
+  "scope": "Fixed synthetic/archival one-step fixtures and analytic matrix arithmetic; no empirical sweep or trained-policy evaluation",
+  "source_sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "started_utc": "2026-10-28T18:10:26.470154+00:00",
+  "status": "passed_fixed_physics_checks",
+  "versions": {
+    "jax": "0.6.2",
+    "numpy": "2.2.6",
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]"
+  }
+}
