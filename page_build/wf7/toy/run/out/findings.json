@@ -1,0 +1,504 @@
+{
+ "notebook": "bca_findings.ipynb",
+ "seconds": 353.2,
+ "cells": [
+  {
+   "cell": 3,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 4,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Training counts [time, context, action]:\n [[[263 240]\n  [ 53  44]]\n\n [[396 107]\n  [ 97   0]]]\nFrozen critic:\n [[[1.1        1.3       ]\n  [1.1        1.44545455]]\n\n [[1.         1.62616822]\n  [1.         2.5       ]]]\nTrain-only count scales:\n [[[0.06166264 0.06454972]\n  [0.13736056 0.15075567]]\n\n [[0.05025189 0.09667365]\n  [0.10153462 1.        ]]]\n"
+    }
+   ]
+  },
+  {
+   "cell": 5,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Known context ratios: [0.41176471 4.33333333]   E_test[w] = 2.960784313725491\nstage, empirical, credible, BCA, weighted empirical, weighted credible, weighted BCA\n(0, 0.0, 0.0, 0.0, 4.3418, 6.2714, 6.2714)\n(1, 16.8212, 16.8212, 16.8212, 14.211, 14.211, 14.211)\n"
+    }
+   ]
+  },
+  {
+   "cell": 6,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Supported shifted test: method | stage | finite coverage: sampled, exact | refusal | mean finite full width\nempirical            0  0.674  0.6750  0.000  0.000\nempirical            1  1.000  1.0000  0.000  2.949\nconformal            0  0.674  0.6750  0.000  0.000\nconformal            1  1.000  1.0000  0.000  2.949\nBCA                  0  0.674  0.6750  0.000  0.000\nBCA                  1  1.000  1.0000  0.000  2.949\nweighted empirical   0  0.842  0.8375  0.000  1.005\nweighted empirical   1  0.955  0.9563  0.000  2.492\nweighted conformal   0  0.842  0.8375  0.000  1.005\nweighted conformal   1  0.955  0.9563  0.000  2.492\nweighted BCA         0  1.000  1.0000  0.000  1.451\nweighted BCA         1  0.955  0.9563  0.000  2.492\n\nNo-shift control, exact (contexts from P_CAL): method | stage 0 | stage 1\nempirical            0.9250  1.0000\nconformal            0.9250  1.0000\nBCA                  0.9250  1.0000\n\nNovelty probe, terminal stage (NaN means no finite certificate):\nconformal            refusal=1.000  finite coverage=nan  width=nan\nBCA                  refusal=1.000  finite coverage=nan  width=nan\nweighted conformal   refusal=1.000  finite coverage=nan  width=nan\nweighted BCA         refusal=1.000  finite coverage=nan  width=nan\n\nORACLE world: harmful\nTrue Q^safe:\n [[[ 1.1  1.3]\n  [ 1.1  1.3]]\n\n [[ 1.   1.5]\n  [ 1.  -3.6]]]\nBCA finite-cell Q^safe containment = 0.8571428571428571 finite-cell mean abs Q error = 0.038803252821944474\nweighted BCA finite-cell Q^safe containment = 1.0 finite-cell mean abs Q error = 0.038803252821944474\nmethod | return | regret | failure risk | actions [t,c] | fallback states\nno penalty            -1.515   2.990   0.520 [[1, 1], [1, 1]] 0\nsupport only           1.475   0.000   0.000 [[1, 1], [1, 0]] 0\nscale only             1.475   0.000   0.000 [[1, 1], [1, 0]] 0\nconformal              1.300   0.175   0.000 [[1, 1], [0, 0]] 0\nBCA                    1.300   0.175   0.000 [[1, 1], [0, 0]] 0\nweighted conformal     1.300   0.175   0.000 [[1, 1], [0, 0]] 0\nweighted BCA           1.300   0.175   0.000 [[1, 1], [0, 0]] 0\n\nORACLE world: harmless\nTrue Q^safe:\n [[[1.1 1.3]\n  [1.1 1.3]]\n\n [[1.  1.5]\n  [1.  2. ]]]\nBCA finite-cell Q^safe containment = 0.8571428571428571 finite-cell mean abs Q error = 0.038803252821944474\nweighted BCA finite-cell Q^safe containment = 1.0 finite-cell mean abs Q error = 0.038803252821944474\nmethod | return | regret | failure risk | actions [t,c] | fallback states\nno penalty             2.125   0.000   0.000 [[1, 1], [1, 1]] 0\nsupport only           1.475   0.650   0.000 [[1, 1], [1, 0]] 0\nscale only             1.475   0.650   0.000 [[1, 1], [1, 0]] 0\nconformal              1.300   0.825   0.000 [[1, 1], [0, 0]] 0\nBCA                    1.300   0.825   0.000 [[1, 1], [0, 0]] 0\nweighted conformal     1.300   0.825   0.000 [[1, 1], [0, 0]] 0\nweighted BCA           1.300   0.825   0.000 [[1, 1], [0, 0]] 0\n"
+    }
+   ]
+  },
+  {
+   "cell": 7,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 9,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "All checks passed. Calibration effective sample size (ESS): 97.22\nMain notebook elapsed seconds: 0.968\n"
+    }
+   ]
+  },
+  {
+   "cell": 10,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Optional seed sweep skipped.\n"
+    }
+   ]
+  },
+  {
+   "cell": 14,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 15,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 16,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 18,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "n    BCA with 1,000 draws = exact    BCA with 100,000 draws = exact    (8 random score sets each)\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 10               8/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 28               4/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 29               4/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 30               7/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 36               8/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": " 45               5/8                               8/8\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "100               8/8                               8/8\nSmallest n with any finite threshold: 29\n"
+    }
+   ]
+  },
+  {
+   "cell": 19,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Kill rules SHA-256: bb9e03252e9c6be5fc30e72d1172a134498198559d30f51d9552fd86a6afdbc3\n"
+    }
+   ]
+  },
+  {
+   "cell": 21,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 22,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "200 seeds in 74.0 s\nclaimed  mean    0.504   min    0.256   max    0.788\nq_gap    mean    1.506   min    1.242   max    1.788\nq_safe   mean    1.002   min    0.962   max    1.039\nr0       mean    1.712   min    1.511   max    1.960\nr1_min   mean    1.473   min    1.292   max    1.648\nr1_max   mean    8.896   min    8.093   max    9.934\nn_rest   mean  600.655   min  546.000   max  659.000\n"
+    }
+   ]
+  },
+  {
+   "cell": 24,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "P(venture outcome at the gap < 1.0), by world; above 0.10 is an unsafe world:\n  shortfall +1.00: 0.000  +0.50: 0.006  +0.25: 0.106  +0.10: 0.309  -0.10: 0.691  -0.25: 0.894  -0.50: 0.994  -1.00: 1.000  -2.00: 1.000  -4.60: 1.000\n  tail      +1.00: 0.000  +0.50: 0.071  +0.25: 0.107  +0.10: 0.129  -0.10: 0.157  -0.25: 0.179  -0.50: 0.214  -1.00: 0.286  -2.00: 0.429  -4.60: 0.800\n\nBest world-blind rule: range limit.  Room = 0.1215 (its pooled regret minus the oracle's)\n\nrule                            pooled regret gain / room  unsafe-deviation  (tail worlds)\noracle switch                          0.0000        1.00             0.250          0.250\ngreedy                                 0.5505       -3.53             1.000          1.000\nrange limit                            0.1215        0.00             0.000          0.000\ncount penalty                          0.1222       -0.01             0.000          0.000\nhost BC actor                          0.4939       -3.06             0.865          0.865\nA1 width penalty                       0.4253       -2.50             0.003          0.003\nA2 width BC multiplier                 0.3755       -2.09             0.649          0.653\nG1 step-1 certificate                  0.0508        0.58             0.517          0.424\nG1 local reference                     0.0329        0.73             0.241          0.424\nG2R BCA harm test                      0.0282        0.77             0.276          0.424\nG2 BCA tail certificate                0.0758        0.38             0.002          0.002\nG3 split-conformal certificate         0.0392        0.68             0.057          0.078\nG4 exact binomial certificate          0.0753        0.38             0.001          0.001\nG5 plug-in mean                        0.0157        0.87             0.270          0.290\nG6 mean harm test                      0.0634        0.48             0.485          0.681\nG1 shuffled                            0.4356       -2.58             0.899          0.920\nG2R shuffled                           0.3543       -1.91             0.710          0.791\nG2 shuffled                            0.1211        0.00             0.004          0.005\n"
+    }
+   ]
+  },
+  {
+   "cell": 26,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Test 1, width channel (bar: gain at least 0.25 of the room)\n  A1 width penalty: gain / room = -2.50 -> SHELVED\n  A2 width BC multiplier: gain / room = -2.09 -> SHELVED\nTest 2, step-1 gate (bars: gain at least 0.50 of the room; shuffled keeps at most half)\n  gain / room = +0.58; shuffled keeps -4.44 of it -> ALIVE\nTest 3, decision-referenced reference point (bar: G2R's pooled regret below G1's)\n  G2R 0.0282 against G1 0.0508 -> ALIVE\nTest 4a, 'BCA's posterior decides differently from the exact binomial test' (shelved if agreement >= 0.99)\n  agreement 0.9961 -> SHELVED\nTest 4b, 'BCA's credibility makes deviations safer than split conformal' (bar: 0.05 more unsafe deviations)\n  split conformal 0.057 against BCA 0.002 (difference +0.055) -> ALIVE\nTest 4c, 'tail safety needs quantile semantics, not a mean' (bar: 0.05, tail-shape unsafe worlds)\n  plug-in mean 0.290 against BCA 0.002 (difference +0.288) -> ALIVE\nReported, not deciding:\n  G2's pooled regret minus G5's: +0.0601\n  G2 BCA tail certificate: worst unsafe-world deviation rate by evidence size: n=5: 0.000  n=10: 0.000  n=20: 0.000  n=30: 0.025  n=45: 0.030  n=60: 0.020  n=100: 0.015\n  G4 exact binomial certificate: worst unsafe-world deviation rate by evidence size: n=5: 0.000  n=10: 0.000  n=20: 0.000  n=30: 0.030  n=45: 0.005  n=60: 0.010  n=100: 0.015\n"
+    }
+   ]
+  },
+  {
+   "cell": 28,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Pooled regret by evidence size (both shapes, whole ladder)\nevidence size (survivors)             5      10      20      30      45      60     100\ngreedy                           0.5505  0.5505  0.5505  0.5505  0.5505  0.5505  0.5505\nrange limit                      0.1215  0.1215  0.1215  0.1215  0.1215  0.1215  0.1215\ncount penalty                    0.1222  0.1222  0.1222  0.1222  0.1222  0.1222  0.1222\nhost BC actor                    0.4939  0.4939  0.4939  0.4939  0.4939  0.4939  0.4939\nA1 width penalty                 0.4274  0.4253  0.4250  0.4250  0.4247  0.4247  0.4247\nA2 width BC multiplier           0.4075  0.4075  0.4018  0.3985  0.3872  0.3368  0.2891\nG1 step-1 certificate            0.0854  0.0693  0.0482  0.0441  0.0397  0.0362  0.0329\nG1 local reference               0.0661  0.0505  0.0296  0.0264  0.0224  0.0191  0.0161\nG2R BCA harm test                0.0619  0.0457  0.0256  0.0219  0.0176  0.0139  0.0108\nG2 BCA tail certificate          0.1215  0.1215  0.1215  0.0485  0.0411  0.0390  0.0373\nG3 split-conformal certificate   0.1215  0.0318  0.0265  0.0251  0.0266  0.0224  0.0207\nG5 plug-in mean                  0.0297  0.0275  0.0149  0.0125  0.0102  0.0084  0.0065\nG6 mean harm test                0.1600  0.0944  0.0612  0.0443  0.0341  0.0289  0.0208\noracle switch                    0.0000  0.0000  0.0000  0.0000  0.0000  0.0000  0.0000\n\nUnsafe-deviation rate by evidence size (unsafe worlds only)\nevidence size (survivors)             5      10      20      30      45      60     100\nG1 step-1 certificate             0.602   0.568   0.520   0.515   0.491   0.477   0.448\nG2R BCA harm test                 0.392   0.342   0.272   0.265   0.239   0.226   0.196\nG2 BCA tail certificate           0.000   0.000   0.000   0.003   0.003   0.002   0.002\nG3 split-conformal certificate    0.000   0.089   0.076   0.066   0.050   0.058   0.057\nG4 exact binomial certificate     0.000   0.000   0.000   0.004   0.000   0.001   0.002\nG5 plug-in mean                   0.272   0.306   0.261   0.268   0.265   0.257   0.260\nG6 mean harm test                 0.625   0.555   0.500   0.463   0.438   0.423   0.392\n\nShare of (seed, harm shape) where the gap decision changes somewhere along the ladder\nevidence size (survivors)             5      10      20      30      45      60     100\nrange limit                        0.00    0.00    0.00    0.00    0.00    0.00    0.00\nhost BC actor                      0.00    0.00    0.00    0.00    0.00    0.00    0.00\nA1 width penalty                   0.00    0.01    0.01    0.01    0.01    0.01    0.01\nA2 width BC multiplier             0.00    0.00    0.02    0.03    0.05    0.20    0.35\nG1 step-1 certificate              0.99    1.00    1.00    1.00    1.00    1.00    1.00\nG2R BCA harm test                  0.99    1.00    1.00    1.00    1.00    1.00    1.00\nG2 BCA tail certificate            0.00    0.00    0.00    0.91    1.00    1.00    1.00\nG5 plug-in mean                    1.00    1.00    1.00    1.00    1.00    1.00    1.00\n\nInformation only: the step-1 certificate at other margins (its rule uses 0.10)\n  margin 0.00: pooled regret 0.0491\n  margin 0.05: pooled regret 0.0502\n  margin 0.10: pooled regret 0.0508\n  margin 0.25: pooled regret 0.0540\n  margin 0.50: pooled regret 0.0790\n  margin 1.00: pooled regret 0.0837\n"
+    }
+   ]
+  },
+  {
+   "cell": 30,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    },
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 32,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "A1 width coverage at recorded actions, stage 0: 0.902 (target at least 0.90)\nA1 width coverage at recorded actions, stage 1: 0.935 (target at least 0.90)\nAll checks passed. Notebook seconds: 80.2\n"
+    }
+   ]
+  },
+  {
+   "cell": 34,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "shortfall: share of seeds that venture at the gap with 30 survivors (* unsafe world; venture is better on average when the advantage is above 0)\nrule                             +1.00   +0.50   +0.25*  +0.10*  -0.10*  -0.25*  -0.50*  -1.00*  -2.00*  -4.60*\nrange limit                       0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00 \nA2 width BC multiplier            0.67    0.67    0.67    0.67    0.67    0.67    0.67    0.65    0.65    0.65 \nG1 step-1 certificate             1.00    1.00    1.00    1.00    0.98    0.98    0.94    0.00    0.00    0.00 \nG2R BCA harm test                 1.00    1.00    0.85    0.06    0.00    0.00    0.00    0.00    0.00    0.00 \nG2 BCA tail certificate           0.91    0.73    0.03    0.00    0.00    0.00    0.00    0.00    0.00    0.00 \nG3 split-conformal certificate    1.00    0.99    0.35    0.01    0.00    0.00    0.00    0.00    0.00    0.00 \nG5 plug-in mean                   1.00    1.00    1.00    0.99    0.01    0.00    0.00    0.00    0.00    0.00 \n\ntail: share of seeds that venture at the gap with 30 survivors (* unsafe world; venture is better on average when the advantage is above 0)\nrule                             +1.00   +0.50   +0.25*  +0.10*  -0.10*  -0.25*  -0.50*  -1.00*  -2.00*  -4.60*\nrange limit                       0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00    0.00 \nA2 width BC multiplier            0.67    0.67    0.67    0.67    0.67    0.67    0.67    0.67    0.66    0.65 \nG1 step-1 certificate             1.00    0.97    0.91    0.81    0.64    0.54    0.38    0.06    0.00    0.00 \nG2R BCA harm test                 1.00    0.97    0.91    0.81    0.64    0.54    0.38    0.06    0.00    0.00 \nG2 BCA tail certificate           0.91    0.10    0.03    0.01    0.00    0.00    0.00    0.00    0.00    0.00 \nG3 split-conformal certificate    1.00    0.60    0.35    0.21    0.10    0.03    0.01    0.00    0.00    0.00 \nG5 plug-in mean                   1.00    0.91    0.76    0.62    0.46    0.33    0.12    0.01    0.00    0.00 \n\nWorst single unsafe world: share of seeds that venture there, by evidence size\nG2 BCA tail certificate         n=5: 0.00  n=10: 0.00  n=20: 0.00  n=30: 0.03  n=45: 0.03  n=60: 0.02  n=100: 0.01\nG4 exact binomial certificate   n=5: 0.00  n=10: 0.00  n=20: 0.00  n=30: 0.03  n=45: 0.01  n=60: 0.01  n=100: 0.01\nG3 split-conformal certificate  n=5: 0.00  n=10: 0.37  n=20: 0.38  n=30: 0.35  n=45: 0.32  n=60: 0.35  n=100: 0.38\nG2R BCA harm test               n=5: 0.89  n=10: 0.90  n=20: 0.85  n=30: 0.91  n=45: 0.89  n=60: 0.92  n=100: 0.90\nG5 plug-in mean                 n=5: 1.00  n=10: 1.00  n=20: 1.00  n=30: 1.00  n=45: 1.00  n=60: 1.00  n=100: 1.00\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "\nThe step-1 gate's reference group (all other final-step calibration rows), over 200 seeds:\n  posterior median of its 90% crossing: mean 1.04, from 0.35 to 1.50\n  5% posterior quantile of that crossing: mean 0.52\n  share of its rows that are the noisy cell's low outcomes (over-prediction near 1.5): 0.107\n"
+    }
+   ]
+  },
+  {
+   "cell": 38,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 39,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Every held-out try shows the same gain g; gains range from -1 to +1. Smallest g each gate accepts:\nheld-out tries   BCA mean gate   Hoeffding   empirical Bernstein   t-test\n            10            0.35        0.77                 never   any g above 0\n            29            0.11        0.45                  0.61   any g above 0\n           100            0.03        0.24                  0.17   any g above 0\n\nA candidate gains 0.4 on 95% of tries and loses 10 on the rest (true average -0.12, so harmful).\nWith 29 tries, 23% of samples contain no loss. The t-test sees no spread in those and accepts,\nso it accepts this harmful action about 23% of the time instead of 5%.\nTold that the floor is -10, the BCA mean gate puts 32% of its weighted averages below 0\nfor those same clean samples, far more than 5%, so it refuses.\n"
+    }
+   ]
+  },
+  {
+   "cell": 41,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 42,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Kill rules fingerprint (SHA-256): 50a0f49d678b2205e2dba3af5ea741d8cbc887679127ccdd8612f2c43f93b1d3\n"
+    }
+   ]
+  },
+  {
+   "cell": 44,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "200 seeds in 24 s. The critic proposed something in 75% of situations: 79,355 good proposals and 28,508 harmful ones.\n"
+    }
+   ]
+  },
+  {
+   "cell": 45,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 47,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "gate                               gain  of oracle  good accepted  worst harm  worst disaster harm\nalways safe                       0.000         0%             0%        0.0%                 0.0%\nno gate                           0.138        66%           100%      100.0%               100.0%\ncount rule                        0.065        31%            32%       43.2%                12.4%\nplain average                     0.158        76%            83%       41.4%                36.2%\nshrunk average                    0.151        73%            69%       90.0%                16.4%\nBCA average                       0.136        65%            60%       11.8%                 1.7%\nt-test                            0.080        39%            44%       31.3%                31.3%\nHoeffding                         0.000         0%             0%        0.0%                 0.0%\nempirical Bernstein               0.000         0%             0%        0.0%                 0.0%\nBCA mean gate                     0.045        22%            17%        0.3%                 0.0%\nBCA tail gate                     0.003         2%             1%        0.0%                 0.0%\nsplit-conformal tail              0.019         9%            10%        7.6%                 7.6%\nBCA mean gate, shared budget      0.027        13%            10%        0.0%                 0.0%\noracle gate                       0.208       100%           100%        0.0%                 0.0%\n\nFor reference, picking the truly best candidate in every situation would gain 0.294:\nthe critic's proposals already lose part of that before any gate acts.\n"
+    }
+   ]
+  },
+  {
+   "cell": 48,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 50,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Claim 1, BCA's mean gate keeps its promise: worst harm rate 0.003; worlds above their allowance: 0 -> ALIVE\nClaim 2, tightest guaranteed mean gate: good proposals accepted 17.4% against Hoeffding 0.0% and empirical Bernstein 0.0% -> ALIVE\nClaim 3, the t-test is unsafe with rare disasters: worst rare-disaster harm rate 0.313 -> ALIVE\nClaim 4, crowded worlds: gain 0.0567 against plain average 0.1829 and shrunk average 0.1625 -> SHELVED\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Claim 5, at equal harm: tuned BCA mean gate gains 0.0845; best tuned rival BCA average gains 0.0400 -> ALIVE\nClaim 6, shared 10% harm budget: gain 0.0270 against 0.0453 deciding alone; worst average harmful share of acceptances 0.000 -> SHELVED\n"
+    }
+   ]
+  },
+  {
+   "cell": 52,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "gate                      chosen knob  gain, seeds 0-99  gain, seeds 100-199  worst harm, 100-199\nBCA mean gate                     0.2            0.0864               0.0845                 2.3%\nBCA average                       0.5            0.0410               0.0400                 3.8%\nshrunk average                    0.5            0.0165               0.0187                 1.6%\nHoeffding                         0.5            0.0167               0.0174                 0.1%\nBCA tail gate                     0.2            0.0187               0.0172                 2.9%\nplain average                     1.5            0.0061               0.0070                 0.8%\nempirical Bernstein               0.5            0.0061               0.0061                 0.0%\nsplit-conformal tail             0.05            0.0064               0.0056                 0.3%\ncount rule                        100            0.0001               0.0003                 0.2%\nt-test                           none            0.0000               0.0000                 0.0%\n"
+    }
+   ]
+  },
+  {
+   "cell": 54,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Gain per situation by outcome shape (seeds 100-199, pooled over the other two factors)\ngate                                    steady  rare disaster   rare jackpot\nplain average                           0.1755         0.0951         0.2038\nshrunk average                          0.1616         0.0765         0.2156\nt-test                                  0.0993         0.0843         0.0567\nHoeffding                               0.0000         0.0000         0.0001\nempirical Bernstein                     0.0000         0.0000         0.0000\nBCA mean gate                           0.0540         0.0138         0.0681\nBCA tail gate                           0.0000         0.0099         0.0000\nBCA mean gate, shared budget            0.0370         0.0032         0.0407\noracle gate                             0.1987         0.1565         0.2690\n\nGain per situation by number of candidates (seeds 100-199)\ngate                                    1         3        10        30\nplain average                      0.0597    0.1292    0.2055    0.2381\nshrunk average                     0.0526    0.1236    0.1983    0.2303\nt-test                             0.0314    0.0674    0.1072    0.1144\nHoeffding                          0.0000    0.0000    0.0000    0.0000\nempirical Bernstein                0.0000    0.0000    0.0000    0.0000\nBCA mean gate                      0.0176    0.0415    0.0637    0.0585\nBCA tail gate                      0.0007    0.0023    0.0051    0.0052\nBCA mean gate, shared budget       0.0128    0.0264    0.0379    0.0307\noracle gate                        0.0768    0.1690    0.2683    0.3181\n\nHarm rate by outcome shape, worst over the other factors (seeds 100-199)\ngate                                    steady  rare disaster   rare jackpot\nplain average                            41.4%          36.2%          17.3%\nshrunk average                           34.5%          16.4%          90.0%\nt-test                                    5.7%          31.3%           0.0%\nHoeffding                                 0.0%           0.0%           0.0%\nempirical Bernstein                       0.0%           0.0%           0.0%\nBCA mean gate                             0.1%           0.0%           0.3%\nBCA tail gate                             0.0%           0.0%           0.0%\nBCA mean gate, shared budget              0.0%           0.0%           0.0%\noracle gate                               0.0%           0.0%           0.0%\n\nShare of good proposals accepted, by number of held-out tries (seeds 100-199)\ngate                                 5-9    10-19    20-39    40-69   70-100\nplain average                        71%      80%      89%      95%      96%\nshrunk average                       50%      63%      77%      87%      90%\nt-test                               32%      36%      46%      59%      72%\nHoeffding                             0%       0%       0%       0%       0%\nempirical Bernstein                   0%       0%       0%       0%       0%\nBCA mean gate                         1%       5%      17%      41%      64%\nBCA tail gate                         0%       0%       1%       4%       6%\nBCA mean gate, shared budget          0%       1%       8%      25%      45%\noracle gate                         100%     100%     100%     100%     100%\n"
+    }
+   ]
+  },
+  {
+   "cell": 56,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "1. Gain per situation on seeds 100-199, after tuning on seeds 0-99 to each cap on worst-world harm\ngate                      cap 1%    cap 2%    cap 5%   cap 10%   cap 20%  cap 100%\nplain average              0.001     0.007     0.007     0.036     0.078     0.158\nshrunk average             0.001     0.019     0.019     0.056     0.087     0.151\nBCA average                0.000     0.021     0.040     0.098     0.136     0.136\nt-test                      none      none      none      none     0.040     0.158\nHoeffding                  0.005     0.017     0.017     0.017     0.017     0.017\nempirical Bernstein        0.006     0.006     0.006     0.006     0.006     0.006\nBCA mean gate              0.030     0.061     0.084     0.103     0.137     0.137\nBCA tail gate              0.003     0.003     0.017     0.017     0.027     0.046\nsplit-conformal tail       0.006     0.006     0.006     0.019     0.019     0.062\ncount rule                 0.000     0.000     0.000     0.011     0.011     0.138\nOn seeds 100-199, every tuned gate stayed within its cap: True\n\n2. Worlds (of 36) where each gate loses return at its stated setting, seeds 100-199\ngate                             worlds below 0  lowest world gain\nalways safe                                   0             0.0000\nno gate                                       5            -0.2512\ncount rule                                    0             0.0012\nplain average                                 4            -0.0109\nshrunk average                                0             0.0031\nBCA average                                   0             0.0078\nt-test                                        4            -0.0085\nHoeffding                                     0             0.0000\nempirical Bernstein                           0             0.0000\nBCA mean gate                                 0             0.0008\nBCA tail gate                                 0             0.0000\nsplit-conformal tail                          0             0.0000\nBCA mean gate, shared budget                  0             0.0004\noracle gate                                   0             0.0204\n\nThe hardest worlds: rare disasters and 10% good candidates. Gain by number of candidates, seeds 100-199\ngate                                    1         3        10        30\nno gate                           -0.0667   -0.1453   -0.2311   -0.2512\nplain average                     -0.0049   -0.0109   -0.0059   -0.0071\nt-test                            -0.0028   -0.0085   -0.0017   -0.0018\nshrunk average                     0.0031    0.0083    0.0169    0.0156\nBCA mean gate                      0.0008    0.0038    0.0107    0.0112\nBCA average                        0.0078    0.0219    0.0437    0.0482\noracle gate                        0.0204    0.0539    0.1021    0.1202\n"
+    }
+   ]
+  },
+  {
+   "cell": 58,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "All checks passed. Notebook seconds: 29.0\n"
+    }
+   ]
+  },
+  {
+   "cell": 62,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 64,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "shift      effective tries   tries kept by       tries needed to say yes at all (about)\n           per try           rejection           weighted BCA   rejection-sampled exact   stratified exact\nnone             1.00             1.00                    29                  29                    216\nmoderate         0.73             0.40                    39                  73                    287\nstrong           0.34             0.20                    83                 145                    382\n"
+    }
+   ]
+  },
+  {
+   "cell": 65,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 66,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Kill rules fingerprint (SHA-256): e32e04d79b52e3a234e2576ef7cddf9c7b667436315b58330fe827b2dafff44e\n"
+    }
+   ]
+  },
+  {
+   "cell": 68,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "800 seeds in 152 s\n"
+    }
+   ]
+  },
+  {
+   "cell": 69,
+   "status": "ok",
+   "outputs": []
+  },
+  {
+   "cell": 71,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "gate                         worst unsafe  safe, shifted  worst harmful    gain  of oracle\nnever deviate                       0.000          0.000          0.000  0.0000         0%\nalways deviate                      1.000          1.000          1.000  0.0950        55%\nBCA tail, unweighted                0.899          0.550          0.736  0.1106        64%\nBCA tail, weighted                  0.043          0.336          0.025  0.0838        49%\nweighted split conformal            0.388          0.750          0.266  0.1423        83%\nrejection-sampled exact             0.036          0.190          0.021  0.0644        37%\nstratified exact                    0.000          0.000          0.000  0.0023         1%\nBCA mean, unweighted                0.986          0.647          0.936  0.1253        73%\nBCA mean, weighted                  0.119          0.415          0.044  0.0982        57%\nrejection-sampled BCA mean          0.119          0.261          0.026  0.0789        46%\nweighted t-test                     0.440          0.741          0.381  0.1395        81%\nweighted average                    0.730          0.927          0.549  0.1536        89%\nplain average                       1.000          0.888          1.000  0.1461        85%\noracle                              1.000          1.000          0.000  0.1719       100%\n"
+    }
+   ]
+  },
+  {
+   "cell": 73,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Claim 1, ignoring the shift breaks the tail promise: worst unsafe-world rate 0.899; unsafe worlds above the allowance (0.073): 17 -> ALIVE\nClaim 2, weighted BCA keeps the tail promise: worst unsafe-world rate 0.043; above the allowance: 0 -> ALIVE\nClaim 3, weights use shifted evidence better: deviation rate in safe shifted worlds 0.336, against rejection-sampled 0.190 and stratified 0.000 -> ALIVE\nClaim 4, a promise for the data in hand: worst unsafe-world rate 0.388 for weighted split conformal, against 0.043 for weighted BCA -> ALIVE\nClaim 5, weighted BCA's mean gate keeps its promise: worst harmful-world rate 0.044; above the allowance: 0 -> ALIVE\n"
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Claim 6, at equal harm: tuned weighted BCA mean gate gains 0.0975; best tuned rival weighted split conformal gains 0.0923 -> ALIVE\n"
+    }
+   ]
+  },
+  {
+   "cell": 75,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    },
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "gate                         chosen knob  gain, 0-399  gain, 400-799  worst harmful, 400-799\nBCA mean, weighted                  0.05       0.0988         0.0975                   0.052\nweighted split conformal            0.05       0.0923         0.0923                   0.048\nBCA tail, weighted                   0.1       0.0838         0.0838                   0.030\nrejection-sampled BCA mean          0.05       0.0791         0.0788                   0.025\nrejection-sampled exact              0.1       0.0642         0.0646                   0.018\nBCA tail, unweighted                0.05       0.0517         0.0536                   0.020\nstratified exact                     0.2       0.0351         0.0358                   0.005\nBCA mean, unweighted                none       0.0000         0.0000                   0.000\nweighted t-test                     none       0.0000         0.0000                   0.000\nweighted average                    0.75       0.0000         0.0000                   0.000\nplain average                       0.75       0.0000         0.0000                   0.000\n"
+    }
+   ]
+  },
+  {
+   "cell": 77,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "Worst unsafe-world deviation rate, by shift\ngate                                none    moderate      strong\nBCA tail, unweighted               0.036       0.454       0.899\nBCA tail, weighted                 0.031       0.043       0.037\nweighted split conformal           0.388       0.369       0.355\nrejection-sampled exact            0.036       0.026       0.025\nstratified exact                   0.000       0.000       0.000\nBCA mean, unweighted               0.119       0.746       0.986\nBCA mean, weighted                 0.119       0.098       0.094\nrejection-sampled BCA mean         0.119       0.079       0.044\nweighted t-test                    0.179       0.240       0.440\nweighted average                   0.730       0.714       0.689\nplain average                      0.730       0.996       1.000\n\nDeviation rate pooled over safe worlds, by shift\ngate                                none    moderate      strong\nBCA tail, unweighted               0.539       0.551       0.550\nBCA tail, weighted                 0.538       0.421       0.251\nweighted split conformal           0.877       0.818       0.683\nrejection-sampled exact            0.539       0.261       0.119\nstratified exact                   0.028       0.000       0.000\nBCA mean, unweighted               0.655       0.655       0.639\nBCA mean, weighted                 0.655       0.517       0.313\nrejection-sampled BCA mean         0.655       0.346       0.177\nweighted t-test                    0.770       0.746       0.735\nweighted average                   0.955       0.941       0.913\nplain average                      0.955       0.924       0.851\n\nWorst harmful-world deviation rate, by shift\ngate                                none    moderate      strong\nBCA tail, unweighted               0.021       0.191       0.736\nBCA tail, weighted                 0.016       0.025       0.018\nweighted split conformal           0.266       0.230       0.233\nrejection-sampled exact            0.021       0.011       0.011\nstratified exact                   0.000       0.000       0.000\nBCA mean, unweighted               0.026       0.481       0.936\nBCA mean, weighted                 0.026       0.041       0.044\nrejection-sampled BCA mean         0.026       0.024       0.021\nweighted t-test                    0.113       0.174       0.381\nweighted average                   0.501       0.522       0.549\nplain average                      0.501       0.959       1.000\n\nPooled gain, by shift\ngate                                none    moderate      strong\nBCA tail, unweighted              0.1117      0.1122      0.1079\nBCA tail, weighted                0.1111      0.0872      0.0532\nweighted split conformal          0.1545      0.1472      0.1250\nrejection-sampled exact           0.1117      0.0556      0.0260\nstratified exact                  0.0070      0.0000      0.0000\nBCA mean, unweighted              0.1288      0.1276      0.1195\nBCA mean, weighted                0.1288      0.1019      0.0637\nrejection-sampled BCA mean        0.1288      0.0707      0.0373\nweighted t-test                   0.1440      0.1400      0.1346\nweighted average                  0.1588      0.1554      0.1467\nplain average                     0.1588      0.1487      0.1309\n\nDeviation rate pooled over safe shifted worlds, by number of tries\ngate                                  30          60         120         240\nBCA tail, unweighted               0.388       0.426       0.648       0.740\nBCA tail, weighted                 0.002       0.210       0.498       0.635\nweighted split conformal           0.537       0.740       0.833       0.892\nrejection-sampled exact            0.000       0.024       0.237       0.499\nstratified exact                   0.000       0.000       0.000       0.000\nBCA mean, unweighted               0.449       0.604       0.730       0.804\nBCA mean, weighted                 0.030       0.279       0.608       0.744\nrejection-sampled BCA mean         0.000       0.082       0.353       0.610\nweighted t-test                    0.705       0.699       0.742       0.817\nweighted average                   0.880       0.912       0.945       0.971\nplain average                      0.874       0.884       0.894       0.899\n\nPooled gain, by number of tries\ngate                                  30          60         120         240\nBCA tail, unweighted              0.0820      0.0916      0.1281      0.1406\nBCA tail, weighted                0.0241      0.0637      0.1139      0.1336\nweighted split conformal          0.1147      0.1416      0.1532      0.1595\nrejection-sampled exact           0.0272      0.0337      0.0777      0.1191\nstratified exact                  0.0000      0.0000      0.0000      0.0094\nBCA mean, unweighted              0.0948      0.1209      0.1384      0.1471\nBCA mean, weighted                0.0356      0.0804      0.1299      0.1467\nrejection-sampled BCA mean        0.0315      0.0526      0.0972      0.1344\nweighted t-test                   0.1277      0.1342      0.1433      0.1529\nweighted average                  0.1401      0.1513      0.1589      0.1641\nplain average                     0.1395      0.1455      0.1489      0.1506\n\nPooled gain under strong shift, by where harm sits\ngate                               alike       harsh        mild\nBCA tail, unweighted              0.1115      0.1317      0.0805\nBCA tail, weighted                0.0531      0.0525      0.0541\nweighted split conformal          0.1256      0.1241      0.1254\nrejection-sampled exact           0.0261      0.0259      0.0259\nstratified exact                  0.0000      0.0000      0.0000\nBCA mean, unweighted              0.1288      0.1369      0.0927\nBCA mean, weighted                0.0637      0.0621      0.0654\nrejection-sampled BCA mean        0.0374      0.0373      0.0370\nweighted t-test                   0.1335      0.1286      0.1417\nweighted average                  0.1454      0.1417      0.1529\nplain average                     0.1584      0.1073      0.1270\n\nEffective number of tries, and tries kept by rejection sampling (averages over seeds)\nshift               30 tries          60 tries         120 tries         240 tries\nnone           30.0 /  30.0       60.0 /  60.0      120.0 / 120.0      240.0 / 240.0  \nmoderate       22.2 /  12.1       44.2 /  24.1       88.1 /  48.0      175.7 /  95.7  \nstrong         10.9 /   6.1       21.2 /  12.0       41.8 /  24.1       83.0 /  47.7  \n"
+    }
+   ]
+  },
+  {
+   "cell": 78,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "display_data",
+     "image": true
+    }
+   ]
+  },
+  {
+   "cell": 80,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "With no shift, BCA's sampled tail gate (1,000 draws) and its exact form agree in 98.51% of cases.\nAll checks passed. Notebook seconds: 155.3\n"
+    }
+   ]
+  },
+  {
+   "cell": 82,
+   "status": "ok",
+   "outputs": [
+    {
+     "type": "stream",
+     "name": "stdout",
+     "text": "version                    worst harmful  safe, shifted    gain  tuned level  tuned gain  tuned worst harmful\nBCA mean, weighted                 0.044          0.415  0.0982         0.05      0.0975                0.052\nBCA mean, largest weight           0.026          0.273  0.0804          0.1      0.0954                0.055\nBest tuned rival in claim 6, weighted split conformal: tuned gain 0.0923\nTuned gains are on seeds 400-799, after tuning on seeds 0-399 as in claim 6.\n\nPooled gain at the stated 5% level, by shift\nversion                         none  moderate    strong\nBCA mean, weighted            0.1288    0.1019    0.0637\nBCA mean, largest weight      0.1288    0.0739    0.0383\n"
+    }
+   ]
+  }
+ ]
+}
