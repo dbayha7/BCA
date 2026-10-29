@@ -1,0 +1,536 @@
+== OPTIONS
+- O0 O0 (reference, rejected by the owner): dose on the host's own conservatism multiplier at recorded rows | where: actor objective (TD3+BC and ReBRAC actor behavior-cloning term); critic regularizer (CQL per-row gap); actor data weighting (IQL advantage weights) | calibrated: One-step TD residual |y - min(Q1,Q2)(s,a)| at held-out recorded rows, where y is the host's detached target with one dra | query: Recorded (state, action) pairs of each training minibatch (origin/main:algorithms/td3_bc_bca.py:283-285; ALGORITHMS.md:335 'at RECORDED actions, not new policy 
+- O1 Lower-confidence critic target (pessimistic backup) | where: critic target | calibrated: One-step TD residual. Read at a non-logged action, it would need recalibrating on the head used in the target and comman | query: The next-state target command (s', clip(pibar(s') + eps)), i.e. the target policy's own command at the next state, off the logged action. In the reward-penalty 
+- O2 Width-weighted push-down of Q at the policy's and sampled commands | where: critic regularizer | calibrated: TD residual with a per-query command-weighted band (weights w(s)*pi_h(a|s)/beta(a|s) over state and action), recalibrate | query: The actor's own command pi(s), and CQL's sampled random and policy actions inside the logsumexp
+- O3 Noise-aware critic regression: band-weighted TD loss at recorded rows | where: critic target (loss weighting / critic data weighting) | calibrated: The TD residual at recorded rows, used as an estimate of each row's noise size. A prediction width includes target noise | query: Recorded training (state, action) rows
+- O4 Value lower edge Q1 - k*U at the actor's own command ('most BCA') | where: actor objective | calibrated: TD residual recalibrated on Q1, the head the actor climbs, with per-query command weights over (state, action). It cover | query: The actor's smoothed command pi(s) + xi at training states (the band's command input lies on the actor's gradient path)
+- O5 Refusal as fallback: a support certificate at the actor's command (SPIBB-style) | where: actor objective / policy extraction (deployment form under O11) | calibrated: TD residual with command weights, but only the finite-or-infinite verdict is used: whether WBCP can certify at all (the  | query: The actor's command pi(s) (smoothed) at training states
+- O6 In-support extraction: band-gated or band-weighted imitation of recorded rows | where: actor data weighting / policy extraction | calibrated: TD residual (as today), or, changing the score, the error of an advantage estimate |A_hat(s,a) - (G - V(s))| on held-out | query: Recorded (s,a), compared with the actor's command at the same state: Q(s,a_rec) against Q(s,pi(s))
+- O7 Return-level band on the critic: n-step or Monte Carlo residuals at recorded rows | where: critic regularizer / critic evaluation | calibrated: The n-step or Monte Carlo return residual G_t^(n) - Q(s_t,a_t), one-sided, on held-out logged trajectories. This is erro | query: Recorded (s_t,a_t) along held-out episodes, thinned for dependence (DEPENDENCE.md:174-200)
+- O8 Certificate on each deviation from the clone, from held-out outcomes | where: policy extraction / action selection (accept or reject deviations); can switch a training penalty or a deployment rule | calibrated: Deviation outcome: the held-out gain from taking the deviation instead of the clone or behavior action, measured on an o | query: Held-out tries of the deviation: episodes or segments where it was taken, or groups of deviations declared without looking at outcomes
+- O9 Conformal off-policy evaluation of the learned policy | where: evaluation | calibrated: The learned policy's value or return: weighted return intervals or a mean-return lower bound [inferred] | query: Episodes or initial states, under policy weights (d^pi/d^beta, or trajectory ratios for a stochastic target) or pseudo-policy subsamples
+- O10 Selection by certified value: choose alpha, checkpoint or candidate policy | where: selection | calibrated: Candidate policies' values (via O9), or held-out outcomes per candidate. The residual-statistic variant calibrates the T | query: Candidate policies or hyperparameters (for example a TD3+BC alpha grid, checkpoints or seeds), each evaluated on held-out episodes
+- O11 Deployment gate, shield or runtime monitor | where: deployment | calibrated: A threshold tau on U, the split-conformal 95% level at held-out recorded rows, which promises only a false-alarm rate of | query: The command about to run, pi(s_t), at the states the deployed policy visits
+- O12 Band on a learned model's one-step error (MOPO/MOReL-style) | where: critic target via model rollouts (requires a model-based host) | calibrated: The learned dynamics and reward model's one-step prediction error at held-out logged transitions. These are real labels  | query: Model-rollout (s,a) pairs, including the actor's commands at model-generated states
+
+== EVALS
+- O0 O0 (reference, rejected by the owner): dose on the host's own conservatism multiplier at recorded rows | score 1.5 | cov holds with conditions | ret shown not to improve | theory stretched
+   cov: Holds where it was calibrated; never checked where the dose is read; and the dose does not use it.
+
+Where it was calibrated. The band is fitted on fresh recorded rows drawn like the held-out bank. It covers min(Q1,Q2) of the critic frozen at the refresh, with one draw of target-action noise.
+- Pre-registered, no shift: 91.2-92.5% (LIVE 8595-8600) [shown].
+- Under the known shift: 83.3-86.7% unweig
+   ret: Against plain TD3+BC it loses on weak data and ties on good data. Even with exact harm information, placement in this channel is worth about 1 point against a pre-registered bar of 3. The useful direction on weak data is less pull, which the dose cannot give, since it never goes below 1. The lever acts only on recorded rows, so it cannot reach the critic's over-valuation at the actor's own off-dat || ThrusterChain weighting-test data, co-trained, seeds 0-4 (exploratory). Capped pull minus plain TD3+BC, random to expert: -8.79 / -5.80 / -5.28 / +0.55 / -0.04 points. Weighted per step: -8.88 / -7.87 / -6.36 / +0.47 / -0.04 (origin/main:outputs/shift_iw/explore/RESULTS.md:103-107) [shown].
+- The le
+   theory: For O0:
+- It matches BCA's stated purpose word for word: set the host's conservatism 'in a calibrated, per-sample way' (literature review LIT 1304, 1308) [shown].
+- It reads the band only where the score exists and the band was calibrated, at recorded rows [shown].
+
+Against it:
+- The calibrated part
+   credit: A gain here would almost certainly belong to a plain rule, the host's own coefficient retuned (TD3+BC alpha 2.5 -> about 1.88), not to the band, the calibration or the Bayesian step.
+
+How to tell:
+- **Band placement.** The dosed run must beat a co-trained constant dose set to BCA's own mean dose, an
+   still: BCA in name and mechanism, but functionally not BCA. The full pipeline runs (residual score, eta fit, WBCP/BQ-CP threshold, frozen width, dose), but what reaches the host is a near-constant 1.33x on i
+   test: Most of this is already settled: pre-registered H3 (actor-only) and the LQ harness (constant and shuffled controls, 216 cells) both show placement adds no more than about 1 point. The one missing piece is the full-training constant-pull check that the page proposed and that waits for the owner's go (LIVE ~10083).
+
+Cheapest decisive test: co-trained TD3+BC on ThrusterChain's weighting-test data, with the same 5 data qualities, seeds 0-4 and 100,000 updates as RESULTS.md section 3. Reuse the exist
+- O1 Lower-confidence critic target (pessimistic backup) | score 2.5 | cov breaks | ret unlikely | theory stretched
+   cov: Terms: the band is y in [q-U, q+U]. y is the host's own one-step target, including one draw of TD3's target-smoothing noise. q is the minimum of the two ONLINE critic heads at the RECORDED command (origin/main:ALGORITHMS.md:276-289; algorithms/td3_bc_bca.py:146-156, 244-270) [shown]. The guarantee holds for fresh recorded rows drawn like the bank. It is marginal, not per point (theory_notes.md 11-
+   ret: This placement has never been run. Four lines of evidence say BCA's band would not reach the harm through it:
+
+(a) The band barely varies with the command. On ThrusterChain every row has d = 0: episodes only truncate (thruster_chain.py:35). So a constant U lowers every Q by the same k*u0*gamma/(1-gamma) and leaves the actor's gradient unchanged. This is the same identity the signal study records f || Never run on any host. BCA leaves the critics' Bellman targets unchanged (origin/main:ALGORITHMS.md:43-48). IQL is explicitly 'not a lower-confidence Bellman target' (ALGORITHMS.md:357-359) [shown].
+
+The signal study's C2 (penalized-backup critic) is designed and coded (STEP4_DESIGN.md:137-143; run_
+   theory: For O1: the score is a Bellman residual. The identity Q - Q^pi = (I - gamma P^pi)^-1 (Q - B^pi Q) makes a reward-penalty backup a valid lower bound if U bounds the expected one-step error at every (s,a) the policy visits. So the units and the place line up with pessimism theory (PEVI, VI-LCB, MOPO's
+   credit: If O1 raised return, the expected owners are, in order: (1) the refusal/fallback rule used where the band is +inf, i.e. no bootstrap credit for unsupported next commands, which is an in-sample (BCQ/IQL-style) support rule; result F's F0 control already showed that this kind of gain belongs to the ru
+   still: BCA as a component at most. It keeps BCA's residual score and (weighted) band machinery, but uses the band as a per-step penalty in a backup, where its coverage has no meaning. Each variant reduces to
+   test: Step 0, zero compute. If the signal study's step-4 main-run outputs exist on the desktop (runs/wbcp_signal/step4/main, gitignored), score C2 against EXACT, the uniform-BC frontier P0 and the actor-side P3:SIG/P3:NUIS at matched displacement, in block C's poor-data cells. This only shows whether a backed-up penalty moves value beyond uniform BC. C2 has no shuffled twin, so it cannot credit the band.
+
+Step 1, the decisive test on ThrusterChain. Main gapped log, stalling world and no-stall world, c
+- O2 Width-weighted push-down of Q at the policy's and sampled commands (critic regularizer) | score 3.5 | cov holds with conditions | ret unlikely | theory stretched
+   cov: Where the band is queried and whether the guarantee holds at each point.
+
+(a) Recorded rows, the CQL push-up term. The band is calibrated here (91.2-92.5%, MAIN:EXPERIMENTS.md:388) [S], but O2 leaves this term unweighted.
+
+(b) Samples from the policy at s. With no command weights the band breaks: past 80% throttle it covers 48.4% (medium-expert) and 24.7% (expert) (LIVE-HTML 9006-9009) [S]. With t
+   ret: Never run. Judged against matched plain controls, any gain would most likely come from the push-down and refusal rather than the width.
+- The weighted width varies across commands mainly through R(w), a monotone function of the supplied density ratio. The error-size network eta is flat, and the unweighted width differs by at most 0.008 across commands.
+- At most uniform commands the weight is near || O2 never run: ALGORITHMS.md:335; MAIN:algorithms/cql_bca.py:285-288 (dose read at the recorded row); record_by_placement slot 3 [S].
+
+Closest placement tried, current CQL+BCA on D4RL (pre-WBCP, one seed per pair):
+- Hopper -6.19 final, +0.07 on the mean curve;
+- Walker -16.25 final, -0.72 on the mea
+   theory: For it:
+- It acts in the right family of place. Pessimism belongs on the value at the policy's own commands (PEVI, CQL, PBRL; literature_notes sections 1 and 4) [SS].
+- It reads a refusal as the most caution. That matches SPIBB's meaning of 'cannot certify' and fixes today's rule, where a refusal gi
+   credit: If O2 gained return, the gain would most likely belong to a plain support or density-ratio rule, not to BCA's band. The reason: across commands the weighted width is R(w(s,a)) times eta. R(w) depends only on the query's supplied likelihood ratio (wbcp.py:43-54), and eta is flat (CV 0.065-0.111, map.
+   still: BCA as a component. It keeps the residual score, WBCP and command weights, but in practice it reduces to CQL weighted by the density ratio and by refusal: the band's calibrated variation is a transfor
+   test: The toy harness is unsuitable: it cannot show how errors spread through a critic's own targets (LIVE-TXT 11885).
+
+Step 0: no training, minutes of CPU, settles the credit question.
+- Inputs: result E's saved critics and actors (weighting-test medium-expert and expert, seeds 0-4).
+- Compute: the weighted width U_w at the actor's command (with its +-0.2 spread) and at 10 uniform commands per training state.
+- Report:
+  - the share of commands refused;
+  - among certified commands, how much of the v
+- O3 Noise-aware critic regression: band-weighted TD loss at recorded rows | score 2 | cov holds with conditions | ret unlikely | theory stretched
+   cov: The band would be read at the recorded TRAINING rows (s_i, a_i) of each minibatch, the same points the dose reads (MAIN:algorithms/td3_bc_bca.py:283-285). It would not be read at the bank. (1) The band's own calibration is unaffected. Bank rows leave training ('Every row of a reserved episode must still leave training', MAIN:calibration/bank.py:7), so the bank stays fresh to the critic. Its covera
+   ret: The placement is on the wrong side and the wrong quantity. (1) Lever size. eta_f has CV 0.065-0.111 and correlates with |y-q| at only 0.04-0.43 (map.md:80-82) [S]. So 1/U^2 has a CV of about 0.13-0.22 [I, first order], close to even weights. Within a state, U at full throttle and at the 80% hold differ by -0.4% to +1.1% [S]. (2) What eta tracks: TD3's target-smoothing noise (noise map, Spearman 0. || Never run. Critic losses are untouched in every host (MAIN:ALGORITHMS.md:46-47; td3_bc.py:117-119, unweighted MSE). No ThrusterChain, LQ or D4RL result exists [S]. Closest record: survivor rows added to the critic data still left 71.5-85.8/99.5 harm (HV2:outputs/shift/beyond-the-data/restructure/rou
+   theory: For: the band is a prediction width, so it includes target noise, which is the quantity inverse-variance weighting needs [SS]. It is the one placement where the band's measured habit of tracking target noise is the wanted property. Huber at a conformal threshold is conformal outlier flagging, with a
+   credit: If the inverse-variance version gained anything, the credit would almost certainly go to a plain noise rule, not to BCA. R and u_f cancel, so neither calibration nor the Bayesian step could earn it, and eta is an uncalibrated network. To credit eta's placement, O3 must beat three controls by a margi
+   still: Mostly something else: heteroscedastic or robust TD regression (the IV-RL, SUNRISE, UWAC, Huber family) that borrows BCA's uncalibrated eta as its variance proxy. BCA's guarantee goes unused in the we
+   test: Stage 0, no training, minutes, run as a kill gate. On the saved seed 0-4 co-trained TD3+BC+BCA states (weighting-test data, RESULTS.md section 3; seed-0 states are known to exist from p09), compute four things at each refresh on training rows: (a) the CV of the normalized 1/U^2 weights; (b) their Spearman correlation with the direct noise map (16 target-noise draws) and with the exact expected one-step error |B^pi Q - Q| from the truth code; (c) the share of training rows with |y-q| > U, against
+- O4 Value lower edge Q1 - k*U at the actor's own command ("most BCA") | score 4.5 | cov holds with conditions | ret shown to improve | theory reasonable
+   cov: Terms. Band: y lies in [q-U, q+U], with U = R*u_f*eta_f(s,a). Covered-or-refused: the share of query points where the band either covers or returns +inf (refuses). Exact ratio: the true density ratio of query law to bank law over (state, command).
+
+The guarantee holds only for the pure variant (exact ratio over state x command, declared stochastic query law, refusal honoured), only at a frozen cri
+   ret: The placement lifts return over no caution and over the reference BC dose in the stalling world. It costs 14.8-16.2 points where the missing commands help. It never beat a matched plain support rule, and no measured gain belongs to BCA's band. All ThrusterChain numbers are exploratory, on seeds 0-4 already seen. Stage 2's confirmatory seeds 5-9 never ran (LIVE 7958-7962). || Room in this slot. The exact-error oracle won back 93.9 of 98.9 points. Using the size of the error instead of its sign scored 77.5 against 79.7, so a size-type band would be enough if it were tall where the error is (LIVE 7601-7622, 7610). On the weighting data the perfect edge gained +5.8/+8.5 (LI
+   theory: For:
+- It is the only training-side read point where BCA's own per-query weighted guarantee can hold (theory_notes use 2) [strongly supported].
+- It reads +inf as no value credit, which is consistent with the theory (use 3) [shown].
+- It is the right family of place: pessimism theory puts the penalt
+   credit: Any gain would go to a plain support rule, not to BCA, unless a test separates the two. [inferred]
+
+Why:
+- U_w(s,a) = R(w(s,a))*u_f*eta_f(s,a). Across commands at one state its shape comes from R(w), a monotone function of the supplied ratio (exact behavior density, or a classifier), and from eta, w
+   still: It depends on the variant. [inferred, from shown code]
+- Pure variant (score, WBCP, eta, per-query weighted band, refusal): still BCA, with a new consumer. That consumer breaks BCA's design rule that 
+   test: Step 0: no training, minutes of CPU (result E ran 02:46-02:47Z).
+- Inputs: result E's frozen critics and no-caution actors (weighting test, medium-expert and expert, seeds 0-4).
+- Recalibrate the band on Q1: score |y - Q1| on the bank and refit eta on Q1 residuals (20,000 steps).
+- Use exact state x command weights and the declared law pi + N(0, 0.2) clipped at 0.5.
+- Report:
+  - covered-or-refused, and covered-among-certified, overall and past 80%;
+  - the refused share;
+  - among certified com
+- O5 Refusal as fallback: a support certificate at the actor's command (SPIBB-style) | score 4 | cov holds with conditions | ret plausible | theory reasonable
+   cov: Where the band is queried: at kept training states, at the actor's command pi(s) widened by a declared spread of 0.2 (clipped at +-0.5). The ratio is w(c)*pi_h(a|s)*Z/beta_eps(a|s), using the recording controller's exact density. It is recomputed from the current actor at every refresh (origin/main:outputs/shift_iw/explore/channel/RESULTS_command_weighted_band.md:15-25; command_le_train_f1.py:104-
+   ret: The support-rule core raised return in one exploratory world, but only with an exact, privileged behavior likelihood. O5's literal form, no credit at every WBCP refusal, lost on medium-expert. Moving WBCP's own atom-test refusals off 'no credit' was worth +11.8 points. Estimated support kept the gain only on expert. The cost in a world where unseen commands help was never measured, and every analo || All runs below are actor-only training against a frozen critic on the weighting-test ThrusterChain data. They are exploratory, on data seeds 0-4 already seen, in one environment.
+
+(1) O5 literal, the first return test. The refused set was in-ball, +inf ratio, past the grid, or non-finite R (outputs/
+   theory: For:
+- +inf is the only valid output where the data have no support (theory notes 61-66). 'Uncertified, so use the baseline' is SPIBB's semantics (Laroche et al. 2019; repo literature.md:256-271).
+- O5 gives refusal one consistent meaning. Today a refusal maps to dose 1, the least caution (calibrati
+   credit: If O5 worked, the credit would go to a plain rule, not to BCA. This is shown by measurement and holds by construction.\n- By measurement: F0, the same no-credit rule with the band removed, matched result F to within +0.14/+0.08 points against a +1.0 bar (live 9181-9188).\n- By construction: WBCP's f
+   still: No. It is something else that wears WBCP's refusal: a continuous-action, SPIBB-style likelihood-ratio support rule. At most it is 'BCA as a degenerate component', keeping only the importance-weighted 
+   test: Step 0: no training, minutes of CPU, settles the credit question.\n- Inputs: result E/F's saved refresh tables and actors (medium-expert and expert, seeds 0-4).\n- Per query, compute: (a) WBCP's verdict; (a') the verdict with the bank's scores permuted or set constant; (b) the closed-form atom cut t > alpha*sum(w)/((1-alpha) ln 20), or its exact Gamma form; (c) whether the supplied density is zero.\n- Prediction: a = a' on 100% of queries, and a = b on at least 99%.\n- If confirmed, no return ga
+- O6 In-support extraction: band-gated or band-weighted imitation of recorded rows | score 3 | cov holds with conditions | ret shown not to improve | theory stretched
+   cov: Of all the training uses, this one strains the guarantee least, but the guarantee does not apply to the decision being made. Query points, one by one:
+
+(a) The width U_i at (s_i, a_i). This is the recorded action, so the action law is the one the band was calibrated on. But arm A reads it at the kept TRAINING rows (arm_a.py:226, readout on S.prep.train). Those are not the held-out bank: train = ke
+   ret: The slot itself works well. Filtering recorded rows beat TD3+BC by +10 to +19 points on weak data with no harm anywhere, far ahead of the reference BC multiplier (-5 to -9). But BCA's band added nothing over matched plain controls, and the coverage-correct weighted version did worse. Every plain rule here is a plain margin or count rule, not BCA. A fixed plain margin of 1 or 2 residual spreads did || Arm A is now in the repository: commit 8031ef7 (19 Oct 2026 12:50 UTC) on origin/claude/main-bca-connection-x4o46s, folder outputs/shift_iw/explore/arms_abc_f0/ (ARMS). This corrects record_by_placement.md, which says 'not in the repository'.
+
+- A1 minus TD3+BC trained the same way, strong test: ran
+   theory: For: the band is read at the action law it was calibrated on. IQL's post-cap shrinkage is exactly BCA's stated aim of 'tempering inflated advantages'. In-support extraction never queries unseen actions (LIT 244), so it avoids the zero-support refusal problem.
+
+Against:
+- The decision 'a_i is clearly
+   credit: If this placement gains, the credit goes to the filter (margin 0 is CRR's binary filter on Q(s,pi(s))), to a plain margin level, or to the support guard. It does not go to BCA's band, its calibration or its Bayesian step. The same run already contains the controls that separate them:\n- A1 minus shu
+   still: Arm A's band-gated filter uses BCA's band only as a per-row margin, and uses none of its guarantee. With a flat eta it reduces to a plain CRR-style filter with a margin of about 2 residual spreads, so
+   test: Step 0: no training, under 1 CPU-hour. Re-score arm A's saved final actors (actors_final.msgpack; their SHA-256 values are in the ARMS records) on the strong test for random, medium-expert and expert. Arms: margin0, plain_1s, plain_2s, plain_4s, matched_share, shuffled_band. Plain margins were scored only on medium-replay and medium. If the sandbox binaries are gone, retraining the 12-arm vmapped program costs about 2 hours for seed 0 plus 23 CPU-hours for seeds 1-4 (routes2/PROPOSAL.md:20). Out
+- O7 Return-level band on the critic: n-step or Monte Carlo residuals at recorded rows | score 3 | cov holds with conditions | ret unlikely | theory reasonable
+   cov: WHERE THE BAND IS QUERIED: only at recorded (s_t, a_t) on held-out logged episodes. The score is G_t^(n) - Q(s_t, a_t), one-sided, where G^(n) is the logged discounted rewards for n steps plus a tail gamma^n Q(s_{t+n}, pi(s_{t+n})) (n-step), or the rewards to the episode's end (Monte Carlo). A return label exists only where an episode was logged, so the band can never be read at the actor's own co
+   ret: 1. The mechanism claim is only half shown. SIGNAL_STUDY.md:74-77 shows that one-step residuals miss bias that already satisfies the Bellman equation. Nothing shows that return residuals catch it.
+
+2. A sample identity (my derivation, checked by hand for n = 1 and 2) says why they mostly cannot. With delta_k the host's one-step residual at logged rows:
+G^(n)_t - Q(s_t,a_t) = sum_{k<n} gamma^k delta || Never measured on any host, harness or toy. Sources: MAIN:ALGORITHMS.md:706-708; MAIN:EXPERIMENTS.md:267-280 (D4RL rollout truth built, never run on real data); RN slot 10 ('Coverage of returns ... never measured').
+
+The closest designs and their outcomes:
+- The only multi-step design on ThrusterCha
+   theory: FOR:
+- It is a legitimate conformal score on held-out rows. It targets the gap BCA's own theory names: covering one step is not covering the value error (TN use 4; ALGORITHMS.md:706-708).
+- With real terminal returns, the label is a real outcome rather than a bootstrapped target. That matches the li
+   credit: If it raised return, the gain would most likely belong to using logged returns as labels, plus whatever rule acts on the test. With equal weights the threshold is Wilks' limit, the exact binomial test (TN (b); PAGE 12152: 28,000 of 28,000 exact agreement), so a plain split-conformal cutoff, a plain 
+   still: BCA as a component. It keeps the WBCP sampler, optionally the weights, and possibly a refit eta, on a new score: the multi-step or return residual instead of the one-step residual. It drops the dose a
+   test: Stage 0, first and cheapest: the LQ harness, with frozen critics, closed-form Q^pi and no training. MAIN:experiments/signal/lq_harness.py already has the six critic cases, both behaviours, the three pi offsets and a Monte Carlo check of Q^pi.
+- Scores: G^(n) - Q1 for n in {1, 5, 20, to-end with tail}, one row per held-out episode, 10+ replicates.
+- Arms, all at an equal false-alarm rate: BCA's threshold on the eta-normalized score; the same on raw scores; split conformal; the plain mean; Gaffke;
+- O8 Certificate on each deviation from the clone, from held-out outcomes | score 6 | cov holds with conditions | ret plausible | theory natural
+   cov: Of all the options, this is the one placement whose promise is about the decision itself, and it reads the certificate only where it was calibrated. It holds only under the conditions below. Notes: placement/O8_judgment.md section 2. LIVE n = live_c264.html, TXT n = live_c264.txt.
+
+Where it is queried: held-out tries of the deviation, i.e. logged steps from episodes no critic trained on, scored on
+   ret: Two forms behave differently, and neither result is confirmatory.
+- World-level switch (one on/off decision per world, read from held-out outcomes): improved return clearly on ThrusterChain, but only in exploratory runs on seeds already seen.
+- Per-deviation form: the only ThrusterChain version (arm B) stopped on its own kill rule because its outcome was blind to the harm. The toys' recommended ta || Toys (exploratory, kill rules fingerprinted first, not ThrusterChain):
+- Every outcome-reading gate closed 38-87% of the room; shuffled rows erased the gain (LIVE 10517, 10556-10566).
+- The plain average was best for return: gain 0.87, regret 0.016. The tail certificate gained 0.38, but its worst wo
+   theory: This option fits the calibration theory naturally, but it is not the use BCA was built for.
+
+Why it fits:
+- A bank-conditional tolerance bound, or a mean bound, on held-out outcomes of the very decision being certified is what a conformal promise supports. It is the same pattern as high-confidence p
+   credit: If it worked, the credit would mostly go to reading held-out outcomes of the deviation, and to the chosen margin or level. It would not go to BCA's band, which this option does not use at all (no eta, U or dose).
+- Equal weights: no credit to BCA is possible. Computed exactly, the tail gate equals t
+   still: This is BCA as a component, not BCA. It keeps only WBCP's Dirichlet sampler, with or without importance weights, applied to a new score: the outcome of a deviation against the fallback. BCA's residual
+   test: The cheapest test that settles both questions is to rerun arm B's ceiling walk with an outcome that contains the harm. Arm B's code already exists (ARMS code/arm_b.py), and each map takes 10-17 s to build (ARMS state/job_times.tsv).
+
+Step 0 (toy harness, CPU-minutes): does BCA's only non-textbook part survive estimated weights?
+- Run the designed but unrun estimated-weights toy (LIVE 11066), with kill rules fingerprinted first. Use 800 seeds: tune on 0-399, score on 400-799.
+- Arms: weighted BCA
+- O9 Conformal off-policy evaluation of the learned policy | score 3 | cov holds with conditions | ret unlikely | theory reasonable
+   cov: WHERE IT IS QUERIED: the points are episodes, or initial states, of a held-out log. They are weighted by trajectory ratios, or by state ratios combined with pseudo-policy subsampling, or replaced by pseudo-returns that have a learned tail. BCA's machinery would be calibration/wbcp.py run on returns, not on one-step residuals.
+
+THE CASE FOR [SS]: this is a cleaner setting than any training-side use
+   ret: Evaluation trains nothing, so it can raise return only through selection (alpha, checkpoint or candidate; that is O10) or a deployment gate.
+
+The room is real [S]:
+- Half pull gained +15.4, +8.7 and +7.9 on weak data and lost 0.8 and 0.5 on top data.
+- Plain TD3+BC peaks after 5,000-15,000 updates and loses 4-17 points by 100,000.
+- Results are read at the last checkpoint because test return is un || Never measured on any host or harness: record slot 10 (record_by_placement.md:177-181; ALGORITHMS.md:703-708; EXPERIMENTS.md:267-287, where D4RL rollout truth was built but never run).
+
+Closest analogues:
+- The toys' mean gate on held-out tries earned 0.0845 against 0.0400 at equal harm (PAGE 10615-
+   theory: FOR: this is the use WBCP's weighting was designed for.
+- It gives outcome or return intervals under a likelihood ratio, with a test atom, and Kish n_eff and sigma_post as how-much-evidence diagnostics (wbcp.py:1-14, 116; literature_notes section 10).
+- Several of BCA's strained assumptions disappea
+   credit: If it worked, the gain would most plausibly belong to plain parts:\n- the selection step itself;\n- using real returns as labels;\n- the known importance ratio, which a plain WIS/PDIS estimator (weighted or per-decision importance sampling) uses just the same;\n- or, in the pseudo-return variants, t
+   still: Not BCA. At most BCA as a component: WBCP (Lou and Luo's weighted Bayesian conformal method) is applied to a new score, episode returns. BCA's residual score, error-size network eta, band U = R*u_f*et
+   test: Step 0, feasibility. No training; CPU minutes; decisive for the trajectory-weighted variants.\n- Data: the weighting-test logs, 5 qualities x data seeds 0-4. Use the 300 held-out training-law episodes plus the mild and strong test logs.\n- Actors: the saved TD3+BC actors, alpha 2.5 and the half-pull arm, at every saved checkpoint.\n- Compute per-episode weights W = w(c) x prod_t N(a_t; pi(s_t), sigma^2 I4) / beta(a_t|s_t), using world.py's closed-form behavior density (uniform share eps, Gaussia
+- O10 Selection by certified value: choose alpha, checkpoint or candidate policy | score 4 | cov holds with conditions | ret plausible | theory reasonable
+   cov: Where the band is queried. Here the certificate is queried at each candidate's return on held-out episodes. A candidate is one trained policy: an alpha setting, a checkpoint or a seed. The promise only covers the quantity actually calibrated, at draws like the calibration set (theory_notes use 5; literature_notes section 10).
+
+(1) Offline, logged episodes hold only the behaviour policy's returns (
+   ret: There is real room, all of it in the host's own settings. But this placement was never run, and plain fixed rules take most of the room. Offline, a valid certificate refuses and so reproduces the default. With an online budget, a plain held-out mean should capture the room, and the bound would mainly buy 'never below default'. Improvement from the placement is plausible. Improvement credited to BC || Shown or computed, exploratory seeds 0-4 already seen.
+
+Never run:
+- 'Outcome-priced selection among range rules' is listed as not tested (V2:.../routes/round1/ROUND1.md:155).
+- Every weighting-test result is read at the last checkpoint because 'the test return that could pick an earlier one is not 
+   theory: For:
+- A bank-conditional certificate on a candidate's held-out outcomes is exactly what the calibration theory supports. BCA's credible threshold is the Learn-then-Test-style analogue, and its posterior mean is conformal risk control (CSEL:8, 52).
+- A refusal maps cleanly to the default.
+- It serve
+   credit: The return room belongs to TD3+BC's pull setting and to early stopping (PAGE 10058-10059; O10_checkpoint_room.out), not to BCA.
+
+With equal weights, BCA's tail certificate is identical to the exact binomial test (Clopper-Pearson / Wilks): 28,000 of 28,000 cases agreed (live_c264.txt 12152). The mean
+   still: BCA as a component: the WBCP sampler, optionally with weights, used as a selection certificate on candidates' returns, with fallback to the default. It drops BCA's residual score, eta, the band and th
+   test: Step 0, already done at zero cost from stored curves (placement/O10_checkpoint_room.out). Compare the oracle selection room with plain fixed-rule controls.
+- Result: oracle minus the best fixed rule is 0.2-1.9 points for checkpoints and 0-0.8 for alpha, on seen seeds.
+- Had it exceeded about 3 points on some quality, selection would have room beyond fixed rules.
+
+Step 1, evaluation only, on the weighting-test logs.
+- Cells: 5 qualities x seeds 0-4 (exploratory), then fresh data seeds 10-14, pre-
+- O11 Deployment gate, shield or runtime monitor | score 3 | cov breaks | ret shown not to improve | theory stretched
+   cov: Terms: a gate looks at each step of a deployed episode and swaps the actor's command pi(s_t) for a fallback when a trigger fires. Clip means cutting each thruster back to the recorded range. tau is the gate's threshold.
+
+Where the band is queried [S]. At (s_t, pi(s_t)), for t = 0..99, at the states the gated policy visits, on 200 starts per situation (MAIN:outputs/shift/beyond-the-data/stage2/code
+   ret: The deployment channel itself can reach the harm. But every band-based trigger was matched or beaten by plain rules, and every gain went to the clip, the recorded range, or outcomes read against a fixed 0.10 margin.
+
+The structural reason [S/I]:
+- In ThrusterChain's stalling world, clipping at every state already equals the perfect detector (+106.0 vs +106.1; LIVE 7872, 7899-7902). Within that wor || Most numbers are exploratory: seeds 0-4, already seen. M5 is a pre-registered Stage 2 v6 mark read on those same seeds; its confirmatory seeds 5-9 never ran (LIVE 7315, 8184).
+
+Per-step band triggers:
+- M5, BCA's band switch to a clip: +1.5 over random switching at its own rate, against a bar of 10;
+   theory: For:
+- Switching at deployment, with a safe fallback, is conformal's home ground: outlier p-values with false-alarm control (Bates 2023), risk-controlled fallback switching, and conformal decision theory (literature_notes.md:372-397) [S].
+- It puts no gradient through the band and creates no feedbac
+   credit: If a band gate earned return, the credit would almost surely go to the fallback and the recorded range, or to a novelty classifier, not to BCA's band, calibration or Bayesian step.
+
+How to tell, control by control:
+(a) Random switching at the trigger's own rate tests whether where it fires matters. 
+   still: Mostly something else carrying BCA's name.
+- The U > tau gate keeps BCA's band only as an outlier score, under a plain split-conformal threshold. With uniform weights it is 'eta above its own 95% leve
+   test: This is a read-only test on saved files, with no training: four worlds from the run-time monitor's build (S stalling, N no-stall, M3 harm only beyond the log, M4 harm only inside the log; ROUND1 runtime_monitor/KILL_RULE.md:6-12). It uses Stage 2's no-caution actors with the clip fallback, 200 strong-current and 200 recorded starts, exact rollouts. Run on seeds 0-4 as exploratory, then on fresh seeds 10-14 (which needs the 10 critic trainings, about 70 CPU-minutes) only if it passes.
+
+Arms:
+- A1
+- O12 Band on a learned model's one-step error (MOPO/MOReL-style) | score 3 | cov holds with conditions | ret unlikely | theory reasonable
+   cov: This option gives the cleanest calibration of any option, but the guarantee does not reach the harm. Notes: /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/placement/O12_model_error_judgment.md.
+
+(1) Calibration point [S/I]. The score is the model's error at held-out logged transitions: e = ||(s', r) - f_hat(s, a)||.
+- The label is raw data, with no bootstrapping.
+- Th
+   ret: Untested. There is a structural reason to expect no gain on ThrusterChain over plain rules.
+- The harm sits at commands the gapped log and bank do not contain. Below 80%, 99.86-99.97% of kept rows follow the same rule in both worlds (SHIFT_ENV.md:219-221). So the fitted model, the bank and the band are essentially identical in both worlds. A data-only band cannot do better than the support rule's  || This placement:
+- Never run. The only model-based code is vendored Unifloral (MAIN:baselines/unifloral/algorithms/dynamics.py, mopo.py, morel.py, combo.py). No BCA output or page row uses it (git grep on 5 branches; page grep: no hit) [S].
+
+Closest placements tried (exploratory, seeds 0-4, already s
+   theory: For [SS/I]:
+- This is the score type conformal certifies best. The labels are real; the model is frozen; there is no bootstrapping.
+- The conditional law Y|X does not change with the policy, so per-query weights face a pure covariate shift. That is Tibshirani et al.'s exact setting, which the TD tar
+   credit: Any gain would most likely belong to something other than BCA:
+- the model-based host itself (ThrusterChain's dynamics are linear and easy to model);
+- the HALT-or-refusal support rule, which says 'past the data';
+- the ensemble's uncalibrated disagreement, which supplies the place (SHIFTLIT 240-242
+   still: BCA as a component, not BCA. It keeps the WBCP sampler, the band form U = R*u*eta (with the model's own std, or a fitted eta, as the scale), and the IW per-query weights. It drops the Bellman-residual
+   test: Step 0: no policy training, under 1 CPU-h, ThrusterChain gapped data, seeds 0-4 x {stall, no-stall}.
+
+Fit two models on the training split only:
+- a ridge model on (x, a);
+- a 5-member 4x200 Gaussian ensemble, as in Unifloral dynamics.py.
+
+Calibrate WBCP (alpha 0.1, beta 0.95) in two ways:
+- on the episode-thinned gapped bank (827-851 rows);
+- separately, on the 15-30 held-out full-throttle rows in the calibration episodes.
+
+Measure truth with one exact simulator step (thruster_chain.dynamics):
+
+
+== RECOMMENDATION
+ The best place for BCA is not inside the host's conservatism term. It is at the decision to deviate from the clone: certify each deviation (or a declared group of deviations, or a whole-world switch) from held-out outcomes that contain the harm, let it through only when the WBCP bound clears a declared margin, and otherwise fall back to the clone (O8, score 6). This is the only placement whose promise is about the decision itself and that reads the certificate only where it was calibrated. Every ThrusterChain gain that avoided the no-stall cost came from reading held-out outcomes: step 1 world switch net 106.1, step 2 certificate-switched ramp 102.9 (ROUND1.md:23-39; step2_results/results.md:9-38; exploratory) [shown]. The training-side partner should be actor-side in value form, not cloning form: a lower edge Q1 - k*U_w at the actor's own smoothed command, recalibrated on Q1, with exact command weights, where a refusal means no value credit (O4, 4.5), switched on only where O8 certifies harm. Certified choice of alpha or checkpoint (O10, 4.0) is a cheap third, because that is where the return room actually is: a fixed stop at 5k updates gains +14.4/+10.4/+4.9 (placement/O10_checkpoint_room.out) [shown]. The honest caveat is that the more valid the placement, the less of BCA it uses. O8 and O10 keep only the WBCP sampler and weights, and with equal weights that is the exact binomial test (LIVE 12152). O4, the option that keeps the most BCA, has so far lost its credit to support rules, the classifier and the refusal rule: eta gave 0.2% of the extra width, and F - F0 = +0.14/+0.08 (LIVE 8020-8025, 9181-9188) [shown]. So BCA's own claim can only be earned in two places, its weights under a known shift (O8/O10) and the per-command shape of its band (O4), each against matched plain controls. Drop O0, O1, O3 and band-threshold deployment gates.
+
+== TABLE
+  O8 | Certificate on each deviation from the clone, from held-out outcomes | Holds, with conditions. The promise is about the decision, read only on held-out tries that no critic trained on. With equal weights it is Wilks' limit, i.e. the exact binomial test (28,000/28,000 agreement, LIVE 12152) [S]. In the toys, weights kept the promise under shift: unsafe let-through 89.9% -> 4.3% (LIVE 10809-10813) [S]. Conditions: 29 tries per decision (about 39 under moderate shift, about 83 under strong); independent tries; an outcome that contains the harm. Arm B's one-step critic-scored gain did not contain it: plain mean, t-test and shuffled outcomes also certified past 0.80 (O8_screen_seed0.json) [S]. Gaffke mean-gate proof unreviewed. | Plausible. Toys: gates closed 38-87% of the room; mean gate 0.0845 vs 0.040/0.019 at equal safety (LIVE 10517, 10727-10729) [S]. ThrusterChain (exploratory, seeds 0-4): world switch net 106.1; certificate-switched ramp 102.9 vs 77.7 always on [S]. Plain tests with the same 0.10 margin also netted 106.1, and split conformal made the same switch in 10/10 runs. Per-deviation arm B was stopped by kill rule K1 before scoring (ARMS RESULTS.md:44-47) [S]. | Natural: a Seldonian/HCPI-shaped bank-conditional certificate on held-out outcomes of the decision itself, with refusal read as 'fall back to the clone'. Stretched only for the step-1 two-posterior gap and arm B's one-step median certificate. | BCA as a component: only the WBCP sampler and its weights. Eta, the band U and the dose are dropped. It is BCA-specific only with importance weights; with equal weights it is a textbook test. | 6
+  O4 | Value lower edge Q1 - k*U at the actor's own command | Holds, with conditions, and only in the pure form: exact state x command weights for a declared smoothing law, refusal honoured, frozen critic and actor, band recalibrated on Q1. That recalibration was never run: every run subtracted a min(Q1,Q2) band from Q1 (td3_bc_bca.py:252-256; lower_edge.py:121-122 vs 303) [S]. Covered-or-refused is 94.3-100%, but mostly by refusing: 49-77% of draws are refused, and covered-among-certified past 80% is only 32-51% (expert) (results/command_band) [S]. Feedback shift and the slope dU/da lie outside the theorem [I]. | Shown to improve over no caution and over O0 in the stalling world: +39.2 actor-only; co-trained 28.0 vs -16.8 [S]. But it costs 14.8 (actor-only) / 16.2 (co-trained) points in the no-stall world and lost to the matched range hinge, 24.9 vs 70.5 (results-2026-10-14 README:20-80) [S]. Credit went to the classifier term (86% of the extra width) and not to eta (0.2%). The exact command-weighted version's gain is F0's [S]. All exploratory. | Reasonable. It is the only training-side read point where BCA's own per-query weighted guarantee can hold, and the right family of place (pessimism at the policy's own commands). Against it: the band is a noisy one-step prediction width, not the data-scarcity bound that lower-bound theory needs, and the paired form [U(a)-U(a_i)]_+ is not a calibrated quantity. | Yes in the pure form (residual score, eta, WBCP, per-query weights, refusal). This is the most BCA of any option, but it breaks BCA's rule that host gradients do not flow through the calibrator (ALGORITHMS.md:127-130). The Stage 2 version was a classifier hinge with BCA's height. | 4.5
+  O10 | Selection by certified value: alpha, checkpoint or candidate | Holds, with conditions. Offline, a valid certificate refuses every candidate: deterministic actors have no trajectory ratios, and smoothed ones collapse over 100 steps [I]. It is clean with an online evaluation budget (each candidate's own returns, independent starts), or with a known per-episode w(c) shift (n_eff/n 0.35 strong, 0.72 mild) [I]. It needs Learn-then-Test multiplicity control and separate episodes for choosing and for certifying (CSEL:220-222). | Plausible for the placement; unlikely to be credited to BCA. The room is real: checkpoint best-minus-last +15.7/+11.4/+6.4/+2.1/+0.6; half pull +15.4/+8.7/+7.9 [S]. But a data-blind stop at 5k updates already takes +14.4/+10.4/+4.9/+0.2/+0.4, leaving 0.2-1.9 points for any selector (O10_checkpoint_room.out) [S]. Never run. | Reasonable: a bank-conditional certificate on candidates' held-out outcomes is exactly what the calibration theory supports. Against it: it keeps the global knob BCA was built to replace, and production WBCP certifies a quantile while the target is the mean. The residual-statistic variant is contradicted by the literature (Fujimoto et al. 2022). | BCA as a component (WBCP as a selection certificate with fallback to the default). The score, eta, band and dose are dropped. | 4
+  O5 | Refusal as fallback: support certificate at the actor's command (SPIBB-style) | Holds, trivially. The finite/infinite verdict depends only on the weights, the query's test mass and the random draws; the scores never enter (wbcp.py:51-54; world.py:44-47) [S]. So +inf is always valid and no band is used up. The conditions only govern what a refusal means: an exact behavior density, a declared smoothing law, and an undefined ratio for the deterministic command actually executed. | Plausible. Result F: +2.0/+5.8 points, 5/5 seeds, with the exact recording likelihood (RESULTS_fallback_rerun.md:58-62) [S]. The literal form lost 9.8 points on medium-expert. Estimated weights gave +2.3 / ~0. The no-stall cost was never measured; analogues lost 20-26 points [S]. | Reasonable: SPIBB's 'uncertified -> baseline' semantics, and it would fix today's inconsistent +inf mapping (dose 1 / IQL weight 0 / IW spec 1.5 / no credit). It uses none of BCA's content. | No. It is a likelihood-ratio support rule wearing WBCP's refusal. Keep it as the refusal semantics inside O4/O2/O8, not as a place for BCA. | 4
+  O2 | Width-weighted push-down of Q at the policy's and sampled commands (critic regularizer) | Holds, with conditions, only as covered-or-refused with exact command weights at a frozen critic: 98.0-99.5% within 80%, 100% refused past 80% [S]. 25-48% of commands are refused within 80%, and 68-98% on weak data. Self-reference: a band recalibrated on the regularized critic measures the critic's own push (STEP4_DESIGN.md:510). There is no guarantee for value error through the backups. | Unlikely; never run. The per-command variation is R(w), a transform of the supplied ratio, which CQL's fixed point already uses; eta is flat. Blanket refusal on weak data is the wrong direction there. The only CQL+BCA result is D4RL -6.19/-16.25 (one seed per pair, pre-WBCP) [S]. | Stretched. Right family of place and right reading of refusal, but a residual band supplies only the noise numerator that CQL's theory needs. Bellman-consistent pessimism is invisible to residuals. | BCA as a component. In practice it reduces to CQL weighted by the density ratio plus a refusal push-down (the latter a support rule). | 3.5
+  O6 | In-support extraction: band-gated or band-weighted imitation of recorded rows | Holds, with conditions, but adds nothing to the decision. It is read at the critic's own training rows, where y is already observed. The Q(s,pi(s)) side of the comparison has no band. The IW version is valid but releases fewer rows (0.287 vs 0.433). | The slot works but the band does not. Filtering gained +18.8/+11.3/+10.1 over TD3+BC on weak data, 5/5 seeds (arms_abc_f0 RESULTS.md:15-32) [S]. P4 failed: plain 1-2 spread margins matched or beat the band, the shuffled band changed nothing (~0), and IW cost -0.3 to -3.0. On good data the gain is only +0.9/+0.5 [S]. | Stretched. 'Clearly worse' needs a confidence bound on a difference of means. The band is a prediction interval about as wide as the whole action-value spread (0.58-0.83 x U). | Component at most. With a flat eta it is a CRR-style filter with a margin of about 2 residual spreads. | 3
+  O9 | Conformal off-policy evaluation of the learned policy | Holds, with conditions that fail on these hosts. Deterministic actors have no trajectory ratio. Smoothed 100-step weights have E_b[W^2] ~10^21-10^180, so WBCP refuses every learned actor [I, arithmetic]. Pseudo-returns cover only up to the tail model's error, and that error is the harm itself. | Unlikely. It trains nothing and could act only through O10/O11. The valid certificate refuses, so the default is kept. The mean route needs a declared floor (provable floor -6.57e6), costing ~65,700 return units at n=300 [I]. | Reasonable. This is the use WBCP weighting was designed for (real returns, independent episodes, a frozen policy), but it is the wrong object for deterministic continuous actors over long horizons. | No / component: WBCP on returns; eta, band and dose dropped. | 3
+  O7 | Return-level band on the critic: n-step or Monte Carlo residuals at recorded rows | Holds, with conditions, at recorded held-out rows and for behavior returns only (one row per episode, frozen Q and pi). It is never readable at the actor's command. Truncation at 100 steps and the gapped log (15% of rows removed) break Monte Carlo labels. | Unlikely; never measured. By a sample identity, the n-step residual is the one-step residuals minus the critic's own claimed advantage along the path. The real behavior-vs-learned policy gap (~10-20 units per row) swamps the harm (0.33-0.89), so a ceiling would fire on real improvement [I]. | Reasonable: a legitimate conformal score on real outcomes, aimed at the gap that one-step coverage misses. But it certifies behavior value, not Q^pi. | Component (WBCP on a new score). Extended to the learned policy it becomes O9. | 3
+  O12 | Band on a learned model's one-step error (MOPO/MOReL-style) | Holds, with conditions. The cleanest score of any option: real labels, a frozen model, and a deterministic world, so the band bounds the true error [I]. But the gap also strips the bank (0-2 full-throttle rows). Rollout states need estimated ratios, the policy will exploit the uncovered 10%, and MOPO/MOReL need admissibility at every point. | Unlikely; never run. Model, bank and band are essentially identical in the stall and no-stall worlds (SHIFT_ENV.md:219-221). A learned model extends thrust linearly past 80%, so a finite band misses the stall. The host family is weaker: MOPO 53.3 vs TD3+BC 67.55 on D4RL Gym. | Reasonable: the best match of score type to what conformal certifies (a pure covariate shift). The conversion to value units (MOPO's lambda) stays uncalibrated. | Component. It drops the Bellman residual and the dose and changes the host family; no BCA host is model-based. | 3
+  O11 | Deployment gate, shield or runtime monitor | Breaks for band-threshold gates. tau is split-conformal false-alarm control on recorded-like rows. Under shift, 100% of visited states lie outside the data, so a valid weighted band refuses everywhere. A 5% per-step promise over dependent steps says nothing per episode. Online-outcome monitors hold up to dependence, but they no longer use the band. | Shown not to improve: M5 +1.5 vs +23.2 for a perfect detector; refusal-to-clip 45.1 vs classifier 45.0 vs clip always 44.2; runtime monitor 102.1 vs 103.3 for clip always. The outcome gate's net 106 was matched by Mann-Whitney and a plain difference of means [S]. | Stretched. Conformal outlier tests and fallback switching are conformal's home ground, but BCA's band is not a risk score. With uniform weights, U > tau is just 'eta above its own 95% level'. | Mostly something else (an outlier score or a classifier novelty test). An online monitor would be BCA as a component. | 3
+  O1 | Lower-confidence critic target (pessimistic backup) | Breaks. The one-step read at (s',a') can be made valid by recalibrating on the target heads with command weights. But the lower bound carried through ~50 backups (gamma 0.98) has no guarantee, and +inf at zero support needs a floor, which is a support rule [SS]. | Unlikely; never run. ThrusterChain has d = 0 on every row, so a constant U cancels in the actor's gradient. The width varies by at most 0.008 across commands vs a false preference of 0.63-0.89. The closest critic-side BCA use (CQL) scored -6.19/-16.25 [S/I]. | Stretched. The units match PEVI/MOPO, but the band is marginal, noisy, does not shrink with data, and cannot see Bellman-consistent bias. | Component at most. It reduces to a support-constrained backup, a MOPO-style penalty, UNIQ or a PBRL floor. | 2.5
+  O3 | Noise-aware critic regression: band-weighted TD loss at recorded rows | Holds only vacuously. It is read at training rows; R and u_f cancel after normalization; Huber or trimming thresholds do not transfer to training rows. | Unlikely; never run. Eta's CV is 0.065-0.111, so the weights are nearly even. Row weights do not move the fixed point. The robust variants would discard the stall survivors' large residuals, BCA's only working evidence. | Stretched. This is the one place where tracking target noise is wanted, but eta is not a variance estimate, and the noise is TD3's own smoothing, which can be computed exactly. | Mostly something else: IV-RL/UWAC-style regression borrowing BCA's eta. | 2
+  O0 | Reference: dose on the host's conservatism multiplier at recorded rows (TD3+BC BC term etc.) | Holds where calibrated: 91.2-92.5%; IW restores 83-87% -> 91-95% (LIVE 8595-8638) [S]. But it is read at training rows, the band is on min(Q1,Q2) while the actor climbs Q1, and the dose uses no coverage property: the unit cancels and calibration pins m at 1.31-1.38. | Shown not to improve: -8.79/-5.80/-5.28/+0.55/-0.04 vs plain TD3+BC (RESULTS.md:103-107). Oracle-placed pull was worth about 1 point (pre-registered H3). The useful fix, half pull (+15.4/+8.7/+7.9), lies below its range (dose >= 1) [S]. | Stretched. It matches BCA's stated aim, but only one global R is calibrated. Per-row variation comes from an uncalibrated eta that the saturating map squeezes out, and a refusal maps to the least caution. | In name and machinery only. What reaches the host is alpha 2.5 -> ~1.88, a plain retune. | 1.5
+
+== ACTOR SIDE
+ Yes, actor-side is better, but only in one form, and in that form BCA's band has not yet earned credit of its own. The current BC multiplier is itself actor-side (O0), and it ranks last. So the useful split is not actor vs critic. It is (a) where the band is read: the actor's own command or the deviation itself, not recorded training rows; and (b) what it acts on: value credit or an accept/reject decision, not the cloning strength.
+
+The exact form I recommend has two parts.
+
+(1) Decision layer (O8, policy extraction):
+- Each deviation from the clone (or a declared deviation group, or a world-level switch) is accepted only if a WBCP bound on its held-out outcome clears a declared margin.
+- The outcome must contain the harm: a k-step segment outcome against the critic's value at the fallback, not arm B's one-step critic-scored gain.
+- Otherwise the policy falls back to the clone.
+
+(2) Training-side consumer, switched on only where (1) certifies harm (O4 in pure form):
+- The actor maximizes lambda*[Q1(s,a) - k*U_w(s,a)] - alpha*BC, at a = pi(s)+xi, xi ~ N(0,0.2) clipped at 0.5.
+- U_w is recalibrated on Q1, the head TD3+BC's actor climbs. Every run so far used a min(Q1,Q2) band.
+- Exact per-query state x command weights for that declared law.
+- Unpaired edge with k = 1 (the paired [U(a)-U(a_i)]_+ is not calibrated).
+- A refusal (+inf) means no value credit, with the clone as fallback, not the row's recorded command. That fallback was the -9.8 loss mechanism (O5 semantics).
+
+This is the restructured step-2 pattern (certificate-switched ramp, net 102.9 vs 77.7 always on), with BCA's U_w taking the place of the hand-set shape.
+
+Why this form: the room sits at the actor's command. The oracle value penalty there recovered 93.9 of 98.9 points, against ~2.6% through the pull channel (LIVE 7601-7622) [S]. It is also the only training-side read point where BCA's weighted guarantee can hold.
+
+The caveats are shown, not guessed:
+- In this slot, BCA's credit went to the classifier: 86% of the extra width vs 0.2% from eta (LIVE 8020-8025).
+- It went to the refusal rule: F - F0 = +0.14/+0.08 against a +1.0 bar (LIVE 9181-9188).
+- It lost to the plain range hinge: 24.9 vs 70.5.
+- It costs 14.8-16.2 points in the no-stall world unless it is switched by outcomes.
+
+The other actor-side form, band-gated imitation (O6), has a working slot (+10 to +19 over TD3+BC on weak data), but the band adds nothing over a plain margin of 1-2 residual spreads.
+
+So: actor-side value or decision use, yes. A BCA-specific gain there is unproven until test T1's eta-share gate and test T5's controls (F0, ratio-only, eta shuffled, split conformal, plain cap) are passed.
+
+== TRADEOFFS
+  - Validity vs BCA-ness. The options whose promise holds where it is read (O8, O10, O9) keep only the WBCP sampler and weights, and with equal weights that is the exact binomial test (LIVE 12152). The option that keeps the whole band (O4) is where the guarantee is most strained (feedback shift, slope, head mismatch), and its measured credit went to support or the classifier [S].
+  - Honest coverage by refusing vs return. With exact command weights, O4/O2 meet covered-or-refused by refusing 49-77% of draws, and 68-98% of commands on weak data (RESULTS_command_weighted_band.md). That turns into blanket caution where less caution helps (half pull +15.4/+8.7/+7.9). In O6, coverage-correct IW weighting cost 0.3-3.0 points [S].
+  - Stalling-world gain vs no-stall cost. Every signal that sees only the data pays in the no-stall world: range hinge 20.4, BCA lower edge 14.8/16.2, distance check 25.7. Only switches that read outcomes escape it (net 106.1, 102.9), and plain tests with the same margin match them [S].
+  - Privileged information. Result F's gain used the recorder's exact command likelihood plus a per-episode random-share label. With estimated support it held on expert (+2.3) and vanished on medium-expert, where it found only 5.0% of the needed refusals [S]. On D4RL every weight would be estimated.
+  - Evidence size vs granularity. A tail certificate needs 29 tries per decision, about 39 under moderate shift and about 83 under strong shift (LIVE 10987-10992). ThrusterChain has 28-59 survivors per seed-world and 0-78 tries per 5% rung, so fine-grained per-deviation certificates mostly refuse, and the world-level switch is where the evidence suffices [S].
+  - Prediction width vs confidence bound. BCA's band includes one-step outcome noise and does not shrink with data. That is right for 'is this outcome unusual' (O8 tails, O11 outliers), but too wide for comparing means (O6: margin 0 and 1-spread beat it by 2.5-3.1) and the wrong object for pessimism (O1/O2) [S/I].
+  - Margin vs calibration. The hand-set 0.10 margin carried about 60% of BCA's lead in step 1; without it BCA netted 55.7 instead of 106.1 (ROUND1.md:34, 108-119). Any certificate placement has to fix its margin in advance, and the margin, not the posterior, may be doing the work [S].
+  - Decision-side vs training-side. A frozen, held-out certificate keeps its promise. A band inside training is rescored by critics it shaped (198 refreshes), is frozen for up to 5,000 updates, and is queried at points the actor chooses, so the promise holds only vacuously or formally fails [S/I].
+  - Deterministic actors. TD3+BC/ReBRAC actors have no density ratio, so O4, O9 and O10 must declare a smoothing law, and the certificate then covers a different, noisier policy. Near the 80% knee the noise itself causes stalls [I].
+  - Global knob vs per-sample caution. The return room on weak data sits in the dataset-level pull strength and in early stopping (O10). BCA was designed to replace that global knob with a per-sample factor, so the placement with the most room is the one least like BCA's stated purpose [S/I].
+
+== TEST PLAN
+  - T1, no training, minutes of CPU; the gate for O4 and O5 (whether BCA's band can earn any credit at the actor's command). Use result E/F's saved refresh tables, critics and no-caution actors (weighting test, medium-expert and expert, seeds 0-4). (a) Permute, or set constant, the bank's scores and check that WBCP's finite/+inf verdict is unchanged on 100% of queries and equals the closed-form atom cut t > alpha*sum(w)/((1-alpha) ln 20) on at least 99% of them. If so, no O5 gain can ever be credited to the band, calibration or eta. (b) Recalibrate the band on Q1 (score |y - Q1| on the bank, refit eta for 20,000 steps), with exact state x command weights for pi + N(0,0.2) clipped at 0.5. Report covered-or-refused and covered-among-certified, overall and past 80%; the refused share; the share of the variance of log U_w that comes from log eta vs log R(w); and the partial Spearman correlation of U_w with |delta*_Q1| given w. Decision rule: if eta's share is at least 25% and the partial Spearman at least 0.2, on both qualities in 4 of 5 seeds, the band shape can carry information and T5's band arms run. Otherwise O4's shape is just the ratio: drop the band arms and keep O4 as a support rule credited to support.
+  - T2, toy harness, CPU-minutes; the gate for whether anything BCA-specific is left in O8. Run the designed but never run estimated-weights toy (LIVE 11066), with kill rules fingerprinted first. 800 seeds: tune on 0-399, score on 400-799. Arms: BCA's weighted tail and mean gates with classifier-estimated weights and with exact weights; a rejection-sampled exact test; a stratified exact bound; weighted split conformal; the plain average; shuffled outcomes as the null. Decision rule: BCA's weights keep credit only if the estimated-weight BCA gates stay within the 7.3% allowance in every unsafe or harmful world AND say yes more often than rejection sampling in safe shifted worlds (with exact weights that was 33.6% vs 19.0%, LIVE 10811). Otherwise O8's credit belongs to textbook tests, and T3 and T6 test only the placement.
+  - T3, ThrusterChain screen, no actor training, under 1 CPU-hour; for O8, does the outcome carry the harm? Rerun arm B's ceiling walk (ARMS code/arm_b.py, 10-17 s per map) on the weighting-test hosts, with the same tries, rungs and walk, swapping the score: (a) the original one-step critic-scored gain g, as the negative control; (b) held-out k-step segment outcomes for k = 10 and 25, against the critic's value at the fallback rung; (c) step 1's residual-gap score per rung. Gates on each score: BCA's tail gate (computed exactly) and mean gate (Gaffke, 10,000 draws, floor declared from the reward range), each unweighted, with estimated weights and with exact weights. Plain controls: exact binomial, split conformal, weighted mean > 0, t-test, Hoeffding, empirical Bernstein, a rejection-sampled exact test, shuffled outcomes. Price false refusals on the stall-strength ladder (ROUND1.md:66-96, about 5 CPU-minutes). Decision rule: if (a) misses the stall and (b) or (c) stops at or below 0.80 with at least 30 tries in the 80-85% rung, the outcome choice decided arm B and O8 goes on to T6. If (b) and (c) also miss, per-deviation certificates cannot carry this harm at these evidence sizes, and only the world-level switch is left, which plain tests already match.
+  - T4, evaluation only; CPU-minutes to about 1 hour if checkpoints are saved, about 7.5 CPU-hours if candidates must be retrained; for O10. Use the weighting-test logs, 5 qualities x seeds 0-4. Candidates: alpha in {1.25, 2.5, 5} x checkpoints {5k, 10k, 20k, 50k, 100k}. Truth: exact returns on the 1,000-start strong bank. Arms: oracle; default (alpha 2.5, last checkpoint); BCA's capped pull (the reference); plain fixed rules (always half pull, stop at 5k, both); offline WBCP trajectory-weighted bound (predicted to refuse); FQE argmax. With an online budget of N in {3, 10, 30, 100} episodes per candidate, fallback to the default and Learn-then-Test: plain mean, Unifloral UCB, t-test, Hoeffding, Clopper-Pearson, BCA's equal-weight tail (it must equal Clopper-Pearson; a sanity check), BCA-averaged Gaffke. Weighted: WBCP-IW vs weighted split conformal, a self-normalised weighted mean with a t interval, and rejection sampling. Controls: shuffled returns, and a residual-statistic selector as the negative control. Decision rule: if the oracle beats the best fixed rule by 1 point or less everywhere, close O10. If the plain mean or UCB comes within 1 point of the oracle at N >= 10, the credit goes to the evaluation episodes. BCA gets credit only if WBCP-IW beats every weighted rival by at least 1 point at equal harm on fresh seeds 10-14.
+  - T5, actor-only training, about 4-5 CPU-hours (about 100-120 runs at about 150 s each); O4 Step 1 merged with O5 Step 1. Run the band arms only if T1 passes. Use result F's actor-only protocol against the frozen critic: medium-expert and expert, stalling and no-stall worlds, fresh seeds 5-9, pre-registered. Arms: N, no caution; G, the Q1 oracle (if G - N < 1.8 units, there is no room and the test is uninformative); A, O4 in pure form (recalibrated on Q1, exact weights, k = 1, unpaired and paired, refusal = no value credit with clone fallback); B, F0 (the same refusal, no band); C, ratio-only (eta = 1); D, eta shuffled across commands within a state; E, a weighted split-conformal threshold (no Bayesian step); F, a plain no-credit-past-80% cap and a range hinge matched to A's displacement; CL, clone fallback at an infinite ratio; EST, classifier max-odds support; REF, BCA's capped BC pull plus plain alpha {1.25, 1.88, 2.5} (the reference to beat and the plain retune). Recompute coverage at the trained A actor's own commands. Decision rule: A - B < 1 point means O4 collapses to O5 (credit to support). A > B but A ~ C means the credit goes to the weighted threshold's scale, not eta. C ~ E means the Bayesian step gets none. F >= A means a plain cap is enough. BCA's band earns credit only if A beats max(B..F) by at least 1 point in 4 of 5 seeds, with covered-or-refused of at least 88% at the trained actor and a no-stall cost no larger than B's.
+  - T6, confirmatory, only on the owner's go, pass marks frozen first; about 8-10 CPU-hours; O8 Step 2 with the combined actor-side form. Fresh seeds 15-19; medium-replay, medium, medium-expert and expert; the strong test plus the no-stall twin. Arms: host alone; host + each O8 map that passed T3; certificate-switched O4 (the step-2 ramp pattern with BCA's U_w as the shape) and certificate-switched plain range hinge/clip, under the same switch; uninformed caps (99.5th-percentile range limit, matched global ceiling, knee clip at 0.80 labelled as knowing the stall). Marks as in arm B: G1 at least +2.0 on medium-expert in 4 of 5 seeds; G2 no quality below -1.0; G3 beats the range limit and shuffled outcomes by at least 1.5; G4 the BCA arm beats the best plain test by at least +2.0 summed. Decision rule: G1-G3 met means the placement works. G4 met only by a weighted BCA arm that also beats rejection sampling means the credit goes to BCA's weights. The band shape earns credit only if certificate-switched O4 beats the certificate-switched plain hinge by at least 1 point in 4 of 5 seeds. Otherwise the credit goes to outcome reading and the margin.
+  - Optional closure of the reference O0 (the owner already judges it pointless; about 50-75 co-trained runs, about 35-55 CPU-hours): co-trained TD3+BC on the weighting-test data, seeds 0-4, 100k updates. Add arms for a constant dose at BCA's mean (~1.33), BCA's doses shuffled within each batch, R swapped for a split-conformal quantile, and an alpha ladder of 2.5/1.88/1.25. Expected: b - c <= 1 point and b ~ d, so the whole O0 effect is the global retune. Run it only if a written record of that closure is wanted.
+
+== OPEN
+  - Does any held-out outcome that contains the harm (k-step segment, residual gap) exist at ThrusterChain's evidence sizes (28-59 survivors per seed-world) for certificates on individual deviations, or only for the world-level switch? T3 decides this.
+  - Once recalibrated on Q1, does eta carry any information about the error from one command to another at the actor's command (T1)? If not, should BCA supply only the level (k from R and the unit), with an epistemic or support signal supplying the shape? UNIQ-style, that was worth about 3 points in the literature (LIT 681).
+  - Do BCA's weights keep their promise with estimated weights? The toy test (T2) has never been run, and on ThrusterChain medium-expert the estimated weights found only 5.0% of the needed refusals.
+  - The mean gate's validity rests on an unreviewed July 2026 proof (REP:39), and the weighted average-weight form has no proof. Should the plan rely on the tail gate only until that is reviewed?
+  - Separating support rules from BCA needs a mixed world, where the missing commands help in some states and harm in others. That means new physics at about 25-40 process-hours (ANSWER.md:23). Is that worth building before any confirmatory claim?
+  - What does the owner count as 'BCA'? If only the full pipeline counts (score, eta, band), the best place is O4, and its evidence is weak. If WBCP plus weights used as a certificate counts, O8 and O10 are the places, and with equal weights they are textbook tests.
+  - Which single meaning should refusal (+inf) have across hosts? Today it maps to dose 1 in TD3+BC/ReBRAC/CQL, weight 0 in IQL, 1.5 in the IW spec, and no credit on ThrusterChain. The theory-consistent choice is 'fall back to the clone', but the owner needs to decide.
+  - The record needs correcting before any write-up. F0 is not in the repository, and origin/main EXPERIMENTS.md row 17 still credits the band for result F. record_by_placement.md says arm A is not in the repository, but it is: commit 8031ef7 on origin/claude/main-bca-connection-x4o46s, outputs/shift_iw/explore/arms_abc_f0/.
+  - The near-80 v8 confirmatory test of the certificate-switched ramp has no result as of 19 Oct. Its design cannot credit calibration or the posterior. Did the main run start?
+  - Do the signal study's step-4 main-run outputs (arms C2 and P3; runs/wbcp_signal/step4/main, gitignored) exist on the desktop? They would give a zero-compute first look at critic-side and critic-LCB-read-by-actor placements.
+  - Transfer: every ThrusterChain number used here is exploratory, on seeds 0-4 already seen, in one environment, and mostly actor-only against a frozen critic. Will the ranking hold co-trained (O4 co-trained cost 16.2 in the no-stall world) and on D4RL, where behavior densities must be estimated?
+
+== RED TEAM
+  [broken] O8 is ranked first on evidence that came from the opposite decision rule. The ranking's O8 is a safety certificate: let a deviation through only if certified, otherwise fall back. The ThrusterChain gains it cites (step 1 world switch, net 106.1; step
+     Step 1 states its rule outright: 'It switches caution on when the 5% lower bound of BCA's posterior gap (full-throttle scores minus all other scores) is above 0.10' (HV2 restructure/routes/round1/ROUND1.md:11) [S]. Step 2 is switched by that same certificate (step2_results/results.md:9-38) [S].
+
+In the no-stall world the bound was -0.01 to +0.02 (ROUND1.md:31). That evidence is inconclusive, and the harm rule correctly left the host alone [S]. A safety rule needs credible evidence that the deviation is fine. Held-out calibration episodes hold only 15-30 full-throttle rows per seed-world (ROUND
+     fix: Split O8 into two options.
+- O8b: a harm certificate on a declared group or world. Default: the host. Caution switches on when the group's held-out over-prediction credibly beats the rest by a margin fixed in advance. This holds the shown gain.
+- O8a: a safety certificate on each deviation. Default: the fallback. This is the Seldonian/SPIBB form, the toys' form and arm B's. Unshown on ThrusterChai
+  [broken] The recommendation says 'otherwise fall back to the clone'. Every shown gain used a clip to the recorded range as the fallback.
+     Same perfect past-80% detector, two fallbacks (HV2 outputs/shift/beyond-the-data/results-2026-10-13/deploy_tables.md, both 'gapped critic's actor, stalling world' tables) [S]:
+
+| Fallback | Strong current | Big kicks | Recorded conditions |
+|---|---|---|---|
+| Clip | +106.1 | +28.2 | +7.2 |
+| Clone | +73.8 | -30.4 | -1.0 |
+
+Other runs agree:
+- The distance check with a clone fallback lost 41.6 points in big kicks (LIVE 7874) [S].
+- The cloned actor as a whole-policy baseline nets -50.7 (step2_results/results.md:17) [S].
+- On weak data the clone copies mostly random commands. That is why less p
+     fix: Name the fallback the evidence used: clip to the recorded range, or one rung down. Report that this is a plain support action. Keep the clone as an untested, theory-consistent arm, and test clone against clip in T3/T6. Unify +inf as 'no credit / fall back to the clip' until a clone fallback earns its place.
+  [weakened] Coverage claim: O8 is 'the only placement whose promise is about the decision itself and that reads the certificate only where it was calibrated'.
+     (a) The shown variant has no calibrated promise. Its statistic is the 5% quantile of a gap between two posteriors' 90% crossings, and nothing in the repository gives it a frequentist error rate (placement/O8_judgment.md section 2j) [I].
+
+(b) It is calibrated in recorded conditions, but the decision pays off in strong current, where every visited state lies outside the log (ROUND1.md:61) [S]. The transfer relies on the stall's residual signature being the same in every state. That is true by how ThrusterChain was built, not certified [I].
+
+(c) The 0.10 margin carries the false-alarm control.
+- 
+     fix: State the promise as: 'with 95% credibility, the declared group's one-step over-prediction at recorded conditions exceeds the rest by more than the margin'. Mark the step from that to 'clipping pays in deployment' as assumed. Derive the margin from a decision break-even fixed in advance, not by tuning. Drop 'only' and 'read only where calibrated'.
+  [weakened] The weighted coverage claims ('weights kept the promise under shift: 89.9% -> 4.3%'; 'BCA's own claim can be earned through its weights') are presented as a guarantee.
+     With non-uniform weights, WBCP's credibility no longer equals confidence. Its frequentist slack (Theorem 4) is 0.32-1.19 at n = 1,103, above alpha in every case. 'The certificate says nothing at these sizes', and the paper's coverage under shift 'is an empirical finding ... not a theorem' (MAIN experiments/wbcp/DEPENDENCE.md:1114-1133) [S].
+
+The toy numbers are worst-world rates with KNOWN weights (LIVE 10805-10813) [S]. Estimated weights were never tested in the toys (LIVE 10996; 11066 designed, not run) [S]. On ThrusterChain medium-expert, estimated weights found only 5.0% of the needed refu
+     fix: Wherever BCA's weights are offered as its distinctive part, say 'more power, with a promise that is empirical and unproven'. In T2, require that estimated-weight BCA:
+- keeps the allowance;
+- beats Tibshirani's weighted split conformal at equal harm on the scoring seeds;
+- beats a self-normalised importance-weighted mean with an empirical-Bernstein (HCOPE-style) bound.
+Beating rejection sampling a
+  [broken] T3 and the recommendation make a k-step segment outcome, 'against the critic's value at the fallback', the outcome that contains the harm, and treat arm B's one-step score as the failure.
+     The record calls multi-step residuals 'dead by construction. The one-step score already carries the stall's cost, and the log never holds two stalls in a row' (ROUND1.md:153) [S]. Step 1's one-step score did contain the stall: +0.15 to +0.33 against about -0.16 (ROUND1.md:37) [S]. That score is a same-command residual: the critic's prediction at the recorded command minus what that command delivered.
+
+Arm B's score is a different kind of number. It compares the realised outcome with the critic's value at a different command (the rung below), with a bootstrap through the host actor: g = r + 0.9
+     fix: Make the same-command, one-sided held-out residual per rung (step 1's score) T3's primary score. Keep k-step only as a secondary arm, built as a matched contrast: the segment outcomes of deviation tries minus those of matched in-range tries with the same behaviour continuation, so the policy gap cancels. Count intact k-step windows first. Keep arm B's g as the negative control.
+  [broken] T3, T5 and T6 assume a no-stall twin of the weighting-test data and price false refusals on the stall-strength ladder.
+     The weighting test exists only in the stalling world: 'The world is v1's ThrusterChain in the stalling world' (MAIN experiments/shift_iw/world.py:4), with PHYSICS = TC.STALL (:69) [S]. The page confirms that 'the weighting test does not report result F in a world where pushing past 80% helps' (TXT 12902) [S].
+
+The stall-strength ladder runs on the main log's no-stall held-out rows, and only one-step outcomes were changed (ROUND1.md:74, 96) [S]. So it cannot price k-step outcomes, or anything about the weighting-test hosts.
+
+Without a no-stall twin, a ceiling that stops at 0.80 cannot be told a
+     fix: Before T3, T5 or T6, build a no-stall twin of the weighting-test logs: same seeds, no-stall physics, hosts and frozen critics retrained. Budget its CPU explicitly; it is not in the plan's estimates [I]. Otherwise run T3 only on the main log, report that the per-deviation tail gate there is below its evidence floor, and score both directions (O8a and O8b) against plain tests.
+  [broken] The recommended training-side partner: O4 in pure form, switched on where O8 certifies harm ('the step-2 pattern with BCA's U_w taking the place of the hand-set shape'), justified because 'the room sits at the actor's command'.
+     Once the world switch is right, a plain action already takes the room:
+- the switched clip nets 106.1, equal to a perfect switch (ROUND1.md:13, 32) [S];
+- the gated hand-set hinge nets 107.4 (ROUND1.md:155) [S];
+- the certificate-switched ramp nets 102.9, and twice its height 106.6 (step2_results/results.md:18-19) [S].
+
+Within the stalling world, a no-signal clip scores 93.1 against 79.7 for the exact-error oracle penalty at the actor's command (HV2 stage1/RESULTS.md:44, 55) [S]. So 'the room at the actor's command' is room a plain clip takes. Only the world-level yes/no needs information, and
+     fix: Remove O4 from the recommended combination. Keep it as a research arm only if T1 passes, and test it only in a world where harm varies across commands within a state. Its bars are the switched clip (106.1) and the switched hinge (107.4), not the always-on ramp (77.7).
+  [broken] O10 is ranked third 'because that is where the return room actually is'.
+     By the ranking's own computation, a fixed stop at 5,000 updates gains +14.4/+10.4/+4.9/+0.2/+0.4 of +15.7/+11.4/+6.4/+2.1/+0.6. That leaves 0.2-1.9 points for any selector (placement/O10_checkpoint_room.out) [S]. That remainder is measured against a per-seed maximum over 20 checkpoints, an optimistic oracle no selector reaches [I].
+
+Halving the pull takes the alpha room (LIVE 10046-10051) [S]. Offline, a valid certificate refuses every learned actor (O9 arithmetic: E_b[W^2] of about 10^21-10^180) [I]. With an online budget, the credit goes to the evaluation episodes, and with equal weights BCA
+     fix: Demote O10 below O5 and O6. Do not spend T4's CPU on ThrusterChain. Revisit only in a new environment where no fixed rule is known, and credit any gain to the selection step and the evaluation episodes unless WBCP-IW beats the weighted rivals at equal harm.
+  [weakened] Theory fit: O8 'Natural: a Seldonian/HCPI-shaped bank-conditional certificate on held-out outcomes of the decision itself'.
+     HCPI and Seldonian tests bound the new policy's return against the baseline, from real returns. The variant that worked (O8b) does something else. It certifies a residual gap between two groups, with a hand-set margin, and switches a plain action. Its posterior-gap statistic has no frequentist error rate (O8_judgment.md 2j) [I].
+
+The per-deviation form certifies 'deviate once, then follow the behaviour' (theory_notes use 7) [SS]. A 5% error per decision does not compose into a policy-level promise (reports/Calibrated bounds...md:62) [SS].
+
+With equal weights the tail gate is the exact binomial
+     fix: Rate theory fit 'reasonable' for O8a in its toy form (raw outcomes against a fallback the critic knows well, LIVE 10517), and 'stretched' for O8b's world switch. Reserve 'Seldonian-shaped' for a mean gate on policy-weighted behaviour-advantage outcomes, which nobody has built.
+  [weakened] Credit claim: 'BCA's own claim can only be earned in two places, its weights under a known shift (O8/O10) and the per-command shape of its band (O4)'.
+     It misses the two measured pieces that point at BCA's own parts.
+
+(1) The residual score. The one BCA component that reached the harm is its one-sided held-out Bellman residual, read on a declared group. The honest claim is 'BCA's residual score reads outcomes that range-based rivals cannot', not 'the Bayesian aggregation adds value' (RS analysis/restructure/ANSWER.md:13-19) [S].
+
+(2) A thin-evidence hint for the Bayesian step. The posterior beat plain split conformal by up to 12.3 at 5-8 rows (ROUND1.md:115). In an after-the-fact sweep it was less sensitive to the margin: its lead held at +13
+     fix: List three possible homes for BCA credit:
+1. The residual score as the outcome (already shown against range rules; plain tests on the same score match it).
+2. The posterior two-sample gap at thin evidence, with a margin fixed in advance.
+3. The weights under a known shift.
+Test #2 with a pre-registered margin and evidence-size sweep (see the recommendation).
+  [weakened] Numbers and citations, checked against the sources.
+     Most numbers check out; placement/redteam_checks.txt lists each one with its source. Corrections:
+(a) 'LIVE 12152' (28,000/28,000) is TXT 12152, which is LIVE 10575.
+(b) 'LIVE 8020-8025' for 86%/0.2% should be LIVE 8014/8093. Lines 8020-8025 hold the M1-M5 table.
+(c) 'The 0.10 margin carried about 60% of BCA's lead in step 1' is wrong. The 60% is of BCA's 4.29-point lead over the rank test in the thin-evidence test (ROUND1.md:109-114). In step 1 itself the margin decides everything: 55.7 without it against 106.1 with it (ROUND1.md:34).
+(d) '28-59 survivors per seed-world' are in-sample trainin
+     fix: Correct (a)-(f) in the write-up. In particular, quote 15-30 held-out tries wherever evidence floors are compared, and drop 'held-out' as the stated reason for the step-1 gain.
+  [weakened] The tests' ability to separate BCA's credit from plain rules (T1, T2, T4, T5, T6).
+     - T1's gate (eta share at least 25%) is nearly decided in advance. Eta's CV is 0.065-0.111 while log R(w) spans orders of magnitude [I]. It is cheap, but its expected outcome should be stated.
+- T5's coverage mark ('covered-or-refused at least 88%') can be met just by refusing. At test draws, 48-75% are refused (command_band/*.json) [S].
+- T2's 'says yes more often than rejection sampling' is a low bar (see the weighted-coverage challenge above).
+- T4's 1-point bar sits inside the seed spread: the last checkpoint on random runs from 62.8 to 69.2 by seed (O10_checkpoint_room.out) [S].
+- T6's G4
+     fix: - T5: use covered-among-certified past 80%, with a cap on the refused share.
+- T2: require wins at equal harm over proven-valid and weighted-conformal rivals.
+- Drop T4 on ThrusterChain.
+- Add a margin/evidence-size test for O8b.
+- State T1's expected result: fail, after which O4 is a support rule.
+  [weakened] Open question: 'Separating support rules from BCA needs a mixed world ... new physics at about 25-40 process-hours (ANSWER.md:23)'.
+     A cheap mixed world already exists. It was spliced from whole saved episodes by wave size: stalls above 0.25, helps below (ROUND1.md:121-146) [S].
+
+There the local weighted posterior scored 43.2 (primary evidence), against 24.4 for clip-always. A plain throttle cap at 0.80 scored 41.5, at 0.82 41.2, at 0.84 40.0 (ROUND1.md:132-140) [S]. A nearest-neighbour version not told about wave size scored 15-20 (ROUND1.md:141) [S].
+
+So the cheap mixed world is where per-state localisation of O8b can be tested now. It already shows a plain cap close behind, and the localising variable was handed to the r
+     fix: Use the spliced wave-size world first. Rivals: a plain cap ladder from 0.75 to 0.95, with 0.80 labelled as set at the knee, a local cap, and a plain kernel-weighted difference of means with the same margin. Build new physics only if the localised BCA switch beats all of them.
+  [survives] The claims the ranking already gets right: drop O0 (the reference); with equal weights BCA is a textbook test; O5's verdict ignores the scores; O6's band adds nothing over a plain margin.
+     - O0: -8.79/-5.80/-5.28/+0.55/-0.04 against plain TD3+BC (MAIN outputs/shift_iw/explore/RESULTS.md:103-107) [S]. The dose sits near 1.33 whatever the signal (rootcause mech) [SS]. It cannot go below 1, while half pull gives +15.4/+8.7/+7.9 (LIVE 10046-10051) [S]. The owner's view holds.
+- Textbook test: exact agreement with the binomial test in 28,000 of 28,000 cases (TXT 12152) [S].
+- O5: a draw is +inf exactly when the test atom's share exceeds alpha, decided by the weights and exponentials alone (MAIN calibration/wbcp.py:43-54) [S].
+- O6: P4 failed; the shuffled band changed about 0; plain 
+     fix: None. Keep these as stated.
+
+== MISSING OPTIONS
+  - O8b, a harm certificate on a declared group or world. Default: leave the host alone. A plain caution action (clip or range hinge) switches on only when the group's held-out one-sided residuals credibly exceed the rest by a margin fixed in advance. This is what step 1 and step 2 actually ran (ROUND1.md:11), the opposite direction from O8's safety certificate. It holds the only shown ThrusterChain gain (net 106.1, 10/10 seed-worlds right), and plain two-sample tests with the same margin match it (ROUND1.md:31-34) [S].
+  - Margin calibration: derive the effect size the certificate tests against from the decision's break-even, instead of setting it by hand. The 0.10 margin was picked after seeing seeds 0-2 (step1/PRESPEC.md:156-168). It carried the false-alarm control (55.7 without it, ROUND1.md:34) and landed near break-even by luck (ROUND1.md:90) [S].
+  - The fallback action as a declared variable (clip to the recorded range, one rung down, or the clone). The shown gains depend on it more than on the trigger. With a perfect detector: clip +106.1 against clone +73.8 in strong current, and +28.2 against -30.4 in big kicks (HV2 results-2026-10-13/deploy_tables.md) [S].
+  - Certificate-guarded release of the host's conservatism (arm C: half pull guarded by a certified throttle ceiling). It is the only placement aimed at where the weak-data room lies (+15.5/+8.9/+8.5, LIVE 10044-10059). Credit went to half pull and a plain 80% cap; the guard was void in 18 of 25 pairs [S].
+  - A conformalised epistemic or support score at the actor's command, UNIQ-style: BCA's R sets the level, and an ensemble, classifier or density sets the shape. It appears only as an open question. ThrusterChain's priors are weak: two-head disagreement 1.2/4.0, a last-layer posterior varies by at most 0.0008, classifier 36.8/11.0 (LIVE 7986-7993, 8218-8221) [S].
+  - An online randomised certificate before deployment. Flip a coin per episode to turn the gate on or off, and certify the gate-on minus gate-off return with an anytime-valid mean gate. It is the only form whose outcome is the decision's own return. It exists only as arm A4 in O11's test, not as a placement in the table [I].
+  - Report-only critic audit: publish per-group held-out residual certificates as a trust report, with no consumer. The promise is valid where it is read, and there is no return claim. It is the honest fallback if every consumer test fails [I].
+  - A two-sided dose that may go below 1. Closed by algebra: calibration fixes the mean dose and the saturating map squeezes out the per-row spread (rootcause mech), so it reduces to a global retune of alpha, where the half-pull gain already sits [SS].
+
+== REVISED RECOMMENDATION
+ Revised recommendation (19 Oct 2026). Read-only; nothing was trained or run. Every ThrusterChain number is exploratory, on seeds 0-4 already seen, unless marked otherwise. Tags: [S] shown, [SS] strongly supported, [I] inferred. Number checks are in /tmp/claude-0/-home-user-BCA/8720079f-929e-55d9-81af-561745cb590b/scratchpad/placement/redteam_checks.txt.
+
+Terms:
+- Harm certificate: switch caution on only when held-out evidence credibly shows harm; otherwise leave the host alone.
+- Safety certificate: allow a deviation only when held-out evidence credibly shows it is fine; otherwise fall back.
+- Residual: how far the critic's one-step prediction overshot what the step delivered, scored by a critic that did not train on that step.
+- Margin: the effect size, fixed in advance, that the evidence must clear.
+
+1. The owner is right about the multiplier. Drop the dose on TD3+BC's cloning term (O0). It amounts to retuning alpha from 2.5 to about 1.88. It cannot go below 1, where less pull helps (half pull +15.4/+8.7/+7.9, LIVE 10046-10051), and it loses 5-9 points on weak data (MAIN outputs/shift_iw/explore/RESULTS.md:103-107) [S]. Also drop the pessimistic critic target (O1), band-weighted TD loss (O3) and deployment gates that threshold the band (O11).
+
+2. Best place on the evidence: a harm certificate on a declared group of deviations, or on a whole world, that switches a plain caution action (O8b). The ranking calls this O8, but O8 as it wrote it is a safety certificate. The shown gains come from the harm direction, and with ThrusterChain's evidence the two do not behave alike.
+- How it works: read BCA's own score, the one-sided residual, on the declared group (full-throttle steps) against all other steps, using rows the critic did not train on. Switch on the clip to the recorded range, or a gated range hinge, only when the 5% lower bound of the gap clears the margin. Otherwise leave the host alone.
+- What it showed: net 106.1, equal to a perfect switch; right in 10 of 10 seed-worlds (ROUND1.md:31-32). The gated hand-set hinge gives 107.4 (ROUND1.md:155) [S].
+- What is BCA's own: only the residual score as the outcome (ANSWER.md:19) [S]. The band, eta and the dose take no part. The posterior beat split conformal by just 1.78 against a 5-point bar. A plain difference of means with the same margin also nets 106.1, and without the margin BCA nets 55.7 (ROUND1.md:34, 109) [S].
+- What its promise covers: one-step residuals of a group in recorded conditions. It does not cover the decision. The link to return rests on a hand-set margin, picked after seeing seeds 0-2. In-sample survivors also reached 106, so reading held-out rows was not shown to matter (ROUND1.md:39) [S].
+- Theory: reasonable; not Seldonian.
+
+3. Theory-natural but unshown: a safety certificate on each deviation (O8a, the Seldonian/SPIBB direction).
+- This is the only place BCA's weights could earn credit: in the toys they said yes 33.6% of the time in safe shifted worlds, against 19.0% for rejection sampling (LIVE 10811) [S].
+- But under weights the promise is empirical, not proven at these sizes (MAIN experiments/wbcp/DEPENDENCE.md:1114-1133) [S]. Estimated weights are untested in the toys.
+- On ThrusterChain, held-out evidence is 15-30 tries per seed-world, at or below the 29-try floor (ROUND1.md:25; LIVE 10516) [S]. It would mostly refuse and turn into clip-always, net 44.4 [I].
+- Its fallback must be the clip, not the clone. With a perfect detector, the clone fallback scores +73.8 against +106.1 in strong current, and -30.4 against +28.2 in big kicks (deploy_tables.md) [S].
+
+4. Hygiene, not a place for BCA: give refusal (+inf) one meaning in every host, 'no value credit, fall back to the clip' (O5). Credit it to support (wbcp.py:43-54; F - F0 = +0.14/+0.08) [S].
+
+5. Do not adopt the value lower edge (O4) as a training-side partner now.
+- Once the switch is right, a plain action takes the room: switched clip 106.1, switched hinge 107.4, BCA ramp 102.9 [S].
+- Within the stalling world, a no-signal clip beats the exact-error oracle penalty: 93.1 against 79.7 (stage1/RESULTS.md:44, 55) [S].
+- Eta is flat, and the measured credit went to the classifier and the refusal rule [S].
+- Keep it only as a research arm if T1 passes, in a world where harm varies across commands within a state.
+Demote certified selection (O10): fixed plain rules take its room, leaving 0.2-1.9 points, and offline certificates refuse [S/I].
+Remaining order: O6 band-gated imitation, about 3 (the slot works; the band adds nothing). Then O2, O7, O9, O12, about 2.5-3.
+
+Answer to 'is actor-side better?': yes, in the sense of acting on the actor's OUTPUT, a switch on what it may command, read from held-out residual outcomes. Every use inside the actor's LOSS that has been tried so far either lost its credit to support rules or found no room. On present evidence, what BCA contributes at the best place is its residual score, not its band, eta, dose or (with equal weights) its Bayesian step.
+
+Tests, cheapest first:
+(0) Fix the record (no compute):
+- the citation and number corrections in this review;
+- F0 is not in the repository;
+- origin/main EXPERIMENTS.md row 17 still credits the band for result F;
+- arm A is in commit 8031ef7.
+
+(1) Is the margin or the posterior doing the work? A margin and evidence-size test of O8b, pre-registered, on fresh seeds 10-14 (10 critic trainings, about 70 CPU-minutes, ANSWER.md:29).
+- Arms: BCA's posterior gap, split conformal, difference of means, rank test.
+- Margins: 0, 0.05, 0.10 and 0.20, with the primary margin fixed in advance from the clipping break-even.
+- Evidence: subsamples of 5-8, 12, 20 and 30 rows.
+- Fallback: clip and clone, both.
+- Credit the posterior only if it beats every plain test by at least 5 net at the primary margin, and keeps that lead across the sweep. This is the one place the record hints in its favour (ROUND1.md:87, 115).
+
+(2) Do BCA's weights survive estimation? The toy with estimated weights (T2), at equal harm. Rivals: rejection sampling, the stratified exact bound, Tibshirani's weighted split conformal, and a self-normalised weighted mean with an empirical-Bernstein bound.
+
+(3) The per-rung screen (T3), revised:
+- Primary score: the same-command residual per rung. k-step only as a matched contrast.
+- Both certificate directions.
+- Run it on the main log, or on a no-stall twin of the weighting test that must be built first.
+
+(4) T1, minutes: it decides whether O4 stays on the list. Expected result: it fails.
+
+(5) The spliced wave-size mixed world (ROUND1.md:121-146), against a plain cap ladder and a kernel-weighted difference of means with the same margin. It is the only cheap place where localising the switch by state can show.
+
+Skip T4 on ThrusterChain. Run the O0 closure only if a written record of it is wanted.
