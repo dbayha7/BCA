@@ -1,0 +1,1649 @@
+{
+ "workflow_run": "wf_4b18df46-241",
+ "form": "DECISION_BLOCK.md",
+ "findings_by_critic": [
+  {
+   "critic": "A-fidelity",
+   "sound": [
+    "Section 10 formulas: S*C*(W+A*(T-W)) = S*3*(10,000+3*10,000) = 120,000*S critic and auxiliary updates, matching v2 line 152. Actor updates at half (60,000*S) match the 2:1 critic:actor ratio in ATTEMPT_HOLD.json (critic 200, actor 100, auxiliary 200). Refreshes S*C*(1+2A) = 21*S. Unique snapshots S*C*(2+3A) = 33*S (v2 line 154).",
+    "C=3, A=3, warmup 10k, end 20k, refreshes at 15k/20k and checkpoints {0, 10k, 11k, 15k, 20k} all match v2 lines 128-130.",
+    "4.2 and 4.5: 76,800 \u00d7 P(g>=0.4)=0.5 \u00d7 P(band)=0.1 \u00d7 (1/2) = 0.05 gives 1,920 rows. Needs: an action law that ignores the state (uniform requested a0 with marginal density 1/2; the 0.25/0.75 masses on volumes 4/12 give density 1/16 everywhere, per datasets.py:188-220), and g symmetric about 0.4 (c~U[0.1,0.7], wave rotation independent of actions).",
+    "4.3: E[0.95^N_high] over the start law (Monte Carlo of c, A and phase only) gives P(no hole row) = 0.211, so about 605.8 episodes (78.9%) have at least one hole row. Never-high share 0.111 matches the review.",
+    "4.4: P(g>=0.4) = 0.500 in every ten-step bin, so 7,680 \u00d7 0.5 \u00d7 0.05 = 192 per bin.",
+    "4.6 shares: 29.1%, 25.1%, 45.7% of high-load rows (rounds to 29/25/46). Strong-current P(g>=0.4) = 0.995 matches the review.",
+    "5.7 and 5.8: 64 \u00d7 0.05 = 3.2 and 2 \u00d7 64 \u00d7 0.05 = 6.4. Both adjacent bands [-0.95,-0.85) and (-0.75,-0.65] lie inside [-1,1].",
+    "6.1: calibration times come from PCG64(2026102362).integers(0,100) and are independent of the state (unifloral_checkpoint_v1/data.py:46-47), so 128 \u00d7 0.5 \u00d7 0.05 = 3.2. Seed 2026102362 matches bca_one_sided_v1/DATA_PROVENANCE.md:10.",
+    "2.2 float32 values checked with numpy: float32(-k-h) = -0.8500000238 (outside), next inward -0.8499999642 (inside); -0.7500000596 (inside); float32(-k+h) = -0.75 (outside). These agree with REVIEW lines 131-132.",
+    "Knee k = 0.800000011920929 = float32(0.8) (thrusterchain.py:79). Load g = c + w1 (thrusterchain.py:271 'The water's push on the floats... (c + w1)'), with obs indices 10 and 11 (v2 line 45).",
+    "Adjacent bands [\u2212k\u22123h, \u2212k\u2212h) and (\u2212k+h, \u2212k+3h] match v2 line 86. 5.3 (64), 5.4 (32 from 8) and 5.5 (32 at 0.4, 128 at 0.6) match v2 lines 86 and 90.",
+    "tau(v) = 1e-4 + 1e-5\u00b7abs(v) and eta = tau(v) match v2 lines 138-139. The 2.2 accounting identities (kappa zero, no sign flip, underestimation grows by kappa\u00b7U) match v2 line 144.",
+    "'v2 line 146' is the aggregation-weights paragraph.",
+    "Episode roles (768 / 128 calibration = first 128 tuning-validation groups by group ID / other 128 / sealed selection and final calibration; 1,280 total) match v2 line 35, REVIEW line 127 and data.py:41-43.",
+    "The Q^pi definition (candidate once, then the snapshot's own actor to step 100, gamma 0.98, no bootstrap) matches v2 lines 119-121 and simulation.py continuation_values.",
+    "Referenced paths exist: DRAFT_PROTOCOL.md, REVIEW_20261027.md, ../titan_handoff_20261027/ATTEMPT_HOLD.json (execution_allowed false).",
+    "Strong-current probes are outside recorded support by definition (v2 line 105). The kappa 3 and distance-control descriptions match v2 lines 125 and 128 and REVIEW line 139."
+   ],
+   "findings": [
+    {
+     "id": "A1",
+     "form_location": "3.8 (with 3.9, 7.6 and section 8)",
+     "severity": "blocking",
+     "title": "Pass/Fail/Inconclusive rules overlap and conflict with the gate scopes in 7.6",
+     "problem": "Under 3.8, any failed gate in section 7 makes the primary result Inconclusive. 7.6 says a 7.5 failure only leaves the return claim untested, and forced-probe accuracy may still be reported. The primary outcome is an accuracy statistic (MAE). Under 3.8, a 7.5 failure therefore makes the accuracy primary Inconclusive, while 7.6 and section 8 step 3 ('only if step 2 passed for the primary stratum') would let it be read. 7.5 is likely to fail: the reference shows 0 of 128 entries. Also, Fail requires only that every exposure gate passed. It does not require that 3.9 passed. A run where 3.9 fails, every gate passes and the pass rule is not met therefore meets both Fail and Inconclusive. The three outcomes are not mutually exclusive.",
+     "evidence": [
+      "DECISION_BLOCK.md:109 \"**Fail.** Every exposure gate in section 7 passed, and the pass rule is not met.\"",
+      "DECISION_BLOCK.md:110 \"**Inconclusive.** Any exposure gate in section 7 failed, or a readiness or learning check in 3.9 failed.\"",
+      "DECISION_BLOCK.md:200-203 \"If 7.1, 7.2, 7.3 or 7.4 fails, these claims are inconclusive... If 7.5 fails, the whole-policy return claim is untested... Forced-probe accuracy may still be reported.\"",
+      "DECISION_BLOCK.md:210 \"The primary comparison (section 3), only if step 2 passed for the primary stratum.\"",
+      "DECISION_BLOCK.md:197 reference \"development actor: 0 of 128 states\""
+     ],
+     "proposed_correction": "State which section-7 gates make the primary (accuracy) comparison Inconclusive, consistent with 7.6, so that 7.5 is either included or excluded explicitly. Make the three outcomes exclusive and exhaustive: Inconclusive is checked first (3.9 or the named gates failed), then Pass, then Fail. Fail should explicitly require that 3.9 passed.",
+     "verification": {
+      "id": "A1",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "I re-read lines 107-110. Fail needs only 'every exposure gate in section 7 passed' and the pass rule not met. Inconclusive is 'any exposure gate failed, or a readiness or learning check in 3.9 failed'. So a run with a failed 3.9, all gates passed and the pass rule unmet is both Fail and Inconclusive. Pass also does not require any gate to pass. 7.6 (lines 200-203) limits a 7.5 failure to the return claim and lets forced-probe accuracy be reported. Section 8 step 3 (line 210) reads the primary 'only if step 2 passed for the primary stratum', which leaves open whether 7.5 counts. Under 3.8 a 7.5 failure makes the accuracy primary Inconclusive, which conflicts with 7.6. I found no other text in the form that sets a precedence among the outcomes. An ambiguous decision rule is blocking under the rubric.",
+      "evidence": [
+       "DECISION_BLOCK.md:109 \"**Fail.** Every exposure gate in section 7 passed, and the pass rule is not met.\"",
+       "DECISION_BLOCK.md:110 \"**Inconclusive.** Any exposure gate in section 7 failed, or a readiness or learning check in 3.9 failed.\"",
+       "DECISION_BLOCK.md:202-203 \"If 7.5 fails, the whole-policy return claim is untested for this mechanism. Forced-probe accuracy may still be reported.\"",
+       "DECISION_BLOCK.md:210 \"only if step 2 passed for the primary stratum\""
+      ]
+     }
+    },
+    {
+     "id": "A2",
+     "form_location": "3.1 / 3.5 (statistic sign)",
+     "severity": "blocking",
+     "title": "Sign of the primary statistic is ambiguous",
+     "problem": "3.5 names a 'decrease in mean absolute error' but then writes it as BCA's error 'minus' native's error, and 3.1 says 'BCA minus native'. Read literally, that is MAE_BCA \u2212 MAE_native, which is positive when BCA is worse. 3.8 passes when 'the decrease exceeds 3.6'. With the sign undefined, the same data could pass or fail.",
+     "evidence": [
+      "DECISION_BLOCK.md:98 \"BCA minus native, paired within each trained seed.\"",
+      "DECISION_BLOCK.md:102 \"Decrease in mean absolute error, BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`.\"",
+      "DECISION_BLOCK.md:107 \"the decrease exceeds 3.6 in every seed\""
+     ],
+     "proposed_correction": "Write the statistic as one explicit formula per seed, for example D_s = MAE_native,s \u2212 MAE_BCA,s, with the weights from v2 line 146. State that positive D_s means BCA has lower error, and use D_s in 3.6 and 3.8.",
+     "verification": {
+      "id": "A2",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "Line 102 calls the statistic a 'Decrease in mean absolute error', then writes it as BCA's error 'minus' native's error. Line 98 says 'BCA minus native'. Read literally, the statistic is MAE_BCA \u2212 MAE_native, which is positive when BCA is worse. The word 'decrease' implies the opposite sign. The pass test 'the decrease exceeds 3.6' (line 107) depends on the sign. The review's candidate primary (REVIEW:50) also says 'BCA minus native' for the paired change in absolute error, so the sources do not settle it. No formula elsewhere in the form fixes the sign. The primary decision rule is ambiguous, so blocking.",
+      "evidence": [
+       "DECISION_BLOCK.md:98 \"BCA minus native, paired within each trained seed.\"",
+       "DECISION_BLOCK.md:102 \"Decrease in mean absolute error, BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`.\"",
+       "DECISION_BLOCK.md:107 \"the decrease exceeds 3.6 in every seed\"",
+       "REVIEW_20261027.md:50 \"the paired change in absolute Q error, BCA minus native\""
+      ]
+     }
+    },
+    {
+     "id": "A3",
+     "form_location": "How-to-use rule 3, stage order, headers of sections 9 and 10, 10.7, 3.7/9.1",
+     "severity": "blocking",
+     "title": "Freeze points contradict each other: sections 9 and 10 are frozen at three different stages, and 10.7 allows changes after the freeze",
+     "problem": "Section 9 is approved at stage 1 (stage table and approval table), but its header says it is fixed in stage 3. Stage 3 freezes 'every remaining blank', which includes section 10, but the section 10 header says it is fixed in stage 6. 10.7 then lets a projected total at stage 6 reduce S or the section 9 counts. That breaks rule 3 (blanks never change after their stage has run) and section 8 (nothing changes after step 1). S also has two independent blanks (3.7 and 9.1) that could be filled differently.",
+     "evidence": [
+      "DECISION_BLOCK.md:10 \"After a stage has run, its blanks never change.\"",
+      "DECISION_BLOCK.md:41 \"| 1 | Seed and role ledger | ... | Sections 1 and 9 |\" and DECISION_BLOCK.md:281 \"| 1 | 1, 9 |\"",
+      "DECISION_BLOCK.md:215 \"## 9. Seeds and evaluation counts (fixed in stage 3)\"",
+      "DECISION_BLOCK.md:43 \"| 3 | Freeze this whole form | Nothing | Every remaining blank |\" vs DECISION_BLOCK.md:231 \"## 10. Runtime ceiling (fixed in stage 6)\"",
+      "DECISION_BLOCK.md:255 \"A projected total above 10.1 reduces S or the counts in section 9 before the approval request.\"",
+      "DECISION_BLOCK.md:104 \"3.7 Trained seeds S | `[ ____ ]` (also section 9)\" and DECISION_BLOCK.md:219 \"9.1 Trained seeds S | `[ ____ ]`\""
+     ],
+     "proposed_correction": "Give each section one freeze stage, and use the same stage in its header, the stage-order table and the approval table. Either move the budget sheet before the stage-3 freeze, or state that a stage-6 reduction of S or the counts produces a new labeled version of the form, as rule 3 requires. Keep one blank for S and refer to it everywhere else.",
+     "verification": {
+      "id": "A3",
+      "verdict": "partly_confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "Most of the finding holds. Section 9 is approved at stage 1 (lines 41, 281), but its header says 'fixed in stage 3' (line 215). Stage 3 freezes 'every remaining blank' (lines 43, 283), but section 10 says 'fixed in stage 6' (line 231). 10.7 (line 255) lets the stage-6 budget sheet reduce S or the section 9 counts. Both were frozen at stage 1 or 3, which breaks rule 3 (line 10). S does have two blanks (3.7 and 9.1); line 104 links them only by the note 'also section 9'. One part is wrong: section 8's no-change rule (line 213) starts at 'step 1' of the stage-8 unsealing, which comes after stage 6. A stage-6 reduction therefore does not break section 8. The conflict is with rule 3 and the stage-3 freeze only.",
+      "evidence": [
+       "DECISION_BLOCK.md:10 \"After a stage has run, its blanks never change.\"",
+       "DECISION_BLOCK.md:41 \"| 1 | Seed and role ledger | ... | Sections 1 and 9 |\"; :215 \"## 9. Seeds and evaluation counts (fixed in stage 3)\"",
+       "DECISION_BLOCK.md:43 \"| 3 | Freeze this whole form | Nothing | Every remaining blank |\" vs :231 \"## 10. Runtime ceiling (fixed in stage 6)\"",
+       "DECISION_BLOCK.md:255 \"A projected total above 10.1 reduces S or the counts in section 9 before the approval request.\"",
+       "DECISION_BLOCK.md:213 \"No blank ... may change after step 1 begins.\" (step 1 is in stage 8, after stage 6)"
+      ],
+      "corrected_statement": "The freeze points contradict each other. Section 9 is approved at stage 1 but headed 'fixed in stage 3'. Section 10 falls under stage 3's 'every remaining blank' but is headed 'fixed in stage 6'. 10.7 lets the stage-6 budget reduce S or the section 9 counts after they are frozen, which breaks rule 3 at line 10. This does not break section 8's rule, which applies only from stage-8 step 1. S has two separate blanks (3.7 and 9.1)."
+     }
+    },
+    {
+     "id": "A4",
+     "form_location": "Stage order table vs sections 1, 2, 7, 8 and approval table (section 12)",
+     "severity": "major",
+     "title": "Stage-order table, section headers and approval table do not match",
+     "problem": "The stage table and the approval table cite blanks that do not exist, and they disagree with each other and with the section headers. Sections 1 and 2 have no blanks ('fixed; no blank'), yet stages 1 and 2 'approve' them. Sections 4 and 5 are 'fixed in stage 3', yet the approval table says stage 4 approves blanks 4 and 5, after stage 3 already approved 'all remaining'. For stage 7, the stage table requires sections 3, 7, 8, 9 and 10 plus a run authorization, while the approval table lists only 'run authorization'. Section 8 has no blanks. The section 7 header says it is 'read first in stage 8', but section 8 reads 3.9 first.",
+     "evidence": [
+      "DECISION_BLOCK.md:62 \"**1.3 Episode roles.** These are fixed; no blank.\"; DECISION_BLOCK.md:82 \"**2.2 Required cases.** These are fixed; no blank.\"",
+      "DECISION_BLOCK.md:42 \"| 2 | ... | Section 2 |\"; DECISION_BLOCK.md:282 \"| 2 | 2 |\"",
+      "DECISION_BLOCK.md:119 \"## 4. Coverage thresholds (fixed in stage 3, checked in stage 4)\" vs DECISION_BLOCK.md:284 \"| 4 | 4, 5 |\"",
+      "DECISION_BLOCK.md:47 \"Sections 3, 7, 8, 9 and 10, plus a separate run authorization\" vs DECISION_BLOCK.md:287 \"| 7 | run authorization |\"",
+      "DECISION_BLOCK.md:187 \"(fixed in stage 3, read first in stage 8)\" vs DECISION_BLOCK.md:208-209 (3.9 is step 1, section 7 is step 2)"
+     ],
+     "proposed_correction": "Separate 'blanks frozen' from 'permission to run' in both tables. List only sections that contain blanks. Make the stage-7 row of the approval table match the stage table. Change the section 7 header to 'read second in stage 8, after 3.9'.",
+     "verification": {
+      "id": "A4",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "Every quoted mismatch checks out. Sections 1 and 2 contain no blanks (lines 55-90, with 'These are fixed; no blank' at 62 and 82), yet the approval table's 'Blanks approved' column lists 1 and 2. Stage 3 approves 'all remaining' blanks, while stage 4 approves blanks 4 and 5 and their headers say 'fixed in stage 3'. For stage 7, the stage table (line 47) lists sections 3, 7, 8, 9 and 10 plus a run authorization, while the approval table (line 287) lists only the run authorization. The section 7 header says 'read first in stage 8', but section 8 puts 3.9 first. Approving fixed kill rules at stages 1 and 2 is sensible in itself, but the 'Blanks approved' column is still wrong, and the stage-7 scope differs between the two tables. Major is the right severity because these mismatches mislead and partly overlap A3.",
+      "evidence": [
+       "DECISION_BLOCK.md:62 \"**1.3 Episode roles.** These are fixed; no blank.\"; :82 \"**2.2 Required cases.** These are fixed; no blank.\"",
+       "DECISION_BLOCK.md:279-283 \"| Stage | Blanks approved |... | 1 | 1, 9 |... | 2 | 2 |... | 3 | all remaining |\"",
+       "DECISION_BLOCK.md:119 \"(fixed in stage 3, checked in stage 4)\" vs :284 \"| 4 | 4, 5 |\"",
+       "DECISION_BLOCK.md:47 \"Sections 3, 7, 8, 9 and 10, plus a separate run authorization\" vs :287 \"| 7 | run authorization |\"",
+       "DECISION_BLOCK.md:187 \"read first in stage 8\" vs :208-209 (3.9 is step 1, section 7 is step 2)"
+      ]
+     }
+    },
+    {
+     "id": "A5",
+     "form_location": "7.5 (band test for free-policy entry)",
+     "severity": "major",
+     "title": "The entry test in 7.5 uses a wider band than the hole, and reverses the support pilot's tolerance",
+     "problem": "7.5 counts a command as in the band when abs(a0 + k) <= h + 1e-6. The hole (plain-language table, v2 mask) uses <= h. Under the 7.5 test, the executed float32 values \u22120.75 and \u22120.85000002 count as entries, but 2.2 and the review classify them as outside the hole. The review asks for an entry rate 'defined like the support pilot's exposure fraction'. The pilot added its 1e-6 so that an entry had to be strictly beyond the boundary, which shrinks the counted region. 7.5 adds it the other way, which enlarges the region.",
+     "evidence": [
+      "DECISION_BLOCK.md:197 \"executed command is in the band (`abs(a0 + k) <= h + 1e-6`)\"",
+      "DRAFT_PROTOCOL.md (v2):47 \"`R_h(o,a) = [g(o) >= 0.4] AND [abs(float64(a[0]) + k) <= h]`\"",
+      "REVIEW_20261027.md:131-132 \"the executed hole runs from \u22120.84999996 to \u22120.75000006. The values \u22120.75 and \u22120.85000002 both fall outside.\"",
+      "support_shift_pilot_v1/evaluate_worker.py:36 \"outside = actions[:, :, 0].astype(np.float64) > .5 + 1e-6\"",
+      "numpy: abs(-0.75 + 0.800000011920929) = 0.0500000119 > 0.05 (outside the hole) but <= 0.05 + 1e-6 (in band for 7.5); the same holds for float32(-0.85) = -0.8500000238"
+     ],
+     "proposed_correction": "Define entry with the same membership test as the hole, R_h on the executed float32 command with <= h. If a tolerance is wanted, state its direction and why, consistent with the pilot's convention, and add the 7.5 edge cases to the 2.2 fixtures.",
+     "verification": {
+      "id": "A5",
+      "verdict": "partly_confirmed",
+      "verified_severity": "minor",
+      "reasoning": "The calculation reproduces. abs(float32(-0.75)+k) = 0.0500000119 and abs(float32(-0.85)+k) = 0.0500000119. Both exceed h, so they are outside the hole (v2 line 47 uses <= h), and both are <= h+1e-6, so 7.5 counts them as in the band. The pilot (evaluate_worker.py:36) adds 1e-6 in the shrinking direction ('> .5 + 1e-6'), so 7.5 does reverse the pilot's tolerance. The severity is inflated, though. Near 0.75 the float32 spacing is 5.96e-8, so the 1e-6 tolerance adds only about 17 float32 values at each edge, against roughly 1.7 million values in the band. A tanh actor output almost never lands on one of them, so the effect on an entry share is negligible. The core problem is a definitional inconsistency with the hole mask and the 2.2 edge fixtures, not a material misreading.",
+      "evidence": [
+       "DECISION_BLOCK.md:197 \"(`abs(a0 + k) <= h + 1e-6`)\"",
+       "DRAFT_PROTOCOL.md (v2):47 \"`R_h(o,a) = [g(o) >= 0.4] AND [abs(float64(a[0]) + k) <= h]`\"",
+       "support_shift_pilot_v1/evaluate_worker.py:36 \"outside = actions[:, :, 0].astype(np.float64) > .5 + 1e-6\"",
+       "numpy: -0.75 -> 0.050000011920928955 (<=h False, <=h+1e-6 True); float32(-0.85) -> same",
+       "np.spacing(float32(0.75)) = 5.96e-8; 1e-6/5.96e-8 = 16.8 values per edge"
+      ],
+      "corrected_statement": "The 7.5 entry test (<= h + 1e-6) differs from the hole mask (<= h). It counts the float32 values \u22120.75 and \u22120.85000002, which 2.2 and the review classify as outside, and it applies the tolerance in the opposite direction from the support pilot. The numerical effect is negligible (about 17 float32 values per edge), so this is a definitional consistency issue, not a material one."
+     }
+    },
+    {
+     "id": "A6",
+     "form_location": "7.3 (development reference)",
+     "severity": "major",
+     "title": "The +19 to +82 reference conflicts with the verified saved-bank figures and is a different statistic from the threshold",
+     "problem": "7.3 sets a minimum native MAE, but its reference is a range of signed per-row errors copied from the review. The v3 addendum recomputed the saved development bank: 25 high-load in-band candidates have signed Q1 errors from about \u22126.54 to +81.96, and MAE 47.49. Some errors are therefore negative, and the lower end is not +19. The form does not mention the dispute.",
+     "evidence": [
+      "DECISION_BLOCK.md:195 \"full-data development critic: +19 to +82 at such commands\"",
+      "REVIEW_20261027.md:61 \"misjudges in-band commands at `g >= 0.4` by +19 to +82 units\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:11 \"Saved high-load band candidates have absolute Q1 errors 6.5421-81.9592, MAE 47.48894; 20-80 is an approximate scale, not an all-row range.\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:21 \"There are 25 saved high-load candidates in this interval, from 21 states. Their signed Q1 error ranges from approximately -6.5421 to +81.9592.\""
+     ],
+     "proposed_correction": "Give the reference in the threshold's own units (an MAE, with its source, checkpoint, data condition and row count). Cite the addendum's verified figures, or mark the review figure as disputed.",
+     "verification": {
+      "id": "A6",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "Line 195 gives the reference as '+19 to +82 at such commands', copied from REVIEW:61. The threshold is a minimum native MAE, while the reference is a range of signed per-row errors, so the units differ. The v3 addendum, committed in the same commit 850120f as the form, reports for the saved high-load in-band candidates signed Q1 errors from about \u22126.54 to +81.96 (25 candidates, 21 states) and MAE 47.49. That contradicts the '+19' lower end and the implied all-positive sign. I could not recompute the bank because loading .npz files is prohibited, and the addendum's EVIDENCE.json is not in the folder. The conflict between the two documents is still explicit, and the form does not mention it.",
+      "evidence": [
+       "DECISION_BLOCK.md:195 \"full-data development critic: +19 to +82 at such commands\"",
+       "REVIEW_20261027.md:61 \"misjudges in-band commands at `g >= 0.4` by +19 to +82 units on the development banks\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:11 \"absolute Q1 errors 6.5421-81.9592, MAE 47.48894; 20-80 is an approximate scale, not an all-row range\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:21 \"There are 25 saved high-load candidates in this interval, from 21 states. Their signed Q1 error ranges from approximately -6.5421 to +81.9592.\""
+      ]
+     }
+    },
+    {
+     "id": "A7",
+     "form_location": "Preamble lines 12-13; 5.2 and 7.1 references",
+     "severity": "major",
+     "title": "The form calls all analytic references closed-form recorder and start-law expectations, but 5.2 and 7.1 are model-based and disputed",
+     "problem": "The preamble says every analytic reference is a closed-form expectation from the recorder and start law. The 5.2 radius figures come from a per-time Gaussian model fitted to the receipt's state standard deviations. The 7.1 value-spread figure comes from a linear-quadratic, simple-continuation calculation on the plant. Neither follows from the recorder and start law alone, and the v3 addendum classifies both as unverified. The 4.x, 5.7, 5.8 and 6.1 references do follow from the recorder and start law (see the checked items).",
+     "evidence": [
+      "DECISION_BLOCK.md:12-13 \"that number comes from the documented recorder and start law. It is a closed-form expectation\"",
+      "REVIEW_20261027.md:41-44 \"A per-time Gaussian model of the training states reproduces the receipt's standard deviations... about 1 to 2 same-bin, same-side training rows within standardized distance 0.5\"; REVIEW_20261027.md:184 \"(Gaussian approximation)\"",
+      "REVIEW_20261027.md:57-60 \"finite-horizon linear-quadratic curvature... Under simple neutral continuations, the value spread... averages about 1 to 1.5 units\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:12 \"**Unverified numerical claim.** No matching saved count/normalization/anchor receipt was found\"; AUDIT_ADDENDUM.md:11 \"full-return bound unverified\""
+     ],
+     "proposed_correction": "Give each reference a provenance label: (a) recorder and start-law expectation, (b) model-based approximation with its model named, or (c) development measurement. Mark 5.2 and 7.1 as model-based and disputed by v3 AUDIT_ADDENDUM.md lines 11-12. Note that 7.1's figure is an average over states, while the threshold applies per state.",
+     "verification": {
+      "id": "A7",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "Lines 12-13 say every analytic reference 'comes from the documented recorder and start law. It is a closed-form expectation'. The 5.2 reference sits in an 'Analytic reference' column, and the review itself labels it a '(Gaussian approximation)' from a per-time Gaussian model fitted to the receipt's standard deviations (REVIEW:41-44, 184). That depends on the plant dynamics, not on the recorder and start law alone. The 7.1 reference rests on a linear-quadratic curvature and simple-continuation calculation (REVIEW:57-60). The form takes its framing from the review's own blanket statement (REVIEW:8, 174), but the statement is still inaccurate for these two items. The v3 addendum calls the radius claim unverified (line 12) and the full-return value-flatness bound unverified (line 11).",
+      "evidence": [
+       "DECISION_BLOCK.md:12-13 \"that number comes from the documented recorder and start law. It is a closed-form expectation\"",
+       "DECISION_BLOCK.md:144 \"0.5 gives about 1 to 2 rows; about 0.67 to 0.77 gives 32 to 64\"",
+       "REVIEW_20261027.md:41-42 \"A per-time Gaussian model of the training states reproduces the receipt's standard deviations\"; :184 \"(Gaussian approximation)\"",
+       "REVIEW_20261027.md:57-60 \"finite-horizon linear-quadratic curvature ... Under simple neutral continuations, the value spread ... averages about 1 to 1.5 units\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:12 \"**Unverified numerical claim.**\""
+      ]
+     }
+    },
+    {
+     "id": "A8",
+     "form_location": "Preamble / stage 7 (missing citation of the v3 addendum)",
+     "severity": "major",
+     "title": "The form leaves out the later audit that rejects this band as the next efficacy-pilot candidate",
+     "problem": "The form presents stage 7 (training and evaluation) as the path for this band and names only the review and v2 as sources. The v3 addendum in the same commit says to reject the present band as the next policy-efficacy pilot candidate and not to spend the training budget on it. A user filling the form is not told that this decision exists, or that several of the form's references are disputed in it.",
+     "evidence": [
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:3 \"Status: **reject the present band as the next policy-efficacy pilot candidate; keep launch blocked**... this addendum supersedes v2's recommendation to retain the band provisionally\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:67 \"**Decision:** do not spend the proposed policy-training budget on this candidate.\"",
+      "DECISION_BLOCK.md:13 \"The sources are `REVIEW_20261027.md` and v2.\"; DECISION_BLOCK.md:47 stage 7 \"Training and evaluation\""
+     ],
+     "proposed_correction": "Add a status note naming conditional_ood_design_v3/AUDIT_ADDENDUM.md and its decision (as of this commit; a newer version is being edited elsewhere). State that stage 7 is not a candidate until that decision is resolved by the user.",
+     "verification": {
+      "id": "A8",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "Git history shows that DECISION_BLOCK.md and conditional_ood_design_v3/AUDIT_ADDENDUM.md were added in the same commit (850120f, 2026-10-27 15:41). The form names only the review and v2 as sources (line 13) and never mentions the addendum. The addendum's status line rejects the present band as the next efficacy-pilot candidate, says it supersedes v2's provisional retention, and states 'do not spend the proposed policy-training budget on this candidate'. The form's stage 7 (training and evaluation) assumes this band. A user filling the form is not told about that decision or about the disputed references (see A6 and A7). It mainly misleads rather than authorizing anything, since the form authorizes no run, so major fits.",
+      "evidence": [
+       "git log: 850120f 2026-10-27 15:41:48 'OOD plans' adds both files",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:3 \"Status: **reject the present band as the next policy-efficacy pilot candidate; keep launch blocked**\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:67 \"**Decision:** do not spend the proposed policy-training budget on this candidate.\"",
+       "DECISION_BLOCK.md:13 \"The sources are `REVIEW_20261027.md` and v2.\""
+      ]
+     }
+    },
+    {
+     "id": "A9",
+     "form_location": "3.5 (fixed default statistic)",
+     "severity": "major",
+     "title": "The fixed primary statistic compares BCA's adjusted score z with native's raw q, which neither source specifies",
+     "problem": "v2 keeps two panels apart: the same-critic q versus z panel, and separately trained critics each evaluated against its own actor's v. The review's candidate primary is the paired change in absolute Q error. 3.5 fixes a mixed statistic, BCA's z = Q1 \u2212 3U against native's q, without saying that it combines the score adjustment with the training effect. It also leaves out v2's rule that cross-method own-policy comparisons use the larger of the two tau values.",
+     "evidence": [
+      "DRAFT_PROTOCOL.md (v2):125-126 \"Same-critic adjustment: compare `q=Q1` and `z=Q1-kappa*U`... Separately trained native/BCA/control policies: each critic is evaluated against its own actor's `v^pi`\"",
+      "REVIEW_20261027.md:50 \"One candidate primary is the paired change in absolute Q error, BCA minus native\"",
+      "DRAFT_PROTOCOL.md (v2):139 \"For own-policy comparisons across trained methods, record both references and use the larger proposed tau as the comparison band.\"",
+      "DECISION_BLOCK.md:102 \"BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`\""
+     ],
+     "proposed_correction": "State that the default statistic is a mixed-panel choice not specified in v2 or the review. Name the q-versus-q alternative explicitly next to the alternative blank. Add v2's larger-tau rule for cross-method pairs.",
+     "verification": {
+      "id": "A9",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "The core holds. v2 keeps the same-critic q-versus-z panel (line 125) separate from the cross-method own-policy panel (line 126), and the review's candidate primary is the 'paired change in absolute Q error' (REVIEW:50). Neither source specifies comparing BCA's z with native's q, and 3.5 does not say that its statistic mixes the score adjustment with the training effect. The larger-tau part does not apply here. v2 line 139's larger-tau rule is the tie band for improved, worsened and tied classification of Delta, which the form handles under section 11 'Paired change ... with eta'. The primary statistic is an MAE difference judged against the practical size 3.6 and uses no tau, so omitting the rule from 3.5 is not a gap in the primary.",
+      "evidence": [
+       "DRAFT_PROTOCOL.md (v2):125-126 \"Same-critic adjustment: compare `q=Q1` and `z=Q1-kappa*U` ... Separately trained native/BCA/control policies: each critic is evaluated against its own actor's `v^pi`\"",
+       "REVIEW_20261027.md:50 \"the paired change in absolute Q error, BCA minus native\"",
+       "DRAFT_PROTOCOL.md (v2):139 the larger-tau rule is inside the paired Delta improved/worsened/tied classification",
+       "DECISION_BLOCK.md:263 \"**Paired change:** improved, worsened and tied counts with `eta`.\""
+      ],
+      "corrected_statement": "The fixed 3.5 statistic compares BCA's adjusted score z with native's raw q. That mixed-panel choice is not specified in v2 or the review, and the form does not label it as such or name the q-versus-q alternative. v2's larger-tau rule concerns the secondary paired-change tie classification, not the MAE primary, so it is not missing from 3.5."
+     }
+    },
+    {
+     "id": "A10",
+     "form_location": "3.8 Inconclusive / 3.9 / section 8 step 1",
+     "severity": "major",
+     "title": "A 'readiness check' is cited but never defined",
+     "problem": "3.8 and section 8 point to readiness checks in 3.9, but 3.9 contains only the learning check. No readiness criterion, threshold or kill rule exists anywhere in the form, for example a refusal or invalid share, or an unavailable BCA reference. So one branch of the Inconclusive rule cannot be evaluated.",
+     "evidence": [
+      "DECISION_BLOCK.md:110 \"a readiness or learning check in 3.9 failed\"",
+      "DECISION_BLOCK.md:112-114 (3.9 defines only the native-return learning check)",
+      "DECISION_BLOCK.md:208 \"Readiness and learning checks (3.9), with refusal and invalid counts.\"",
+      "DRAFT_PROTOCOL.md (v2):68 \"An unavailable or infinite BCA reference remains a refusal/unready state\""
+     ],
+     "proposed_correction": "Add a readiness item to 3.9 with its own user blank and rule (for example, the maximum refused or invalid share, and what counts as an unready reference), or remove 'readiness' from 3.8 and section 8.",
+     "verification": {
+      "id": "A10",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "3.9 (lines 112-114) is titled 'Learning check' and defines only the native-return improvement test. Line 110 and section 8 step 1 (line 208) refer to 'readiness' checks in 3.9, and nothing in the form defines a readiness criterion, threshold or kill rule. Step 1 mentions 'refusal and invalid counts' but sets no rule for them. v2 line 68 treats an unavailable or infinite BCA reference as a refusal or unready state, so the concept exists in the protocol but has no criterion in the form. The readiness branch of the Inconclusive rule therefore cannot be evaluated.",
+      "evidence": [
+       "DECISION_BLOCK.md:110 \"or a readiness or learning check in 3.9 failed\"",
+       "DECISION_BLOCK.md:112 \"**3.9 Learning check.** The native arm must improve mean paired return ...\"",
+       "DECISION_BLOCK.md:208 \"Readiness and learning checks (3.9), with refusal and invalid counts.\"",
+       "DRAFT_PROTOCOL.md (v2):68 \"An unavailable or infinite BCA reference remains a refusal/unready state\""
+      ]
+     }
+    },
+    {
+     "id": "A11",
+     "form_location": "Section 9, line 229 (seeds 10 to 14)",
+     "severity": "major",
+     "title": "The 'standing rules reserve seeds 10 to 14' claim has no source",
+     "problem": "No source the form cites mentions a reservation of seeds 10 to 14: not v2, the audit, the review, the addendum or any Zeus JSON receipt. The only matches in the repo are in a different experiment's preregistration, where 10 to 14 are that study's fresh confirmatory seeds. They are not in the stage-1 ledger, so the 1.2 overlap rule would not catch a collision if the user answers 'no'.",
+     "evidence": [
+      "DECISION_BLOCK.md:229 \"The standing rules reserve seeds 10 to 14 for a new version.\"",
+      "grep for '10 to 14|10-14|seeds 10' across zeus_20261026_validation and conditional_ood_design_v1/v2/v3 returns only DECISION_BLOCK.md:229",
+      "Only other hit: /home/user/BCA/outputs/shift/beyond-the-data/near80/PREREGISTRATION.md:25 \"Seeds 10-14 are fresh. Only they can carry a claim.\" (a different study)"
+     ],
+     "proposed_correction": "Cite the rule's actual source file and line, or remove the sentence. In either case, state whether seeds 10 to 14 enter the stage-1 ledger as a reserved range.",
+     "verification": {
+      "id": "A11",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "None of the form's cited sources (v2, the audit, the review, the addendum or the Zeus JSON receipts) contains a reservation of seeds 10 to 14. In zeus_20261026_validation, grep finds only DECISION_BLOCK.md:229, and there is no CLAUDE.md or project rule file containing it. The finding's 'only other hit' is wrong, though. Several files under outputs/shift/beyond-the-data mention seeds 10-14, for example restructure/step2/PRESPEC.md:23 ('seeds 10-14 to a later confirmation') and :228, and restructure/analysis/restructure/ANSWER.md:33, :47. All of them belong to a different study's planned version 8, not to standing rules for this design. The core point stands: the claim has no cited source, and a possible collision is not in the stage-1 ledger.",
+      "evidence": [
+       "DECISION_BLOCK.md:229 \"The standing rules reserve seeds 10 to 14 for a new version.\"",
+       "grep in zeus_20261026_validation: only DECISION_BLOCK.md:229",
+       "outputs/shift/beyond-the-data/restructure/step2/PRESPEC.md:23 \"seeds 10-14 to a later confirmation\"; :228 \"version 8 (fresh seeds 10-14)\"",
+       "outputs/shift/beyond-the-data/restructure/analysis/restructure/ANSWER.md:47 \"approve the v8 text and fresh seeds 10-14\""
+      ],
+      "corrected_statement": "The 'standing rules reserve seeds 10 to 14' sentence cites no source, and no document cited by the form contains it. The repository mentions of seeds 10-14 (near80/PREREGISTRATION.md, restructure/step2/PRESPEC.md, restructure/analysis/.../ANSWER.md) all belong to a different study's planned version 8. That range is not in the stage-1 ledger, so a collision would not be caught if the user answers 'no'."
+     }
+    },
+    {
+     "id": "A12",
+     "form_location": "7.1-7.5",
+     "severity": "major",
+     "title": "The exposure gates do not say which data condition, checkpoint or arm they are read on",
+     "problem": "7.1, 7.2, 7.3 and 7.5 do not name the data condition (full, hole or random-removal) or the checkpoint (for example 20k, or the 3.4 choice). 7.5's 'native or distance-control' does not say whether either arm, both arms, or each arm separately must meet the share. The gates therefore cannot be evaluated mechanically, which matters most for 7.3, where an error opportunity in the full-data condition and in the hole condition are different quantities.",
+     "evidence": [
+      "DECISION_BLOCK.md:195 \"7.3 Error opportunity: minimum native mean absolute error on in-band high-load probes\"",
+      "DECISION_BLOCK.md:197 \"the native or distance-control actor's executed command is in the band\"",
+      "support_shift_pilot_v1/evaluate_worker.py:79 \"exposed = any(... for arm in (\\\"native\\\", \\\"distance\\\"))\" (the pilot's 'any' convention)"
+     ],
+     "proposed_correction": "For each gate, add the data condition(s), checkpoint and arm quantifier (any or all), or a user blank for each.",
+     "verification": {
+      "id": "A12",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "7.1, 7.2, 7.3 and 7.5 name no data condition and no checkpoint. Only 7.4 names its conditions (hole minus full-data). 7.5's 'native or distance-control actor' gives no quantifier: either arm, both arms, or each arm separately. The pilot used an 'any' convention (evaluate_worker.py:79), so 'or' could be read either way. Section 8 step 3 refers to the 'primary stratum' but still gives no condition or checkpoint for the gates. I found no text elsewhere that fixes these, so the gates cannot be evaluated mechanically.",
+      "evidence": [
+       "DECISION_BLOCK.md:195 \"7.3 Error opportunity: minimum native mean absolute error on in-band high-load probes\"",
+       "DECISION_BLOCK.md:197 \"the native or distance-control actor's executed command is in the band\"",
+       "DECISION_BLOCK.md:196 7.4 is the only gate naming conditions (\"hole condition minus full-data condition\")",
+       "support_shift_pilot_v1/evaluate_worker.py:79 \"exposed = any(... for arm in (\\\"native\\\", \\\"distance\\\"))\""
+      ]
+     }
+    },
+    {
+     "id": "A13",
+     "form_location": "6.1-6.3",
+     "severity": "major",
+     "title": "Calibration row plan leaves out v2's random-removal matching within calibration episodes",
+     "problem": "v2 requires an action-independent count-matching plan inside the calibration episodes, followed by one row per eligible episode. The form's 6.3 random-removal stream is defined only per training stratum, and 6.2 offers a yes/no shared calibration row set without saying how a shared set fits v2's per-condition plan.",
+     "evidence": [
+      "DRAFT_PROTOCOL.md (v2):82 \"Apply the analogous action-independent count-matching plan within the separate calibration episodes; then select one row per eligible episode.\"",
+      "DECISION_BLOCK.md:175 \"Do all three data conditions use one shared calibration row set? `[ yes / no ]`\"",
+      "DECISION_BLOCK.md:177 \"The RNG stream is addressed per (episode, ten-step bin, load side) stratum.\""
+     ],
+     "proposed_correction": "Add an item for the random-removal calibration rows, or state that answering 'yes' in 6.2 replaces v2 line 82, and say so as a departure from v2.",
+     "verification": {
+      "id": "A13",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "v2 line 82 requires an action-independent count-matching plan inside the calibration episodes, then one row per eligible episode. The form's 6.1 covers only the hole replacement rule, and 6.2 asks yes or no on a shared calibration row set without saying how 'yes' fits v2 line 82. Nothing in the form explicitly covers random-removal calibration rows. One detail of the finding is wrong: 6.3 does not say 'training'. It says the stream is 'addressed per (episode, ten-step bin, load side) stratum' without naming training or calibration episodes, so it is ambiguous rather than training-only. The gap remains, especially if 6.2 is answered 'no'.",
+      "evidence": [
+       "DRAFT_PROTOCOL.md (v2):82 \"Apply the analogous action-independent count-matching plan within the separate calibration episodes; then select one row per eligible episode.\"",
+       "DECISION_BLOCK.md:175 \"Do all three data conditions use one shared calibration row set? `[ yes / no ]`\"",
+       "DECISION_BLOCK.md:177 \"The RNG stream is addressed per (episode, ten-step bin, load side) stratum.\" (no 'training' qualifier)"
+      ],
+      "corrected_statement": "The row plans do not say whether, or how, v2's random-removal count matching applies inside the calibration episodes. 6.3's stratum addressing does not say which episodes it covers. 6.2 'yes' would implicitly replace v2 line 82 without being labeled a departure from v2."
+     }
+    },
+    {
+     "id": "A14",
+     "form_location": "2.2 and 10.5",
+     "severity": "major",
+     "title": "The t>0 reference parity fixture and the parity transitions are missing",
+     "problem": "The review and the addendum require a parity check of the reference continuation at an interior time (t>0), because reset always sets t=0. Section 2.2 has no such fixture. 10.5's simulator-transition formula also leaves out parity and verification fixtures, which v2's budget explicitly includes, so the ceiling formula undercounts.",
+     "evidence": [
+      "REVIEW_20261027.md:99-102 \"References at `t > 0` must replay a prefix... Add a parity check at a `t > 0` probe. The existing check covers only `t = 0` and `t = 99`.\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:57 \"Require parity/accounting checks against environment-driven sequences at initial, interior and final times.\"",
+      "DRAFT_PROTOCOL.md (v2):154 \"plus diagnostic state-bank generation, parity fixtures, and `100 * return_episode_count`\"",
+      "DECISION_BLOCK.md:252 \"the sum of `(100 \u2212 t)` over every candidate and snapshot, plus 100 \u00d7 return episodes, plus state-bank generation\""
+     ],
+     "proposed_correction": "Add a required t>0 (interior-time) reference parity fixture to 2.2. Add parity and verification transitions, and the extra actor-action candidates, to the 10.5 formula.",
+     "verification": {
+      "id": "A14",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "The form never mentions a t>0 reference parity check, and REVIEW:99-102 and ADDENDUM:57 both require one. Placing it in 2.2 does not fit, because stage 2 is 'hand-built cases only, no dataset' and a reference-continuation parity check runs the simulator. It still needs a home somewhere. 10.5 leaves out parity fixtures, which v2 line 154 lists explicitly. The 'extra actor-action candidates' part of the finding is wrong: 10.5 sums '(100 \u2212 t) over every candidate and snapshot', and 9.6 includes the actor's own command as a candidate ('plus 1'), so those transitions are already counted.",
+      "evidence": [
+       "REVIEW_20261027.md:101-102 \"Add a parity check at a `t > 0` probe. The existing check covers only `t = 0` and `t = 99`.\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:57 \"Require parity/accounting checks ... at initial, interior and final times.\"",
+       "DRAFT_PROTOCOL.md (v2):154 \"plus diagnostic state-bank generation, parity fixtures, and `100 * return_episode_count`\"",
+       "DECISION_BLOCK.md:252 formula omits parity fixtures; :224 \"plus the actor's own command ... plus 1\" (actor candidates already counted)",
+       "DECISION_BLOCK.md:42 stage 2 \"Hand-built cases only, no dataset\""
+      ],
+      "corrected_statement": "The form has no required interior-time (t>0) reference parity check anywhere. It belongs in a simulator-running stage, not the hand-built-only stage 2. The 10.5 transition formula leaves out the parity and verification transitions that v2 line 154 includes. Actor-action candidates are already covered by 'every candidate'."
+     }
+    },
+    {
+     "id": "A15",
+     "form_location": "4.6",
+     "severity": "minor",
+     "title": "The load-depth reference is a share, while the threshold is a count with one value for 'each' stratum",
+     "problem": "The threshold is a minimum hole-row count applied to each stratum, but the reference gives shares of high-load rows, and the strata are unequal. The expected hole-row counts are about 559, 482 and 878. These need the same assumptions as 4.2, plus the start law for the distribution of g.",
+     "evidence": [
+      "DECISION_BLOCK.md:130 \"`[ ____ ]` each | shares of high-load rows about 29%, 25%, 46%\"",
+      "Monte Carlo over the start law (c~U[0.1,0.7], A~U[0.1,0.4], phase uniform, 0.27 rad/step): shares 0.291/0.251/0.457; \u00d7 1,920 = 559/482/878"
+     ],
+     "proposed_correction": "Give the reference as expected hole-row counts per stratum (or label both units), and say whether one minimum applies to all strata.",
+     "verification": {
+      "id": "A15",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "4.6's threshold is a count ('[ ____ ] each'), while its reference gives shares. My independent Monte Carlo over the start law (c~U[0.1,0.7], A~U[0.1,0.4], phase uniform) gives P(g>=0.4) = 0.500 and high-load shares of 0.291, 0.252 and 0.457. Multiplied by the 1,920 expected hole rows, that is about 559, 483 and 877 rows per stratum. The units mismatch, and with unequal strata a single 'each' minimum needs care. Minor is right.",
+      "evidence": [
+       "DECISION_BLOCK.md:130 \"`[ ____ ]` each | shares of high-load rows about 29%, 25%, 46%\"",
+       "MC (4M draws): shares 0.2914/0.2516/0.4570; \u00d7 1,920 \u2248 559/483/877"
+      ]
+     }
+    },
+    {
+     "id": "A16",
+     "form_location": "5.2 / 5.5",
+     "severity": "minor",
+     "title": "5.2 does not state v2's proposed radius, and 5.5 does not note that its sensitivity radii lie below the review's range",
+     "problem": "5.3 to 5.5 each quote 'v2 proposes ...', but 5.2 leaves out that v2 proposes radius 0.5. The review notes that the sensitivity pair at 0.4 and 0.6 does not reach the 0.67 to 0.77 range. The form leaves out that note and v2's tie-break by source row ID. It also leaves out the addendum's whole-episode exclusion for training-derived anchors.",
+     "evidence": [
+      "DRAFT_PROTOCOL.md (v2):86 \"Keep at most the nearest 64 within proposed radius 0.5... breaking ties by source row ID\"",
+      "REVIEW_20261027.md:45-46 \"The declared sensitivity pair at 0.4 and 0.6 does not reach it.\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:12 \"Exclude the entire anchor episode when measuring other-episode support\"",
+      "DECISION_BLOCK.md:144-147"
+     ],
+     "proposed_correction": "Add 'v2 proposes 0.5' to 5.2, note under 5.5 that both sensitivity radii are below the review's range, and state the tie-break and anchor-episode exclusion rules in Option A.",
+     "verification": {
+      "id": "A16",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "5.3 to 5.5 each say 'v2 proposes ...', while 5.2 mentions 0.5 only as an analytic point, not as v2's proposed radius (v2:86). The form leaves out the review's note that the 0.4 and 0.6 sensitivity pair does not reach the 0.67 to 0.77 range (REVIEW:45-46). It also leaves out v2's tie-break by source row ID and the addendum's whole-anchor-episode exclusion. These are omissions of clarity and completeness, and minor fits.",
+      "evidence": [
+       "DRAFT_PROTOCOL.md (v2):86 \"breaking ties by source row ID. Keep at most the nearest 64 within proposed radius 0.5\"",
+       "REVIEW_20261027.md:45-46 \"The declared sensitivity pair at 0.4 and 0.6 does not reach it.\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:12 \"Exclude the entire anchor episode when measuring other-episode support\"",
+       "DECISION_BLOCK.md:144-147"
+      ]
+     }
+    },
+    {
+     "id": "A17",
+     "form_location": "7.5 reference",
+     "severity": "minor",
+     "title": "The 7.5 reference measures distance from the band center, and counts bank states rather than high-load rollout steps",
+     "problem": "The nearest actor command, \u22120.48282, is 0.317 from the band center \u2212k, but only 0.267 from the band edge. 'Nearest 0.32 away' reads as distance from the band. The reference also counts 128 bank states at all loads, while the gate measures the share of high-load free-rollout steps. The addendum reports 0 of 59 high-load states.",
+     "evidence": [
+      "DECISION_BLOCK.md:197 \"development actor: 0 of 128 states, nearest 0.32 away\"",
+      "conditional_ood_design_v3/AUDIT_ADDENDUM.md:13 \"-0.4828205704689026 to +0.52145916223526, with 0/128 in the proposed band and 0/59 among high-load actor states\"",
+      "-0.48282 - (-0.80000001) = 0.3172 (from center); -0.48282 - (-0.75000001) = 0.2672 (from edge)"
+     ],
+     "proposed_correction": "Write 'nearest 0.32 from the band center (0.27 from its edge)', add 0 of 59 high-load states, and note that these are fixed-bank states, not free-rollout steps.",
+     "verification": {
+      "id": "A17",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "I recomputed the distances. \u22120.4828205704689026 is 0.3172 from the band center \u2212k and 0.2672 from the band edge \u2212k+h. The review says 'the nearest 0.32 from the band center' (REVIEW:77). The form drops 'from the band center', so '0.32 away' reads as distance from the band. The addendum adds 0/59 among high-load actor states. The reference counts fixed-bank states at all loads, while the gate is a share of high-load free-rollout steps.",
+      "evidence": [
+       "DECISION_BLOCK.md:197 \"development actor: 0 of 128 states, nearest 0.32 away\"",
+       "REVIEW_20261027.md:77 \"the nearest 0.32 from the band center\"",
+       "conditional_ood_design_v3/AUDIT_ADDENDUM.md:13 \"0/128 in the proposed band and 0/59 among high-load actor states\"",
+       "computed: 0.31718 (center), 0.26718 (edge)"
+      ]
+     }
+    },
+    {
+     "id": "A18",
+     "form_location": "Section 10, training-time estimate",
+     "severity": "minor",
+     "title": "Per-seed training time differs from the review it cites, and its scaling assumption is not stated",
+     "problem": "Scaling the two warmup times linearly by 12 (120,000 critic updates per seed \u00f7 10,000) gives 2.13 to 2.36 h per seed, which matches the form. The review's 4.3 to 5.0 h for two seeds implies 2.15 to 2.5 h per seed. The form gives neither the source of its numbers nor the assumption that branch updates with the BCA penalty and calibration refreshes cost the same as warmup updates.",
+     "evidence": [
+      "DECISION_BLOCK.md:243-244 \"about 2.1 to 2.4 hours per seed of training only\"",
+      "REVIEW_20261027.md:104-105 \"637.6 s and 708.3 s) puts training alone at about 4.3 to 5.0 hours for two seeds\"",
+      "12 \u00d7 637.6 s = 7,651 s = 2.13 h; 12 \u00d7 708.3 s = 8,500 s = 2.36 h (two seeds: 4.25 to 4.72 h)",
+      "archived_attempts/support_shift_retry2_interrupted_20261027T042116Z/snapshot/RUN_RESULT.json:10,45 elapsed_seconds 637.60, 708.31"
+     ],
+     "proposed_correction": "State the scaling assumption (12 warmup-equivalents per seed, refresh and penalty overhead excluded), and note the difference from the review's 4.3 to 5.0 h figure.",
+     "verification": {
+      "id": "A18",
+      "verdict": "partly_confirmed",
+      "verified_severity": "minor",
+      "reasoning": "The arithmetic reproduces. 12 \u00d7 637.60 s = 2.125 h and 12 \u00d7 708.31 s = 2.361 h, matching the form's 2.1 to 2.4 h per seed (RUN_RESULT.json:10,45). The review's 4.3 to 5.0 h for two seeds implies 2.15 to 2.5 h per seed, so the two figures differ slightly. The claim that the form 'gives neither the source of its numbers' is wrong: line 243 says the estimate is 'extrapolated from two Zeus 10k warmups'. What is missing is the scaling assumption (12 warmup-equivalents, with refresh and penalty overhead excluded) and a note of the gap from the review.",
+      "evidence": [
+       "DECISION_BLOCK.md:243-244 \"It is extrapolated from two Zeus 10k warmups ... about 2.1 to 2.4 hours per seed\"",
+       "REVIEW_20261027.md:104-105 \"about 4.3 to 5.0 hours for two seeds\"",
+       "RUN_RESULT.json:10 elapsed_seconds 637.600727173; :45 708.3104125549999",
+       "computed 2.1253 h, 2.3610 h"
+      ],
+      "corrected_statement": "The per-seed estimate names its source (two Zeus 10k warmups) but not its linear 12\u00d7 scaling assumption. That assumption excludes refresh and penalty overhead and gives 4.25 to 4.72 h for two seeds, slightly below the review's 4.3 to 5.0 h, and the form does not note the difference."
+     }
+    },
+    {
+     "id": "A19",
+     "form_location": "2.2",
+     "severity": "minor",
+     "title": "Edge values are correct but unlabeled, and the load-precision wording is imprecise",
+     "problem": "The four float32 values are correct, but 2.2 does not say which are inside the hole: \u22120.84999996 and \u22120.75000006 are inside, \u22120.85000002 and \u22120.75 are outside. 'Float32 observation sum' could be read as summing in float32, whereas v2 sums the float64 casts of the float32 coordinates.",
+     "evidence": [
+      "DECISION_BLOCK.md:84 \"a load where the float32 observation sum and the float64 state fall on opposite sides of 0.4\"",
+      "DRAFT_PROTOCOL.md (v2):45 \"g(o)=float64(o[10])+float64(o[11])\"",
+      "numpy: inside abs(x+k)<=0.05 for -0.8499999642 and -0.7500000596; outside for -0.8500000238 and -0.75"
+     ],
+     "proposed_correction": "Label each edge value as inside or outside the hole, and reword as 'v2's float64 sum of the float32 observation coordinates versus the float64 state load'.",
+     "verification": {
+      "id": "A19",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "I recomputed each edge value. \u22120.8499999642 and \u22120.7500000596 lie inside (abs(x+k) = 0.04999995 <= h). \u22120.8500000238 and \u22120.75 lie outside (0.0500000119 > h). Line 86 lists all four without saying which is which. Line 84's 'float32 observation sum' can be read as a float32 addition, whereas v2:45 casts each float32 coordinate to float64 and sums in float64. This is a wording issue, so minor.",
+      "evidence": [
+       "DECISION_BLOCK.md:84 \"a load where the float32 observation sum and the float64 state fall on opposite sides of 0.4\"",
+       "DECISION_BLOCK.md:86 the four edge values, unlabeled",
+       "DRAFT_PROTOCOL.md (v2):45 \"g(o)=float64(o[10])+float64(o[11])\"",
+       "numpy: inside True/False/True/False for \u22120.84999996/\u22120.85000002/\u22120.75000006/\u22120.75"
+      ]
+     }
+    },
+    {
+     "id": "A20",
+     "form_location": "Plain-language terms table",
+     "severity": "minor",
+     "title": "The glossary leaves several terms undefined, uses 'family' in two senses, and omits 'executed' from the hole definition",
+     "problem": "'Family' means a test-episode family in 9.3, 9.4 and 9.9, and a candidate family in 7.1 and v2 line 146. The glossary defines neither. 'Far set', 'RMS', 'RNG address', 'readiness', 'U', 'Zeus' and 'Titan' are also undefined. The hole definition says 'command' without 'executed', but v2 bases membership on the executed float32 command.",
+     "evidence": [
+      "DECISION_BLOCK.md:22 \"first-thruster command within `h = 0.05` of `\u2212k`\"",
+      "DRAFT_PROTOCOL.md (v2):25 \"Region membership uses the **executed** command.\"",
+      "DECISION_BLOCK.md:193 \"best and worst candidate families\"; DECISION_BLOCK.md:221-227 \"Test-family seed range... Probe states per family... far set... Test families\""
+     ],
+     "proposed_correction": "Define 'test family' and 'candidate family' separately. Add the missing terms to the glossary, and write 'executed first-thruster command' in the hole and band definitions.",
+     "verification": {
+      "id": "A20",
+      "verdict": "partly_confirmed",
+      "verified_severity": "minor",
+      "reasoning": "Most of this holds. 'Family' is used both for candidate families (line 193) and for test families (lines 221-227), and the glossary defines neither. 'Far set', 'RMS', 'RNG address', 'readiness', 'Zeus' and 'Titan' are not in the glossary. The hole definition (line 22) leaves out 'executed', while v2:25 bases membership on the executed command. One part is wrong: 'U' is defined, since the glossary's 'Adjusted score' row (line 27) gives 'the BCA uncertainty width `U`'.",
+      "evidence": [
+       "DECISION_BLOCK.md:22 \"first-thruster command within `h = 0.05` of `\u2212k`\"",
+       "DRAFT_PROTOCOL.md (v2):25 \"Region membership uses the **executed** command.\"",
+       "DECISION_BLOCK.md:27 \"The raw score minus kappa times the BCA uncertainty width `U`.\" (U is defined)",
+       "DECISION_BLOCK.md:193 \"candidate families\"; :221-227 \"Test-family seed range ... per family ... far set ... Test families\""
+      ],
+      "corrected_statement": "The glossary uses 'family' in two undefined senses (candidate and test family). It leaves out far set, RMS, RNG address, readiness, Zeus and Titan, and its hole definition omits 'executed'. U is already defined in the 'Adjusted score' row."
+     }
+    },
+    {
+     "id": "A21",
+     "form_location": "5.7 / 5.8 references",
+     "severity": "minor",
+     "title": "Band-count references leave out the expected false-'unknown' rates the review asks to freeze with the threshold",
+     "problem": "The references give only binomial means. The review says to freeze the band threshold together with its expected false-'unknown' rate. That rate is material: under Binomial(n, 0.05), P(band empty) is 0.0375 at n=64, and P(at least one of the three bands empty) is 0.109 at n=64 and 0.484 at n=32.",
+     "evidence": [
+      "REVIEW_20261027.md:86-89 \"The chance that at least one of the three bands is empty is 0.11 at 64 and 0.48 at 32... freeze the threshold with its expected false-'unknown' rate.\"",
+      "Calculation: 0.95^64 = 0.0375; 3(0.95^64) \u2212 3(0.90^64) + 0.85^64 = 0.109; same at n=32: 0.484"
+     ],
+     "proposed_correction": "Add the empty-band probabilities as analytic references next to 5.7 and 5.8, and state that they assume the neighbor cap (64) is reached.",
+     "verification": {
+      "id": "A21",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "I recomputed the probabilities. 0.95^64 = 0.0375. P(at least one of three bands empty) = 3(0.95^n) \u2212 3(0.90^n) + 0.85^n is 0.109 at n = 64 and 0.484 at n = 32, matching REVIEW:86-89, which asks to freeze the threshold together with its expected false-'unknown' rate. 5.7 and 5.8 give only binomial means (3.2 and 6.4). For 5.8's pooled adjacent bands, the empty probability is 0.9^64 \u2248 0.0012. The probabilities are a useful omission to fix, and minor fits.",
+      "evidence": [
+       "REVIEW_20261027.md:87-89 \"The chance that at least one of the three bands is empty is 0.11 at 64 and 0.48 at 32 ... freeze the threshold with its expected false-'unknown' rate.\"",
+       "DECISION_BLOCK.md:158-159 \"3.2 expected per 64 neighbors\" / \"6.4 expected per 64 neighbors\"",
+       "computed: 0.03752, 0.10907 (n=64), 0.48364 (n=32), 0.9^64 = 0.00118"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "critic": "B-decision",
+   "sound": [
+    "The 'v2 line 146' pointer lands on the correct paragraph: the aggregation-weights text is at DRAFT_PROTOCOL.md:146.",
+    "Section 10 formulas match v2:152-154. S*3*(10000+3*10000) = 120000*S critic and auxiliary updates; actor updates are half (60000*S); refreshes S*3*(1+2*3) = 21*S; unique snapshots S*3*(2+3*3) = 33*S.",
+    "The per-seed training estimate of 2.1-2.4 h equals the review's two-seed 4.3-5.0 h divided by 2 (REVIEW:105).",
+    "The S of 4 or fewer and S of 5 or more split covers every positive integer S with no gap or overlap.",
+    "Analytic references hold: 4.2 is 76800*0.5*0.05 = 1920. 4.3 is 768*0.79, about 606. 4.4 is 1920/10 = 192, valid because P(g >= 0.4) = 0.5 at every step. 4.5 is 1920. 6.1 is 128*0.5*0.05 = 3.2. 5.7 and 5.8 are Binomial(64, 0.05) means of 3.2 and 6.4. The load-depth shares 29/25/46% agree with a Monte Carlo of the stated start law (0.291/0.252/0.457).",
+    "The exposure gates (7) and the learning check (3.9) are defined on native and distance-control outputs, and section 8 orders them before the primary.",
+    "There is no outcome-driven tuning loop: 3.9 does not extend training; 4.7 forbids region search; 5.11 never relaxes the radius; 6.5 never redraws; 10.7 has no automatic retry.",
+    "The arms are matched on budget and data: fresh shared 10k native warmup per condition, fork into three arms, matched auxiliary and refresh work (21*S counts native shadow work), shared rows and normalization within a condition, and paired probes per seed (v2:82, 128, 152).",
+    "Section 1.3 roles and the 'No result is confirmatory' wording match the review's corrections (REVIEW:127-130).",
+    "No blank is pre-filled by an agent. The form states that it authorizes nothing (lines 3-5), and stages 4 to 7 require the Zeus hold to be resolved (ATTEMPT_HOLD.json execution_allowed false)."
+   ],
+   "findings": [
+    {
+     "id": "B1",
+     "form_location": "3.5 (with 3.1 and 3.8)",
+     "severity": "blocking",
+     "title": "The primary statistic's sign is backwards as written",
+     "problem": "Item 3.5 calls the statistic a \"decrease in mean absolute error\". It then writes it as BCA's error \"minus\" native's error, and 3.1 also says \"BCA minus native\". Read literally, MAE(BCA z vs BCA v) minus MAE(native q vs native v) is positive when BCA's error is larger. 3.8 passes when \"the decrease exceeds 3.6\", so the literal formula passes when BCA is worse by more than the practical effect size. A decrease in BCA's error relative to native is native minus BCA. Two readers could compute opposite signs and reach opposite verdicts from the same data.",
+     "evidence": [
+      "DECISION_BLOCK.md:98 \"3.1 Contrast | BCA minus native, paired within each trained seed.\"",
+      "DECISION_BLOCK.md:102 \"Decrease in mean absolute error, BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`.\"",
+      "DECISION_BLOCK.md:107 \"Pass. For S of 4 or fewer: the decrease exceeds 3.6 in every seed.\"",
+      "Worked example: MAE_BCA = 50, MAE_native = 40. The literal 3.5 formula gives 50 - 40 = +10 (> 0, so a Pass if 3.6 < 10), yet BCA is worse. The intended decrease is 40 - 50 = -10."
+     ],
+     "proposed_correction": "Write the statistic once, as a formula with an explicit sign, for example D_s = MAE_native,s - MAE_BCA,s, where a positive value means BCA has the smaller error. Make 3.1, 3.5 and 3.8 all refer to that D_s.",
+     "verification": {
+      "id": "B1",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "DECISION_BLOCK.md:102 calls the statistic a \"Decrease in mean absolute error\" but then writes it as BCA's z-vs-v error \"minus\" native's q-vs-v error, and 3.1 (line 98) says \"BCA minus native\". Read literally, that difference is positive when BCA's error is larger. 3.8 (line 107) passes when \"the decrease exceeds 3.6\". So the word \"decrease\" and the written subtraction point in opposite directions. The source of the wording, REVIEW_20261027.md:50-53 (\"paired change in absolute Q error, BCA minus native ... both seeds positive beyond the band\"), has the same ambiguity, so nothing else in the form settles the sign. The worked example checks out: 50 - 40 = +10. Because the decision rule depends on the sign, this is blocking.",
+      "evidence": [
+       "DECISION_BLOCK.md:98 \"3.1 Contrast | BCA minus native, paired within each trained seed.\"",
+       "DECISION_BLOCK.md:102 \"Decrease in mean absolute error, BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`.\"",
+       "DECISION_BLOCK.md:107 \"the decrease exceeds 3.6 in every seed\"",
+       "REVIEW_20261027.md:50-53 \"paired change in absolute Q error, BCA minus native ... 'both seeds positive beyond the band'\""
+      ]
+     }
+    },
+    {
+     "id": "B2",
+     "form_location": "3.8 (with 7.6 and section 8 step 3)",
+     "severity": "blocking",
+     "title": "Pass, Fail and Inconclusive overlap, and a failed 7.5 leaves Pass possible but Fail impossible",
+     "problem": "Pass has no gate condition. Fail requires every section-7 gate to pass, including 7.5, the free-policy entry gate. Inconclusive applies when any gate fails. So: (a) the pass rule met with 7.5 failed is both Pass and Inconclusive; (b) all gates passed, the learning check failed and the pass rule unmet is both Fail and Inconclusive. 7.6 says that when 7.5 fails, forced-probe accuracy (which is exactly the primary) may still be reported. 8.3 gates the primary only on step 2 passing \"for the primary stratum\", and 7.5 is not a property of that stratum. With 7.5 failed, the primary can therefore be computed and can reach Pass, but it can never reach Fail. This is an outcome asymmetry that favors BCA. A 7.5 failure is the likely case: the development actor had 0 of 128 commands in the band.",
+     "evidence": [
+      "DECISION_BLOCK.md:107-110 \"Pass. ... Fail. Every exposure gate in section 7 passed, and the pass rule is not met. Inconclusive. Any exposure gate in section 7 failed, or a readiness or learning check in 3.9 failed.\"",
+      "DECISION_BLOCK.md:202-203 \"Return claim. If 7.5 fails, the whole-policy return claim is untested for this mechanism. Forced-probe accuracy may still be reported.\"",
+      "DECISION_BLOCK.md:210 \"The primary comparison (section 3), only if step 2 passed for the primary stratum.\"",
+      "DECISION_BLOCK.md:197 7.5 reference \"development actor: 0 of 128 states, nearest 0.32 away\"; AUDIT_ADDENDUM.md:13 \"0/128 in the proposed band and 0/59 among high-load actor states\""
+     ],
+     "proposed_correction": "Write 3.8 as an ordered, exhaustive decision tree. First, Inconclusive if a readiness or learning check fails, or if any gate that applies to the primary fails. Then Pass if the pass rule is met. Otherwise Fail. State explicitly whether 7.5 applies to the forced-probe primary. Make 3.8, 7.6 and 8.3 name the same set of gates.",
+     "verification": {
+      "id": "B2",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "The three outcome bullets at lines 107-110 are not ordered and do not exclude each other. Pass names no gate or 3.9 condition. Fail (line 109) requires every section-7 gate to pass but says nothing about 3.9. Inconclusive (line 110) applies when any gate fails or a 3.9 check fails. I checked whether 7.6 or section 8 keeps the primary sealed when 7.5 fails. 7.6 seals BCA outcomes only when 7.1 to 7.4 fail (line 200-201). For 7.5 it says \"Forced-probe accuracy may still be reported\" (line 202-203). Step 3 of section 8 requires only that step 2 passed \"for the primary stratum\" (line 210). So with 7.5 failed, the forced-probe primary can be unsealed and can meet the Pass rule, but it can never be a Fail, because Fail needs every gate to pass. The overlaps and the asymmetry are both real. A 7.5 failure is plausible: the addendum reports 0 of 59 high-load actor states in the band.",
+      "evidence": [
+       "DECISION_BLOCK.md:107-110 Pass/Fail/Inconclusive bullets",
+       "DECISION_BLOCK.md:200-203 \"If 7.1, 7.2, 7.3 or 7.4 fails ... BCA outcomes stay sealed ... If 7.5 fails ... Forced-probe accuracy may still be reported.\"",
+       "DECISION_BLOCK.md:210 \"only if step 2 passed for the primary stratum\"",
+       "AUDIT_ADDENDUM.md:13 \"0/128 in the proposed band and 0/59 among high-load actor states\""
+      ]
+     }
+    },
+    {
+     "id": "B3",
+     "form_location": "3.8, 3.9 and section 8 step 1",
+     "severity": "blocking",
+     "title": "The \"readiness check\" that 3.8 depends on is never defined",
+     "problem": "3.8 makes the result Inconclusive when \"a readiness or learning check in 3.9 failed\". 3.9 defines only a learning check. No readiness criterion, threshold or blank exists anywhere in the form. Section 8 step 1 reads \"Readiness and learning checks (3.9), with refusal and invalid counts\", but no refusal or invalid count leads to any outcome. The protocol treats an unavailable BCA reference as a refusal or unready state and stops on an invalid required reference. The form never says whether a BCA arm that is not ready, or that refuses at many in-band probes, gives Inconclusive, Fail, or a primary computed on a reduced shared subset. Because BCA readiness is itself a BCA outcome, labeling it Inconclusive rather than Fail is a decision the user has to make before outcomes are known.",
+     "evidence": [
+      "DECISION_BLOCK.md:110 \"or a readiness or learning check in 3.9 failed.\"",
+      "DECISION_BLOCK.md:112-114 (3.9 contains only the native-return learning check)",
+      "DECISION_BLOCK.md:208 \"1. Readiness and learning checks (3.9), with refusal and invalid counts.\"",
+      "v2 DRAFT_PROTOCOL.md:68 \"An unavailable or infinite BCA reference remains a refusal/unready state\"; :128 \"Stop on an invalid required reference\"",
+      "v2 DRAFT_PROTOCOL.md:144 \"Report valid-pair MAE on the explicitly shared finite subset alongside refusal/invalid counts ... never ... infer benefit from differential availability.\""
+     ],
+     "proposed_correction": "Add a readiness item with blanks: what counts as ready (for example, a valid 10k calibration in each BCA branch); the maximum refusal or invalid share on the primary stratum, per arm; whether the primary MAE uses the shared finite subset; and which outcome (Inconclusive or Fail) each readiness failure produces.",
+     "verification": {
+      "id": "B3",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "3.8 (line 110) points to \"a readiness or learning check in 3.9\", but 3.9 (lines 112-114) is titled \"Learning check\" and defines only the native-return improvement check. No other item in the form defines a readiness criterion. Section 8 step 1 (line 208) lists \"refusal and invalid counts\", but no rule maps those counts to an outcome. v2:68 and v2:144 make refusal and unready states, and the use of the shared finite subset, things that must be handled explicitly. One of the three Inconclusive triggers is therefore undefined, which leaves the decision rule ambiguous.",
+      "evidence": [
+       "DECISION_BLOCK.md:110 \"or a readiness or learning check in 3.9 failed.\"",
+       "DECISION_BLOCK.md:112-114 (only a learning check)",
+       "DECISION_BLOCK.md:208 \"Readiness and learning checks (3.9), with refusal and invalid counts.\"",
+       "v2 DRAFT_PROTOCOL.md:68 \"An unavailable or infinite BCA reference remains a refusal/unready state\"",
+       "v2 DRAFT_PROTOCOL.md:144 \"Report valid-pair MAE on the explicitly shared finite subset alongside refusal/invalid counts ... never ... infer benefit from differential availability.\"",
+       "v2 DRAFT_PROTOCOL.md:148 \"Readiness/learning-adequacy, mechanism and efficacy decisions remain separate.\""
+      ]
+     }
+    },
+    {
+     "id": "B4",
+     "form_location": "3.8, 3.9, 7.1-7.5, 10.7 (seed-level failure handling)",
+     "severity": "blocking",
+     "title": "No rule for failed seeds or gates that fail in only some seeds",
+     "problem": "The Pass rule is per seed (\"in every seed\", \"at least ___ of S seeds\"). The gates 7.1-7.5 do not say whether they are read per seed, pooled over seeds, or per data condition, or at which checkpoint. 10.7 says a timed-out job \"keeps its evidence and stops\" with no retry. The existing matching code also stops on degenerate norms. Nothing says what happens when one seed's BCA or distance branch fails, or when native fails a gate in some seeds only. The options include dropping the seed (S then changes after outcomes), counting the seed as not passing, or making the whole primary Inconclusive. For S of 4 or fewer, \"every seed\" with a missing seed is undefined. A rule chosen after the fact here can be tuned on outcomes.",
+     "evidence": [
+      "DECISION_BLOCK.md:107-108 \"exceeds 3.6 in every seed ... in at least `[ ____ ]` of S seeds\"",
+      "DECISION_BLOCK.md:189-197 (no per-seed, per-condition or checkpoint scope for 7.1-7.5)",
+      "DECISION_BLOCK.md:256 \"An interrupted or timed-out job keeps its evidence and stops. There is no automatic retry or extension.\"",
+      "support_shift_pilot_v1/design.py:91-92 \"raise ValueError(\\\"Degenerate matching norms; stop without rematching\\\")\"; runtime.py:286 \"Match requires completed calibration\"",
+      "v2 DRAFT_PROTOCOL.md:148 \"Use trained seeds as method-level independent units\""
+     ],
+     "proposed_correction": "Add blanks that set: the scope of each gate (per seed or pooled; which data condition; which checkpoint); what a seed failure is (job timeout, invalid reference, matching stop, nonfinite output); and its fixed consequence for 3.8, for example \"counts as a non-pass seed\" or \"the primary is Inconclusive\", chosen by the user. State that S is never reduced after training starts.",
+     "verification": {
+      "id": "B4",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "The Pass rule is read per seed (\"in every seed\", \"at least ___ of S seeds\", line 107-108). Gates 7.1 to 7.5 (lines 193-197) give no scope: per seed or pooled, which data condition, or which checkpoint. 10.7 (line 256) stops a timed-out job with no retry. The existing match code stops on degenerate norms: design.py lines 91-92 raise \"Degenerate matching norms; stop without rematching\", and runtime.py:286 requires completed calibration. I verified both code citations. The form has no rule for a missing or failed seed, so \"every seed\" with one seed missing is undefined, and the rule could be chosen after outcomes are seen.",
+      "evidence": [
+       "DECISION_BLOCK.md:107-108 \"in every seed ... at least `[ ____ ]` of S seeds\"",
+       "DECISION_BLOCK.md:193-197 (no seed/condition/checkpoint scope)",
+       "DECISION_BLOCK.md:256 \"An interrupted or timed-out job keeps its evidence and stops. There is no automatic retry or extension.\"",
+       "support_shift_pilot_v1/design.py:91-92 \"raise ValueError(\\\"Degenerate matching norms; stop without rematching\\\")\"",
+       "support_shift_pilot_v1/runtime.py:286 require(..., \"Match requires completed calibration\")"
+      ]
+     }
+    },
+    {
+     "id": "B5",
+     "form_location": "5.9-5.11 and section 8",
+     "severity": "blocking",
+     "title": "The support kill rule is placed at stage 4 but needs probes that exist only from stage 7, and it is missing from the unsealing order",
+     "problem": "Section 5 is \"checked in stage 4\", and stage 4 reads only training and tuning-validation arrays with no model. Yet 5.9 is a share of \"probe neighborhoods\", and the 5.11 kill rule counts \"in-band high-load probes\". Probe state banks are generated by the simulator, which first runs in stage 7 (10.5 counts \"state-bank generation\"). The protocol does its stability audit on a separate training-derived anchor set. As written, the shelving rule either cannot be evaluated at stage 4, or it runs after training, where section 8 gives it no place relative to the gates and the primary. The form also never says whether probes labeled support-unknown are removed from the primary stratum or kept in it. That choice changes the primary MAE.",
+     "evidence": [
+      "DECISION_BLOCK.md:135 \"## 5. Local support definition (fixed in stage 3, checked in stage 4)\"",
+      "DECISION_BLOCK.md:44 stage 4 \"Training and tuning-validation arrays only, no model\"; :47 stage 7 \"Models and simulator\"",
+      "DECISION_BLOCK.md:160 \"5.9 Minimum share of probe neighborhoods or cells ...\"; :163-165 \"If more than `[ ____ ]` of in-band high-load probes are unknown, the design is shelved\"",
+      "DECISION_BLOCK.md:252 10.5 \"... plus state-bank generation\"",
+      "v2 DRAFT_PROTOCOL.md:90 \"Audit state-neighborhood stability on a fixed geometry-only training anchor set, separate from final outcomes\"",
+      "DECISION_BLOCK.md:206-211 (the unsealing order has no support-labeling step)"
+     ],
+     "proposed_correction": "Separate the stage-4 anchor-set check (on training anchors) from the probe-level support labeling. Place probe-level labeling as an explicit step in section 8, before step 2. State whether support-unknown probes are excluded from, or kept in, the primary stratum.",
+     "verification": {
+      "id": "B5",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "Section 5 is \"checked in stage 4\" (line 135), and stage 4 decodes \"Training and tuning-validation arrays only, no model\" (line 44). The simulator first appears at stage 7 (line 47). 5.9 and 5.11 (lines 160, 163-165) are stated over probe neighborhoods and \"in-band high-load probes\". v2:107 builds the probe state banks from independent starts run under the uniform recorder at times 25, 50 and 75, so they need the simulator. 10.5 also budgets \"state-bank generation\" as simulator transitions. v2:90 separates the stage-4 stability audit, which runs on a training anchor set. The section-8 unsealing order (lines 208-211) has no step for labeling probe support. Neither 3.3 (line 100) nor 5.11 says whether support-unknown probes stay in the primary stratum. The probe-level shelving rule therefore cannot run at the stage where it is placed.",
+      "evidence": [
+       "DECISION_BLOCK.md:135 \"## 5. Local support definition (fixed in stage 3, checked in stage 4)\"",
+       "DECISION_BLOCK.md:44 \"Training and tuning-validation arrays only, no model\"; :47 \"Models and simulator\"",
+       "DECISION_BLOCK.md:163-165 \"If more than `[ ____ ]` of in-band high-load probes are unknown, the design is shelved\"",
+       "DECISION_BLOCK.md:252 \"... plus state-bank generation\"",
+       "v2 DRAFT_PROTOCOL.md:90 \"Audit state-neighborhood stability on a fixed geometry-only training anchor set\"",
+       "v2 DRAFT_PROTOCOL.md:107 \"Use independent starts with a common, method-neutral reference behavior to obtain diagnostic state banks at proposed times {0,25,50,75}\""
+      ]
+     }
+    },
+    {
+     "id": "B6",
+     "form_location": "10.7 and the stage order, lines 10, 43-46 and 213; 3.7 and 9.1",
+     "severity": "blocking",
+     "title": "The budget kill rule changes S after S is frozen, and the form gives two different freeze points",
+     "problem": "S (3.7 and 9.1) and the section-9 counts are \"fixed in stage 3\", and stage 1 already approves section 9. 10.7, at stage 6, says a projected total above 10.1 \"reduces S or the counts in section 9\". Line 10 forbids that (\"After a stage has run, its blanks never change\"). Changing S also switches 3.8 between its S of 4 or fewer and S of 5 or more branches, and changes the meaning of \"at least ___ of S\". It would happen after the stage-4 coverage counts have been seen. Section 10 is labeled \"fixed in stage 6\", but stage 3 freezes \"every remaining blank\". Line 213 then allows changes until unsealing step 1 begins, which is after training outputs exist. That conflicts with line 10.",
+     "evidence": [
+      "DECISION_BLOCK.md:10 \"After a stage has run, its blanks never change. A changed number needs a new, labeled post-hoc version of this form.\"",
+      "DECISION_BLOCK.md:41 stage 1 approval \"Sections 1 and 9\"; :43 stage 3 \"Every remaining blank\"",
+      "DECISION_BLOCK.md:215 \"## 9. Seeds and evaluation counts (fixed in stage 3)\"; :231 \"## 10. Runtime ceiling (fixed in stage 6)\"",
+      "DECISION_BLOCK.md:255 \"A projected total above 10.1 reduces S or the counts in section 9 before the approval request.\"",
+      "DECISION_BLOCK.md:213 \"No blank, threshold, checkpoint or probe set may change after step 1 begins.\""
+     ],
+     "proposed_correction": "Give one freeze point for each blank. Either move the budget sheet before the freeze of S, or make 10.7 say that an over-ceiling projection requires a new, labeled version of the form. Make line 213 match line 10.",
+     "verification": {
+      "id": "B6",
+      "verdict": "partly_confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "The core holds. S and the section-9 counts are approved at stage 1 (line 41) and labeled \"fixed in stage 3\" (line 215). Stage 3 freezes \"Every remaining blank\" (line 43). Yet 10.7 (line 255), at stage 6, lets an over-ceiling projection reduce S or the section-9 counts. That contradicts line 10 (\"After a stage has run, its blanks never change\"). It would also happen after the stage-4 coverage counts are known, and it would switch the 3.8 branch. Section 10 is labeled \"fixed in stage 6\" (line 231), which conflicts with stage 3 freezing every remaining blank. One detail is overstated. Line 213 (\"No blank ... may change after step 1 begins\") is a weaker prohibition, not a permission. It does not allow changes before step 1; line 10 still forbids them. The inconsistency is that line 213 is redundant and looser, not that it overrides line 10.",
+      "evidence": [
+       "DECISION_BLOCK.md:10 \"After a stage has run, its blanks never change.\"",
+       "DECISION_BLOCK.md:41 stage 1 \"Sections 1 and 9\"; :43 stage 3 \"Every remaining blank\"",
+       "DECISION_BLOCK.md:215 \"(fixed in stage 3)\"; :231 \"(fixed in stage 6)\"",
+       "DECISION_BLOCK.md:255 \"A projected total above 10.1 reduces S or the counts in section 9 before the approval request.\"",
+       "DECISION_BLOCK.md:213 \"No blank, threshold, checkpoint or probe set may change after step 1 begins.\""
+      ],
+      "corrected_statement": "10.7 lets S and the section-9 counts change at stage 6, after the stage-1 and stage-3 approvals and after the stage-4 coverage counts. That contradicts line 10. Section 10's \"fixed in stage 6\" conflicts with stage 3 freezing every remaining blank. Line 213 is a weaker, redundant prohibition, not a permission to change blanks before unsealing."
+     }
+    },
+    {
+     "id": "B7",
+     "form_location": "3.8 (S of 5 or more)",
+     "severity": "blocking",
+     "title": "The S of 5 or more test is not specified, and some combinations the form allows can never pass",
+     "problem": "The form does not say what the sign test or paired t tests: the sign of D greater than 0, or D greater than the practical size in 3.6. It gives no rule for ties. The smallest achievable one-sided sign-test p is 2^-S. At S = 5 it is 0.03125, so any chosen alpha below that (for example 0.025 or 0.01) makes Pass impossible, and the form does not warn about this. At alpha 0.05 the sign test needs every seed positive for S = 5, 6 and 7, so a smaller \"at least ___ of S\" count is ineffective. The user could also enter a count greater than S. If 9.9 \"shared across seeds\" is chosen, the seed-level test treats seeds as independent, which v2 says they then are not.",
+     "evidence": [
+      "DECISION_BLOCK.md:107-108 \"in at least `[ ____ ]` of S seeds, and the seed-level `[ sign test / paired t ]` gives one-sided p below `[ ____ ]`.\"",
+      "Calculation: minimum one-sided sign-test p = 0.5^S, which is 0.03125 at S=5, 0.0156 at S=6 and 0.0078 at S=7. The critical count for p <= 0.05 is 5/5, 6/6, 7/7, 7/8 and 8/9. At alpha <= 0.025 and S = 5 no count passes.",
+      "DECISION_BLOCK.md:227 \"9.9 Test families | `[ separate per trained seed / shared across seeds ]`\"",
+      "v2 DRAFT_PROTOCOL.md:148 \"If test families are reused across training seeds, they are crossed/shared test units: preserve both episode identity and seed pairing in intervals\""
+     ],
+     "proposed_correction": "Name the null hypothesis and the tested quantity (sign of D or D minus the 3.6 value) and a tie rule. Print the minimum achievable p for each S next to the blank. State that a combination with an unachievable p, or a count above S, is invalid. Tie the seed-level test to 9.9 = separate, or name a test that accounts for shared families.",
+     "verification": {
+      "id": "B7",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "Line 107-108 names neither the tested quantity (D > 0, or D > the 3.6 value) nor a tie rule, and nothing ties the count blank to S. I recomputed the one-sided sign-test tail probabilities. The minimum is 0.5^S: 0.03125 at S=5, 0.015625 at S=6 and 0.0078 at S=7. At alpha 0.05 the critical counts are 5/5 (4/5 gives 0.1875), 6/6 (5/6 gives 0.109), 7/7 (6/7 gives 0.0625), 7/8 (p=0.035) and 8/9 (p=0.0195). At S=5, any alpha at or below 0.03125 makes Pass impossible. v2:148 says shared test families are crossed units, so a plain seed-level test under 9.9 \"shared\" ignores that dependence. The decision rule is underspecified.",
+      "evidence": [
+       "DECISION_BLOCK.md:107-108 \"at least `[ ____ ]` of S seeds, and the seed-level `[ sign test / paired t ]` gives one-sided p below `[ ____ ]`.\"",
+       "Computed: S=5 p(5/5)=0.03125, p(4/5)=0.1875; S=7 p(6/7)=0.0625, p(7/7)=0.0078; S=8 p(7/8)=0.0352; S=9 p(8/9)=0.0195",
+       "DECISION_BLOCK.md:227 \"9.9 Test families | `[ separate per trained seed / shared across seeds ]`\"",
+       "v2 DRAFT_PROTOCOL.md:148 \"If test families are reused across training seeds, they are crossed/shared test units\""
+      ]
+     }
+    },
+    {
+     "id": "B8",
+     "form_location": "3.5 (fairness and comparability)",
+     "severity": "major",
+     "title": "The primary mixes the adjusted BCA score with the raw native critic, and the different Q^pi references are not disclosed",
+     "problem": "v2 keeps the same-critic adjustment panel (q against z) separate from the trained-critic panel. In the trained-critic panel, each critic, not its adjusted score, is compared with its own actor's v. The form's primary instead compares BCA's z = Q1 - kappa*U with native's raw q. Native also has shadow auxiliary and calibration work, so a native z exists. The development critic overestimates in-band high-load commands by tens of units, so subtracting a nonnegative kappa*U lowers BCA's MAE mechanically even if BCA's trained critic is no better. This choice therefore favors BCA. The form also does not tell the user that the two errors are measured against different continuation policies, which v2 says is \"not a correction against one common target\".",
+     "evidence": [
+      "DECISION_BLOCK.md:102 \"BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`\"",
+      "v2 DRAFT_PROTOCOL.md:123-126 \"Keep two panels separate ... Same-critic adjustment: compare q=Q1 and z=Q1-kappa*U ... Separately trained ... each critic is evaluated against its own actor's v^pi ... their difference is not a correction against one common target.\"",
+      "v2 DRAFT_PROTOCOL.md:128 \"All arms retain matching auxiliary work\"",
+      "REVIEW_20261027.md:50-51 the candidate primary is \"the paired change in absolute Q error, BCA minus native\"",
+      "REVIEW_20261027.md:61 \"The full-data 20k critic already misjudges in-band commands at g >= 0.4 by +19 to +82 units\"",
+      "Calculation: same critic, error e > 0 and 0 <= kappa*U <= e, so |e - kappa*U| = e - kappa*U. The MAE drops by kappa*U with no training effect."
+     ],
+     "proposed_correction": "Make the score used for each arm an explicit choice: q against q; z against z; or z against q, labeled as a combined training-plus-subtraction effect. Add a sentence that the arms' errors are measured against different own-policy references.",
+     "verification": {
+      "id": "B8",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "The core holds. v2:125-126 keeps the same-critic panel (q against z) separate from the cross-trained panel, in which \"each critic is evaluated against its own actor's v^pi\". The review proposes \"absolute Q error\" (REVIEW:50). The form instead pairs BCA's adjusted z with native's raw q (line 102), which folds the same-critic subtraction into the cross-arm contrast. Native also keeps matched auxiliary and calibration work (v2:128, v2:82), so a native z or a BCA q comparison would also be possible. Where the critic overestimates, with 0 <= kappa*U <= e, the absolute error falls by exactly kappa*U, so this choice favors BCA. One detail is overstated. The form does show that the references differ: it says \"BCA's own `v`\" and \"native's `v`\", and the glossary (line 25) defines v by \"the snapshot's own actor\". What it leaves out is v2's warning that the difference \"is not a correction against one common target\".",
+      "evidence": [
+       "DECISION_BLOCK.md:102 \"BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`\"",
+       "v2 DRAFT_PROTOCOL.md:125-126 \"Same-critic adjustment: compare q=Q1 and z=Q1-kappa*U ... each critic is evaluated against its own actor's v^pi ... their difference is not a correction against one common target.\"",
+       "v2 DRAFT_PROTOCOL.md:128 \"All arms retain matching auxiliary work\"",
+       "REVIEW_20261027.md:50 \"the paired change in absolute Q error, BCA minus native\"",
+       "DECISION_BLOCK.md:25 \"following the snapshot's own actor\""
+      ],
+      "corrected_statement": "The primary pairs BCA's adjusted score z with native's raw q, which mixes the two panels v2 keeps separate. Where the critic overestimates, this lowers BCA's MAE by kappa*U with no training effect. The form does label each arm's v as its own, but it omits v2's warning that the cross-arm difference is not measured against one common target."
+     }
+    },
+    {
+     "id": "B9",
+     "form_location": "3.3 and 3.5 (probe set of the primary)",
+     "severity": "major",
+     "title": "It is unclear whether the actor's own command rows enter the primary, and they differ between arms",
+     "problem": "9.6 adds \"the actor's own command\" to each probe state, and that command differs between BCA and native. v2 makes actor-action rows a separate family. The form's primary stratum, \"in-band probes at high load\", does not say whether only forced in-band candidates count or also actor rows that land in the band. Including them would compare different action sets across arms, and the count would depend on BCA's own avoidance. The v2 line 146 pointer also leaves open whether the primary is one stratum or a pooled summary over the declared sub-strata: load-depth (4.6), near and deep interior (v2 line 109) and times 0, 25, 50 and 75. Line 146 weights pooled strata equally and calls an empty stratum a design failure. The form gives that failure no consequence in 3.8.",
+     "evidence": [
+      "DECISION_BLOCK.md:224 \"9.6 Candidates per probe state: in band, each adjacent band, far set, plus the actor's own command\"",
+      "DECISION_BLOCK.md:100 \"3.3 Probe stratum | In-band probes at high load under recorded current.\"",
+      "v2 DRAFT_PROTOCOL.md:146 \"Actor-action rows form a separate family ... any pooled diagnostic summary uses equal weights across the declared nonempty strata, with empty strata reported as a design failure\"",
+      "v2 DRAFT_PROTOCOL.md:109 near-boundary / deeper-interior strata; DECISION_BLOCK.md:130 load-depth strata"
+     ],
+     "proposed_correction": "State that the primary uses only the forced in-band candidate family and excludes actor-action rows. Say whether it pools over load-depth, depth and time sub-strata, and with which weights. State the 3.8 outcome when a sub-stratum is empty.",
+     "verification": {
+      "id": "B9",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "9.6 (line 224) adds the actor's own command to each probe state, and that command differs between arms. 3.3 (line 100) does not say whether actor rows that land in the band count toward the primary. The pointer to v2 line 146 does make actor rows a separate family with their own weight, but it does not exclude them from a stratum. The same line also describes both per-stratum reports and a pooled summary over strata. 3.5 does not say which one is the primary, and does not name the sub-strata: load-depth (4.6), near and deep interior (v2:109) and times. v2:146 treats an empty stratum as a design failure, and 3.8 gives that failure no outcome.",
+      "evidence": [
+       "DECISION_BLOCK.md:224 \"plus the actor's own command\"",
+       "DECISION_BLOCK.md:100 \"3.3 Probe stratum | In-band probes at high load under recorded current.\"",
+       "v2 DRAFT_PROTOCOL.md:146 \"Report strata separately; any pooled diagnostic summary uses equal weights across the declared nonempty strata, with empty strata reported as a design failure ... Actor-action rows form a separate family\"",
+       "v2 DRAFT_PROTOCOL.md:109 near-boundary / deeper-interior strata"
+      ]
+     }
+    },
+    {
+     "id": "B10",
+     "form_location": "7.1, 7.3, 7.5",
+     "severity": "major",
+     "title": "Gate definitions do not match their references or are ambiguous",
+     "problem": "7.1 is the spread between the \"best and worst candidate families\", which includes the far set and the actor family. Its reference covers only \"band and adjacent bands\", and it is unclear whether the spread is of family means or of single candidates. 7.3 is a minimum native mean absolute error, but its reference is a signed range, \"+19 to +82\". The later audit addendum reports the same saved rows as signed -6.54 to +81.96 with MAE 47.49, so the reference is both disputed and in the wrong unit. 7.5 is passed by \"the native or distance-control actor\": either arm, both arms, or pooled is unstated. Its reference counts all 128 states, not high-load steps (0 of 59 high-load states per the addendum).",
+     "evidence": [
+      "DECISION_BLOCK.md:193 \"7.1 ... spread of native `v` between the best and worst candidate families ... | about 1 to 1.5 units across band and adjacent bands under simple continuations\"",
+      "DECISION_BLOCK.md:195 \"7.3 ... minimum native mean absolute error ... | full-data development critic: +19 to +82 at such commands\"",
+      "AUDIT_ADDENDUM.md:11 \"absolute Q1 errors 6.5421-81.9592, MAE 47.48894\"; :21 \"signed Q1 error ranges from approximately -6.5421 to +81.9592\"",
+      "DECISION_BLOCK.md:197 \"the native or distance-control actor's executed command is in the band ... development actor: 0 of 128 states\"; AUDIT_ADDENDUM.md:13 \"0/59 among high-load actor states\""
+     ],
+     "proposed_correction": "Define 7.1 exactly: which families, and family means or single candidates. Give a reference in the same scope. Restate the 7.3 reference as an MAE and note the addendum's dispute. Say whether 7.5 applies to native, distance, each or either. Report the high-load denominator.",
+     "verification": {
+      "id": "B10",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "7.1 measures the spread between the \"best and worst candidate families\". By 9.6, those families include the far set and the actor command, but the reference covers only the \"band and adjacent bands\" (REVIEW:59-61). The text also does not say whether the spread is between family means or single candidates. 7.3 sets a minimum MAE, but its reference \"+19 to +82\" is a range of single-row signed errors, not an MAE. The addendum reports the same saved rows as signed -6.5421 to +81.9592 with MAE 47.48894 (AUDIT_ADDENDUM.md:11, 21), so the reference is disputed and in the wrong unit. 7.5 says \"the native or distance-control actor\", which does not settle whether one arm, both, or a pool must pass. Its reference counts all 128 states, while the gate is a share of high-load steps; the addendum gives 0 of 59 high-load states.",
+      "evidence": [
+       "DECISION_BLOCK.md:193 7.1 row",
+       "DECISION_BLOCK.md:195 7.3 row \"full-data development critic: +19 to +82 at such commands\"",
+       "AUDIT_ADDENDUM.md:11 \"absolute Q1 errors 6.5421-81.9592, MAE 47.48894\"; :21 \"signed Q1 error ranges from approximately -6.5421 to +81.9592\"",
+       "DECISION_BLOCK.md:197 7.5 row; AUDIT_ADDENDUM.md:13 \"0/59 among high-load actor states\"",
+       "DECISION_BLOCK.md:224 9.6 candidate families"
+      ]
+     }
+    },
+    {
+     "id": "B11",
+     "form_location": "3.9",
+     "severity": "major",
+     "title": "The learning check's condition, checkpoint and episode set are not specified",
+     "problem": "\"In every seed and condition\" could mean the 3 data conditions, or also the recorded and strong current conditions. Strong current is never in the training data, so requiring native to improve there could make the study Inconclusive for reasons unrelated to the primary. The checkpoint (3.4 or each reported checkpoint) and the return episodes (9.7 or 9.8) are not stated. Only native is checked: no learning or readiness requirement exists for the distance control, whose outputs feed gate 7.5.",
+     "evidence": [
+      "DECISION_BLOCK.md:112-113 \"The native arm must improve mean paired return over its own untrained actor by more than `[ ____ ]` in every seed and condition.\"",
+      "DECISION_BLOCK.md:225-226 (separate return-episode counts for recorded and strong current)",
+      "v2 DRAFT_PROTOCOL.md:132 \"Strong-current data never enter updates\""
+     ],
+     "proposed_correction": "Name the data and current conditions, the checkpoint and the episode set over which 3.9 is read. State whether the distance-control arm has its own learning check.",
+     "verification": {
+      "id": "B11",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "3.9 (lines 112-113) says \"in every seed and condition\" without saying whether \"condition\" means the 3 data conditions, the current conditions, or both. 9.7 and 9.8 define separate return episodes for recorded and strong current. 3.9 also names no checkpoint and no episode set. Only the native arm is checked, yet the distance-control outputs feed gate 7.5 (line 197). v2:132 confirms that strong-current data never enter updates. The check that can make the whole study Inconclusive is therefore underspecified.",
+      "evidence": [
+       "DECISION_BLOCK.md:112-113 \"The native arm must improve mean paired return over its own untrained actor by more than `[ ____ ]` in every seed and condition.\"",
+       "DECISION_BLOCK.md:225-226 (separate recorded/strong return episode counts)",
+       "DECISION_BLOCK.md:197 7.5 uses the distance-control actor",
+       "v2 DRAFT_PROTOCOL.md:132 \"Strong-current data never enter updates\""
+      ]
+     }
+    },
+    {
+     "id": "B12",
+     "form_location": "3.10 and 11",
+     "severity": "major",
+     "title": "The \"tested with correction\" option has no defined consequence and contradicts \"reported, not decided\"",
+     "problem": "3.10 offers to test secondary outcomes with a correction, but section 11 says they are \"reported, not decided\", and line 94 says one comparison decides. The form does not say what a significant secondary result means, which tests make up the correction family, or whether the primary is in that family. It does not say explicitly that a secondary result can never stand in for, or rescue, a primary that is Fail or Inconclusive. The free-text \"Alternative\" blanks in 3.1, 3.3 and 3.5 also let the user swap in a statistic, such as regret or return, in which the 3.6 value (\"return units of mean absolute error\") and the 3.8 rule no longer make sense.",
+     "evidence": [
+      "DECISION_BLOCK.md:94 \"One comparison decides efficacy. Every other outcome is secondary or descriptive.\"",
+      "DECISION_BLOCK.md:116-117 \"reported as `[ descriptive only / tested with ____ correction ]`\"",
+      "DECISION_BLOCK.md:259 \"## 11. Secondary and descriptive outcomes (reported, not decided)\"",
+      "DECISION_BLOCK.md:103 \"3.6 Practical effect size | `[ ____ ]` return units of mean absolute error\""
+     ],
+     "proposed_correction": "State that no secondary outcome changes the 3.8 verdict. If testing is chosen, name the family and say that results are labeled exploratory. Require that any alternative primary comes with its own effect-size unit and decision rule.",
+     "verification": {
+      "id": "B12",
+      "verdict": "partly_confirmed",
+      "verified_severity": "minor",
+      "reasoning": "The claimed contradiction does not hold. Line 94 already says \"One comparison decides efficacy. Every other outcome is secondary or descriptive.\" So a tested secondary outcome still does not decide efficacy and cannot rescue the primary, and testing secondary outcomes with a correction is consistent with \"reported, not decided\" (line 259). Two smaller gaps remain. The correction family is not defined. The free-text \"Alternative\" blanks in 3.1, 3.3 and 3.5 could replace the statistic, while 3.6 stays fixed as \"return units of mean absolute error\" and the 3.8 rule does not adapt. These are clarity gaps, not material misdirection.",
+      "evidence": [
+       "DECISION_BLOCK.md:94 \"One comparison decides efficacy. Every other outcome is secondary or descriptive.\"",
+       "DECISION_BLOCK.md:116-117 \"reported as `[ descriptive only / tested with ____ correction ]`\"",
+       "DECISION_BLOCK.md:103 \"`[ ____ ]` return units of mean absolute error\"",
+       "DECISION_BLOCK.md:102 \"Alternative: `[ ____ ]`\""
+      ],
+      "corrected_statement": "Line 94 already rules out secondary outcomes deciding or rescuing efficacy, so there is no contradiction with section 11. The real gaps are minor: the correction family is undefined, and an alternative primary entered in 3.1, 3.3 or 3.5 would not carry its own effect-size unit or decision rule."
+     }
+    },
+    {
+     "id": "B13",
+     "form_location": "7 header, 7.6 and section 8 (sealing)",
+     "severity": "major",
+     "title": "No procedure or blank says how BCA outputs stay sealed",
+     "problem": "The gates must be read \"before any BCA outcome is unsealed\". Stage 7, however, computes per-probe rows for every arm in one run, and v2 requires Q1, Q2, U, kappa, z and v for every probe row. The form names no mechanism that enforces the seal: who may read which file, separate output files, hash commitments, or an analysis script frozen before stage 7. Without one, nothing ensures the gate thresholds and the readiness and learning rules are applied before BCA results are visible.",
+     "evidence": [
+      "DECISION_BLOCK.md:189 \"These are read on native and distance-control outputs before any BCA outcome is unsealed.\"",
+      "DECISION_BLOCK.md:201 \"BCA outcomes stay sealed for those claims.\"",
+      "v2 DRAFT_PROTOCOL.md:134 \"Every probe row records ... `Q1,Q2,U,kappa,z,v^pi`\""
+     ],
+     "proposed_correction": "Add an item that fixes the sealing mechanism: BCA-arm outputs written to separate files, a hash committed before reading, and a gate and primary analysis script frozen at stage 3. Record in 12 who unseals and when.",
+     "verification": {
+      "id": "B13",
+      "verdict": "partly_confirmed",
+      "verified_severity": "minor",
+      "reasoning": "It is true that the form names no way to enforce the seal: no separate files, hashes or frozen analysis script. That matters because stage 7 writes per-probe rows that include Q1, Q2, U, kappa, z and v for every arm (v2:134). The claimed consequence is overstated, though. Every threshold and rule is frozen at stage 3, before training (line 43, line 48 \"Nothing new; the rules are already frozen\", line 10), so seeing BCA outputs early could not legally change the gate thresholds or the readiness and learning rules. The remaining risk is to the integrity of the procedure, not an unfrozen decision rule, so the severity is lower.",
+      "evidence": [
+       "DECISION_BLOCK.md:189 \"These are read on native and distance-control outputs before any BCA outcome is unsealed.\"",
+       "DECISION_BLOCK.md:48 \"Nothing new; the rules are already frozen\"",
+       "DECISION_BLOCK.md:10 \"After a stage has run, its blanks never change.\"",
+       "v2 DRAFT_PROTOCOL.md:134 \"Every probe row records ... `Q1,Q2,U,kappa,z,v^pi`\""
+      ],
+      "corrected_statement": "The form gives no mechanism to enforce the BCA seal in stage 7 outputs. Since every rule is frozen at stage 3, this is a procedural-integrity gap rather than a way to tune thresholds after the fact."
+     }
+    },
+    {
+     "id": "B14",
+     "form_location": "6.4-6.5 (with 3.2)",
+     "severity": "major",
+     "title": "An imbalanced control has no consequence for the interaction primary",
+     "problem": "If 3.2 is set to \"hole minus random-removal interaction\", the random-removal pool is part of the primary. 6.5 only says that an imbalance above 6.4 \"is reported as an imbalanced control\". It does not say whether the primary is then still read, made Inconclusive, or labeled qualified.",
+     "evidence": [
+      "DECISION_BLOCK.md:99 \"3.2 Data condition | `[ hole / hole minus random-removal interaction ]`\"",
+      "DECISION_BLOCK.md:184-185 \"An imbalance above 6.4 is reported as an imbalanced control. The plan is never redrawn.\""
+     ],
+     "proposed_correction": "State the 3.8 consequence of an imbalance above 6.4 when the interaction is the primary.",
+     "verification": {
+      "id": "B14",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "3.2 (line 99) allows the hole-minus-random-removal interaction as the primary. 6.5 (lines 184-185) says only that an imbalance above 6.4 \"is reported as an imbalanced control\", and 3.8 gives it no consequence. v2:80 says residual differences \"still qualify that interaction\", but neither document says whether a qualified primary is still read as Pass or Fail. The gap is real.",
+      "evidence": [
+       "DECISION_BLOCK.md:99 \"`[ hole / hole minus random-removal interaction ]`\"",
+       "DECISION_BLOCK.md:184-185 \"An imbalance above 6.4 is reported as an imbalanced control. The plan is never redrawn.\"",
+       "v2 DRAFT_PROTOCOL.md:80 \"residual state/normalization differences still qualify that interaction\""
+      ]
+     }
+    },
+    {
+     "id": "B15",
+     "form_location": "Distance control (glossary line 32; 7.5)",
+     "severity": "minor",
+     "title": "The distance-control match has no item for its probe set",
+     "problem": "The match rule exists in code: RMS action gradients of 3 times BCA's gradient matched to the distance penalty's gradient on probe rows, done once. The form fixes it only as \"strength-matched once on training probes\". It has no item for which retained training rows form the match probe set, or how many there are. The distance arm affects gate 7.5.",
+     "evidence": [
+      "DECISION_BLOCK.md:32 \"Distance control | The existing simple penalty, strength-matched once on training probes at the 10k fork.\"",
+      "support_shift_pilot_v1/design.py:89-93 \"gb = ... (3.0 * bca) ** 2 ... coefficient = gb / gd\"",
+      "support_shift_pilot_v1/runtime.py:290-294 (match over context.probe.obs / context.probe.action)",
+      "v2 DRAFT_PROTOCOL.md:62 \"Penalty-strength matching | Retained training probes only\""
+     ],
+     "proposed_correction": "Cite the existing match rule. Add a fixed or user item for the match probe set under each data condition.",
+     "verification": {
+      "id": "B15",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "I verified the code. design.py lines 89-93 compute gb from (3.0*bca)**2 and gd from the distance gradients, and set coefficient = gb/gd. runtime.py lines 290-294 run the match over context.probe.obs and context.probe.action. The form's glossary (line 32) says only \"strength-matched once on training probes at the 10k fork\" and has no item for which retained probe rows are used, or how many, in each data condition. v2:62 requires retained training probes only. This is a small specification gap.",
+      "evidence": [
+       "DECISION_BLOCK.md:32 \"strength-matched once on training probes at the 10k fork\"",
+       "support_shift_pilot_v1/design.py:89-93 gb/gd/coefficient",
+       "support_shift_pilot_v1/runtime.py:290-294 (context.probe.obs, context.probe.action)",
+       "v2 DRAFT_PROTOCOL.md:62 \"Retained training probes only\""
+      ]
+     }
+    },
+    {
+     "id": "B16",
+     "form_location": "3.4",
+     "severity": "minor",
+     "title": "The \"other\" checkpoint option allows degenerate or unbudgeted choices",
+     "problem": "At 0 and 10k, BCA's actor has had no BCA-trained update, so the cross-arm primary collapses to the same-critic subtraction. A checkpoint after 20k is outside the T = 20000 that section 10 assumes. The form does not warn about either.",
+     "evidence": [
+      "DECISION_BLOCK.md:101 \"3.4 Checkpoint | `[ 20k / other: ____ ]`\"",
+      "v2 DRAFT_PROTOCOL.md:130 \"Label 10k as calibrated but before any BCA-trained actor update\"",
+      "DECISION_BLOCK.md:233 \"warmup to 10k and an end at 20k\""
+     ],
+     "proposed_correction": "Limit \"other\" to 11k or 15k, or note what each choice implies.",
+     "verification": {
+      "id": "B16",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "3.4 (line 101) allows any \"other\" checkpoint. At 0 all arms share one initialization. At 10k, v2:130 says the actor is calibrated \"before any BCA-trained actor update\", so the BCA and native networks are the same and the cross-arm primary reduces to the same-critic subtraction. Any checkpoint past 20k lies outside the T=20000 assumed in section 10 (line 233). The form warns about neither case.",
+      "evidence": [
+       "DECISION_BLOCK.md:101 \"`[ 20k / other: ____ ]`\"",
+       "v2 DRAFT_PROTOCOL.md:130 \"Label 10k as calibrated but before any BCA-trained actor update\"",
+       "DECISION_BLOCK.md:233 \"warmup to 10k and an end at 20k\""
+      ]
+     }
+    },
+    {
+     "id": "B17",
+     "form_location": "3.7 and 9.1; 9.3 and 9.9",
+     "severity": "minor",
+     "title": "S has two blanks, and the 9.3 label conflicts with the 9.9 \"shared\" option",
+     "problem": "S appears as two separate blanks, which could be filled differently, and they are approved at different stages (stage 3 and stage 1). The 9.3 label says \"per trained seed\", which conflicts with the 9.9 option \"shared across seeds\".",
+     "evidence": [
+      "DECISION_BLOCK.md:104 \"3.7 Trained seeds S | `[ ____ ]` (also section 9)\"; :219 \"9.1 Trained seeds S | `[ ____ ]`\"",
+      "DECISION_BLOCK.md:221 \"9.3 Test-family seed range, per trained seed\"; :227 \"shared across seeds\""
+     ],
+     "proposed_correction": "Keep one blank for S and refer to it in the other place. Word 9.3 so that it fits both 9.9 options.",
+     "verification": {
+      "id": "B17",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "S has two blanks, 3.7 (line 104) and 9.1 (line 219). 3.7 does say \"(also section 9)\", but the two are approved at different stages: section 9 at stage 1 (line 41) and section 3 at stage 3 (line 43). The 9.3 label \"per trained seed\" (line 221) does not fit the 9.9 option \"shared across seeds\" (line 227).",
+      "evidence": [
+       "DECISION_BLOCK.md:104 \"3.7 Trained seeds S | `[ ____ ]` (also section 9)\"",
+       "DECISION_BLOCK.md:219 \"9.1 Trained seeds S | `[ ____ ]`\"",
+       "DECISION_BLOCK.md:41,43 approval stages",
+       "DECISION_BLOCK.md:221 \"per trained seed\"; :227 \"shared across seeds\""
+      ]
+     }
+    },
+    {
+     "id": "B18",
+     "form_location": "2.1",
+     "severity": "minor",
+     "title": "The fixture kill rule does not say who decides that a defect is a fixture defect",
+     "problem": "Only a \"fixture defect\" may be corrected. A bug in one of the two mask implementations is neither a specification defect nor a fixture defect. The rule does not say whether that bug can be fixed, or who classifies a disagreement.",
+     "evidence": [
+      "DECISION_BLOCK.md:75-80 \"The work stops on any of these ... The specification is fixed. Only a fixture defect may be corrected.\""
+     ],
+     "proposed_correction": "Say whether implementation bugs may be corrected and that the user classifies each disagreement.",
+     "verification": {
+      "id": "B18",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "Lines 75-80 stop the work on a disagreement between the two mask implementations, and line 80 allows only \"a fixture defect\" to be corrected. A bug in one implementation is not clearly either a specification defect or a fixture defect, and the form does not say who classifies a disagreement. This is a wording and clarity gap.",
+      "evidence": [
+       "DECISION_BLOCK.md:75-80 \"a disagreement between the two independent mask implementations ... The specification is fixed. Only a fixture defect may be corrected.\""
+      ]
+     }
+    },
+    {
+     "id": "B19",
+     "form_location": "4.6",
+     "severity": "minor",
+     "title": "The 4.6 reference is in a different unit from its blank",
+     "problem": "The blank is a minimum count of hole rows per load-depth stratum. The reference is given as shares of high-load rows. The shares themselves check out under the stated start law: Monte Carlo gives 0.291, 0.252 and 0.457.",
+     "evidence": [
+      "DECISION_BLOCK.md:130 \"Minimum hole rows in each load-depth stratum ... | `[ ____ ]` each | shares of high-load rows about 29%, 25%, 46%\""
+     ],
+     "proposed_correction": "State the reference in the blank's unit (rows) or relabel the blank.",
+     "verification": {
+      "id": "B19",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "The 4.6 blank (line 130) is a minimum row count, while its reference gives shares of high-load rows. I reproduced the shares by Monte Carlo on the stated start law, g = c + A*cos(phase) with c ~ U[0.1,0.7] and A ~ U[0.1,0.4]. The results are P(g>=0.4) = 0.500 and stratum shares of 0.291, 0.252 and 0.457, which matches the finding. The only issue is that the reference is in a different unit from the blank.",
+      "evidence": [
+       "DECISION_BLOCK.md:130 \"`[ ____ ]` each | shares of high-load rows about 29%, 25%, 46%\"",
+       "Computed (4e6 draws): P(g>=0.4)=0.5002; shares 0.2914, 0.2516, 0.4570",
+       "thrusterchain.py:88 \"recorded\": dict(current=(0.1, 0.7), wave=(0.1, 0.4), kick=0.5)"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "critic": "C-provenance",
+   "sound": [
+    "Lines 3-5: the form states that agents fill no blank, that a message from an agent or workflow never counts as approval, and that it authorizes no decoding, fitting, training, simulation or spending.",
+    "Stage 7 (line 47) requires a separate run authorization, and lines 50-51 apply a Zeus hold to stages 4-7. The hold citation is stale (C13), but the requirement itself is present.",
+    "Host: line 29 says unmodified Unifloral TD3+BC. No CORL material appears in the form.",
+    "'v2 line 146' (line 102) does point to v2's frozen aggregation-weight paragraph (DRAFT_PROTOCOL.md:146).",
+    "The v2 protocol hash f46f78db... and AUDIT.md hash 1df734f2... recompute to the values in AUDIT_RECEIPT.json:14,19; the v1 hash 7bebb74c... matches AUDIT.md:3.",
+    "Knee k = 0.800000011920929 = float32(0.8) (thrusterchain.py:79), and load g = current + first wave coordinate (thrusterchain.py:270-273; v2:45).",
+    "2.2 float32 edge values: -0.84999996 and -0.75000006 are inside the hole; -0.85000002 and -0.75 are outside under v2's tolerance-free mask (my numpy check).",
+    "Analytic references 4.2 (~1,920), 4.3 (~606, 79%), 4.4 (~192), 4.5 (~1,920), 4.6 (29/25/46%), 5.7 (3.2), 5.8 (6.4) and the 6.1 expectation (3.2 of 128) are correct closed-form expectations under the documented uniform recorder and start law (numeric integral: P(g>=0.4)=0.5; P(no hole row)=0.212; shares 0.291/0.251/0.457). Only their labeling and citations need fixing (C7).",
+    "1.3 episode roles: the calibration set is the first 128 tuning-validation groups sorted by group ID (unifloral_checkpoint_v1/data.py:43), with times from PCG64 seed 2026102362 (data.py:46). The other 128 were used as local validation in the one-sided work (bca_one_sided_v1/DATA_PROVENANCE.md:10-12).",
+    "Section 10 formulas match v2:152-154: 120,000*S critic and auxiliary updates, 60,000*S actor updates, 21*S refreshes, 33*S unique actor snapshots.",
+    "5.2 correctly uses standardized RMS distance, as v2:86 does. v3's conversion to Euclidean distance (0.5 RMS = 1.803 Euclidean) re-derives correctly.",
+    "The strong-current statement (line 167) matches v2:105 and v3:46.",
+    "No result is labeled confirmatory (line 71), consistent with v2:37.",
+    "The form does not call the band value-flat, in line with v3:11's caution (though 7.1 repeats an unverified number, C9).",
+    "What v3 verified that I could check independently: reset always sets t=0 (thrusterchain.py:434); v2's factor table lacks the low-load in-band cell (v2:100-103); the one-step bounds 1.2*k*h=0.048, 1.5*h=0.075 and 0.3*sqrt(2)*1.5*h=0.0318 follow from thrust() at thrusterchain.py:198. What v3 only asserts here: its bank recomputations (25 candidates, signed range, zero fixed-other-action pairs, actor range) cite an EVIDENCE.json that is absent at this commit.",
+    "American spelling is used throughout (labeled, standardized); no British spellings found.",
+    "Kill rules are written for stages 1, 2, 4, 5 and 6 and for the exposure gates (1.2, 2.1, 4.7, 5.11, 6.5, 7.6, 10.7), and 10.7 forbids automatic retry or extension."
+   ],
+   "findings": [
+    {
+     "id": "C1",
+     "form_location": "Header (lines 1-13) and stage 7 (line 47)",
+     "severity": "blocking",
+     "title": "Form does not mention the v3 addendum, which rejects this band as the next efficacy candidate",
+     "problem": "The form never cites conditional_ood_design_v3/AUDIT_ADDENDUM.md. Stage 7 still offers training and evaluation on this candidate. The later audit rejects the band's readiness and priority for the next policy-efficacy test, says the policy-training budget should not be spent on it, and says it supersedes v2's recommendation to keep the band provisionally. A user freezing this form would not see that the protocol's own recommendation has been overtaken. The addendum is an agent's audit, not the user's decision, so the form should report its status without treating it as settled.",
+     "evidence": [
+      "v3/AUDIT_ADDENDUM.md:3 \"Status: **reject the present band as the next policy-efficacy pilot candidate; keep launch blocked** ... this addendum supersedes v2's recommendation to retain the band provisionally for the next policy experiment.\"",
+      "v3/AUDIT_ADDENDUM.md:67 \"**Decision:** do not spend the proposed policy-training budget on this candidate.\"",
+      "DECISION_BLOCK.md:47 \"| 7 | Training and evaluation | Models and simulator, within the ceiling | Sections 3, 7, 8, 9 and 10, plus a separate run authorization |\"",
+      "grep for 'v3' or 'ADDENDUM' in DECISION_BLOCK.md finds nothing. The form's only source statement is line 13: \"The sources are `REVIEW_20261027.md` and v2.\"",
+      "Repo copy of the addendum: SHA-256 25dc75467331af590564c5a4d0ba36c9e87127f82adf0f46f2c41ee3b94ffe97 at HEAD cc22192 (older snapshot; a newer version is being edited elsewhere)."
+     ],
+     "proposed_correction": "Add a status line at the top citing v3/AUDIT_ADDENDUM.md by path, commit and hash. It should say that, as of that snapshot, a later agent audit rejects this band as the next policy-efficacy candidate and keeps launch blocked; that this is not a user decision; and that stage 7 (and arguably stage 4 onward) should not be requested until the user has recorded in section 12 whether this candidate proceeds. Say that the v3 file is an older snapshot and must be re-read before freezing.",
+     "verification": {
+      "id": "C1",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "The facts check out. The form never names v3, and its only statement of sources is line 13. v3:3 and v3:67 reject the band as the next efficacy candidate and say they supersede v2's recommendation. The form and the addendum were added in the same commit (850120f), so the author could have seen it. The severity is inflated, though. v3 is an agent audit, not the form's own protocol. Leaving it out does not create a step that could run without approval, because stage 7 still needs a separate run authorization (line 47). It also does not create a wrong number or an ambiguous decision rule. This is a material gap that misleads the user, which makes it major rather than blocking.",
+      "evidence": [
+       "DECISION_BLOCK.md:13 \"The sources are `REVIEW_20261027.md` and v2.\" No mention of v3 or ADDENDUM anywhere in the form",
+       "v3/AUDIT_ADDENDUM.md:3 \"reject the present band as the next policy-efficacy pilot candidate; keep launch blocked ... supersedes v2's recommendation\"",
+       "v3/AUDIT_ADDENDUM.md:67 \"do not spend the proposed policy-training budget on this candidate\"",
+       "sha256 of the addendum at HEAD cc22192 = 25dc7546...ffe97 (recomputed). Both files were added in commit 850120f",
+       "DECISION_BLOCK.md:47 stage 7 requires \"a separate run authorization\", so the omission authorizes nothing"
+      ]
+     }
+    },
+    {
+     "id": "C2",
+     "form_location": "12, approval record (lines 277-287); also lines 3-4, 9-10",
+     "severity": "blocking",
+     "title": "Approval record cannot bind a frozen form",
+     "problem": "Section 12 records only approver, commit and date. It has no SHA-256 of the filled form, no hash of the v2 protocol it serves, no approval statement and no typed confirmation. Line 10's rule that blanks never change after a stage runs therefore cannot be checked. The user's earlier approvals bind an exact file hash with a typed statement. Rows 2-7 have empty cells with no `[ ____ ]` marker, so the rule that every bracketed blank belongs to the user does not plainly cover them. \"Approval commit identity\" is used but never defined.",
+     "evidence": [
+      "DECISION_BLOCK.md:279-287 table columns \"Stage | Blanks approved | Approver | Commit | Date\"; rows 2-7 have empty cells, e.g. \"| 2 | 2 | | | |\"",
+      "DECISION_BLOCK.md:3-4 \"Every `[ ____ ]` is a number or choice for the user to set. An agent fills no blank\"",
+      "DECISION_BLOCK.md:9 \"under your approval commit identity\"; line 10 \"After a stage has run, its blanks never change.\"",
+      "Prior user practice: outputs/shift/beyond-the-data/near80/approval_near80_51e677ab76c8d2f7.json has fields \"prereg_sha256\", \"statement\": \"I approve ... whose SHA-256 is 51e677ab..., and only that exact file\", \"typed\", \"stdin_isatty\": true",
+      "docs/session-history/2026-10-14_cloud_session_01Ro4BnWxcsoeFi9CGcTQ5bx.md:93-94 \"the user approves each one at their own terminal. A message from an agent never counts as approval. The approval commit uses the user's GitHub identity\"",
+      "The v2 protocol hash exists (AUDIT_RECEIPT.json:14 f46f78db..., recomputed equal) but the form does not record it."
+     ],
+     "proposed_correction": "Add to every approval row: the SHA-256 of the filled form as approved, the SHA-256 of DRAFT_PROTOCOL.md v2 (and of any receipts the stage relies on), a fixed approval statement naming that hash, and a typed confirmation. Mark every approval cell as a user blank. Define the approval identity in plain words, or point to where the standing rule defines it. Say that a form whose hash does not match the approved hash is not approved.",
+     "verification": {
+      "id": "C2",
+      "verdict": "partly_confirmed",
+      "verified_severity": "minor",
+      "reasoning": "Section 12 has no typed approval statement and no explicit file hash. Rows 2 to 7 have empty cells with no [ ____ ] markers, and the form does not define \"approval commit identity\". But the claim that the record \"cannot bind a frozen form\" is wrong. The record has a Commit column, and a git commit SHA pins the exact content of every file in the tree, including DECISION_BLOCK.md and v2 DRAFT_PROTOCOL.md in the same repository. Line 9 already requires approval at the user's own terminal. A separate SHA-256 and a typed statement, as in the near-80 practice, would add robustness, but without them the form's content is still pinned. The missing markers and the undefined term are clarity issues.",
+      "evidence": [
+       "DECISION_BLOCK.md:279 columns \"Stage | Blanks approved | Approver | Commit | Date\"",
+       "DECISION_BLOCK.md:282-287 rows 2-7 have empty cells with no [ ____ ]",
+       "DECISION_BLOCK.md:9 \"Approve each stage's blanks at your own terminal ... under your approval commit identity\"",
+       "outputs/shift/beyond-the-data/near80/approval_near80_51e677ab76c8d2f7.json shows \"prereg_sha256\", \"statement\", \"typed\", \"stdin_isatty\": true",
+       "docs/session-history/2026-10-14_cloud_session_01Ro4BnWxcsoeFi9CGcTQ5bx.md:93-94 defines the approval identity as the user's GitHub identity"
+      ],
+      "corrected_statement": "The Commit column already pins the approved form and v2 by git content, so the form can be bound. What is missing is a typed approval statement with an explicit file hash, as in the user's earlier approvals. Rows 2-7 also need [ ____ ] markers, and \"approval commit identity\" needs a definition or a pointer to the standing rule that defines it. These are clarity and robustness gaps, not a failure to bind."
+     }
+    },
+    {
+     "id": "C3",
+     "form_location": "Stage order, stages 3-5 (lines 43-45); line 5",
+     "severity": "blocking",
+     "title": "Stages 4 and 5 (array decoding) have no separate decoding authorization",
+     "problem": "Stage 3 approves \"every remaining blank\", which includes sections 4, 5 and 6. Stages 4 and 5 then list only \"Sections 4 and 5\" and \"Section 6\" as their approval, and those were already approved at stage 3. Only stage 7 asks for \"a separate run authorization\". On one reading, approving the stage-3 freeze is enough to start decoding training and tuning-validation arrays. That conflicts with line 5 and with the review's requirement that stage 4 needs the user's own approval.",
+     "evidence": [
+      "DECISION_BLOCK.md:43 \"| 3 | Freeze this whole form | Nothing | Every remaining blank |\"",
+      "DECISION_BLOCK.md:44 \"| 4 | Geometry-only coverage audit | Training and tuning-validation arrays only, no model | Sections 4 and 5 |\"",
+      "DECISION_BLOCK.md:45 \"| 5 | Calibration and random-removal row plans | The same arrays, no model | Section 6 |\"",
+      "DECISION_BLOCK.md:47 only stage 7 says \"plus a separate run authorization\"",
+      "DECISION_BLOCK.md:5 \"This form authorizes no data decoding\"",
+      "REVIEW_20261027.md:165 \"It decodes training and tuning arrays only and needs the user's approval.\""
+     ],
+     "proposed_correction": "Give stages 4 and 5 the same structure as stage 7: an explicit, separate user authorization, typed at the user's terminal, that names the arrays and episode roles to be decoded and is recorded in its own section 12 row. State that the stage-3 freeze approves numbers only and never authorizes decoding.",
+     "verification": {
+      "id": "C3",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "The reading that the stage-3 freeze alone allows decoding is weakened by the form's own text. Line 9 requires each stage to be approved at the user's terminal before it runs. Section 12 has separate rows for stage 4 (\"4, 5\") and stage 5 (\"6\"), each with its own approver, commit and date. Line 50 also requires the hold to be resolved before stages 4 to 7. So stage 4 cannot run on the stage-3 approval alone. The real defect is narrower. The stage-4 and stage-5 approvals list only sections that stage 3 already approved, so it is unclear what those approvals actually authorize. Unlike stage 7, they never say that a decoding authorization is needed. And line 5 says this form authorizes no decoding, so the form never says where decoding authorization comes from. That ambiguity is real but does not leave a step runnable without approval, so major rather than blocking.",
+      "evidence": [
+       "DECISION_BLOCK.md:43 \"| 3 | Freeze this whole form | Nothing | Every remaining blank |\"",
+       "DECISION_BLOCK.md:44-45 stage 4 \"Sections 4 and 5\", stage 5 \"Section 6\"",
+       "DECISION_BLOCK.md:47 only stage 7 says \"plus a separate run authorization\"",
+       "DECISION_BLOCK.md:284-285 separate approval rows \"| 4 | 4, 5 |\" and \"| 5 | 6 |\"",
+       "DECISION_BLOCK.md:9 approval at the terminal \"before that stage runs\"; :50 the hold must be resolved for stages 4 to 7; :5 \"This form authorizes no data decoding\""
+      ],
+      "corrected_statement": "Stages 4 and 5 have their own approval rows in section 12, and line 9 requires approval before each stage runs, so the stage-3 freeze does not authorize decoding by itself. But their listed approvals cover only sections already approved at stage 3. Unlike stage 7, they do not name an explicit decoding authorization, and line 5 says the form authorizes no decoding. As a result, the form never says what authorizes array decoding at stages 4 and 5."
+     }
+    },
+    {
+     "id": "C4",
+     "form_location": "Stage order vs section headers (lines 41, 43, 46-47, 215, 231); 10.7 (lines 255-257); line 213",
+     "severity": "major",
+     "title": "Stage-to-section approval mapping contradicts itself",
+     "problem": "Several statements disagree about which stage approves which section. Stage 1 requires approval of sections 1 and 9, but section 1 has no blanks and section 9 is headed \"fixed in stage 3\". Stage 3 approves \"every remaining blank\", yet section 10 is headed \"fixed in stage 6\" and stage 6 requires section 10 approval. Stage 7 re-lists sections 3, 7, 8, 9 and 10, which were approved earlier. Rule 10.7 lets S or the section 9 counts be reduced at stage 6, after they were frozen at stage 3 (or stage 1). That contradicts line 10 and leaves it unclear whether a new labeled version is needed.",
+     "evidence": [
+      "DECISION_BLOCK.md:41 \"| 1 | Seed and role ledger | Reads local JSON receipts only | Sections 1 and 9 |\" vs line 215 \"## 9. Seeds and evaluation counts (fixed in stage 3)\"",
+      "DECISION_BLOCK.md:43 \"Every remaining blank\" vs line 231 \"## 10. Runtime ceiling (fixed in stage 6)\" and line 46 \"| 6 | Budget sheet | Nothing | Section 10 |\"",
+      "DECISION_BLOCK.md:255 \"A projected total above 10.1 reduces S or the counts in section 9 before the approval request.\"",
+      "DECISION_BLOCK.md:10 \"A changed number needs a new, labeled post-hoc version of this form.\"",
+      "DECISION_BLOCK.md:281 approval row 1 lists \"1, 9\"; row 3 \"all remaining\""
+     ],
+     "proposed_correction": "Give each section a single approving stage and make the stage table, the section headers and section 12 agree. State whether reducing S or the section 9 counts under 10.7 requires a new labeled version of the form under line 10. If it is meant to be allowed without one, say so explicitly, and say that it happens before any array is decoded.",
+     "verification": {
+      "id": "C4",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "I re-read every cited line. Section 1 has no [ ____ ] blanks (lines 53-71), yet stage 1 approves \"Sections 1 and 9\", and section 9 is headed \"fixed in stage 3\". Stage 3 approves \"every remaining blank\", but section 10 is headed \"fixed in stage 6\" and stage 6 approves section 10. Stage 7 re-lists sections 3, 7, 8, 9 and 10. Rule 10.7 changes S or the section 9 counts at the stage-6 budget sheet, after the stage-3 freeze. That conflicts with line 10, and the form does not say whether a new labeled version is needed. The review's step 6 has the same ordering, so the form inherited it, but the form still contradicts itself.",
+      "evidence": [
+       "DECISION_BLOCK.md:41 \"Sections 1 and 9\" vs :215 \"## 9. Seeds and evaluation counts (fixed in stage 3)\"",
+       "DECISION_BLOCK.md:43 \"Every remaining blank\" vs :231 \"## 10. Runtime ceiling (fixed in stage 6)\" and :46",
+       "DECISION_BLOCK.md:255 \"A projected total above 10.1 reduces S or the counts in section 9 before the approval request.\"",
+       "DECISION_BLOCK.md:10 \"A changed number needs a new, labeled post-hoc version of this form.\"",
+       "Section 1 (lines 53-71) contains no [ ____ ]"
+      ]
+     }
+    },
+    {
+     "id": "C5",
+     "form_location": "7.5 (line 197)",
+     "severity": "blocking",
+     "title": "Free-policy entry test widens the band past the hole mask, reversing the earlier pilot's convention",
+     "problem": "Rule 7.5 counts entry when abs(a0 + k) <= h + 1e-6. The hole mask in v2 and the form's own fixtures have no tolerance, and the form says the executed values -0.85000002 and -0.75 lie outside the hole. Under 7.5's tolerance both count as in-band. The pattern 'like the support pilot's exposure fraction' was copied with its sign reversed: the support pilot added 1e-6 to make its 'outside support' test stricter, while 7.5 adds it to make the entry test looser. That makes the exposure gate easier to pass and inconsistent with the mask.",
+     "evidence": [
+      "DECISION_BLOCK.md:197 \"executed command is in the band (`abs(a0 + k) <= h + 1e-6`)\"",
+      "DRAFT_PROTOCOL.md (v2):47 \"`R_h(o,a) = [g(o) >= 0.4] AND [abs(float64(a[0]) + k) <= h]`\" (no tolerance)",
+      "DECISION_BLOCK.md:86 executed edges \"\u22120.84999996, \u22120.85000002, \u22120.75000006 and \u22120.75\"; REVIEW_20261027.md:131-132 \"The values \u22120.75 and \u22120.85000002 both fall outside.\"",
+      "Calculation with k=0.800000011920929, h=0.05: float32(-0.75)+k = 0.0500000119 -> mask False, 7.5 rule True; float32(-0.85000002)=-0.8500000238, abs(+k)=0.0500000119 -> mask False, 7.5 rule True",
+      "support_shift_pilot_v1/evaluate_worker.py:36 \"outside = actions[:, :, 0].astype(np.float64) > .5 + 1e-6\"; support_shift_pilot_v1/PROTOCOL.md:58 \"the fraction above `0.5 + 1e-6`\""
+     ],
+     "proposed_correction": "Define 7.5 entry with exactly the executed-float32 hole mask of v2 line 47 (the band part only). If a tolerance is kept, state its direction, give the reason, and add the 2.2 edge values as fixtures for the entry count.",
+     "verification": {
+      "id": "C5",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "I reproduced the calculation. With k=0.800000011920929 and h=0.05, float32(-0.85000002) and float32(-0.75) both give abs(a0+k)=0.0500000119, which is outside the v2 mask but inside the 7.5 rule (h+1e-6). Float32(-0.84999996) and float32(-0.75000006) give 0.04999995, inside both. The support pilot uses \"> .5 + 1e-6\" for 'outside', which makes its exposure count stricter. 7.5 adds the tolerance to the entry count, which makes entry easier, so the direction is reversed. This contradicts v2:47 and the form's own fixtures (line 86). I set the severity to major rather than blocking because the widening is about 1e-6 at each edge of a 0.1-wide band (relative size about 2e-5). For a continuous actor that cannot materially change the gate outcome. It is a definitional inconsistency to fix before freezing, not one that leaves the decision ambiguous.",
+      "evidence": [
+       "DECISION_BLOCK.md:197 \"abs(a0 + k) <= h + 1e-6\"",
+       "DRAFT_PROTOCOL.md (v2):47 \"abs(float64(a[0]) + k) <= h\" with no tolerance",
+       "numpy: float32(-0.85000002) -> d=0.050000011920928955, d<=h False, d<=h+1e-6 True; float32(-0.75) -> same",
+       "support_shift_pilot_v1/evaluate_worker.py:36 \"outside = actions[:, :, 0].astype(np.float64) > .5 + 1e-6\"",
+       "REVIEW_20261027.md:131-132 \"The values \u22120.75 and \u22120.85000002 both fall outside.\""
+      ]
+     }
+    },
+    {
+     "id": "C6",
+     "form_location": "3.8 Inconclusive (line 110) vs 7.6 (lines 199-204)",
+     "severity": "blocking",
+     "title": "Primary becomes inconclusive whenever 7.5 fails, contradicting 7.6 and the saved actor evidence",
+     "problem": "Rule 3.8 makes the primary comparison inconclusive if any section 7 gate fails, and that includes 7.5, the free-policy entry gate. Rule 7.6 says a 7.5 failure only leaves the return claim untested and that forced-probe accuracy may still be reported. The primary statistic (3.5) is forced-probe accuracy. The v3 check of the saved actor found no in-band commands at high-load states, so under 3.8 the primary would almost certainly read inconclusive. The two rules give different verdicts for the same outcome.",
+     "evidence": [
+      "DECISION_BLOCK.md:110 \"**Inconclusive.** Any exposure gate in section 7 failed\"",
+      "DECISION_BLOCK.md:202-203 \"If 7.5 fails, the whole-policy return claim is untested for this mechanism. Forced-probe accuracy may still be reported.\"",
+      "DECISION_BLOCK.md:102 primary statistic is mean absolute error on in-band probes (forced candidates)",
+      "v3/AUDIT_ADDENDUM.md:13 \"0/128 in the proposed band and 0/59 among high-load actor states\" (verified for the single saved penalty-off 20k actor)"
+     ],
+     "proposed_correction": "State exactly which section 7 gates make the primary inconclusive and which affect only secondary or return claims, so that 3.8, 7.6 and section 8 step 3 agree.",
+     "verification": {
+      "id": "C6",
+      "verdict": "confirmed",
+      "verified_severity": "blocking",
+      "reasoning": "Rule 3.8 makes the primary comparison inconclusive if any section 7 gate fails, and 7.5 is a section 7 gate. Rule 7.6 says a 7.5 failure only leaves the return claim untested, and that the accuracy claims depend on 7.1 to 7.4. Section 8 step 3 runs the primary only if \"step 2 passed for the primary stratum\", which is a third wording. The primary statistic is forced-probe accuracy (3.5). So the same outcome, 7.4 passing and 7.5 failing, gets two different verdicts. v3:13 records 0 of 59 high-load actor states in the band, which makes this case likely. This is an ambiguous decision rule, so blocking is justified.",
+      "evidence": [
+       "DECISION_BLOCK.md:110 \"**Inconclusive.** Any exposure gate in section 7 failed\"",
+       "DECISION_BLOCK.md:200-203 \"If 7.1, 7.2, 7.3 or 7.4 fails, these claims are inconclusive ... If 7.5 fails, the whole-policy return claim is untested ... Forced-probe accuracy may still be reported.\"",
+       "DECISION_BLOCK.md:210 \"only if step 2 passed for the primary stratum\"",
+       "v3/AUDIT_ADDENDUM.md:13 \"0/128 in the proposed band and 0/59 among high-load actor states\""
+      ]
+     }
+    },
+    {
+     "id": "C7",
+     "form_location": "Lines 12-13 and every 'Analytic reference' / 'development reference' column (4.2-4.6, 5.2-5.8, 7.1-7.5)",
+     "severity": "major",
+     "title": "Reference provenance and type are mislabeled and uncited",
+     "problem": "Line 12 says every analytic reference is a closed-form expectation from the documented recorder and start law, taken from the review or v2. Several are not. The 5.2 radius numbers come from a fitted per-time Gaussian approximation of state occupancy, which v2 itself warns against treating as exact. The 7.1 number is a hand model under assumed continuations. The 7.3 and 7.5 numbers are development measurements on a different checkpoint. Entries 5.3-5.5 are v2 proposals placed in the 'Analytic reference' column. The 4.4 and 4.6 figures (192; 25% and 46%) appear in neither source; they are correct but were derived by the form's author. No reference gives a file:line. The 'not a recommendation' disclaimer covers only analytic references, not development references or v2 proposals. Inventory (my checks): 4.2 ~1,920 = REVIEW:181, closed form, correct. 4.3 ~606 (79%) = REVIEW:182 (21%), closed form, my integral gives 21.17%. 4.4 ~192 = derived, not in sources, correct. 4.5 ~1,920 = REVIEW:81-82, closed form. 4.6 29/25/46% = only 29% in REVIEW:67, my integral gives 29.1/25.1/45.7%. 5.2 = REVIEW:41-45,184-185, Gaussian approximation, no saved script or receipt, labeled wrongly. 5.3-5.5 = v2:86,90, proposals, labeled as references. 5.7 3.2 / 5.8 6.4 = REVIEW:86, binomial closed form, correct. 6.1 3.2 of 128 = REVIEW:124-125 + data.py:46, closed form. 7.1 = REVIEW:59-61, hand model, no receipt. 7.3 = REVIEW:61-62, a measurement, but conflicts with v3 (see C10). 7.5 = REVIEW:76-77 / v3:13, a measurement, minor wording issue (C17).",
+     "evidence": [
+      "DECISION_BLOCK.md:12-13 \"that number comes from the documented recorder and start law. It is a closed-form expectation, not a measurement and not a recommendation. The sources are `REVIEW_20261027.md` and v2.\"",
+      "REVIEW_20261027.md:41-43 \"A per-time Gaussian model of the training states reproduces the receipt's standard deviations within about 2%... Under it, a probe has about 1 to 2\"; REVIEW:184 \"(Gaussian approximation)\"",
+      "DRAFT_PROTOCOL.md (v2):31 \"Random Gaussian starts do not make the full rollout distribution Gaussian.\"",
+      "DECISION_BLOCK.md:145-147 \"v2 proposes 64\", \"v2 proposes 32 from 8\", \"v2 proposes 32 at 0.4 and 128 at 0.6\" under heading \"Analytic reference\" (line 142)",
+      "DECISION_BLOCK.md:191 column header \"Analytic or development reference\" (mixed types)",
+      "My numeric integral over the start law (c~U[0.1,0.7], A~U[0.1,0.4], uniform phase, 0.27 rad/step): P(g>=0.4)=0.500; high-load shares 0.291/0.251/0.457; P(no high-load step)=0.114; P(no hole row)=E[0.95^n]=0.212",
+      "grep of the repo for 0.67-0.77, 0.672 and the review run ids wf_1bc8b803 / wf_943039b2 finds no saved script or receipt outside the .md files"
+     ],
+     "proposed_correction": "Add a 'source and type' column for each reference: file:line, and one of closed-form expectation / approximation model / hand calculation / development measurement (naming the checkpoint) / v2 proposal / none found. Move the v2 proposals out of the 'Analytic reference' column. Extend 'not a recommendation' to every reference and proposal. Rewrite line 12 so it no longer claims all references come from the recorder and start law.",
+     "verification": {
+      "id": "C7",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "Line 12 says every analytic reference is a closed-form expectation from the recorder and start law. That is false for 5.2, which comes from a per-time Gaussian approximation (REVIEW:41-43,184). It is also false for 7.1, a hand model under assumed continuations (REVIEW:59-61), and for 7.3 and 7.5, which are development measurements. 5.3-5.5 are v2 proposals placed under 'Analytic reference'. Two things soften this. The section 7 header (line 191) does say \"Analytic or development reference\", and 5.3-5.5 are each worded \"v2 proposes\". The line-12 overclaim and the absence of any file:line citation remain. I reproduced the closed-form figures with the documented start law: P(g>=0.4)=0.500; strata shares 0.291/0.252/0.457; P(no high-load step)=0.111; P(no hole row)=0.212, so 768 x 0.788 = 606; 76,800 x 0.5 x 0.05 = 1,920; 1,920/10 = 192. 192 and the 25%/46% shares appear in neither source.",
+      "evidence": [
+       "DECISION_BLOCK.md:12-13 \"It is a closed-form expectation, not a measurement and not a recommendation.\"",
+       "REVIEW_20261027.md:184 \"about 1 to 2 (Gaussian approximation)\"",
+       "DECISION_BLOCK.md:145-147 \"v2 proposes ...\" under the 'Analytic reference' header (line 142)",
+       "DECISION_BLOCK.md:191 \"Analytic or development reference\" (partial mitigation for section 7)",
+       "My recomputation: shares 0.2914/0.2516/0.4570; E[0.95^n]=0.2115 -> 605.5 episodes with a hole row"
+      ]
+     }
+    },
+    {
+     "id": "C8",
+     "form_location": "5.2 radius reference and Option A rules (lines 139-147)",
+     "severity": "major",
+     "title": "Radius reference has no receipt, steers toward a count-hitting radius, and omits whole-episode exclusion",
+     "problem": "The 0.67-0.77 reference has no saved script or receipt. The v3 addendum classes it as an unverified numerical claim and says not to adopt it or search radii automatically. Placing it beside the radius blank invites the user to pick the radius that makes the support gate pass. Option A also lacks the whole-episode exclusion that v3 requires for training-derived anchors: inside a ten-step bin, an anchor's own episode can supply up to 9 temporally adjacent rows, inflating neighbor counts. The 'same load side' restriction is fixed with no blank, although the review argued it hides nearby low-load rows that keep in-band labels.",
+     "evidence": [
+      "DECISION_BLOCK.md:144 \"0.5 gives about 1 to 2 rows; about 0.67 to 0.77 gives 32 to 64\"",
+      "v3/AUDIT_ADDENDUM.md:12 \"**Unverified numerical claim.** No matching saved count/normalization/anchor receipt was found... Do not adopt 0.7-0.75 or search radii automatically. Exclude the entire anchor episode when measuring other-episode support for a training-derived anchor.\"",
+      "v3/AUDIT_ADDENDUM.md:65 \"A radius receipt needs ... whole-episode exclusion and per-anchor distinct-episode counts.\"",
+      "DECISION_BLOCK.md:139-140 Option A text has no episode-exclusion rule; \"Neighbors come from the same ten-step bin and the same load side.\"",
+      "REVIEW_20261027.md:68-69 \"Low-load rows with retained in-band labels therefore sit very close to many high-load probes. The same-side neighbor restriction at v2 line 86 hides this.\"",
+      "RMS vs Euclidean: 0.5*sqrt(13)=1.803, 0.7*sqrt(13)=2.524, 0.75*sqrt(13)=2.704 (matches v3:12); the form correctly says 'standardized RMS distance'"
+     ],
+     "proposed_correction": "Label the 0.67-0.77 figure as an unverified Gaussian approximation with no saved receipt, cite v3:12 and v3:65, and say it must not be used to set the radius. Alternatively, remove it. Add an explicit item, fixed or a user blank, stating whether the anchor's whole episode is excluded from its neighbor set, and state how 'distinct episodes' in 5.4 treats that episode. Note beside the same-side rule that the review disputes it.",
+     "verification": {
+      "id": "C8",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "I verified every quote. The 0.67-0.77 figure comes only from the review's Gaussian model. My search found no saved script or receipt; the run IDs appear only in .md files. v3:12 calls it an unverified numerical claim and says not to adopt it, and v3:65 requires whole-episode exclusion. Option A (lines 139-140) has no episode-exclusion rule. Its same-load-side restriction is fixed, although REVIEW:68-69 disputes it. My RMS-to-Euclidean conversions match v3 (1.803, 2.524, 2.704). Putting an unreceipted, count-hitting radius beside a user blank materially steers the user.",
+      "evidence": [
+       "DECISION_BLOCK.md:144 \"about 0.67 to 0.77 gives 32 to 64\"",
+       "v3/AUDIT_ADDENDUM.md:12 \"Unverified numerical claim ... Do not adopt 0.7-0.75 ... Exclude the entire anchor episode\"",
+       "v3/AUDIT_ADDENDUM.md:65 \"whole-episode exclusion and per-anchor distinct-episode counts\"",
+       "DECISION_BLOCK.md:139-140 no exclusion rule; \"the same load side\"",
+       "REVIEW_20261027.md:68-69 \"The same-side neighbor restriction at v2 line 86 hides this.\"",
+       "grep for wf_1bc8b803 / wf_943039b2 in .json/.py files returns nothing"
+      ]
+     }
+    },
+    {
+     "id": "C9",
+     "form_location": "7.1 (line 193) and 9.6 (line 224)",
+     "severity": "major",
+     "title": "Value-gap reference is unreceipted, measures a different quantity, and candidates are not required to hold other actions fixed",
+     "problem": "The reference 'about 1 to 1.5 units ... under simple continuations' comes from a hand model in the review with no saved script. The v3 addendum says no full-return bound is verified. It also says the saved bank has zero same-state pairs with the other three actions fixed, so no saved measurement can supply this number. The review's figure is an average spread across the band and its two neighbors, while 7.1 thresholds the per-state spread between the best and worst candidate families. Neither 7.1 nor 9.6 requires the other three action coordinates to be held fixed, though v2 and v3 both do.",
+     "evidence": [
+      "DECISION_BLOCK.md:193 \"about 1 to 1.5 units across band and adjacent bands under simple continuations\"",
+      "REVIEW_20261027.md:59-61 \"Under simple neutral continuations, the value spread across the band and its two neighbors averages about 1 to 1.5 units, and its sign depends on the continuation.\"",
+      "v3/AUDIT_ADDENDUM.md:11 \"These do not bound later actor feedback or full Q^pi for t<99... Require a stated full-return proof or a valid saved fixed-other-actions value comparison before calling the band value-flat.\"",
+      "v3/AUDIT_ADDENDUM.md:23 \"There are **zero same-state candidate pairs holding all three other action coordinates fixed** in the saved bank.\"",
+      "DRAFT_PROTOCOL.md (v2):84 \"compare candidate actions inside the band, just below it, just above it, and farther away while holding the other three action coordinates fixed\"; v3:42 \"At a given state, candidate comparisons must keep the other action coordinates fixed.\"",
+      "DECISION_BLOCK.md:224 \"9.6 Candidates per probe state: in band, each adjacent band, far set, plus the actor's own command\" (no fixed-other-actions statement)",
+      "v3's one-step bounds re-derived: 1.2*k*h=0.0480000007; thrust spread 1.5*h=0.075 (thrusterchain.py:198); 0.3*sqrt(2)*0.075=0.03182"
+     ],
+     "proposed_correction": "Label the 7.1 reference as an unverified hand-model estimate with no saved script, state that it averages across bands rather than measuring 7.1's per-state best-minus-worst family spread, and cite v3:11 and v3:23. Add to 7.1 and 9.6 the fixed rule that, within a probe state, all candidates share the same other three action coordinates.",
+     "verification": {
+      "id": "C9",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "The reference problem is confirmed. 'About 1 to 1.5 units' comes from the review's hand model with no saved script (REVIEW:59-61). It is an average across the band and its two neighbors, while 7.1 thresholds a per-state best-minus-worst spread between candidate families. v3:11 says no full-return bound is verified, and v3:23 says the saved bank has no pairs with the other three actions fixed. I re-derived the one-step bounds: 1.2*k*h = 0.0480000007 and 0.3*sqrt(2)*0.075 = 0.0318. The second half is overstated. The fixed-other-actions rule already appears in v2:84, the protocol this form serves. Its absence from 9.6 is a gap in stating the rule here, not a missing rule.",
+      "evidence": [
+       "DECISION_BLOCK.md:193 \"about 1 to 1.5 units across band and adjacent bands under simple continuations\"",
+       "REVIEW_20261027.md:59-61 \"averages about 1 to 1.5 units, and its sign depends on the continuation\"",
+       "v3/AUDIT_ADDENDUM.md:11 and :23 \"zero same-state candidate pairs holding all three other action coordinates fixed\"",
+       "DRAFT_PROTOCOL.md (v2):84 \"while holding the other three action coordinates fixed\"",
+       "python: 1.2*0.800000011920929*0.05 = 0.04800000071525574; 0.3*sqrt(2)*0.075 = 0.0318198"
+      ],
+      "corrected_statement": "The 7.1 reference is an unreceipted hand-model average across bands, not the per-state best-minus-worst family spread that 7.1 thresholds, and v3 disputes any full-return flatness bound. The fixed-other-actions requirement exists in v2:84. The form should restate it at 9.6 and 7.1, but it is not absent from the protocol."
+     }
+    },
+    {
+     "id": "C10",
+     "form_location": "7.3 (line 195)",
+     "severity": "major",
+     "title": "Error-opportunity reference conflicts with v3's recomputation, and v3's own receipt is missing",
+     "problem": "The form gives the full-data development critic's in-band high-load errors as '+19 to +82'. The v3 addendum reports 25 such candidates from 21 states with signed errors from about -6.5421 to +81.9592 and MAE 47.48894, scored by a broad-data, penalty-off checkpoint. So the lower end and the sign are disputed, and v3 says '20-80 is an approximate scale, not an all-row range'. The reference is also a range of per-command signed errors, while 7.3 thresholds a mean absolute error. On what v3 verified versus asserted: v3 says its recomputation is recorded in EVIDENCE.json, but that file is not in the repository at this commit. Only the upper value 81.959 can be matched in saved JSON here.",
+     "evidence": [
+      "DECISION_BLOCK.md:195 \"full-data development critic: +19 to +82 at such commands\"",
+      "REVIEW_20261027.md:61-62 \"The full-data 20k critic already misjudges in-band commands at `g >= 0.4` by +19 to +82 units\"",
+      "v3/AUDIT_ADDENDUM.md:11 \"Saved high-load band candidates have absolute Q1 errors 6.5421-81.9592, MAE 47.48894; 20-80 is an approximate scale, not an all-row range.\"",
+      "v3/AUDIT_ADDENDUM.md:21 \"Their signed Q1 error ranges from approximately -6.5421 to +81.9592. They were scored by the earlier **broad-data, penalty-off** checkpoint\"",
+      "v3/AUDIT_ADDENDUM.md:23 \"narrow recomputation and hashes are recorded in `EVIDENCE.json`\"; `find / -name EVIDENCE.json -path '*conditional*'` returns nothing; conditional_ood_design_v3/ holds only AUDIT_ADDENDUM.md",
+      "81.95917184369456 appears in titan_20261026/payload/unifloral_operator_alignment_v1/results_20261026T221700_762125Z/checks.json:7337"
+     ],
+     "proposed_correction": "Replace the single quote with a sourced statement that shows the review's +19 to +82 and v3's -6.5421 to +81.9592 (MAE 47.48894) side by side, names the checkpoint (broad-data, penalty-off), and says v3's EVIDENCE.json is absent at this commit. Express the reference in the gate's own units (mean absolute error), or say plainly that it is not in those units.",
+     "verification": {
+      "id": "C10",
+      "verdict": "partly_confirmed",
+      "verified_severity": "major",
+      "reasoning": "The conflict is real. The form and the review give '+19 to +82', while v3:11 and v3:21 report signed errors from about -6.5421 to +81.9592 (MAE 47.48894) for 25 candidates scored by the broad-data, penalty-off checkpoint. The reference is a signed per-command range, while 7.3 is a mean absolute error threshold. EVIDENCE.json does not exist under conditional_ood_design_v3; the only file by that name is outputs/advisor_answers/2026-09-29/EVIDENCE.json. One detail is wrong. The claim that 'only the upper value 81.959 can be matched in saved JSON' is false: -6.542091878865419 also appears in the same checks.json (line 9852 and others). The MAE 47.48894 itself was not found.",
+      "evidence": [
+       "DECISION_BLOCK.md:195 \"full-data development critic: +19 to +82 at such commands\"",
+       "v3/AUDIT_ADDENDUM.md:21 \"signed Q1 error ranges from approximately -6.5421 to +81.9592 ... broad-data, penalty-off checkpoint\"",
+       "checks.json:7337 81.95917184369456 and checks.json:9852 -6.542091878865419 (both present)",
+       "find / -name EVIDENCE.json returns only outputs/advisor_answers/2026-09-29/EVIDENCE.json; conditional_ood_design_v3/ holds only AUDIT_ADDENDUM.md"
+      ],
+      "corrected_statement": "The form's '+19 to +82' conflicts with v3's signed range of -6.5421 to +81.9592 (MAE 47.48894, broad-data penalty-off checkpoint). It is also a signed range, not the gate's MAE unit. v3's EVIDENCE.json is absent at this commit, but both endpoint values, -6.542091878865419 and 81.95917184369456, do appear in the operator-alignment checks.json. Only the MAE figure lacks a saved match."
+     }
+    },
+    {
+     "id": "C11",
+     "form_location": "Plain-language terms 'Q^pi reference, v' (line 25); 2.2 fixtures (lines 82-90)",
+     "severity": "major",
+     "title": "No reset-time / direct-continuation contract and no parity fixture at t > 0",
+     "problem": "v is defined as following the actor 'to step 100' with no mechanism. The environment's reset always sets t = 0, so restoring a probe at t > 0 by reset-to-state would give the wrong time observation and horizon. Both v3 and the review require an exact continuation contract and a parity check at an interior time. Section 2's required fixtures include neither, so the primary statistic's references could be computed by an unvalidated route.",
+     "evidence": [
+      "DECISION_BLOCK.md:25 \"The discounted return of taking one command and then following the snapshot's own actor to step 100.\"",
+      "titan_20261026/.../canonical/thrusterchain.py:434 \"self._x, self._t, self._command = x.copy(), 0, None\" inside reset (verified)",
+      "v3/AUDIT_ADDENDUM.md:50 \"A new evaluator must use one of two validated routes: replay the authenticated saved prefix ... or use the existing authenticated direct-dynamics continuation contract.\"; lines 54-57 list the four steps including exactly `100-t` transitions and parity checks at initial, interior and final times",
+      "REVIEW_20261027.md:101-102 \"Add a parity check at a `t > 0` probe. The existing check covers only `t = 0` and `t = 99`.\"",
+      "unifloral_frozen_usefulness_v1/simulation.py:428 \"remaining = np.asarray([100 - q[\"t\"] ...\" and :448 \"_observation(states[active], remaining[active] - offset)\" (existing direct-continuation route)"
+     ],
+     "proposed_correction": "Add the reference contract as fixed text: the route (prefix replay or direct dynamics), the float32 action conversion, exactly 100 - t transitions, discount starting at exponent zero, and no reward or bootstrap after t = 99. Add a required stage-2 fixture comparing it with environment-driven steps at initial, interior (t > 0) and final times, with a stop on mismatch, and state that old receipts do not validate new code.",
+     "verification": {
+      "id": "C11",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "thrusterchain.py:434 sets `self._t` to 0 on every reset, with no time option. The existing direct-continuation route in simulation.py:428-448 uses `remaining = 100 - t` and builds observations from the remaining time. The form defines v only as following the actor 'to step 100' (line 25) and states no continuation contract. The required stage-2 cases (lines 83-90) include no parity check at an interior time. v2:121 says only \"exact state/time restoration\". The review (REVIEW:99-102) and v3 (v3:50-57) both ask for the mechanism and a parity check at t > 0.",
+      "evidence": [
+       "thrusterchain.py:434 \"self._x, self._t, self._command = x.copy(), 0, None\"",
+       "unifloral_frozen_usefulness_v1/simulation.py:428 \"remaining = np.asarray([100 - q[\"t\"] ...\" and :448 \"_observation(states[active], remaining[active] - offset)\"",
+       "DECISION_BLOCK.md:25 and 2.2 list (lines 83-90) have no continuation or interior-time parity fixture",
+       "REVIEW_20261027.md:101-102 \"Add a parity check at a `t > 0` probe.\"",
+       "v3/AUDIT_ADDENDUM.md:54-57 four-step contract"
+      ]
+     }
+    },
+    {
+     "id": "C12",
+     "form_location": "4.5 (line 129), section 11 (lines 259-266), 9.4 (line 222)",
+     "severity": "major",
+     "title": "Four-cell within-model control appears only as a coverage count, not as a reported comparison",
+     "problem": "The form adds a minimum row count for the low-load in-band cell (4.5). Its outcome list in section 11 names only current-shift, combined and hole-minus-random cells. Neither the low-load retained-band cell nor the high-load out-of-band cell is reported, and probe counts (9.4) are not split by load. The v3 addendum requires the explicit four-cell recorded-current table, with per-cell counts, support status, signed errors, MAE, benefit/harm and decisions, plus the caveat that the cross-load contrast is descriptive.",
+     "evidence": [
+      "DECISION_BLOCK.md:129 \"4.5 Minimum retained in-band rows at low load (the within-model control cell)\"",
+      "DECISION_BLOCK.md:266 \"**Other cells:** current-shift and combined cells, and the hole-minus-random interaction if it is not the primary.\"",
+      "v3/AUDIT_ADDENDUM.md:35-42 four-cell table and \"Require original and retained counts, distinct episodes, state-support status, per-probe signed errors, MAE, adjustment benefit/harm and decisions for each cell.\"",
+      "v3/AUDIT_ADDENDUM.md:44 \"Report the band-versus-outside contrast within each load stratum and any cross-load difference descriptively; it is not a pure causal effect of withholding.\"",
+      "REVIEW_20261027.md:80-84 the within-model control cell is missing from v2 lines 100-103 (verified: v2:100-103 table has only two columns)"
+     ],
+     "proposed_correction": "Add the four-cell recorded-current table to section 11 (or 3.10) as reported cells, using the same checkpoint and parameters in every cell. Make 9.4 state probe counts by load side. Include v3's caveat that the cross-load difference is descriptive.",
+     "verification": {
+      "id": "C12",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "4.5 sets only a row-count minimum for the low-load in-band cell. Section 11 (line 266) reports only current-shift and combined cells and the hole-minus-random interaction, and 9.4 does not split probe counts by load. v3:35-44 requires the four-cell recorded-current table with per-cell statistics, plus a caveat that the cross-load contrast is descriptive. The review (REVIEW:80-84) flags the same missing cell, which the v2 table at lines 100-103 also lacks.",
+      "evidence": [
+       "DECISION_BLOCK.md:129 \"4.5 Minimum retained in-band rows at low load (the within-model control cell)\"",
+       "DECISION_BLOCK.md:266 \"**Other cells:** current-shift and combined cells, and the hole-minus-random interaction\"",
+       "DECISION_BLOCK.md:222 9.4 has no load split",
+       "v3/AUDIT_ADDENDUM.md:37-44 four-cell table and the descriptive-contrast caveat",
+       "DRAFT_PROTOCOL.md (v2):100-103 two-column table"
+      ]
+     }
+    },
+    {
+     "id": "C13",
+     "form_location": "Lines 50-51 (Zeus hold); 10.6 (line 253)",
+     "severity": "major",
+     "title": "Zeus hold citation is stale and has no place in the approval record",
+     "problem": "The form cites only ATTEMPT_HOLD.json, a 03:54 UTC snapshot of attempt 1. Later local records show that attempt 1's processes were reported absent, that a fresh process check is still required before launch, that a second Zeus attempt ran and was canceled by the user, and that the user asked for execution to move to Titan, where a separate continuation proposal is pending. The form gives the user no section 12 row to record resolving the hold. Its runtime estimate and the 10.6 options do not mention the user's move to Titan or the competing Titan proposal.",
+     "evidence": [
+      "DECISION_BLOCK.md:50-51 \"Stages 4 to 7 also need the Zeus execution hold resolved by the user. That hold is recorded in `../titan_handoff_20261027/ATTEMPT_HOLD.json`.\"",
+      "titan_handoff_20261027/ATTEMPT_HOLD.json:3-5 \"snapshot_utc\": \"2026-10-27T03:54:16...\", \"started_terminal_outcome_uncertain\", \"execution_allowed\": false",
+      "archived_attempts/support_shift_pilot_v1_interrupted_20261027T033240Z/USER_PROCESS_CHECK.json: reported 04:10Z, PIDs 372/486 \"absent\", \"launch_still_requires_fresh_scoped_process_check\": true",
+      "archived_attempts/support_shift_retry2_interrupted_20261027T042116Z/ARCHIVE.json: \"user_canceled_after_seed0_warmups\" ... \"requested experiment execution move to Titan\"",
+      "zeus_20261026_validation/README.md:1 \"Current handoff (2026-10-27): experiment execution is moving to Titan.\"; titan_continuation_20261027/PROPOSAL.md:3 \"No continuation scheduler or GPU run is enabled.\"",
+      "DECISION_BLOCK.md:279-287 has no row for hold resolution"
+     ],
+     "proposed_correction": "Cite every hold-related record by path (ATTEMPT_HOLD.json, USER_PROCESS_CHECK.json, the retry-2 ARCHIVE.json, README.md:1, titan_continuation_20261027/PROPOSAL.md) and give the current status in plain words. Add a section 12 row where the user records how the hold is resolved and which machine is authorized. Note that the pending Titan continuation competes for the same ledger and budget.",
+     "verification": {
+      "id": "C13",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "I verified every cited record. ATTEMPT_HOLD.json is a 03:54Z snapshot. USER_PROCESS_CHECK.json (04:10Z) reports both PIDs absent and says \"launch_still_requires_fresh_scoped_process_check\": true. The retry-2 ARCHIVE.json records \"user_canceled_after_seed0_warmups\" and a request to move execution to Titan. README.md:1 and titan_continuation_20261027/PROPOSAL.md:3 confirm the move, and say no continuation run is enabled. Section 12 has no row for recording how the hold is resolved. One detail is overstated: 10.6 does offer Titan as an option, so the form does not ignore Titan entirely. The core point stands: the hold citation is stale and there is no place to record its resolution.",
+      "evidence": [
+       "DECISION_BLOCK.md:50-51 cites only ATTEMPT_HOLD.json",
+       "ATTEMPT_HOLD.json \"snapshot_utc\": \"2026-10-27T03:54:16...\", \"execution_allowed\": false",
+       "archived_attempts/support_shift_pilot_v1_interrupted_20261027T033240Z/USER_PROCESS_CHECK.json \"launch_still_requires_fresh_scoped_process_check\": true",
+       "archived_attempts/support_shift_retry2_interrupted_20261027T042116Z/ARCHIVE.json:5-6 \"user_canceled_after_seed0_warmups\" ... \"requested experiment execution move to Titan\"",
+       "README.md:1 \"experiment execution is moving to Titan\"",
+       "DECISION_BLOCK.md:253 \"[ Zeus / Titan ]\" (partial mitigation)"
+      ]
+     }
+    },
+    {
+     "id": "C14",
+     "form_location": "Line 229 (seeds 10-14); 1.1 ledger scope (lines 55-56)",
+     "severity": "major",
+     "title": "Seeds 10-14 statement is stale, and the ledger's scope is undefined",
+     "problem": "The 'seeds 10 to 14 for a new version' rule comes from the user's standing rules for a different seed namespace. Those seeds were later claimed by the near-80 pre-registration and its results check records runs on them, so asking whether 'that reservation applies here' is ill-posed. This design's ThrusterChain seeds are large integers (e.g. 2026102301, 2026102362), not 10-14. Rule 1.1 says ranges come from 'every local receipt' without naming which directories, so it is unclear whether the outputs/shift ledgers that record seeds 10-14 are included. The task's ledger scope is zeus_20261026_validation.",
+     "evidence": [
+      "DECISION_BLOCK.md:229 \"The standing rules reserve seeds 10 to 14 for a new version. Whether that reservation applies here is `[ yes / no ]`.\"",
+      "docs/session-history/2026-10-14_cloud_session_01Ro4BnWxcsoeFi9CGcTQ5bx.md:101-102 \"Seeds 5-9 are reserved for versions 6 and 7; seeds 10-14 for a new version.\"",
+      "outputs/shift/beyond-the-data/near80/PREREGISTRATION.md:25 \"Seeds 10-14 are fresh. Only they can carry a claim.\" and :431 \"**Seeds 10-14:** step 2's full arm set\" (approved: near80/approval_near80_51e677ab76c8d2f7.json)",
+      "outputs/shift/beyond-the-data/near80_results_check/checks.json:150 \"the 20 ledger attempts of seeds 10-14 (10 data_main done, 10 failed)\" (cited as seed-ledger provenance only, not as method evidence)",
+      "DECISION_BLOCK.md:55 \"Ranges are collected from every local receipt.\"",
+      "Dataset root seed 2026102301 (v2:29); calibration seed 2026102362 (unifloral_checkpoint_v1/data.py:46)"
+     ],
+     "proposed_correction": "Replace line 229 with a sourced factual statement: where the rule comes from, which project's seed namespace it covers, and that the near-80 pre-registration has since claimed and used seeds 10-14. Do not ask a yes/no on a reservation that no longer stands. Define the ledger's scope in 1.1 by explicit paths, and say whether other projects' seed records are included.",
+     "verification": {
+      "id": "C14",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "The seeds 10-14 reservation comes from the shift project's standing rules (session-history:101-102). The near-80 pre-registration then claimed seeds 10-14 (PREREGISTRATION.md:25, :431), and its results check records 20 ledger attempts on them (checks.json:150). This design's seeds are large integers such as 2026102301 and 2026102362 (data.py:46). Asking whether 'that reservation applies here' rests on a stale premise, which makes the blank ill-posed. 1.1's 'every local receipt' does not say which directories are in scope.",
+      "evidence": [
+       "DECISION_BLOCK.md:229 \"The standing rules reserve seeds 10 to 14 for a new version.\"",
+       "docs/session-history/2026-10-14_cloud_session_01Ro4BnWxcsoeFi9CGcTQ5bx.md:101-102 \"seeds 10-14 for a new version\"",
+       "outputs/shift/beyond-the-data/near80/PREREGISTRATION.md:25 \"Seeds 10-14 are fresh. Only they can carry a claim.\"",
+       "outputs/shift/beyond-the-data/near80_results_check/checks.json:150 \"the 20 ledger attempts of seeds 10-14\"",
+       "unifloral_checkpoint_v1/data.py:46 \"np.random.PCG64(2026102362)\"",
+       "DECISION_BLOCK.md:55 \"Ranges are collected from every local receipt.\""
+      ]
+     }
+    },
+    {
+     "id": "C15",
+     "form_location": "3.1, 3.3, 3.5 pre-filled choices (lines 98-102); 3.4 and section 11 option order (lines 101, 272-273)",
+     "severity": "major",
+     "title": "Primary contrast, stratum and statistic are pre-filled by an agent, and the statistic favors BCA",
+     "problem": "Items 3.1, 3.3 and 3.5 state a choice and offer only an 'Alternative'. If the alternative is left empty, the agent's choice stands, even though the review offered this as only 'one candidate primary'. Statistic 3.5 compares BCA's adjusted score z with native's raw q. v2 keeps the score-adjustment panel (q vs z on the same critic) separate from the trained-policy panel, where 'each critic is evaluated'. Since U >= 0 and the development errors in this region are mostly overestimates, subtracting kappa*U lowers BCA's absolute error even if the two critics were identical. This contrast therefore favors BCA by construction, and the form does not disclose that. Options in 3.4 and section 11 list a default first ('20k', 'confirm'), which adds mild anchoring.",
+     "evidence": [
+      "DECISION_BLOCK.md:98 \"BCA minus native, paired within each trained seed. Alternative to choose instead: `[ ____ ]`.\"; :100 \"In-band probes at high load under recorded current. Alternative: `[ ____ ]`.\"",
+      "DECISION_BLOCK.md:102 \"BCA's own `z` against BCA's own `v`, minus native's `q` against native's `v`.\"",
+      "REVIEW_20261027.md:50 \"One candidate primary is the paired change in absolute Q error, BCA minus native\"",
+      "DRAFT_PROTOCOL.md (v2):125-126 panel 1 \"compare `q=Q1` and `z=Q1-kappa*U`\"; panel 2 \"each critic is evaluated against its own actor's `v^pi`\"",
+      "Calculation: if e=q-v>0 and 0<=kappa*U<=e then |z-v|=e-kappa*U<e; with v3:21 signed errors -6.5 to +82 (mostly positive), subtraction mechanically reduces BCA's MAE",
+      "DECISION_BLOCK.md:101 \"`[ 20k / other: ____ ]`\"; :272 \"`[ confirm / ____ ]`\""
+     ],
+     "proposed_correction": "Turn 3.1, 3.3 and 3.5 into true user blanks, or list options with equal standing, including BCA's raw q against its own v. Disclose beside 3.5 that using z for BCA and q for native mixes the two v2 panels and lowers BCA's error mechanically wherever errors are positive. Present the options without a default.",
+     "verification": {
+      "id": "C15",
+      "verdict": "confirmed",
+      "verified_severity": "major",
+      "reasoning": "Items 3.1, 3.3 and 3.5 state a choice and offer only an optional 'Alternative'. If that is left empty, the pre-written choice stands, although the review called it only \"One candidate primary\" (REVIEW:50). Statistic 3.5 compares BCA's z against native's q. v2's trained-policy panel (v2:126) says \"each critic is evaluated\", and v2 keeps the q-versus-z score panel separate (v2:125). Arithmetically, when e = q - v > 0 and 0 < kappa*U < 2e, abs(z - v) < e. With development errors that are mostly positive (v3:21, up to +82), the subtraction alone lowers BCA's error, and the form does not disclose this. One caveat: the advantage needs kappa*U < 2e, not merely e > 0, so 'wherever errors are positive' slightly overstates it. The anchoring from ordering defaults first is minor but real.",
+      "evidence": [
+       "DECISION_BLOCK.md:98, :100, :102 pre-filled choices with 'Alternative: [ ____ ]'",
+       "REVIEW_20261027.md:50 \"One candidate primary is the paired change in absolute Q error\"",
+       "DRAFT_PROTOCOL.md (v2):125-126 panel 1 q vs z; panel 2 \"each critic is evaluated against its own actor's v^pi\"",
+       "Algebra: e>0, 0<kU<2e => |e-kU|<e",
+       "DECISION_BLOCK.md:101 \"[ 20k / other: ____ ]\"; :272 \"[ confirm / ____ ]\""
+      ]
+     }
+    },
+    {
+     "id": "C16",
+     "form_location": "5.7, 5.8 references (lines 158-159)",
+     "severity": "minor",
+     "title": "Band-count references show only expected counts, not the false-'unknown' rate the review asked for",
+     "problem": "The references give expected counts (3.2 and 6.4 per 64 neighbors), which can anchor a threshold near the mean. The review's key analytic point, the chance that a band is empty by chance alone, is left out, though the review asked that each threshold be frozen together with its expected false-'unknown' rate.",
+     "evidence": [
+      "DECISION_BLOCK.md:158-159 \"3.2 expected per 64 neighbors\", \"6.4 expected per 64 neighbors\"",
+      "REVIEW_20261027.md:86-89 \"The chance that at least one of the three bands is empty is 0.11 at 64 and 0.48 at 32... freeze the threshold with its expected false-\\\"unknown\\\" rate.\"",
+      "Check: 1-(1-0.95^64)^3 = 0.108; 1-(1-0.95^32)^3 = 0.476"
+     ],
+     "proposed_correction": "Add a column that, for whatever threshold the user enters, gives the binomial probability that a fully supported neighborhood fails it (the formula, or a small lookup table over thresholds), with a citation to REVIEW:86-89. Do not suggest a threshold.",
+     "verification": {
+      "id": "C16",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "I reproduced 1-(1-0.95^64)^3 = 0.108 and 1-(1-0.95^32)^3 = 0.476, matching REVIEW:87. The review asks for each threshold to be frozen together with its expected false-'unknown' rate (REVIEW:88-89). The form gives only expected counts (64 x 0.05 = 3.2 and 128 x 0.025... i.e. 6.4 for the two adjacent bands pooled).",
+      "evidence": [
+       "DECISION_BLOCK.md:158-159 \"3.2 expected per 64 neighbors\", \"6.4 expected per 64 neighbors\"",
+       "REVIEW_20261027.md:86-89",
+       "python: 0.10840, 0.47583"
+      ]
+     }
+    },
+    {
+     "id": "C17",
+     "form_location": "7.5 development reference (line 197)",
+     "severity": "minor",
+     "title": "7.5 actor reference misstates distance and denominator",
+     "problem": "The value 0.32 is the distance from the band center, not from the band. The nearest saved actor command is 0.267 from the band edge. The relevant high-load denominator is 0 of 59 states, not 0 of 128. The evidence is a single saved penalty-off 20k actor.",
+     "evidence": [
+      "DECISION_BLOCK.md:197 \"development actor: 0 of 128 states, nearest 0.32 away\"",
+      "v3/AUDIT_ADDENDUM.md:13 \"exact first-command range is -0.4828205704689026 to +0.52145916223526, with 0/128 in the proposed band and 0/59 among high-load actor states\"",
+      "Calculation: -0.48282057+0.8 = 0.3172 (to center); -0.48282057+0.75 = 0.2672 (to edge)",
+      "REVIEW_20261027.md:77 \"the nearest 0.32 from the band center\""
+     ],
+     "proposed_correction": "Say 'nearest 0.32 from the band center (0.27 from its edge)', give the 0/59 high-load count, name the single saved penalty-off 20k actor, and cite v3:13 and REVIEW:76-77.",
+     "verification": {
+      "id": "C17",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "-0.48282057 + 0.8 = 0.317, the distance to the band center. -0.48282057 + 0.75 = 0.267, the distance to the band edge. REVIEW:77 says 'from the band center', but the form says only 'away'. Gate 7.5 concerns high-load steps, and v3:13 gives 0/59 among high-load actor states, but the form cites 0 of 128. The evidence is a single saved penalty-off 20k actor (v3:13).",
+      "evidence": [
+       "DECISION_BLOCK.md:197 \"development actor: 0 of 128 states, nearest 0.32 away\"",
+       "v3/AUDIT_ADDENDUM.md:13 \"0/128 in the proposed band and 0/59 among high-load actor states\"",
+       "python: 0.31718 to center, 0.26718 to edge"
+      ]
+     }
+    },
+    {
+     "id": "C18",
+     "form_location": "Plain-language terms and throughout (lines 9, 27, 30-32, 68, 108, 144, 172, 180, 240-241, 262-263)",
+     "severity": "minor",
+     "title": "Jargon is used before it is defined",
+     "problem": "The glossary leaves out several terms the form uses: BCA is never spelled out; kappa, U, RMS, RNG, 'standardized mean difference', 'sign test / paired t', 'one-sided p', 'fork', 'warmup', 'snapshot', 'calibration refresh', 'auxiliary updates', 'the one-sided work', Zeus and Titan (machines), and 'approval commit identity'. tau(v) and eta are named in section 11 before the table defines tau. The review asked for a glossary covering RMS, U and similar terms. Spelling is American throughout.",
+     "evidence": [
+      "DECISION_BLOCK.md:30 \"| BCA | The original BCA actor penalty at kappa 3. |\" (acronym not expanded; kappa undefined)",
+      "DECISION_BLOCK.md:144 \"standardized RMS distance\"; :172 \"RNG address\"; :180 \"standardized mean difference\"; :108 \"`[ sign test / paired t ]` gives one-sided p\"",
+      "DECISION_BLOCK.md:9 \"approval commit identity\"; :68 \"used in the one-sided work\"; :32 \"at the 10k fork\"",
+      "REVIEW_20261027.md:141-142 \"OOD, ID, MAE, RMSE, RMS, BC, twin-min, U, BNP and AUROC are undefined at first use. Add a short glossary.\""
+     ],
+     "proposed_correction": "Add each of these terms to the plain-language table in one sentence, spell out Bayesian Conformal Aggregation, and define tau(v) and eta before section 11 uses them.",
+     "verification": {
+      "id": "C18",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "The form never spells out 'Bayesian Conformal Aggregation', and the glossary entry for BCA (line 31) does not define kappa. RMS, RNG, 'standardized mean difference', 'sign test / paired t', 'fork', 'warmup' and 'snapshot' are used without definition. tau(v) and eta first appear at line 262, and tau is defined only in the table at line 272. REVIEW:141-142 asks for a glossary.",
+      "evidence": [
+       "DECISION_BLOCK.md:31 \"| BCA | The original BCA actor penalty at kappa 3. |\"",
+       "grep -i bayesian in DECISION_BLOCK.md: no match",
+       "DECISION_BLOCK.md:144, :172, :180, :108, :32",
+       "DECISION_BLOCK.md:262 uses tau(v) before :272 defines it"
+      ]
+     }
+    },
+    {
+     "id": "C19",
+     "form_location": "10, training-time estimate (lines 243-244)",
+     "severity": "minor",
+     "title": "Runtime estimate cites no receipt and does not match the review's two-seed range",
+     "problem": "The estimate does not name its source. The two warmups are the support-shift retry-2 jobs, whose data plan differs from this design. The form's 2.1-2.4 hours per seed matches 12 times each warmup time. The review's two-seed range of 4.3-5.0 hours has an upper end that the same arithmetic does not reproduce (4.72), so the two documents disagree slightly.",
+     "evidence": [
+      "DECISION_BLOCK.md:243-244 \"extrapolated from two Zeus 10k warmups ... about 2.1 to 2.4 hours per seed of training only.\"",
+      "support_shift_pilot_v1_retry_20261027/RUN_RESULT.json: \"elapsed_seconds\": 637.600727173 and 708.3104125549999",
+      "Calculation: 120,000/10,000 = 12; 12*637.6/3600 = 2.13 h; 12*708.3/3600 = 2.36 h; two seeds 4.25-4.72 h",
+      "REVIEW_20261027.md:104-105 \"about 4.3 to 5.0 hours for two seeds\""
+     ],
+     "proposed_correction": "Cite the RUN_RESULT.json path and the two elapsed times. State that the warmups came from the support-shift pilot's data plan, not this design, and note that the review's 5.0-hour upper end is not reproduced by linear extrapolation.",
+     "verification": {
+      "id": "C19",
+      "verdict": "confirmed",
+      "verified_severity": "minor",
+      "reasoning": "RUN_RESULT.json gives 637.600727173 s and 708.3104125549999 s. Twelve times each is 2.13 h and 2.36 h per seed, which matches the form's 2.1-2.4 h. For two seeds that is 4.25-4.72 h, against the review's 4.3-5.0 h, so the review's 5.0 upper end is not reproduced by linear scaling. The form cites no receipt path.",
+      "evidence": [
+       "support_shift_pilot_v1_retry_20261027/RUN_RESULT.json:10 637.600727173, :45 708.3104125549999",
+       "python: 2.125 h, 2.361 h; two seeds 4.25-4.72 h",
+       "REVIEW_20261027.md:104-105 \"about 4.3 to 5.0 hours for two seeds\"",
+       "DECISION_BLOCK.md:243-244 no source cited"
+      ]
+     }
+    }
+   ]
+  }
+ ]
+}
