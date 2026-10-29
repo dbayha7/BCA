@@ -1,0 +1,119 @@
+M2_test.py  python 3.14.2, numpy 2.5.4, jax 0.12.0 (cpu), 2026-10-20 16:56 UTC; repo M:\
+==============================================================================================================
+PART A. Synthetic test: the project's own fit (td3_bc_bca.fit_scale) on rows whose error size is known
+==============================================================================================================
+A0 PASS  pieces: eta at extreme inputs (states +-1000, commands +-1) finite, positive and at or above the 0.01 floor: True (values [0.009999999776482582, 200.37710571289062, 0.7031000256538391, 0.7178999781608582]; at state +1000 the float32 softplus underflows and eta EQUALS the floor: True, so the exact statement is eta >= 0.01, not eta > 0.01); soft coverage = 1.0000 at the center, 0.500 at the band's edge, 3.8e-11 at twice the band (a smoothed indicator of |y - q| <= u*eta, slope 20); bootstrap masses: sum 1.000000, min 8.08e-06, max 0.0266 (all >= 0)
+A0b PASS  acceptance rule (M2.8): a batch with residual 0 everywhere is accepted (True) and u becomes 0.99*1 + 0.01*1e-6 = 0.99000001 in float32 (> 0); a batch with one NaN residual is rejected (True) and eta's parameters and u stay as they were (True, u = 1.0)
+
+Table A. The fit on three synthetic worlds (40,000 training rows, 4,000 held-out rows from the same law; 20000 fit steps of 256 rows; the study's settings)
+world                                accepted eta>0.01  u/SD(e)      eta med [min,max] share<=u*eta train held-out  R (M5) Spearman(eta,sigma)  eta*u/sigma med [q10,q90]
+error size visible to the network       1.000     True    0.985   1.118 [0.29,2.26]            0.886    0.859   1.208               0.880   1.643 [0.91,2.49]
+error size constant                     1.000     True    0.997   1.430 [0.84,2.36]            0.884    0.848   1.195                 nan   1.432 [1.23,1.66]
+error size hidden from the network      1.000     True    0.993   1.184 [0.60,2.55]            0.878    0.833   1.391              -0.002   1.680 [0.77,3.71]
+  (eta*u/sigma = the band at threshold 1 in units of the row's true error scale; 1.645 would be the row's own 90% point. The loss's own equilibrium with a constant error size is eta = 1.515 sigma/u and coverage 0.870, not 0.900: the width penalty 0.005 trades about 3 points of coverage for a narrower band.)
+
+Coverage (share with |e| <= u*eta) inside each tenth of the held-out rows by TRUE error size, smallest to largest:
+  error size visible to the network    0.99 0.98 0.95 0.95 0.91 0.90 0.84 0.78 0.74 0.55
+  error size constant                  0.86 0.84 0.86 0.85 0.86 0.83 0.85 0.85 0.86 0.82
+  error size hidden from the network   1.00 1.00 0.98 0.95 0.92 0.85 0.80 0.72 0.66 0.43
+A1 PASS  mechanics: every fit step accepted (accepted share 1.000 in all three worlds), eta finite and above 0.01 at every row, the unit within 3% of SD(e) on the training rows (0.985, 0.997, 0.993)
+A2a PASS  coverage on the rows the fit saw: the share with |e| <= u*eta is 0.886, 0.884, 0.878, within 0.02 of the loss's own equilibrium 0.870 (not 0.900: the width penalty's trade)
+A2b FAIL  coverage on held-out rows from the SAME law: 0.859, 0.848, 0.833, and M5's threshold R = 1.208, 1.195, 1.391. The strict statement 'held-out share at least 0.85 and R at most 1.25' does not hold: the network overfits the training rows' particular errors by 3.6 points on average (most where there is nothing to learn, the hidden case), and R absorbs it. On ThrusterChain eta is far flatter and this cost is under half a point (part C, C4).
+A3 PASS  tracking: where the error size can be read off (s, a), eta follows it (Spearman 0.880; coverage by size decile 0.99 to 0.55); with a constant size eta is nearly constant (spread/mean 0.121); where the size is hidden eta is flat (spread/mean 0.150) and the band is wrong row by row: coverage 1.00 on the smallest-error tenth, 0.43 on the largest, while the average stays 0.833
+A4 PASS  the real data's situation: the same fitted eta and u, held-out errors scaled up by a factor (the recorded critics' held-out residual SD is 1.2-1.6 times the training one):
+      factor share<=u*eta expected  R (M5) share<=R*u*eta
+         1.0        0.859    0.880   1.208          0.908
+         1.2        0.797    0.805   1.450          0.908
+         1.3        0.766    0.768   1.571          0.908
+         1.4        0.733    0.733   1.692          0.908
+      (expected = P(|Z| <= 1.555/factor): the held-out share falls to about 0.8 and the threshold rises to about 1.3-1.4, which is exactly the recorded pattern of part B; the threshold step M5 restores 0.9)
+
+==============================================================================================================
+PART B. Real data: the twenty recorded version-6 bands of the near-80 run (frozen critic, seeds 0-4, both worlds, settings near80 and random_rows), read from v6_band.json and v6_bank_scores.npz on branch claude/near80-run-files
+==============================================================================================================
+setting     world     seed    n accepted    unit       R eta min  median    max >0.01  <=u*eta <=R*u*eta score q90 Spearman(eta,|e|)
+near80      stall        0  821    1.000  0.1567  1.4692   1.038   1.186  1.678  True    0.801     0.917     1.363             0.207
+near80      stall        1  814    1.000  0.1542  1.5219   1.051   1.220  1.983  True    0.792     0.919     1.322             0.285
+near80      stall        2  806    1.000  0.1523  1.6148   0.968   1.224  1.765  True    0.762     0.918     1.495             0.316
+near80      stall        3  826    1.000  0.1437  1.3466   1.066   1.251  1.783  True    0.815     0.916     1.290             0.284
+near80      stall        4  805    1.000  0.1499  1.6075   1.009   1.200  1.640  True    0.785     0.919     1.519             0.257
+near80      no_stall     0  823    1.000  0.1495  1.5332   1.042   1.194  1.759  True    0.767     0.917     1.415             0.245
+near80      no_stall     1  820    1.000  0.1456  1.4138   0.810   1.253  2.172  True    0.822     0.917     1.290             0.195
+near80      no_stall     2  814    1.000  0.1449  1.7016   1.052   1.198  1.664  True    0.783     0.918     1.442             0.188
+near80      no_stall     3  832    1.000  0.1327  1.5402   1.105   1.296  1.824  True    0.770     0.918     1.483             0.329
+near80      no_stall     4  808    1.000  0.1337  1.5858   1.094   1.271  1.883  True    0.787     0.918     1.456             0.285
+random_rows stall        0  821    1.000  0.1705  1.4035   0.138   1.134  1.563  True    0.803     0.918     1.312             0.168
+random_rows stall        1  814    1.000  0.1621  1.4907   0.662   1.165  1.694  True    0.814     0.918     1.302             0.221
+random_rows stall        2  806    1.000  0.1626  1.4372   0.272   1.152  1.880  True    0.801     0.918     1.330             0.255
+random_rows stall        3  826    1.000  0.1533  1.6382   0.172   1.191  1.692  True    0.771     0.918     1.470             0.322
+random_rows stall        4  805    1.000  0.1511  1.6058   0.731   1.178  1.916  True    0.773     0.918     1.455             0.267
+random_rows no_stall     0  823    1.000  0.1559  1.4644   0.926   1.231  1.929  True    0.795     0.917     1.393             0.242
+random_rows no_stall     1  820    1.000  0.1516  1.3647   0.648   1.208  1.739  True    0.827     0.918     1.215             0.223
+random_rows no_stall     2  814    1.000  0.1433  1.5019   1.048   1.209  1.767  True    0.784     0.916     1.396             0.317
+random_rows no_stall     3  832    1.000  0.1371  1.7091   1.077   1.249  1.876  True    0.766     0.918     1.509             0.334
+random_rows no_stall     4  808    1.000  0.1404  1.5547   1.072   1.211  1.782  True    0.771     0.917     1.454             0.242
+B1 PASS  on all 20 bands: accepted share 1.000 over 20,000 fit steps, eta finite and above 0.01 at every held-out row (range over bands 0.138 to 2.172), the refresh valid
+B2 PASS  on the held-out rows the share with |e| <= u*eta is 0.762 to 0.827 (mean 0.789), BELOW the 0.9 the fit aims at; the threshold R = 1.35 to 1.71 brings the band to 0.916-0.919 (M5 and M6 do their job; whether the shortfall is the fit's or the critic's is answered by the training rows, part C)
+B3 (description)  Spearman rank correlation of eta with |e| on the held-out rows: 0.17 to 0.33 (mean 0.26); eta's spread across rows: median 1.21, typical range 0.85 to 1.80 (times u = 0.150)
+
+==============================================================================================================
+PART C. Pinned environment (Python 3.10.20, numpy 2.2.6, jax 0.6.2): eta and the residual recomputed from the saved critic and band at every kept TRAINING row (the rows the fit drew its batches from) and every held-out row
+==============================================================================================================
+  report written 2026-10-20T16:50:35Z, environment {'python': '3.10.20', 'numpy': '2.2.6', 'jax': '0.6.2', 'JAX_PLATFORMS': 'cpu', 'OMP_NUM_THREADS': '1'}, 20 bands
+setting     world     seed n train hashes eta=rec sc=rec eta train min    max u/SD train SD held/SD train <=u*eta train   held <=R*u*eta train   held q90 train   held rho train   held
+near80      stall        0   41056   True    True   True         0.561  2.012      0.985            1.225         0.878  0.801           0.959  0.917     1.071  1.363     0.193  0.207
+random_rows stall        0   41056   True    True   True         0.063  1.738      0.991            1.211         0.876  0.803           0.950  0.918     1.078  1.312     0.157  0.168
+near80      stall        1   40969   True    True   True         0.579  2.221      0.969            1.361         0.875  0.792           0.965  0.919     1.078  1.322     0.214  0.285
+random_rows stall        1   40969   True    True   True         0.237  1.969      1.010            1.288         0.891  0.814           0.962  0.918     1.035  1.302     0.173  0.221
+near80      stall        2   41071   True    True   True         0.438  2.245      0.949            1.346         0.884  0.762           0.970  0.917     1.051  1.495     0.210  0.316
+random_rows stall        2   41071   True    True   True         0.354  1.990      0.975            1.289         0.881  0.801           0.956  0.918     1.065  1.330     0.201  0.255
+near80      stall        3   41183   True    True   True         0.282  2.141      0.984            1.203         0.886  0.815           0.952  0.916     1.046  1.290     0.203  0.284
+random_rows stall        3   41183   True    True   True         0.096  2.074      0.982            1.413         0.885  0.771           0.970  0.918     1.053  1.470     0.224  0.322
+near80      stall        4   41190   True    True   True         0.875  1.945      0.990            1.311         0.875  0.785           0.966  0.919     1.082  1.519     0.216  0.257
+random_rows stall        4   41190   True    True   True         0.356  1.988      0.974            1.402         0.875  0.773           0.965  0.919     1.087  1.455     0.174  0.267
+near80      no_stall     0   41400   True    True   True         0.926  1.945      1.019            1.300         0.883  0.767           0.964  0.917     1.059  1.415     0.181  0.245
+random_rows no_stall     0   41400   True    True   True         0.303  2.342      0.995            1.272         0.891  0.795           0.959  0.917     1.035  1.393     0.173  0.242
+near80      no_stall     1   41283   True    True   True         0.498  2.166      0.997            1.362         0.889  0.822           0.960  0.917     1.035  1.290     0.183  0.195
+random_rows no_stall     1   41283   True    True   True         0.368  2.187      1.002            1.376         0.890  0.827           0.955  0.917     1.033  1.215     0.157  0.223
+near80      no_stall     2   41374   True    True   True         0.868  2.034      1.009            1.200         0.874  0.783           0.972  0.916     1.087  1.442     0.221  0.188
+random_rows no_stall     2   41374   True    True   True         1.015  2.157      0.986            1.458         0.875  0.784           0.961  0.916     1.079  1.396     0.198  0.317
+near80      no_stall     3   41451   True    True   True         1.049  2.195      0.985            1.252         0.882  0.770           0.967  0.918     1.057  1.483     0.212  0.329
+random_rows no_stall     3   41451   True    True   True         1.019  1.899      0.980            1.327         0.874  0.766           0.974  0.917     1.079  1.509     0.194  0.334
+near80      no_stall     4   41456   True    True   True         0.858  1.950      0.990            1.605         0.875  0.787           0.965  0.918     1.079  1.456     0.189  0.285
+random_rows no_stall     4   41456   True    True   True         1.002  2.099      0.965            1.390         0.867  0.771           0.962  0.917     1.112  1.454     0.213  0.242
+C1 PASS  integrity: prepared rows' hashes, the frozen host and the unit equal the records; eta at the held-out rows and the scores equal the stored arrays byte for byte; eta finite and above 0.01 at all 824,866 training rows (20 of 20 bands)
+C2 PASS  the fit did its job on the rows it saw: unit/SD(e) = 0.949 to 1.019 on the training rows (the unit averages batch SDs, which sit a few percent below the whole-set SD when the residual has heavy tails; the largest recorded scores reach 9); share with |e| <= u*eta on the training rows 0.867 to 0.891 (mean 0.880; the 0.9 target less the width penalty's pull, as in part A)
+C3 PASS  the held-out shortfall is the critic's generalization gap, not the fit's: the critic's residual SD on held-out rows is 1.20 to 1.60 times its training-row SD, and the held-out share drops to 0.762-0.827 (mean 0.789), 9 points below the training share
+C4 PASS  the caveat, measured: with eta(s, a) replaced by ONE number (its mean over the training rows, 1.227), the share inside u*eta changes by +0.4 points on the training rows (range +0.3 to +0.7) and +0.2 points on the held-out rows (-1.5 to +1.3); inside the full band R*u*eta, +0.8 points on the held-out rows. The network's row-by-row shape adds almost nothing to a constant width on ThrusterChain. The held-out shortfall is the critic's: its 90% error point is 1.21 to 1.49 times larger on held-out rows than on training rows (mean 1.33).
+
+  Inside each tenth of the rows by eta (smallest to largest), pooled over the 20 bands: the 90% point of the score |e|/(u*eta) (1.00 = eta right for that tenth) and the mean eta
+    mean eta, training    1.10  1.14  1.16  1.18  1.20  1.22  1.24  1.27  1.32  1.44
+    q90 score, training   1.15  0.94  0.93  0.94  0.95  0.97  1.00  1.05  1.21  1.74
+    q90 score, held-out   1.45  1.06  1.07  1.14  1.16  1.19  1.31  1.38  1.76  2.81
+    coverage, training    0.88  0.92  0.92  0.92  0.92  0.91  0.90  0.88  0.84  0.71
+    coverage, held-out    0.84  0.87  0.87  0.85  0.84  0.84  0.80  0.76  0.69  0.53
+  Inside each tenth of the rows by WATER CURRENT (weakest to strongest), pooled over the 20 bands:
+    mean current          0.12  0.17  0.22  0.28  0.34  0.39  0.44  0.50  0.57  0.65
+    mean eta, training    1.21  1.21  1.20  1.20  1.21  1.21  1.22  1.24  1.26  1.30
+    mean |e|, training   0.088 0.089 0.089 0.090 0.092 0.094 0.099 0.109 0.127 0.160
+    coverage, training    0.92  0.91  0.91  0.91  0.90  0.90  0.89  0.87  0.83  0.77
+    coverage, held-out    0.81  0.82  0.81  0.81  0.81  0.83  0.80  0.77  0.74  0.69
+  Full-throttle training rows (some thruster at +-1; 36 rows per band on average): mean eta 1.29 against 1.23 overall; coverage 0.712 against 0.880 overall
+  Rank correlations on the training rows: eta with |e| 0.16 to 0.22; eta with the current 0.15 to 0.49; |e| with the current 0.08 to 0.14
+
+==============================================================================================================
+PART D. The weighting test's pre-registered mark M2 (outputs/shift_iw/v5/<quality>/report.json, branch main): Spearman rank correlation of the band width U with the EXACT critic error |q - Q^pi| (by simulation), inside each tenth of the held-out truth rows by water current, averaged; pass = one-sided lower bound above 0
+==============================================================================================================
+quality        status within deciles: mean lower bound                             per seed  pooled given float radius noise map
+random           pass                0.215       0.189        [0.22, 0.2, 0.19, 0.22, 0.26]   0.035     0.176 (0.139)     0.682
+medium-replay    pass                0.196       0.162        [0.15, 0.2, 0.16, 0.24, 0.22]   0.141     0.110 (0.082)     0.762
+medium           pass                0.144       0.103        [0.21, 0.12, 0.14, 0.1, 0.15]   0.183     0.081 (0.057)     0.709
+medium-expert    pass                0.326       0.293         [0.33, 0.39, 0.32, 0.3, 0.3]   0.312     0.142 (0.120)     0.760
+expert           pass                0.104       0.041       [0.06, 0.17, 0.18, 0.05, 0.05]   0.155     0.063 (0.018)     0.516
+D1 PASS  the mark passes on 5 of 5 qualities, but the link is weak: within-decile correlation 0.10 to 0.33; after removing the float radius (position and speed size), 0.06 to 0.18 (expert: 0.063, lower bound 0.018). The width follows the noise map (how noisy the recorded outcomes are) much more closely: 0.52 to 0.76
+
+==============================================================================================================
+SUMMARY  A0 PASS  A0b PASS  A1 PASS  A2a PASS  A2b FAIL  A3 PASS  A4 PASS  B1 PASS  B2 PASS  C1 PASS  C2 PASS  C3 PASS  C4 PASS  D1 PASS
+==============================================================================================================
+
+figure written: M:\docs\bca_mechanics\figures\M2.svg

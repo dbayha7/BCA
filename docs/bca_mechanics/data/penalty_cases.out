@@ -1,0 +1,345 @@
+BCA's penalty: the consistent and exceptional cases, rebuilt from recorded inputs (nothing trained, no band fitted).
+repository root M:\; numpy 2.5.4
+
+==============================================================================================================
+Case 1 [consistent]: the standard penalty is the same number whatever the test condition (dose and width)
+==============================================================================================================
+Before = the dose on the recorded training rows; after = the same dose read under a shifted test. The dose is read
+at recorded (state, command) rows from a threshold fixed at the last refresh (calibration/dose.py:65-95,
+algorithms/td3_bc_bca.py:283-288), so a shift in the test states cannot reach it. What the records show:
+
+  (a) Weighting test, capped pull, seed 0, standard arm: mean dose per 5,000 updates after the first refresh
+      (outputs/shift_iw/explore/routes2/diagnose/dose_chunks.json; exploratory)
+      random         min 1.318  mean 1.329  max 1.343  last 1.343  (18 chunks)
+      medium-replay  min 1.317  mean 1.327  max 1.337  last 1.336  (18 chunks)
+      medium         min 1.315  mean 1.327  max 1.341  last 1.341  (18 chunks)
+      medium-expert  min 1.293  mean 1.307  max 1.327  last 1.316  (18 chunks)
+      expert         min 1.297  mean 1.309  max 1.321  last 1.318  (18 chunks)
+
+  (b) The same band read at four commands of the recorded state (dose-equivalent 1 + 0.5 U/(U+u); seed 0;
+      diag_band_at_commands.json): recorded command | actor's command | 60% hold | 80% hold | full throttle
+      random         1.3568  1.3550  1.3545  1.3543  1.3542   spread 0.0026
+      medium-replay  1.3501  1.3478  1.3470  1.3464  1.3460   spread 0.0041
+      medium         1.3590  1.3572  1.3566  1.3562  1.3561   spread 0.0029
+      medium-expert  1.3408  1.3389  1.3404  1.3398  1.3400   spread 0.0019
+      expert         1.3241  1.3247  1.3221  1.3235  1.3247   spread 0.0026
+
+  (c) Four-learner study, standard arm, mean dose on kept training rows at the last refresh, per seed
+      (origin/claude/shift-hosts:outputs/shift_hosts_v3/results.json; exploratory seeds 0-4)
+      cql     medium         mean dose per seed [1.347, 1.352, 1.373, 1.352, 1.361]  rows' min 1.009 max 1.451
+      rebrac  medium         mean dose per seed [1.347, 1.307, 1.299, 1.319, 1.354]  rows' min 1.191 max 1.379
+      td3_bc  medium-expert  mean dose per seed [1.357, 1.360, 1.368, 1.367, 1.362]  rows' min 1.277 max 1.407
+      cql     medium-expert  mean dose per seed [1.340, 1.340, 1.385, 1.359, 1.336]  rows' min 1.008 max 1.458
+
+  Count: every recorded standard dose level lies in [1.293, 1.385] (110 readings: 90 chunk means + 20 seed means); the dose at the
+  actor's full-throttle command differs from the recorded command's by at most 0.0041 (5 qualities).
+  Takeaway: the standard penalty cannot be 'higher under shift' because it never looks at the test condition.
+
+==============================================================================================================
+Case 2 [consistent]: what drops under the shift is coverage, while the band's width barely moves
+==============================================================================================================
+Before = IID test, after = strong shift, same standard band. Weighting test marks M1 (IID) and W2 (strong), per
+seed (pre-registered marks; outputs/shift_iw/v5/<quality>/report.json):
+  random         IID [0.919, 0.916, 0.918, 0.916, 0.921]  strong [0.868, 0.865, 0.861, 0.870, 0.869]  drop per seed [0.051, 0.050, 0.057, 0.046, 0.052]
+  medium-replay  IID [0.926, 0.905, 0.932, 0.889, 0.906]  strong [0.873, 0.844, 0.869, 0.829, 0.834]  drop per seed [0.053, 0.062, 0.063, 0.060, 0.073]
+  medium         IID [0.927, 0.918, 0.939, 0.896, 0.905]  strong [0.838, 0.851, 0.865, 0.818, 0.814]  drop per seed [0.089, 0.067, 0.074, 0.078, 0.091]
+  medium-expert  IID [0.925, 0.914, 0.940, 0.929, 0.918]  strong [0.847, 0.816, 0.861, 0.842, 0.812]  drop per seed [0.078, 0.097, 0.079, 0.086, 0.106]
+  expert         IID [0.909, 0.903, 0.928, 0.900, 0.930]  strong [0.797, 0.827, 0.860, 0.826, 0.856]  drop per seed [0.112, 0.076, 0.068, 0.073, 0.074]
+  Count: coverage under the strong shift is below the IID coverage on 25 of 25 seed-qualities.
+
+Width and coverage at the actor's own commands, standard band, by whether the command is within or past 80%
+throttle (the removed region; channel check, exploratory, outputs/shift_iw/explore/channel/results/<q>.json).
+  quality        seed | width within-80  width past-80  ratio | coverage (training law) within-80  past-80 | needed x (strong law, past-80)
+  random            0 |          7.648          8.833   1.15 |                           0.963    0.864 | 1.14
+  random            1 |          8.190          9.004   1.10 |                           0.961    0.893 | 1.25
+  random            2 |          7.849          9.154   1.17 |                           0.964    0.884 | 1.10
+  random            3 |          8.028          9.202   1.15 |                           0.961    0.902 | 1.21
+  random            4 |          7.886          8.955   1.14 |                           0.967    0.899 | 1.10
+  medium-replay     0 |          6.046          7.676   1.27 |                           0.973    0.919 | 0.99
+  medium-replay     1 |          5.442          6.254   1.15 |                           0.959    0.846 | 1.31
+  medium-replay     2 |          6.420          7.333   1.14 |                           0.974    0.894 | 1.14
+  medium-replay     3 |          5.729          7.072   1.23 |                           0.951    0.874 | 1.14
+  medium-replay     4 |          5.440          6.376   1.17 |                           0.961    0.896 | 1.09
+  medium            0 |          3.930          4.550   1.16 |                           0.974    0.870 | 1.28
+  medium            1 |          4.232          5.023   1.19 |                           0.972    0.881 | 1.19
+  medium            2 |          4.641          5.475   1.18 |                           0.979    0.889 | 1.20
+  medium            3 |          3.936          4.535   1.15 |                           0.958    0.790 | 1.71
+  medium            4 |          3.445          4.155   1.21 |                           0.965    0.854 | 1.32
+  medium-expert     0 |          1.887          2.414   1.28 |                           0.978    0.604 | 3.24
+  medium-expert     1 |          1.774          2.282   1.29 |                           0.970    0.559 | 3.77
+  medium-expert     2 |          2.070          2.471   1.19 |                           0.985    0.664 | 3.21
+  medium-expert     3 |          1.999          2.473   1.24 |                           0.983    0.637 | 3.44
+  medium-expert     4 |          1.622          2.002   1.23 |                           0.977    0.632 | 3.44
+  expert            0 |          0.397          0.441   1.11 |                           0.961    0.316 | 9.01
+  expert            1 |          0.389          0.434   1.12 |                           0.953    0.331 | 8.33
+  expert            2 |          0.462          0.538   1.17 |                           0.979    0.446 | 7.62
+  expert            3 |          0.398          0.440   1.11 |                           0.962    0.358 | 9.27
+  expert            4 |          0.474          0.591   1.25 |                           0.979    0.433 | 6.41
+  Count: the band past 80% is 1.10 to 1.29 times its width within 80% (25 seeds), while
+  coverage there falls by 0.05 to 0.64. Where the data do not cover the command the penalty is
+  not higher; the band is simply wrong more often. Takeaway: the penalty's direction test fails for the width at
+  the actor's command, in every seed (consistent).
+
+==============================================================================================================
+Case 3 [consistent]: Stage 2: the band is flat between the actor's harmful command, its 80% cap and the recorded command
+==============================================================================================================
+Before = the recorded command (IID), after = the actor's own command past 80% throttle, same state. Mean band
+width U in critic value units over the detection pairs (T1 = training states in the full-throttle region, T3 =
+strong-current rollout states, T4 = recorded rows), per seed, from the recorded width scores
+(runs/shift_explore/stage2/detect/<version>/stall/fixed/seed<K>/scores/bca_width_*_fixed.npz; exploratory seeds 0-4).
+  uniform band:  seed | T1 command (harmful)  T1 cap  diff | T1 recorded | T3 command (harmful)  T3 cap  diff | T4 recorded
+                 0 |              0.3451  0.3414  +0.0037 |      0.3290 |              0.2951  0.2871  +0.0081 | 0.3097
+                 1 |              0.3200  0.3197  +0.0003 |      0.3069 |              0.3136  0.3013  +0.0122 | 0.2866
+                 2 |              0.3278  0.3265  +0.0013 |      0.3130 |              0.3411  0.3366  +0.0045 | 0.2889
+                 3 |              0.3079  0.3071  +0.0008 |      0.2949 |              0.3192  0.3115  +0.0077 | 0.2758
+                 4 |              0.3230  0.3204  +0.0026 |      0.3002 |              0.3841  0.3816  +0.0025 | 0.2810
+  weighted band:  seed | T1 command (harmful)  T1 cap  diff | T1 recorded | T3 command (harmful)  T3 cap  diff | T4 recorded
+                 0 |              2.4302  0.7854  +1.6448 |      0.3732 |              1.7632  0.4290  +1.3342 | 0.3608
+                 1 |              1.9427  0.6840  +1.2586 |      0.6026 |              0.9838  0.5935  +0.3903 | 0.5657
+                 2 |              1.5325  0.5413  +0.9912 |      0.3409 |              0.7916  0.3726  +0.4190 | 0.3205
+                 3 |              1.4731  0.5438  +0.9293 |      0.2589 |              0.8560  0.2925  +0.5635 | 0.2479
+                 4 |              0.8160  0.3097  +0.5063 |      0.2435 |              0.5795  0.3158  +0.2637 | 0.2290
+  Count (uniform): command minus cap on harmful pairs is +0.0003 to +0.0122 (10 seed-sets); the band at
+  shifted states (T3) is 0.92 to 1.18 times the band at IID states (T1). The critic's over-preference
+  it had to cancel (Q1 gap minus true gap on harmful pairs) was 0.88-1.12 at training states and 2.81-2.88 in strong
+  current (modules/M9.md, table R2; data/M9/M9_r2.json, mean_over_pref_harmful). Takeaway: flat, in every seed.
+  Weighted version at recorded (IID) rows, T4: [0.361, 0.566, 0.320, 0.248, 0.229] against uniform [0.310, 0.287, 0.289, 0.276, 0.281]: higher on 3 of 5 seeds,
+  by construction (it adds a classifier term U_max softplus(log w - l*) to the uniform band; stage2/code/band.py).
+
+==============================================================================================================
+Case 4 [consistent]: the harm switch's height is high where full throttle is harmful and low where it is harmless
+==============================================================================================================
+Before = the no-stall world (full throttle harmless), after = the stall world (harmful). Height = R_tail - R_rest in
+critic value units (step1lib.py:244-276). Every certificate on record (near-80 30 seed-worlds; step 1 10):
+  study    setting      world     seed  n_tail  finite share  height    switch
+  near-80  main         no_stall    10     18  0.854             +inf  off
+  near-80  main         no_stall    11     32  0.965            0.134  off
+  near-80  main         no_stall    12     21  0.890             +inf  off
+  near-80  main         no_stall    13     36  0.981            0.241  off
+  near-80  main         no_stall    14     31  0.969            0.775  off
+  near-80  main         stall       10     19  0.879             +inf  on
+  near-80  main         stall       11     53  0.997            2.289  on
+  near-80  main         stall       12     22  0.903             +inf  on
+  near-80  main         stall       13     18  0.850             +inf  on
+  near-80  main         stall       14     30  0.964            4.595  on
+  near-80  near80       no_stall     0     37  0.983            0.046  off
+  near-80  near80       no_stall     1     36  0.975            0.062  off
+  near-80  near80       no_stall     2     50  0.997            0.159  off
+  near-80  near80       no_stall     3     29  0.947             +inf  off
+  near-80  near80       no_stall     4     60  0.999            0.208  off
+  near-80  near80       stall        0     34  0.973            5.943  on
+  near-80  near80       stall        1     47  0.996            2.558  on
+  near-80  near80       stall        2     57  0.995            3.145  on
+  near-80  near80       stall        3     43  0.993            1.915  on
+  near-80  near80       stall        4     47  0.996            1.411  on
+  near-80  random_rows  no_stall     0     31  0.963            0.211  off
+  near-80  random_rows  no_stall     1     32  0.976            0.261  off
+  near-80  random_rows  no_stall     2     48  0.993            0.094  off
+  near-80  random_rows  no_stall     3     28  0.948             +inf  off
+  near-80  random_rows  no_stall     4     56  0.997            0.119  off
+  near-80  random_rows  stall        0     29  0.950            5.609  on
+  near-80  random_rows  stall        1     40  0.986            4.030  on
+  near-80  random_rows  stall        2     52  0.997            3.049  on
+  near-80  random_rows  stall        3     34  0.977            1.688  on
+  near-80  random_rows  stall        4     43  0.990            1.846  on
+  step 1   main         no_stall     0     38  0.981            0.083  off
+  step 1   main         no_stall     1     36  0.975            0.151  off
+  step 1   main         no_stall     2     52  0.994            0.200  off
+  step 1   main         no_stall     3     29  0.947             +inf  off
+  step 1   main         no_stall     4     60  0.999            0.038  off
+  step 1   main         stall        0     35  0.970            6.019  on
+  step 1   main         stall        1     47  0.996            2.420  on
+  step 1   main         stall        2     59  0.997            2.065  on
+  step 1   main         stall        3     43  0.993            1.605  on
+  step 1   main         stall        4     47  0.996            1.796  on
+  Count: 32 finite certificates; stall heights 1.41-6.02, no-stall 0.04-0.77; every stall
+  height exceeds every no-stall height (32 of 32 in the right direction). Infinite height in 8 of 40: tails of
+  [18, 18, 19, 21, 22, 28, 29, 29] rows (case 9).
+  Label: near-80 seeds 0-4 and step 1 exploratory; near-80 seeds 10-14 pre-registered.
+
+==============================================================================================================
+Case 5 [consistent]: the penalty rises under the shift only when the shift is declared through weights
+==============================================================================================================
+Before = standard threshold R_u; after = the weighted threshold R_w with exact weights for the mild or strong mix,
+on the same held-out scores (single threshold; shown values of the weighting test; exploratory BCA arms).
+  quality        R_w/R_u mild per seed              R_w/R_u strong per seed             dose change strong (R2)      lower-edge scale change strong (L2)
+  random         [1.119, 1.093, 1.085, 1.082, 1.109] [1.284, 1.171, 1.206, 1.219, 1.250] [0.0231, 0.0162, 0.0192, 0.0192, 0.0228] [0.251, 0.171, 0.207, 0.202, 0.250]
+  medium-replay  [1.051, 1.048, 1.146, 1.135, 1.034] [1.121, 1.125, 1.342, 1.297, 1.114] [0.0117, 0.0119, 0.0290, 0.0257, 0.0110] [0.119, 0.117, 0.342, 0.277, 0.110]
+  medium         [1.189, 1.155, 1.162, 1.142, 1.163] [1.417, 1.331, 1.394, 1.372, 1.209] [0.0337, 0.0284, 0.0313, 0.0317, 0.0196] [0.412, 0.332, 0.387, 0.356, 0.207]
+  medium-expert  [1.151, 1.266, 1.276, 1.347, 1.267] [1.662, 1.563, 1.476, 1.821, 2.254] [0.0509, 0.0464, 0.0370, 0.0564, 0.0748] [0.663, 0.556, 0.477, 0.822, 1.254]
+  expert         [1.153, 1.144, 1.119, 1.063, 1.169] [1.481, 1.358, 1.617, 1.210, 1.606] [0.0438, 0.0335, 0.0495, 0.0215, 0.0475] [0.482, 0.349, 0.619, 0.206, 0.595]
+  Count: R_w/R_u > 1 on 25 of 25 (mild) and 25 of 25 (strong) seed-qualities; strong above mild on 25 of 25;
+  dose change > 0 on 25 of 25; lower-edge scale change > 0 on 25 of 25; exact 'none' weights give 1.000 on 25 of 25.
+  Coverage under the strong shift with exact strong weights is at least 0.89 on 21 of 25 seeds (W1; standard: case 2).
+  four-learner cql     medium        : dose standard [1.347, 1.352, 1.373, 1.352, 1.361] -> IW [1.494, 1.493, 1.496, 1.494, 1.497]; change [0.144, 0.147, 0.138, 0.149, 0.128]
+  four-learner rebrac  medium        : dose standard [1.347, 1.307, 1.299, 1.319, 1.354] -> IW [1.348, 1.302, 1.278, 1.318, 1.344]; change [0.003, -0.006, -0.022, -0.005, 0.003]
+  four-learner cql     medium-expert : dose standard [1.340, 1.340, 1.385, 1.359, 1.336] -> IW [1.488, 1.495, 1.494, 1.494, 1.472]; change [0.131, 0.156, 0.125, 0.141, 0.131]
+  Count: CQL's dose rises on 10 of 10 seeds (+0.125 to +0.156); ReBRAC (critic did not learn): case 10.
+  Takeaway: declared weights raise the penalty everywhere, by 1.1-2.3x in the threshold and 0.02-0.16 in the dose.
+
+==============================================================================================================
+Case 6 [consistent]: weights of 1 (the IID test declared exactly) give the standard penalty bit for bit
+==============================================================================================================
+Before = standard calibrate(scores); after = calibrate(scores, weights = 1, test mass = 1), same random stream
+(calibration/wbcp.py:62-66 and :117; experiments/shift_iw/coverage.py:78-86 unit_check).
+  weighting test W0 random        : unit check [True, True, True, True, True] (gapped host), [True, True, True, True, True] (full host); status pass
+  weighting test W0 medium-replay : unit check [True, True, True, True, True] (gapped host), [True, True, True, True, True] (full host); status pass
+  weighting test W0 medium        : unit check [True, True, True, True, True] (gapped host), [True, True, True, True, True] (full host); status pass
+  weighting test W0 medium-expert : unit check [True, True, True, True, True] (gapped host), [True, True, True, True, True] (full host); status pass
+  weighting test W0 expert        : unit check [True, True, True, True, True] (gapped host), [True, True, True, True, True] (full host); status pass
+  Count: 50 of 50 seed-hosts identical (threshold, lambda_hat, lambda_hpd, every posterior crossing, the per-step
+  table [1.0] and the per-step arm's coverage). Pre-registered mark W0 (labeled a unit check).
+  Four-learner stop rule S2 (PRESPEC.md:474): IW with every weight 1 equals the standard run in every bit after the
+  refresh, and R(1) equals the stored standard threshold in float32: passed for all four learners (the study ran on).
+  live near-80 version 6 near80 no_stall seed 0: recorded R 1.533197; weights of 1 -> 1.533197; equals recorded recompute True; explicit ones bit-equal True
+  Recorded held-out scores (pinned environment, data/penalty_recompute.json): 30 of 30 banks reproduce the
+  recorded threshold, and weights of 1 equal the unweighted call bit for bit on 30 of 30.
+  Takeaway: with no shift and known weights the weighted penalty cannot differ from the standard one.
+
+==============================================================================================================
+Case 7 [exceptional]: estimated weights fitted for the IID test move the threshold by -9% to +5% on single seeds
+==============================================================================================================
+Before = standard R_u; after = R with the classifier's weights fitted on the IID ('none') mix, where the exact weights
+are 1 (single threshold at the frozen band; shown values; the classifier is logistic regression on the 13-number
+observation, experiments/shift_iw/classifier.py). Also its fitted slope on the current (exact 0; mark W4) and the
+coverage of the estimated band minus the exact one on the IID test.
+  quality        seed  R_est/R_u   slope on c   coverage est - exact
+  random            0     1.0226     +0.1867   +0.0067  <- beyond 1%
+  random            1     0.9814     -0.1197   -0.0057  <- beyond 1%
+  random            2     1.0000     -0.2822   +0.0000
+  random            3     1.0014     +0.0847   +0.0004
+  random            4     1.0419     +0.3900   +0.0097  <- beyond 1%
+  medium-replay     0     1.0026     +0.2866   +0.0004
+  medium-replay     1     0.9901     -0.0195   -0.0024
+  medium-replay     2     0.9896     -0.1170   -0.0021  <- beyond 1%
+  medium-replay     3     1.0125     +0.0984   +0.0043  <- beyond 1%
+  medium-replay     4     1.0016     +0.4192   +0.0004
+  medium            0     1.0096     +0.1083   +0.0023
+  medium            1     0.9881     -0.0807   -0.0030  <- beyond 1%
+  medium            2     0.9857     -0.2802   -0.0029  <- beyond 1%
+  medium            3     1.0055     +0.1444   +0.0012
+  medium            4     1.0376     +0.2917   +0.0105  <- beyond 1%
+  medium-expert     0     1.0000     +0.2842   +0.0000
+  medium-expert     1     0.9730     +0.1130   -0.0064  <- beyond 1%
+  medium-expert     2     0.9134     +0.0048   -0.0162  <- beyond 5%
+  medium-expert     3     1.0311     +0.0964   +0.0047  <- beyond 1%
+  medium-expert     4     1.0504     +0.3252   +0.0104  <- beyond 5%
+  expert            0     1.0008     +0.2019   +0.0002
+  expert            1     0.9941     -0.2267   -0.0013
+  expert            2     0.9949     +0.0055   -0.0009
+  expert            3     1.0029     +0.1473   +0.0005
+  expert            4     1.0047     +0.3665   +0.0008
+  Count: IW higher than standard on 14 of 25 seed-qualities, lower on 9, equal on 2; beyond 1% on 12, beyond 5% on
+  2 (both medium-expert: seed 2 at 0.913, seed 4 at 1.050). The sign of the move agrees with the sign of the fitted
+  slope on the current in 20 of 23 moved cases: a positive slope tilts the weights toward high-current rows, where
+  the scores are larger (mark M2), so the weighted quantile rises; a negative slope lowers it. Means by quality are
+  within 1% of 1 (W4's coverage gap 0.0001-0.002). Exceptional: classifier noise on a slope whose true value is 0.
+  The same 25 slopes applied to random currents on the 30 recorded banks (no link between weight and score; pinned
+  recompute case E): R ratio 0.930 to 1.033, beyond 5% in 2 of 3000. So the recorded moves beyond 5%
+  need the weights to be correlated with the scores (the tilt), not the smaller effective sample.
+
+==============================================================================================================
+Case 8 [consistent]: weights for the strong shift, applied while the learner trains on IID rows, raise the penalty on every seed
+==============================================================================================================
+This is how the IW arm is actually run: its band is calibrated for the strong test law, and the dose it reads on the
+recorded (IID) training rows is therefore higher than the standard arm's. Before = standard, after = IW.
+  (a) Weighting test, seed 0, mean dose per 5,000-update chunk after the first refresh, IW arm minus standard arm
+      (dose_chunks.json, exploratory; two different training runs):
+      random         IW - standard per chunk: min +0.0125 mean +0.0250 max +0.0367; per-row R_w/R_u at the first two refreshes: [1.155, 1.212], [1.358, 1.380]
+      medium-replay  IW - standard per chunk: min +0.0169 mean +0.0268 max +0.0406; per-row R_w/R_u at the first two refreshes: [1.318, 1.370], [1.340, 1.403]
+      medium         IW - standard per chunk: min +0.0225 mean +0.0307 max +0.0463; per-row R_w/R_u at the first two refreshes: [1.532, 1.663], [1.256, 1.323]
+      medium-expert  IW - standard per chunk: min +0.0415 mean +0.0603 max +0.0846; per-row R_w/R_u at the first two refreshes: [2.200, 2.367], [1.578, 1.951]
+      expert         IW - standard per chunk: min +0.0130 mean +0.0445 max +0.0607; per-row R_w/R_u at the first two refreshes: [1.314, 1.503], [1.639, 1.744]
+      Count: IW's dose is above the standard arm's in 90 of 90 chunks (5 qualities x 18 chunks), and every per-row
+      threshold ratio at the recorded refreshes is above 1 (10 of 10 refresh records).
+  (b) The frozen band: R2's dose change (case 5) is positive on 25 of 25 seeds; CQL's on 10 of 10; refused rows 0 everywhere.
+  (c) What it costs where there is no shift (return on the IID starts, IW minus standard; exploratory):
+      random         capped pull: return units per seed [-7.7, 0.1, 4.0, 8.5, 1.5] (mean +1.3, +0.17 points); lower edge [-0.2, 1.7, -0.7, 1.2, 1.4]
+      medium-replay  capped pull: return units per seed [-9.4, -1.0, -9.9, -20.3, -5.0] (mean -9.1, -1.19 points); lower edge [-0.2, 0.7, -0.7, 0.0, -0.1]
+      medium         capped pull: return units per seed [-3.0, -11.0, -3.1, -4.4, -1.8] (mean -4.6, -0.61 points); lower edge [-0.4, -0.3, -0.3, -1.1, -0.1]
+      medium-expert  capped pull: return units per seed [-0.7, -0.9, -0.6, 0.2, -0.6] (mean -0.5, -0.07 points); lower edge [0.1, 0.1, 0.1, 0.2, 0.3]
+      expert         capped pull: return units per seed [-0.4, 0.1, -0.2, -1.3, 0.2] (mean -0.3, -0.04 points); lower edge [-0.1, -0.0, 0.1, -0.0, -0.1]
+      four-learner CQL medium         claim 3 (IW - standard on the IID bank): [2.21, 0.24, -3.96, 0.49, -2.74] mean -0.75; passed
+      four-learner CQL medium-expert  claim 3 (IW - standard on the IID bank): [4.45, -0.62, 0.31, 0.86, -2.75] mean +0.45; passed
+      Count: the capped pull loses return on 18 of 25 IID seed-qualities (largest mean loss medium-replay, -9.1 units =
+      -1.2 points); the lower edge and CQL stay within a few units either way.
+  (d) Why the threshold rises: the three parts, on the 30 recorded banks (pinned recompute, data/penalty_recompute.json):
+      B  test atom alone (mass 2.84 instead of 1, weights 1):          R_w/R_u mean 1.015
+      C  strong weights on random currents (Kish 0.35 n, no link to the scores): mean 1.094, range 0.806-1.513; above 1 in 522 of 600 draws, below in 68
+         weighted empirical quantile / unweighted 1.013; Bayesian margin lambda_hpd/lambda_hat 1.089 -> 1.175
+      D  strong weights sorted onto the scores: heaviest on the largest scores 2.91x, on the smallest 0.43x
+      F  the margin as the bank shrinks: n = 300 1.173, n = 100 1.498 (recorded n = 805-851: 1.089)
+      The recorded strong ratios (1.11-2.25 per seed) sit far above C and below D-up: most of the rise is the reweighting
+      toward the high-current rows, where the critic's scores are larger; the smaller effective sample adds about
+      +9% to the threshold (+0.01 in the dose: the four-learner shuffled placebo -0.008 to +0.017).
+      live near-80 version 6 near80 no_stall seed 0: B 1.0108, C strong mean 1.0713 [0.954, 1.247], D up 2.546, down 0.443
+  Takeaway: the higher IW penalty under IID training rows is the declared shift, not a defect; it costs at most about 1 point.
+
+==============================================================================================================
+Case 9 [exceptional]: refusal (R = +inf): too few effective held-out rows, never the IW arms on record
+==============================================================================================================
+The credible quantile is finite only when at least 950 of the 1,000 posterior draws cross; a draw fails with
+probability 0.9^n, so about 29 rows are needed (near80_results_check/REPORT.md:24-27; calibration/wbcp.py:108-117).
+  (a) Every certificate with a full-throttle group of at most 30 rows (finite share = share of finite draws):
+      near-80  main         no_stall  seed 10  n_tail 18  finite share 0.854 (1 - 0.9^n = 0.850)  height +inf  switch off
+      near-80  main         stall     seed 13  n_tail 18  finite share 0.850 (1 - 0.9^n = 0.850)  height +inf  switch on
+      near-80  main         stall     seed 10  n_tail 19  finite share 0.879 (1 - 0.9^n = 0.865)  height +inf  switch on
+      near-80  main         no_stall  seed 12  n_tail 21  finite share 0.890 (1 - 0.9^n = 0.891)  height +inf  switch off
+      near-80  main         stall     seed 12  n_tail 22  finite share 0.903 (1 - 0.9^n = 0.902)  height +inf  switch on
+      near-80  random_rows  no_stall  seed  3  n_tail 28  finite share 0.948 (1 - 0.9^n = 0.948)  height +inf  switch off
+      near-80  near80       no_stall  seed  3  n_tail 29  finite share 0.947 (1 - 0.9^n = 0.953)  height +inf  switch off
+      near-80  random_rows  stall     seed  0  n_tail 29  finite share 0.950 (1 - 0.9^n = 0.953)  height 5.609  switch on
+      step 1   main         no_stall  seed  3  n_tail 29  finite share 0.947 (1 - 0.9^n = 0.953)  height +inf  switch off
+      near-80  main         stall     seed 14  n_tail 30  finite share 0.964 (1 - 0.9^n = 0.958)  height 4.595  switch on
+      Count: infinite in 8 of 40; every tail of 28 or fewer refused, every tail of 30 or more certified;
+      at exactly 29 rows 2 of 3 refused (a 70/30 draw: P(at least 950 of 1,000 finite) with p = 1 - 0.9^29 = 0.953).
+  (b) The same arithmetic widens before it refuses: Bayesian margin lambda_hpd/lambda_hat on random subsets of the recorded
+      scores, n = 300: 1.17; n = 100: 1.50; full bank: 1.089.
+  (c) The IW arms with exact weights never refused a row: weighting test R2 refused_rows = 0 on 25 of 25 seeds; four-learner
+      refused_rows_last = 0 on 10 of 10 CQL seeds (18 of 18 refreshes certified).
+  (d) Where weighting does refuse: the command-weighted band (weights for the actor's own commands; exploratory,
+      outputs/shift_iw/explore/channel/results/command_band/<q>.json). Per seed: Kish share of the held-out rows, share of
+      the actor's within-80% (IID-like) commands refused, past-80% refused, largest finite threshold / R_u:
+      random         seed 0  Kish   1.7%  refused within-80 100.0%  past-80 100.0%  cap/R_u 1.55
+      random         seed 1  Kish   0.6%  refused within-80  96.1%  past-80  99.5%  cap/R_u 1.16
+      random         seed 2  Kish   1.6%  refused within-80 100.0%  past-80 100.0%  cap/R_u 1.21
+      random         seed 3  Kish   1.4%  refused within-80 100.0%  past-80 100.0%  cap/R_u 1.29
+      random         seed 4  Kish   1.6%  refused within-80 100.0%  past-80 100.0%  cap/R_u 1.68
+      medium-replay  seed 0  Kish   0.7%  refused within-80  85.4%  past-80 100.0%  cap/R_u 1.50
+      medium-replay  seed 1  Kish   1.3%  refused within-80  89.8%  past-80 100.0%  cap/R_u 2.52
+      medium-replay  seed 2  Kish   1.4%  refused within-80  90.5%  past-80 100.0%  cap/R_u 1.71
+      medium-replay  seed 3  Kish   1.8%  refused within-80  93.1%  past-80 100.0%  cap/R_u 1.75
+      medium-replay  seed 4  Kish   0.9%  refused within-80  87.0%  past-80 100.0%  cap/R_u 1.52
+      medium         seed 0  Kish   3.1%  refused within-80  75.7%  past-80 100.0%  cap/R_u 1.73
+      medium         seed 1  Kish   1.0%  refused within-80  76.5%  past-80 100.0%  cap/R_u 1.23
+      medium         seed 2  Kish   0.3%  refused within-80  72.2%  past-80 100.0%  cap/R_u 1.27
+      medium         seed 3  Kish   0.8%  refused within-80  71.4%  past-80 100.0%  cap/R_u 1.38
+      medium         seed 4  Kish   0.6%  refused within-80  61.6%  past-80 100.0%  cap/R_u 2.12
+      medium-expert  seed 0  Kish   3.7%  refused within-80  47.0%  past-80 100.0%  cap/R_u 1.38
+      medium-expert  seed 1  Kish   3.8%  refused within-80  51.6%  past-80 100.0%  cap/R_u 2.37
+      medium-expert  seed 2  Kish   2.2%  refused within-80  49.1%  past-80 100.0%  cap/R_u 1.38
+      medium-expert  seed 3  Kish   3.8%  refused within-80  42.7%  past-80 100.0%  cap/R_u 1.26
+      medium-expert  seed 4  Kish   1.4%  refused within-80  47.7%  past-80 100.0%  cap/R_u 2.10
+      expert         seed 0  Kish   5.7%  refused within-80  23.6%  past-80 100.0%  cap/R_u 2.89
+      expert         seed 1  Kish  18.3%  refused within-80  26.1%  past-80 100.0%  cap/R_u 4.77
+      expert         seed 2  Kish  19.6%  refused within-80  24.4%  past-80 100.0%  cap/R_u 3.11
+      expert         seed 3  Kish  20.9%  refused within-80  24.5%  past-80 100.0%  cap/R_u 2.13
+      expert         seed 4  Kish  14.7%  refused within-80  26.2%  past-80 100.0%  cap/R_u 2.11
+      Count: refuses 24% to 100% of within-80% commands (25 seeds) because the effective sample falls to
+      0.3-20.9% of the bank (Kish). This is the one setting on record where IW's penalty is higher than
+      standard's under IID-like commands by a large margin, and it is a refusal, not a wider band.
+
+==============================================================================================================
+Case 10 [control]: weights change nothing when the critic's error does not grow with the current (ReBRAC; shuffled weights)
+==============================================================================================================
+Before = standard dose, after = IW dose, four-learner study (exploratory). ReBRAC's critic 'did not learn' (its
+standard band already covered 90-96% under the shift); the shuffled-weight placebo keeps the weights' sizes but
+breaks their link to the rows.
+  rebrac  medium         dose change: strong weights [0.003, -0.006, -0.022, -0.005, 0.003]  shuffled placebo [0.001, 0.003, 0.001, -0.008, 0.006]  estimated weights [0.004, -0.008, -0.020, -0.006, 0.004]
+  cql     medium         dose change: strong weights [0.144, 0.147, 0.138, 0.149, 0.128]  shuffled placebo [0.007, -0.007, 0.017, 0.001, -0.006]  estimated weights [0.145, 0.148, 0.138, 0.150, 0.129]
+  cql     medium-expert  dose change: strong weights [0.131, 0.156, 0.125, 0.141, 0.131]  shuffled placebo [0.017, -0.008, 0.010, 0.009, -0.001]  estimated weights [0.131, 0.156, 0.122, 0.143, 0.132]
+  Count: ReBRAC's change is -0.022 to +0.003 (2 of 5 above 0); CQL's shuffled placebo -0.008 to +0.017
+  (6 of 10 above 0) against +0.125 to +0.156 with the real weights. Takeaway: the rise needs weights that
+  point at rows where the critic's error is larger; the sample-size part alone is about 0.01 in the dose.
+
+wrote M:\docs\bca_mechanics\data\penalty_cases.json
