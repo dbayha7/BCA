@@ -1,6 +1,11 @@
-"""Near-80 (version 8): the lane scheduler. run_near80.sh starts it after its own checks; the commands are
+"""Near-80 (version 9, main setting): the lane scheduler. DRAFT, not frozen. run_near80.sh (the desktop) and
+near80_slurm_job.sh (the cluster) start it after their own checks; the commands are
 
-  near80_runner.py run [--lanes N]            the official run (default 10 lanes, 1-16); continues after any restart
+  near80_runner.py run [--lanes N] [--seeds a,b] [--group-only] [--tag T]
+                                              the official run (default 10 lanes, 1-16); continues after any restart.
+                                              --seeds restricts this runner to the phases of the given fresh seeds
+                                              (one Slurm job per seed); --group-only to the group's lock and look
+                                              (the last job); --tag names this runner's lock and status file.
   near80_runner.py plumbing [--lanes N]       the unit tests, a 40-step smoke of every phase kind on seed 0, the
                                               fresh-seed code path on seed 0 and the reproduction check (scratch only)
   near80_runner.py status                     what is running, done, waiting, stopped and skipped (reads only)
@@ -8,44 +13,41 @@
   near80_runner.py plan                       the phase plan and each phase's state (runs nothing)
   near80_runner.py retry PHASE_ID             one more attempt of an UNFINISHED phase (typed at a terminal)
   near80_runner.py budget-continue STAGE      lifts a budget pause by one forecast of that stage (typed at a terminal)
-  near80_runner.py version7-ended             records that version 7's run ended for good without finishing (typed)
   near80_runner.py report                     the halt report (pooled.halt_report), when the run stopped early
   near80_runner.py results                    copies every record (no model file) into near80/results-<utc>/
   near80_runner.py runfiles-plan --dir DIR    the list of run files for push_runfiles_near80.sh
-  near80_runner.py stub --fixture DIR [--lanes N] [--seeds a,b]   stub mode on a test fixture outside the repository
+  near80_runner.py stub --fixture DIR [--lanes N] [--seeds a,b] [--refuse a,b]   stub mode on a test fixture
+                                              outside the repository (--refuse: seeds whose synthetic data make BCA
+                                              refuse, for the refusal rule)
 
 Version 7's runner (stage2_v7/laptop/lib/runner_v7.py) restated with near-80 names; it is never imported here.
-  One runner per machine: OUT/runner.lock (flock). Version 7 (choice 12): 'run' and 'plumbing' refuse while version
-    7's runner is running (its runner lock or a phase lock held), and refuse unless version 7's run has finished
-    (stage2_v7/results/BUNDLE.json gathered and not partial, or every phase of its status final) or the owner typed
-    'version7-ended' (OUT/version7_ended.json, write-once). While running, the runner checks version 7's locks at
-    every poll and starts nothing while they are held ("waiting: version 7 is running").
+  One runner per output root and tag: OUT/runner<tag>.lock. Several runners may share one output root when their
+    seeds do not overlap (the cluster's one-job-per-seed entry); each phase holds its own lock, so no phase runs
+    twice. Version 8's version-7 gating is gone: version 7's run finished on 16 October 2026.
   Plumbing gate: 'run' refuses unless OUT/plumbing/plumbing.json exists, matches its sidecar, passed, and carries the
-    current prereg_sha256 (it is written only when the plumbing passed). A reproduction difference writes
-    OUT/plumbing/reproduction_differs.json (write-once): then 'run' and 'plumbing' refuse for good (section 8.2). Any
-    other plumbing failure writes OUT/plumbing/failed_<utc>.json and the plumbing may be run again.
+    current prereg_sha256. A reproduction difference writes OUT/plumbing/reproduction_differs.json (write-once): then
+    'run' and 'plumbing' refuse for good (section 8.2). Any other plumbing failure writes
+    OUT/plumbing/failed_<utc>.json and the plumbing may be run again.
   Approval: run, plumbing and retry call approval_check.require_approval() first; every phase process checks again.
-  Lanes: 1-16 (default 10); processors from version 7's pick_cpus(16)[:lanes] (one per physical core); each phase:
+  Lanes: 1-16 (default 10); processors from version 7's pick_cpus(16)[:lanes] (one per physical core, within the
+    processors this process may use: a Slurm job's allocation); each phase:
     env -i <PHASE_ENV> nice -n 5 taskset -c <cpu> <python> phase_main.py --phase-id <id> --out <root> ...
-    with standard output and error appended to OUT/logs/<phase_id>.log.
+    with standard output and error appended to OUT/logs/<phase_id>.log. (The unit tests on Windows spawn the same
+    command without env -i, nice and taskset; nothing official runs there.)
   Memory rule (version 7's): a phase starts only if the running phases' reservations plus its own are at most
     MemTotal - 8 GiB and MemAvailable >= own + 8 GiB. Reservation: an unmeasured kind 7 GiB; a measured kind 1.25 times
     its largest peak; a policy phase the larger of 7 GiB and twice its peak; at most 2 policy phases at once until
-    one is measured.
+    one is measured. On the cluster the job's memory (NEAR80_MEM_TOTAL_KB) stands for MemTotal, and the free memory
+    is that total minus the running phases' reservations (the node's meminfo says nothing about the job's share).
   Budget guard: CPU-hours per stage from the ledger; a stage beyond PAUSE_FACTOR times its forecast starts no new
-    phase ('paused: ... no result is read differently because of a pause'); beyond CAP_CPU_HOURS nothing starts. When
-    the run can only wait for the guard it ends with exit 5 (PAUSED). Each typed 'budget-continue STAGE' (a
-    write-once OUT/budget/<stage>/<n>.json) raises that stage's pause point and the cap by one forecast of the stage.
-  Memory: a phase whose own reservation exceeds MemTotal - 8 GiB can never start: the run halts and says so.
-  Safe stop: one Ctrl-C, no new phase starts and the running ones finish (exit 3); a second Ctrl-C sends SIGTERM to the
-    running phases (recorded first in their ledger: machine-wide, they rerun on the next start).
+    phase; beyond CAP_CPU_HOURS nothing starts. Each typed 'budget-continue STAGE' raises both by one forecast.
+  Safe stop: one Ctrl-C (or Slurm's SIGTERM), no new phase starts and the running ones finish (exit 3); a second
+    sends SIGTERM to the running phases (recorded first in their ledger: machine-wide, they rerun on the next start).
   Interruptions (ledger.classify_attempt): machine-wide reruns without limit; phase-specific reruns twice as usual,
-    the third time alone, then the phase is UNFINISHED and waits for 'retry' (each request allows one attempt, run
-    alone). Before any rerun every existing file of the phase is moved, never deleted, to OUT/interrupted/. A
-    recorded stop (exit 2 with its stop file) is never rerun. Exit 97 from a phase halts the run; any other failure
-    stops new phases and names the log. On seeds 0-4 a failed no-training check halts the run ('report' gives the
-    stop sentence).
-  Status: OUT/status.json (+ sidecar), rewritten each poll through os.replace.
+    the third time alone, then the phase is UNFINISHED and waits for 'retry'. Before any rerun every existing file of
+    the phase is moved, never deleted, to OUT/interrupted/. A recorded stop (exit 2 with its stop file) is never
+    rerun. Exit 97 from a phase halts the run; any other failure stops new phases and names the log.
+  Status: OUT/status<tag>.json (+ sidecar), rewritten each poll through os.replace.
 Exit codes: 0 finished; 3 stopped safely; 4 waiting for a retry; 5 paused by the budget guard; 97 refused; 1 a phase
 or a check failed.
 """
@@ -54,7 +56,6 @@ import sys
 sys.dont_write_bytecode = True
 
 import argparse  # noqa: E402
-import fcntl  # noqa: E402
 import json  # noqa: E402
 import math  # noqa: E402
 import os  # noqa: E402
@@ -75,18 +76,16 @@ import phases as PH  # noqa: E402
 
 EXIT_FINISHED, EXIT_STOPPED, EXIT_RETRY, EXIT_FAILED = 0, 3, 4, 1
 EXIT_REFUSED, EXIT_PAUSED = K.EXIT_REFUSED, K.EXIT_PAUSED
-RUN_N80 = f"sh {K.N80}/run_near80.sh"           # every command a message names, written out in full
+RUN_N80 = (f"sh {K.N80}/run_near80.sh" if K.HOST == "desktop" else f"sh {K.N80}/run_near80_cluster.sh")
 FINAL_STATES = PH.FINAL
 INTERRUPTED = LG.INTERRUPTED
 SYSFS = "/sys/devices/system/cpu"
-PLUMBING_SCRATCH = Path("/root/near80_plumbing")
-V7_MESSAGE = ("refused: version 7's runner is running; the near-80 run starts after version 7's run has finished "
-              "(choice 12)")
-V7_FINAL_STATES = ("done", "inherited", "skipped")      # version 7's runner_v7.FINAL_STATES
+PLUMBING_SCRATCH = Path(K.HOME) / "near80_v9_plumbing"
 PAUSE_TEXT = "no result is read differently because of a pause"
 STATUS_NAME = {"pending": "waiting"}           # the status file's word for a phase that has not started yet
 STUB_MEMINFO = "MemTotal:       25165824 kB\nMemAvailable:   24117248 kB\n"   # a stub fixture's: 24 GiB, as WSL
 MODEL_SUFFIXES = (".msgpack", ".npz", ".hdf5", ".h5")   # model, array and training files: never in results-*/
+POSIX = os.name == "posix"
 
 
 # --------------------------------------------------------------------------------------------- small helpers
@@ -95,32 +94,27 @@ def say_line(line):
     print(line, flush=True)
 
 
-def lock_free(path):
-    """True when no process holds an flock on path (a missing file is free)."""
-    p = Path(path)
-    if not p.exists():
-        return True
-    try:
-        fd = os.open(str(p), os.O_RDONLY)
-    except OSError:
-        return True
-    try:
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        fcntl.flock(fd, fcntl.LOCK_UN)
-        return True
-    except OSError:
-        return False
-    finally:
-        os.close(fd)
+lock_free = LG.lock_free
 
 
 def phase_lock_free(out_root, pid):
     return lock_free(Path(out_root) / "locks" / f"{pid}.lock")
 
 
-def runner_running(root):
-    """version 7's runner_running, on any runner folder: its runner.lock is held by a process."""
-    return not lock_free(Path(root) / "runner.lock")
+def runner_lock_name(tag=None):
+    return "runner.lock" if not tag else f"runner_{tag}.lock"
+
+
+def status_name(tag=None):
+    return K.LAYOUT["status"] if not tag else f"status_{tag}.json"
+
+
+def runner_running(root, tag=None):
+    """A runner holds its lock under root (any tag when tag is None)."""
+    root = Path(root)
+    if tag is not None:
+        return not lock_free(root / runner_lock_name(tag))
+    return any(not lock_free(p) for p in root.glob("runner*.lock")) if root.is_dir() else False
 
 
 def held_phase_locks(root):
@@ -129,13 +123,10 @@ def held_phase_locks(root):
     return sorted(p.stem for p in d.glob("*.lock") if not lock_free(p)) if d.is_dir() else []
 
 
-def version7_running(r7=K.V7_R7):
-    return runner_running(r7) or bool(held_phase_locks(r7))
-
-
 def pick_cpus(n, sysfs=SYSFS, affinity=None):
-    """version 7's pick_cpus: n processors on different physical cores when the topology says so, else the first n."""
-    allowed = set(os.sched_getaffinity(0) if affinity is None else affinity)
+    """version 7's pick_cpus: n processors on different physical cores when the topology says so, else the first n;
+    always within the processors this process may use (a Slurm job's allocation)."""
+    allowed = set(LG.cpu_affinity() if affinity is None else affinity)
     groups, seen = [], set()
     for d in sorted(Path(sysfs).glob("cpu[0-9]*"), key=lambda p: int(p.name[3:])):
         cpu = int(d.name[3:])
@@ -160,8 +151,13 @@ def lane_cpus(lanes, sysfs=SYSFS, affinity=None, given=None):
     return cpus, None
 
 
-def meminfo(path="/proc/meminfo"):
-    """(MemTotal, MemAvailable) in bytes."""
+def meminfo(path="/proc/meminfo", reserved=0):
+    """(MemTotal, MemAvailable) in bytes. With NEAR80_MEM_TOTAL_KB set (a Slurm job), the job's memory is the total
+    and the free memory is that total minus the running phases' reservations."""
+    env_total = os.environ.get("NEAR80_MEM_TOTAL_KB")
+    if env_total:
+        total = int(env_total) * 1024
+        return total, max(0, total - int(reserved))
     vals = {}
     for line in Path(path).read_text().splitlines():
         parts = line.split()
@@ -254,16 +250,25 @@ class Cfg:
         self.python = kw.pop("python", K.PYTHON)
         self.phase_main = Path(kw.pop("phase_main", K.CODE / "phase_main.py"))
         self.sizes = dict(kw.pop("sizes", {}) or {})
-        self.r7 = Path(kw.pop("r7", K.V7_R7))
-        self.v7_results = Path(kw.pop("v7_results", K.V7_RESULTS))
         self.approval_fn = kw.pop("approval_fn", None)
-        self.look_fn = kw.pop("look_fn", None)
         self.extra_pythonpath = kw.pop("extra_pythonpath", None)
-        self.use_taskset = bool(kw.pop("use_taskset", True))
+        self.use_taskset = bool(kw.pop("use_taskset", POSIX))
         self.forecast = dict(kw.pop("forecast", K.FORECAST_CPU_HOURS))
         self.cap = float(kw.pop("cap", K.CAP_CPU_HOURS))
         self.fresh_path = bool(kw.pop("fresh_path", False))
+        self.seeds = kw.pop("seeds", None)              # this runner starts the phases of these seeds only
+        self.group_only = bool(kw.pop("group_only", False))   # ... or the group phases (lock, look) only
+        self.tag = kw.pop("tag", None)                  # this runner's lock and status file name
         self.out_extra = kw
+        if self.seeds is not None:
+            self.seeds = sorted({int(s) for s in self.seeds})
+            for s in self.seeds:
+                try:
+                    K.group_of(s)
+                except ValueError as error:
+                    raise PH.Refused(str(error)) from None
+        if self.mode == "official" and K.HOST == "test":
+            raise PH.Refused("refused: the test host never runs an official run")
         if self.mode == "official" and Path(os.path.realpath(str(self.out))) != Path(os.path.realpath(str(K.OUT))):
             raise PH.Refused(f"refused: the official run writes to {K.OUT} only")
         if self.mode in ("stub", "scratch") and LG.inside(self.out, K.ROOT):
@@ -271,6 +276,8 @@ class Cfg:
         if self.mode == "stub":
             if self.fixture is None or not LG.inside(self.out, self.fixture):
                 raise PH.Refused("refused: stub outputs go inside the fixture")
+        if self.tag is not None and not re.fullmatch(r"[A-Za-z0-9_.-]{1,40}", str(self.tag)):
+            raise PH.Refused("refused: --tag takes letters, digits, '_', '.' and '-' only (at most 40)")
         PH.check_plan_spec(self.plan, self.mode)
 
     def phase_env(self):
@@ -280,10 +287,20 @@ class Cfg:
             # the gate's code from source, about 3 s each); official and scratch phases keep the prefix
             env.pop("PYTHONPYCACHEPREFIX", None)
         if self.mode == "stub" and self.extra_pythonpath:
-            extra = [p for p in str(self.extra_pythonpath).split(":") if p]
+            extra = [p for p in str(self.extra_pythonpath).split(os.pathsep) if p]
             if any(LG.inside(p, K.ROOT) for p in extra):
                 raise PH.Refused("refused: extra stub import folders must lie outside the repository")
-            env["PYTHONPATH"] = ":".join(extra + [env["PYTHONPATH"]])
+            env["PYTHONPATH"] = os.pathsep.join(extra + [env["PYTHONPATH"]])
+        if self.mode != "official":
+            for name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS", "SYSTEMROOT", "TEMP", "TMP"):
+                if os.environ.get(name):
+                    env[name] = os.environ[name]
+        if self.mode == "stub" and os.environ.get(K.STUB_FRESH_ENV) == "1":
+            env[K.STUB_FRESH_ENV] = "1"                 # the tests' synthetic fresh labels (never an official run)
+        elif K.HOST == "cluster":
+            for name in ("NEAR80_HOST", "NEAR80_ROOT", "NEAR80_PYTHON", "BCA_SHIFT_DEPS", "NEAR80_MEM_TOTAL_KB"):
+                if os.environ.get(name):
+                    env[name] = os.environ[name]
         return env
 
     def approval(self):
@@ -293,10 +310,22 @@ class Cfg:
         cfg = AC.fixture_config(self.fixture) if self.mode == "stub" else None
         return AC.require_approval(cfg)
 
-    def look(self):
-        if self.look_fn is not None:
-            return self.look_fn()
-        return PH.read_look(self.out)
+    def mine(self, key):
+        """Does this runner start this phase? Every phase without --seeds and --group-only; with --seeds, the phases
+        of those seeds that need no group phase (a seed job ends once only lock-dependent phases remain); with
+        --group-only, the group phases (lock, look) and every phase that needs one (the evaluations). The cluster's
+        group job waits for the seed jobs, so a seed job that owned an evaluation would wait for a lock no runner
+        holds."""
+        if self.group_only:
+            return group_dependent(key)
+        if self.seeds is not None:
+            return key.seed is not None and int(key.seed) in self.seeds and not group_dependent(key)
+        return True
+
+
+def group_dependent(key):
+    """A group phase (no seed: the lock, the look) or a phase that needs one (the evaluations)."""
+    return key.seed is None or any(d.seed is None for d in PH.needs(key))
 
 
 def stub_fixture_memory(fx):
@@ -334,12 +363,14 @@ class Task:
         self.state, self.note = "pending", None
         self.cpu = self.lane = self.proc = self.n = self.started = self.code = None
         self.reserved, self.alone, self.retry_n = 0, False, None
+        self.mine = True
 
     def row(self):
         return dict(state=STATUS_NAME.get(self.state, self.state), note=self.note, plain=PH.plain_name(self.key),
                     cpu=self.cpu, lane=self.lane,
                     attempt=self.n, started=self.started, exit_code=self.code, alone=self.alone,
-                    retry_request=self.retry_n, reserved_gib=round(self.reserved / K.GIB, 2), stage=PH.stage(self.key))
+                    retry_request=self.retry_n, reserved_gib=round(self.reserved / K.GIB, 2), stage=PH.stage(self.key),
+                    mine=self.mine)
 
     def key_fields(self):
         k = self.key
@@ -415,6 +446,8 @@ class Runner:
         self.cfg, self.cpus, self.approval = cfg, list(cpus), approval
         self.keys = list(keys)
         self.tasks = build_tasks(self.keys)
+        for t in self.tasks:
+            t.mine = cfg.mine(t.key)
         self.by = {t.pid: t for t in self.tasks}
         self.out = out
         self.until_waiting = until_waiting
@@ -425,8 +458,7 @@ class Runner:
         self.peaks = LG.measured_peaks(cfg.out, self.plumbing_peaks)
         self.hours = LG.cpu_hours(cfg.out, self.plumbing_seconds)
         self.continues = budget_continues(cfg.out)
-        self.logfile = cfg.out / "runner.log"
-        self._look = None
+        self.logfile = cfg.out / ("runner.log" if not cfg.tag else f"runner_{cfg.tag}.log")
         self.paused_pids, self.paused = set(), False
 
     # ---- output
@@ -456,11 +488,6 @@ class Runner:
     def log_path(self, t):
         return self.cfg.out / "logs" / f"{t.pid}.log"
 
-    def look(self):
-        if self._look is None:
-            self._look = self.cfg.look()
-        return self._look
-
     def dep_state(self, pid):
         t = self.by.get(pid)
         return t.state if t is not None else None
@@ -475,14 +502,23 @@ class Runner:
             rec = LG.ok_record(self.cfg.out / PH.skipped_rel(t.key)) if st == "skipped" else None
             return st, (rec or {}).get("reason")
         states = {self.by[d].key: self.by[d].state for d in t.deps if d in self.by}
-        why = PH.rule_skip(t.key, self.cfg.out, self.keys, states=states, look=self.look() if t.key.group ==
-                           "confirmatory" else None)
+        why = PH.rule_skip(t.key, self.cfg.out, self.keys, states=states)
         if why:
             return "skipped", why
         return "pending", None
 
     def running(self):
         return [t for t in self.tasks if t.proc is not None]
+
+    def refresh_others(self):
+        """The phases another runner owns (--seeds, --group-only): their states are read from the files each poll,
+        so that this runner's phases can follow them."""
+        for t in self.tasks:
+            if t.mine or t.state in FINAL_STATES:
+                continue
+            state, why = self.resolve(t)
+            if state != "pending":
+                t.state, t.note = state, why
 
     # ---- start-up: settle attempts whose runner did not survive
     def settle(self, t):
@@ -497,14 +533,15 @@ class Runner:
 
     def startup(self):
         for t in self.tasks:
-            self.settle(t)
+            if t.mine:
+                self.settle(t)
         for t in self.tasks:
             state, why = self.resolve(t)
             if state != "pending":
                 t.state, t.note = state, why
                 continue
-            self.after_records(t)
-        self.check_halts()
+            if t.mine:
+                self.after_records(t)
 
     def after_records(self, t):
         """Move the files of an interrupted attempt aside (never deleted) before the phase reruns."""
@@ -521,28 +558,14 @@ class Runner:
             self.halt(f"HALT: {t.pid} has files that no attempt of this runner wrote: {files[:4]}; nothing was moved")
             t.state = "halted"
 
-    def check_halts(self):
-        """On seeds 0-4 a failed no-training check (data_band, fixed_checks) halts the official run (a smoke on fewer
-        starts, or a stub run on synthetic logs, records the rules and goes on)."""
-        if self.cfg.mode != "official":
-            return
-        for t in self.tasks:
-            if t.state != "done" or t.kind not in ("data_band", "fixed_checks"):
-                continue
-            if t.kind == "data_band" and t.key.seed not in K.EXPLORATORY:
-                continue
-            rec = LG.ok_record(self.cfg.out / PH.record_rel(t.key)) or {}
-            if rec.get("halts_run"):
-                first = rec.get("first_failed_check") or {}
-                self.halt(f"HALT: a no-training check failed on seeds 0-4 ({t.pid}: {first.get('rule', 'check 9')}); "
-                          f"nothing more starts. Type: {RUN_N80} report")
-
     # ---- starting and ending
     def command(self, t, n, cpu):
-        cmd = ["env", "-i"] + [f"{k}={v}" for k, v in sorted(self.cfg.phase_env().items())]
-        cmd += ["nice", "-n", "5"]
-        if self.cfg.use_taskset:
-            cmd += ["taskset", "-c", str(cpu)]
+        cmd = []
+        if POSIX:
+            cmd = ["env", "-i"] + [f"{k}={v}" for k, v in sorted(self.cfg.phase_env().items())]
+            cmd += ["nice", "-n", "5"]
+            if self.cfg.use_taskset:
+                cmd += ["taskset", "-c", str(cpu)]
         cmd += [self.cfg.python, str(self.cfg.phase_main), "--phase-id", t.pid, "--out", str(self.cfg.out),
                 "--mode", self.cfg.mode, "--plan", self.cfg.plan, "--attempt", str(n)]
         if self.cfg.fixture is not None:
@@ -565,8 +588,10 @@ class Runner:
         with open(logp, "a", encoding="utf8") as handle:
             handle.write(LG.start_line(t.pid, n, cpu) + "\n")
         handle = open(logp, "a", encoding="utf8")
-        t.proc = subprocess.Popen(self.command(t, n, cpu), cwd="/tmp", stdin=subprocess.DEVNULL, stdout=handle,
-                                  stderr=subprocess.STDOUT, start_new_session=True)
+        kw = dict(start_new_session=True) if POSIX else dict(creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                                                             env=self.cfg.phase_env())
+        t.proc = subprocess.Popen(self.command(t, n, cpu), cwd=LG.work_dir(), stdin=subprocess.DEVNULL, stdout=handle,
+                                  stderr=subprocess.STDOUT, **kw)
         handle.close()
         how = " ALONE (nothing else starts)" if alone else ""
         if retry_n:
@@ -591,12 +616,6 @@ class Runner:
                 t.note = (LG.ok_record(self.cfg.out / PH.skipped_rel(t.key)) or {}).get("reason")
             self.say(f"{'done  ' if st == 'done' else 'skip  '} {t.pid} (exit {code})" + (f": {t.note}" if t.note
                                                                                          else ""))
-            if t.kind == "look_exploratory":
-                self._look = None
-                lk = self.look() or {}
-                self.say("the exploratory look " + ("allows" if lk.get("fresh_near80_allowed") is True else
-                                                    "stops") + " the near-80 settings on seeds 10-14")
-            self.check_halts()
             return
         if kind == "stopped":
             t.state = "stopped"
@@ -630,8 +649,11 @@ class Runner:
             except OSError:
                 pass
             try:
-                os.killpg(t.proc.pid, sig)
-            except (ProcessLookupError, PermissionError):
+                if POSIX:
+                    os.killpg(t.proc.pid, sig)
+                else:
+                    t.proc.terminate()
+            except (ProcessLookupError, PermissionError, OSError):
                 pass
             self.say(f"stopped {t.pid} (signal {int(sig)}, recorded in its ledger: a machine-wide interruption; it "
                      f"reruns on the next start)")
@@ -651,25 +673,20 @@ class Runner:
         run = self.running()
         if any(t.alone for t in run):
             return
-        if self.cfg.mode != "stub" and version7_running(self.cfg.r7):
-            self.once("v7", "waiting: version 7 is running (its runner or one of its phases holds a lock); nothing "
-                            "new starts until it ends (choice 12)")
-            return
-        self.notes.pop("v7", None)
         self.continues = budget_continues(self.cfg.out)
         paused, over = budget(self.hours, self.cfg.forecast, K.PAUSE_FACTOR, self.cfg.cap, self.continues)
         self.paused_pids = set()
         if over:
             self.once("over", over)
             for t in self.tasks:
-                if t.state == "pending":
+                if t.state == "pending" and t.mine:
                     t.note = over
                     self.paused_pids.add(t.pid)
             return
-        total, avail = meminfo(self.cfg.meminfo)
+        total, avail = meminfo(self.cfg.meminfo, sum(r.reserved for r in run))
         cands = []
         for t in sorted(self.tasks, key=lambda x: -x.prio):
-            if t.state != "pending" or not self.ready(t):
+            if t.state != "pending" or not t.mine or not self.ready(t):
                 continue
             if not phase_lock_free(self.cfg.out, t.pid):
                 self.once(f"elsewhere {t.pid}", f"waiting: {t.pid} is running outside this runner (its lock is held)")
@@ -679,12 +696,8 @@ class Runner:
                 t.state, t.note = state, why
                 self.say(f"{'found ' if state == 'done' else 'skip  '} {t.pid}" + (f": {why}" if why else ""))
                 continue
-            ok, why = PH.admit(t.key, self.approval, self.look(), self.cfg.mode)
+            ok, why = PH.admit(t.key, self.approval, None, self.cfg.mode)
             if not ok:
-                if PH.is_skip(why):
-                    t.state, t.note = "skipped", why
-                    self.say(f"skip   {t.pid}: {why}")
-                    continue
                 t.state = "halted"
                 self.halt(f"REFUSED: {t.pid}: {why}", EXIT_REFUSED)
                 return
@@ -713,8 +726,8 @@ class Runner:
             if own > total - K.HEADROOM_GIB * K.GIB:
                 t.state = "halted"
                 self.halt(f"HALT: {t.pid} reserves {own / K.GIB:.1f} GiB, more than MemTotal - {K.HEADROOM_GIB} GiB = "
-                          f"{(total - K.HEADROOM_GIB * K.GIB) / K.GIB:.1f} GiB; it can never start (give WSL more "
-                          f"memory). Nothing was deleted")
+                          f"{(total - K.HEADROOM_GIB * K.GIB) / K.GIB:.1f} GiB; it can never start (give the machine "
+                          f"more memory). Nothing was deleted")
                 return
             ok, why = admit(t.kind, own, [(r.kind, r.reserved) for r in self.running()], total, avail, self.peaks)
             if not ok:
@@ -728,14 +741,15 @@ class Runner:
             self.start(t, self.cpus[0], alone=True, retry_n=n)
 
     def status_body(self):
-        total, avail = meminfo(self.cfg.meminfo)
+        total, avail = meminfo(self.cfg.meminfo, sum(r.reserved for r in self.running()))
         paused, over = budget(self.hours, self.cfg.forecast, K.PAUSE_FACTOR, self.cfg.cap, self.continues)
         counts = {}
         for t in self.tasks:
             name = STATUS_NAME.get(t.state, t.state)
             counts[name] = counts.get(name, 0) + 1
         return dict(kind="near80-runner-status", updated=LG.utc(), mode=self.cfg.mode, plan=self.cfg.plan,
-                    lanes=len(self.cpus), cpus=self.cpus,
+                    lanes=len(self.cpus), cpus=self.cpus, host=K.HOST, tag=self.cfg.tag, seeds=self.cfg.seeds,
+                    group_only=self.cfg.group_only,
                     memory=dict(total_gib=round(total / K.GIB, 2), available_gib=round(avail / K.GIB, 2),
                                 reserved_gib=round(sum(t.reserved for t in self.running()) / K.GIB, 2),
                                 measured_peaks_gib={k: round(v / K.GIB, 3) for k, v in sorted(self.peaks.items())}),
@@ -747,12 +761,15 @@ class Runner:
 
     def write_status(self):
         try:
-            LG.write_json_replace(self.cfg.out / "status.json", self.status_body())
+            LG.write_json_replace(self.cfg.out / status_name(self.cfg.tag), self.status_body())
         except OSError:
             pass
 
+    def mine_all(self):
+        return [t for t in self.tasks if t.mine]
+
     def finished_all(self):
-        return all(t.state in FINAL_STATES for t in self.tasks)
+        return all(t.state in FINAL_STATES for t in self.mine_all())
 
     def run(self):
         killed_at = None
@@ -764,23 +781,31 @@ class Runner:
                 self.stop_running()
                 killed_at = time.time()
             elif killed_at is not None and time.time() - killed_at > self.cfg.stop_grace and self.running():
-                self.stop_running(signal.SIGKILL, "second Ctrl-C; still running after the grace period")
+                self.stop_running(signal.SIGKILL if POSIX else signal.SIGTERM,
+                                  "second Ctrl-C; still running after the grace period")
                 killed_at = time.time() + 10 ** 6
+            self.refresh_others()
             self.check_retries()
             self.schedule()
             self.write_status()
             if not self.running():
                 if self.halted or self.stop_requested or self.finished_all():
                     break
-                waiting = [t for t in self.tasks if t.state == "unfinished"]
-                startable = [t for t in self.tasks if t.state == "pending" and self.ready(t)]
+                waiting = [t for t in self.mine_all() if t.state == "unfinished"]
+                startable = [t for t in self.mine_all() if t.state == "pending" and self.ready(t)]
+                others_pending = [t for t in self.tasks if not t.mine and t.state not in FINAL_STATES]
                 if not startable:
                     if waiting:
                         self.once("waiting", f"WAITING FOR RETRY: {', '.join(t.pid for t in waiting)}. For each, "
                                              f"type: {RUN_N80} retry <phase>")
-                    else:
-                        stuck = [t.pid for t in self.tasks if t.state not in FINAL_STATES]
-                        self.halt(f"HALT: no phase can start and the plan is not finished ({stuck[:5]})")
+                        break
+                    if others_pending:
+                        self.once("others", f"waiting: {len(others_pending)} phases of other runners are not finished "
+                                            f"({others_pending[0].pid})")
+                        time.sleep(self.cfg.poll)
+                        continue
+                    stuck = [t.pid for t in self.mine_all() if t.state not in FINAL_STATES]
+                    self.halt(f"HALT: no phase can start and the plan is not finished ({stuck[:5]})")
                     break
                 if all(t.pid in self.paused_pids for t in startable):
                     self.say("PAUSED (budget): " + "; ".join(sorted({t.note for t in startable if t.note})))
@@ -793,8 +818,9 @@ class Runner:
         return self.verdict()
 
     def verdict(self):
-        c = {s: sum(1 for t in self.tasks if t.state == s) for s in FINAL_STATES}
-        unfinished = sorted(t.pid for t in self.tasks if t.state == "unfinished")
+        mine = self.mine_all()
+        c = {s: sum(1 for t in mine if t.state == s) for s in FINAL_STATES}
+        unfinished = sorted(t.pid for t in mine if t.state == "unfinished")
         tail = f"unfinished: {', '.join(unfinished)}" if unfinished else "unfinished: none"
         if self.halted:
             self.say(f"runner ends (halted): {c['done']} done, {c['stopped']} stopped, {c['skipped']} skipped; {tail}")
@@ -805,20 +831,18 @@ class Runner:
             return EXIT_FINISHED
         if self.paused and not self.stop_requested:
             self.say(f"runner ends PAUSED by the budget guard: {c['done']} done, "
-                     f"{sum(1 for t in self.tasks if t.state == 'pending')} not started; {tail}")
+                     f"{sum(1 for t in mine if t.state == 'pending')} not started; {tail}")
             return EXIT_PAUSED
         if unfinished and not self.stop_requested:
             self.say(f"runner ends while WAITING FOR RETRY: {tail}")
             return EXIT_RETRY
         self.say(f"runner ends (stopped safely; nothing failed): {c['done']} done, "
-                 f"{sum(1 for t in self.tasks if t.state == 'pending')} not started; {tail}")
+                 f"{sum(1 for t in mine if t.state == 'pending')} not started; {tail}")
         return EXIT_STOPPED
 
 
 def plumbing_facts(out_root):
-    """(first peaks {kind: vmhwm_kb}, CPU seconds) from OUT/plumbing/plumbing.json, when it exists and verifies. The
-    peaks are plumbing_peaks' (section 13); the seconds are the plumbing's own CPU seconds (its tests, its smoke and
-    fresh-path attempts and the reproduction check), or its wall time in an older record."""
+    """(first peaks {kind: vmhwm_kb}, CPU seconds) from OUT/plumbing/plumbing.json, when it exists and verifies."""
     rec = LG.ok_record(Path(out_root) / K.LAYOUT["plumbing"])
     if not rec:
         return {}, None
@@ -840,27 +864,36 @@ def plumbing_peaks(smoke_peaks, repro_kb):
 
 
 def run_locked(cfg, keys, approval, out=say_line, until_waiting=False, signals=True):
-    """Hold OUT/runner.lock and run the plan. Returns the exit code."""
+    """Hold OUT/runner<tag>.lock and run the plan. Returns the exit code."""
     cfg.out.mkdir(parents=True, exist_ok=True)
     for sub in ("logs", "ledger", "locks", "retry"):
         (cfg.out / sub).mkdir(parents=True, exist_ok=True)
-    with open(cfg.out / "runner.lock", "a") as lock:
+    with open(cfg.out / runner_lock_name(cfg.tag), "a+") as lock:
         try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            out(f"refused: another near-80 runner is running on this machine (OUT/runner.lock); type "
-                f"'tmux attach -t near80', or {RUN_N80} status to see it")
+            LG.lock_exclusive(lock)
+        except LG.LockHeld:
+            out(f"refused: another near-80 runner with this tag is running on this output root "
+                f"({runner_lock_name(cfg.tag)}); type {RUN_N80} status to see it")
             return EXIT_REFUSED
-        held = held_phase_locks(cfg.out)
+        if cfg.seeds is None and not cfg.group_only and runner_running(cfg.out):
+            others = [p.name for p in cfg.out.glob("runner*.lock") if not lock_free(p) and p.name !=
+                      runner_lock_name(cfg.tag)]
+            if others:
+                out(f"refused: other runners hold this output root ({others}); a whole-plan runner runs alone")
+                return EXIT_REFUSED
+        held = [p for p in held_phase_locks(cfg.out) if cfg.mine(PH.parse_id(p))]
         if held:
-            out(f"refused: phases from an earlier run are still running ({', '.join(held[:5])}); wait for them to end")
+            out(f"refused: phases of this runner's share are still running ({', '.join(held[:5])}); wait for them to "
+                f"end")
             return EXIT_REFUSED
         cpus, why = lane_cpus(cfg.lanes, cfg.sysfs, given=cfg.cpus)
         if why:
             out(f"refused: {why}")
             return EXIT_REFUSED
         runner = Runner(cfg, keys, cpus, approval, out=out, until_waiting=until_waiting)
-        runner.say(f"plan: {len(keys)} phases ({cfg.plan}, {cfg.mode}); lanes {len(cpus)} on processors {cpus}")
+        share = ("" if cfg.seeds is None and not cfg.group_only else
+                 f"; this runner: {'the group phases' if cfg.group_only else 'seeds ' + ','.join(map(str, cfg.seeds))}")
+        runner.say(f"plan: {len(keys)} phases ({cfg.plan}, {cfg.mode}); lanes {len(cpus)} on processors {cpus}{share}")
         old = {}
 
         def on_signal(signum, frame):
@@ -873,10 +906,12 @@ def run_locked(cfg, keys, approval, out=say_line, until_waiting=False, signals=T
                 runner.say("second Ctrl-C: stopping the running phases")
 
         if signals:
-            old = {s: signal.getsignal(s) for s in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
+            names = [signal.SIGINT, signal.SIGTERM] + ([signal.SIGHUP] if hasattr(signal, "SIGHUP") else [])
+            old = {s: signal.getsignal(s) for s in names}
             signal.signal(signal.SIGINT, on_signal)
             signal.signal(signal.SIGTERM, on_signal)
-            signal.signal(signal.SIGHUP, signal.SIG_IGN)
+            if hasattr(signal, "SIGHUP"):
+                signal.signal(signal.SIGHUP, signal.SIG_IGN)
         try:
             runner.startup()
             return runner.run()
@@ -893,8 +928,8 @@ def run_locked(cfg, keys, approval, out=say_line, until_waiting=False, signals=T
 def refuse_reproduction_differs(out_root):
     p = Path(out_root) / K.LAYOUT["reproduction_differs"]
     if p.exists():
-        raise PH.Refused(f"refused: {p} exists: with the band empty, the new code did not reproduce the saved files, so "
-                         f"nothing official starts in this version (section 8.2). Type: {RUN_N80} report")
+        raise PH.Refused(f"refused: {p} exists: the new code did not reproduce the saved files, so nothing official "
+                         f"starts in this version (section 8.2). Type: {RUN_N80} report")
 
 
 def require_plumbing(out_root, approval):
@@ -905,75 +940,13 @@ def require_plumbing(out_root, approval):
     try:
         rec = LG.read_json_verified(path)
     except LG.RecordError as error:
-        raise PH.Refused(f"refused: the plumbing has not passed yet ({error}); type inside tmux: {RUN_N80} plumbing "
+        raise PH.Refused(f"refused: the plumbing has not passed yet ({error}); type: {RUN_N80} plumbing "
                          f"--lanes 10") from None
     if rec.get("kind") != "near80-plumbing" or rec.get("passed") is not True:
         raise PH.Refused("refused: the plumbing did not pass; nothing official starts")
     if rec.get("prereg_sha256") != approval.get("prereg_sha256"):
         raise PH.Refused("refused: the plumbing record was made under another pre-registration")
     return rec
-
-
-def refuse_v7(r7):
-    if version7_running(r7):
-        raise PH.Refused(V7_MESSAGE)
-
-
-def version7_finished(cfg):
-    """(True, how) when version 7's run has finished (choice 12): its results are gathered and not partial
-    (stage2_v7/results/BUNDLE.json, verified), or every phase of its status is final, or the owner typed
-    'version7-ended' (OUT/version7_ended.json); else (False, why)."""
-    bundle = LG.ok_record(cfg.v7_results)
-    if bundle is not None and bundle.get("kind") == "stage2-v7-results" and bundle.get("partial") is False:
-        return True, f"version 7's results are gathered ({cfg.v7_results})"
-    status = None
-    try:
-        status = json.loads((cfg.r7 / "status.json").read_text(encoding="utf8"))
-    except (OSError, ValueError):
-        status = None
-    tasks = (status or {}).get("tasks") or {}
-    if tasks and all((r or {}).get("state") in V7_FINAL_STATES for r in tasks.values()):
-        return True, f"every phase of version 7's status is done, inherited or skipped ({cfg.r7 / 'status.json'})"
-    ack = LG.ok_record(cfg.out / K.LAYOUT["version7_ended"])
-    if ack is not None and ack.get("kind") == "near80-version7-ended":
-        return True, f"you recorded that version 7 ended without finishing ({ack.get('utc')})"
-    return False, (f"refused: version 7's run has not finished (no gathered results at {cfg.v7_results}, and its "
-                   f"status shows phases that are not final); the near-80 run starts after it (choice 12). If "
-                   f"version 7 stopped for good, type: {RUN_N80} version7-ended")
-
-
-def require_v7_finished(cfg):
-    ok, why = version7_finished(cfg)
-    if not ok:
-        raise PH.Refused(why)
-    return why
-
-
-def cmd_version7_ended(cfg, out=say_line, isatty=None, argv=None):
-    """The owner's typed acknowledgement that version 7's run ended for good without finishing (a halt, or a stop
-    the owner chose): OUT/version7_ended.json, write-once, with version 7's status counts at that time."""
-    isatty = sys.stdin.isatty() if isatty is None else isatty
-    if not isatty:
-        out("refused: version7-ended must be typed at a terminal (standard input is not one)")
-        return EXIT_REFUSED
-    if version7_running(cfg.r7):
-        out(V7_MESSAGE)
-        return EXIT_REFUSED
-    path = cfg.out / K.LAYOUT["version7_ended"]
-    if path.exists():
-        out(f"refused: {path} exists (write-once); it was recorded already")
-        return EXIT_REFUSED
-    try:
-        status = json.loads((cfg.r7 / "status.json").read_text(encoding="utf8"))
-    except (OSError, ValueError):
-        status = {}
-    LG.write_json_once(path, dict(kind="near80-version7-ended", utc=LG.utc(), tty=tty_name(),
-                                  command_line=list(argv if argv is not None else sys.argv),
-                                  version7_counts=status.get("counts"), version7_halted=status.get("halted"),
-                                  version7_unfinished=status.get("unfinished"),
-                                  rule="the near-80 run may start although version 7's run did not finish"))
-    out(f"recorded: {path}. The near-80 plumbing and run may now start (inside tmux).")
-    return EXIT_FINISHED
 
 
 def cmd_budget_continue(cfg, stage, out=say_line, isatty=None, argv=None):
@@ -998,7 +971,7 @@ def cmd_budget_continue(cfg, stage, out=say_line, isatty=None, argv=None):
     out(f"budget-continue {n} for the {stage.replace('_', ' ')} stage recorded ({d / f'{n}.json'}): it allows one more "
         f"forecast ({K.FORECAST_CPU_HOURS.get(stage):g} CPU-hours) of this stage and of the cap. " +
         ("The running runner picks it up." if runner_running(cfg.out) else
-         f"Start the run again inside tmux: {RUN_N80} run --lanes 10"))
+         f"Start the run again: {RUN_N80} run --lanes 10"))
     return EXIT_FINISHED
 
 
@@ -1008,6 +981,17 @@ def refuse_identity(repo=K.ROOT):
         AC.refuse_git_identity(repo)
     except AC.ApprovalRefused as error:
         raise PH.Refused(str(error) if str(error).startswith("refused") else f"refused: {error}") from None
+
+
+def refuse_root_user():
+    """The cluster entry: never root. The desktop entry runs as root inside WSL (version 7's rule); the test host
+    never runs an official phase."""
+    if K.HOST == "cluster" and hasattr(os, "geteuid") and os.geteuid() == 0:
+        raise PH.Refused("refused: the cluster entry never runs as root")
+    if K.HOST == "cluster" and os.path.realpath(str(K.ROOT)) == os.path.realpath(K.DESKTOP_ROOT):
+        raise PH.Refused(f"refused: the cluster entry runs from a clone other than {K.DESKTOP_ROOT}")
+    if K.HOST == "cluster" and not LG.inside(K.ROOT, K.CLUSTER_SCRATCH):
+        raise PH.Refused(f"refused: on the cluster the clone must lie under {K.CLUSTER_SCRATCH} (got {K.ROOT})")
 
 
 def approval_or_refuse(cfg):
@@ -1038,11 +1022,16 @@ def selftest(cfg, for_cmd=None, out=say_line, checks=None):
 
 
 def _run(cmd, env=None, timeout=300):
-    r = subprocess.run(cmd, env=env, cwd="/tmp", stdin=subprocess.DEVNULL, capture_output=True, text=True,
+    r = subprocess.run(cmd, env=env, cwd=LG.work_dir(), stdin=subprocess.DEVNULL, capture_output=True, text=True,
                        timeout=timeout)
     if r.returncode != 0:
         raise RuntimeError(f"{' '.join(cmd[:4])}... exit {r.returncode}: {(r.stderr or r.stdout).strip()[-300:]}")
     return r.stdout.strip()
+
+
+def _clean(env, cmd):
+    """A command under exactly `env` (env -i where it exists)."""
+    return ["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + cmd if POSIX else cmd
 
 
 def default_checks(cfg, for_cmd):
@@ -1053,19 +1042,19 @@ def default_checks(cfg, for_cmd):
     def python():
         if cfg.python != K.PYTHON:
             raise RuntimeError(f"the phases' Python is {cfg.python}, not {K.PYTHON}")
-        v = _run(["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + [cfg.python, "-c",
-                                                                          "import numpy; print(numpy.__version__)"])
+        v = _run(_clean(env, [cfg.python, "-c", "import numpy; print(numpy.__version__)"]), env=None if POSIX else env)
         if v != "2.2.6":
             raise RuntimeError(f"numpy is {v}, not 2.2.6")
         return f"{cfg.python}, numpy {v}"
 
     def jax_cpu():
-        v = _run(["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + [
-            cfg.python, "-c", "import jax; print(jax.devices()[0].platform)"])
+        v = _run(_clean(env, [cfg.python, "-c", "import jax; print(jax.devices()[0].platform)"]),
+                 env=None if POSIX else env)
         if v != "cpu":
             raise RuntimeError(f"JAX runs on {v}")
         return "JAX on the processor"
 
+    out["host"] = lambda: (refuse_root_user() or f"{K.HOST}: {K.ROOT}")
     out["versions"] = python
     out["jax"] = jax_cpu
     if for_cmd in ("run", "plumbing", "retry"):
@@ -1074,6 +1063,8 @@ def default_checks(cfg, for_cmd):
         out["code manifest and pins"] = manifest_and_pins
 
     def placement():
+        if K.HOST != "desktop":
+            return "not the desktop: version 6's code is read from the clone's own files (no placement)"
         _run(["env", "-i", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME=/root",
               "LANG=C.UTF-8", "LC_ALL=C.UTF-8", "/usr/bin/python3", "-I", str(K.V7_PLACE), "place"])
         return "version 6's code and the stand-ins are placed (version 7's placement)"
@@ -1081,6 +1072,8 @@ def default_checks(cfg, for_cmd):
     def one_cpu():
         if why:
             raise RuntimeError(why)
+        if not POSIX:
+            return "no taskset on this platform (never an official run)"
         for c in cpus:
             v = _run(["taskset", "-c", str(c), sys.executable, "-c",
                       "import os; print(len(os.sched_getaffinity(0)))"])
@@ -1101,16 +1094,30 @@ def default_checks(cfg, for_cmd):
             raise RuntimeError(f"{p} is missing")
         return "the gate's data record of seed 0 exists"
 
+    def room_code():
+        p = K.ROOT / "runs" / "shift_explore" / "room" / "code" / "harness.py"
+        if not p.is_file():
+            raise RuntimeError(f"{p} is missing (the room harness lives under runs/, which git does not hold)")
+        return "the room harness is in place"
+
+    def v6_run_folder():
+        """Version 6's run folder: its policy code reads runs/shift_explore/stage2/prereg.json (in stub mode too);
+        on the cluster it must be copied beside the gate's data and the room harness (run_near80_cluster.sh, 7)."""
+        p = K.ROOT / "runs" / "shift_explore" / "stage2" / "prereg.json"
+        if not p.is_file():
+            raise RuntimeError(f"{p} is missing (version 6's run folder lives under runs/, which git does not hold)")
+        return "version 6's run folder is in place"
+
     def step2_saved():
         d = K.S2_OUT / "policy"
-        missing = [f"seed{s}/{w}/{f}" for s in K.EXPLORATORY for w in K.WORLDS
+        missing = [f"seed{s}/{w}/{f}" for s in K.SMOKE_SEEDS for w in K.WORLDS
                    for f in ("lock.json", "lock.json.sha256", "actors.msgpack", "values.json")
                    if not (d / f"seed{s}" / w / f).is_file()]
         if missing:
-            raise RuntimeError(f"step 2's saved actors are missing under {d}: {missing[:6]}")
+            raise RuntimeError(f"step 2's saved actors of seed 0 are missing under {d}: {missing[:6]}")
         if not K.S2_RESULTS.is_file() or not K.S1_RESULTS.is_file():
             raise RuntimeError(f"step 1's or step 2's committed results are missing ({K.S1_RESULTS}, {K.S2_RESULTS})")
-        return "step 2's saved actors (ten seed-worlds) and step 1's and step 2's results"
+        return "step 2's saved actors of seed 0 (both worlds) and step 1's and step 2's results"
 
     def gate_inputs():
         """The gate's saved files the reproduction check reads on seed 0: the critics (gap removal, both worlds; the
@@ -1133,11 +1140,10 @@ def default_checks(cfg, for_cmd):
     out["placement"] = placement
     out["one processor per lane"] = one_cpu
     out["git identity"] = refuse_identity
-    out["version 7 not running"] = lambda: refuse_v7(cfg.r7) or "version 7's runner is not running"
-    if for_cmd in ("run", "plumbing") and cfg.mode == "official":
-        out["version 7 finished"] = lambda: require_v7_finished(cfg)
     out["output root writable"] = writable
     out["gate data"] = gate_record
+    out["room harness"] = room_code
+    out["version 6's run folder"] = v6_run_folder
     if for_cmd in ("run", "plumbing"):
         out["step 2's saved actors"] = step2_saved
     if for_cmd == "plumbing":
@@ -1159,10 +1165,9 @@ def manifest_and_pins():
 def cmd_run(cfg, out=say_line):
     try:
         approval = approval_or_refuse(cfg)
-        refuse_v7(cfg.r7)
         if cfg.mode == "official":
+            refuse_root_user()
             refuse_identity()
-            require_v7_finished(cfg)
             require_plumbing(cfg.out, approval)
     except PH.Refused as error:
         out(str(error))
@@ -1170,11 +1175,17 @@ def cmd_run(cfg, out=say_line):
     return run_locked(cfg, PH.plan(spec=cfg.plan), approval, out)
 
 
-def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None):
+def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None, refuse=None):
     fx = Path(os.path.realpath(str(fixture)))
     if LG.inside(fx, K.ROOT):
-        out("refused: a test fixture must lie outside /home/user/bca")
+        out(f"refused: a test fixture must lie outside {K.ROOT}")
         return EXIT_REFUSED
+    if refuse:
+        allowed = {int(s) for s in seeds} if seeds else set(K.SMOKE_SEEDS) | set(K.FRESH)
+        bad = sorted(int(s) for s in refuse if int(s) not in allowed)
+        if bad:
+            out(f"refused: --refuse names seeds this stub run does not have: {bad}")
+            return EXIT_REFUSED
     try:
         if not (fx / K.TEST_MARKER).is_file():
             if fx.exists() and any(fx.iterdir()):
@@ -1182,6 +1193,11 @@ def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None):
                 return EXIT_REFUSED
             import approval_check as AC
             AC.write_test_fixture(fx)
+        if refuse:
+            import stubs
+            p = fx / stubs.STUB_FILE
+            if not p.exists():
+                p.write_text(json.dumps(dict(refuse_seeds=[int(s) for s in refuse])), encoding="utf8")
         stub_fixture_memory(fx)
         cfg = stub_cfg(fx, lanes, seeds, sizes)
         env = cfg.phase_env()
@@ -1190,9 +1206,10 @@ def cmd_stub(fixture, lanes, seeds=None, out=say_line, sizes=None):
             if why:
                 out(f"refused: {why}")
                 return EXIT_REFUSED
-            _run(["env", "-i"] + [f"{k}={v}" for k, v in env.items()] +
-                 ["taskset", "-c", str(cpus[0]), cfg.python, str(K.CODE / "stubs.py"), "step2-fixture", str(fx)],
-                 timeout=1800)
+            cmd = [cfg.python, str(K.CODE / "stubs.py"), "step2-fixture", str(fx)]
+            if POSIX:
+                cmd = ["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + ["taskset", "-c", str(cpus[0])] + cmd
+            _run(cmd, env=None if POSIX else env, timeout=1800)
         approval = approval_or_refuse(cfg)
     except PH.Refused as error:
         out(str(error))
@@ -1207,8 +1224,9 @@ def run_tests(env, out=say_line):
     res = {}
     for name in K.TEST_FILES:
         t0 = time.perf_counter()
-        r = subprocess.run(["env", "-i"] + [f"{k}={v}" for k, v in env.items()] + [K.PYTHON, str(K.CODE / name)],
-                           cwd="/tmp", stdin=subprocess.DEVNULL, capture_output=True, text=True)
+        cmd = [K.PYTHON, str(K.CODE / name)]
+        r = subprocess.run(_clean(env, cmd), env=None if POSIX else env, cwd=LG.work_dir(), stdin=subprocess.DEVNULL,
+                           capture_output=True, text=True)
         res[name] = dict(exit_code=r.returncode, seconds=time.perf_counter() - t0, tail=(r.stderr or "")[-2000:])
         out(f"{'PASS' if r.returncode == 0 else 'FAIL'} {name} ({res[name]['seconds']:.0f}s)")
     return res
@@ -1221,24 +1239,20 @@ def cmd_plumbing(cfg, out=say_line, tests_fn=None, smoke_fn=None, repro_fn=None,
       the reproduction check differed  OUT/plumbing/reproduction_differs.json (write-once): nothing official ever starts
                                        in this version; 'plumbing' and 'run' refuse for good.
       any other failure               OUT/plumbing/failed_<utc>.json (kept): the cause and the logs; once the cause is
-                                       fixed, 'plumbing' may be run again (in a new scratch folder).
-    One Ctrl-C stops safely: the running part finishes or stops (the smoke's phases as in a run), nothing after it
-    starts, and the attempt is recorded as failed (interrupted); a second Ctrl-C stops the smoke's phases now."""
+                                       fixed, 'plumbing' may be run again (in a new scratch folder)."""
     t0 = time.perf_counter()
     try:
         approval = approval_or_refuse(cfg)
-        refuse_v7(cfg.r7)
         refuse_reproduction_differs(cfg.out)
         if cfg.mode == "official":
+            refuse_root_user()
             refuse_identity()
-            require_v7_finished(cfg)
     except PH.Refused as error:
         out(str(error))
         return EXIT_REFUSED
     path = cfg.out / K.LAYOUT["plumbing"]
     if path.exists():
-        out(f"refused: {path} exists: the plumbing has passed; nothing to do. Start the run inside tmux: {RUN_N80} run "
-            f"--lanes 10")
+        out(f"refused: {path} exists: the plumbing has passed; nothing to do. Start the run: {RUN_N80} run --lanes 10")
         return EXIT_REFUSED
     scratch = Path(scratch) if scratch else PLUMBING_SCRATCH / LG.utc_stamp()
     if LG.inside(scratch, K.ROOT):
@@ -1255,17 +1269,19 @@ def cmd_plumbing(cfg, out=say_line, tests_fn=None, smoke_fn=None, repro_fn=None,
         out("stop requested: the plumbing stops after the running part (nothing after it starts); it is recorded as "
             "interrupted and may be run again")
 
-    with open(_ensure(cfg.out) / "runner.lock", "a") as lock:
+    with open(_ensure(cfg.out) / runner_lock_name(cfg.tag), "a+") as lock:
         try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except OSError:
-            out("refused: another near-80 runner is running on this machine")
+            LG.lock_exclusive(lock)
+        except LG.LockHeld:
+            out("refused: another near-80 runner is running on this output root")
             return EXIT_REFUSED
         if signals:
-            old = {sg: signal.getsignal(sg) for sg in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
+            names = [signal.SIGINT, signal.SIGTERM] + ([signal.SIGHUP] if hasattr(signal, "SIGHUP") else [])
+            old = {sg: signal.getsignal(sg) for sg in names}
             signal.signal(signal.SIGINT, on_signal)
             signal.signal(signal.SIGTERM, on_signal)
-            signal.signal(signal.SIGHUP, signal.SIG_IGN)
+            if hasattr(signal, "SIGHUP"):
+                signal.signal(signal.SIGHUP, signal.SIG_IGN)
         try:
             env = cfg.phase_env()
             tests = (tests_fn or run_tests)(env, out)
@@ -1292,10 +1308,10 @@ def cmd_plumbing(cfg, out=say_line, tests_fn=None, smoke_fn=None, repro_fn=None,
                smoke_peaks=sm["peaks"], reproduction_vmhwm_kb=(rrec or {}).get("vmhwm_kb"),
                peaks=plumbing_peaks(sm["peaks"], (rrec or {}).get("vmhwm_kb")),
                prereg_sha256=approval.get("prereg_sha256"), scratch=str(scratch), seconds=time.perf_counter() - t0,
-               cpu_seconds=cpu, written=LG.utc())
+               cpu_seconds=cpu, host=K.HOST, written=LG.utc())
     if passed:
         LG.write_json_once(path, dict(rec, kind="near80-plumbing", passed=True))
-        out(f"plumbing PASSED: {path}. Start the run inside tmux: {RUN_N80} run --lanes 10")
+        out(f"plumbing PASSED: {path}. Start the run: {RUN_N80} run --lanes 10")
         return EXIT_FINISHED
     if tests_ok and smoke_ok and repro and differs and not state["stop"]:
         dpath = cfg.out / K.LAYOUT["reproduction_differs"]
@@ -1327,7 +1343,7 @@ def cmd_plumbing(cfg, out=say_line, tests_fn=None, smoke_fn=None, repro_fn=None,
                                    rule="not a reproduction difference: the plumbing may be run again once the cause "
                                         "is fixed (section 8.2)"))
     out(f"plumbing FAILED: {cause}. Recorded in {fpath}; logs under {scratch}. Nothing official was written. Once the "
-        f"cause is fixed, run it again inside tmux: {RUN_N80} plumbing --lanes 10")
+        f"cause is fixed, run it again: {RUN_N80} plumbing --lanes 10")
     return EXIT_STOPPED if state["stop"] else EXIT_FAILED
 
 
@@ -1342,11 +1358,10 @@ def _attempt_seconds(out_root):
 
 def run_smoke(cfg, scratch, approval, out=say_line, signals=True):
     """The smoke (scratch, 40 steps, seed 0, every kind) and the fresh-seed path. Returns {smoke: {phase id: ok},
-    peaks: {kind: vmhwm_kb}, fresh: {world: ok}, codes: [the two runners' exit codes], cpu_seconds}. With signals,
-    one Ctrl-C stops each runner safely (exit 3), as in a run."""
+    peaks: {kind: vmhwm_kb}, fresh: {world: ok}, codes: [the two runners' exit codes], cpu_seconds}."""
     sizes = dict(steps=K.SMOKE_STEPS, chunk=K.SMOKE_CHUNK, updates=K.SMOKE_UPDATES, starts=K.SMOKE_STARTS)
     scfg = Cfg(mode="scratch", out=scratch / "smoke", plan="smoke", lanes=cfg.lanes, cpus=cfg.cpus,
-               meminfo=cfg.meminfo, poll=cfg.poll, sizes=sizes, r7=cfg.r7, approval_fn=lambda: approval)
+               meminfo=cfg.meminfo, poll=cfg.poll, sizes=sizes, approval_fn=lambda: approval)
     keys = PH.plan(spec="smoke")
     codes = [run_locked(scfg, keys, approval, out, until_waiting=True, signals=signals)]
     smoke = {PH.phase_id(k): PH.done(k, scfg.out) == "done" for k in keys}
@@ -1356,8 +1371,7 @@ def run_smoke(cfg, scratch, approval, out=say_line, signals=True):
             peaks[rec["phase_kind"]] = max(peaks.get(rec["phase_kind"], 0), int(rec["vmhwm_kb"]))
     fresh = {}
     fcfg = Cfg(mode="scratch", out=scratch / "fresh_path", plan="smoke", lanes=min(2, cfg.lanes), cpus=cfg.cpus,
-               meminfo=cfg.meminfo, poll=cfg.poll, sizes=sizes, r7=cfg.r7, approval_fn=lambda: approval,
-               fresh_path=True)
+               meminfo=cfg.meminfo, poll=cfg.poll, sizes=sizes, approval_fn=lambda: approval, fresh_path=True)
     if codes[0] != EXIT_STOPPED:
         fkeys = [PH.make_key("data_main", "main", w, 0) for w in K.WORLDS]
         codes.append(run_locked(fcfg, fkeys, approval, out, until_waiting=True, signals=signals))
@@ -1375,14 +1389,14 @@ def run_reproduction(cfg, folder, out=say_line):
     if why:
         out(f"FAIL the reproduction check could not start: {why}")
         return {}, {}
-    cmd = ["env", "-i"] + [f"{k}={v}" for k, v in cfg.phase_env().items()] + ["nice", "-n", "5", "taskset", "-c",
-                                                                              str(cpus[0]), cfg.python,
-                                                                              str(cfg.phase_main), "--reproduction",
-                                                                              "--out", str(folder), "--mode",
-                                                                              "scratch"]
+    cmd = [cfg.python, str(cfg.phase_main), "--reproduction", "--out", str(folder), "--mode", "scratch"]
+    if POSIX:
+        cmd = ["env", "-i"] + [f"{k}={v}" for k, v in cfg.phase_env().items()] + ["nice", "-n", "5", "taskset", "-c",
+                                                                                  str(cpus[0])] + cmd
     _ensure(folder)
     with open(folder / "reproduction.log", "a", encoding="utf8") as handle:
-        r = subprocess.run(cmd, cwd="/tmp", stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT)
+        r = subprocess.run(cmd, cwd=LG.work_dir(), stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT,
+                           env=None if POSIX else cfg.phase_env())
     rec = LG.ok_record(folder / "reproduction.json")
     if r.returncode != 0 or rec is None or not rec.get("items"):
         out(f"FAIL the reproduction check did not finish (exit {r.returncode}); log {folder / 'reproduction.log'}")
@@ -1392,33 +1406,37 @@ def run_reproduction(cfg, folder, out=say_line):
 
 
 def cmd_status(out_root, out=say_line):
-    alive = not lock_free(Path(out_root) / "runner.lock")
-    p = Path(out_root) / "status.json"
-    if not p.exists():
-        out(f"no status yet ({p}); runner running: {'yes' if alive else 'no'}")
+    root = Path(out_root)
+    alive = runner_running(root)
+    files = sorted(root.glob("status*.json")) if root.is_dir() else []
+    if not files:
+        out(f"no status yet ({root}); runner running: {'yes' if alive else 'no'}")
         return 0
-    body = json.loads(p.read_text(encoding="utf8"))
-    out(f"runner running: {'yes' if alive else 'no'}; last update {body.get('updated')}; lanes {body.get('lanes')} on "
-        f"processors {body.get('cpus')}")
-    out("counts: " + ", ".join(f"{k} {v}" for k, v in sorted((body.get("counts") or {}).items())))
-    m = body.get("memory") or {}
-    out(f"memory: MemTotal {m.get('total_gib')} GiB, MemAvailable {m.get('available_gib')} GiB, reserved "
-        f"{m.get('reserved_gib')} GiB")
-    out("CPU-hours: " + ", ".join(f"{k} {v}" for k, v in sorted((body.get("cpu_hours") or {}).items())))
-    for pid, r in sorted((body.get("phases") or {}).items()):
-        if r.get("state") == "running":
-            out(f"  running {pid} on processor {r.get('cpu')} since {r.get('started')}")
-    for pid, r in sorted((body.get("phases") or {}).items()):
-        if r.get("state") in ("stopped", "unfinished", "halted"):
-            out(f"  {r['state']} {pid}: {r.get('note')}")
-    for why in (body.get("paused") or {}).values():
-        out(why)
-    if body.get("over_cap"):
-        out(body["over_cap"])
-    if body.get("budget_continues"):
-        out("budget-continue records: " + ", ".join(f"{k} {v}" for k, v in sorted(body["budget_continues"].items())))
-    if body.get("halted"):
-        out(f"halted: {body['halted']}")
+    for p in files:
+        body = json.loads(p.read_text(encoding="utf8"))
+        out(f"[{p.name}] runner running: {'yes' if alive else 'no'}; last update {body.get('updated')}; lanes "
+            f"{body.get('lanes')} on processors {body.get('cpus')}" +
+            (f"; seeds {body.get('seeds')}" if body.get("seeds") else "") +
+            ("; the group phases" if body.get("group_only") else ""))
+        out("counts: " + ", ".join(f"{k} {v}" for k, v in sorted((body.get("counts") or {}).items())))
+        m = body.get("memory") or {}
+        out(f"memory: MemTotal {m.get('total_gib')} GiB, MemAvailable {m.get('available_gib')} GiB, reserved "
+            f"{m.get('reserved_gib')} GiB")
+        out("CPU-hours: " + ", ".join(f"{k} {v}" for k, v in sorted((body.get("cpu_hours") or {}).items())))
+        for pid, r in sorted((body.get("phases") or {}).items()):
+            if r.get("state") == "running":
+                out(f"  running {pid} on processor {r.get('cpu')} since {r.get('started')}")
+        for pid, r in sorted((body.get("phases") or {}).items()):
+            if r.get("state") in ("stopped", "unfinished", "halted"):
+                out(f"  {r['state']} {pid}: {r.get('note')}")
+        for why in (body.get("paused") or {}).values():
+            out(why)
+        if body.get("over_cap"):
+            out(body["over_cap"])
+        if body.get("budget_continues"):
+            out("budget-continue records: " + ", ".join(f"{k} {v}" for k, v in sorted(body["budget_continues"].items())))
+        if body.get("halted"):
+            out(f"halted: {body['halted']}")
     return 0
 
 
@@ -1461,7 +1479,7 @@ def cmd_retry(cfg, pid, out=say_line, isatty=None, argv=None):
         return EXIT_REFUSED
     n = write_retry_request(cfg.out, pid, argv if argv is not None else sys.argv, tty_name())
     out(f"retry request {n} for {pid} written; " + ("the running runner picks it up" if runner_running(cfg.out) else
-                                                    f"start the run again inside tmux: {RUN_N80} run --lanes 10"))
+                                                    f"start the run again: {RUN_N80} run --lanes 10"))
     return EXIT_FINISHED
 
 
@@ -1485,10 +1503,29 @@ def _result_files(out_root):
     return files
 
 
-def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None):
+OUTPUT_ROOT_SUMS = "OUTPUT_ROOT_SHA256SUMS"      # written by 'results' on the cluster: every file of the output root
+
+
+def output_root_sums(src, repo=K.ROOT):
+    """'<sha256>  <path relative to the repository>' for every file of the output root (model files included; lock
+    and temporary files left out), so that a copy of the root on another machine can be checked with sha256sum -c
+    from the repository's root."""
+    src, repo = Path(src), Path(repo)
+    lines = []
+    for q in sorted(src.rglob("*")):
+        if not q.is_file() or q.is_symlink() or q.name.endswith(".lock") or ".tmp" in q.name:
+            continue
+        rel = q.relative_to(repo).as_posix() if LG.inside(q, repo) else q.as_posix()
+        lines.append(f"{LG.file_sha256(q)}  {rel}")
+    return lines
+
+
+def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None, host=K.HOST):
     """Copies every record of the output root (_result_files) into <dest_root>/results-<utc>/files/ with SHA256SUMS
     (every copied file's SHA-256) and RESULTS.json (+ .sha256), write-once. Reads OUT only; never recomputes a number.
-    Returns the folder."""
+    On the cluster (the owner's answer to choice 9) it also writes OUTPUT_ROOT_SHA256SUMS (every file of the output
+    root) and prints how to copy both folders to the desktop, check them there and commit from the desktop's clone;
+    on the desktop it prints the commit and push commands. Returns the folder."""
     src = Path(out_root)
     if not src.is_dir():
         raise PH.Refused(f"refused: {src} does not exist; there is nothing to gather")
@@ -1503,25 +1540,54 @@ def make_results(out_root=K.OUT, dest_root=K.N80, out=say_line, stamp=None):
         shutil.copyfile(q, target)
         sums.append(f"{LG.file_sha256(target)}  files/{rel.as_posix()}")
     (dest / "SHA256SUMS").write_text("\n".join(sorted(sums, key=lambda x: x[66:])) + "\n", encoding="utf8")
-    status = LG.ok_record(src / K.LAYOUT["status"]) or {}
+    root_sums = None
+    if host == "cluster":
+        root_sums = output_root_sums(src)
+        (dest / OUTPUT_ROOT_SUMS).write_text("\n".join(root_sums) + "\n", encoding="utf8")
+    states = {}
+    for p in sorted(src.glob("status*.json")):
+        status = LG.ok_record(p) or {}
+        for pid, r in (status.get("phases") or {}).items():
+            if r.get("mine", True) or pid not in states:
+                states[pid] = r.get("state")
     plumb = LG.ok_record(src / K.LAYOUT["plumbing"]) or {}
-    states = {pid: r.get("state") for pid, r in (status.get("phases") or {}).items()}
     LG.write_json_once(dest / "RESULTS.json", dict(
-        kind="near80-results", created=LG.utc(), source=str(src), files=len(sums),
+        kind="near80-results", version=K.VERSION, created=LG.utc(), source=str(src), files=len(sums),
         sha256sums_sha256=LG.file_sha256(dest / "SHA256SUMS"), prereg_sha256=plumb.get("prereg_sha256"),
         finished=bool(states) and all(v in FINAL_STATES for v in states.values()),
-        counts=status.get("counts"), halted=status.get("halted"),
+        counts={s: sum(1 for v in states.values() if v == s) for s in sorted(set(states.values()))} or None,
         note="records only: no model (.msgpack), array (.npz) or training (.hdf5) file; those go to the run-files "
              "branch (push_runfiles_near80.sh). Logs are copied as .txt."))
     rel = dest.relative_to(K.ROOT) if LG.inside(dest, K.ROOT) else dest
-    out(f"results gathered: {dest} ({len(sums)} files). Commit and push them under your own name:")
+    commit = (f"  git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m \"Near-80 v9: "
+              f"results {stamp}\"")
+    rebase = (f"If the push is rejected: git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} pull "
+              f"--rebase origin {K.BRANCH}, then git push origin {K.BRANCH} again.")
+    if host == "cluster":
+        d_root, d_n80 = K.DESKTOP_ROOT, f"{K.DESKTOP_ROOT}/{K.N80_REL}"
+        out(f"results gathered: {dest} ({len(sums)} files); {OUTPUT_ROOT_SUMS} lists every file of {src} "
+            f"({len(root_sums)} files, model files included). Nothing is committed here (your answer to choice 9).")
+        out("In your own SSH session, from the desktop (inside Ubuntu as root), copy both folders over, check them, then "
+            "commit and push the results folder from the desktop's clone under your own name (-f: the repository's "
+            ".gitignore hides data/ folders, which hold the data records) and push the run files from there:")
+        out(f"  cd {d_root} && mkdir -p {d_root}/runs/shift_explore")
+        out(f"  scp -r <login node>:{dest} {d_n80}/")
+        out(f"  scp -r <login node>:{src} {d_root}/runs/shift_explore/")
+        out(f"  (cd {d_n80}/{dest.name} && sha256sum -c --quiet SHA256SUMS) && sha256sum -c --quiet "
+            f"{d_n80}/{dest.name}/{OUTPUT_ROOT_SUMS}")
+        out(f"  git add -f {K.N80_REL}/{dest.name}")
+        out(commit)
+        out(f"  git push origin {K.BRANCH}")
+        out(f"  sh {d_n80}/push_runfiles_near80.sh")
+        out(rebase)
+        return dest
+    out(f"results gathered: {dest} ({len(sums)} files). Commit and push them under your own name (-f: the "
+        f"repository's .gitignore hides data/ folders, which hold the data records):")
     out(f"  cd {K.ROOT}")
-    out(f"  git add {rel}")
-    out(f"  git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} commit -m \"Near-80: results "
-        f"{stamp}\"")
+    out(f"  git add -f {rel}")
+    out(commit)
     out(f"  git push origin {K.BRANCH}")
-    out(f"If the push is rejected: git -c user.name=\"{K.APPROVER_NAME}\" -c user.email={K.APPROVER_EMAIL} pull "
-        f"--rebase origin {K.BRANCH}, then git push origin {K.BRANCH} again.")
+    out(rebase)
     return dest
 
 
@@ -1561,8 +1627,8 @@ def runfiles_plan(out_root, plan_dir, repo=K.ROOT):
     date = f"@{int(newest)} +0000"            # git's own date format: the newest file's time (a rerun rebuilds it)
     (d / "env.sh").write_text("\n".join([f"REPO_DIR='{repo}'", f"AUTHOR_NAME='{K.APPROVER_NAME}'",
                                           f"AUTHOR_EMAIL='{K.APPROVER_EMAIL}'", f"COMMIT_DATE='{date}'",
-                                          f"RUNFILES_BRANCH='{K.RUNFILES_BRANCH}'", f"COUNT='{len(files)}'"]) + "\n",
-                              encoding="utf8")
+                                          f"RUNFILES_BRANCH='{K.RUNFILES_BRANCH}'", f"COUNT='{len(files)}'",
+                                          f"HOST='{K.HOST}'"]) + "\n", encoding="utf8")
     return len(files)
 
 
@@ -1583,6 +1649,10 @@ def cmd_report(out_root, out=say_line):
     return 0
 
 
+def _seeds_arg(text):
+    return [int(s) for s in str(text).split(",") if s.strip()] if text else None
+
+
 def main(argv=None, out=say_line):
     argv = list(sys.argv[1:] if argv is None else argv)
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -1590,6 +1660,9 @@ def main(argv=None, out=say_line):
     for name in ("run", "plumbing"):
         p = sub.add_parser(name)
         p.add_argument("--lanes", type=int, default=K.DEFAULT_LANES)
+        p.add_argument("--seeds", default=None, help="this runner's seeds (the cluster's per-seed jobs: one seed each)")
+        p.add_argument("--group-only", action="store_true", help="the group phases only (the cluster's last job)")
+        p.add_argument("--tag", default=None, help="this runner's lock and status file name")
     sub.add_parser("status")
     p = sub.add_parser("selftest")
     p.add_argument("--for", dest="for_cmd", choices=("run", "plumbing", "retry", "selftest"), default="selftest")
@@ -1599,7 +1672,6 @@ def main(argv=None, out=say_line):
     p.add_argument("phase_id")
     p = sub.add_parser("budget-continue")
     p.add_argument("stage")
-    sub.add_parser("version7-ended")
     sub.add_parser("report")
     sub.add_parser("results")
     p = sub.add_parser("runfiles-plan")
@@ -1607,24 +1679,29 @@ def main(argv=None, out=say_line):
     p = sub.add_parser("stub")
     p.add_argument("--fixture", required=True)
     p.add_argument("--lanes", type=int, default=4)
-    p.add_argument("--seeds", default=None, help="a stub run on fewer seeds, e.g. 0,10")
+    p.add_argument("--seeds", default=None, help="a stub run on fewer seeds (a test uses 0: the plumbing's seed)")
+    p.add_argument("--refuse", default=None, help="seeds whose synthetic data make BCA refuse (a test uses 0)")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "stub":
             if not 1 <= a.lanes <= K.MAX_LANES:
                 out(f"refused: --lanes must be 1-{K.MAX_LANES}")
                 return EXIT_REFUSED
-            seeds = [int(s) for s in a.seeds.split(",")] if a.seeds else None
+            seeds = _seeds_arg(a.seeds)
             for s in seeds or []:
-                if s in K.RESERVED:
-                    out(f"refused: seed {s} belongs to version 6/7 (5-9)")
-                    return EXIT_REFUSED
-            return cmd_stub(a.fixture, a.lanes, seeds, out)
+                K.group_of(s)
+            return cmd_stub(a.fixture, a.lanes, seeds, out, refuse=_seeds_arg(a.refuse))
         lanes = getattr(a, "lanes", K.DEFAULT_LANES)
         if not 1 <= lanes <= K.MAX_LANES:
             out(f"refused: --lanes must be 1-{K.MAX_LANES}")
             return EXIT_REFUSED
-        cfg = Cfg(lanes=lanes)
+        extra = {}
+        if a.cmd in ("run", "plumbing"):
+            extra = dict(seeds=_seeds_arg(a.seeds), group_only=bool(a.group_only), tag=a.tag)
+            if a.cmd == "plumbing" and (extra["seeds"] or extra["group_only"]):
+                out("refused: the plumbing runs as one job (no --seeds or --group-only)")
+                return EXIT_REFUSED
+        cfg = Cfg(lanes=lanes, **extra)
         if a.cmd == "run":
             return cmd_run(cfg, out)
         if a.cmd == "plumbing":
@@ -1639,8 +1716,6 @@ def main(argv=None, out=say_line):
             return cmd_retry(cfg, a.phase_id, out)
         if a.cmd == "budget-continue":
             return cmd_budget_continue(cfg, a.stage, out)
-        if a.cmd == "version7-ended":
-            return cmd_version7_ended(cfg, out)
         if a.cmd == "report":
             return cmd_report(cfg.out, out)
         if a.cmd == "results":
@@ -1649,8 +1724,9 @@ def main(argv=None, out=say_line):
             n = runfiles_plan(cfg.out, a.dir)
             out(f"run files planned: {n}")
             return EXIT_FINISHED
-    except PH.Refused as error:
-        out(str(error))
+    except (PH.Refused, ValueError) as error:
+        text = str(error)
+        out(text if text.startswith("refused") else f"refused: {text}")
         return EXIT_REFUSED
     return EXIT_FAILED
 

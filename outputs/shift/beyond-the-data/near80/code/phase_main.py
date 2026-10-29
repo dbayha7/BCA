@@ -1,23 +1,24 @@
-"""Near-80 (version 8): the one entry every phase process runs. The runner starts it as
+"""Near-80 (version 9, main setting): the one entry every phase process runs. DRAFT, not frozen. The runner starts
+it as
   env -i <PHASE_ENV> nice -n 5 taskset -c <cpu> <python> phase_main.py --phase-id ID --out ROOT
       [--mode official|scratch|stub] [--fixture DIR] [--plan full|smoke|seeds:a,b] [--attempt N]
       [--steps N --chunk N --updates N --starts N]
 and the plumbing also as  phase_main.py --reproduction --out SCRATCH --mode scratch  (the reproduction check) and
 phase_main.py --phase-id data_main.main.<world>.s0 --fresh-path ... (the fresh-seed code path on seed 0).
 
-In order, before any heavy import (build spec, section 5.4):
-  1. the id is parsed and checked against the table (seeds 5-9 are refused in every mode; scratch mode is the
-     plumbing smoke on seed 0 only, so seeds 10-14 and the confirmatory group are refused there); the phase lock
-     OUT/locks/<phase_id>.lock is taken with flock (refused while another process holds it);
-  2. the environment: exactly near80_constants.PHASE_ENV (official), and exactly one processor visible;
-  3. the output root: official mode only near80_constants.OUT; scratch and stub only outside /home/user/bca (stub
+In order, before any heavy import:
+  1. the id is parsed and checked against the table (a used seed is refused in every mode; scratch mode is the
+     plumbing smoke on seed 0 only, so the fresh seeds and the fresh group are refused there); the phase lock
+     OUT/locks/<phase_id>.lock is taken (refused while another process holds it);
+  2. the environment: exactly near80_constants.PHASE_ENV (official), and exactly one processor visible (official
+     runs need Linux: sched_getaffinity; the unit tests on Windows pass with one notional processor);
+  3. the output root: official mode only near80_constants.OUT; scratch and stub only outside the repository (stub
      only inside its fixture); never a pinned folder; write-once (a phase whose files exist is refused: the runner
      moves an interrupted attempt's files aside first);
   4. the approval: approval_check.require_approval() (official and scratch), require_approval(fixture_config(DIR))
      (stub); prereg.json's constants must equal near80_constants;
-  5. phases.admit (exit 97 when refused; exit 0 with a skipped record when the exploratory look stops the near-80
-     settings, or when a need was stopped or skipped);
-  6. the training-file check for every kind that reads a setting's training rows (a mismatch is a recorded stop);
+  5. phases.admit (exit 97 when refused); exit 0 with a skipped record when a need was stopped or skipped;
+  6. the training-file check for every kind that reads the setting's training rows (a mismatch is a recorded stop);
   7. the phase itself; its record is written once with the approval facts, the processor, the peak memory and the
      time. A recorded stop writes stops/<phase_id>.json (and the policy's stop.json) and exits 2: a stopped phase is
      written once and never rerun.
@@ -29,7 +30,6 @@ import sys
 sys.dont_write_bytecode = True
 
 import argparse  # noqa: E402
-import fcntl  # noqa: E402
 import json  # noqa: E402
 import os  # noqa: E402
 import time  # noqa: E402
@@ -37,7 +37,6 @@ import traceback  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
-ROOT = Path("/home/user/bca")
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
@@ -45,7 +44,8 @@ import near80_constants as K  # noqa: E402
 import ledger as LG  # noqa: E402
 import phases as PH  # noqa: E402
 
-# step2lib.PINNED (test_runner checks that they agree) plus step 2's own output folder: never written.
+ROOT = Path(K.ROOT)
+# step2lib.PINNED (test_runner checks that they agree) plus step 2's own output folder and version 8's: never written.
 PINNED_REL = ("experiments", "runs/shift", "runs/shift_explore/stage2", "runs/shift_explore/stage2_v7",
               "runs/shift_explore/room", "runs/shift_explore/standins", "runs/shift_explore/detect",
               "runs/shift_explore/deploy", "runs/shift_explore/fallback", "runs/shift_explore/trace",
@@ -54,8 +54,8 @@ PINNED_REL = ("experiments", "runs/shift", "runs/shift_explore/stage2", "runs/sh
               "outputs/shift/beyond-the-data/stage2_v7", "outputs/shift/beyond-the-data/stage2_gpu",
               "outputs/shift/beyond-the-data/stage2_v7_design", "outputs/shift/beyond-the-data/restructure/step1",
               "outputs/shift/beyond-the-data/restructure/analysis", "calibration", "algorithms", "runtime")
-EXTRA_PINNED_REL = ("runs/shift_explore/restructure",)
-LOOK_KINDS = ("look_exploratory", "look_confirmatory")
+EXTRA_PINNED_REL = ("runs/shift_explore/restructure", "runs/shift_explore/near80")
+LOOK_KINDS = ("look",)
 
 
 class Refusal(Exception):
@@ -69,12 +69,17 @@ def say(*a):
 # --------------------------------------------------------------------------------------------- checks
 
 def check_environment(mode, environ=None, affinity=None):
-    """Official: exactly PHASE_ENV. Every mode: exactly one processor visible."""
+    """Official: exactly PHASE_ENV and Linux's processor affinity. Every mode: exactly one processor visible (where
+    the platform can say; the unit tests on Windows run with one notional processor in scratch and stub modes)."""
     environ = dict(os.environ if environ is None else environ)
     if mode == "official" and environ != dict(K.PHASE_ENV):
         extra = sorted(set(environ) - set(K.PHASE_ENV))
         wrong = sorted(k for k in K.PHASE_ENV if environ.get(k) != K.PHASE_ENV[k])
         raise Refusal(f"refused: the environment must be exactly the phase environment (extra {extra}, wrong {wrong})")
+    if affinity is None and not hasattr(os, "sched_getaffinity"):
+        if mode == "official":
+            raise Refusal("refused: an official phase needs Linux (sched_getaffinity: one processor per phase)")
+        return [0]
     cpus = sorted(os.sched_getaffinity(0) if affinity is None else affinity)
     if len(cpus) != 1:
         raise Refusal(f"refused: a phase runs on exactly one processor (taskset -c <cpu>); this process may use {cpus}")
@@ -88,6 +93,8 @@ def check_out_root(out, mode, fixture=None):
         if LG.inside(p, ROOT / rel):
             raise Refusal(f"refused: {p} is inside the pinned folder {ROOT / rel}")
     if mode == "official":
+        if K.HOST == "test":
+            raise Refusal("refused: the test host never runs an official phase")
         if p != Path(os.path.realpath(str(K.OUT))):
             raise Refusal(f"refused: official outputs go to {K.OUT} only (got {p})")
         return p
@@ -120,14 +127,14 @@ def check_sizes(a, mode):
 
 
 def take_lock(out_root, pid):
-    """The phase lock OUT/locks/<phase_id>.lock (flock); refused while another process holds it. The returned file
-    stays open for the life of the process."""
+    """The phase lock OUT/locks/<phase_id>.lock; refused while another process holds it. The returned file stays
+    open for the life of the process."""
     d = Path(out_root) / "locks"
     d.mkdir(parents=True, exist_ok=True)
-    handle = open(d / f"{pid}.lock", "a")
+    handle = open(d / f"{pid}.lock", "a+")
     try:
-        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
+        LG.lock_exclusive(handle)
+    except LG.LockHeld:
         handle.close()
         raise Refusal(f"refused: phase {pid} is already running (its lock is held)") from None
     return handle
@@ -197,23 +204,15 @@ def write_stop(run, stop, facts):
 # --------------------------------------------------------------------------------------------- dispatch
 
 def needs_training_file(key):
-    if key.kind not in PH.TRAINING_ROW_KINDS:
-        return False
-    if key.setting in PH.BAND_SETTINGS:
-        return True
-    return key.setting == "main" and key.seed in K.CONFIRMATORY
+    return key.kind in PH.TRAINING_ROW_KINDS and key.setting == "main"
 
 
 def dispatch(run, fresh_path=False):
-    """The phase's record (the look phases write their own files and return the look)."""
+    """The phase's record (the look phase writes its own files and returns the look)."""
     import settingdata as SD
     k = run.key
-    if k.kind == "fixed_checks":
-        return SD.fixed_checks(run)
     if k.kind == "data_main":
         return SD.fresh_path_check(run) if fresh_path else SD.data_main(run)
-    if k.kind == "data_band":
-        return SD.data_band(run)
     if k.kind in LOOK_KINDS:
         pooled = K.load_local("pooled")
         return pooled.run_look(k.group, run.out_root, run.mode, run.prereg)
@@ -222,20 +221,18 @@ def dispatch(run, fresh_path=False):
         return PP.stage_lock(run)
     cache = {}
     tf = None
-    ctx_seed = k.seed
     if needs_training_file(k):
-        ctx0 = SD.context(run, k.setting, ctx_seed)
+        ctx0 = SD.context(run, k.setting, k.seed)
         passed, detail, prep = SD.check_training_file(run, k.setting, ctx0.seed(k.world), ctx0.learn)
         tf = dict(passed=passed, detail=detail)
         if not passed:
             raise PH.PhaseStop(PH.STOP_REASONS["training_file"], detail)
         cache[k.world] = prep
-        ctx = SD.context(run, k.setting, ctx_seed, prepared_cache=cache)
+        ctx = SD.context(run, k.setting, k.seed, prepared_cache=cache)
         ctx._sd.update(ctx0._sd)
     else:
-        setting = "main" if k.kind == "critic_full" else k.setting
-        ctx = SD.context(run, setting, ctx_seed)
-    if k.kind in ("critic", "critic_full", "critic_second", "switch", "clone", "reference_actors", "v6_band"):
+        ctx = SD.context(run, "main", k.seed)
+    if k.kind in ("critic", "critic_full", "critic_second", "switch", "clone", "reference_actors"):
         import learner_phases as LP
         rec = LP.DISPATCH[k.kind](run, ctx)
     elif k.kind == "policy":
@@ -244,9 +241,6 @@ def dispatch(run, fresh_path=False):
     elif k.kind == "evaluate":
         import evaluate_phase as EP
         rec = EP.evaluate(run, ctx)
-    elif k.kind == "readouts":
-        import evaluate_phase as EP
-        rec = EP.readouts(run, ctx)
     else:
         raise Refusal(f"refused: {k.kind!r} has no phase function")
     if tf is not None:
@@ -259,13 +253,9 @@ def run_phase(a, key, out_root, n, t0):
     cpus = check_environment(a.mode)
     check_write_once(key, out_root)
     facts, prereg = approval_facts(a.mode, a.fixture)
-    look = PH.read_look(out_root)
     skip_sha = facts.get("prereg_sha256") if a.mode == "official" else None
-    ok, why = PH.admit(key, facts, look, a.mode)
+    ok, why = PH.admit(key, facts, None, a.mode)
     if not ok:
-        if PH.is_skip(why):
-            write_skip(key, out_root, why, a.mode, skip_sha)
-            return 0
         raise Refusal(why)
     keys = PH.plan(spec=a.plan)
     state, why = PH.needs_state(key, out_root, keys)
@@ -295,7 +285,7 @@ def run_phase(a, key, out_root, n, t0):
         return 0
     rec = dict(rec, mode=a.mode, prereg_sha256=run.prereg_sha256, phase_id=pid, phase_kind=key.kind,
                approval=facts, cpus=cpus, attempt=n, plan=a.plan,
-               sizes=dict(steps=a.steps, chunk=a.chunk, updates=a.updates, starts=run.starts),
+               run_sizes=dict(steps=a.steps, chunk=a.chunk, updates=a.updates, starts=run.starts),
                vmhwm_mb=(LG.vmhwm_kb() or 0) / 1024.0, phase_seconds=time.perf_counter() - t0, written=LG.utc())
     rec.setdefault("seconds", rec["phase_seconds"])
     LG.write_json_once(Path(out_root) / PH.record_rel(key), rec)

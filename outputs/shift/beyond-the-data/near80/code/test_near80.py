@@ -1,11 +1,10 @@
-"""Unit tests of the near-80 data code (the band, the removals, the leak checks, the facts), on synthetic logs only
-(no recorded seed is generated, loaded or read; no learner is trained; no BCA band is fitted). The fixed banks are used
-only through tiny 5-start rollouts of scripted controllers. The machine-readable pre-registration and the documents
-are checked against the code: prereg.json when it exists, otherwise the draft it is built from.
+"""Unit tests of the near-80 version 9 data code (the pooled groups, the outcome-free count, the training-file check,
+the readout helpers, the seed registry), on synthetic logs only (no recorded seed is generated, loaded or read; no
+learner is trained). The machine-readable draft and the documents are checked against the code.
 
-Run (plain unittest; pytest is not installed), from /tmp:
-  PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=/home/user/bca \
-    python /home/user/bca/outputs/shift/beyond-the-data/near80/code/test_near80.py
+Run (plain unittest), from the work folder, with NEAR80_HOST and NEAR80_ROOT set for a host other than the desktop:
+  PYTHONDONTWRITEBYTECODE=1 JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 PYTHONPATH=<repo> \
+    python <repo>/outputs/shift/beyond-the-data/near80/code/test_near80.py
 It takes a few seconds.
 """
 import sys
@@ -35,10 +34,10 @@ PATTERN = np.array([-1.0, -0.137, -0.585, -0.406])
 SYNTHETIC_REP = 901          # a synthetic tag for the random streams; not a recorded data seed
 
 
-def synthetic_log(rep=SYNTHETIC_REP, seed=7, sizes=(250, 50, 50), length=20):
-    """A small synthetic log with the gate's Log interface: normal driving capped below 80% (dense up to the band),
-    a full-throttle cluster (inside the ball), 30 'survivors' near full throttle outside the ball, and a few rows
-    exactly on and around the band's edges."""
+def synthetic_log(rep=SYNTHETIC_REP, seed=7, sizes=(250, 50, 50), length=20, n_train=30, n_held=8):
+    """A small synthetic log with the gate's Log interface: normal driving capped below 80%, a full-throttle cluster
+    (inside the ball), survivors near full throttle outside the ball in the training split and in each held-out
+    split. Returns (log, training survivors, held-out survivors per split)."""
     rng = np.random.default_rng(seed)
     E = int(sum(sizes))
     n = E * length
@@ -46,15 +45,14 @@ def synthetic_log(rep=SYNTHETIC_REP, seed=7, sizes=(250, 50, 50), length=20):
     a = 0.8 * np.tanh((mu + 0.45 * rng.standard_normal((n, 4))) / 0.8)
     ft = rng.uniform(size=n) < 0.15
     a[ft] = np.clip(PATTERN + 0.03 * rng.standard_normal((int(ft.sum()), 4)), -1, 1)
-    train_rows = np.arange(sizes[0] * length)
-    surv = rng.choice(train_rows[~ft[train_rows]], 30, replace=False)
-    a[surv] = np.array([-0.985, 0.4, 0.3, 0.3]) + 0.004 * rng.standard_normal((30, 4))
-    edges = rng.choice(train_rows[~ft[train_rows] & ~np.isin(train_rows, surv)], 6, replace=False)
-    edge_vals = [np.float32(0.7), np.nextafter(np.float32(0.7), np.float32(1)), np.float32(-0.9),
-                 np.nextafter(np.float32(0.9), np.float32(1)), np.float32(TC.KNEE), np.float32(-0.75)]
-    for r, v in zip(edges, edge_vals):
-        a[r] = [0.1, 0.1, 0.1, 0.1]
-        a[r, 2] = v                      # on thruster 3: inside the band only under scope 'any'
+    bounds = np.cumsum([0] + [s * length for s in sizes])
+    survivors = {}
+    for i, name in enumerate(("train", "calibration", "evaluation")):
+        rows = np.arange(bounds[i], bounds[i + 1])
+        k = n_train if i == 0 else n_held
+        surv = rng.choice(rows[~ft[rows]], k, replace=False)
+        a[surv] = np.array([-0.985, 0.4, 0.3, 0.3]) + 0.004 * rng.standard_normal((k, 4))
+        survivors[name] = np.sort(surv)
     a32 = a.astype(np.float32)
     x = 0.3 * rng.standard_normal((n, TC.DX))
     x[:, TC.CURRENT] = rng.uniform(0.1, 0.7, n)
@@ -71,9 +69,9 @@ def synthetic_log(rep=SYNTHETIC_REP, seed=7, sizes=(250, 50, 50), length=20):
     first = sizes[0]
     offs = np.random.default_rng(seed + 1).integers(0, length, (sizes[1], 5))
     bank = np.sort(np.unique(np.concatenate([(first + e) * length + np.unique(o) for e, o in enumerate(offs)])))
-    meta = dict(rep=int(rep), bank_rows=bank.tolist(), sizes=list(sizes), length=length,
+    meta = dict(rep=int(rep), world="stall", bank_rows=bank.tolist(), sizes=list(sizes), length=length,
                 physics=TC.world_physics("stall").as_dict(), recorder=RC.DEFAULT_SPEC.as_dict())
-    return DS.Log(arrays, meta), edges, surv
+    return DS.Log(arrays, meta), survivors["train"], survivors
 
 
 def synthetic_gap():
@@ -84,449 +82,268 @@ def synthetic_gap():
 class Base(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.log, cls.edges, cls.surv = synthetic_log()
+        cls.log, cls.surv, cls.per_split = synthetic_log()
         cls.gap = synthetic_gap()
-        cls.near = N.band_removal(cls.log, cls.gap)
-        cls.rnd = N.random_rows_removal(cls.log, cls.gap, cls.near)
+        cls.rm = SH.make_removal(cls.log, "gap", cls.gap)
         cls.step1 = N.load_step1lib()
+        kept = cls.rm.kept_train_rows(cls.log)
+        cls.gr = cls.step1.gap_rule(cls.step1.throttle(cls.log["actions"][kept]), **K.GAP_RULE)
 
 
-class TestBand(Base):
-    def test_edges_closed_float64_of_float32(self):
-        v = np.zeros((7, 4), np.float32)
-        v[:, 0] = [np.float32(0.7), np.nextafter(np.float32(0.7), np.float32(1)), np.float32(0.9),
-                   np.nextafter(np.float32(0.9), np.float32(1)), np.float32(TC.KNEE), np.float32(-0.8), 0.5]
-        got = N.in_band(v, scope="thruster1")
-        # float32(0.7) = 0.69999999 is just below 0.70 (seen side); float32(0.9) = 0.89999998 is inside
-        self.assertEqual(got.tolist(), [False, True, True, False, True, True, False])
+# --------------------------------------------------------------------------------------------- the pooled groups
 
-    def test_scope_and_signs(self):
-        v = np.zeros((3, 4), np.float32)
-        v[0, 2] = -0.75
-        v[1, 0] = -0.75
-        v[2, 0] = 0.75
-        self.assertEqual(N.in_band(v, scope="any").tolist(), [True, True, True])
-        self.assertEqual(N.in_band(v, scope="thruster1").tolist(), [False, True, True])
+class TestPooledGroups(Base):
+    def test_gap_rule_is_defined_on_the_synthetic_log(self):
+        self.assertTrue(self.gr["defined"])
+        self.assertGreater(self.gr["n_tail"], 9)
 
-    def test_bad_arguments(self):
-        with self.assertRaises(ValueError):
-            N.in_band(np.zeros((2, 3)))
-        with self.assertRaises(ValueError):
-            N.in_band(np.zeros((2, 4)), lo=0.9, hi=0.7)
-        with self.assertRaises(ValueError):
-            N.in_band(np.zeros((2, 4)), scope="thruster3")
+    def test_held_out_rows_are_the_two_splits_outside_the_ball(self):
+        held = N.heldout_rows(self.log, self.gap)
+        cal, ev = self.log.split_rows("calibration"), self.log.split_rows("evaluation")
+        self.assertTrue(set(held) <= set(cal) | set(ev))
+        self.assertFalse(self.gap.contains(self.log["actions"][held]).any())
+        inside = self.gap.contains(self.log["actions"])
+        self.assertEqual(len(held), int((~inside[cal]).sum() + (~inside[ev]).sum()))
+        self.assertTrue(np.all(np.diff(held) > 0))
 
-    def test_edge_rows_of_the_synthetic_log(self):
-        got = N.in_band(self.log["actions"][self.edges])
-        self.assertEqual(got.tolist(), [False, True, True, False, True, True])
+    def test_leak_checks_are_recorded_and_a_failure_is_an_error(self):
+        """Section 8.1, check 3, as a record of the pooled groups and of the data record; a planted leak (a held-out
+        row among the kept training rows) is a PooledGroupsError, which the data phase turns into a plumbing stop."""
+        g = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
+        c = g["leak_checks"]
+        self.assertTrue(c["passed"])
+        self.assertEqual(set(c), {"each_heldout_row_outside_the_ball_once", "no_training_row_among_the_heldout_rows",
+                                  "survivors_are_kept_training_rows", "no_ball_row", "full_throttle_and_rest_disjoint",
+                                  "passed"})
+        rec = N.pooled_count_record(self.log, self.gap, self.rm, self.step1)
+        self.assertTrue(rec["leak_checks"]["passed"])
+        self.assertNotIn("leak_checks", rec["groups"])
+        self.assertIsNone(N.gap_rule_problem(rec["gap_rule"]), rec["gap_rule"])     # check 4 on the synthetic log
+        held = N.heldout_rows(self.log, self.gap)
+        kept = np.asarray(self.rm.kept_train_rows(self.log), np.int64)
+        leaky = N.leak_checks(self.log, self.gap, kept, g["survivors"], np.concatenate([held, kept[:1]]),
+                              g["heldout_tail"], np.concatenate([g["heldout_rest"], kept[:1]]))
+        self.assertFalse(leaky["passed"])
+        self.assertFalse(leaky["no_training_row_among_the_heldout_rows"])
+        log, rm = self.log, self.rm
+
+        class LeakyRemoval:
+            """A removal whose kept training rows wrongly include the calibration split's rows."""
+            kind = "gap"
+
+            def kept_train_rows(self, lg):
+                return np.concatenate([np.asarray(rm.kept_train_rows(lg), np.int64), lg.split_rows("calibration")])
+        with self.assertRaises(N.PooledGroupsError) as cm:
+            N.pooled_groups(log, self.gap, LeakyRemoval(), self.gr["t_lo"], self.step1)
+        self.assertFalse(cm.exception.checks["survivors_are_kept_training_rows"])
+        self.assertIn("leak checks failed", str(cm.exception))
+
+    def test_exact_row_sets(self):
+        g = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
+        t = N.throttle_index(self.log["actions"])
+        kept = self.rm.kept_train_rows(self.log)
+        want_surv = kept[t[kept] > self.gr["t_lo"]]
+        self.assertTrue(np.array_equal(g["survivors"], want_surv))
+        self.assertTrue(np.array_equal(g["survivors"], np.sort(self.per_split["train"])))
+        held = N.heldout_rows(self.log, self.gap)
+        self.assertTrue(np.array_equal(g["heldout_tail"], held[t[held] > self.gr["t_lo"]]))
+        self.assertTrue(np.array_equal(g["heldout_rest"], held[t[held] <= self.gr["t_lo"]]))
+        self.assertEqual(len(g["heldout_tail"]) + len(g["heldout_rest"]), len(held))
+        self.assertEqual(g["n_full_throttle"], len(want_surv) + len(g["heldout_tail"]))
+        self.assertEqual(g["n_rest"], len(g["heldout_rest"]))
+        # the held-out survivors planted in the two splits are in the full-throttle group
+        planted = np.sort(np.concatenate([self.per_split["calibration"], self.per_split["evaluation"]]))
+        self.assertTrue(set(planted) <= set(g["heldout_tail"]))
+
+    def test_no_row_from_a_scored_test_set_and_no_training_row_among_the_held_out(self):
+        """The pooled rows are recorded rows of the calibration and evaluation splits; the scored tests are the four
+        fixed test start sets (rollouts from thruster_chain.bank_starts), which no recorded row enters."""
+        g = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
+        train = set(self.log.split_rows("train"))
+        self.assertFalse(train & set(g["heldout_tail"]))
+        self.assertFalse(train & set(g["heldout_rest"]))
+        self.assertTrue(set(g["survivors"]) <= train)
+        starts = TC.bank_starts("strong_current", 5)
+        self.assertEqual(np.asarray(starts).shape[-1], TC.DX)      # start states, not log rows
+
+    def test_version8_groups_are_a_subset(self):
+        rec = N.pooled_count_record(self.log, self.gap, self.rm, self.step1)
+        v8, g = rec["version8_groups"], rec["groups"]
+        self.assertLessEqual(v8["n_full_throttle"], g["n_full_throttle"])
+        self.assertLessEqual(v8["n_rest"], g["n_rest"])
+        bank = self.rm.bank_rows(self.log)
+        self.assertTrue(set(bank) <= set(self.log.split_rows("calibration")))
+
+    def test_deterministic_and_hashed(self):
+        a = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
+        b = N.pooled_groups(self.log, self.gap, self.rm, self.gr["t_lo"], self.step1)
+        for k in ("survivors_sha256", "heldout_tail_sha256", "heldout_rest_sha256"):
+            self.assertEqual(a[k], b[k])
+            self.assertEqual(len(a[k]), 64)
+
+    def test_outcome_free(self):
+        """The count reads commands and split labels only: changing every reward and state leaves it unchanged."""
+        lg2 = DS.Log({k: (v * 0 + 1 if k in ("rewards",) else v) for k, v in self.log._arrays.items()},
+                     dict(self.log.meta))
+        a = N.pooled_count_record(self.log, self.gap, self.rm, self.step1)
+        b = N.pooled_count_record(lg2, self.gap, SH.make_removal(lg2, "gap", self.gap), self.step1)
+        self.assertEqual(a["groups"], b["groups"])
+        self.assertEqual(a["gap_rule"], b["gap_rule"])
+
+    def test_certification_expectation(self):
+        c = N.certification_expectation(29)
+        self.assertTrue(c["reaches_min_rows"])
+        self.assertGreater(c["expected_finite_share"], 0.95)
+        self.assertFalse(N.certification_expectation(28)["reaches_min_rows"])
+        self.assertAlmostEqual(N.certification_expectation(19)["expected_finite_share"], 1 - 0.9 ** 19)
+        self.assertEqual(N.min_rows_for(), 29)
+        self.assertEqual(K.CERT_MIN_ROWS, 29)
+
+    def test_count_record_without_a_gap_rule(self):
+        """A log whose ball-kept commands give no gap rule: the record says so and holds no groups."""
+        arrays = dict(self.log._arrays)
+        a = np.asarray(arrays["actions"]).copy()
+        a[:, :] = np.clip(a, -0.5, 0.5)                 # every throttle index equal: no gap
+        arrays["actions"] = a.astype(np.float32)
+        lg = DS.Log(arrays, dict(self.log.meta))
+        rec = N.pooled_count_record(lg, self.gap, SH.make_removal(lg, "gap", self.gap), self.step1)
+        self.assertFalse(rec["defined"])
+        self.assertIsNone(rec["groups"])
 
 
-class TestRemoval(Base):
-    def test_structure(self):
-        log, gap, near = self.log, self.gap, self.near
-        train, cal, ev = log.split_rows("train"), log.split_rows("calibration"), log.split_rows("evaluation")
-        ball, band = gap.contains(log["actions"]), N.in_band(log["actions"])
-        self.assertIsInstance(near, SH.Removal)
-        self.assertEqual(near.kind, N.KIND_BAND)
-        self.assertTrue(np.array_equal(near.removed[train], (ball | band)[train]))
-        self.assertFalse(near.removed[cal].any() or near.removed[ev].any())
-        self.assertTrue(np.array_equal(near.bank_removed, (ball | band)[log.bank_rows]))
-        kept = near.kept_train_rows(log)
-        self.assertEqual(int(band[kept].sum()), 0)
-        self.assertEqual(int(ball[kept].sum()), 0)
-        self.assertGreater(int((band & ~ball)[train].sum()), 100)        # the band adds rows beyond the ball
-        self.assertGreater(int(band[ev].sum()), 0)                       # held-out band rows stay
-
-    def test_empty_band_reproduces_the_gate_removal_bit_for_bit(self):
-        gate = SH.make_removal(self.log, "gap", self.gap)
-        empty = N.band_removal(self.log, self.gap, empty=True)
-        self.assertTrue(np.array_equal(empty.removed, gate.removed))
-        self.assertTrue(np.array_equal(empty.bank_removed, gate.bank_removed))
-        a, b = empty.summary(self.log), gate.summary(self.log)
-        self.assertEqual((a["kept_rows_sha256"], a["bank_rows_sha256"]), (b["kept_rows_sha256"], b["bank_rows_sha256"]))
-
-    def test_removed_mask(self):
-        m = N.removed_mask(self.log, self.gap)
-        self.assertTrue(np.array_equal(m, self.near.removed))
-        self.assertEqual(m.dtype, bool)
-        self.assertEqual(m.shape, (self.log.n_rows,))
-
-    def test_thruster1_scope_removes_fewer(self):
-        t1 = N.band_removal(self.log, self.gap, scope="thruster1")
-        self.assertLess(t1.count, self.near.count)
-        self.assertTrue(np.all(self.near.removed >= t1.removed))
-
-
-class TestRandomRows(Base):
-    def test_matched_counts_and_source(self):
-        log, gap, near, rnd = self.log, self.gap, self.near, self.rnd
-        base = SH.make_removal(log, "gap", gap)
-        train = log.split_rows("train")
-        self.assertEqual(rnd.kind, N.KIND_RANDOM)
-        self.assertEqual(int(rnd.removed[train].sum()), int(near.removed[train].sum()))
-        self.assertEqual(int(rnd.bank_removed.sum()), int(near.bank_removed.sum()))
-        self.assertTrue(np.all(rnd.removed >= base.removed))
-        self.assertTrue(np.all(rnd.bank_removed >= base.bank_removed))
-        self.assertGreater(int(N.in_band(log["actions"])[rnd.kept_train_rows(log)].sum()), 0)   # band rows remain
-
-    def test_stratified_by_hard_water(self):
-        """In each kind of water (calm, hard water), the control removes exactly as many training rows and bank rows
-        as the band does, so it keeps the band's share of hard-water rows."""
-        log, gap, near, rnd = self.log, self.gap, self.near, self.rnd
-        base = SH.make_removal(log, "gap", gap)
-        region = RC.Recorder(log.spec, log.physics).in_region(log["infos/state"])
-        self.assertTrue(np.array_equal(N.hard_water(log), region))
-        band_t, band_b = N.extra_per_stratum(log, near, base, region)
-        mine_t, mine_b = N.extra_per_stratum(log, rnd, base, region)
-        self.assertEqual(mine_t, band_t)
-        self.assertEqual(mine_b, band_b)
-        self.assertTrue(band_t[0] > 0 and band_t[1] > 0, band_t)       # the synthetic log exercises both strata
-        train = log.split_rows("train")
-        kept_share = lambda rm: float(np.mean(~rm.removed[train][region[train]]))
-        self.assertEqual(kept_share(rnd), kept_share(near))
-
-    def test_rng_tags(self):
-        self.assertEqual(N.rng_tags(3, 0), [TC.DATA_SEED, 3, SH.TAG_RANDOM, N.TAG_NEAR80, 2])
-        self.assertEqual(N.rng_tags(3, 1), [TC.DATA_SEED, 3, SH.TAG_RANDOM, N.TAG_NEAR80, 3])
-        self.assertEqual(N.rng_tags(3, 0, bank=True), [TC.DATA_SEED, 3, SH.TAG_RANDOM, N.TAG_NEAR80, 4])
-        self.assertEqual(N.rng_tags(3, 1, bank=True), [TC.DATA_SEED, 3, SH.TAG_RANDOM, N.TAG_NEAR80, 5])
-        for s in (0, 1):
-            for bank in (False, True):
-                self.assertNotEqual(N.rng_tags(3, s, bank)[-1], 0)          # numpy would drop a trailing 0
-        # the training draw in stratum s is exactly default_rng(rng_tags(rep, s)) over that stratum's ball-kept rows
-        log, gap, near, rnd = self.log, self.gap, self.near, self.rnd
-        base = SH.make_removal(log, "gap", gap)
-        region = N.hard_water(log)
-        train = log.split_rows("train")
-        band_t, _ = N.extra_per_stratum(log, near, base, region)
-        for s in (0, 1):
-            in_s = region if s == 1 else ~region
-            kept_s = train[~base.removed[train] & in_s[train]]
-            pick = np.random.default_rng(N.rng_tags(SYNTHETIC_REP, s)).choice(len(kept_s), band_t[s], replace=False)
-            got = train[(rnd.removed & ~base.removed)[train] & in_s[train]]
-            self.assertTrue(np.array_equal(np.sort(kept_s[pick]), got))
-
-    def test_deterministic_and_rep_dependent(self):
-        again = N.random_rows_removal(self.log, self.gap, self.near)
-        self.assertTrue(np.array_equal(again.removed, self.rnd.removed))
-        other, _, _ = synthetic_log(rep=SYNTHETIC_REP + 1)
-        other_rnd = N.random_rows_removal(other, self.gap, N.band_removal(other, self.gap))
-        self.assertFalse(np.array_equal(other_rnd.removed, self.rnd.removed))
-
-    def test_refuses_a_removal_without_the_ball(self):
-        base = SH.make_removal(self.log, "gap", self.gap)
-        rem = self.near.removed.copy()
-        rem[np.flatnonzero(base.removed)[0]] = False
-        with self.assertRaises(ValueError):
-            N.random_rows_removal(self.log, self.gap, SH.Removal(N.KIND_BAND, rem, self.near.bank_removed, self.gap))
-
-    def test_leak_check_of_control(self):
-        c = N.leak_check(self.log, self.rnd, self.gap, band_rm=self.near)
-        self.assertTrue(c["passed"], c)
-        self.assertTrue(c["same_training_count_per_stratum"] and c["same_bank_count_per_stratum"])
-        with self.assertRaises(ValueError):
-            N.leak_check(self.log, self.rnd, self.gap)
-
-    # negative tests: each tampering of the control must fail its leak check
-
-    def _check(self, removed=None, bank_removed=None):
-        rm = SH.Removal(N.KIND_RANDOM, self.rnd.removed.copy() if removed is None else removed,
-                        self.rnd.bank_removed.copy() if bank_removed is None else bank_removed, self.gap)
-        c = N.leak_check(self.log, rm, self.gap, band_rm=self.near)
-        self.assertFalse(c["passed"], c)
-        with self.assertRaises(N.LeakError):
-            N.assert_no_leak(self.log, rm, self.gap, band_rm=self.near)
-        return c
-
-    def test_catches_one_extra_training_row(self):
-        train = self.log.split_rows("train")
-        rem = self.rnd.removed.copy()
-        rem[train[~rem[train]][0]] = True
-        c = self._check(removed=rem)
-        self.assertFalse(c["same_training_count_as_band"])
-
-    def test_catches_one_missing_training_row(self):
-        base = SH.make_removal(self.log, "gap", self.gap)
-        rem = self.rnd.removed.copy()
-        rem[np.flatnonzero(rem & ~base.removed)[0]] = False
-        c = self._check(removed=rem)
-        self.assertFalse(c["same_training_count_as_band"])
-
-    def test_catches_bank_count_off_by_one(self):
-        br = self.rnd.bank_removed.copy()
-        br[np.flatnonzero(~br)[0]] = True
-        c = self._check(bank_removed=br)
-        self.assertFalse(c["same_bank_count_as_band"])
-        base = SH.make_removal(self.log, "gap", self.gap)
-        br = self.rnd.bank_removed.copy()
-        br[np.flatnonzero(br & ~base.bank_removed)[0]] = False
-        c = self._check(bank_removed=br)
-        self.assertFalse(c["same_bank_count_as_band"])
-
-    def test_catches_a_removed_evaluation_row(self):
-        rem = self.rnd.removed.copy()
-        rem[self.log.split_rows("evaluation")[0]] = True
-        c = self._check(removed=rem)
-        self.assertFalse(c["only_training_rows_removed"])
-
-    def test_catches_a_kept_ball_row(self):
-        train = self.log.split_rows("train")
-        ball = self.gap.contains(self.log["actions"])
-        rem = self.rnd.removed.copy()
-        rem[train[ball[train]][0]] = False
-        c = self._check(removed=rem)
-        self.assertEqual(c["kept_training_rows_in_ball"], 1)
-        self.assertFalse(c["ball_rows_all_removed"])
-
-    def test_catches_rows_moved_between_strata(self):
-        """Same totals, wrong mix: one extra row moved from hard water to calm."""
-        log = self.log
-        base = SH.make_removal(log, "gap", self.gap)
-        region = N.hard_water(log)
-        train = log.split_rows("train")
-        rem = self.rnd.removed.copy()
-        hard = train[(rem & ~base.removed & region)[train]][0]
-        calm = train[(~rem & ~region)[train]][0]
-        rem[hard], rem[calm] = False, True
-        c = self._check(removed=rem)
-        self.assertTrue(c["same_training_count_as_band"])
-        self.assertFalse(c["same_training_count_per_stratum"])
-        _, band_b = N.extra_per_stratum(log, self.near, base, region)
-        bank_region = region[log.bank_rows]
-        br = self.rnd.bank_removed.copy()
-        hard_b = np.flatnonzero(br & ~base.bank_removed & bank_region)
-        calm_b = np.flatnonzero(~br & ~bank_region)
-        if band_b[1] > 0 and len(calm_b):
-            br[hard_b[0]], br[calm_b[0]] = False, True
-            c = self._check(bank_removed=br)
-            self.assertTrue(c["same_bank_count_as_band"])
-            self.assertFalse(c["same_bank_count_per_stratum"])
-
+# --------------------------------------------------------------------------------------------- the training file
 
 class TestTrainingFile(Base):
-    def test_matches_the_leak_checked_arrays(self):
-        arrays = DS.d4rl_dict(self.log, self.near.kept_train_rows(self.log))
-        self.assertTrue(N.training_file_check(arrays, self.log, self.near)["passed"])
+    def test_matches_the_kept_rows(self):
+        want = DS.d4rl_dict(self.log, self.rm.kept_train_rows(self.log))
+        c = N.training_file_check(want, self.log, self.rm)
+        self.assertTrue(c["passed"])
 
     def test_catches_a_changed_or_missing_row(self):
-        arrays = DS.d4rl_dict(self.log, self.near.kept_train_rows(self.log))
-        bad = dict(arrays, actions=arrays["actions"].copy())
-        bad["actions"][0, 0] = np.float32(0.75)                      # a band command slipped into the file
-        c = N.training_file_check(bad, self.log, self.near)
-        self.assertFalse(c["passed"])
-        self.assertFalse(c["actions_sha256_equal"])
-        short = {k: v[1:] for k, v in arrays.items()}
-        self.assertFalse(N.training_file_check(short, self.log, self.near)["passed"])
-        missing = {k: v for k, v in arrays.items() if k != "rewards"}
-        self.assertFalse(N.training_file_check(missing, self.log, self.near)["passed"])
-        other = DS.d4rl_dict(self.log, self.rnd.kept_train_rows(self.log))
-        self.assertFalse(N.training_file_check(other, self.log, self.near)["passed"])
+        want = DS.d4rl_dict(self.log, self.rm.kept_train_rows(self.log))
+        bad = dict(want)
+        a = np.array(bad["actions"])
+        a[0, 0] = np.nextafter(a[0, 0], 1.0)
+        bad["actions"] = a
+        self.assertFalse(N.training_file_check(bad, self.log, self.rm)["passed"])
+        short = {k: v[:-1] for k, v in want.items()}
+        self.assertFalse(N.training_file_check(short, self.log, self.rm)["passed"])
 
 
-class TestLeakCheck(Base):
-    def test_passes(self):
-        c = N.assert_no_leak(self.log, self.near, self.gap)
-        self.assertTrue(c["passed"])
-        self.assertEqual(c["kept_training_rows_in_band"], 0)
-        self.assertEqual(c["d4rl_commands_in_band"], 0)
-
-    def _tampered(self, removed=None, bank_removed=None):
-        return SH.Removal(N.KIND_BAND, self.near.removed.copy() if removed is None else removed,
-                          self.near.bank_removed.copy() if bank_removed is None else bank_removed, self.gap)
-
-    def test_catches_a_kept_band_row(self):
-        log, gap = self.log, self.gap
-        train = log.split_rows("train")
-        ball, band = gap.contains(log["actions"]), N.in_band(log["actions"])
-        r = train[(band & ~ball)[train]][0]
-        rem = self.near.removed.copy()
-        rem[r] = False
-        c = N.leak_check(log, self._tampered(removed=rem), gap)
-        self.assertFalse(c["passed"])
-        self.assertEqual(c["kept_training_rows_in_band"], 1)
-        self.assertEqual(c["d4rl_commands_in_band"], 1)
-        with self.assertRaises(N.LeakError):
-            N.assert_no_leak(log, self._tampered(removed=rem), gap)
-
-    def test_catches_a_kept_bank_band_row(self):
-        log, gap = self.log, self.gap
-        band_bank = N.in_band(log["actions"])[log.bank_rows] & ~gap.contains(log["actions"])[log.bank_rows]
-        i = int(np.flatnonzero(band_bank)[0])
-        br = self.near.bank_removed.copy()
-        br[i] = False
-        c = N.leak_check(log, self._tampered(bank_removed=br), gap)
-        self.assertFalse(c["passed"])
-        self.assertEqual(c["kept_bank_rows_in_band"], 1)
-
-    def test_catches_a_touched_held_out_row(self):
-        rem = self.near.removed.copy()
-        rem[self.log.split_rows("evaluation")[0]] = True
-        c = N.leak_check(self.log, self._tampered(removed=rem), self.gap)
-        self.assertFalse(c["passed"])
-        self.assertFalse(c["only_training_rows_removed"])
-
-    def test_catches_an_extra_removed_row(self):
-        log, gap = self.log, self.gap
-        train = log.split_rows("train")
-        rem = self.near.removed.copy()
-        rem[train[~rem[train]][0]] = True          # a seen row removed for no reason
-        c = N.leak_check(log, self._tampered(removed=rem), gap)
-        self.assertFalse(c["passed"])
-        self.assertFalse(c["removed_is_exactly_ball_or_band"])
-
-    def test_catches_a_kept_ball_row(self):
-        log, gap = self.log, self.gap
-        train = log.split_rows("train")
-        ball = gap.contains(log["actions"])
-        rem = self.near.removed.copy()
-        rem[train[ball[train]][0]] = False
-        c = N.leak_check(log, self._tampered(removed=rem), gap)
-        self.assertFalse(c["passed"])
-        self.assertEqual(c["kept_training_rows_in_ball"], 1)
-
-
-class TestFacts(Base):
-    def test_world_card_restates_the_gate(self):
-        from experiments.shift import acceptance as AC
-        physics, spec = TC.world_physics("stall"), RC.DEFAULT_SPEC
-        card, _ = AC.world_marks(self.log, self.gap, spec, physics)
-        train = self.log.split_rows("train")
-        mine = N.world_card(self.log, self.gap.contains(self.log["actions"])[train], spec, physics)
-        for k in ("full_throttle_commands_removed", "kept_past80_share", "identical_rule_share", "region_rows_kept"):
-            self.assertEqual(mine[k], card[k], k)
-
-    def test_gap_rule_moves_to_the_band_edge(self):
-        acts = self.log["actions"]
-        g_near = self.step1.gap_rule(self.step1.throttle(acts[self.near.kept_train_rows(self.log)]))
-        g_rnd = self.step1.gap_rule(self.step1.throttle(acts[self.rnd.kept_train_rows(self.log)]))
-        self.assertTrue(g_near["defined"])
-        self.assertLess(g_near["t_lo"], N.BAND_LO)
-        self.assertGreaterEqual(g_near["t_lo"], N.NO_TRAINING["gap_lo_min"])
-        self.assertTrue(g_rnd["defined"])
-        self.assertGreater(g_rnd["t_lo"], 0.75)           # random rows leave normal driving's top near 0.8
-
-    def test_seed_world_facts_and_checks(self):
-        physics, spec = TC.world_physics("stall"), RC.DEFAULT_SPEC
-        anchors = F.anchors_for("stall", bank_n=5)
-        f = F.seed_world_facts(self.log, self.gap, "stall", physics, spec, self.step1, anchors=anchors, bank_n=5)
-        self.assertTrue(f["leak_check_band"]["passed"])
-        self.assertTrue(f["leak_check_random"]["passed"])
-        self.assertTrue(f["reproduces_gate_removal_with_empty_band"])
-        tr = f["training_split"]
-        self.assertEqual(f["near80"]["extra"], tr["band_only"])
-        self.assertEqual(tr["band_rows"], tr["band_and_ball"] + tr["band_only"])
-        self.assertEqual(f["near80"]["kept_rows"], f["ball_alone"]["kept_rows"] - tr["band_only"])
-        self.assertEqual(f["random_rows"]["kept_rows"], f["near80"]["kept_rows"])
-        self.assertEqual(f["random_rows"]["bank_rows_kept"], f["near80"]["bank_rows_kept"])
-        self.assertLess(f["near80"]["max_throttle_index_below_band"], N.BAND_LO)
-        self.assertEqual(f["world_card_ball"]["region_rows_kept"], f["gate_world_card_on_ball"]["region_rows_kept"])
-        self.assertLessEqual(f["world_card_near80"]["region_rows_kept"], f["world_card_ball"]["region_rows_kept"])
-        self.assertIn("data_edge_loss_strong_current", f)
-        fixed = F.fixed_bank_facts(anchors, bank_n=5)
-        self.assertAlmostEqual(fixed["situations"]["strong_current"]["stall_aware_points"], 100.0, places=6)
-        self.assertGreater(fixed["stall_aware_thruster1_band_share_strong_current"], 0.0)
-        res = N.no_training_checks([f], fixed)
-        names = {r["rule"] for r in res["rules"]}
-        self.assertTrue(any(n.startswith("check 1:") for n in names) and any(n.startswith("check 10:") for n in names))
-        self.assertEqual(res["not_run"], [])
-        json.dumps(res)                                    # serializable
-
-    def test_no_training_thresholds(self):
-        physics, spec = TC.world_physics("stall"), RC.DEFAULT_SPEC
-        f = F.seed_world_facts(self.log, self.gap, "stall", physics, spec, self.step1)
-        rules = lambda ff: {r["rule"]: r["passed"] for r in N.no_training_checks([ff])["rules"]}
-        g = json.loads(json.dumps(f))
-        g["world_card_near80"]["region_rows_kept"] = 0.3499
-        self.assertFalse(rules(g)["check 4: hard-water rows kept (35%, set after seeing seeds 0-4)"])
-        g["world_card_near80"]["region_rows_kept"] = 0.35
-        self.assertTrue(rules(g)["check 4: hard-water rows kept (35%, set after seeing seeds 0-4)"])
-        g["near80"]["bank_rows_kept"] = 499
-        self.assertFalse(rules(g)["check 7: the calibration bank keeps enough rows"])
-        g["near80"]["gap_rule"]["t_lo"] = 0.786
-        self.assertFalse(rules(g)["check 6: BCA's gap rule is defined, lower end at the band's edge"])
-        res = N.no_training_checks([f])
-        self.assertFalse(res["passed"])                    # rollouts not run: checks 9 and 10 are missing
-        self.assertTrue(res["not_run"])
-
+# --------------------------------------------------------------------------------------------- readout helpers
 
 class TestReadoutHelpers(unittest.TestCase):
-    def test_hold_and_ramp_start_follow_the_band(self):
-        self.assertEqual(N.HOLD, N.BAND_LO)
-        self.assertEqual(N.NO_TRAINING["gap_lo_max"], N.BAND_LO)
-        self.assertAlmostEqual(N.NO_TRAINING["gap_lo_min"], N.BAND_LO - 0.005, places=12)
-
     def test_zones(self):
-        c = np.zeros((6, 4))
-        c[:, 0] = [0.69, 0.70, 0.75, TC.KNEE, 0.8000001, -0.95]
-        self.assertEqual(N.throttle_zones(c).tolist(), [0, 1, 1, 1, 2, 2])
-        self.assertEqual(N.throttle_zones(np.float32(c)).tolist()[3], 1)    # float32(0.8) is not past the knee
+        z = N.throttle_zones(np.array([[0.1, 0.2, 0.3, 0.4], [0.7, 0.1, 0.1, 0.1], [0.81, 0.0, 0.0, 0.0],
+                                       [np.float32(0.8), 0, 0, 0]]))
+        self.assertEqual(z.tolist(), [0, 1, 2, 1])
 
     def test_clip(self):
-        c = np.array([[-0.95, 0.75, 0.5, -0.71]])
-        self.assertEqual(N.clip_throttle(c, N.HOLD).tolist(), [[-0.7, 0.7, 0.5, -0.7]])
-        z = N.throttle_zones(np.float32(N.clip_throttle(c, N.HOLD)))
-        self.assertEqual(z.tolist(), [0])                  # held to 70% in float32 is on the seen side
+        c = N.clip_throttle(np.array([[0.9, -0.9, 0.5, 0.0]]), 0.7)
+        self.assertEqual(c.tolist(), [[0.7, -0.7, 0.5, 0.0]])
 
-    def test_range_clip_controller(self):
-        K = RC.textbook_gain(TC.world_physics("stall"))
-        x = TC.bank_starts("strong_current", 5)
-        lo, hi = -0.5 * np.ones(4), 0.4 * np.ones(4)
-        u = N.RangeClip(K, lo, hi, "test")(x)
-        self.assertTrue(np.all(u >= lo) and np.all(u <= hi))
+    def test_recorded_range(self):
+        r = N.recorded_range(np.random.default_rng(1).uniform(-1, 1, (1000, 4)))
+        self.assertEqual(len(r), 4)
+        self.assertTrue(all(lo < hi for lo, hi in r))
+
+    def test_throttle_index_matches_step1(self):
+        s1 = N.load_step1lib()
+        a = np.random.default_rng(2).uniform(-1, 1, (50, 4)).astype(np.float32)
+        self.assertTrue(np.array_equal(N.throttle_index(a), s1.throttle(a)))
 
 
-class TestGuards(unittest.TestCase):
-    def test_seeds(self):
+# --------------------------------------------------------------------------------------------- guards and seeds
+
+class TestGuardsAndSeeds(unittest.TestCase):
+    def test_facts_seeds(self):
         self.assertEqual(N.check_seeds([0, 1, 2, 3, 4]), [0, 1, 2, 3, 4])
-        for s in (5, 9, 10, 14, 15, 900):
+        for bad in ([5], [10], [K.FRESH[0]], [K.RESERVED_SEEDS[0]], [99]):
             with self.assertRaises(N.Refused):
-                N.check_seeds([s])
-        with self.assertRaises(N.Refused):
-            F.main(["--out", "/nonexistent/x.json", "--seeds", "10"])
+                N.check_seeds(bad)
+        self.assertEqual(N.check_spent_seeds([10, 11, 12, 13, 14]), [10, 11, 12, 13, 14])
+        self.assertEqual(N.check_spent_seeds([]), [])
+        for bad in ([0], [5], [15], [K.FRESH[0]], [K.RESERVED_SEEDS[0]], [99]):
+            with self.assertRaises(N.Refused):
+                N.check_spent_seeds(bad)
+
+    def test_certify_chance_is_exact(self):
+        """P(Binomial(1000, 0.9^n) <= 50): 0 up to 24 rows, 0.405 at 28, 0.700 at 29, 0.896 at 30, 0.976 at 31,
+        0.9995 at 33 (the preview's table, reproduced from the draws)."""
+        for n, want in ((10, 0.0), (24, 0.0001), (28, 0.405), (29, 0.700), (30, 0.896), (31, 0.976), (33, 0.9995),
+                        (40, 1.0)):
+            self.assertAlmostEqual(K.certify_chance(n), want, places=3, msg=n)
+        self.assertEqual(K.certify_chance(0), 0.0)
+        c = N.certification_expectation(29)
+        self.assertAlmostEqual(c["certify_chance"], 0.700, places=3)
+        self.assertEqual(K.c2_positive_needed(10), 8)
+
+    def test_fresh_seeds_are_unused_by_every_registry(self):
+        """The fresh seeds lie in the block 40-59, which no registry names: not 0-4, 5-9, 10-14, 15-19, the placement
+        test's 20-34, the gate's 100-119 or stage 0's 900-909 (near80_constants.SEED_REGISTRY, from the repository
+        and the seed_registry.json of claude/placement-test-design)."""
+        used = set(K.USED_SEEDS)
+        for s in K.FRESH:
+            self.assertNotIn(s, used)
+            self.assertIsNone(K.seed_holder(s))
+            self.assertTrue(K.FRESH_SEED_BLOCK[0] <= s <= K.FRESH_SEED_BLOCK[1])
+        for span in K.SEED_REGISTRY:
+            a, b = (int(x) for x in span.split("-"))
+            self.assertTrue(set(range(a, b + 1)) <= used)
+        self.assertEqual(sorted(K.FRESH), list(K.FRESH))
+        self.assertEqual(K.group_of(0), "smoke")
+        for s in (5, 9, 10, 14, 15, 19, 20, 25, 30, 34, 100, 119, 900, 909):
+            with self.assertRaises(ValueError) as cm:
+                K.group_of(s)
+            self.assertIn("belongs to", str(cm.exception))
+        with self.assertRaises(ValueError):
+            K.group_of(60)
+        with self.assertRaises(ValueError):
+            K.group_of(1)
 
     def test_outputs(self):
-        for p in (N.ROOT / "outputs" / "x.json", HERE / "x.json", N.ROOT / "runs" / "shift" / "x.json",
-                  N.ROOT / "experiments" / "shift" / "x.json", N.ROOT / "runs" / "shift_explore" / "room" / "x.json"):
-            with self.assertRaises(N.Refused):
-                N.guard_out(p)
-        N.guard_out(N.ROOT / "runs" / "shift_explore" / "near80" / "stageA" / "facts.json")   # allowed, not created
-        with tempfile.TemporaryDirectory() as d:
-            N.guard_out(Path(d) / "facts.json")
-            (Path(d) / "exists.json").write_text("{}")
-            with self.assertRaises(N.Refused):
-                N.guard_out(Path(d) / "exists.json")
+        d = Path(tempfile.mkdtemp(prefix="near80_test_"))
+        p = N.guard_out(d / "x.json")
+        self.assertEqual(p, (d / "x.json").resolve())
+        (d / "y.json").write_text("{}")
+        with self.assertRaises(N.Refused):
+            N.guard_out(d / "y.json")
+        with self.assertRaises(N.Refused):
+            N.guard_out(Path(K.ROOT) / "outputs" / "x.json")
 
     def test_step1lib_is_verified(self):
-        mod = N.load_step1lib()
-        self.assertTrue(hasattr(mod, "gap_rule") and hasattr(mod, "throttle"))
+        s1 = N.load_step1lib()
+        self.assertTrue(callable(s1.gap_rule) and callable(s1.certificate))
+        self.assertEqual(Path(s1.ROOT), Path(K.ROOT))
 
     def test_nothing_written_into_the_code_folder(self):
-        """Only the planned Python files may live here (near80_constants.CODE_FILES); no output, cache or other file."""
-        allowed = set(K.CODE_FILES)
-        for p in HERE.iterdir():
-            self.assertTrue(p.is_file() and p.suffix == ".py", f"not a Python file: {p.name}")
-            self.assertIn(p.name, allowed)
-        for name in ("near80lib.py", "facts_near80.py", "test_near80.py", "near80_constants.py"):
-            self.assertTrue((HERE / name).is_file(), name)
+        self.assertFalse((HERE / "__pycache__").exists())
 
+
+# --------------------------------------------------------------------------------------------- the draft and documents
 
 def final_or_draft(root=HERE.parent):
-    """('final', prereg.json) when it exists; else ('draft', the draft kept in prereg_history/); else ('draft',
-    prereg_draft.json, before freeze.py moves it); else (None, None)."""
+    """('final', prereg.json of this version) when it exists; else ('draft', the draft kept in prereg_history/);
+    else ('draft', prereg_draft.json); else (None, None)."""
     p = root / "prereg.json"
     if p.is_file():
-        return "final", json.loads(p.read_text(encoding="utf8"))
+        d = json.loads(p.read_text(encoding="utf8"))
+        if d.get("version") == K.VERSION:
+            return "final", d
     hist = root / "prereg_history"
-    kept = sorted(h for h in hist.glob("prereg_draft_*.json") if h.suffix == ".json") if hist.is_dir() else []
-    if kept:
-        return "draft", json.loads(kept[0].read_text(encoding="utf8"))
+    if hist.is_dir():
+        for h in sorted(hist.glob("prereg_draft_*.json")):
+            if h.suffix == ".json":
+                d = json.loads(h.read_text(encoding="utf8"))
+                if d.get("version") == K.VERSION:
+                    return "draft", d
     p = root / "prereg_draft.json"
     if p.is_file():
         return "draft", json.loads(p.read_text(encoding="utf8"))
     return None, None
 
 
-class TestFinalJson(unittest.TestCase):
+class TestDraftJson(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.which, cls.d = final_or_draft()
@@ -537,74 +354,28 @@ class TestFinalJson(unittest.TestCase):
 
     def test_json_matches_the_code(self):
         d = self.d
+        self.assertEqual(d["version"], K.VERSION)
+        self.assertEqual(d["label"], K.LABEL)
+        self.assertEqual(d["seeds"]["fresh"], list(K.FRESH))
+        self.assertEqual(d["seeds"]["fresh_block"], list(K.FRESH_SEED_BLOCK))
+        self.assertEqual(d["seeds"]["plumbing"], list(K.SMOKE_SEEDS))
+        self.assertEqual(d["pooled_groups"]["splits"], list(K.POOLED_SPLITS))
+        self.assertEqual(sorted(d["pass_marks"]["c2_twins"]["twins"]), sorted(K.TWIN_ARMS))
+        self.assertEqual(d["kill_rules"]["noise_floor"]["rule"].split("<=")[-1].strip(),
+                         f"{K.MARKS['noise_floor_max']:g}")
         if self.which == "final":
-            self.assertEqual(d["kind"], K.PREREG_KIND)
             self.assertEqual(d["status"], K.STATUS_FINAL)
-            self.assertEqual(d["status_line"], K.STATUS_LINE_FINAL)
-            self.assertIs(d["approvable"], True)
-            self.assertEqual(d["missing"], [])
-            self.assertEqual(sorted(d["arms"]["random_rows_both_worlds"]), sorted(K.ARMS["random_rows"]))
             self.assertEqual(d["arms"]["logical_ids"], {k: list(v) for k, v in K.ARMS.items()})
+            self.assertEqual(d["pass_marks"]["c2_twins"]["net_margin"], K.MARKS_C2["net_margin"])
         else:
             self.assertEqual(d["status"], "draft")
-        self.assertEqual(d["band"]["lo"], N.BAND_LO)
-        self.assertEqual(d["band"]["hi"], N.BAND_HI)
-        self.assertEqual(d["band"]["scope"], N.SCOPE)
-        self.assertEqual(d["seeds"]["exploratory"], list(N.EXPLORATORY_SEEDS))
-        self.assertEqual(d["seeds"]["confirmatory"], list(N.CONFIRMATORY_SEEDS))
-        self.assertEqual(d["kill_rules"]["no_training_checks"]["thresholds"], N.NO_TRAINING)
-        self.assertEqual(d["measures"]["hold_level"], N.HOLD)
-        tags = d["random_rows_control"]["rng_tags"]
-        for s, name in enumerate(N.STRATA):
-            self.assertEqual(tags["training"][name], [TC.DATA_SEED, "rep", SH.TAG_RANDOM, N.TAG_NEAR80,
-                                                      N.TRAIN_TAG_BASE + s])
-            self.assertEqual(tags["bank"][name], [TC.DATA_SEED, "rep", SH.TAG_RANDOM, N.TAG_NEAR80,
-                                                  N.BANK_TAG_BASE + s])
-
-    def test_final_choices_constants_and_claims(self):
-        if self.which != "final":
-            self.skipTest("prereg.json is not written yet")
-        d = self.d
-        for c in d["choices"]:
-            self.assertEqual(c["taken"], c["default"], c["number"])
-            self.assertEqual(c["accepted"], K.OWNER_ANSWER["utc"])
-        self.assertEqual(d["owner_answer"], K.OWNER_ANSWER)
-        self.assertEqual(d["constants"], json.loads(json.dumps(K.as_dict(), sort_keys=True)))
-        self.assertIsInstance(d["claims_word_for_word"], dict)
-        self.assertEqual(d["claims_word_for_word"]["source"], "PREREGISTRATION.md section 14")
-
-    def _strings(self, x, skip=("choices", "claims_word_for_word", "constants")):
-        if isinstance(x, str):
-            yield x
-        elif isinstance(x, list):
-            for v in x:
-                yield from self._strings(v, skip)
-        elif isinstance(x, dict):
-            for k, v in x.items():
-                if k not in skip:
-                    yield from self._strings(v, skip)
-
-    def test_every_choice_number_names_its_choice(self):
-        """Every 'choice N' in the JSON is followed by '(name)', the name of the Nth entry of the choices list (the
-        choices themselves, the claims copied word for word and the constants aside)."""
-        import re
-        choices = self.d["choices"]
-        for i, c in enumerate(choices):
-            self.assertEqual(c["number"], i + 1)
-        seen = 0
-        for text in self._strings(self.d):
-            for m in re.finditer(r"choices? (\d+)", text):
-                n = int(m.group(1))
-                rest = text[m.end():]
-                self.assertTrue(rest.startswith(" ("), f"'choice {n}' without its name in: {text!r}")
-                name = rest[2:rest.index(")")]
-                self.assertTrue(1 <= n <= len(choices), text)
-                self.assertEqual(name, choices[n - 1]["choice"], text)
-                seen += 1
-        self.assertGreater(seen, 0)
+        self.assertEqual(d["pass_marks"]["c2_twins"]["net_margin"], K.MARKS_C2["net_margin"])
+        self.assertEqual(d["pass_marks"]["c2_twins"]["positive_share"], K.MARKS_C2["positive_share"])
+        self.assertEqual(d["pass_marks"]["c3_mirror"]["net_margin"], K.MARKS_C3["net_margin"])
+        self.assertEqual(d["pass_marks"]["min_certified"], K.MIN_CERTIFIED)
+        self.assertEqual(d["seeds"]["fresh_count"], len(K.FRESH))
 
     def test_choices_match_the_document(self):
-        """Section 16 of PREREGISTRATION.md lists the same choices, in the same order, with the same names."""
         import re
         sec = self.doc[self.doc.index("## 16."):self.doc.index("## 17.")]
         titles = re.findall(r"^(\d+)\. \*\*([^*]+?)\.?\*\*", sec, flags=re.M)
@@ -613,28 +384,83 @@ class TestFinalJson(unittest.TestCase):
             self.assertEqual(t.strip().rstrip(".").lower(), c["choice"].lower(), n)
 
     def test_document_brackets_are_defined(self):
-        """Every [X] bracket in section 14's sentences is defined in its bracket table."""
+        """Every capitalised bracket the code-filled sentences use (sections 14.1-14.5) is in the bracket table;
+        section 14.6 (the project's verdict table, copied from DECISION.md and filled by hand) is not the code's."""
         import re
         sec = self.doc[self.doc.index("## 14."):self.doc.index("## 15.")]
-        table = sec[:sec.index("**Always attached:**")]
+        self.assertIn("### 14.6 ", sec)
+        code_part = sec[:sec.index("### 14.6 ")]
+        table = code_part[:code_part.index("**Always attached:**")]
         defined = set()
         for row in re.findall(r"^\| ([^|]+) \|", table, flags=re.M):
             defined.update(x.strip() for x in re.split(r",| and ", row) if x.strip())
-        used = set(re.findall(r"\[([A-Z][A-Za-z0-9]*)\]", sec[len(table):]))
+        used = set(re.findall(r"\[([A-Z][A-Za-z0-9]*)\]", code_part[len(table):]))
         self.assertTrue(used <= defined, used - defined)
+        self.assertIn("No reading. The verdict of section 1 stands unchanged.", sec[len(code_part):])
 
-    def test_documents_are_final(self):
-        """The documents carry the final status lines, a section 14.6, and no draft status."""
+    def test_documents_status_lines(self):
+        """The document's own status line (line 3) says which state the folder is in: a draft carries the draft line
+        and the freeze's TODO(FREEZE) marks; a finalized document (the freeze's as-frozen copy, or the frozen folder
+        with prereg.json) the final line and no mark. README's line 3 follows it."""
         lines = self.doc.split("\n")
-        self.assertEqual(lines[0], "# Hiding the commands near 80%: pre-registration (version 8, near-80)")
-        bold = "**" + K.STATUS_LINE_FINAL + "**"
-        self.assertEqual(lines[2], bold)
-        self.assertEqual(self.readme.split("\n")[2], bold)
-        self.assertTrue(any(line.startswith("### 14.6 ") for line in lines))
-        for text in (self.doc, self.readme):
-            self.assertNotIn("**DRAFT", text)
-            self.assertNotIn("this draft", text.lower())
-        self.assertEqual(N.STATUS, K.STATUS_LINE_FINAL)
+        self.assertTrue(lines[0].startswith("# The main setting on fresh seeds: pre-registration (version 9"))
+        self.assertTrue(any(line.startswith("### 14.5 ") for line in lines))
+        draft_line, final_line = "**" + K.STATUS_LINE_DRAFT + "**", "**" + K.STATUS_LINE_FINAL + "**"
+        self.assertIn(lines[2], (draft_line, final_line))
+        self.assertEqual(self.readme.split("\n")[2], lines[2])
+        self.assertNotIn("TODO(OWNER", self.doc)                   # the owner answered on 20 October 2026
+        self.assertNotIn("TODO(DECISION", self.doc)                # DECISION.md fixed every value
+        self.assertEqual(K.placeholders_present(), [])
+        if lines[2] == draft_line:
+            self.assertIn("TODO(FREEZE", self.doc)                 # the facts the freeze fills are the open item
+            self.assertNotEqual(self.which, "final")               # no prereg.json of this version while a draft
+        else:
+            self.assertNotIn("TODO(", self.doc)
+            self.assertNotIn("TODO(", self.readme)
+        self.assertNotIn("DRAFT", N.STATUS)                        # the facts record never says DRAFT (it is frozen)
+
+
+class TestFacts(Base):
+    def test_switch_calls_and_kill_rule(self):
+        """facts_near80.switch_calls_of restates step 2's and policy_phase's switch rules on a certificate entry; the
+        kill rule compares BCA's and the mean-difference switch's calls only."""
+        entry = dict(certificate=dict(on=True, height=2.5, q05=0.4, finite_share_tail=0.99, tail_certified=True),
+                     groups=dict(n_full_throttle=60, n_rest=42000, mean_full_throttle=0.6, mean_rest=0.0,
+                                 q90_full_throttle=1.2, q90_rest=-0.04), rank_test=dict(p=1e-6))
+        c = F.switch_calls_of(entry)
+        self.assertEqual((c["bca"], c["meandiff"], c["conformal"], c["rank"], c["bca_refused"]),
+                         (True, True, True, True, False))
+        self.assertAlmostEqual(c["plain_gap"], 1.24)
+        self.assertAlmostEqual(c["twice_plain_gap"], 2.48)
+        refused = dict(entry, certificate=dict(entry["certificate"], height="inf", tail_certified=False))
+        self.assertTrue(F.switch_calls_of(refused)["bca_refused"])
+        off = dict(entry, certificate=dict(on=False, height=0.1), groups=dict(entry["groups"], mean_full_throttle=0.05,
+                                                                            q90_full_throttle=0.05),
+                   rank_test=dict(p=0.3))
+        o = F.switch_calls_of(off)
+        self.assertEqual((o["bca"], o["meandiff"], o["conformal"], o["rank"]), (False, False, False, False))
+        kr = F.kill_rule(c, F.switch_calls_of(refused))
+        self.assertTrue(kr["passed"])                       # the same calls (on), whatever the heights
+        kr = F.kill_rule(o, c)
+        self.assertEqual((kr["bca"], kr["meandiff"], kr["passed"]), (False, False, False))
+        rows = [dict(seed=10, world="stall", kill_rule=dict(passed=True), pooled=dict(calls=c),
+                     recorded=dict(calls=F.switch_calls_of(refused))),
+                dict(seed=10, world="no_stall", kill_rule=dict(passed=True), pooled=dict(calls=o),
+                     recorded=dict(calls=o))]
+        sm = F.spent_summary(rows)
+        self.assertEqual((sm["seed_worlds"], sm["kill_rule_passed"], sm["bca_refused_recorded"],
+                          sm["bca_refused_pooled"], sm["meandiff_made_bcas_call_pooled"]), (2, True, 1, 0, 2))
+
+    def test_seed_world_counts_record(self):
+        rec = F.seed_world_counts(self.log, self.gap, "stall", self.rm, self.step1)
+        self.assertEqual(rec["world"], "stall")
+        self.assertEqual(rec["rep"], SYNTHETIC_REP)
+        self.assertTrue(rec["defined"])
+        self.assertEqual(rec["groups"]["n_full_throttle"] + rec["groups"]["n_rest"] - rec["groups"]["n_survivors"],
+                         rec["groups"]["n_heldout"])
+        s = F.summary([rec, dict(rec, world="no_stall")])
+        self.assertEqual(s["stall"]["seed_worlds"], 1)
+        self.assertEqual(s["no_stall"]["n_full_throttle_min"], rec["groups"]["n_full_throttle"])
 
 
 if __name__ == "__main__":

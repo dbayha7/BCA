@@ -1,28 +1,27 @@
 #!/bin/sh
-# Near-80 (version 8): the desktop entry. POSIX sh. Run it as root (HOME=/root) inside tmux, from anywhere:
+# Near-80 (version 9, main setting): the desktop entry. DRAFT, not frozen. POSIX sh. Run it as root (HOME=/root)
+# inside tmux, from anywhere:
 #   sh /home/user/bca/outputs/shift/beyond-the-data/near80/run_near80.sh run [--lanes N]
 #       the official run (default 10 lanes, 1-16); after any restart, run the same command: it continues.
 #       One Ctrl-C stops safely (no new phase starts; the running ones finish). A second Ctrl-C stops them now
 #       (they rerun on the next start).
-#   sh .../run_near80.sh plumbing [--lanes N]   the unit tests, a 40-step smoke of every phase kind on seed 0 and the
-#       reproduction check (scratch only; required once before 'run'; a failure other than a reproduction difference
-#       may be run again)
+#   sh .../run_near80.sh plumbing [--lanes N]   the unit tests, a 40-step smoke of every phase kind on seed 0, the
+#       fresh-seed code path and the reproduction check (scratch only; required once before 'run'; a failure other
+#       than a reproduction difference may be run again)
 #   sh .../run_near80.sh status                 what is running, done, waiting, stopped and skipped (reads only)
 #   sh .../run_near80.sh selftest               the short self-test alone (prints READY or NOT READY)
 #   sh .../run_near80.sh plan                   the phase plan and each phase's state; runs nothing
 #   sh .../run_near80.sh retry PHASE_ID         one more attempt of an UNFINISHED phase (type it yourself)
 #   sh .../run_near80.sh budget-continue STAGE  lifts a budget pause by one forecast of that stage (type it yourself)
-#   sh .../run_near80.sh version7-ended         records that version 7's run ended for good without finishing (type
-#       it yourself; only if version 7 halted or you stopped it for good)
 #   sh .../run_near80.sh report                 the halt report, when the run stopped early
 #   sh .../run_near80.sh results                copies every record (no model file) into near80/results-<utc>/
 #       (also done at the end of a finished run)
-#   sh .../run_near80.sh stub --fixture DIR [--lanes N] [--seeds a,b]   stub mode on a test fixture outside the
-#       repository (no training: every learner is replaced by a stand-in that takes no gradient step)
+#   sh .../run_near80.sh stub --fixture DIR [--lanes N] [--seeds a,b] [--refuse a]   stub mode on a test fixture
+#       outside the repository (no training: every learner is replaced by a stand-in that takes no gradient step)
 # Every command except status, plan and stub first checks: root with HOME=/root, the repository, git's identity
 # (it must not be the approver's or the cloud's); run, plumbing, selftest, retry and report then the version 7
 # placement of the version 6 code and the short self-test; then the runner. Nothing trains before the owner's approval
-# is imported (every phase checks it again).
+# is imported (every phase checks it again). Version 8's checks on version 7's run are gone (it finished).
 # Exit codes: 0 finished; 3 stopped safely before the end; 4 waiting for a retry; 5 paused by the budget guard;
 # 97 refused; other: a phase or a check failed (nothing deleted).
 set -u
@@ -36,14 +35,14 @@ LINK=/tmp/claude-0/bcavenv
 PY=$LINK/bin/python
 APPROVER_EMAIL=35092758+dbayha7@users.noreply.github.com
 CLEAN_ENV="env -i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/root LANG=C.UTF-8 LC_ALL=C.UTF-8"
-RUN_ENV="$CLEAN_ENV PYTHONPATH=$REPO PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/nonexistent/near80_no_pycache JAX_PLATFORMS=cpu OMP_NUM_THREADS=1"
+RUN_ENV="$CLEAN_ENV PYTHONPATH=$REPO PYTHONDONTWRITEBYTECODE=1 PYTHONPYCACHEPREFIX=/nonexistent/near80_no_pycache JAX_PLATFORMS=cpu OMP_NUM_THREADS=1 NEAR80_HOST=desktop"
 HERE=$(cd "$(dirname "$0")" && pwd -P)
 
 refuse() { echo "refused: $*"; exit 97; }
 
 require_root() {
     if [ "$(id -u)" != 0 ] || [ "${HOME:-}" != /root ]; then
-        refuse "run this as root with HOME=/root"
+        refuse "run this as root with HOME=/root (the desktop entry, the fallback; the cluster entry is run_near80_cluster.sh)"
     fi
 }
 
@@ -105,9 +104,7 @@ case "$CMD" in
         exec $RUN_ENV "$(system_python)" "$RUNNER" "$CMD";;
     stub)
         exec $RUN_ENV NEAR80_STUB_PYTHONPATH="${NEAR80_STUB_PYTHONPATH:-}" "$PY" "$RUNNER" stub "$@";;
-    budget-continue|version7-ended|results)
-        # typed records and the results: no training, no self-test; budget-continue and version7-ended must be typed
-        # at a terminal (the runner refuses otherwise)
+    budget-continue|results)
         require_root
         require_repo
         require_no_identity
@@ -116,7 +113,7 @@ case "$CMD" in
         exec $RUN_ENV "$PY" "$RUNNER" "$CMD" "$@";;
     run|plumbing|selftest|retry|report) ;;
     *) echo "usage: sh $N80/run_near80.sh run|plumbing|status|selftest|plan|retry PHASE_ID|budget-continue STAGE|"
-       echo "       version7-ended|report|results|stub --fixture DIR"
+       echo "       report|results|stub --fixture DIR"
        exit 1;;
 esac
 require_root

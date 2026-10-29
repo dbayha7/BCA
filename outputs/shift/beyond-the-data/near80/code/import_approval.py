@@ -1,4 +1,5 @@
-"""Near-80 (version 8): show the final pre-registration's fingerprint, and import the owner's approval.
+"""Near-80 (version 9, main setting): show the final pre-registration's fingerprint, and import the owner's
+approval. DRAFT, not frozen (the import refuses a draft).
 
   import_approval.py show     prints prereg.json's path, its fingerprint and first 16 characters, whether it can be
                               approved now (final, the near-80 code matches its manifest, the pinned repository files
@@ -25,7 +26,7 @@
                               code_manifest.json, amendment_1.json and every file of the amendment with its
                               fingerprint, and each result file the approval names, with its SHA-256, saying the check
                               passed in official mode on THIS amendment_1.json, with the check code amendment_1.json
-                              names and the four unit test files. Writes import_near80_amendment1_<first 16>.json
+                              names and the five unit test files. Writes import_near80_amendment1_<first 16>.json
                               (+ .sha256) once.
 This is not authentication: git does not authenticate authors. The owner checks on GitHub that the commit the import
 record names is theirs. No approval file is ever written here.
@@ -85,7 +86,7 @@ def show(cfg=None, log=print):
         am = AC.load_amendment(prereg, cfg)
     except AC.ApprovalRefused as error:
         am = None
-        log(f"Amendment 1: {error}")
+        log(f"Amendment (version 9): {error}")
     if am is not None:
         log(f"Amendment 1: {am.path}\nSHA-256: {am.sha256}\nFirst 16 characters: {am.prefix}\n"
             f"Route: the owner runs the desktop check, then approve_local_near80.py (amendment mode) at their own "

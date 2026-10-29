@@ -1,26 +1,24 @@
-"""Near-80 (version 8): the evaluations, the readouts, step 2's saved actors and the reproduction check.
+"""Near-80 (version 9, main setting): the evaluations and the plumbing's reproduction check. DRAFT, not frozen.
 
-evaluate (one setting, world and seed; after the group's lock lists this lock's SHA-256): for every scored actor of
-the lock, with the gate's anchors and the setting's prepared data:
+evaluate (one world and seed; after the group's lock lists this lock's SHA-256): for every scored actor of the lock,
+with the gate's anchors and the setting's prepared data:
   as trained     acceptance._evaluate (learners.evaluate_actor: exact 100-step returns on the four fixed test start
                  sets, points, the same actor capped at 80% by recorder.CappedController, the share of steps past 80%);
-  held to 70%    the same rollouts with recorder.CappedController(learners.mlp_policy(params, prepared), cap=0.70);
-  one recorded rollout per situation of the as-trained policy: the zone shares (near80lib.throttle_zones: seen,
-                 unseen below the stall, unseen past the stall) and the lower tail (mean points of the worst tenth of
-                 the starts: the worst 100 of 1,000).
+  held to 70%    the same rollouts with recorder.CappedController(learners.mlp_policy(params, prepared), cap=0.70)
+                 (version 8's readout, carried over; no mark reads it);
+  one recorded rollout per situation of the as-trained policy: the zone shares (near80lib.throttle_zones) and the
+                 lower tail (mean points of the worst tenth of the starts).
   unseen_gain = points - held70_points; overshoot_loss = capped80_points - points.
-evaluate_step2_saved (main setting, seeds 0-4): step 2's saved locks, actors and values, read-only and checked first
-  (the lock's sidecar, step2lib.lock_problems, every actor's SHA-256, the values' lock SHA-256, and every per-seed point
-  of every logical arm equal to the committed step-2 results, exactly); then the same values with source
-  'step2_saved'; their as-trained points must equal step 2's exactly.
-readouts (reported only; a failure inside is recorded and never stops): at the evaluation split's band rows, (9) the
-  frozen critic's minimum-head value minus the exact 100-step value of the stall-aware controller after that command,
-  beside the same with the command held to 70%; (10) version 6's width at the same pairs.
-reproduction (plumbing only, scratch, full length, seed 0, the band empty): the critic, the cloned actor, the
-  no-caution actor, the second critic and the switch must reproduce the gate's and step 1's saved files bit for bit;
-  then policy_phase.train_world itself (the function every official policy phase runs, with the main setting's arm set
-  and step 2's ramp programs) must reproduce step 2's saved plumbing-check, switched-ramp and hand-set range-limit
-  actors bit for bit.
+A refused arm (BCA's) has no actor in the lock: its values are null in the record, and so are the controls matched
+to it (unmatched); the look reads the refusal from the switch record and substitutes the no-caution actor's numbers
+for them in C1, and leaves the seed out of C2 and C3 (the refusal rule, section 5.4; pooled.Results.apply_failures).
+Every actor of the lock is scored, the twins and BCA's lone copy among them.
+reproduction (plumbing only, scratch, full length, seed 0): the critic, the cloned actor, the no-caution actor, the
+second critic and the switch on VERSION 8's groups (the survivors and the bank: step 1's) must reproduce the gate's
+and step 1's saved files bit for bit; then policy_phase.train_world itself (the function every official policy phase
+runs), given step 1's own switch entries, must reproduce step 2's saved plumbing-check, switched-ramp and hand-set
+range-limit actors bit for bit. The pooled groups' certificate is computed beside it and reported (not compared:
+step 1 never computed it).
 """
 import sys
 
@@ -113,7 +111,7 @@ def situations_table(ev, extra):
 
 def full_arm_ids(setting, world, arm_ids):
     """Every logical id of near80_constants.ARMS[setting]: stall-only ids are null in the no-stall world; an unmatched
-    control or a failed stand-in is null."""
+    control, a failed stand-in or a refused arm is null."""
     out = {}
     for logical in K.ARMS[setting]:
         name = (arm_ids or {}).get(logical)
@@ -123,7 +121,7 @@ def full_arm_ids(setting, world, arm_ids):
     return out
 
 
-def compute_values(run, ctx, names, finite, acts, arm_ids, lock_sha, source):
+def compute_values(run, ctx, names, finite, acts, arm_ids, lock_sha, source, refused=()):
     k = run.key
     world = k.world
     prep = ctx.prepared(world)
@@ -134,7 +132,7 @@ def compute_values(run, ctx, names, finite, acts, arm_ids, lock_sha, source):
         ev[name], extra[name] = actor_values(acts[name], prep, an, ctx.cfg, failed=not finite.get(name, False))
         run.log(f"evaluated {name}")
     return dict(kind="near80-values", setting=k.setting, world=world, seed=k.seed, group=k.group, source=source,
-                lock_sha256=lock_sha, arm_ids=full_arm_ids(k.setting, world, arm_ids),
+                lock_sha256=lock_sha, arm_ids=full_arm_ids(k.setting, world, arm_ids), refused_arms=list(refused),
                 situations=situations_table(ev, extra), evaluations=ev, bank_size=int(ctx.cfg.bank_size),
                 evaluation_seconds=time.perf_counter() - t0)
 
@@ -148,11 +146,9 @@ def stage_lock_record(run):
 
 
 def evaluate(run, ctx):
-    """One setting, world and seed (module docstring)."""
+    """One world and seed (module docstring)."""
     import policy_phase as PP
     k = run.key
-    if k.setting == "main" and k.seed in K.EXPLORATORY:
-        return evaluate_step2_saved(run, ctx)
     steps, _, _ = PP.sizes(run)
     stage = stage_lock_record(run)
     lock, acts, lock_sha = PP.verify_lock(run, k.setting, k.seed, k.world, steps)
@@ -160,10 +156,11 @@ def evaluate(run, ctx):
     if (stage.get("locks") or {}).get(pid, {}).get("lock_sha256") != lock_sha:
         raise PH.Refused(f"refused: the {k.group} lock does not list this lock's SHA-256 ({pid})")
     names = list(lock["scored_names"])
-    return compute_values(run, ctx, names, lock["finite"], acts, lock["arm_ids"], lock_sha, "trained")
+    return compute_values(run, ctx, names, lock["finite"], acts, lock["arm_ids"], lock_sha, "trained",
+                          refused=lock.get("refused_arms") or [])
 
 
-# --------------------------------------------------------------------------------------------- step 2's saved actors
+# --------------------------------------------------------------------------------------------- step 2's saved files
 
 def step2_paths(run, seed, world):
     """(folder of step 2's saved lock, actors and values; the committed step-2 results file)."""
@@ -178,8 +175,9 @@ def _stop_fp(what, **detail):
 
 
 def check_step2_saved(run, seed, world):
-    """Everything about step 2's saved files of one seed-world, before anything is computed (module docstring).
-    Returns (lock, actors, lock SHA-256, step 2's values)."""
+    """Step 2's saved lock and actors of one seed-world, before anything is compared (the reproduction check): the
+    lock's sidecar, step2lib.lock_problems with step 2's own prespec and code manifest, every actor's SHA-256, the
+    values' lock SHA-256. Returns (lock, actors, lock SHA-256, step 2's values)."""
     import policy_phase as PP
     S, MC, s2 = PP.load_step2(run)
     d, results_path = step2_paths(run, seed, world)
@@ -206,122 +204,7 @@ def check_step2_saved(run, seed, world):
         raise PH.Refused("refused: prereg.json pins no step-2 results")
     if want is not None and LG.sha256_bytes(raw) != want:
         raise _stop_fp("the committed step-2 results", want=want, got=LG.sha256_bytes(raw))
-    res = json.loads(raw.decode("utf8"))
-    i = list(res["seeds"]).index(int(seed))
-    diffs = []
-    for arm, name in (lock.get("arm_ids") or {}).items():
-        table = ((res.get("points") or {}).get(world) or {}).get(arm)
-        if table is None:
-            continue
-        for sit in TC.SITUATIONS:
-            saved = None if name is None else vals["situations"][sit]["points"].get(name)
-            committed = table[sit]["per_seed"][i]
-            if saved != committed:
-                diffs.append(dict(arm=arm, situation=sit, saved=saved, committed=committed))
-    if diffs:
-        raise _stop_fp("step 2's saved points differ from the committed step-2 results", diffs=diffs[:10])
     return lock, acts, lock_sha, vals
-
-
-def evaluate_step2_saved(run, ctx):
-    """The main setting on seeds 0-4: step 2's saved actors, checked, then evaluated as every other actor (with the
-    70% hold); their as-trained points must equal step 2's exactly."""
-    k = run.key
-    lock, acts, lock_sha, vals = check_step2_saved(run, k.seed, k.world)
-    ids = dict(lock.get("arm_ids") or {})
-    ids[K.W0] = K.W0 if K.W0 in lock["names"] else None
-    names = sorted({v for v in ids.values() if v})
-    finite = dict(lock.get("finite") or {})
-    if K.W0 in names:
-        finite[K.W0] = bool(((lock.get("checks") or {}).get("b_w0") or {}).get("passed")) and \
-            bool(L._finite_tree(acts[K.W0]))
-    out = compute_values(run, ctx, names, finite, acts, ids, lock_sha, "step2_saved")
-    step2_bank = int(vals.get("bank_size") or TC.BANK_SIZE)
-    if int(ctx.cfg.bank_size) != step2_bank:
-        out["step2_points_compared"] = (f"not compared: this run evaluates {ctx.cfg.bank_size} starts per situation, "
-                                        f"step 2 evaluated {step2_bank} (a smoke run)")
-        out["step2_values_sha256"] = LG.file_sha256(step2_paths(run, k.seed, k.world)[0] / "values.json")
-        return out
-    diffs = []
-    for sit in TC.SITUATIONS:
-        for name in names:
-            if name not in vals["situations"][sit]["points"]:
-                continue
-            if out["situations"][sit]["points"][name] != vals["situations"][sit]["points"][name]:
-                diffs.append(dict(actor=name, situation=sit, step2=vals["situations"][sit]["points"][name],
-                                  now=out["situations"][sit]["points"][name]))
-    if diffs:
-        raise _stop_fp("step 2's actors re-evaluated here give other points than step 2's", diffs=diffs[:10])
-    out["step2_points_compared"] = "equal to step 2's, exactly"
-    out["step2_values_sha256"] = LG.file_sha256(step2_paths(run, k.seed, k.world)[0] / "values.json")
-    return out
-
-
-# --------------------------------------------------------------------------------------------- readouts
-
-def summary(x, mask=None):
-    x = np.asarray(x, np.float64)
-    if mask is not None:
-        x = x[np.asarray(mask, bool)]
-    x = x[np.isfinite(x)]
-    if not len(x):
-        return dict(n=0, mean=None, median=None, p90=None)
-    return dict(n=int(len(x)), mean=float(x.mean()), median=float(np.median(x)), p90=float(np.quantile(x, 0.9)))
-
-
-def split_summary(x, past):
-    return dict(all=summary(x), at_most_80=summary(x, ~past), past_80=summary(x, past))
-
-
-def band_pairs(sd, prep):
-    """The evaluation split's band rows: (float64 states, normalized float32 observations, float32 commands)."""
-    lg = sd.log
-    ev = lg.split_rows("evaluation")
-    rows = ev[N.in_band(lg["actions"][ev])]
-    states = np.asarray(lg["infos/state"][rows], np.float64)
-    obs = (np.asarray(lg["observations"][rows], np.float32) - prep.obs_mean) / prep.obs_std
-    acts = np.asarray(lg["actions"][rows], np.float32)
-    return rows, states, obs.astype(np.float32), acts
-
-
-def readouts(run, ctx):
-    """Reported only (module docstring); MC.info_only records any failure inside and never stops."""
-    import policy_phase as PP
-    _, MC, _ = PP.load_step2(run)
-    k = run.key
-    stage_lock_record(run)
-    sd = ctx.seed(k.world)
-    prep = ctx.prepared(k.world)
-    critic = ctx.critic(k.world)
-    rows, states, obs, acts = band_pairs(sd, prep)
-    a64 = acts.astype(np.float64)
-    past = np.any(np.abs(a64) > TC.KNEE, axis=1)
-    held = N.clip_throttle(a64, K.HOLD)
-    ctrl = RC.stall_aware(sd.physics)
-
-    def critic_error():
-        q = L.critic_rows(critic, obs, acts)[0].min(1)
-        q70 = L.critic_rows(critic, obs, held.astype(np.float32))[0].min(1)
-        truth = TR.q_value(ctrl, states, a64, sd.physics, horizon=sd.physics.length)
-        truth70 = TR.q_value(ctrl, states, held, sd.physics, horizon=sd.physics.length)
-        return dict(error=split_summary(q - truth, past), error_held70=split_summary(q70 - truth70, past),
-                    horizon=int(sd.physics.length))
-
-    def width():
-        import learner_phases as LP
-        import v6bca
-        band, brec = LP.load_v6_band(run.out_root, k.setting, k.world, k.seed)
-        if band is None:
-            return dict(missing=True, reason=brec.get("reason"))
-        w = v6bca.width_rows(band, obs, acts)
-        w70 = v6bca.width_rows(band, obs, held.astype(np.float32))
-        return dict(width=split_summary(w, past), width_held70=split_summary(w70, past))
-
-    return dict(kind="near80-readouts", setting=k.setting, world=k.world, seed=k.seed, group=k.group,
-                band_rows=int(len(rows)), band_rows_past_80=int(past.sum()),
-                critic_error=MC.info_only("the critic's error at band commands", critic_error, run.log),
-                version6_width=MC.info_only("version 6's width at band commands", width, run.log),
-                note="reported only; no mark reads these numbers")
 
 
 # --------------------------------------------------------------------------------------------- reproduction
@@ -333,8 +216,9 @@ def repro_item(name, passed, detail):
 def reproduction_items(got, want):
     """The reproduction check's verdicts from what the near-80 code produced (got) and the saved references (want),
     both {item: value}: removal (kept and bank hashes), critic (file SHA-256), clone and none (actor SHA-256),
-    critic_second (file SHA-256), switch (q05, height, on), w0_check, obca_k1 and range_hinge (actor SHA-256). A
-    difference in the second critic or the switch is reported under obca_k1 (BCA's switched ramp reads them)."""
+    critic_second (file SHA-256), switch (q05, height, on, on version 8's groups), w0_check, obca_k1 and range_hinge
+    (actor SHA-256). A difference in the second critic or the switch is reported under obca_k1 (BCA's switched ramp
+    reads them)."""
     items = {}
     for name in ("removal", "critic", "clone", "none", "w0_check", "range_hinge"):
         items[name] = repro_item(name, got.get(name) is not None and got.get(name) == want.get(name),
@@ -351,10 +235,9 @@ def _cert_key(cert):
 
 
 class ReproContext(SD.SettingContext):
-    """The main setting of seed 0 through the near-80 code with the band empty, for the reproduction check: the seed's
-    data from the gate's loader (no data record is needed), the prepared rows of the empty band's removal, and the
-    critic, cloned actor and no-caution actor the check itself trained; everything else (the full-log actor, the
-    anchors, the gate's configuration) as SettingContext gives it for the main setting on seed 0."""
+    """The main setting of seed 0 through the near-80 code with the gate's seed data (no data record is needed) and
+    the critic, cloned actor and no-caution actor the check itself trained; the full-log actor is the gate's check-2
+    actor (not trained here); the anchors and the gate's configuration as SettingContext gives them."""
 
     def __init__(self, run, built, seeds):
         super().__init__(run, "main", 0)
@@ -373,6 +256,9 @@ class ReproContext(SD.SettingContext):
     def none(self, world="stall"):
         return self._built[world]["none"]
 
+    def full_none(self):
+        return SD.gate_check2_actor(0, "full")
+
 
 # Stops inside the reproduction that are not a reproduction difference: a saved input whose fingerprint does not
 # match, or a training file that fails its check, is a missing or damaged input (section 8.2: it can be retried once
@@ -383,10 +269,11 @@ REPRO_RETRYABLE_STOPS = ("fingerprint", "training_file")
 
 def reproduce_policy(run, ctx, S, MC, table, seed=0):
     """policy_phase.train_world on the main setting of seed 0 in both worlds (the stalling world first, its payload
-    then serving as the no-stall world's lock, as in the official phases). Returns ({world: actors or None},
-    {world: detail}); a recorded stop inside train_world (the height-0 check, a learner, a built-in check) leaves that
-    world's actors None (its items then differ). A stop for a saved input or a training file (REPRO_RETRYABLE_STOPS)
-    is raised again: it is not a reproduction difference."""
+    then serving as the no-stall world's lock, as in the official phases), with the switch entries `table` (step 1's
+    own, so that step 2's actors can be reproduced). Returns ({world: actors or None}, {world: detail}); a recorded
+    stop inside train_world (the height-0 check, a learner, a built-in check) leaves that world's actors None (its
+    items then differ). A stop for a saved input or a training file (REPRO_RETRYABLE_STOPS) is raised again: it is
+    not a reproduction difference."""
     import policy_phase as PP
     got, detail, stall_payload = {}, {}, None
     for world in K.WORLDS:
@@ -409,11 +296,12 @@ def reproduce_policy(run, ctx, S, MC, table, seed=0):
 
 
 def reproduction(run):
-    """Plumbing only (scratch, full length, seed 0, both worlds; the band empty, that is the main setting through the
-    near-80 code path). Trains the critic, the cloned actor, the no-caution actor and the second critic of each world
-    exactly as the official phases do, scores the switch, then runs policy_phase.train_world (the official policy
-    phases' own function) on them, and compares with the gate's saved files, step 1's results and step 2's saved
-    locks. Returns {world: {item: {passed, detail, plain}}}."""
+    """Plumbing only (scratch, full length, seed 0, both worlds; the main setting through the near-80 code path).
+    Trains the critic, the cloned actor, the no-caution actor and the second critic of each world exactly as the
+    official phases do, scores the switch on version 8's groups (step 1's) and on the pooled groups, then runs
+    policy_phase.train_world (the official policy phases' own function) with step 1's entries, and compares with the
+    gate's saved files, step 1's results and step 2's saved locks. Returns {world: {item: {passed, detail, plain}}}
+    and reports the pooled certificate of seed 0 under each world's 'pooled' (not compared)."""
     import learner_phases as LP
     import policy_phase as PP
     if run.mode != "scratch" or run.steps is not None:
@@ -423,12 +311,12 @@ def reproduction(run):
     learn = p.config.learn
     seed = 0
     s1 = json.loads(Path(K.S1_RESULTS).read_bytes().decode("utf8"))
-    out, built = {}, {}
+    out, built, pooled = {}, {}, {}
     for world in K.WORLDS:
         sd = SD.gate_seed(seed, world)
-        empty = N.band_removal(sd.log, sd.gap, empty=True)
-        se, sg = empty.summary(sd.log), sd.removals["gap"].summary(sd.log)
-        prep = L.prepare(sd.log, empty, sd.norm(), learn)
+        rm = sd.removals["gap"]
+        sg = rm.summary(sd.log)
+        prep = L.prepare(sd.log, rm, sd.norm(), learn)
         res, crit = LP.train_critic(prep, learn, seed, None, run.log)
         from flax import serialization
         crit_file = LG.sha256_bytes(serialization.to_bytes(crit))
@@ -446,12 +334,15 @@ def reproduction(run):
         rm2, surv = LP.second_removal("main", sd, prep, gr)
         prep2 = L.prepare(sd.log, rm2, sd.norm(), learn)
         _, crit2 = LP.train_critic(prep2, learn, seed, None, run.log)
-        tail, rest = LP.switch_scores(crit2, prep, gr, learn.gamma)
+        tail, rest = LP.switch_scores_step1(crit2, prep, gr, learn.gamma)
         entry = LP.certificate_entry(tail, rest, seed, world, gr)
+        ptail, prest, pdetail = LP.switch_scores_pooled(crit2, sd, prep, gr, learn.gamma)
+        pentry = LP.certificate_entry(ptail, prest, seed, world, gr)
+        pooled[world] = dict(entry=pentry, detail=pdetail, refused=LP.refusal_of(pentry)[0])
         s1e = s1["per_seed_world"][f"{world}/seed{seed}"]
         built[world] = dict(prep=prep, crit=crit, clone=clone_p, none=none, entry=entry, sd=sd)
         out[world] = dict(
-            got=dict(removal=[se["kept_rows_sha256"], se["bank_rows_sha256"]], critic=crit_file,
+            got=dict(removal=[sg["kept_rows_sha256"], sg["bank_rows_sha256"]], critic=crit_file,
                      clone=L.tree_sha256(clone_p), none=L.tree_sha256(none),
                      critic_second=LG.sha256_bytes(serialization.to_bytes(crit2)),
                      switch=_cert_key(entry["certificate"])),
@@ -461,6 +352,8 @@ def reproduction(run):
                       none=L.tree_sha256(SD.gate_check2_actor(seed, "gapped" if world == "stall"
                                                               else "no_stall_gapped")),
                       critic_second=s1e["critic"]["file_sha256"], switch=_cert_key(s1e["certificate"])))
+        want_rm = sd.record["removals"]["gap"]
+        out[world]["want"]["removal"] = [want_rm["kept_rows_sha256"], want_rm["bank_rows_sha256"]]
     seeds = {w: built[w]["sd"] for w in K.WORLDS}
     ctx = ReproContext(run, built, seeds)
     acts, detail = reproduce_policy(run, ctx, S, MC, {w: built[w]["entry"] for w in K.WORLDS}, seed)
@@ -475,4 +368,7 @@ def reproduction(run):
     for w in K.WORLDS:
         for name in (K.W0, K.PRIMARY, "range_hinge"):
             items[w][name]["detail"]["policy"] = detail.get(w)
+        items[w]["obca_k1"]["detail"]["pooled_groups_certificate"] = dict(
+            certificate=_cert_key(pooled[w]["entry"]["certificate"]), groups=pooled[w]["entry"]["groups"],
+            refused=pooled[w]["refused"], note="reported, not compared: step 1 never computed the pooled groups")
     return items

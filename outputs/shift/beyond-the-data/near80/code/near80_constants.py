@@ -1,42 +1,163 @@
-"""Near-80 (version 8): every fixed constant shared by the approval chain, the runner and the looks. FINAL, awaiting
-the owner's approval. Standard library only, so that the approval code can import it without the gate or JAX.
+"""Near-80 (version 9, main setting): every fixed constant shared by the approval chain, the runner and the looks.
+DRAFT, not frozen, awaiting the owner. Standard library only, so that the approval code can import it without the
+gate or JAX.
 
-Changing any value here changes the code manifest and so the fingerprint the owner approves."""
+Version 9 supersedes version 8 in this folder: the main test's setting only (the densest-15% removal ball; no near-80
+band setting, no random-rows setting), on fresh seeds no study of this generator has used, with BCA's two groups
+pooled over every held-out recorded row outside the removal ball (the refusal fix), an outcome-free count of the
+full-throttle group before any training, the refusal rule (BCA refusing on a seed fails BCA's own arms on that
+seed, never the seed: in C1 they count as the no-caution actor; C2 and C3 leave the seed out), four new trained arms
+(the mean-difference switch with the plain 90% gap, with twice it, turning on the hand-set range limit, and BCA's
+switched ramp trained alone) and three claims (C1: version 8's claim 4 marks unchanged, the hand-set range limit added
+to the world-blind rivals; C2: BCA's switched ramp beats each plain twin by 5 points; C3, the mirror: a twin beats it).
+
+Changing any value here changes the code manifest and so the fingerprint the owner approves. DECISION.md (20 October
+2026, after three reviews) fixed every value below, and OWNER_ANSWER records the owner's own words answering the
+choices of section 16 (the defaults, with the university cluster as the run machine; the results copied back to the
+desktop and committed from there, the owner's second answer).
+
+Host profiles (section 12 of PREREGISTRATION.md): the cluster (hpc.charlotte.edu, Slurm, never root, a clone under
+/scratch/dbayha, the entry run_near80_cluster.sh with one job per fresh seed and a group job) runs version 9; the
+desktop (version 8's paths, root inside WSL, run_near80.sh) is the fallback. Both run the same frozen code with the
+same approval import and manifest checks. The host is chosen by NEAR80_HOST; the paths that depend on it are left out
+of the frozen constants block (HOST_DEPENDENT), everything else is frozen.
+"""
 import importlib.util
+import os
 import sys
 from pathlib import Path
 
 sys.dont_write_bytecode = True
 
+# ------------------------------------------------------------------------------------------------ placeholders
+# DECISION.md (20 October 2026) fixed the seed count (ten, 40-49), C2's margin (5.0 points, ceil(0.8 n) positive seeds,
+# all three twins), C3 (the mirror: -5.0 points, at most 1 positive seed) and MIN_CERTIFIED (8); OWNER_ANSWER below
+# holds the owner's answer. Nothing is open here; freeze.py refuses while this dict is not empty, while any mark value
+# is None, while OWNER_ANSWER is None, and while the documents carry a TODO(...) mark or "**DRAFT".
+PLACEHOLDERS = {}
+
+# ------------------------------------------------------------------------------------------------ host profiles
+HOST_PROFILES = {
+    "desktop": dict(root="/home/user/bca", python="/tmp/claude-0/bcavenv/bin/python", home="/root",
+                    requires_root=True, entry="run_near80.sh (tmux, one runner, lanes 1-16)",
+                    memory="WSL: MemTotal minus 8 GiB (version 7's rule)"),
+    "cluster": dict(root="NEAR80_ROOT: a git clone under /scratch/dbayha (never /home/user/bca)",
+                    python="NEAR80_PYTHON: a venv built from the package's pins (uv 0.11.32, Python 3.10.20, the "
+                           "stage2_gpu lock file's 67 wheels, hash-checked), the shift dependencies in BCA_SHIFT_DEPS",
+                    home="a stand-in HOME under /scratch/dbayha (never root; nothing under /users)", requires_root=False,
+                    entry="run_near80_cluster.sh (sbatch, account staruser, partition Orion, --constraint=caslake: one "
+                          "job per fresh seed at 8 processors, then one group job at 16 for the lock, every "
+                          "evaluation and the look; the same frozen runner, approval import and manifest checks as "
+                          "the desktop; its stub run finished all 19 phases on the cluster on 20 October 2026, "
+                          "V9_BUILD_NOTES.md)",
+                    memory="the job's Slurm memory (NEAR80_MEM_TOTAL_KB) minus 8 GiB"),
+    "test": dict(root="NEAR80_ROOT (a clone used by the unit tests; never an official run)", python="sys.executable",
+                 home="the user's HOME", requires_root=False, entry="the unit tests and stub runs only",
+                 memory="the fixture's own meminfo"),
+}
+HOST = os.environ.get("NEAR80_HOST", "desktop")
+if HOST not in HOST_PROFILES:
+    raise SystemExit(f"refused: NEAR80_HOST={HOST!r} is not one of {tuple(HOST_PROFILES)}")
+CLUSTER_SCRATCH = "/scratch/dbayha"
+DESKTOP_ROOT = "/home/user/bca"
+DESKTOP_PYTHON = "/tmp/claude-0/bcavenv/bin/python"
+
+
+def _host_root():
+    if HOST == "desktop":
+        return Path(DESKTOP_ROOT)
+    root = os.environ.get("NEAR80_ROOT")
+    if not root:
+        raise SystemExit(f"refused: NEAR80_HOST={HOST} needs NEAR80_ROOT (the repository clone)")
+    p = Path(root)
+    if HOST == "cluster":
+        if os.path.realpath(str(p)) == os.path.realpath(DESKTOP_ROOT) or not p.is_absolute():
+            raise SystemExit(f"refused: on the cluster NEAR80_ROOT must be an absolute path other than {DESKTOP_ROOT}")
+    return p
+
+
+def _host_python():
+    if HOST == "desktop":
+        return DESKTOP_PYTHON
+    if HOST == "cluster":
+        py = os.environ.get("NEAR80_PYTHON")
+        if not py:
+            raise SystemExit("refused: NEAR80_HOST=cluster needs NEAR80_PYTHON (the venv's python)")
+        return py
+    return sys.executable
+
+
+def _host_home():
+    if HOST == "desktop":
+        return "/root"
+    return os.environ.get("HOME") or os.environ.get("USERPROFILE") or str(Path.home())
+
+
 # ------------------------------------------------------------------------------------------------ paths
-ROOT = Path("/home/user/bca")
+ROOT = _host_root()
 N80_REL = "outputs/shift/beyond-the-data/near80"
 N80 = ROOT / N80_REL
 CODE = N80 / "code"
-OUT = ROOT / "runs" / "shift_explore" / "near80"            # official outputs (write-once)
-PRE_OUT = OUT / "pre"                                       # the frozen-code no-training checks before approval
+OUT = ROOT / "runs" / "shift_explore" / "near80_v9"          # official outputs (write-once); version 8's stay apart
+PRE_OUT = OUT / "pre"                                       # the frozen code's outcome-free counts before approval
 BTD = ROOT / "outputs" / "shift" / "beyond-the-data"
 S1_DIR = BTD / "restructure" / "step1"
 S2_DIR = BTD / "restructure" / "step2"
 S1_RESULTS = S1_DIR / "results" / "results.json"
 S2_RESULTS = BTD / "restructure" / "step2_results" / "results.json"
-S2_OUT = ROOT / "runs" / "shift_explore" / "restructure" / "step2"     # step 2's saved actors (desktop), read-only
+S2_OUT = ROOT / "runs" / "shift_explore" / "restructure" / "step2"     # step 2's saved actors, read-only
 V6_CODE = BTD / "stage2" / "code"
 V7_DIR = BTD / "stage2_v7"
-V7_R7 = ROOT / "runs" / "shift_explore" / "stage2_v7"                 # version 7's runner folder (its locks)
 V7_PLACE = V7_DIR / "laptop" / "lib" / "selftest_v7.py"              # version 7's placement of the version 6 code
-PYTHON = "/tmp/claude-0/bcavenv/bin/python"
-SCRATCH = Path("/tmp/claude-0/-home-user/9e341792-006d-5a11-a8e9-8fac16ac7f5b/scratchpad")
+PYTHON = _host_python()
+HOME = _host_home()
+V8_OUT = ROOT / "runs" / "shift_explore" / "near80"                   # version 8's outputs (never written)
 
 # ------------------------------------------------------------------------------------------------ identity
-LABEL = ("Version 8, near-80: the main test's setting with every recorded throttle from 70% to 90% also hidden")
-VERSION = "version 8, near-80"
+LABEL = ("Version 9, near-80 main: the main test's setting on fresh seeds, with BCA's two groups pooled over every "
+         "held-out row outside the removal ball")
+VERSION = "version 9, near-80 main"
+PREVIOUS_VERSION = "version 8, near-80"
 BRANCH = "claude/main-bca-connection-x4o46s"
 APPROVER_EMAIL = "35092758+dbayha7@users.noreply.github.com"
 APPROVER_NAME = "David Bayha"
 AGENT_EMAILS = ("noreply@anthropic.com",)
-OWNER_ANSWER = dict(text="accept the defaults", utc="2026-10-15T19:24:00Z",
-                    where="a comment on the ThrusterChain page", choices="every default of section 16")
+# The owner's own words answering the choices of PREREGISTRATION.md section 16 (DECISION.md section 16, defaults
+# 1-11), with the time and the place they were said, and what each choice takes: every default, except that the run
+# machine (choice 4) is the university cluster, with the desktop kept as the fallback. The first answer ("and
+# cluster") had been read as taking the cluster for choice 9 too (where results are committed from); asked about it,
+# the owner gave the second answer below: the results folder and the run files are copied from the cluster to the
+# desktop over the owner's own SSH session, checked by SHA-256 there, and committed and pushed from the desktop's
+# clone, as version 8's records were; so choice 9 takes its default (the desktop). `taken` names the choices that
+# are not their default; `second["choices"]` the choices the second answer settled. The freeze refuses while this is
+# None; no agent writes it from anything but the owner's words.
+OWNER_ANSWER = dict(
+    text="Accept the defaults and cluster",
+    utc="2026-10-20T18:29:00Z",
+    where="chat with the cloud assistant",
+    second=dict(text="committed from desktop after copying over from cluster",
+                utc="2026-10-20T19:20:00Z",
+                where="chat with the cloud assistant",
+                about="choice 9, where results are committed from: the desktop (the default), after the results and "
+                      "the run files are copied from the cluster over the owner's SSH session and checked by SHA-256",
+                choices=["9"]),
+    choices=["1: ten seeds, 40-49 (the default)",
+             "2: a refusal read per arm: no caution in C1, the seed left out of C2 and C3 (the default)",
+             "3: no second held-out log (the default)",
+             "4: the machine: the university cluster hpc.charlotte.edu (the cluster entry, one job per seed on the "
+             "caslake nodes); the desktop is the fallback",
+             "5: version 7's memory rule (the default)",
+             "6: 10 lanes (the default; on the cluster 8 per seed job and 16 for the group job)",
+             "7: version 9 in place in near80/ (the default)",
+             "8: the plain 90% gap and twice it (the default)",
+             "9: results are committed from the desktop (the default; the second answer): the results folder and the "
+             "output root are copied from the cluster to the desktop over the owner's SSH session, checked by SHA-256 "
+             "on the desktop, and committed and pushed from the desktop's clone, as version 8's records were; the login "
+             "node pushes nothing",
+             "10: no fresh start bank (the default)",
+             "11: no retrain of seeds 0-4's second critics (the default)"],
+    taken={"4": "the university cluster hpc.charlotte.edu (run_near80_cluster.sh); the desktop entry is the fallback"},
+)
 
 # ------------------------------------------------------------------------------------------------ the approval files
 PREREG_KIND = "near80-preregistration"
@@ -46,27 +167,45 @@ IMPORT_KIND = "near80-import-record"
 LOCAL_MODE = "local-terminal"
 STATUS_FINAL = "final, awaiting approval"
 STATUS_LINE_FINAL = "FINAL, awaiting the owner's approval. Nothing has been trained."
+STATUS_DRAFT = "draft"
+STATUS_LINE_DRAFT = "DRAFT, not frozen, awaiting the owner. Nothing has been trained."
 PREFIX_LEN = 16
 PREREG_NAME = "prereg.json"
 MANIFEST_NAME = "code_manifest.json"
 APPROVAL_NAME = "approval_near80_{prefix}.json"
 IMPORT_NAME = "import_near80_{prefix}.json"
 HISTORY_DIR = "prereg_history"
+DRAFT_NAME = "prereg_draft.json"
 DRAFT_HISTORY_NAME = "prereg_draft_{prefix}.json"
+SUPERSEDED_NAME = "prereg_superseded_{prefix}.json"
 MANIFEST_HISTORY_DIR = "code_manifest_history"
 PRE_APPROVAL_DIR = "pre_approval"
-NO_TRAINING_FROZEN_NAME = "no_training_checks_seeds0_4.json"
+COUNTS_FROZEN_NAME = "pooled_facts_seeds0_4_spent10_14.json"   # the pre-approval facts (nothing trained)
 TEST_MARKER = "NEAR80_TEST_FIXTURE"
 TEST_MARKER_TEXT = "near-80 test fixture: synthetic files only\n"
 
+# Version 8's files that stay in this folder as history (its approval chain, its amendment, its frozen checks and its
+# results). The approval script and the freeze allow exactly these beside version 9's own files; nothing reads them.
+V8_PREFIX, V8_AMENDMENT_PREFIX = "51e677ab76c8d2f7", "52fe05b92900290b"
+V8_HISTORY_FILES = ("approval_near80_51e677ab76c8d2f7.json", "import_near80_51e677ab76c8d2f7.json", "amendment_1.json",
+                    "approval_near80_amendment1_52fe05b92900290b.json",
+                    "import_near80_amendment1_52fe05b92900290b.json")
+V8_HISTORY_DIRS = ("results-20261020T115246Z",)
+V8_FROZEN_NAME = "no_training_checks_seeds0_4.json"
+V9_NOTES = "V9_BUILD_NOTES.md"
+# The session's decision files (DECISION.md and its revision log, the credit and power calculations, the preview),
+# kept as history beside the package; unpinned like the build notes, allowed by the approval script, read by nothing.
+V9_DECISION_DIR = "decision"
+
 # Files the code manifest lists, relative to N80 (code/ is listed by name; freeze refuses any other file there).
-TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "push_runfiles_near80.sh")
+TOP_FILES = ("PREREGISTRATION.md", "README.md", "approve_local_near80.py", "run_near80.sh", "run_near80_cluster.sh",
+             "near80_slurm_job.sh", "push_runfiles_near80.sh")
 CODE_FILES = ("near80_constants.py", "near80lib.py", "facts_near80.py", "test_near80.py", "approval_check.py",
               "import_approval.py", "near80_prereg.py", "freeze.py", "test_approval.py", "near80_runner.py",
               "phases.py", "phase_main.py", "settingdata.py", "learner_phases.py", "policy_phase.py",
-              "evaluate_phase.py", "v6bca.py", "ledger.py", "stubs.py", "test_runner.py", "pooled.py",
-              "claims_text.py", "test_pooled.py")
-TEST_FILES = ("test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py")
+              "evaluate_phase.py", "ledger.py", "stubs.py", "test_runner.py", "pooled.py", "claims_text.py",
+              "test_pooled.py", "test_v9.py")
+TEST_FILES = ("test_near80.py", "test_approval.py", "test_runner.py", "test_pooled.py", "test_v9.py")
 # Repository code the near-80 code imports or executes, pinned file by file in the manifest (repository_files).
 PIN_DIRS = ("experiments/shift", "calibration", "algorithms", "runtime",
             "outputs/shift/beyond-the-data/restructure/step1", "outputs/shift/beyond-the-data/restructure/step2",
@@ -78,10 +217,41 @@ PIN_FILES = ("outputs/shift/beyond-the-data/restructure/step1/results/results.js
              "outputs/shift/beyond-the-data/stage2/prereg.json")
 
 # ------------------------------------------------------------------------------------------------ seeds and worlds
-EXPLORATORY = (0, 1, 2, 3, 4)
-CONFIRMATORY = (10, 11, 12, 13, 14)
-RESERVED = (5, 6, 7, 8, 9)                 # version 6/7's; refused always, in every mode
-GROUPS = ("exploratory", "confirmatory")
+# The seed registry of this generator (DATA_SEED 20261012; every seed any study has used or named). Version 9's fresh
+# seeds come from the block 40-59, which no registry or record names (checked: this repository, the near-80 branches,
+# and outputs/shift/beyond-the-data/placement_test/seed_registry.json on claude/placement-test-design).
+SEED_REGISTRY = {
+    "0-4": "seen by everything (the gate, version 6 stage 2, steps 1 and 2, the routes, near-80 version 8)",
+    "5-9": "version 6/7's confirmatory seeds",
+    "10-14": "near-80 version 8's confirmatory seeds (run 19 October 2026; claim 4 failed on 10, 12 and 13)",
+    "15-19": "named as the fallback block for step 2's confirmation (version 8, choice 6)",
+    "20-24": "the placement test's optional margin block (seed_registry.json, claude/placement-test-design)",
+    "25-29": "the placement test's planned confirmatory seeds (seed_registry.json)",
+    "30-34": "the placement test's extension block (seed_registry.json)",
+    "100-119": "the gate's confirmation seeds (logs generated, never trained on)",
+    "900-909": "stage 0's design seeds",
+}
+USED_SEEDS = frozenset(list(range(0, 35)) + list(range(100, 120)) + list(range(900, 910)))
+SMOKE_SEEDS = (0,)                         # the plumbing's seed (a gate seed): scratch and stub runs only
+# The owner's rule (20 October 2026): every stub, smoke or plumbing test runs on seed 0, and no test, fixture, default
+# or example names a reserved fresh seed (40-59). The unit tests that need a fresh GROUP of several seeds (the look's
+# arithmetic on synthetic records, the runner's fake phases) patch FRESH to these labels inside the test process: no
+# study uses them, no registry names them, and nothing is ever generated or trained on them.
+TEST_LABELS = tuple(range(1000, 1010))
+STUB_FRESH_ENV = "NEAR80_STUB_FRESH_LABELS"   # =1: FRESH is TEST_LABELS (the tests only; see below FRESH)
+SPENT_SEEDS = (10, 11, 12, 13, 14)         # version 8's fresh seeds: read by the pre-approval facts only (section 8.1)
+FRESH_SEED_BLOCK = (40, 59)                # the block version 9 draws its fresh seeds from, in order
+# DECISION.md 2.4: ten fresh seeds, 40-49; seeds 50-59 are reserved for a version 10 and refused by this one.
+FRESH = tuple(range(40, 50))
+RESERVED_SEEDS = tuple(range(50, 60))
+# The unit tests' fresh group: with NEAR80_STUB_FRESH_LABELS=1 in the environment FRESH is TEST_LABELS, so that no test
+# names or runs a reserved seed (the fake phases and the stub phases of the tests see the same labels as the test
+# process that wrote their fixture). Only the tests set it; near80_runner forwards it to phase processes in stub mode
+# only; the entries never set it. An official run cannot be moved by it: prereg.json pins FRESH, and every phase's
+# approval check (approval_check.check_constants) refuses a constants module whose FRESH differs from the pinned one.
+if os.environ.get(STUB_FRESH_ENV) == "1":
+    FRESH = TEST_LABELS
+GROUPS = ("smoke", "fresh")
 WORLDS = ("stall", "no_stall")
 WORLD_TAG = {"stall": 1, "no_stall": 2}    # step 1's tags; never end a tag list in 0
 SITUATIONS = ("recorded", "strong_current", "big_waves", "big_kicks")   # thruster_chain.SITUATIONS order
@@ -92,12 +262,11 @@ SITUATION_PLAIN = {"recorded": "recorded conditions", "strong_current": "strong 
 WORLD_PLAIN = {"stall": "stalling world", "no_stall": "no-stall world"}
 
 # ------------------------------------------------------------------------------------------------ settings and data
-SETTINGS = ("main", "near80", "random_rows")
-SETTING_REMOVAL = {"main": "gap", "near80": "ball_band", "random_rows": "ball_random_rows"}
-BAND_LO, BAND_HI, BAND_SCOPE = 0.70, 0.90, "any"
-HOLD = 0.70                                # held to 70% at test (unseen-throttle gain)
-CAP = 0.80                                 # capped at 80% at test (overshoot loss); recorder.CappedController's cap
-KNEE32 = 0.800000011920929                 # float(numpy.float32(0.8)) == thruster_chain.KNEE: the knee arms' start
+SETTINGS = ("main",)
+SETTING_REMOVAL = {"main": "gap"}
+HOLD = 0.70                                # held to 70% at test (the unseen-throttle readout, carried over)
+CAP = 0.80                                 # capped at 80% at test (the overshoot readout)
+KNEE32 = 0.800000011920929                 # float(numpy.float32(0.8)) == thruster_chain.KNEE
 VARIANT = "base"                           # the gate's variant; fresh seeds use its recorder, sizes and stall slope
 
 # ------------------------------------------------------------------------------------------------ learners
@@ -107,105 +276,127 @@ CRITIC_UPDATES = 100_000
 SMOKE_STEPS, SMOKE_CHUNK, SMOKE_UPDATES, SMOKE_STARTS = 40, 20, 40, 20
 CONTROLLER = "stall_aware"
 GAP_RULE = dict(upper_quantile=0.99, min_gap=0.05, min_tail=9)
+# Section 8.1, check 4: the gap rule must be defined and its lower end t_lo must lie in this range (seen 0.782-0.791
+# on the 20 recorded seed-worlds); the data phase stops the seed-world otherwise (near80lib.gap_rule_problem).
+T_LO_RANGE = (0.78, 0.80)
 CERT = dict(alpha=0.1, credibility=0.95, draws=1000, statistic_quantile=0.05, margin=0.10)
 CERT_TAG_HEAD = (20261015, 9700)           # certificate rng tags: [20261015, 9700, seed, WORLD_TAG[world]] (+[1] / [2])
+CERT_MIN_ROWS = 29                         # reported: 0.9^29 < 0.05, the smallest group size whose draws can certify
 ARM_RULE = dict(fixed_height=1.0, conformal_margin=0.10, rank_p=0.05)   # step 2's arms rule, unchanged
-MEANDIFF_MARGIN = 0.10                     # meandiff_k1: on when mean(full-throttle) - mean(rest) > 0.10
+MEANDIFF_MARGIN = 0.10                     # the mean-difference switch: on when mean(full throttle) - mean(rest) > 0.10
 W0_TOL = 1e-5
+# The pooled groups (the refusal fix): every held-out recorded row outside the removal ball, that is the whole
+# calibration split and the whole evaluation split minus the ball's rows, split by step 1's gap rule (t > t_lo is the
+# full-throttle group), together with the training-split survivors step 1 already scored. Every switch arm reads them.
+POOLED_SPLITS = ("calibration", "evaluation")
 
 # ------------------------------------------------------------------------------------------------ arms (logical ids)
 PRIMARY = "obca_k1"
 W0 = "w0_check"
 STEP2_RAMP_ARMS = ("obca_k1", "obca_k2", "obca_forced", "fixed_gated", "conformal_k1", "meangap_k1")
-NEW_RAMP_ARMS = ("meandiff_k1", "knee_ramp")
+# C2's and C3's twins (DECISION.md 2.5): the mean-difference switch with the plain 90%-quantile gap, with twice that
+# gap, and turning on the hand-set range limit. Each makes BCA's call by the mean difference, so BCA ahead of or
+# behind one is a reading about heights.
+TWIN_ARMS = ("meandiff_q90x1", "meandiff_q90x2", "meandiff_limit")
+NOISE_ARM = "obca_k1_alone"                                        # BCA's switched ramp trained alone: the noise
+                                                                   # floor's copy and C2's and C3's BCA side
+BCA_DEPENDENT = ("obca_k1", "obca_k2", "obca_forced", "obca_k1_alone")   # refused when BCA's height is not finite
+NEW_ARMS = ("meandiff_k1", "meandiff_q90x1", "meandiff_q90x2", "meandiff_limit", "obca_k1_alone")
+LONE_CALLS = ("meandiff_k1", "meandiff_q90x1", "meandiff_q90x2", "obca_k1_alone")   # ramp programs of one, in order;
+                                                                                    # then meandiff_limit (a hinge)
 MATCHED = ("even_pull", "push_less", "random_1", "random_2")
 WORLD_BLIND = ("standin", "even_pull", "random_1", "random_2", "obca_forced")   # step 2's order (ties: first)
-REPORTED_ONLY = ("obca_k2", "fixed_gated", "conformal_k1", "meangap_k1", "meandiff_k1")
-HAND_SET_LIMIT = "range_hinge"            # the draft's "range_hinge_k1"
+HAND_SET_LIMIT = "range_hinge"
+LEAD_RIVALS = WORLD_BLIND + (HAND_SET_LIMIT,)      # C1's net-lead rivals (DECISION.md 2.5; ties go to the first)
+REPORTED_ONLY = ("obca_k2", "fixed_gated", "meangap_k1", "conformal_k1", "meandiff_k1", "obca_k1_alone")
 ARMS = {
-    "near80": ("none", "clone", "full_none", W0) + STEP2_RAMP_ARMS + NEW_RAMP_ARMS
-              + ("perfect_band", "range_hinge", "knee_limit") + MATCHED + ("standin", "version6_bca"),
-    "random_rows": ("none", "clone", W0, "obca_k1", "range_hinge"),
-    "main": ("none", "clone", "full_none", W0) + STEP2_RAMP_ARMS + ("perfect_band", "range_hinge") + MATCHED
-            + ("standin",),
+    "main": ("none", "clone", "full_none", W0) + STEP2_RAMP_ARMS + NEW_ARMS + ("perfect_band", "range_hinge")
+            + MATCHED + ("standin",),
 }
 STALL_ONLY_ARMS = ("full_none",)
 ARM_PLAIN = {"obca_k1": "BCA's switched ramp", "obca_forced": "the always-on ramp", "standin": "the matched range limit",
              "even_pull": "the matched even pull", "random_1": "the first matched random surface",
              "random_2": "the second matched random surface", "range_hinge": "the hand-set range limit",
              "none": "the controller trained without caution", "full_none": "the full-log controller",
-             "version6_bca": "version 6's BCA", "push_less": "the matched push-less penalty",
-             "perfect_band": "the perfect band", "knee_ramp": "the ramp started at the stall",
-             "knee_limit": "the range limit placed at the stall", "clone": "the cloned actor",
-             "w0_check": "the plumbing check", "obca_k2": "the ramp at twice BCA's height",
-             "fixed_gated": "BCA's switch with height 1.0", "conformal_k1": "the split-conformal switch",
-             "meangap_k1": "the rank-test switch", "meandiff_k1": "the mean-difference switch"}
+             "push_less": "the matched push-less penalty", "perfect_band": "the perfect band",
+             "clone": "the cloned actor", "w0_check": "the plumbing check",
+             "obca_k2": "the ramp at twice BCA's height", "fixed_gated": "BCA's switch with height 1.0",
+             "conformal_k1": "the split-conformal switch", "meangap_k1": "the rank-test switch",
+             "meandiff_k1": "the mean-difference switch with the mean gap as its height",
+             "meandiff_q90x1": "the mean-difference switch with the plain 90% gap",
+             "meandiff_q90x2": "the mean-difference switch with twice the plain 90% gap",
+             "meandiff_limit": "the mean-difference switch with the hand-set range limit",
+             "obca_k1_alone": "BCA's switched ramp trained alone (the noise-floor copy)"}
 
 # ------------------------------------------------------------------------------------------------ marks (section 9)
 MARKS = dict(
-    harm_min=30.0,                  # full-log actor minus no caution, near-80, stalling, strong current (validity, stop)
-    past80_min=0.25,                # no caution's share of strong-current steps past 80% (validity, stop)
-    rival_band_cost_min=5.0,        # hand-set range limit's band cost (stop on 0-4; claim 3 validity)
-    noise_floor_max=5.0,            # |random rows - main| for range_hinge and obca_k1 on 0-4 (drops claim 3)
-    net_lead_margin=10.0,           # claims 1 and 4
-    keeps_floor=-3.0,               # claims 1 and 4, three other situations
-    even_pull_margin=15.0,          # claims 1 and 4
-    gain_min=5.0, gain_positive_seeds_min=4,              # claim 2
-    overshoot_max=5.0,                                    # claim 2
-    band_cost_diff_min=5.0, band_cost_positive_seeds_min=4,   # claim 3
-    check10_seeds_min=4,                                  # claims 2 and 3 validity (of 5 fresh seeds)
+    harm_min=30.0,                  # validity: full-log actor minus no caution, stalling world, strong current
+    past80_min=0.25,                # validity: no caution's share of strong-current steps past 80%
+    noise_floor_max=5.0,            # |obca_k1 - obca_k1_alone| pooled, stalling world, strong current (drops C2)
+    net_lead_margin=10.0,           # C1 (step 2's three go marks, version 8's claim 4)
+    keeps_floor=-3.0,
+    even_pull_margin=15.0,
 )
-DEFAULTS = dict(thrusters="any", band=(0.70, 0.90), with_ball=True, signs="both", region_floor=0.35,
-                main_on_fresh_seeds=True, random_rows_control=True, version6_bca=True,
-                after_poor_bca="run seeds 10-14 anyway", checkpoint=None, hosts="TD3+BC actor-only",
-                when="after version 7's run on the desktop has finished", lanes=10, name="version 8, near-80",
-                claim2_marks=5.0)
+# C2 (DECISION.md 2.6): per twin, d = NET(obca_k1_alone) - NET(twin) over the certified seeds; "BCA ahead" when the
+# mean of d is at least net_margin and d is positive in at least ceil(positive_share * n) seeds (8 of 10, 8 of 9, 7 of
+# 8; positive_seeds_min is the ten-seed value); C2 holds when BCA is ahead of all three twins.
+MARKS_C2 = dict(net_margin=5.0, positive_seeds_min=8, positive_share=0.8, multiplicity="all_three")
+# C3 (the mirror, one claim per twin): "the twin ahead" when the mean of d is at most net_margin and d is positive in
+# at most positive_seeds_max seeds. Otherwise the reading is a tie ("not shown to beat T by 5 points").
+MARKS_C3 = dict(net_margin=-5.0, positive_seeds_max=1)
+MIN_CERTIFIED = 8                          # C2 and C3 are read only when at least this many seeds certified
+MULTIPLICITY_RULES = ("all_three", "each_separately")
+DEFAULTS = dict(setting="main", seeds="ten seeds, 40-49", pooled_groups=True,
+                refusal_rule="per arm: no caution in C1; the seed left out of C2 and C3",
+                noise_floor="obca_k1 trained alone", hosts="TD3+BC actor-only", lanes=10, name="version 9, near-80 main",
+                machine="the cluster (hpc.charlotte.edu, caslake nodes); the desktop as the fallback")
 
 # ------------------------------------------------------------------------------------------------ the runner
-PHASE_KINDS = ("fixed_checks", "data_main", "data_band", "critic", "critic_full", "critic_second", "switch", "clone",
-               "reference_actors", "v6_band", "policy", "lock", "evaluate", "readouts", "look_exploratory",
-               "look_confirmatory")
-PHASE_PLAIN = {"fixed_checks": "the checks on the fixed test start sets",
-               "data_main": "the main setting's data and the gate's checks",
-               "data_band": "the near-80 and random-rows data and their no-training checks",
+PHASE_KINDS = ("data_main", "critic", "critic_full", "critic_second", "switch", "clone", "reference_actors", "policy",
+               "lock", "evaluate", "look")
+PHASE_PLAIN = {"data_main": "the main setting's data, the gate's checks and the pooled group counts",
                "critic": "the critic", "critic_full": "the full-log critic", "critic_second": "BCA's second critic",
-               "switch": "BCA's switch and height", "clone": "the cloned actor",
-               "reference_actors": "the no-caution and full-log actors", "v6_band": "version 6's BCA band",
-               "policy": "the actor training", "lock": "the lock", "evaluate": "the evaluation",
-               "readouts": "the readouts", "look_exploratory": "the exploratory look",
-               "look_confirmatory": "the confirmatory look"}
+               "switch": "BCA's switch and height on the pooled groups", "clone": "the cloned actor",
+               "reference_actors": "the no-caution and full-log actors", "policy": "the actor training",
+               "lock": "the lock", "evaluate": "the evaluation", "look": "the look"}
 DEFAULT_LANES, MAX_LANES = 10, 16
+# The cluster entry's jobs (run_near80_cluster.sh; the smoke of 20 October 2026 measured the sizes): the login node
+# hpc.charlotte.edu, Slurm account staruser, partition Orion, one processor type for a whole run. Lanes are
+# --cpus-per-task; a seed's width is 7 phases; the group job holds every evaluation (2 per seed) beside the lock and
+# the look. The seed job ends once only lock-dependent phases remain (near80_runner.Cfg.mine).
+CLUSTER = dict(login="hpc.charlotte.edu", account="staruser", partition="Orion", constraint="caslake",
+               scratch=CLUSTER_SCRATCH, pinned_deps="/root/.cache/bca-shift/py",
+               jobs=dict(plumbing=dict(lanes=4, mem_gb=16, time="02:00:00"),
+                         seed=dict(lanes=8, mem_gb=24, time="03:00:00"),
+                         group=dict(lanes=16, mem_gb=24, time="01:00:00")))
 GIB = 1024 ** 3
 UNMEASURED_GIB, HEADROOM_GIB, MEASURED_FACTOR = 7, 8, 1.25
 POLICY_KINDS = ("policy",)
 POLICY_CAP_UNMEASURED = 2
 EXIT_REFUSED, EXIT_STOP = 97, 2
-EXIT_PAUSED = 5                            # the runner: the budget guard paused the run (budget-continue lifts it)
-# PYTHONPYCACHEPREFIX: Python reads and writes compiled bytecode only under this (absent) folder, so a __pycache__ next
-# to a pinned source file is never loaded in place of the verified source (with PYTHONDONTWRITEBYTECODE=1, nothing is
-# written there either). Stub runs, on synthetic fixtures only, leave it out (near80_runner.Cfg.phase_env).
+EXIT_PAUSED = 5
 PYCACHE_PREFIX = "/nonexistent/near80_no_pycache"
-PHASE_ENV = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME": "/root",
+PHASE_ENV = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "HOME": HOME,
              "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "PYTHONPATH": str(ROOT), "PYTHONDONTWRITEBYTECODE": "1",
              "PYTHONPYCACHEPREFIX": PYCACHE_PREFIX, "JAX_PLATFORMS": "cpu", "OMP_NUM_THREADS": "1"}
-FORECAST_CPU_HOURS = {"plumbing": 2.5, "exploratory": 16.0, "confirmatory_band": 16.0, "confirmatory_main": 8.5}
-BUDGET_STAGES = ("exploratory", "confirmatory_band", "confirmatory_main")   # the stages that can pause (plumbing has
-#                                                                            no phase of the official plan)
+if HOST == "cluster":
+    PHASE_ENV["PATH"] = os.environ.get("PATH", PHASE_ENV["PATH"])        # the module's python and its tools
+# Version 8's ledger (results-20261020T115246Z): 1.52 CPU-hours per main-setting seed (seeds 11 and 14: 1.53 and
+# 1.51, both worlds, every phase); the five programs run alone (four lone ramp calls of about 63 s in the stalling
+# world and 40 s in the no-stall world, and the hinge) add about 0.14; the pooled scores seconds. About 1.65 expected;
+# 2.2 is the forecast with margin (the guard pauses at twice it; the cap is 2.5 times it: 55 CPU-hours for ten seeds).
+FORECAST_CPU_HOURS_PER_SEED = 2.2
+FORECAST_CPU_HOURS = {"plumbing": 2.5, "fresh": FORECAST_CPU_HOURS_PER_SEED * len(FRESH)}
+BUDGET_STAGES = ("fresh",)
 PAUSE_FACTOR = 2.0
-CAP_CPU_HOURS = 50.0
-# Peak memory from the plumbing (section 13): the reproduction check runs these kinds at full length in one process,
-# whose peak seeds their reservations; every other kind reserves at least SMOKE_FLOOR_GIB until an official attempt of
-# it has been measured.
+CAP_CPU_HOURS = round(2.5 * FORECAST_CPU_HOURS_PER_SEED * len(FRESH), 1)
 REPRO_PEAK_KINDS = ("critic", "critic_full", "critic_second", "switch", "clone", "reference_actors", "policy")
 SMOKE_FLOOR_GIB = 2.0
-V7_RESULTS = V7_DIR / "results" / "BUNDLE.json"            # version 7's gathered results (its run has finished)
-RUNFILES_BRANCH = "claude/near80-run-files"
+RUNFILES_BRANCH = "claude/near80-v9-run-files"
 
 # Output layout under an output root (OUT, or a scratch or fixture folder). Every JSON has a '<name>.sha256' sidecar.
 LAYOUT = dict(
-    fixed="fixed/fixed_checks.json",
     data_main="data/main/{world}/seed{seed}/data.json",
-    data_band="data/band/{world}/seed{seed}/data.json",
     train_file="data/{setting}/{world}/seed{seed}/train.hdf5",
     critic="learners/{setting}/{world}/seed{seed}/critic.json",
     critic_full="learners/full/stall/seed{seed}/critic.json",
@@ -213,21 +404,18 @@ LAYOUT = dict(
     switch="learners/{setting}/{world}/seed{seed}/switch.json",
     clone="learners/{setting}/{world}/seed{seed}/clone.json",
     reference_actors="learners/{setting}/{world}/seed{seed}/reference_actors.json",
-    v6_band="learners/{setting}/{world}/seed{seed}/v6_band.json",
     policy_lock="policy/{setting}/{world}/seed{seed}/lock.json",
     policy_stop="policy/{setting}/{world}/seed{seed}/stop.json",
     stage_lock="stage_lock/{group}.json",
     values="eval/{setting}/{world}/seed{seed}/values.json",
-    readouts="readouts/{setting}/{world}/seed{seed}/readouts.json",
     look="looks/{group}.json",
     look_md="looks/{group}.md",
     halt_report="looks/halt_report.json",
     phase_stop="stops/{phase_id}.json",
-    plumbing="plumbing/plumbing.json",                         # written only when the plumbing passed
-    reproduction_differs="plumbing/reproduction_differs.json",  # the reproduction differed: nothing official, ever
-    plumbing_failed="plumbing/failed_{utc}.json",               # any other plumbing failure (it may be run again)
-    budget_continue="budget/{stage}/{n}.json",                  # one typed 'budget-continue STAGE' each
-    version7_ended="version7_ended.json",                       # the typed acknowledgement that version 7 ended
+    plumbing="plumbing/plumbing.json",
+    reproduction_differs="plumbing/reproduction_differs.json",
+    plumbing_failed="plumbing/failed_{utc}.json",
+    budget_continue="budget/{stage}/{n}.json",
     ledger_dir="ledger/{phase_id}",
     phase_lock="locks/{phase_id}.lock",
     log="logs/{phase_id}.log",
@@ -238,6 +426,10 @@ LAYOUT = dict(
     retry="retry/{phase_id}/{n}.json",
 )
 
+# Names whose values depend on the host (NEAR80_HOST): left out of the frozen constants block.
+HOST_DEPENDENT = ("HOST", "ROOT", "N80", "CODE", "OUT", "PRE_OUT", "BTD", "S1_DIR", "S2_DIR", "S1_RESULTS", "S2_RESULTS",
+                  "S2_OUT", "V6_CODE", "V7_DIR", "V7_PLACE", "PYTHON", "HOME", "V8_OUT", "PHASE_ENV")
+
 
 def path(root, name, **kw):
     """The path of layout entry `name` under the output root `root`."""
@@ -245,20 +437,87 @@ def path(root, name, **kw):
 
 
 def phase_id(kind, setting="x", world="x", seed=None, group=None):
-    """'<kind>.<setting>.<world>.<s{seed} | group | x>', e.g. 'policy.near80.stall.s3', 'lock.x.x.exploratory'."""
+    """'<kind>.<setting>.<world>.<s{seed} | group | x>', e.g. 'policy.main.stall.s40', 'lock.x.x.fresh'."""
     tail = f"s{int(seed)}" if seed is not None else (group or "x")
     return f"{kind}.{setting}.{world}.{tail}"
 
 
-def group_of(seed):
+def seed_holder(seed):
+    """Who holds a used seed (SEED_REGISTRY), or None when no study names it."""
     s = int(seed)
-    if s in RESERVED:
-        raise ValueError(f"refused: seed {s} belongs to version 6/7 (5-9)")
-    if s in EXPLORATORY:
-        return "exploratory"
-    if s in CONFIRMATORY:
-        return "confirmatory"
-    raise ValueError(f"refused: seed {s} is not one of this version's seeds (0-4, 10-14)")
+    for span, who in SEED_REGISTRY.items():
+        a, b = (int(x) for x in span.split("-"))
+        if a <= s <= b:
+            return who
+    return None
+
+
+def group_of(seed):
+    """'smoke' for the plumbing's seed 0, 'fresh' for a version 9 seed; refuses every other seed, naming its holder."""
+    s = int(seed)
+    if s in FRESH:
+        return "fresh"
+    if s in SMOKE_SEEDS:
+        return "smoke"
+    who = seed_holder(s)
+    if who is not None:
+        raise ValueError(f"refused: seed {s} is not one of version 9's seeds: it belongs to {who}")
+    raise ValueError(f"refused: seed {s} is not one of version 9's seeds (the plumbing's {SMOKE_SEEDS}; the fresh "
+                     f"seeds {FRESH})")
+
+
+def placeholders_present():
+    """The open items: PLACEHOLDERS' names, any MARKS_C2 or MARKS_C3 value still None, MIN_CERTIFIED None, and
+    OWNER_ANSWER None (the owner's own words). Empty when everything is fixed (then freeze.py may freeze)."""
+    out = list(PLACEHOLDERS)
+    for k, v in MARKS_C2.items():
+        if v is None and f"c2_{k}" not in out:
+            out.append(f"c2_{k}")
+    for k, v in MARKS_C3.items():
+        if v is None and f"c3_{k}" not in out:
+            out.append(f"c3_{k}")
+    if MIN_CERTIFIED is None:
+        out.append("min_certified")
+    if OWNER_ANSWER is None and "owner_answer" not in out:
+        out.append("owner_answer")
+    if MARKS_C2.get("multiplicity") not in (None,) + MULTIPLICITY_RULES:
+        out.append("c2_multiplicity (not one of the known rules)")
+    if not (FRESH_SEED_BLOCK[0] <= min(FRESH) and max(FRESH) <= FRESH_SEED_BLOCK[1]):
+        out.append("seeds (outside the block)")
+    if set(FRESH) & set(RESERVED_SEEDS):
+        out.append("seeds (a reserved seed)")
+    return out
+
+
+def c2_positive_needed(n_certified):
+    """ceil(positive_share * n): the seeds C2's sign part requires (8 of 10, 8 of 9, 7 of 8)."""
+    import math
+    return int(math.ceil(float(MARKS_C2["positive_share"]) * int(n_certified) - 1e-9))
+
+
+def certify_chance(n_tail, cfg=None):
+    """The exact chance that BCA's certificate gives a finite height for a full-throttle group of n rows: each of
+    the 1,000 posterior draws is infinite with chance (1 - alpha)^n whatever the scores say (its test atom alone
+    exceeds alpha of the mass), and the group is certified when at most (1 - credibility) of the draws are infinite,
+    so P(Binomial(draws, (1 - alpha)^n) <= floor((1 - credibility) * draws)), summed in log space with the standard
+    library: 0 up to 24 rows, 0.405 at 28, 0.700 at 29, 0.896 at 30, 0.976 at 31, 0.9995 at 33."""
+    import math
+    c = CERT if cfg is None else cfg
+    n = int(n_tail)
+    if n <= 0:
+        return 0.0
+    draws = int(c["draws"])
+    q = (1.0 - float(c["alpha"])) ** n
+    k_max = int(math.floor((1.0 - float(c["credibility"])) * draws + 1e-9))
+    if q <= 0.0:
+        return 1.0
+    if q >= 1.0:
+        return 0.0
+    lq, l1q = math.log(q), math.log1p(-q)
+    terms = [math.lgamma(draws + 1) - math.lgamma(k + 1) - math.lgamma(draws - k + 1) + k * lq + (draws - k) * l1q
+             for k in range(0, k_max + 1)]
+    top = max(terms)
+    return float(min(1.0, math.exp(top) * sum(math.exp(t - top) for t in terms)))
 
 
 def load_local(name):
@@ -275,9 +534,14 @@ def load_local(name):
 
 
 def as_dict():
-    """Every constant above as plain JSON-able values (copied into prereg.json's 'constants' block)."""
+    """Every constant above as plain JSON-able values (copied into prereg.json's 'constants' block), without the
+    host-dependent paths (HOST_DEPENDENT)."""
     out = {}
     for k, v in sorted(globals().items()):
-        if k.isupper():
-            out[k] = str(v) if isinstance(v, Path) else v
+        if k.isupper() and k not in HOST_DEPENDENT:
+            if isinstance(v, Path):
+                v = str(v)
+            elif isinstance(v, frozenset):
+                v = sorted(v)
+            out[k] = v
     return out

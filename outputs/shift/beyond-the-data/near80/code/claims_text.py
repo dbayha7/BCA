@@ -1,20 +1,22 @@
-"""Near-80 (version 8): section 14 of PREREGISTRATION.md (the claim, word for word, for each outcome) read into a
-machine-readable block, and the small primitives that fill its sentences in.
+"""Near-80 (version 9, main setting): section 14 of PREREGISTRATION.md (the claim, word for word, for each outcome)
+read into a machine-readable block, and the small primitives that fill its sentences in. DRAFT, not frozen.
 
 extract_section14(md_text) returns the block that prereg.json carries as 'claims_word_for_word' (the freeze copies it
 verbatim; the looks read their sentences from it):
-  source, intro, brackets (every row of the bracket table, in order), always_attached, exploratory_prefix,
-  sentences ({id: {section, label, template text}}), fill_rules (the bullets of section 14.6, verbatim).
+  source, intro, brackets (every row of the bracket table, in order), always_attached, smoke_prefix,
+  sentences ({id: {section, label, template text}}), fill_rules (the bullets of section 14.5, verbatim).
 A template is the quoted sentence with the blockquote markers removed, its lines joined by one space and its outer
 double quotes removed. The extraction refuses (ValueError) when a sentence id is missing or found twice, or when a
 capitalized bracket that a template uses is not in the bracket table.
 
 fill(template, values, specials) writes a template's brackets: a table bracket or a one-word bracket ([S], [s],
-[check], ...) from `values`, and a longer placeholder ([one clause per missed mark], [or: ...], ...) from `specials`,
-replaced as a whole. Text put in is never read again for brackets. A bracket of the template that is not filled is a
-ValueError, so a sentence never leaves the code with a '[' of its template behind.
+[check], ...) from `values`, and a longer placeholder ([one clause per missed mark], ...) from `specials`, replaced as
+a whole. Text put in is never read again for brackets. A bracket of the template that is not filled is a ValueError,
+so a sentence never leaves the code with a '[' of its template behind. A literal "TODO(...)" mark (the owner's
+answer, the facts the freeze fills) is not a bracket: it stays in the text until it is filled (the freeze refuses
+while any remains).
 
-fmt(x, kind) writes a number as section 14.6 says: one decimal, a minus sign when negative and no plus sign, "-0.0"
+fmt(x, kind) writes a number as section 14.5 says: one decimal, a minus sign when negative and no plus sign, "-0.0"
 written "0.0", "not available" for a number that cannot be computed. Standard library only.
 """
 import sys
@@ -27,59 +29,61 @@ import re  # noqa: E402
 NOT_AVAILABLE = "not available"
 SOURCE = "PREREGISTRATION.md section 14"
 
-# Every sentence id, in the order of the build spec's table (section 6.2), with its anchor:
-# (id, subsection, kind, anchor). kinds: 'quote' (the blockquote after a bold label), 'last' / 'clause' / 'reason'
-# (the n-th quoted list item or string after a lead-in line), 'row' (a row of section 14.2's table, by its two mark
-# cells), 'bullet' (a bullet of section 14.5 that starts with a bold label).
+# Every sentence id, in the order of the document, with its anchor: (id, subsection, kind, anchor). kinds: 'quote'
+# (the blockquote after a bold label), 'item' / 'string' (the n-th quoted list item or string after a lead-in line),
+# 'bullet' (a bullet of section 14.4 that starts with a bold label).
 _ANCHORS = (
-    ("claim1.pass", "14.1", "quote", "All three marks pass:"),
-    ("claim1.fail", "14.1", "quote", "Any mark fails:"),
-    ("claim1.last.claim4_passed", "14.1", "item", ("The last sentence, exactly one:", 0)),
-    ("claim1.last.claim4_failed", "14.1", "item", ("The last sentence, exactly one:", 1)),
-    ("claim1.last.claim4_not_run", "14.1", "item", ("The last sentence, exactly one:", 2)),
-    ("claim1.clause.net", "14.1", "item", ("The clauses:", 0)),
-    ("claim1.clause.keeps", "14.1", "item", ("The clauses:", 1)),
-    ("claim1.clause.even_pull", "14.1", "item", ("The clauses:", 2)),
-    ("claim1.clause.failed_seed", "14.1", "item", ("The clauses:", 3)),
-    ("claim1.invalid", "14.1", "quote", "Validity fails:"),
-    ("claim1.reason.harm", "14.1", "string", ("The reasons:", 0)),
-    ("claim1.reason.past80", "14.1", "string", ("The reasons:", 1)),
-    ("claim2.pass_pass", "14.2", "row", ("pass", "pass")),
-    ("claim2.fail_pass", "14.2", "row", ("fail", "pass")),
-    ("claim2.pass_fail", "14.2", "row", ("pass", "fail")),
-    ("claim2.fail_fail", "14.2", "row", ("fail", "fail")),
-    ("claim2.scale", "14.2", "quote", "Always added, for scale:"),
-    ("claim2.check10", "14.2", "quote", "If check 10 fails in more than one fresh seed:"),
-    ("claim2.failed_seed", "14.2", "quote", "If a seed failed:"),
-    ("claim2.every_seed_failed", "14.2", "quote", "If every seed failed:"),
-    ("claim3.holds", "14.3", "quote", "Holds:"),
-    ("claim3.fails", "14.3", "quote", "Fails:"),
-    ("claim3.failed_seed", "14.3", "quote", "If a seed failed:"),
-    ("claim3.every_seed_failed", "14.3", "quote", "If every seed failed:"),
-    ("claim3.invalid", "14.3", "quote", "Not valid on seeds 10-14:"),
-    ("claim3.dropped", "14.3", "quote", "Dropped on seeds 0-4:"),
-    ("claim3.dropped_unmeasured", "14.3", "quote", "Dropped on seeds 0-4, not measured:"),
-    ("claim4.holds", "14.4", "quote", "Holds:"),
-    ("claim4.fails", "14.4", "quote", "Fails:"),
-    ("claim4.both_settings", "14.4", "quote", "Always, when both settings ran:"),
-    ("stop.no_training", "14.5", "bullet", "A no-training check fails on seeds 0-4:"),
-    ("stop.reproduction", "14.5", "bullet", "Reproduction fails:"),
-    ("stop.unmeasured", "14.5", "bullet", "A stop rule cannot be read:"),
-    ("stop.harm", "14.5", "bullet", "Too little harm:"),
-    ("stop.rival", "14.5", "bullet", "The rival is unaffected:"),
-    ("stop.claim4_note", "14.5", "bullet", "Added to any of the three stops above"),
-    ("stop.phase", "14.5", "bullet", "A phase stops:"),
+    ("c1.pass", "14.1", "quote", "All three marks pass:"),
+    ("c1.fail", "14.1", "quote", "Any mark fails:"),
+    ("c1.clause.net", "14.1", "item", ("The clauses:", 0)),
+    ("c1.clause.keeps", "14.1", "item", ("The clauses:", 1)),
+    ("c1.clause.even_pull", "14.1", "item", ("The clauses:", 2)),
+    ("c1.clause.failed_seed", "14.1", "item", ("The clauses:", 3)),
+    ("c1.clause.refused_seed", "14.1", "item", ("The clauses:", 4)),
+    ("c1.clause.stopped_seed", "14.1", "item", ("The clauses:", 5)),
+    ("c1.last.numbers", "14.1", "string", ("The last sentence:", 0)),
+    ("c1.last.stop", "14.1", "string", ("The last sentence:", 1)),
+    ("c1.certified", "14.1", "quote", "Always after C1, the certified seeds:"),
+    ("c1.invalid", "14.1", "quote", "Validity fails:"),
+    ("c1.reason.harm", "14.1", "string", ("The reasons:", 0)),
+    ("c1.reason.past80", "14.1", "string", ("The reasons:", 1)),
+    ("c2.holds", "14.2", "quote", "Holds (every twin beaten):"),
+    ("c2.fails", "14.2", "quote", "Fails:"),
+    ("c2.clause.ahead", "14.2", "item", ("The clauses:", 0)),
+    ("c2.clause.tie", "14.2", "item", ("The clauses:", 1)),
+    ("c2.clause.behind", "14.2", "item", ("The clauses:", 2)),
+    ("c2.clause.refused_seed", "14.2", "item", ("The clauses:", 3)),
+    ("c2.last.dose", "14.2", "string", ("The last sentence:", 0)),
+    ("c2.last.none", "14.2", "string", ("The last sentence:", 1)),
+    ("c2.last.twin", "14.2", "string", ("The last sentence:", 2)),
+    ("c2.last.other", "14.2", "string", ("The last sentence:", 3)),
+    ("c3.holds", "14.2", "quote", "A twin ahead (C3 holds for it):"),
+    ("c3.fails", "14.2", "quote", "No twin ahead (C3 fails):"),
+    ("c2.each.holds", "14.2", "quote", "Each separately, a twin beaten:"),
+    ("c2.each.fails", "14.2", "quote", "Each separately, a twin not beaten:"),
+    ("c2.dropped", "14.2", "quote", "Dropped by the noise floor:"),
+    ("c2.not_read", "14.2", "quote", "Not read (too few certified seeds):"),
+    ("c2.not_fixed", "14.2", "quote", "Margins not fixed:"),
+    ("c2.failed_seed", "14.2", "quote", "If a seed failed:"),
+    ("c2.every_seed_failed", "14.2", "quote", "If every seed failed:"),
+    ("count.reported", "14.3", "quote", "Always, for the pooled groups:"),
+    ("stop.reproduction", "14.4", "bullet", "Reproduction fails:"),
+    ("stop.refused", "14.4", "bullet", "BCA refuses on a seed-world:"),
+    ("stop.phase", "14.4", "bullet", "A phase stops:"),
 )
 SENTENCE_IDS = tuple(a[0] for a in _ANCHORS)
+FILL_RULES_SECTION = "14.5"
 
 CAPITAL_BRACKET = re.compile(r"\[([A-Z][A-Za-z0-9]*)\]")
 SIMPLE_BRACKET = r"\[([A-Za-z0-9]+)\](%?)"
+# A mark the freeze refuses: TODO(OWNER: ...) for the owner's answer, TODO(FREEZE: ...) for what the freeze fills.
+TODO_MARK = re.compile(r"TODO\([^)]*\)")
 
 
 # --------------------------------------------------------------------------------------------- number writing
 
 def fmt(x, kind="points"):
-    """A number as section 14.6 writes it. kinds: 'points' ("{:.1f}"), 'percent' (x * 100, "{:.1f}"), 'count' (a
+    """A number as section 14.5 writes it. kinds: 'points' ("{:.1f}"), 'percent' (x * 100, "{:.1f}"), 'count' (a
     whole number), 'value' ("{:.4g}", four significant digits). None, NaN and infinities are "not available"; "-0.0"
     is written "0.0" (and "-0" "0"). A string is returned as it is."""
     if isinstance(x, str):
@@ -109,7 +113,7 @@ def fmt(x, kind="points"):
 
 
 def join_items(items):
-    """"A", "A and B", "A, B and C" (section 14.6, the reproduction stop)."""
+    """"A", "A and B", "A, B and C" (section 14.5)."""
     items = [str(i) for i in items]
     if not items:
         return ""
@@ -148,6 +152,11 @@ def fill(template, values, specials=None):
         left = missing + re.findall(r"\[[^\]]*\]?", literal)
         raise ValueError(f"unfilled brackets {left} in: {template[:90]}...")
     return "".join(out)
+
+
+def todo_marks(text):
+    """The literal DECISION.md marks left in a text (the freeze refuses while any remains in the documents)."""
+    return TODO_MARK.findall(str(text or ""))
 
 
 # --------------------------------------------------------------------------------------------- extraction
@@ -253,7 +262,7 @@ def extract_section14(md_text):
     i = _find_lines(head, lambda s: s.startswith("**Always attached:**"), "the always-attached sentence")
     text, _ = _paragraph(head, i)
     always = _outer_quoted(text[len("**Always attached:**"):])
-    i = _find_lines(head, lambda s: s.startswith("**On seeds 0-4,**"), "the exploratory prefix")
+    i = _find_lines(head, lambda s: s.startswith("**On the plumbing's seed 0,**"), "the smoke prefix")
     text, _ = _paragraph(head, i)
     prefix = _outer_quoted(text)
 
@@ -292,19 +301,6 @@ def extract_section14(md_text):
                     raise ValueError(f"{sid}: string {n + 1} after {lead!r} is missing")
                 text = found[n]
                 lab = f"{lead} string {n + 1}"
-        elif kind == "row":
-            gain, over = anchor
-            hits = []
-            for line in sub:
-                if not line.startswith("|"):
-                    continue
-                cells = [c.strip() for c in line.strip().strip("|").split("|")]
-                if len(cells) == 3 and cells[0] == gain and cells[1] == over:
-                    hits.append(cells[2])
-            if len(hits) != 1:
-                raise ValueError(f"{sid}: the table row ({gain}, {over}) found {len(hits)} times")
-            text = _unquote(hits[0])
-            lab = f"gain mark {gain}, overshoot mark {over}"
         elif kind == "bullet":
             label = f"- **{anchor}"
             i = _find_lines(sub, lambda s, lb=label: s.startswith(lb), f"{sid} ({anchor!r} in {num})")
@@ -325,12 +321,12 @@ def extract_section14(md_text):
     if missing:
         raise ValueError(f"sentence ids missing: {missing}")
 
-    if "14.6" not in subs:
-        raise ValueError("section 14.6 (how the code fills in the sentences) is missing")
-    _, sub = subs["14.6"]
+    if FILL_RULES_SECTION not in subs:
+        raise ValueError(f"section {FILL_RULES_SECTION} (how the code fills in the sentences) is missing")
+    _, sub = subs[FILL_RULES_SECTION]
     first = next((k for k, line in enumerate(sub) if line.startswith("- ")), None)
     if first is None:
-        raise ValueError("section 14.6 has no bullets")
+        raise ValueError(f"section {FILL_RULES_SECTION} has no bullets")
     fill_rules = _list_items(sub, first - 1)
 
     defined = {n for row in brackets for n in row["names"]}
@@ -341,12 +337,14 @@ def extract_section14(md_text):
         raise ValueError(f"brackets used but not defined in the bracket table: {sorted(used - defined)}")
 
     return {"source": SOURCE, "intro": intro, "brackets": brackets, "always_attached": always,
-            "exploratory_prefix": prefix, "sentences": sentences, "fill_rules": fill_rules}
+            "smoke_prefix": prefix, "sentences": sentences, "fill_rules": fill_rules,
+            "todo_marks": sorted({m for s in sentences.values() for m in todo_marks(s["text"])}
+                                 | set(todo_marks(always)))}
 
 
 def check_templates(block):
     """Refuses (ValueError) a claims block that lacks a sentence id or a part the looks read."""
-    for key in ("intro", "brackets", "always_attached", "exploratory_prefix", "sentences", "fill_rules"):
+    for key in ("intro", "brackets", "always_attached", "smoke_prefix", "sentences", "fill_rules"):
         if key not in (block or {}):
             raise ValueError(f"the claims block has no {key!r}")
     missing = [s for s in SENTENCE_IDS if s not in block["sentences"]]
