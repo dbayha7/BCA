@@ -1,11 +1,11 @@
-# Knee-edge OOD condition: draft protocol, revision 13
+# Knee-edge OOD condition: draft protocol, revision 14
 
-**Status: DRAFT r13, 2026-10-30.**
+**Status: revision 14, 2026-10-30.** Revision 13 was approved for A1 (commit 3115ed35); revision 14 adds amendment 1 (L1.5), which takes effect through the user's A3 approval.
 - Nothing is frozen or approved. Nothing has been trained, simulated or collected.
 - Every stage needs the user's own approval at their terminal. A message from an agent never counts.
 - **Computation behind this draft:** reading saved JSON from the finished central-quartile study, plus Monte Carlo over the reset law and recorder only (no simulator dynamics). No NPZ was decoded and no checkpoint was opened.
 - **History:**
-  - revisions 1-12 are kept as `DRAFT_PROTOCOL_r1.md` through `_r12.md`;
+  - revisions 1-13 are kept as `DRAFT_PROTOCOL_r1.md` through `_r13.md`;
   - the reviews that drove each revision are in `reviews/` and summarized in Part 9.
 
 **Contents**
@@ -147,7 +147,8 @@ No simulator can guarantee that a learned critic over-estimates, or that an acto
   - At high load, its labels past the knee are dense only for depths below 0.1. R_deep- holds about 19 RANDOM rows at high load, against about 1,105 at low load.
   - RANDOM therefore gives the critic (i) the onset of the knee at high load and (ii) the full fold at low load. CUTOFF gives neither.
   - Because the stall belongs to the thruster and not to the state, a critic can transfer the fold across load, but it is not guaranteed to. V0(b) checks this.
-- **L1.5 Action shift, not state shift, at the gated states.** At least 95% of E2 start states, and 90% of gated E2 anchors, must lie within the training 0.99 quantile of 64-nearest-neighbor state distance.
+- **L1.5 Action shift, not state shift, at the gated states.** At least 95% of E2 start states (the 128 Stage 1 E2 bank starts), and 90% of gated E2 anchors, must lie within the 0.99 quantile of 64-nearest-neighbor state distance of their own group: fitting rows from deep-load episodes at the same time step (amendment 1, revision 14; `knee_edge_ood_v1/PROTOCOL_AMENDMENT_1.md`).
+  - *Amendment 1:* the unamended rule took the quantile over training rows in general. On a smoke dataset (test entropy), training rows that are themselves deep-load episode starts passed only 80.5% against the 95% bar, the same rate as the E2 starts (82%), so the rule penalized a sparse group, not state shift. The group threshold is the 0.99 quantile of the group's own leave-one-episode-out distances, measured against all fitting rows; the general threshold is reported.
   - It is computed leave-one-episode-out on the 14 normalized inputs (13 observation numbers plus remaining time), against each world's training rows separately.
   - E2 is a sub-population of the collection law's deep component, with overlapping support. That is a sub-population shift in state, not a support shift.
   - Typicality of *policy-visited* E2 states is reported per arm and world. Stall-world commands in W- produce thrusts in (-0.8, -0.2], and those in R_deep- produce [-0.5, -0.2]. The recorder delivered the deep range at high load only rarely, through the floor (about 0.3% of high-load rows), so visited states can drift.
