@@ -1,0 +1,441 @@
+{
+  "summary": "Narrow verification of revision 7 edits to the knee-edge OOD draft, focused on the observed-RANDOM reachability form; skeptic; readiness critic",
+  "agentCount": 5,
+  "logs": [
+    "5 high/medium findings survived the skeptic"
+  ],
+  "result": {
+    "packed": [
+      {
+        "lens": "reach",
+        "verdict": "Revision 7 fixes most of what r6 got wrong in the gates. The V0(b) allowance 0.4 x (rho_hat_R + 0.10) is arithmetically sound. The softplus ratios reproduce, it covers widths up to about 0.06 at every scale, and the 0.12 minimum is right. K1c's 0.65 reachability level is exact by shift-equivariance of the median, and the 1.07 figure for the rejected worst-case form checks out. The author's main r7 choice is the weak point: K1a reachability now subtracts the observed per-anchor KC_s05,R. Gating on RANDOM's critic is not biased with respect to the hypothesis, because RANDOM's KC does not depend on what withholding does to CUTOFF. But the two-sided V0(b) bound lets a negative KC_R through, and subtracting it lowers the reach bar. A CUTOFF arm with a true onset gap of about 0.3 can then pass both reachability and K1a. The K1a margin is then made up largely of RANDOM's own approximation error, which V0(d)'s stated rationale (:641) says reachability must exclude. Revision 6's gate closed that path and revision 7 reopens it. Clamping KC_R at zero in the gate (or adding an absolute CUTOFF-gap clause) fixes it without bringing back the 1.07 problem. Three smaller issues remain. The reach median is taken over CR-valid anchors while K1a uses all common anchors, so a correct smooth critic can still fail K1a after the gate passes. The tolerance rationale says 'understate' where the gates protect against overstatement. And 'a step 0.4 PASS implies K1 is reachable' holds only under a per-anchor bound on KC_R. Verdict: not ready for A1; it needs one more text-only pass on items 1-3, and none of this requires new data.",
+        "low_findings": [
+          {
+            "id": "R7G-4",
+            "severity": "low",
+            "section": "Part 2 (:198); Part 9 Review 7 row 8 (:1002)",
+            "claim": "'A step 0.4 PASS implies K1 is reachable under the reference continuation ... when RANDOM's KC is small' is true only if KC_R is small at every anchor (<= 0.15 per anchor), not if its median is small. V0(b) itself allows median KC_R up to 0.34 at rho_hat = 0.75.",
+            "evidence": "The K1c half is correct: 0.75 >= 0.65 and involves no KC_R. For K1a, a median of differences is not bounded by the difference of medians. With 5 anchors, rho_hat(s05) = [0.6, 0.6, 0.75, 0.9, 0.9] (median 0.75, which meets item 1) and KC_R = [0.05, 0.05, 0.25, 0.45, -1.0] (median 0.05) give a reach of 0.45 < 0.5. At equal medians the margin is only 0.15, while V0(b) admits 0.4(0.75 + 0.10) = 0.34.",
+            "fix": "Write: 'implies K1c is reachable; it implies K1a is reachable only if |KC_s05,R| <= 0.15 at every anchor (V0(b) admits up to 0.34), so it is a partial forecast.'"
+          },
+          {
+            "id": "R7G-5",
+            "severity": "low",
+            "section": "Part 2 (:204); V0(d) (:638-641); Part 8.2 (:819)",
+            "claim": "The new form makes the Stage 1 label depend on the RANDOM critic's outcome, and the disclosure does not say so. A positive KC_R within V0(b)'s band can make K1a unreachable and mask a clean K1c FAIL (reading 1) or K2/K3 outcome, even when K1c's own reachability passes. 'It uses no CUTOFF critic outcome, so it does not depend on the hypothesis' is right about the distribution, but it hides this channel.",
+            "evidence": "Example: rho_hat_R = 0.75 and KC_R = 0.34 (V0(b) allowance 0.34, passes); rho_hat_C(s05) = 0.9; rho_hat_C(s10) = 1.8. K1a reach = 0.9 - 0.1 - 0.34 = 0.46 < 0.5, so INCONCLUSIVE. Suppose KC_s10(C) = 0.1, a clean K1c FAIL in every seed. Reading 1 is then masked by RANDOM's s05 error, although r6's gate (0.9 >= 0.8) would have given FAIL with reading 1. Gating on KC_R is not hypothesis-biased, because RANDOM's KC distribution does not depend on what withholding does to CUTOFF.",
+            "fix": "Add to Part 8.2's cost bullet: 'Because K1a reachability uses the observed RANDOM KC, RANDOM kink rounding within V0(b)'s band can make K1a unreachable and mask clean K1c, K2 or K3 outcomes.' Optionally, let a K1a-only reachability miss void only K1a and reading 2 rather than the whole stage. That is an outcome-independent scoping, not an on-failure rule, but it needs the user's sign-off because it touches the accepted design."
+          },
+          {
+            "id": "R7G-6",
+            "severity": "low",
+            "section": "Part 2 (:205)",
+            "claim": "The rejection figure of 1.07 for the worst-case form silently assumes rho_hat_R = rho_hat_C, and 'for any competent learner' overstates it.",
+            "evidence": "Worst case: rho_hat_C - 0.10 - 0.4(rho_hat_R + 0.10) >= 0.5. At equal rho this needs 0.6x >= 0.64, so x >= 1.067 (checked). The level depends on rho_hat_R: it is 0.72 at rho_hat_R = 0.20, 0.84 at 0.5 and 0.94 at 0.75.",
+            "fix": "State the equal-rho assumption and give the range: 'needs rho_hat_C >= 0.6 + 0.4(rho_hat_R + 0.10): 0.72-1.07 for rho_hat_R from 0.2 up to rho_hat_C'."
+          },
+          {
+            "id": "R7G-7",
+            "severity": "low",
+            "section": "V0(b) (:628-630); V0(d) (:635); K1c second clause (:649)",
+            "claim": "The anchor subsets are named for the new clauses but not for the neighbouring ones. V0(b)'s 0.20 resolvability floor, V0(d)'s item 5 (>= 90% of which set?) and item 6, and K1c's '0.5 x median rho_hat(s10)' carry no set. The default reading (common gated anchors) puts predictor-invalid rho_hat into a median.",
+            "evidence": ":629 'median rho_hat_R(s05) >= 0.20' has no set; only :630 says 'on the R-valid anchors'. :635 'passes at >= 90%' has no set. K1c (:649) 'median rho_hat(s10) under the same policies' own continuations at the same anchors' is over the common set, which includes non-C-valid anchors, while K1c reach uses C-valid.",
+            "fix": "Name the set in each clause: the floor on R-valid; item 5 at >= 90% of the common gated anchors under each continuation; K1c's rho_hat(s10) median on C-valid (or on the same set as KC, per R7G-2)."
+          },
+          {
+            "id": "R7G-8",
+            "severity": "low",
+            "section": "Part 9 Review 6 row 1 (:972)",
+            "claim": "The resolution row still quotes the superseded K1a gate 'rho_hat_C(s05) >= 0.5 + 0.4 rho_hat_R(s05)' as the Stage 1 rule, with only an italic note that it was refined. A reader of the history table gets the wrong formula.",
+            "evidence": ":972 gives the r6 formula verbatim, followed by '*Refined in revision 7 ... per-anchor against the observed RANDOM critic*', without the new formula or V0(b)'s new +0.10 allowance.",
+            "fix": "Replace the formula in the refinement note with the r7 form (and the R7G-1 clamp if adopted), and mention V0(b)'s 0.4 x (rho_hat_R + 0.10)."
+          }
+        ],
+        "verified": [
+          {
+            "id": "R7G-1",
+            "severity": "high",
+            "section": "Part 2 Link to Stage 1 (:203-205); V0(d) (:636, :641); V0(b) allowance (:630); Part 8.2 (:814-818)",
+            "claim": "Subtracting the observed KC_s05,R lets a negative RANDOM KC lower the K1a reachability bar. That opens a K1a false-PASS path in which most of the 0.5 margin is RANDOM's approximation error, not CUTOFF's withholding-driven over-valuation. r6's gate blocked this case and the worst-case form would too.",
+            "evidence": "V0(b) is two-sided (|median KC_R| <= 0.4(median rho_hat_R + 0.10)), so KC_R = -0.24 is allowed at rho_hat_R = 0.5 (allowance 0.24). Per-anchor example on 48 CR-valid anchors: rho_hat_R = 0.5 and KC_R = -0.24 everywhere, so V0(b) passes and the 0.20 floor passes. CUTOFF has rho_hat_C(s05) = 0.37 and true rho_C = 0.31. K1c reach also passes, since rho is linear in depth (thrust deficit 4d) and rho_hat_C(s10) is about 0.74 >= 0.65. Reach = 0.37 - 0.10 + 0.24 = 0.51 >= 0.5, so reachable. A smooth CUTOFF critic has KC_C about 0.31 and K1a = 0.31 + 0.24 = 0.55: PASS. r6's gate (0.37 >= 0.5 + 0.4 x 0.5 = 0.7) and the rejected worst-case form (>= 0.84) both give INCONCLUSIVE. The rationale at :641 says reachability exists because 'when the true gap is too small, a K1 pass cannot be attributed to the knee rather than to generic approximation error', yet a 0.31 gap passes here. Part 8.2's line 'needs rho_C(s05) of about 0.6' (:816) holds only for KC_R >= 0. Verified numerically (scratch gates/chk.py).",
+            "fix": "Clamp RANDOM's term from below: K1a reachable iff median over the gate's anchors of [rho_hat_C,j(s05) - 0.10 - max(0, KC_s05,R,j)] >= 0.5. This makes a CUTOFF gap of at least 0.6 necessary, still uses the observed (not worst-case) RANDOM, and keeps the competent-learner forecast near 0.6. Equivalently, keep the current form and add 'and median rho_hat_C(s05) - 0.10 >= 0.5'. Mirror in Part 2, V0(d), Part 8.2 and Part 9 Review 7 row 2, and state that a negative RANDOM KC never lowers the bar.",
+            "check": {
+              "id": "R7G-1",
+              "real": true,
+              "severity_after": "low",
+              "reason": "The arithmetic is right. In the r7 gate (:203, :636), KC_R enters with a minus sign, and V0(b) is two-sided (:630). So at rho_hat_R = 0.5, KC_R = -0.24 is allowed, and rho_hat_C(s05) = 0.37 counts as reachable (0.37 - 0.10 + 0.24 = 0.51). r6's gate (0.5 + 0.4 x median rho_hat_R, r6 V0(d)) needed 0.70 and blocked this case. The gate's per-anchor KC_R term is the same one K1a uses, so it tracks RANDOM's error one for one and gives no protection against a K1a margin bought by RANDOM under-valuing. That contradicts the stated rationale at :641 ('a K1 pass cannot be attributed to the knee rather than to generic approximation error') and the unconditional reading of :816. :816 is itself qualified by 'With RANDOM's KC near 0'. Two points partly refute the finding and lower its severity. First, it is not a false PASS of the hypothesis. In the example the CUTOFF critic over-values by its full true rho (0.31), which is withholding-driven over-valuation by L2.2. K1c's absolute bar (KC_s10 >= 0.5 and >= 0.5 x rho_hat(s10), :649) is required as well, independently of RANDOM. Second, the documented mechanism for a correctly labelled RANDOM, softplus rounding (:208), gives only positive KC/rho. A negative KC_R in all three seeds needs systematic over-sharpening or noise, which is not predicted. What remains is a documentation inconsistency and the loss of the r6 gate's incidental protection on K1a's 0.5 magnitude, not a broken inference. The clamp, max(0, KC_R), is a cheap fix that would make :641 and :816 true as written."
+            }
+          },
+          {
+            "id": "R7G-2",
+            "severity": "medium",
+            "section": "Part 2 (:203, :206); Anchor sets (:619-623); K1a/K1c table (:648-649)",
+            "claim": "The reachability medians are taken over CR-valid (K1a) and C-valid (K1c) anchors, while K1a and K1c themselves use all common gated anchors. Per-anchor dominance therefore guarantees a smooth critic's pass only on the subset, not on the set K1a and K1c are scored on, and the failure the gate exists to prevent can still happen.",
+            "evidence": "The monotonicity argument is valid: on CR-valid anchors item 5 gives rho_C,j >= rho_hat_C,j - 0.10, so a smooth critic's K1a term is >= the reach term per anchor and median(K1a terms) >= median(reach terms) on that set. Up to about 10% of anchors per continuation can be non-predictor-valid, so CR-valid can be about 80% of the common set. Example: 48 common anchors, 40 CR-valid with reach terms 20 x 0.30 and 20 x 0.72 (median 0.51, reachable). The 8 excluded anchors have small terms (about 0). K1a's median over 48 is then 0.30: a correct smooth critic FAILs K1a. The same mismatch holds for K1c's 0.65 on C-valid against K1c's median on common anchors. CR-valid also intersects with R-valid needlessly, since the reach term uses no rho_hat_R.",
+            "fix": "Score each gate on the criterion's own anchor set, with non-valid anchors entered pessimistically. For example, take the median over the common gated anchors, and set each anchor outside C-valid (K1a, K1c) to -infinity in the reach statistic. Alternatively, compute K1a and K1c on the same C-valid set the gates use. Use C-valid rather than CR-valid for K1a reach, because KC_R needs no RANDOM predictor validity.",
+            "check": {
+              "id": "R7G-2",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Confirmed. K1a and K1c are scored on the common gated anchors (:619, :648-649). Their reachability medians are taken over CR-valid and C-valid anchors (:203, :206, :636-637). The gate is justified as asking whether a correct, smooth CUTOFF critic 'could clear K1a' (:204), and that holds only on the subset. Item 5 is required at >= 90% per continuation (:628, :635), so CR-valid can be as small as about 80% of the common set. If the excluded anchors carry low terms, K1a's median for a correct critic can fall to roughly the 37.5th percentile of the reach terms. That produces the by-design K1a FAIL the gate exists to prevent, and reading 2 (:672) can attach to it. The intersection with R-valid is also unnecessary: the reach term uses only rho_hat_C and KC_R, and KC is computed against true Q^pi with no predictor. Severity is low, not medium. The shift is bounded (at most 20% of anchors for K1a, 10% for K1c), it needs the excluded anchors to sit adversarially at the low end, and predictor invalidity is not tied to small rho. The CR-valid subset was also the r6 reviewer's own suggestion (digest r6 item 5, :31), which carried the same mismatch."
+            }
+          },
+          {
+            "id": "R7G-3",
+            "severity": "medium",
+            "section": "Part 2 Link to Stage 1 (:201) and V0(b) (:207); Part 9 Review 7 row 2 (:996)",
+            "claim": "The tolerance rationale is stated in the wrong direction. The reachability gates subtract item 5's tolerance, which protects against rho_hat OVERstating the true rho, but the text says rho_hat 'can understate the true rho'. V0(b) adds the tolerance (understatement), so 'the same true-rho model for each' uses the same symmetric bound at opposite ends, and the text never says so.",
+            "evidence": "rho_hat - rho = min_k P_k - Q_nostall, and item 5 bounds |P_k - Q_nostall| <= tol, so |rho_hat - rho| <= tol in both directions. The reach gates need the lower end, rho >= rho_hat - tol, which is the case where rho_hat overstates. V0(b) needs the upper end, rho <= rho_hat + tol, which is the case where rho_hat understates. The digest's r6 item 2 correctly described the overstatement case ('rho_hat_C overstates rho_C by 0.10').",
+            "fix": "Reword :201 along these lines: 'rho_hat can differ from the true rho by up to item 5's tolerance in either direction. The reachability gates use the low end (rho >= rho_hat - tol), so a pass is robust; V0(b) uses the high end (rho <= rho_hat + tol), so a correctly labelled RANDOM is not rejected.' Mirror in Review 7 row 2.",
+            "check": {
+              "id": "R7G-3",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Confirmed as a wording error. rho_hat = min_k[P_k - Q_stall] (L2.3) and rho = Q_nostall - Q_stall, so rho_hat - rho = min_k P_k - Q_nostall. Item 5 (:184) bounds max_k |P_k - Q_nostall| <= tol, so the error is symmetric. Both gates subtract the tolerance from rho_hat: 'rho_hat_C - 0.10' at :203, and 0.65 = 0.5 + 0.15 at :206. They therefore guard against rho_hat OVERstating the true rho. :201 instead says rho_hat 'can understate the true rho' and that the gates 'therefore add that tolerance'. Only V0(b)'s allowance (:207) uses the understatement end. The formulas are correct and consistent with each other, so validity is not affected. Only the rationale at :201, and its echo 'the same true-rho model' in Review 7 row 2 (:996), is misstated."
+            }
+          }
+        ],
+        "checked_ok": [
+          "V0(b) softplus coverage: KC/rho = 1 - (w/d)(softplus(d/w) - ln 2) at d = 0.05000001 gives 0.2457 / 0.3121 / 0.3530 / 0.3799 at w = 0.02 / 0.03 / 0.04 / 0.05, matching the quoted 0.25 / 0.31 / 0.35 / 0.38. The ratio reaches 0.4 near w = 0.06.",
+          "The claim 'allowance covers widths up to about 0.05 at every scale' is correct (slightly conservative, since the true limit is about 0.06). Worst case rho_hat_R = rho_R - 0.10 gives allowance 0.4 rho_R >= r(w) rho_R, and the median inequality holds by monotonicity on R-valid anchors.",
+          "The 0.12 minimum allowance = 0.4 x (0.20 floor + 0.10) is correct (Part 8.2 (iii)).",
+          "Item 5's tolerance bounds |rho_hat - rho| per anchor: rho_hat - rho = min_k P_k - Q_nostall, and max_k |P_k - Q_nostall| <= tol, so the per-anchor dominance argument for the reach gates is valid on predictor-valid anchors.",
+          "K1c reach level 0.65 = 0.5 + 0.15 is exact under the true-rho model, because the median is shift-equivariant. A smooth critic also meets K1c's second clause (KC >= 0.5 x median rho_hat) whenever median rho_hat >= 0.30, which 0.65 implies.",
+          "The K1a reachability statistic now has K1a's per-anchor form (median of differences), which fixes the r6 3-anchor counterexample of a difference of medians.",
+          "With KC_R ≈ 0 the K1a reach needs rho_hat_C(s05) >= 0.6 (Part 8.2 :816), and the 0.61 LQR proxy is correctly described as borderline.",
+          "The worst-case-form arithmetic of 1.067 at equal rho is correct.",
+          "Gating on KC_R does not bias the test with respect to the withholding hypothesis: RANDOM's KC distribution does not depend on what withholding does to CUTOFF, and V0(b) and reach failures share the INCONCLUSIVE label, so no precedence conflict arises between them.",
+          "V0(c) floors at 32 are consistent with 48 gated anchors and item 5 at >= 90% per continuation (CR-valid >= 40 when all 48 are common).",
+          "Q_nostall at s05/s10/s20/S9 under both stall policies' clipped continuations is listed in the Stage 1 probes (:607), so rho_hat_C, rho_hat_R and the subsets are computable.",
+          "The step 0.4 PASS implies K1c reachability under the reference continuation (item 2 median 0.75 >= 0.65), independent of KC_R.",
+          "V0(d) is stated as an unconditional, outcome-independent validity precondition that voids K1 passes and masks K2/K3, as the r6 adjudication required (:638-641)."
+        ]
+      },
+      {
+        "lens": "resolution",
+        "verdict": "Revision 7 resolves most of the 11 r6 items correctly, but it is not ready for A1. It needs one more text pass, and the new K1a reachability form is where the problems are. These parts check out against the sources: the 4.5b world table and dicts, the per-world literal T3/T15 formulas, the float64 `states` reconstruction, the relative tolerance, the U = (q1 - adjusted)/3 identity, the step 0.3 wording, the 0.4 worlds, the readings, Part 8.2(iii)'s 0.12, the 1.07 figure for the rejected worst case, and all 29 Part 11 hashes. The trouble is the author's choice of median_j[rho_hat_C,j - 0.10 - KC_R,j]. It subtracts the RANDOM critic's observed error, which is one of the two terms of K1a's own contrast. Three things follow. (1) The rule depends on RANDOM's critic outcome. It voids the clean, hypothesis-conforming K1a pass in exactly the forecast band (rho about 0.5-0.6). It lets through passes with smaller gaps whenever RANDOM under-values, which contradicts its own rationale and the 'outcome-independent' and 'correct critic could not pass' wording. (2) It carries RANDOM's kink rounding and additive noise into V0(d) with almost no tolerance at the forecast scale. At rho about 0.61 it tolerates KC_R/rho of only about 0.016, so the 'covers widths up to 0.05 at every scale' claim, the step 0.3 flag tuned to V0(b), and the stated reason for rejecting the worst-case form are no longer accurate. (3) The prose says rho_hat 'understates' the true rho and that the gates 'add' the tolerance; the formulas actually guard against overstatement. None of these opens a label-level false PASS, because K1a itself must still clear +0.5. Smaller gaps: 4.8 asks for exact equality on the full 32x6x4 saved actions, but slot 0 holds the actor's own command. The R_lin 'unclipped at 1.5' claim cites the wrong file. The K1a and reachability anchor sets differ without disclosure. Item 8 was answered by argument rather than with a flagged row acknowledged at A4.",
+        "low_findings": [
+          {
+            "id": "R7-3",
+            "severity": "low",
+            "section": "Part 2 Link to Stage 1 (:204); V0(b) bullet (:210)",
+            "claim": "The prose gets the direction of the predictor error wrong. It says rho_hat 'can understate the true rho by up to item 5's tolerance' and that the gates therefore 'add' it. The reachability gates actually subtract 0.10 from rho_hat to guard against rho_hat overstating the true rho. V0(b)'s +0.10 guards the opposite direction. 'The same true-rho model for each' hides the fact that the two gates use opposite bounds.",
+            "evidence": "rho_hat - rho = min_k(P_k - Q_nostall). Item 5 (:184) bounds max_k|P_k - Q_nostall| <= 0.10, so the error lies in [-0.10, +0.10]. K1a reach uses rho_hat_C - 0.10 and K1c uses 0.5 + 0.15, both lower bounds on the true rho. V0(b) uses rho_hat_R + 0.10, an upper bound. The r6 digest item 2 itself described the failure as rho_hat 'overstates rho_C by 0.10'.",
+            "fix": "Write: 'rho_hat lies within ±0.10 (s05) or ±0.15 (s10) of the true rho. The reachability gates use the lower bound (rho_hat - tol), so a smooth critic certainly clears the bar. V0(b) uses the upper bound (rho_hat + tol), so a correctly labelled RANDOM is not rejected.'"
+          },
+          {
+            "id": "R7-4",
+            "severity": "low",
+            "section": "4.8 forced-probe path (:440-444); 4.4 zero assertion and exemptions (:349-351)",
+            "claim": "The probe builder builds only slots 1-5, but 4.8 requires the built arrays to equal the saved 32 x 6 x 4 `actions` exactly. Slot 0 of the saved array is the old actor's own deployed command, with nonzero a1..a3. Read literally, the check is impossible. It also leaves unstated whether q1, twin_min and adjusted are reproduced at slot 0, which would need an actor forward pass. 4.4's zero assertion covers 'every gated probe array', and its exemptions do not mention slot 0 of the 4.8 array.",
+            "evidence": "evaluation.py:57-65: bank[:,0] = actor; bank[:,1:,0] = FIXED_A0; everything else 0. All 18 `*__native__20000__*.json` files in rerun1 run/evaluation have nonzero slot-0 a1..a3. In slots 1-5, a1..a3 are exactly 0 and a0 is in {-0.5, -0.25, 0, 0.25, 0.5}.",
+            "fix": "Assert builder(slots 1-5) == saved actions[:, 1:, :] (32 x 5 x 4) exactly. Either reproduce q1, twin_min and adjusted on slots 1-5 only, or say that slot 0 comes from the frozen actor's forward pass and is compared to saved actions[:, 0] exactly. Add 'slot 0 of the 4.8 reproduction' to the 4.4 exemptions."
+          },
+          {
+            "id": "R7-5",
+            "severity": "low",
+            "section": "V0(d) K1a reachability (:638) versus the K1a criterion table (:651); Part 2 (:205)",
+            "claim": "K1a is a median over all common gated anchors, but its reachability is a median over the CR-valid subset. The per-anchor cancellation of KC_R that justifies the form is exact only on the same set, and r7 dropped r6's 'this is approximate' disclosure. The CR-valid set can be as small as about 80% of the common anchors, because each continuation's item 5 needs only >= 90%. R-validity is also not needed for the reachability terms: rho_hat_C needs CUTOFF's predictors, and KC_R needs no predictor.",
+            "evidence": "r6 :204 'so this worst case is approximate' was removed. r7 :206 and :638 use CR-valid, and :651 uses common anchors.",
+            "fix": "Use the C-valid set for K1a reachability, since only rho_hat_C needs predictor validity, and state that the median is approximate because the sets differ. Alternatively, report K1a on the same set as a consistency check."
+          },
+          {
+            "id": "R7-6",
+            "severity": "low",
+            "section": "Step 0.3 R_lin (:527); 4.8 saved Q^pi reproduction (:446)",
+            "claim": "The new statement that the saved Q^pi use each old model's 'unclipped deterministic continuation at stall_slope 1.5' is correct, but the cited `evaluation.py` line 210 supports only 'own deterministic actor continuation'. 4.8's '1e-9 relative' reproduction of the saved Q^pi also never says the new evaluator must use that unclipped continuation, whereas Stage 1's primary continuation is clipped.",
+            "evidence": "evaluation.py:210 reads only 'Each model own deterministic actor continuation; Qpi, no Qstar or common-policy claim'. Lack of clipping is established at conditional_ood_gate_central_quartile_v1/reference.py:91-96 (deployed_actions: '|a| <= 1 ... no hidden clipping') and continuation_values:242-276. Slope 1.5 is established at reference.py:37, 57 and 199.",
+            "fix": "Cite reference.py continuation_values (242-276), deployed_actions (91-96) and authenticate_core (37, 57). In 4.8, add 'using each model's own unclipped continuation in `stall15_identity`, as recorded'."
+          },
+          {
+            "id": "R7-7",
+            "severity": "low",
+            "section": "Step 0.4 label table (:574-581); Part 9 Review 7 row 8 (:1003)",
+            "claim": "Item 8 was answered by argument: a step 0.4 PASS implies reachability under the reference continuation. The requested flagged, non-gating row acknowledged at A4 was not added. Step 0.4 still gives no written warning that the learners' forecast (0.61, even worse given R7-2) makes a Stage 1 INCONCLUSIVE through V0(d) likely.",
+            "evidence": "The step 0.4 table has no flagged row. Part 2 :201 and Part 8.2 :818 call the forecast 'borderline', but nothing requires acknowledgment at A4, unlike step 0.3's flagged row (:557, acknowledged at A3).",
+            "fix": "Add a '(pass, flagged)' consequence to step 0.4, or a standing written prediction at A4: 'Stage 1 V0(d) may end INCONCLUSIVE (LQR proxy rho(s05) of about 0.61 against the reachability level of about 0.6 + KC_R)', to be acknowledged by the user."
+          },
+          {
+            "id": "R7-8",
+            "severity": "low",
+            "section": "4.5b world table (:373-377)",
+            "claim": "The 'Used in' column is incomplete. `stall3` omits step 0.4's exact Q^pi probes, the 4.5 cross-check and the data-level check. `nostall` omits step 0.3's no-stall replays for rho15 (:524) and step 0.4's Q_nostall probes. The rule is that every replay asserts against a named world, so each such use should map to a row. Separately, the prior pipeline's reference.py hard-codes stall_slope 1.5, so it cannot be reused for `stall3` or `nostall` receipts without failing the dict assertion. That is not stated.",
+            "evidence": "Table rows at :375-377. Step 0.3 :524 replays in `nostall`. reference.py:37/57 authenticate_core requires Physics(stall=True, stall_slope=1.5), :151 builds ThrusterChainEnv(stall_slope=1.5), and :199 uses Physics(stall=True, stall_slope=1.5).",
+            "fix": "Extend 'Used in': `stall3` adds step 0.4's probes, the 4.5 cross-check and the data-level check; `nostall` adds step 0.3's rho15 replays and step 0.4's probes. Add one line: 'the prior gate's reference.py is used only for `stall15_identity` reproduction'."
+          },
+          {
+            "id": "R7-9",
+            "severity": "low",
+            "section": "Stage 1 reading 2 (:672)",
+            "claim": "Reading 2's precondition, median KC_s05(RANDOM) <= 0.1 x median rho_hat_R(s05), names no anchor set. V0(b) computes both medians on the R-valid anchors, while K1a uses the common anchors.",
+            "evidence": "Reading 2 at :672 gives no set; V0(b) at :630 says 'on the R-valid anchors'.",
+            "fix": "Add 'on the R-valid anchors, as in V0(b)'."
+          }
+        ],
+        "verified": [
+          {
+            "id": "R7-1",
+            "severity": "medium",
+            "section": "Part 2 Link to Stage 1 (DRAFT_PROTOCOL.md:205-208); V0(d) (:637-642); Part 8.2 (:816-819); Part 9 Review 7 row 4 (:999)",
+            "claim": "The chosen K1a reachability form subtracts the observed per-anchor KC_s05,R, which is half of K1a's own contrast. The gate therefore depends on an experimental outcome, and it does not match its stated rationale. It voids clean hypothesis-conforming passes in the forecast band, but admits passes with smaller gaps when RANDOM under-values. The text calls it outcome-independent, says it 'does not depend on the hypothesis', and says 'a correct critic could not pass K1 there'. None of these is accurate.",
+            "evidence": "Per anchor, K1a - reach = KC_C,j - rho_hat_C,j + 0.10, so KC_R cancels. A RANDOM fluctuation therefore moves K1a and reach together: a RANDOM-driven K1a miss becomes INCONCLUSIVE, and a RANDOM-driven pass survives. (a) Clean case: rho_hat_C = 0.58, a smooth CUTOFF critic with KC_C = 0.58 (true rho could be up to 0.68), and an exact RANDOM with KC_R = 0. Then K1a = 0.58, a PASS, and reach = 0.48, so V0(d) makes the result INCONCLUSIVE. A correct critic did pass, which contradicts :816. (b) Pessimistic RANDOM: rho_hat_R = 0.40, so V0(b) allows |KC_R| up to 0.4 x 0.50 = 0.20; take KC_R = -0.20, rho_hat_C = 0.40, KC_C = 0.30. Then K1a = 0.50, a PASS, and reach = 0.40 - 0.10 + 0.20 = 0.50, which passes, so the PASS stands with an s05 gap of about 0.3-0.5. V0(d)'s reason (:641), that 'when the true gap is too small, a K1 pass cannot be attributed to the knee', is not enforced here. r6's form (0.5 + 0.4 rho_hat_R) and the rejected worst case both make the gap requirement independent of KC_R's sign. Part 9 :999 says 'outcome-independent'.",
+            "fix": "Keep the accepted unconditional precondition, but stop RANDOM's pessimism from relaxing the gap requirement. Use median_j[rho_hat_C,j - 0.10 - max(KC_s05,R,j, 0)] >= 0.5, so rho_hat_C >= 0.6 is always needed. Rewrite :206 to say: 'it uses RANDOM's measured critic, one term of K1a; given RANDOM, it isolates whether CUTOFF reaches its smooth-extrapolation lower bound'. Change Part 9 row 4 to 'checked whatever the outcome'. Replace :816 'a correct critic could not pass K1 there' with a sentence saying a correct critic may pass, but the pass is voided because the gap is not resolvable.",
+            "check": {
+              "id": "R7-1",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "The core claim holds, though some of the finding's sub-claims are refuted. REAL: the r7 gate at DRAFT_PROTOCOL.md:203/:636/:814 is median_j[rho_hat_C,j(s05) - 0.10 - KC_s05,R,j] >= 0.5. A negative (pessimistic) observed KC_R lowers the CUTOFF gap it requires one for one. The only other bound on RANDOM's KC is V0(b)'s two-sided |median KC_R| <= 0.4(rho_hat_R + 0.10) at :630. Reading 2's guard at :672 is one-sided and positive only. Nothing in the draft limits RANDOM pessimism further (a grep for pessimism, under-valuation or max(KC finds nothing). The finding's case (b) checks out: rho_hat_R = 0.40 allows KC_R = -0.20, and rho_hat_C = 0.40 with KC_C = 0.30 gives K1a = 0.50 (pass) and reach = 0.50 (pass). A sharper example: rho_hat_R = 1.0 allows KC_R = -0.44, so rho_hat_C = 0.20 with KC_C = 0.06 passes both, and the K1a pass is almost entirely RANDOM's pessimism. This contradicts the stated purpose of V0(d) at :641, 'when the true gap is too small, a K1 pass cannot be attributed to the knee'. It is also the reason the r6 critic gave (digest item 4). The r6 forms (0.5 + 0.4 rho_hat_R) and the rejected worst-case form would both void these cases. K1c's reachability check (rho_hat_C(s10) >= 0.65, :637) does not depend on KC_R, so s10 attribution is still protected. But K1a's job, attributing over-valuation to withholding at a labelled depth (:648), can now be passed spuriously, which weakens the causal claim. That is a validity issue, so medium is kept. REFUTED parts: case (a) is not a defect. Voiding a pass at rho_hat_C = 0.58 follows from the conservative minus-tolerance model that the r6 critic itself recommended and that K1c uses too (0.65 = 0.5 + 0.15). Only the wording at :818, 'could not pass K1 there', overstates; 'cannot be shown to pass' would be accurate, and that sentence is carried over from r6 (:790). 'Outcome-independent' in Part 9 row 4 (:998) and 'checked whatever the outcome' at :638 use the r6 critic's own meaning: the check runs unconditionally, not only on failure. That wording is accurate. :204's 'uses no CUTOFF critic outcome' is also literally true. The fix is sound: max(KC_R, 0), or a floor of rho_hat_C >= 0.6, keeps the author's use of the observed RANDOM critic for the INCONCLUSIVE-not-FAIL role. It also stops RANDOM pessimism from relaxing the gap needed to attribute a pass. Separately, :201 says rho_hat 'can understate' the true rho, but the gates subtract the tolerance, which treats it as a possible overstatement. The tolerance is two-sided, so this is a wording nit only."
+            }
+          },
+          {
+            "id": "R7-2",
+            "severity": "medium",
+            "section": "Part 2 V0(b) coverage (:210-213); Part 8.2(ii)-(iii) (:812, :820); step 0.3 flag row (:557); Part 2 rejection sentence (:207)",
+            "claim": "Because the new reachability gate subtracts the observed KC_R, RANDOM's kink rounding and its additive KC noise now feed into V0(d), not only V0(b). At the forecast scale V0(d) tolerates almost no RANDOM rounding. The claims of coverage 'up to about 0.05 at every scale', of 'costs power, not validity, only for V0(b)', the step 0.3 flag tuned to V0(b)'s 0.4, and the stated reason for rejecting the worst-case form all overstate what the chosen form allows.",
+            "evidence": "Reach requires KC_R <= rho_hat_C - 0.6, roughly. With rho_C = rho_R = rho, the tolerated KC_R/rho is (rho - 0.6)/rho: 0.016 at 0.61 (the LQR forecast), 0.20 at 0.75, 0.40 at 1.0. Kink rounding of width w = 0.02 gives KC/rho = 0.25, i.e. KC_R of about 0.15 at rho 0.61, so reach = 0.61 - 0.10 - 0.15 = 0.36 and the result is INCONCLUSIVE. Tolerating w = 0.05 (ratio 0.38) needs 0.62 rho >= 0.6, i.e. rho of about 0.97, against 1.07 for the rejected worst case (0.6 rho >= 0.64). So the 'INCONCLUSIVE for any competent learner' argument at :207 applies almost equally to the chosen form unless RANDOM is nearly exact. The step 0.3 flag at an onset ratio of 0.3 warns only 'Stage 1 V0(b) may end INCONCLUSIVE' (:557). Part 8.2(iii) assigns the noise cost to V0(b) only.",
+            "fix": "In Part 2 and Part 8.2, state the joint tolerance (rho_hat_C - 0.6)/rho_R, with the table above. Compare the chosen and rejected forms under the same assumptions (0.97 versus 1.07 at w = 0.05; about 0.6 versus 1.07 only when RANDOM is exact). Extend the step 0.3 flagged row's written prediction to 'V0(b) or V0(d) may end INCONCLUSIVE', for example flagging when onset ratio x 0.61 exceeds 0.01. Add to 8.2(iii) that KC_R noise also reaches V0(d).",
+            "check": {
+              "id": "R7-2",
+              "real": true,
+              "severity_after": "low",
+              "reason": "The arithmetic is correct. With rho_C = rho_R = rho and rho_hat about rho, reach needs rho(1 - KC_R/rho) >= 0.6. The tolerated ratio is about 0.016 at 0.61, 0.20 at 0.75 and 0.40 at 1.0. At w = 0.02 (ratio 0.25) rho must be at least 0.8; at w = 0.05 (ratio 0.38) at least 0.97. The worst-case form needs 0.6 rho >= 0.64, or about 1.07. Partly refuted on scope. The coverage sentences at :208-209 and :812 are literally about V0(b)'s allowance, and they are true for V0(b). The rejection sentence at :205 compares the two forms only 'even when RANDOM's KC is near 0', which is also true. The KC_R dependence is disclosed qualitatively: 'when RANDOM's KC is small' (:198) and 'With RANDOM's KC near 0, the first needs rho_C(s05) of about 0.6' (:816). A positive KC_R making K1a unreachable is also inherent to K1a itself (KC_C - KC_R >= 0.5 with KC_C about rho_C), whatever the gate's form. Driving that case to INCONCLUSIVE rather than FAIL is the gate's intended behavior, so no validity defect results. What remains real is an inaccurate disclosure. :210, 'Wider rounding still ends Stage 1 INCONCLUSIVE', and 8.2(iii) at :820, 'costs power, not validity', assigned to V0(b) only, both imply that rounding narrower than 0.05 is harmless to Stage 1. Yet at the disclosed forecast scale (about 0.61), almost any positive RANDOM rounding or KC noise ends Stage 1 INCONCLUSIVE through V0(d). The step 0.3 flagged row (:551) warns only about V0(b). This affects the A3/A4 compute decision and the power forecast, not the validity of any PASS or FAIL, so it is downgraded to low. The fix (state the joint tolerance (rho_hat_C - 0.6)/rho_R, compare the two forms under rounding, and extend the step 0.3 flag text to 'V0(b) or V0(d)') is appropriate."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Part 11: all 29 sha256 entries match the working-tree files, including the three new entries (DRAFT_PROTOCOL_r6.md 6f5a38bb..., VERIFY_WORKFLOW_r6.json 2173042b..., VERIFY_CRITIC_DIGEST_r6.txt e81b1eb5...). Checked with sha256sum -c.",
+          "4.5b shared dict values match the Physics fields in canonical/thrusterchain.py:103-122: knee = float(np.float32(0.8)) has repr 0.800000011920929 (line 79), gain 0.3, throttle_cost 0.3, wave_turn 0.27, gamma 0.98, length 100.",
+          "`nostall` = world_physics('no_stall', 3.0) gives stall False and stall_slope 3.0 (lines 143-149). thrust_knee is 1.0 and thrust_slope is 0.0 when stall is False (lines 124-131), so 'thrust slope 0 either way' is correct. Canonical NO_STALL would carry 1.5, so pre-registering 3.0 is a real, strict choice.",
+          "`stall15_identity` (True, 1.5) matches the world the frozen central-quartile critics were trained and evaluated in (reference.py:37, 57, 151, 199).",
+          "The literal formulas agree with thrust() at line 198 past the knee. T3(-1) = -0.2000000477, T15(-1) = -0.5000000298, and 0.3(1 - T15(-1)^2) = 0.22499999 were recomputed.",
+          "The float64 reconstruction is well founded: datasets.py:24 and :300 store `states` as <f8 with shape (n, 101, 13), so consecutive rows lie within an episode, and _validate at :370-371 already replays dynamics(states[:, :-1]) to rtol 1e-13. Subtracting B_k a_k for k = 1..3 is valid because |a1..a3| <= 0.7 < KNEE.",
+          "4.8's `adjusted` really is q1 - 3U for the saved files: evaluate_worker.py:376-382 returns q1 - 3*width; evaluation.py:417 and 432-434 apply it to the 192 stacked probes; the score is passed for every checkpoint > 0, native included (evaluate_worker.py:604-605). Every native 20k JSON has non-null `adjusted`, with U = (q1 - adjusted)/3 in [3.8, 8.7].",
+          "The relative tolerance is sound: the largest saved |q1| and twin_min across the 18 native 20k files is about 506, and 1e-6 x 500 / ULP(500) = 5e-4 / 3.05e-5, about 16 ULP, as stated. Lambda now uses the same relative convention.",
+          "The 4.8 reference directory and glob are correct: there are 18 files, 9 cells x 2 contexts.",
+          "4.4 exemptions now name the reach-forecast and actor-own-a1..a3 sets (slot 0 of the 4.8 array aside, see R7-4).",
+          "The step 0.3 onset contrast now says 'within the onset contrast's own sub-caps', which agrees with the 200k / 10-minute sub-caps at :494-495. The noise-scale report was added.",
+          "R_lin's 'unclipped' claim is substantively correct: reference.py deployed_actions only asserts |a| <= 1, and continuation_values queries the actor unclipped at slope 1.5. The citation is weak (R7-6).",
+          "The step 0.3 convention sentence was narrowed to 'the same a1..a3 convention as V0(b)'.",
+          "The step 0.4 worlds list uses the tags, with T15 for the identity-only world, and agrees with 4.5b.",
+          "The L2 PASS rule (:183) and Part 2 (:199) now scope the full items 1-6 to step 0.4, with only items 5 and 6 plus reachability gated in Stage 1. This agrees with V0(d) at :642.",
+          "Readings 1 and 2 were reworded as requested; reading 2 uses rho_hat_R.",
+          "The new anchor subsets (R-valid, C-valid, CR-valid) are defined, and V0(c) floors each at 32.",
+          "Arithmetic checks: V0(b)'s minimum allowance is 0.4 x (0.20 + 0.10) = 0.12, matching Part 8.2(iii). With the tolerance added, the allowance is at least 0.4 x true rho_R, so V0(b) alone covers w <= 0.05 (ratio 0.38). The rejected worst case needs 0.6 rho >= 0.64, i.e. rho of about 1.07 when rho_C = rho_R. K1a reachability with KC_R = 0 needs rho_hat_C >= 0.6.",
+          "'A step 0.4 PASS implies reachability under the reference continuation' holds: item 1's median of 0.75 gives 0.75 - 0.10 = 0.65 >= 0.5 when KC_R is about 0, and item 2's median of 0.75 is >= 0.65.",
+          "The r6 digest's sufficiency sentence (rho_C >= rho_R, both >= 0.83) was removed. K1c reachability is on the C-valid anchors.",
+          "V0(d) is still unconditional. It now states that it voids K1 passes and masks K2 and K3, and that every criterion outcome is still recorded per seed. That matches the accepted design and the adjudication in digest item 4.",
+          "The Part 9 Review 7 table lists all 11 items. The Review 6 rows 1 and 3 refinement annotations are consistent with the r7 edits."
+        ]
+      }
+    ],
+    "critic": {
+      "verdict": "Revision 7 is not ready for A1. One more text-only pass is needed, with no new data and no change to the accepted reachability-gate design. Most of the 11 r6 items are resolved correctly, and both lenses confirmed the following against the sources: V0(b)'s allowance 0.4 x (rho_hat_R + 0.10), the softplus ratios, the 0.12 minimum, K1c's 0.65 level, the 1.067 figure for the rejected form at equal rho, the 4.5b world dicts and the T3/T15 formulas, the float64 reconstruction, the relative tolerance, U = (q1 - adjusted)/3, and all 29 Part 11 hashes.\n\nRULING ON THE OBSERVED-RANDOM K1a REACHABILITY FORM: acceptable with specific changes; do not revert to the worst-case form. Using the measured RANDOM critic is legitimate. RANDOM's KC distribution does not depend on what withholding does to CUTOFF, so the gate is not biased with respect to the hypothesis. A positive KC_R correctly turns a RANDOM-rounding-driven K1a miss into INCONCLUSIVE rather than FAIL. The worst-case form would need rho_C of about 0.72-1.07, which is unworkable.\n\nThe form as written has one logic defect. V0(b) is two-sided (DRAFT_PROTOCOL.md:630), and KC_R enters the gate with a minus sign (:203, :636, :814). A negative, pessimistic RANDOM KC therefore lowers the CUTOFF gap the gate requires, one for one. For example, at rho_hat_R = 0.5 V0(b) admits KC_R = -0.24, and then rho_hat_C(s05) = 0.37 counts as reachable; a smooth CUTOFF critic then passes K1a at 0.55. r6's gate needed 0.70 and the worst-case form needs 0.84, so both blocked this case. This contradicts V0(d)'s stated reason at :641 and the unconditional reading of :816. K1c's reachability gate and absolute bar are still required, so this is not a label-level false PASS of the whole hypothesis. But it weakens K1a's attribution of over-valuation to withholding at a labelled depth. It changes gate logic, so it stays medium and blocks A1.\n\nThe fix is to keep the observed form and add a RANDOM-independent floor on the CUTOFF gap. The preferred version, which has no per-anchor clamp bias from noise, is: 'and median over C-valid anchors of rho_hat_C(s05) - 0.10 >= 0.5'. Alternatively, use max(0, KC_s05,R,j) inside the median. Either way, state that a negative RANDOM KC never lowers the bar.\n\nThe other must-fix items are wording and bookkeeping, plus one small change to the anchor set. The 4.8 shape comparison is literally impossible because slot 0 holds the actor's command; as written it would make the known-answer check INCOMPLETE by construction. The reachability anchor subsets do not match K1a/K1c's anchor sets. The tolerance direction is misstated. The KC_R-driven power cost and masking are not disclosed. A few anchor-set labels, citations and history rows are stale.",
+      "ready_for_A1_consideration": false,
+      "must_fix": [
+        {
+          "severity": "medium",
+          "section": "Part 2 Link to Stage 1 (:203-205); V0(d) (:636, :641); Part 8.2 (:814-818); Part 9 Review 7 rows 2 and 4 (:996, :998)",
+          "issue": "K1a reachability subtracts the observed per-anchor KC_s05,R, and V0(b) allows a negative KC_R (two-sided bound, :630). So RANDOM pessimism lowers the CUTOFF gap the gate requires. Verified: at rho_hat_R = 0.5, KC_R = -0.24 is admitted, rho_hat_C(s05) = 0.37 is 'reachable' (0.37 - 0.10 + 0.24 = 0.51), and a smooth CUTOFF critic passes K1a at 0.31 + 0.24 = 0.55. At rho_hat_R = 1.0 the admitted KC_R of -0.44 pushes the bar down to rho_hat_C of about 0.2, but there the K1c reach gate (s10 >= 0.65) catches the case. r6's gate and the rejected worst-case form both voided these cases. The text's rationale (:641 'when the true gap is too small, a K1 pass cannot be attributed to the knee') and :816 ('needs rho_C(s05) of about 0.6') hold only when KC_R >= 0. This is a gate-logic gap, not wording.",
+          "fix": "Keep the observed-RANDOM form (do not revert to worst case) and add a RANDOM-independent gap floor. Preferred: 'K1a is reachable iff median_j[rho_hat_C,j(s05) - 0.10 - KC_s05,R,j] >= 0.5 AND median_j rho_hat_C,j(s05) - 0.10 >= 0.5', both over the same anchor set (see the anchor-set item). An acceptable alternative is median_j[rho_hat_C,j - 0.10 - max(0, KC_s05,R,j)] >= 0.5; note that per-anchor clamping biases the bar slightly upward under symmetric KC noise. Mirror the change in Part 2, V0(d), Part 8.2 and Part 9 Review 7 rows 2 and 4. Add the sentence: 'A negative (pessimistic) RANDOM KC never lowers the gap required; a positive one raises it, so that a RANDOM-driven K1a miss is INCONCLUSIVE, not FAIL.' Restate :641 and :816 so they are true for every sign of KC_R."
+        },
+        {
+          "severity": "medium",
+          "section": "4.8 forced-probe reproduction (:440-444); 4.4 zero-assertion exemptions (:349-351)",
+          "issue": "4.8 builds only slots 1-5 but asserts that the built arrays equal the saved 32 x 6 x 4 `actions` exactly. Slot 0 of the saved bank is the old actor's own deployed command with nonzero a1..a3 (evaluation.py:57-65: bank[:,0] = actor; bank[:,1:,0] = FIXED_A0). Read literally, the shape and value check fails by construction, so 'Known-answer mismatch -> INCOMPLETE' (step 0.3 table) would always fire. The text also does not say whether q1, twin_min and adjusted are reproduced at slot 0, which would need a frozen-actor forward pass. And slot 0 is not exempt from 4.4's 'every gated probe array' zero assertion. The fix is wording only, but without it a pre-registered check fails by construction.",
+          "fix": "Write: 'Assert builder(slots 1-5) == saved actions[:, 1:, :] (32 x 5 x 4) exactly; reproduce q1, twin_min and adjusted on slots 1-5.' Optionally add: 'slot 0 is the frozen actor's deployed command, reproduced by a forward pass and compared to saved actions[:, 0] exactly.' Add 'slot 0 of the 4.8 reproduction' to the 4.4 exemptions."
+        },
+        {
+          "severity": "low",
+          "section": "Anchor sets (:619-623); Part 2 (:203, :206); V0(d) (:636-637); K1a/K1c table (:648-649)",
+          "issue": "Reachability medians are taken over CR-valid (K1a) and C-valid (K1c) anchors, while K1a and K1c are scored on all common gated anchors. Per-anchor dominance therefore guarantees that a correct smooth critic clears K1a/K1c only on the subset, not on the set the criteria are scored on. With item 5 at only >= 90% per continuation, CR-valid can be about 80% of the common set, so the by-design K1a FAIL the gate exists to prevent can still occur, with reading 2 attached. The intersection with R-valid is also unnecessary, because the reach term uses rho_hat_C and KC_R and KC needs no predictor. r7 also dropped r6's 'approximate' disclosure.",
+          "fix": "Use C-valid for K1a reachability, not CR-valid. Then either (a) take the reachability medians over the common gated anchors, entering each non-C-valid anchor pessimistically (as -infinity) so that dominance carries over to the criterion's set, or (b) state that the reachability median is approximate because the sets differ, and report K1a/K1c recomputed on C-valid as a consistency check. Update V0(c)'s floor list to match."
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 (:201); V0(b) bullet (:207); Part 9 Review 7 row 2 (:996)",
+          "issue": "The tolerance direction is misstated. rho_hat - rho = min_k P_k - Q_nostall lies in [-tol, +tol]. The reachability gates subtract tol, guarding against rho_hat OVERstating rho. V0(b) adds tol, guarding against understatement. The text says rho_hat 'can understate the true rho' and that the gates 'add that tolerance', and 'the same true-rho model for each' hides that the two gates use opposite ends of the bound. The formulas are correct.",
+          "fix": "Write: 'rho_hat lies within +/-0.10 (s05) or +/-0.15 (s10) of the true rho. The reachability gates use the lower end (rho >= rho_hat - tol), so a smooth critic certainly clears the bar. V0(b) uses the upper end (rho <= rho_hat + tol), so a correctly labelled RANDOM is not rejected.' Mirror this in Review 7 row 2."
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 V0(b) coverage (:208-210); Part 8.2 (ii)-(iii) (:812, :818-820); step 0.3 flagged row (:557)",
+          "issue": "Positive RANDOM kink rounding and KC noise now feed V0(d) as well as V0(b), and the text does not say so. At the forecast scale (rho about 0.61), V0(d) tolerates KC_R/rho of only about 0.016. With w = 0.02 rounding (ratio 0.25), rho must be at least about 0.8. With w = 0.05 (ratio 0.38), rho must be about 0.97, against 1.07 for the rejected form. 'Wider rounding still ends Stage 1 INCONCLUSIVE', 'costs power, not validity' (assigned to V0(b) only) and the step 0.3 flag text ('V0(b) may end INCONCLUSIVE') imply that rounding below 0.05 is harmless to Stage 1. Through this channel, RANDOM's s05 error can also mask a clean K1c FAIL (reading 1) or a clean K2/K3 outcome even when K1c's own reachability passes. This affects power and the compute decision, not the validity of any label.",
+          "fix": "In Part 2 and Part 8.2, state the joint tolerance: K1a reach needs KC_R <= rho_hat_C - 0.6 (ratio tolerance (rho - 0.6)/rho: 0.016 at 0.61, 0.20 at 0.75, 0.40 at 1.0). Compare the chosen and rejected forms under the same rounding (about 0.97 vs 1.07 at w = 0.05; about 0.6 vs 1.07 only when RANDOM is exact). Add to 8.2(iii): 'KC_R rounding and noise also reach V0(d), and can mask clean K1c, K2 or K3 outcomes.' Change the step 0.3 flagged-row prediction to 'Stage 1 V0(b) or V0(d) may end INCONCLUSIVE'. Optionally, but only with the user's sign-off since it touches the accepted design, let a K1a-only reachability miss void just K1a and reading 2."
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 (:198); step 0.4 label table (:574-581); Part 9 Review 7 row 8 (:1002)",
+          "issue": "'A step 0.4 PASS implies K1 is reachable ... when RANDOM's KC is small' is true for K1c (0.75 >= 0.65, no KC_R involved). For K1a it holds only if KC_R is small at every anchor (about <= 0.15); a small median is not enough, because a median of differences is not bounded by a difference of medians. Counterexample: rho_hat [0.6, 0.6, 0.75, 0.9, 0.9] with KC_R [0.05, 0.05, 0.25, 0.45, -1.0] gives a reach of 0.45. With the new floor from the first item, K1a also needs median rho_hat_C >= 0.6, which item 1 (0.75) satisfies. r6 item 8 was answered by argument, and the requested flagged/acknowledged forecast at A4 was not added.",
+          "fix": "Write: 'implies K1c reachability and the K1a gap floor; it implies the K1a contrast term only if |KC_s05,R| <= 0.15 at every anchor, so it is a partial forecast.' Add a standing written prediction acknowledged by the user at A4: 'Stage 1 V0(d) may end INCONCLUSIVE (LQR proxy rho(s05) of about 0.61 against a reachability level of about 0.6 + KC_R).'"
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 (:205)",
+          "issue": "The 1.07 figure for the rejected worst-case form silently assumes rho_hat_R = rho_hat_C, and 'for any competent learner' overstates it. The level is 0.6 + 0.4(rho_hat_R + 0.10): 0.72 at rho_hat_R = 0.2, 0.84 at 0.5, 0.94 at 0.75, 1.07 at equality.",
+          "fix": "State the equal-rho assumption and the range: 'needs rho_hat_C >= 0.6 + 0.4(rho_hat_R + 0.10): 0.72-1.07 for rho_hat_R from 0.2 up to rho_hat_C'."
+        },
+        {
+          "severity": "low",
+          "section": "V0(b) (:628-630); V0(d) item 5 (:635); K1c second clause (:649); reading 2 (:672)",
+          "issue": "Several clauses next to the new ones name no anchor set: V0(b)'s 0.20 resolvability floor, item 5's '>= 90%' in V0(b)/V0(d), K1c's '0.5 x median rho_hat(s10)', and reading 2's 'median KC_s05(RANDOM) <= 0.1 x median rho_hat_R(s05)'. Read by default as the common anchors, they put predictor-invalid rho_hat into a median.",
+          "fix": "Name the set in each clause: the floor and reading 2 on R-valid (as in V0(b)); item 5 at >= 90% of the common gated anchors under each continuation; K1c's rho_hat(s10) median on C-valid (or on whatever set the anchor-set fix adopts)."
+        },
+        {
+          "severity": "low",
+          "section": "Part 8.2 (:817); Part 9 Review 6 row 1 (:972)",
+          "issue": "':817 'a correct critic could not pass K1 there' overstates: a correct critic may pass, but the pass cannot be attributed and is voided. Review 6 row 1 still quotes the superseded r6 formula 'rho_hat_C(s05) >= 0.5 + 0.4 rho_hat_R(s05)' as the Stage 1 rule, with only an italic note that it was refined.",
+          "fix": "Change :817 to 'a correct critic's pass could not be attributed to the knee, and a FAIL would be set by design'. In the Review 6 row 1 note, give the final r7 formula (with the gap floor from the first item) and V0(b)'s 0.4 x (rho_hat_R + 0.10)."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.3 R_lin (:527); 4.8 saved Q^pi reproduction (:446)",
+          "issue": "The 'unclipped deterministic continuation at stall_slope 1.5' claim is correct, but evaluation.py:210 supports only 'own deterministic actor continuation'. 4.8's 1e-9 Q^pi reproduction does not say it must use that unclipped continuation, whereas Stage 1's primary continuation is clipped.",
+          "fix": "Cite conditional_ood_gate_central_quartile_v1/reference.py deployed_actions (91-96), continuation_values (242-276) and authenticate_core (37, 57). In 4.8 add: 'using each model's own unclipped continuation in `stall15_identity`, as recorded'."
+        },
+        {
+          "severity": "low",
+          "section": "4.5b world table 'Used in' column (:373-377)",
+          "issue": "The column is incomplete. `stall3` omits step 0.4's exact Q^pi probes, the 4.5 cross-check and the data-level check. `nostall` omits step 0.3's rho15 no-stall replays and step 0.4's Q_nostall probes. The table also does not say that the prior gate's reference.py hard-codes stall_slope 1.5, so it cannot produce `stall3`/`nostall` receipts without failing the dict assertion.",
+          "fix": "Extend the 'Used in' entries accordingly and add: 'The prior gate's reference.py is used only for `stall15_identity` reproduction.'"
+        }
+      ],
+      "residual_risks": [
+        "The current forecast is borderline. The clipped-LQR proxy gives rho(s05) of about 0.61, against a K1a reach level of about 0.6 plus any positive RANDOM KC. Stage 1 may well end INCONCLUSIVE through V0(d) even if the hypothesis is true, and this can end the line of work without an answer.",
+        "Even with the gap floor, the K1a contrast itself can be inflated by RANDOM under-valuing the onset. V0(b)'s two-sided band allows that, and only K1c's absolute bar is independent of RANDOM. Part of a K1a margin may still be RANDOM's error rather than withholding.",
+        "The additive noise in KC has never been measured. Step 0.3 reports it only on old critics. Noise can fail V0(b)'s small allowance (as low as 0.12) or move the K1a reach statistic, which costs power in ways not yet quantified.",
+        "No power estimate exists. Six criteria and five V0 items must hold in each of three seeds, so a FAIL-mixed or INCONCLUSIVE outcome is likely and must not be over-read.",
+        "A reachability miss in any single seed masks otherwise clean K1c, K2 and K3 outcomes. They are recorded but get no reading.",
+        "Predictor validity selects anchors, so if predictor invalidity happens to correlate with small gaps, the medians used by the gates and by the criteria can diverge.",
+        "Step 0.4's PASS is measured under the old reference continuation. The Stage 1 learners' continuations can produce smaller gaps, so step 0.4 is only a partial forecast of Stage 1 reachability.",
+        "Target smoothing queries the withheld window for about a third of CUTOFF's target actions (estimated). This can contaminate the -KNEE reference that KC differences against. The protocol assumes the contamination cancels, which is reported, not tested."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:reach",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a43d4acb38e57545e",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793320359492,
+      "queuedAt": 1793320359472,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 7 fixes most of what r6 got wrong in the gates. Th…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 7 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 6: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793320681545,
+      "tokens": 163335,
+      "toolCalls": 9,
+      "durationMs": 322052,
+      "resultPreview": "{\"verdict\":\"Revision 7 fixes most of what r6 got wrong in the gates. The V0(b) allowance 0.4 x (rho_hat_R + 0.10) is arithmetically sound. The softplus ratios reproduce, it covers widths up to about 0.06 at every scale, and the 0.12 minimum is right. K1c's 0.65 reachability level is exact by shift-equivariance of the median, and the 1.07 figure for the rejected worst-case form checks out. The auth…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:resolution",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "ad1962afef192a89c",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793320359492,
+      "queuedAt": 1793320359472,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 7 resolves most of the 11 r6 items correctly, but …",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 7 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 6: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793320800432,
+      "tokens": 188691,
+      "toolCalls": 20,
+      "durationMs": 438171,
+      "resultPreview": "{\"verdict\":\"Revision 7 resolves most of the 11 r6 items correctly, but it is not ready for A1. It needs one more text pass, and the new K1a reachability form is where the problems are. These parts check out against the sources: the 4.5b world table and dicts, the per-world literal T3/T15 formulas, the float64 `states` reconstruction, the relative tolerance, the U = (q1 - adjusted)/3 identity, the …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "verify:reach",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a180e37000de4f1ca",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793320683204,
+      "queuedAt": 1793320683190,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 7 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 6: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793320824778,
+      "tokens": 123686,
+      "toolCalls": 4,
+      "durationMs": 141574,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"R7G-1\",\"real\":true,\"severity_after\":\"low\",\"reason\":\"The arithmetic is right. In the r7 gate (:203, :636), KC_R enters with a minus sign, and V0(b) is two-sided (:630). So at rho_hat_R = 0.5, KC_R = -0.24 is allowed, and rho_hat_C(s05) = 0.37 counts as reachable (0.37 - 0.10 + 0.24 = 0.51). r6's gate (0.5 + 0.4 x median rho_hat_R, r6 V0(d)) needed 0.70 and blocked this case. The…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "verify:resolution",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a00d6ddd96a4d8047",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793320802124,
+      "queuedAt": 1793320802120,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 7 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 6: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793320935675,
+      "tokens": 129188,
+      "toolCalls": 9,
+      "durationMs": 133550,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"R7-1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"The core claim holds, though some of the finding's sub-claims are refuted. REAL: the r7 gate at DRAFT_PROTOCOL.md:203/:636/:814 is median_j[rho_hat_C,j(s05) - 0.10 - KC_s05,R,j] >= 0.5. A negative (pessimistic) observed KC_R lowers the CUTOFF gap it requires one for one. The only other bound on RANDOM's KC is V0(b)'s two-sid…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "aab2090893039b8dd",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793320937307,
+      "queuedAt": 1793320937296,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 7 is not ready for A1. One more text-only pass is …",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 7 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 6: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793321060928,
+      "tokens": 125532,
+      "toolCalls": 3,
+      "durationMs": 123621,
+      "resultPreview": "{\"verdict\":\"Revision 7 is not ready for A1. One more text-only pass is needed, with no new data and no change to the accepted reachability-gate design. Most of the 11 r6 items are resolved correctly, and both lenses confirmed the following against the sources: V0(b)'s allowance 0.4 x (rho_hat_R + 0.10), the softplus ratios, the 0.12 minimum, K1c's 0.65 level, the 1.067 figure for the rejected form…"
+    }
+  ],
+  "totalTokens": 730432,
+  "totalToolCalls": 45
+}

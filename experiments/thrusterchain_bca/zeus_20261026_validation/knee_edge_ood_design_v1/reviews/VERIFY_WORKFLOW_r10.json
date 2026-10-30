@@ -1,0 +1,493 @@
+{
+  "summary": "Narrow verification of revision 10 of the knee-edge OOD draft: the two user-decided rule changes, the r9 must-fix resolutions, and a whole-document consistency sweep; skeptics; readiness critic",
+  "agentCount": 6,
+  "logs": [
+    "2 high/medium findings survived the skeptic"
+  ],
+  "result": {
+    "packed": [
+      {
+        "lens": "decisions",
+        "verdict": "Both user decisions are implemented correctly, and I found no new false-PASS, false-FAIL or wrong-reading path. No gate, label, precedence or approval rule changed beyond decisions (a) and (b).\n\nDecision (a): per anchor, KC_C - min(KC_R,0) >= KC_C - KC_R, so the counterfactual median is never below K1a. Withholding reading 2 whenever that counterfactual reaches +0.5 covers every FAIL that needed RANDOM's positive KC, by definition. It also implies median KC_C alone < 0.5, so the reviewers' second suggested guard adds nothing. Reading 2 can therefore never be attached to a FAIL RANDOM caused.\n\nThe cost is over-withholding. The counterfactual keeps RANDOM's negative KC, so zero-mean RANDOM noise can withhold the reading when CUTOFF's own median is below the bar. In simulation this happens 22% of the time at sigma_R = 0.1 with a CUTOFF median of 0.45, and 61% at sigma_R = 0.2. This is conservative (the label stays FAIL), but the prose blames it on kink rounding.\n\nDecision (b): I checked the dominance proof analytically and by 20,000-case brute force with zero violations. Dropping minus-infinity entries never lowers a median, so M >= 0.65. Per-anchor dominance plus a constant shift gives a C-valid median KC >= M - 0.15 >= 0.5M. The absolute clause stays on the common anchors, at most 10% of anchors are non-C-valid, and C-validity does not depend on the critic's outputs. So the change opens no meaningful false-PASS path.\n\nEvery example number recomputes exactly: the 47-anchor case, the 48-anchor companion case and the 48-anchor K1c case (1.40 vs 0.70, alternative bar 0.33). Decision (c) is recorded accurately as a cost to power only.\n\nWhat is left is wording and disclosure:\n- 'in every seed' is missing from two restatements of condition (b).\n- The noise routing points only to K1a's joint statement, not to K1c.\n- The step 0.4 forecast counts invalid anchors differently from Stage 1.\n- The 4.8 batching change is a method change, though not a rule change.\n- The over-withholding of reading 2 is undisclosed.\n\nr10 is ready for A1 consideration after an optional text-only touch-up.",
+        "low_findings": [
+          {
+            "id": "R10-1",
+            "severity": "low",
+            "section": "Part 5 reading 2 (lines 714-717); Part 2 line 219; Part 8.2(iii) lines 873-874",
+            "claim": "Condition (b) zeroes positive KC_R but keeps negative KC_R. Zero-mean RANDOM noise can therefore withhold reading 2 even when K1a would also fail with RANDOM exactly 0. The text then blames RANDOM's kink rounding for the withholding. The rule is conservative, but the stated reason is not always the cause.",
+            "evidence": "Per anchor, KC_C - min(KC_R,0) >= KC_C >= ... and cf >= median KC_C. Deterministic case: 48 anchors, KC_C = 0.45 everywhere, KC_R = -0.1 at 24 and +0.1 at 24. Median KC_R = 0, condition (a) passes, K1a = 0.45, median KC_C = 0.45 (fails with RANDOM exact), cf = 0.50, so reading 2 is withheld. Simulation (scratch verify_wf_r10/rules/checks.py; 48 anchors, KC_C ~ m + N(0,0.1), KC_R ~ N(0,sigma_R)), P(withheld | K1a fail and median KC_C < 0.5): 0.22 at sigma_R=0.1, m=0.45; 0.61 at sigma_R=0.2, m=0.45; 0.70 to 0.93 at m=0.48. A cf >= 0.5 can also be carried by RANDOM's negative KC at low-gap anchors, the same mechanism 8.2(iv) warns about. Reading 2 line 717 says 'Otherwise RANDOM's own kink rounding could explain the miss'.",
+            "fix": "Disclosure only, without reversing the decision. Add one line to 8.2(iii): '(b) keeps RANDOM's negative KC, so it is conservative: a withheld reading does not by itself show that RANDOM's positive KC caused the miss. With zero-mean RANDOM noise, reading 2 can be withheld when median KC_s05(CUTOFF) alone is just under 0.5. Read it together with the median-KC_s05(CUTOFF) companion.' Reword line 717 to 'Otherwise RANDOM's positive KC, from kink rounding or noise, may have been needed for the miss, and no reading is attached.'"
+          },
+          {
+            "id": "R10-2",
+            "severity": "low",
+            "section": "V0(d) line 678; Part 8.2(iii) line 874",
+            "claim": "Two of the five restatements of condition (b) leave out 'in every seed', and they also omit its formula and anchor set. The other three (Part 2 line 219, reading 2 lines 714-716, consistency check line 702) include the seed qualifier, and two of them carry the formula.",
+            "evidence": "Line 678: 'Reading 2 is then attached only if K1a would still fail with every positive RANDOM KC set to 0'. Line 874: 'reading 2 is attached only if K1a still fails with every positive RANDOM KC set to 0'. Compare line 219 ('in every seed') and line 714 ('both of these hold in every seed'). Both lines point to reading 2, so the operative rule is unambiguous, but the statements are not identical.",
+            "fix": "Add ', in every seed,' and '(median over the common gated anchors of [KC_s05,C,j - min(KC_s05,R,j, 0)] < +0.5)' at lines 678 and 874, or say 'reading 2, condition (b), in every seed'."
+          },
+          {
+            "id": "R10-3",
+            "severity": "low",
+            "section": "Part 2 Tolerance bullet (line 207); Part 8.2(iii) line 870",
+            "claim": "The new text sends CUTOFF-noise misses to 'a joint statement about both critics', which is K1a-specific. A K1c miss caused by CUTOFF's own KC noise is not covered. It is FAIL, and in every seed it gets reading 1 ('does not over-value ... with the s10 gap shown reachable') with no caveat. 8.2(iii) calls this a cost to power, not validity.",
+            "evidence": "Line 207: 'Misses of that kind fall under \"a joint statement about both critics\" below'. That statement (line 218) concerns K1a only. K1c's absolute clause has zero designed margin at the gate edge: gate 0.65 gives median(rho_hat - 0.15) >= 0.50. The relative clause has a margin of 0.5M - 0.15 >= 0.175. r10 did not create the K1c noise path, but its new routing sentence implies all noise misses are covered.",
+            "fix": "Add: 'For K1c, a noise-driven miss is FAIL, and reading 1 then describes the measured critic, noise included; at the gate edge the absolute clause has no margin for CUTOFF noise.' Alternatively, scope the line 207 sentence to K1a."
+          },
+          {
+            "id": "R10-4",
+            "severity": "low",
+            "section": "Part 2 pessimistic anchors (line 210); Part 8.2(iv) lines 883-887; Review 10 resolution sentence",
+            "claim": "Moving the relative clause's KC median from the common set to the C-valid set works in both directions compared with r9, but the text describes it only as closing a gap. It can also turn an r9 pass into a fail when non-C-valid anchors carry high KC. It is not a false-FAIL in the protocol's sense, because such a critic is not smooth. Separately, line 210 cites 8.2(iv) for the M >= 0.3 step, but r10 removed that inequality from 8.2(iv).",
+            "evidence": "Constructed case: 48 common anchors, 4 non-C-valid with KC = 5, 44 C-valid with rho_hat = 1.0, KC = 0.45 at 23 and 0.6 at 21. r9 relative median over common = 0.60 (pass). r10 C-valid median = 0.45 < 0.50 (fail). The absolute clause is 0.60 (pass). The reverse case (low KC at non-C-valid anchors) is bounded by item 5's 90% and by the absolute clause on the common set.",
+            "fix": "Add one sentence to 8.2(iv): 'Because the KC median also moves to the C-valid anchors, the result can differ from r9 in either direction; KC at non-C-valid anchors now enters only the absolute clause.' Point line 210's citation to Part 2, or restore the inequality in 8.2(iv)."
+          },
+          {
+            "id": "R10-5",
+            "severity": "low",
+            "section": "Step 0.4 reported forecast (line 597)",
+            "claim": "The forecast counts anchors that are not valid at all as minus infinity, together with non-predictor-valid ones. In Stage 1, anchors not valid in every arm are removed from the common set rather than counted as minus infinity. The forecast convention therefore does not match V0(d), and it errs pessimistic. The forecast is reported only, so no rule changed.",
+            "evidence": "Line 597: 'with any anchor that is not predictor-valid under that continuation (including one that is not valid) entering as minus infinity'. Line 652: 'The common gated anchors are the gated anchors valid in every arm compared.' V0(d) applies minus infinity only to non-C-valid anchors within the common set.",
+            "fix": "Either compute the median over the valid gated anchors with non-predictor-valid anchors as minus infinity, matching V0(d), or keep the current form and say it is more pessimistic than Stage 1's convention."
+          },
+          {
+            "id": "R10-6",
+            "severity": "low",
+            "section": "4.8 Batching (line 472); Review 10 'Resolved in revision 10' sentence (line 1150)",
+            "claim": "Review 10 says that apart from (a) and (b), 'Everything else is wording, definitions, reporting or bookkeeping'. The 4.8 batching requirement is a new constraint on how a gated known-answer check is executed. It is not a gate, label, precedence or approval change. It removes a fail-closed INCOMPLETE path, and it matches the source.",
+            "evidence": "In continuation_values (reference.py 242-276), the loop at 263-272 calls actor_actions on the active rows each offset. evaluation.py line 437 calls it once per cell with all 32 anchors. Step 0.3 already maps a known-answer mismatch to INCOMPLETE, so the 'A mismatch is INCOMPLETE' sentence only restates that.",
+            "fix": "In the Review 10 sentence, add 'and one implementation constraint on the 4.8 reproduction (recorded batching)', so the list of non-rule changes is complete."
+          }
+        ],
+        "verified": [],
+        "checked_ok": [
+          "The 47-anchor reading-2 example recomputes exactly: gate (i) 0.9, gate (ii) 0.9, median KC_R 0, K1a 0.45, K1a with positive KC_R zeroed 0.90. All anchors are valid and 47 >= 32, so V0(c) and item 5 are satisfied (scratch checks.py).",
+          "The 48-anchor 8.2(iv) example recomputes exactly: gates 0.60 and 0.60, median KC_R 0, smooth K1a 0.70, low-gap share 23/25 = 0.92, median KC_C 0.70.",
+          "The 48-anchor K1c example recomputes exactly: gate 0.66 (passes 0.65); C-valid median rho_hat 1.40 and bar 0.70; r10 C-valid KC median 1.40; r9 common KC median 0.66; alternative bar 0.33; absolute clause 0.66. The worst-case smooth critic (KC = rho_hat - 0.15) gives absolute 0.51 and relative 1.25 >= 0.70.",
+          "The dominance proof is valid. Removing the k smallest (minus-infinity) entries never lowers a median, under both odd and even averaging. Per-anchor KC >= rho_hat - 0.15 gives median KC >= median(rho_hat) - 0.15, because a median is monotone under per-anchor dominance and commutes with a constant shift. M - 0.15 >= 0.5M iff M >= 0.3. A 20,000-case brute force over 32-48 anchors with up to 10% non-C-valid found 0 violations of either K1c clause.",
+          "Condition (b) never attaches reading 2 to a FAIL that needed RANDOM's positive KC. cf >= K1a per anchor, so cf < 0.5 is exactly 'K1a fails without positive KC_R'. cf < 0.5 also implies median KC_C alone < 0.5, which covers the reviewers' second suggested guard.",
+          "Condition (b)'s strict '< +0.5' matches K1a's '>= +0.5' pass rule. It uses the same common gated anchor set and the same s05 slot as K1a.",
+          "'In every seed' for (b) matches reading 2's precondition: a reading applies only when K1a fails in all seeds, and (b) must hold in all seeds. Part 2 line 219, reading 2 and the per-seed consistency check agree.",
+          "Readings precede no label: (b) changes only whether reading 2 is attached, and label precedence (5.0 table) is unchanged.",
+          "The K1c rule is stated identically in Part 2 line 226, the anchor-set bullet line 655 and the Part 5 table row line 686. V0(d)'s 'K1c is reachable' (line 672) is unchanged and is now sufficient for both clauses.",
+          "C-validity depends on predictor fit to simulated Q_nostall, not on the critic's Q at the anchor, so the C-valid restriction does not select on the critic's outcome.",
+          "V0(c)'s 32-anchor C-valid floor and item 5's 90% keep the relative clause's medians over at least 32 anchors, and over at least 90% of the common set. The absolute clause stays on the common set, which bounds any leniency from dropping non-C-valid anchors.",
+          "Reading 1's 'with the s10 gap shown reachable (V0(d))' is now accurate for both K1c clauses. In r9 it held only for the absolute clause.",
+          "Part 2 'What a K1a miss means' (lines 216-217): a miss by a smoothly extrapolating CUTOFF critic implies a gate failure by dominance, so it is INCONCLUSIVE, consistent with the new definition of 'extrapolates smoothly'.",
+          "Decision (c) is recorded accurately at line 875 and in Review 10: the drafted scoping is kept, and the cost is power only, because masked outcomes are recorded per seed (5.0) and labelled INCONCLUSIVE by the existing precedence.",
+          "The diff touches only the declared hunks. V0(d) clauses (i), (ii) and the K1c gate, the K1a row, the label precedence, the step 0.4 label table and readings 1 and 3-6 are unchanged from r9. The step 0.4 forecast and the new consistency checks are reported only.",
+          "Part 2's mention of the K1c relative clause (line 226 and the 8.2(iv) history note) is the only place Parts 2-8 describe it. Parts 3, 6 and 7 do not describe K1c, and Part 6 lists V0 and controls without the relative clause, so nothing is stale.",
+          "The 4.8 citations match the source: authenticate_core starts at reference.py line 36 and ends at 61; continuation_values runs 242-276 with its loop at 259-272; evaluation.py line 437 calls it once per cell with all 32 anchors."
+        ]
+      },
+      {
+        "lens": "resolution",
+        "verdict": "r10 resolves 10 of the 11 r9 digest items in the text itself, not just in the Review 10 table, and implements user decisions (a) and (b) correctly and consistently. Reading 2 condition (b) appears identically at Part 2 lines 216-219, V0(d) line 678, reading 2 lines 714-717, the Part 5 consistency check at 702 and Part 8.2(iii) lines 873-874. K1c's relative clause takes both medians over the C-valid anchors at lines 226, 655 and 686 and in Part 8.2(iv). The dominance proof that the gate now covers the relative clause holds: C-valid median M >= 0.65 and M - 0.15 >= 0.5M. Neither decision opens a false-PASS path. Condition (b) only withholds a reading. Decision (b) changes which anchors the relative clause uses, and item 5's 90% rule limits how many anchors can be dropped. I found no other change to a gate, label, precedence or approval rule. Every example recomputes. The 47-anchor case gives 0.9/0.9/0/0.45, and 0.90 with positive KC_R zeroed. The 48-anchor case gives 0.60/0.60/0/0.70, share 23/25 and median KC_C 0.70. The K1c case gives 0.66, 0.70, C-valid KC 1.40 and the alternative bar 0.33. All 38 Part 11 hashes match. The one item resolved only in part is #11, the 4.8 batching. The protocol fixes the batch but treats the same batch as enough to guarantee bit-identical float32 actor outputs. It drops the digest's 'same jit' and does not pin the runtime stack under which rerun1 reproduced 143/143 contexts byte-identically. It also leaves the identical 1e-9 tension at the 4.5 cross-check untouched. The remaining issues are small: a per-cell vs per-bank wording slip, the step 0.4 forecast's base set, and Review 10 bookkeeping. One more text-only pass would close them, and none affects a gate's logic.",
+        "low_findings": [
+          {
+            "id": "RES10-2",
+            "severity": "low",
+            "section": "4.5 Independent Q^pi evaluator (line 385) vs 4.8 batching rationale (line 472)",
+            "claim": "r10's own rationale says a Q^pi row compounds up to 100 actor calls, so batching must be fixed for a 1e-9 comparison. The same reasoning applies to the 4.5 cross-check, which compares a new raw dynamics() loop with the environment-based evaluator at 1e-9 relative across all three worlds. r10 says nothing there about matching the actor batching. A different batch (for example one row at a time in the raw loop) can produce float32 actions that differ by a ULP and fail the check with no real fault.",
+            "evidence": "Line 385: 'checked against the environment-based evaluator at every step 0.4 anchor, at three slots ..., in all three worlds, to 1e-9 relative'. Step 0.4 label table line 606: 'evaluator cross-check fails' -> INCOMPLETE. The step 0.4 continuations are the frozen actors, clipped (line 592). Clipping removes differences only where the action saturates.",
+            "fix": "Add to 4.5: 'both evaluators obtain each actor action from the same call with the same batch and row order, or the second evaluator consumes the first evaluator's recorded float32 actions'. Alternatively, state why 1e-9 holds there."
+          },
+          {
+            "id": "RES10-3",
+            "severity": "low",
+            "section": "4.8 Batching bullet (line 472); Review 10 row 11 (line 1163)",
+            "claim": "'called once per cell with all 32 anchors at evaluation.py line 437' and 'one call per time offset on ... all 32 x 6 anchor-slot pairs of a cell' are imprecise. A cell has two banks (ordinary and strong_current), so continuation_values runs twice per cell, once per bank with 32 anchors. A literal reading, one call per cell, would batch 64 anchors, which continuation_values accepts (n <= 64) but which would not match the recorded batch. Also, offset 0 makes no actor call: the first action comes from the bank.",
+            "evidence": "There are 18 files matching run/evaluation/*__native__20000__*.json for the 'nine cells' of line 464, each with per_probe qpi of shape (32, 6). evaluate_snapshot is called per bank (evaluate_worker.py:604; out['context']=bank['context'], evaluation.py:421). reference.py:254 requires 1 <= n <= 64. reference.py:265-269 uses first[active] at offset 0 and actor_actions only for offset >= 1.",
+            "fix": "Reword as 'one call per offset >= 1 on the active rows of the 32 x 6 anchor-slot pairs of one cell and bank (context), in the original row order; continuation_values is called once per cell and bank, 18 calls in all'. Align Review 10 row 11."
+          },
+          {
+            "id": "RES10-4",
+            "severity": "low",
+            "section": "Step 0.4 reported forecast (line 597) vs Part 2 line 200 and Stage 1 anchor sets (line 652); r9 digest item 7",
+            "claim": "Part 2 says step 0.4 reports the medians 'under that convention', meaning V0(d)'s. Step 0.4 instead counts an anchor that is not valid as minus infinity. In Stage 1 a not-valid anchor drops out of the common gated set, and only a valid but non-C-valid anchor enters as minus infinity. The forecast is therefore stricter than the Stage 1 convention it claims to mirror. It also departs, without saying so, from the digest's proposed base set ('valid gated anchors'). Line 864's quantile statement uses k as the non-C-valid share among valid anchors, not among all anchors.",
+            "evidence": "Line 597: 'over the 48 gated anchors, with any anchor that is not predictor-valid under that continuation (including one that is not valid) entering as minus infinity'. Line 652: 'The common gated anchors are the gated anchors valid in every arm compared'. Line 655: minus infinity only for 'not C-valid'. The forecast is reported only, so no label is affected.",
+            "fix": "Either compute the forecast over the valid gated anchors per continuation seed, with non-predictor-valid valid anchors as minus infinity, matching Stage 1. Or keep the stricter base and say at line 200 and line 597 that it is more pessimistic than V0(d) because not-valid anchors count as minus infinity here."
+          },
+          {
+            "id": "RES10-5",
+            "severity": "low",
+            "section": "Part 9 Review 10, 'Resolved in revision 10' sentence and lead-in (lines 1135, 1149)",
+            "claim": "The summary says that apart from decisions (a) and (b), 'everything else is wording, definitions, reporting or bookkeeping'. The 4.8 batching bullet, however, adds a new procedural requirement to a check that can return INCOMPLETE. That is not a gate threshold or label change, but it is more than wording and should be named. The lens names are also misreported: Review 10 says the lenses were '(gate meaning, resolution)', but the record names them 'logic' and 'resolution'.",
+            "evidence": "Line 472 adds 'The continuation calls the actor exactly as recorded ... A mismatch is INCOMPLETE (step 0.3)'. reviews/VERIFY_WORKFLOW_r9.json result.packed[0].lens = 'logic', result.packed[1].lens = 'resolution'.",
+            "fix": "Add to 'Resolved in revision 10': 'and 4.8 now specifies the actor batching of the Q^pi known-answer reproduction (procedure only; thresholds and labels unchanged)'. Change '(gate meaning, resolution)' to '(logic, resolution)'."
+          },
+          {
+            "id": "RES10-6",
+            "severity": "low",
+            "section": "Review 10 table row 10 (line 1162)",
+            "claim": "Row 10 says 'actor_actions 115-130 and authenticate_core 36-61 at both sites and in 4.5b'. 4.5b (line 399) cites authenticate_core 36-61 but not actor_actions, so the row overstates what 4.5b contains. The line numbers themselves are right.",
+            "evidence": "Line 399 cites `authenticate_core` lines 36-61, line 151 and `_dynamics` 198-199, with no actor_actions. Line 471 (4.8) and line 554 (R_lin) cite both.",
+            "fix": "Reword row 10 as: 'actor_actions 115-130 and authenticate_core 36-61 at the 4.8 and R_lin sites; authenticate_core 36-61 in 4.5b'."
+          }
+        ],
+        "verified": [
+          {
+            "id": "RES10-1",
+            "severity": "medium",
+            "section": "4.8 Q^pi reproduction, Batching bullet (line 472); r9 digest item 11; Review 10 row 11 (line 1163)",
+            "claim": "The bullet says that because 'each actor call then sees the same batch as the recorded one, ... the float32 actions repeat, and 1e-9 absorbs only float64 summation order'. A matching batch is necessary for bit-identical GPU float32 outputs but not sufficient. The r9 digest's fix also asked for the 'same jit', which r10 dropped, and the protocol does not pin the stack under which the saved values were produced.",
+            "evidence": "Saved values came from a GPU, jit, float32 runtime pinned at rerun1 runtime.py:51-59: jax/jaxlib 0.6.2, cuda12 plugin, backend 'gpu', jax_default_matmul_precision == 'highest'. The actor was compiled as jax.jit(lambda obs: actor.apply_fn(...).sample(seed=None)) at evaluate_worker.py:351. DRAFT_PROTOCOL.md mentions none of 'highest', 0.6.2 or the device kind (grep). The protocol itself expects GPU nondeterminism (lines 494, 498-499). One float32 ULP is 1.19e-7 relative (scratch examples.py), so a single differing action in up to 100 compounding calls can exceed 1e-9. The mismatch is then INCOMPLETE, and a repeat under unchanged code ends the step INCONCLUSIVE (line 498), which stops the line of work with no real fault. There is empirical support the draft does not cite: rerun1 RUN_RESULT.json reproduction gives tier1_exact = 143 and largest_tier2_scaled_deviation = 0.0, so the same stack and batching did reproduce bit for bit.",
+            "fix": "Require the 4.8 reproduction to run the actor through the same compiled function on the rerun1 stack: same jax/jaxlib/CUDA plugin versions, GPU device kind, matmul precision 'highest', same batch and row order. Cite rerun1 RUN_RESULT.json (143/143 Tier-1 byte-identical) as the evidence for bit-identity. Replace 'so the float32 actions repeat' with 'so, on the same stack, the float32 actions are expected to repeat bit for bit (rerun1 evidence)'.",
+            "check": {
+              "id": "RES10-1",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Confirmed as written. DRAFT_PROTOCOL.md:472 pins the batch and row order and then concludes 'so the float32 actions repeat'. Nothing in the draft pins the stack or the compiled function the new evaluator must use: a grep finds no 'highest', no 0.6.2, no device kind, no jit or FrozenPolicy requirement. Line 399 says only that 'the new evaluator' does the 4.8 reproduction. The r9 digest fix (VERIFY_CRITIC_DIGEST_r9.txt:61) asked for 'same jit', and Review 10 row 11 (:1163) drops it. The recorded values came from FrozenPolicy._act = jax.jit(lambda obs: actor.apply_fn(...).sample(seed=None)) (evaluate_worker.py:351), called through reference.actor_actions -> policy.act (reference.py:115-130) inside continuation_values (reference.py:259-272). That ran under runtime_receipt's pins (rerun1 runtime.py:51-59: jax/jaxlib/cuda12 0.6.2, backend gpu, float32, matmul precision 'highest'). A matching batch shape does not by itself give bit-identical float32 outputs if the evaluator jits differently (fusion into a larger jit, a different precision flag or a different device), and one ULP drift compounding over up to 100 calls exceeds 1e-9. The stated rationale therefore overclaims, and the fix is incomplete. The evidence the finding cites exists: rerun1 RUN_RESULT.json reproduction.tier1_exact = 143, tier2_near_exact = 0, largest_tier2_scaled_deviation = 0.0. That shows bit-identity on the same stack, and the draft does not cite it. Severity is lowered from medium to low. The failure is fail-closed: a mismatch is INCOMPLETE (:472), never a false PASS or a wrong reading. After a first INCOMPLETE, the 5.0 rules (:495-497) allow one code-only fix before the rerun, such as switching to the rerun1 compiled path, so INCONCLUSIVE follows only if the cause is not diagnosed. The cost is an extra A2 cycle, which is the same Low class the r9 round gave this item (R9-7 / digest item 11). The suggested fix is still right: require the same compiled actor function on the rerun1 runtime (the runtime_receipt pins plus the same batch and row order), cite RUN_RESULT.json 143/143 Tier-1, and qualify 'repeat' as 'expected to repeat bit for bit on the same stack'. Both parts of the fix are text-only and change no gate."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Digest #1 (medium): reading 2 now has condition (b), median over common gated anchors of [KC_C - min(KC_R, 0)] < +0.5 in every seed. It is consistent at lines 219, 678, 714-717, 702 and 873-874, with no leftover 'reading 2's guard withholds' prose (grep). It catches r9 counterexample 1 (K1a 0.47 -> 0.52 zeroed) and counterexample 2 (0.45 -> 0.90). Label precedence (502-509) is unchanged.",
+          "Decision (b): K1c's relative clause takes both medians over the C-valid anchors at lines 226, 655 and 686 and in Part 8.2(iv). The gate covers it: dropping minus-infinity entries cannot lower the median, so M >= 0.65 and a smooth critic's C-valid median KC >= M - 0.15 >= 0.5M. The reviewers' alternative bar of 0.33 in the example is correct. Item 5's 90% rule limits how many anchors are not C-valid, so the change opens no false-PASS path.",
+          "Digest #3: the 48-anchor example (23/2/23) recomputes as gates 0.60/0.60, median KC_R 0, K1a 0.70, low-gap share 23/25 = 0.92, median KC_C 0.70. The companion's set is defined, covering ties, the even-count median and non-C-valid anchors as low-gap.",
+          "Digest #6: the companions, K1a with positive KC_R zeroed, and 'which K1c clause failed' are wired into Part 5's Stage 1 consistency checks (699-703), and the Part 8.2(iv) definition points there.",
+          "Digest #8: 'extrapolates smoothly' is defined (206) and every later use is consistent with it (205, 209-210, 217-220, 872, 878, 884). The tolerance claim at 207 holds at C-valid anchors because predictor-valid means max_k |P_k - Q_nostall| <= tol, so |rho_hat - rho| <= tol. Dominance at 217 holds: K1a >= gate (i) entrywise.",
+          "Digest #4: Part 2 line 210 cites 8.2(iv) and line 219 cites 8.2(iii); both point to the right content.",
+          "Digest #5: 4.5b (399) now says reference.py is the recorded specification and no new step runs it, consistent with 4.8 line 463 ('by the new evaluator') and the step 0.3 label row 'Known-answer mismatch | INCOMPLETE | Fix the evaluator, then a fresh A2' (576). 4.8's 'A mismatch is INCOMPLETE (step 0.3)' matches.",
+          "Digest #7, partly: step 0.4 now reports per continuation seed against bars 0.60 (floor (ii) 0.5 + 0.10) and 0.65 (K1c), says k in Stage 1 may differ, and line 864 is reworded.",
+          "Digest #9: the note after the Review 8 table lists rows 1, 2, 3, 5, 6, 7, 10 and 11 with a clause each. The note after the Review 9 table lists rows refined in r10 and annotates the stale Review 9 rows 1, 11 and 12.",
+          "Digest #10: citations checked against reference.py. authenticate_core is lines 36-61 (def at 36, return closes at 61; r10's 36 is correct and the digest's 34 was not). actor_actions is 115-130, deployed_actions 91-96 (asserts |a| <= 1 with no clipping), and _dynamics binds stall_slope 1.5 at 198-199. evaluation.py line 209 is the 'reference' string and line 437 is the continuation_values call. Both the 4.8 and R_lin sites now carry them.",
+          "Digest #11 source facts: reference.py continuation_values 259-272 repeats states 6x in anchor-major order and calls actor_actions once per offset >= 1 on current[active] in original row order. float64 accumulation is sequential per row. Slot 0 comes from the bank, and saved JSON float32 actions round-trip exactly.",
+          "47-anchor example (8.2(iii)): gates 0.9/0.9, median KC_R 0, K1a 0.45, 0.90 with positive KC_R zeroed. The K1c example: gate 0.66, old common-anchor KC median 0.66 < 0.70, new C-valid KC median 1.40, item 5 at 44/48 >= 90%.",
+          "Decision (c) is kept as drafted: V0(d) line 673 is unchanged, and 8.2(iii) line 875 records the user's choice and its power-only cost.",
+          "No r10 sentence outside decisions (a) and (b) changes a gate threshold, label, precedence or approval rule. The V0(d) clauses (669-673), the K1a row, the label table and the step 0.4 label table are unchanged.",
+          "Part 11: all 38 sha256 rows verify (sha256sum -c, 38 OK), including DRAFT_PROTOCOL_r9.md ff1bb672..., reviews/VERIFY_WORKFLOW_r9.json 3455d45d... and reviews/VERIFY_CRITIC_DIGEST_r9.txt 499c7505.... Scratch: C:\\Users\\David\\AppData\\Local\\Temp\\claude\\C--Users-David-dev-BCA\\be215736-77cd-47c3-bb51-9f394d41a6ce\\scratchpad\\verify_wf_r10\\resolution\\hashes.txt and examples.py"
+        ]
+      },
+      {
+        "lens": "consistency",
+        "verdict": "I read all of r10 against Part 5's operative text. Decisions (a) and (b) are carried through correctly and consistently. Reading 2's condition (b) has the same form, the same anchor set and the same every-seed scope at 219, 702 and 714-717, and the paraphrases at 678 and 874 point back to it. K1c's relative clause takes both medians over the C-valid anchors at 210, 226, 655 and 686, and Part 8.2(iv) describes it the same way. The claim that the gate covers both K1c clauses holds: a 200k-case random test found no violation. Neither decision opens a false-PASS or false-FAIL path. (a) only withholds a reading, and (b) compares like with like and keeps the bar. Decision (c) is reflected at 673, 217 and 875. None of the stale phrases asked about survive in the operative text: '49-anchor', 'up to its own KC noise', 'reading 2's guard withholds', '36-57' and 'fully smooth' now appear only in history rows, and each of those rows is annotated. The companions, the K1a recomputation with positive RANDOM KC zeroed, and 'which K1c clause failed' are wired into Part 5. Step 0.4's forecast is specified with its 0.60 and 0.65 levels. Every example number and all 38 hashes recompute. What remains is narrower. The 4.8 batching fix claims float32 actions repeat on batch identity alone, but the recorded actor is a jitted GPU function, and the batch unit is a (cell, context) bank, 18 calls, not a 'cell'. Step 0.4's forecast includes not-valid anchors as minus infinity, which is stricter than V0(d), though the text calls it 'that convention'. Review 10 says everything outside (a) and (b) is wording or bookkeeping, which leaves out the new 4.8 procedural requirement. The rest is small history and wording upkeep. No r10 sentence changes a gate, label, precedence or approval rule beyond (a) and (b). r10 is ready for A1 consideration after a short text-only pass on these items.",
+        "low_findings": [
+          {
+            "id": "C10-2",
+            "severity": "low",
+            "section": "Step 0.4 reported forecast (line 597) vs Part 2 (line 200) and Part 8.2 (line 864)",
+            "claim": "Step 0.4's forecast counts any anchor that is not valid as minus infinity. V0(d)'s convention has no such case: its base set, the common gated anchors, already excludes anchors that are not valid in every arm (line 652), and only non-C-valid anchors inside that set enter as minus infinity. Line 200 still says step 0.4 reports the medians 'under that convention'.",
+            "evidence": "Line 597 reads 'over the 48 gated anchors, with any anchor that is not predictor-valid ... (including one that is not valid) entering as minus infinity'. Line 652 defines the common gated anchors as 'the gated anchors valid in every arm compared'. Line 200 says 'Step 0.4 therefore also reports ... the s05 and s10 medians under that convention'. The forecast is therefore stricter than V0(d). It is reported only, so no label is affected, but the two sentences disagree.",
+            "fix": "Either drop not-valid anchors from step 0.4's base set, matching V0(d), or reword line 200 (and 864 if needed) to 'under that convention, made stricter by also counting not-valid anchors as minus infinity'."
+          },
+          {
+            "id": "C10-3",
+            "severity": "low",
+            "section": "Part 9, Review 10 'Resolved in revision 10' lead sentence (line 1149)",
+            "claim": "'Decisions (a) and (b) change one reading's precondition and one criterion's anchor set. Everything else is wording, definitions, reporting or bookkeeping, and no gate's logic changed.' This leaves out the one non-textual change outside (a) and (b): 4.8 now binds how a gated known-answer check is computed.",
+            "evidence": "Line 472 adds a mandatory procedure, the recorded batching, to the 1e-9 Q^pi reproduction, whose mismatch is INCOMPLETE at step 0.3 (line 576). The threshold and label are unchanged, but this is an implementation requirement on a gated check, not wording, a definition, reporting or bookkeeping. The Review 10 table records it (row 11), but the summary sentence does not.",
+            "fix": "Add 'plus one procedural requirement on the 4.8 known-answer computation (recorded batching; thresholds and labels unchanged)' to the summary sentence."
+          },
+          {
+            "id": "C10-4",
+            "severity": "low",
+            "section": "Part 9 history annotations (lines 1090, 1095-1096, 1135, 1162)",
+            "claim": "Some history rows that r10 supersedes are not annotated, and two Review 10 statements are slightly inaccurate.",
+            "evidence": "(1) Review 8 row 8 (line 1090) says sets were named for 'K1c's relative clause' (rho_hat median over C-valid only). Decision (b) changed that clause's anchor set, and the row has no annotation. (2) The r9 note gives Review 8 row 1 'the K1a FAIL path', which r10 superseded with condition (b). Unlike rows 3 and 11, it has no '(refined again in revision 10)' marker. (3) Review 10 row 10 says `actor_actions` 115-130 is cited 'at both sites and in 4.5b'. 4.5b (line 399) cites only `authenticate_core` 36-61, line 151 and `_dynamics` 198-199. (4) Line 1135 names the lenses 'gate meaning, resolution', but VERIFY_WORKFLOW_r9.json labels them 'logic' and 'resolution' (packed[].lens; agents review:logic and review:resolution).",
+            "fix": "Annotate Review 8 row 8 with '(K1c's relative clause: both medians over C-valid since revision 10)'. Add '(refined again in revision 10: reading 2 condition (b))' to the r9-note clause for Review 8 row 1. In Review 10 row 10, change 'and in 4.5b' to 'authenticate_core 36-61 also in 4.5b'. Use the recorded lens name 'logic'."
+          },
+          {
+            "id": "C10-5",
+            "severity": "low",
+            "section": "Part 2, Link to Stage 1 (lines 205-206, 220)",
+            "claim": "The defined term 'extrapolates smoothly' is one-sided: KC_C,j >= rho_hat_C,j - tol, with no upper bound. The sentence just before it (205) uses the term to mean KC 'of about the true rho', and line 220 calls such a critic 'correct'.",
+            "evidence": "Under the line 206 definition, a critic with KC = 10 x rho 'extrapolates smoothly'. That is all the dominance argument needs (209-210, 217), but it conflicts with 205's 'has KC at a slot of about the true rho' and with 220's 'a correct, smoothly extrapolating CUTOFF critic'. A reader could take the INCONCLUSIVE statement at 217 to apply only to near-exact critics.",
+            "fix": "At 205 say 'has KC of at least about the true rho' or move the definition first. At 220 say 'a CUTOFF critic that extrapolates smoothly (in the defined sense)'."
+          },
+          {
+            "id": "C10-6",
+            "severity": "low",
+            "section": "Part 5 Stage 1 medians (lines 669-672, 685-686, 700, 716)",
+            "claim": "The even-count median rule, 'the average of the two middle values', is stated only inside the low-gap companion's definition. It is not stated for K1a, K1c, the V0(d) gate medians or reading 2's condition (b), all of which are medians over up to 48 anchors, an even count.",
+            "evidence": "Line 700 reads '(for an even count, the average of the two middle values)'. No other median in Part 5 states a rule. With the minus-infinity convention, an even count whose lower middle value is minus infinity gives a gate median of minus infinity under averaging, but a finite one under an upper-median rule. The 48-anchor examples (878, 884) happen to have equal middle values, so they do not test this.",
+            "fix": "State once, under Anchor sets, that every median uses the two-middle average for even counts, and that a minus-infinity middle value makes the median minus infinity."
+          },
+          {
+            "id": "C10-7",
+            "severity": "low",
+            "section": "Stage 2 repair screens (line 793)",
+            "claim": "'median KC_s10 of Q1 - 3U <= 0.5 x the replicate's median KC_s10, computed only if the replicate's KC_s10 >= +0.5' does not name an anchor set. Since revision 10, K1c takes KC_s10 medians over two different sets: the common gated anchors for the absolute clause and the C-valid anchors for the relative clause.",
+            "evidence": "Line 686 (common set for the absolute clause, C-valid for the relative clause) against line 793 (no set). The guard's '+0.5' mirrors the absolute clause, which suggests the common set, but this is reported only and is ambiguous.",
+            "fix": "Add 'over the Stage 2 common gated anchors' (or the C-valid set) to both medians and to the guard at line 793."
+          },
+          {
+            "id": "C10-8",
+            "severity": "low",
+            "section": "V0(d) (line 678); Part 8.2(iii) (line 874)",
+            "claim": "The paraphrases of reading 2's condition (b) leave out 'in every seed'. The operative text (714: 'both of these hold in every seed') and Part 2 (219: 'in every seed') include it.",
+            "evidence": "Line 678 reads 'Reading 2 is then attached only if K1a would still fail with every positive RANDOM KC set to 0', and line 874 reads 'reading 2 is attached only if K1a still fails with every positive RANDOM KC set to 0'. Both cite condition (b), so the operative rule governs. This is a nit.",
+            "fix": "Append 'in every seed' at 678 and 874."
+          }
+        ],
+        "verified": [
+          {
+            "id": "C10-1",
+            "severity": "medium",
+            "section": "4.8 Q^pi reproduction, Batching bullet (line 472); slot-0 rationale (line 467)",
+            "claim": "The batching fix says that because each actor call sees the same batch, 'the float32 actions repeat, and 1e-9 absorbs only float64 summation order'. Batch identity is necessary but not sufficient. The recorded actor is a jitted GPU function. The batch unit is also misnamed: the recorded call is once per (cell, context) bank, not once per cell.",
+            "evidence": "evaluate_worker.py:351 builds `self._act=jax.jit(lambda obs: actor.apply_fn(...))`, and runtime.py:57 requires `jax.default_backend()=='gpu'` with x64 disabled. Bit-identical float32 actions therefore also need the same backend, jaxlib/XLA build and compiled program. The text's own slot-0 sentence admits that a re-run forward pass 'need not be bit-identical'. continuation_values is called once per evaluate_snapshot bank (evaluation.py:437, n = 32, times tile([0,25,50,75], 8)). Each of the nine cells has two banks (18 JSONs, ordinary and strong_current), so there are 18 recorded calls. reference.py's `require(1 <= n <= 64)` would accept both banks merged into one 64-anchor call, and that would change every batch. A one-ulp action drift compounded over up to 100 steps can exceed 1e-9 relative, which fails closed as INCOMPLETE at step 0.3. A second identical failure would end the step INCONCLUSIVE (5.0).",
+            "fix": "Say 'once per (cell, context) bank, all 32 anchors x 6 slots of that bank, one actor call per offset >= 1 on the active rows, in the original order'. Also require the recorded execution setup: the same jitted actor.apply_fn as evaluate_worker.py:351, GPU default backend, x64 disabled, and the same jax/jaxlib versions as the saved receipts, recorded in the receipt. Otherwise, state that a mismatch traced to the backend alone is handled as INCOMPLETE with a code-only fix. Drop 'so the float32 actions repeat' as an unconditional claim.",
+            "check": {
+              "id": "C10-1",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "I could not refute it. (1) The batch unit is misnamed. evaluation.py:412-437 calls continuation_values once per evaluate_snapshot bank, and CONTEXTS=('ordinary','strong_current') (evaluation.py:21). The directory run/evaluation holds 18 native__20000 JSONs, two per cell. So there are 18 recorded calls of 32 anchors each, not 'once per cell with all 32 anchors' as DRAFT_PROTOCOL.md:472 says, and a cell has 64 saved anchor rows. The explicit '32 x 6' makes it fairly unlikely that someone merges the banks into one 64-row call. reference.py:252 require(1<=n<=64) would still accept that call, so the wording is wrong and leaves the merge open. (2) 'Same batch, so the float32 actions repeat' is stated without conditions. The recorded actor is jax.jit(actor.apply_fn(...).sample) (evaluate_worker.py:351), run under runtime_receipt's checks (runtime.py:57-60): GPU backend, x64 off, matmul precision 'highest', and exact jax/jaxlib/cuda-plugin 0.6.2 versions. Part 4.8 (lines 463-472) and line 399 say only 'the new evaluator'. Nowhere does the draft require the new evaluator to run under that receipt (grep for runtime/version/backend/x64 finds nothing in 4.8). Even on the same setup, XLA GPU GEMM autotuning is not guaranteed to be bit-stable across compilations. A one-ulp action drift compounded over up to 100 steps is far above 1e-9 relative. The failure is fail-closed: INCOMPLETE at step 0.3 (lines 472, 576), then INCONCLUSIVE on a second failure of the same unit with unchanged code (line 498). Loosening the tolerance would change a threshold, which is not allowed (lines 495-497). So there is a false-stop path with no real fault, and it defeats the stated aim of the r9 item-11 fix (Review 10, row 11). There is no false-PASS path, which is why severity stays medium rather than high. Fix: say 'once per (cell, context) bank, 18 calls' and require the recorded runtime receipt, meaning the same jitted apply_fn, GPU backend, x64 off, highest matmul precision and pinned versions. Otherwise, state that a backend-only mismatch is a code-only-fix INCOMPLETE."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Decision (a) is consistent everywhere it appears: Part 2 219, V0(d) 678, consistency check 702, reading 2 714-717, Part 8.2(iii) 873-874 and (iv) 882, Review 10 rows 1 and 6. All use the same quantity, median over common gated anchors of [KC_s05,C,j - min(KC_s05,R,j, 0)] < +0.5. It only withholds a reading and changes no label or precedence (5.0, 511).",
+          "Decision (b) is consistent at Part 2 210 and 226, anchor sets 655, the K1c row 686, Part 8.2(iv) 883-887 and Review 10 row 2. Both relative-clause medians are over C-valid anchors, and C-valid is a subset of the common gated anchors (652). The absolute clause stays on the common set.",
+          "Gate coverage of K1c's relative clause, recomputed: dropping minus-infinity entries never lowers a median, so M >= 0.65, and M - 0.15 >= 0.5M for M >= 0.3. A 200k-case random test (n 32-48, 0-5 non-C-valid, smooth lower-end critics with arbitrary KC at non-C-valid anchors) found 0 violations of M >= gate median, the absolute clause or the relative clause.",
+          "Decision (c) is consistent at V0(d) 673-676, Part 2 217, Part 8.2 866 and 875, and Review 10.",
+          "47-anchor example (873, Review 10 row 1): gates (i) and (ii) 0.9, median KC_R 0, K1a 0.45, 0.90 with positive KC_R zeroed. CUTOFF is not smooth at 4 anchors, consistent with 218. Reading 2 is withheld by (b) while (a) passes.",
+          "48-anchor example (878-881): gates 0.60/0.60, median KC_R 0, smooth K1a 0.70, low-gap share 23/25 = 0.92, median KC_C 0.70; zeroed K1a 0.70.",
+          "K1c example (884-887): gate median 0.66, C-valid median rho_hat 1.40, common median KC 0.66 against bar 0.70, C-valid median KC 1.40, the alternative's bar 0.33. At the smooth lower end, the C-valid median KC is 1.25 >= 0.70 and the absolute clause gives 0.51.",
+          "The (50-k)/(100-k) quantile is 0.444 at k = 10 (200, 864). Part 8.2 864 is reworded to 'gated item 1 and 2 medians'.",
+          "Stale phrases ('49-anchor', 'up to its own KC noise', 'reading 2's guard ... withholds', 'authenticate_core 36-57', 'fully smooth', 'same set as the criteria') appear only in history rows, each annotated by the r9 or r10 notes (1095-1103, 1125-1133).",
+          "Cross-references after r10: 207 to 8.2(iii); 210 to 8.2(iv); 219 to 8.2(iii); 699 to 8.2(iv); 879 to Part 5 consistency checks; 882 to (iii). All are correct.",
+          "The companions are defined once in Part 5 (700-701: common set, even-count median, non-C-valid counted as low-gap) and summarized consistently in 8.2(iv). 'Which K1c clause failed' is reported per seed.",
+          "Step 0.4 forecast (597-600) agrees with Part 2 200: per continuation seed, 0.60 at s05 (floor (ii) plus 0.10) and 0.65 at s10. Stage 1's k comes from CUTOFF's continuation. K1a's contrast term cannot be forecast in step 0.4.",
+          "Standing prediction and borderline forecast text (203, 613, 862-863) agree: about 0.6 plus any positive RANDOM KC; LQR proxy 0.61.",
+          "Reading 1 (713), 'with the s10 gap shown reachable (V0(d))', is now accurate because the gate covers both K1c clauses.",
+          "4.5b (399) matches 4.8 and the source: evaluate_worker.py:394 loads gate/reference.py and evaluation.py:426/437 call reference.actor_actions and continuation_values, so reference.py is the code behind the saved values and the new evaluator does the reproduction. authenticate_core spans reference.py 36-61, _env line 151 binds slope 1.5, _dynamics 198-199 binds Physics(stall=True, stall_slope=1.5), actor_actions 115-130, deployed_actions 91-96 and continuation_values 242-276 with the loop at 259-272.",
+          "Budget: r10 adds no transitions. The companions, zeroed K1a, which-clause check and step 0.4 forecast are arithmetic on quantities already computed, and the batching constraint does not change counts. The 4.8 Q^pi load is 18 banks x 32 x 6 x mean horizon 62.5 = 216k transitions (about 0.4M with the no-stall comparison), inside step 0.3's 0.5M cap.",
+          "No r10 sentence changes a threshold, label, precedence or approval rule other than decisions (a) and (b). The V0(d) clauses (669-673), label table (504-509) and step 0.4 label table (604-609) have the same logic as r9.",
+          "Part 11: all 38 sha256 rows match, including the three new r9 rows. Header, status and history lines (1, 3, 8) are updated.",
+          "Review 10's rulings and confirmations match VERIFY_CRITIC_DIGEST_r9.txt: r9 text-only; byte-identical operative rules; one medium; READY True; c(0.05) = 0.38, 0.968, 1.103 and 0.34. The 11 table rows map one-to-one onto the digest's 11 must-fix items with matching severities."
+        ]
+      }
+    ],
+    "critic": {
+      "verdict": "r10 is ready for A1 consideration. One medium item remains, and its fix is text-only. Nothing high remains.\n\n(1) User decisions (a) and (b) are implemented correctly, completely and consistently, and they open no false-PASS, false-FAIL or wrong-reading path.\n- Decision (a), reading 2 condition (b), is stated with the same quantity, the same anchor set (common gated) and the same strict '< +0.5' at three places: Part 2 line 219, reading 2 lines 714-716 and the consistency check at line 702. V0(d) line 678 and 8.2(iii) line 874 paraphrase it and point back to it.\n- Why (b) can never attach reading 2 to a FAIL that RANDOM caused: per anchor, KC_C - min(KC_R,0) >= KC_C - KC_R, so the counterfactual is never below K1a. 'Counterfactual < 0.5' therefore means exactly 'K1a fails without RANDOM's positive KC'. It also implies median KC_C alone is below 0.5.\n- What (b) changes: only whether a reading is attached. Label precedence is unchanged.\n- Its one side effect is conservative over-withholding. This is disclosure only, item 6.\n- Decision (b), K1c's relative clause, takes both medians over the C-valid anchors at lines 210, 226, 655 and 686 and in 8.2(iv). The claim that the gate covers this clause holds. Dropping minus-infinity entries never lowers a median, so M >= 0.65, and a smooth critic's C-valid median KC is at least M - 0.15, which is at least 0.5M. Three lenses confirmed this by brute force (20k and 200k cases, zero violations).\n- C-validity does not depend on the critic's outputs, and V0(c) plus item 5 keep the relative clause on at least 90% of the common set. The absolute clause stays on the common set.\n- A switch from an r9 pass to an r10 fail is possible, but only for a critic that is not smooth on the C-valid anchors, so it is not a false-FAIL.\n- Every example number recomputes: the 47-anchor case gives 0.9/0.9/0/0.45, and 0.90 with positive KC_R zeroed; the 48-anchor case gives 0.60/0.60/0/0.70 with share 23/25; the K1c case gives 0.66, 0.70, 1.40 and 0.33.\n- Decision (c) is kept as drafted and recorded accurately as a cost to power only.\n\n(2) No sentence outside (a) and (b) changes a gate threshold, label, precedence or approval rule. The diff has 129 changed lines, all in the declared hunks. The V0(d) clauses, the K1a row, the label table, the step 0.4 label table and readings 1 and 3-6 have the same logic as in r9. The step 0.4 forecast, the companion statistics, the zeroed-K1a line and the which-clause line are reported only.\n\nThe one non-textual change outside (a) and (b) is the 4.8 batching requirement, a procedure on a gated known-answer check. It changes no threshold or label, but Review 10's summary sentence leaves it out of its list of non-rule changes.\n\n(3) Ten of the 11 r9 digest items are resolved in the text itself. Item 11, the 4.8 batching, is resolved only in part, and it is the surviving medium:\n- The batch unit is misnamed. The text says 'per cell', but the recorded calls are one per (cell, context) bank: there are 18 recorded calls and 18 JSONs (evaluation.py:21 and :437; verified).\n- The claim that 'the float32 actions repeat' rests on batch identity alone. It does not require the same jitted actor (evaluate_worker.py:351) under the rerun1 runtime pins (runtime.py:51-59: jax/jaxlib/cuda12 0.6.2, GPU backend, x64 off, matmul precision 'highest'). The draft contains none of these, and the digest's 'same jit' was dropped.\n- This path fails closed (INCOMPLETE, then possibly INCONCLUSIVE). It never produces a false PASS or a wrong reading.\n\nPart 11's 38 hashes verify. The other items are low wording, consistency or bookkeeping fixes: the step 0.4 forecast's base set, two paraphrases missing 'in every seed', Review 10 bookkeeping, the tolerance routing sentence, a circular citation, the one-sided 'smooth' wording, the even-count median rule, and the Stage 2 anchor set.\n\nRefuted or narrowed:\n- C10-6's worry that a minus-infinity middle value could decide a gate median cannot arise once V0(c) passes. Item 5's 90% keeps at most about 4 of 48 entries at minus infinity, so they never reach middle positions 24 and 25. Only the plain wording point survives.\n- RES10-1 was lowered to low by one skeptic and kept at medium by another. I keep it at medium because it defeats the stated aim of the r9 item 11 fix.",
+      "ready_for_A1_consideration": true,
+      "must_fix": [
+        {
+          "severity": "medium",
+          "section": "4.8 Q^pi reproduction, Batching bullet (line 472); Review 10 row 11 (line 1163)",
+          "issue": "(a) The batch unit is misnamed. The bullet says 'one call per time offset on ... all 32 x 6 anchor-slot pairs of a cell ... called once per cell with all 32 anchors at evaluation.py line 437'. In fact evaluate_snapshot runs once per bank, and CONTEXTS = ('ordinary','strong_current') (evaluation.py:21, :412-437). So there are 18 recorded continuation_values calls of 32 anchors each, and run/evaluation holds 18 native__20000 JSONs. reference.py require(1<=n<=64) would also accept a merged 64-anchor call, which would change every batch. Offset 0 makes no actor call. (b) 'Each actor call then sees the same batch ..., so the float32 actions repeat' is stated without conditions. The saved values came from jax.jit(lambda obs: actor.apply_fn(...).sample(seed=None)) (evaluate_worker.py:351) under the rerun1 pins (runtime.py:51-59: jax/jaxlib/cuda12 0.6.2, GPU backend, JIT on, x64 off, matmul precision 'highest'). The draft requires none of this (a grep for highest, 0.6.2 or jit finds nothing), and the digest's 'same jit' was dropped. One float32 ULP is about 1.2e-7 relative, and compounded over up to 100 actor calls it exceeds 1e-9. The result is INCOMPLETE and, if the cause is not diagnosed, INCONCLUSIVE with no real fault. This is fail-closed only: no false PASS and no wrong reading.",
+          "fix": "Reword as: 'one actor call per offset >= 1 on the active rows of the 32 x 6 anchor-slot pairs of one (cell, context) bank, in the original row order; continuation_values is called once per bank, 18 calls in all (evaluation.py 21, 437)'. Add: 'The actor is run through the same compiled function as evaluate_worker.py:351 (jax.jit of actor.apply_fn(...).sample(seed=None)), under the rerun1 runtime receipt (runtime.py 51-59: jax/jaxlib/cuda12 plugin 0.6.2, GPU backend, x64 off, matmul precision highest), recorded in the receipt.' Replace 'so the float32 actions repeat' with 'so, on that stack, the float32 actions are expected to repeat bit for bit (rerun1 RUN_RESULT.json: 143/143 Tier-1 byte-identical)'. Optionally state that a mismatch traced only to the backend is INCOMPLETE with a code-only fix. Align Review 10 row 11. This is text-only, and no threshold or label changes."
+        },
+        {
+          "severity": "low",
+          "section": "4.5 Independent Q^pi evaluator cross-check (line 385)",
+          "issue": "The 4.5 cross-check compares the raw dynamics() loop with the environment-based evaluator at 1e-9 relative, in all three worlds, with frozen-actor continuations. r10's own reasoning, that compounded actor calls require fixed batching, applies here too, but 4.5 says nothing about the actor batching. A failed cross-check is INCOMPLETE at step 0.4 (line 606), so this is fail-closed only.",
+          "fix": "Add to 4.5: 'Both evaluators obtain each actor action from the same compiled call with the same batch and row order, or the second consumes the first's recorded float32 actions.'"
+        },
+        {
+          "severity": "low",
+          "section": "Part 9 Review 10 (lines 1135, 1149, 1162); history notes (lines 1090, 1095-1103)",
+          "issue": "Several bookkeeping errors in Review 10 and the history notes. (1) The 'Resolved in revision 10' sentence says that apart from (a) and (b) everything is 'wording, definitions, reporting or bookkeeping'. That omits the 4.8 procedural requirement on a gated check. (2) The lens names are given as '(gate meaning, resolution)', but VERIFY_WORKFLOW_r9.json records 'logic' and 'resolution'. (3) Row 10 says actor_actions is cited 'at both sites and in 4.5b', but 4.5b (line 399) cites only authenticate_core, line 151 and _dynamics. (4) Review 8 row 8, on the K1c relative clause's sets, and the r9 note's clause for Review 8 row 1, on the K1a FAIL path, are superseded by r10 but not annotated.",
+          "fix": "(1) Append 'plus one procedural requirement on the 4.8 known-answer reproduction (recorded batching and execution stack; thresholds and labels unchanged)'. (2) Use '(logic, resolution)'. (3) Change to 'actor_actions 115-130 and authenticate_core 36-61 at the 4.8 and R_lin sites; authenticate_core 36-61 in 4.5b'. (4) Add '(refined in revision 10: both relative-clause medians over C-valid)' and '(refined again in revision 10: reading 2 condition (b))'."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.4 reported forecast (line 597) vs Part 2 line 200 and Anchor sets (lines 652-655)",
+          "issue": "Part 2 says step 0.4 reports the medians 'under that convention' (V0(d)'s). Step 0.4 instead counts an anchor that is not valid as minus infinity. In Stage 1, such an anchor leaves the common gated set, and only valid but non-C-valid anchors enter as minus infinity. The forecast is therefore stricter than the convention it claims to mirror. It is reported only, so no label is affected.",
+          "fix": "Either compute the forecast over the valid gated anchors per continuation seed, with non-predictor-valid ones as minus infinity, matching V0(d). Or say at lines 200 and 597 that the forecast is stricter than V0(d) because not-valid anchors also count as minus infinity here."
+        },
+        {
+          "severity": "low",
+          "section": "V0(d) line 678; Part 8.2(iii) line 874",
+          "issue": "Two paraphrases of reading 2 condition (b) omit 'in every seed' and the formula. The operative text (714-716), Part 2 (219) and the consistency check (702) include them. Both paraphrases point back to the operative text, so the rule itself is unambiguous.",
+          "fix": "Append ', in every seed (median over the common gated anchors of [KC_s05,C,j - min(KC_s05,R,j, 0)] < +0.5)' at both lines, or write 'reading 2, condition (b), in every seed'."
+        },
+        {
+          "severity": "low",
+          "section": "Part 5 reading 2 (line 717); Part 8.2(iii) lines 873-874",
+          "issue": "Condition (b) keeps RANDOM's negative KC, so zero-mean RANDOM noise can withhold reading 2 when CUTOFF's own median KC_s05 is just under 0.5. Deterministic case: 48 anchors, KC_C = 0.45, KC_R = ±0.1 split evenly. Then K1a = 0.45, median KC_C = 0.45 and the counterfactual = 0.50, so the reading is withheld. In simulation, P(withheld | K1a fails and median KC_C < 0.5) is 0.22 at sigma_R = 0.1 and 0.61 at sigma_R = 0.2. This is conservative, because the label stays FAIL, and it follows from the user's chosen formula. But the text blames 'RANDOM's own kink rounding' alone.",
+          "fix": "Disclosure only; the decision stands. Reword line 717 to 'Otherwise RANDOM's positive KC, from kink rounding or noise, may have been needed for the miss, and no reading is attached.' Add to 8.2(iii): '(b) keeps RANDOM's negative KC and is conservative: with zero-mean RANDOM noise it can withhold reading 2 when median KC_s05(CUTOFF) alone is just under 0.5; read it together with that companion.'"
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 Tolerance bullet (line 207)",
+          "issue": "The sentence 'Misses of that kind fall under \"a joint statement about both critics\" below' routes all CUTOFF-noise misses to a K1a-specific statement. A K1c miss caused by CUTOFF's own KC noise is FAIL and gets reading 1 with no caveat. At the gate edge, K1c's absolute clause has no designed margin.",
+          "fix": "Scope the sentence to K1a, or add: 'For K1c, a noise-driven miss is FAIL, and reading 1 then describes the measured critic, noise included; at the gate edge the absolute clause has no margin for CUTOFF noise.'"
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 line 210; Part 8.2(iv) lines 883-887",
+          "issue": "Line 210 cites 8.2(iv) for the step 'M - 0.15 >= 0.5M whenever M >= 0.3', but 8.2(iv) cites back to Part 2 and does not contain the inequality, so the citation is circular. 8.2(iv) also presents the move of the KC median to the C-valid anchors only as closing a gap. It can turn an r9 pass into a fail when non-C-valid anchors carry high KC; for a critic that is not smooth this is legitimate, but it is undisclosed.",
+          "fix": "Point line 210's citation to itself or to Part 5, or restore the inequality in 8.2(iv). Add: 'Because the KC median also moves to the C-valid anchors, outcomes can differ from r9 in either direction; KC at non-C-valid anchors now enters only the absolute clause.'"
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 Link to Stage 1 (lines 205, 220)",
+          "issue": "'Extrapolates smoothly' (206) is one-sided, KC >= rho_hat - tol, with no upper bound. Line 205 says such a critic has KC 'of about the true rho', and line 220 calls it 'correct'. A reader may take the INCONCLUSIVE statement at 217 to apply only to near-exact critics.",
+          "fix": "At 205 say 'KC of at least about the true rho'. At 220 say 'a CUTOFF critic that extrapolates smoothly (in the defined sense)'."
+        },
+        {
+          "severity": "low",
+          "section": "Part 5 Anchor sets (lines 652-656)",
+          "issue": "The even-count median rule, the average of the two middle values, is stated only inside the low-gap companion's definition (700). It is not stated for K1a, K1c, the V0(d) gate medians or condition (b), all of which are medians over up to 48 anchors. The minus-infinity concern raised with this item is refuted: with item 5's 90% (V0(c)), minus-infinity entries never reach the middle positions.",
+          "fix": "State once under Anchor sets that every median uses the two-middle average for even counts."
+        },
+        {
+          "severity": "low",
+          "section": "Stage 2 repair screens (line 793)",
+          "issue": "'median KC_s10 of Q1 - 3U <= 0.5 x the replicate's median KC_s10, computed only if the replicate's KC_s10 >= +0.5' names no anchor set. Since r10, K1c uses two sets: common for the absolute clause, C-valid for the relative clause. This line is reported only.",
+          "fix": "Add 'over the Stage 2 common gated anchors' (or the C-valid anchors) to both medians and to the guard."
+        }
+      ],
+      "residual_risks": [
+        "The 4.8 known-answer check could stop the work without a real fault. Unless the new evaluator runs the actor exactly as the saved run did (same compiled function, same GPU runtime versions and settings, one call per bank of 32 anchors), tiny float32 differences can compound past the 1e-9 tolerance. The result would be INCOMPLETE and possibly INCONCLUSIVE. It can never produce a false pass.",
+        "Stage 1 may well end INCONCLUSIVE by design. The current forecast (about 0.61 against a reachability level of about 0.6 plus any positive RANDOM KC) is borderline. Any reachability miss voids the whole stage (the user kept this scoping), and RANDOM's kink rounding or noise within V0(b)'s band can cause that miss.",
+        "Reading 2 will sometimes be withheld even though CUTOFF's critic alone fell just short. The user-chosen counterfactual keeps RANDOM's negative KC, so zero-mean RANDOM noise can tip it over 0.5. The label is still FAIL; only the explanatory reading is lost.",
+        "No power estimate exists. Six criteria and five V0 items must hold in each of three seeds, and noise in either critic's KC (never measured on the new critics) can turn a true effect into FAIL-mixed or INCONCLUSIVE.",
+        "K1c's absolute clause has no designed margin at the gate edge. A CUTOFF critic that is correct on average but noisy can FAIL K1c and receive reading 1 ('does not over-value'), and the protocol does not flag that case.",
+        "The K1a companions (low-gap share, median KC_C alone) and the zeroed-K1a value are reported only. A K1a pass carried by low-gap anchors where RANDOM under-values is disclosed, not blocked.",
+        "Learner competence and reach remain the open empirical risks. The Stage 1 continuations may produce smaller gaps than the reference continuations used in the step 0.4 forecast, and the step 0.4 forecast counts invalid anchors more pessimistically than Stage 1 does."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:decisions",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a734692b045ebceb5",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793366576661,
+      "queuedAt": 1793366576639,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Both user decisions are implemented correctly, and I found …",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 10 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 9: experiments/thrusterchain_bca/zeus_2026102…",
+      "promptFramed": true,
+      "lastProgressAt": 1793366981169,
+      "tokens": 174469,
+      "toolCalls": 14,
+      "durationMs": 404507,
+      "resultPreview": "{\"verdict\":\"Both user decisions are implemented correctly, and I found no new false-PASS, false-FAIL or wrong-reading path. No gate, label, precedence or approval rule changed beyond decisions (a) and (b).\\n\\nDecision (a): per anchor, KC_C - min(KC_R,0) >= KC_C - KC_R, so the counterfactual median is never below K1a. Withholding reading 2 whenever that counterfactual reaches +0.5 covers every FAIL…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:resolution",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a0fb2eff0607b1b43",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793366576661,
+      "queuedAt": 1793366576639,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "r10 resolves 10 of the 11 r9 digest items in the text itsel…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 10 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 9: experiments/thrusterchain_bca/zeus_2026102…",
+      "promptFramed": true,
+      "lastProgressAt": 1793367061914,
+      "tokens": 195995,
+      "toolCalls": 27,
+      "durationMs": 482580,
+      "resultPreview": "{\"verdict\":\"r10 resolves 10 of the 11 r9 digest items in the text itself, not just in the Review 10 table, and implements user decisions (a) and (b) correctly and consistently. Reading 2 condition (b) appears identically at Part 2 lines 216-219, V0(d) line 678, reading 2 lines 714-717, the Part 5 consistency check at 702 and Part 8.2(iii) lines 873-874. K1c's relative clause takes both medians ove…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "review:consistency",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "ae9032d0f9be99436",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793366576662,
+      "queuedAt": 1793366576639,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "I read all of r10 against Part 5's operative text. Decision…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 10 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 9: experiments/thrusterchain_bca/zeus_2026102…",
+      "promptFramed": true,
+      "lastProgressAt": 1793367056965,
+      "tokens": 233807,
+      "toolCalls": 19,
+      "durationMs": 477630,
+      "resultPreview": "{\"verdict\":\"I read all of r10 against Part 5's operative text. Decisions (a) and (b) are carried through correctly and consistently. Reading 2's condition (b) has the same form, the same anchor set and the same every-seed scope at 219, 702 and 714-717, and the paraphrases at 678 and 874 point back to it. K1c's relative clause takes both medians over the C-valid anchors at 210, 226, 655 and 686, an…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "verify:consistency",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "af0fb845101af40ad",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793367059260,
+      "queuedAt": 1793367059244,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 10 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 9: experiments/thrusterchain_bca/zeus_2026102…",
+      "promptFramed": true,
+      "lastProgressAt": 1793367114455,
+      "tokens": 111011,
+      "toolCalls": 6,
+      "durationMs": 55195,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"C10-1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"I could not refute it. (1) The batch unit is misnamed. evaluation.py:412-437 calls continuation_values once per evaluate_snapshot bank, and CONTEXTS=('ordinary','strong_current') (evaluation.py:21). The directory run/evaluation holds 18 native__20000 JSONs, two per cell. So there are 18 recorded calls of 32 anchors each, no…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "verify:resolution",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "ab417d4b488a15cfc",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793367063766,
+      "queuedAt": 1793367063761,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 10 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 9: experiments/thrusterchain_bca/zeus_2026102…",
+      "promptFramed": true,
+      "lastProgressAt": 1793367139246,
+      "tokens": 116799,
+      "toolCalls": 9,
+      "durationMs": 75480,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"RES10-1\",\"real\":true,\"severity_after\":\"low\",\"reason\":\"Confirmed as written. DRAFT_PROTOCOL.md:472 pins the batch and row order and then concludes 'so the float32 actions repeat'. Nothing in the draft pins the stack or the compiled function the new evaluator must use: a grep finds no 'highest', no 0.6.2, no device kind, no jit or FrozenPolicy requirement. Line 399 says only that…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "a74004e6574b332c1",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793367140930,
+      "queuedAt": 1793367140917,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "r10 is ready for A1 consideration. One medium item remains,…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 10 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 9: experiments/thrusterchain_bca/zeus_2026102…",
+      "promptFramed": true,
+      "lastProgressAt": 1793367254773,
+      "tokens": 128261,
+      "toolCalls": 4,
+      "durationMs": 113842,
+      "resultPreview": "{\"verdict\":\"r10 is ready for A1 consideration. One medium item remains, and its fix is text-only. Nothing high remains.\\n\\n(1) User decisions (a) and (b) are implemented correctly, completely and consistently, and they open no false-PASS, false-FAIL or wrong-reading path.\\n- Decision (a), reading 2 condition (b), is stated with the same quantity, the same anchor set (common gated) and the same str…"
+    }
+  ],
+  "totalTokens": 960342,
+  "totalToolCalls": 79
+}

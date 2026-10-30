@@ -1,0 +1,466 @@
+{
+  "summary": "Narrow verification of revision 6 edits to the knee-edge OOD draft: resolution and gate coherence, skeptic, readiness critic",
+  "agentCount": 5,
+  "logs": [
+    "8 high/medium findings survived the skeptic"
+  ],
+  "result": {
+    "packed": [
+      {
+        "lens": "resolution",
+        "verdict": "Revision 6 resolves most of the r5 must-fix list in substance, and the accepted item-1 design (reachability gates in V0(d), a ratio-plus-resolvability V0(b), absolute L2 bars kept for step 0.4 only) is written in coherently across Part 2, V0, Part 8.2 and Part 9. All 26 Part 11 sha256 values match their files. The fixed stage2_oc.py reproduces stage2_oc_output.txt byte for byte (e521d8a9...), and every joint, conditional and unconditional figure quoted at lines 696-712 and in Part 8.7 matches that output. The edits do introduce a few new defects, though. Most serious: the new 4.5b literal slope-3 identity rule contradicts the two places where the protocol runs an identity check in a slope-1.5 world: 4.8's known-answer 'identity residual <= 1e-6' on the frozen central-quartile cells, and step 0.4's 'stall_slope 1.5 (identity check only)' world. As written, both would fail by construction and end the step INCOMPLETE. 4.5b's world list also omits step 0.3's slope-1.5 replays. Second: the new 4.8 q1/twin_min reproduction sets a tolerance of '1e-6' without saying absolute or relative. Saved q1 reaches 496 in float32 (1 ULP = 3.05e-5), so read as absolute it demands bit-exact replay and invites a spurious INCOMPLETE. Third: the reachability gates handle item 5's tolerance inconsistently. K1c's gate adds 0.15; K1a's adds nothing. V0(d) reachability, as a V0 item, also turns an observed K1 pass into INCONCLUSIVE. Fourth: V0(b)'s floor drops to 0.20, which shrinks the absolute allowance to 0.08 and adds an undisclosed noise-driven path to INCONCLUSIVE. The remaining items are wording and specification slips, including one leftover 'within this step's cap'. None of these creates a false-PASS path; every one either fails closed or costs power. One more text pass is needed before A1. No new design choice is required from the user.",
+        "low_findings": [
+          {
+            "id": "N6",
+            "severity": "low",
+            "section": "4.4 forced-probe arrays (:347); 4.8 (:426); step 0.3 reach forecast (:499, :516)",
+            "claim": "Three problems in the probe-path changes. (a) 4.8 reproduces q1/twin_min 'at the saved per-probe actions', which feeds stored arrays and bypasses the single probe builder that 4.4 says serves 'the 4.8 reproduction'. a0 placement and the a1..a3 fill are therefore not exercised, which was the point of r5 item 3. (b) 4.8 claims to cover 'the AUROCs', but D1/D2 score the shadow auxiliary's U, not q1/twin_min. (c) 4.4's 'Every gated probe array ... exactly 0.0 at indices 1-3' conflicts with the gated reach forecast (FAIL (reach)), which uses the actor's own a1..a3.",
+            "evidence": "The saved per_probe arrays include actions (32,6,4), with slot 0 the actor's action (a1..a3 up to 0.775) and slots 1-5 at [-0.5, -0.25, 0, 0.25, 0.5] with a1..a3 exactly 0 in all 18 native-20k files. They also include `adjusted` (32,6), computed with the auxiliary live width (evaluate_worker.py:353; evaluation.py:434).",
+            "fix": "In 4.8, build slots 1-5 with the probe builder from the slot values, assert equality with the saved `actions`, then compare q1/twin_min. Add reproduction of the saved per-probe `adjusted` (giving U = (q1 - adjusted)/3) to cover the auxiliary path. In 4.4, exempt the reach-forecast arrays and the reported actor-a1..a3 sets from the zero assertion by name."
+          },
+          {
+            "id": "N7",
+            "severity": "low",
+            "section": "4.5b physics assertion and data-level check (:364-368)",
+            "claim": "The dict assertion is underspecified. physics.as_dict() returns 8 fields, and the no-stall dict's stall_slope is 1.5 under Physics(stall=False)/NO_STALL but 3.0 under world_physics('no_stall', 3.0). The text pins only 'stall False'. Separately, the 1e-9 thrust reconstruction is achievable only from the float64 `states` field, not from the float32 observations.",
+            "evidence": "canonical/thrusterchain.py:133-148. My scratch run with the canonical functions: world_physics('no_stall',3.0).as_dict() has stall_slope 3.0; NO_STALL.as_dict() has 1.5. cond(B) = 3.08. Reconstruction error is 9.4e-15 from float64 states and 3.2e-6 from float32-cast observations.",
+            "fix": "Pin the full expected dict for each world, including no-stall's stall_slope and knee/gain/gamma/length, or assert only (stall, thrust_slope, knee). State that the reconstruction uses the dataset's float64 `states` field."
+          },
+          {
+            "id": "N8",
+            "severity": "low",
+            "section": "Step 0.3 onset contrast (:507) and R_lin (:509); Part 9 Review 6 rows 7-8",
+            "claim": "Item 7 is not fully done: line 507 still says the onset contrast's Q^pi come 'by deterministic prefix replay within this step's cap', which contradicts the separate sub-caps at :494-495, yet Part 9 row 7 marks the item resolved. Also, R_lin's saved Q^pi come from each old model's own unclipped continuation in the slope-1.5 world. The convention sentence (:499) groups R_lin with sources 'matching V0(b)', but V0(b) uses clipped continuations, and the onset contrast uses clipped ones too.",
+            "evidence": "DRAFT_PROTOCOL.md:494-495, :507. evaluation.py:210 records 'Each model own deterministic actor continuation' with no clip. Saved slot-0 actor a1..a3 reach 0.775.",
+            "fix": "Change :507 to 'within the onset contrast's own sub-caps'. Add to :509 that the saved Q^pi use the unclipped own continuation at slope 1.5."
+          },
+          {
+            "id": "N9",
+            "severity": "low",
+            "section": "V0(d) (:614-616); Anchor sets (:601-603); Reading 2 (:648)",
+            "claim": "Neither the Anchor sets bullet nor V0(d) says which anchors the median rho_hat_C in the reachability gate is taken over: all common gated anchors, or those predictor-valid under CUTOFF's continuation. L2 items 1-4 use only predictor-valid anchors, while K1a uses all common anchors. Reading 2 also still uses the unsubscripted rho_hat(s05), although r6 elsewhere distinguishes rho_hat_R from rho_hat_C.",
+            "evidence": "DRAFT_PROTOCOL.md:601-603 names only the RANDOM-predictor-valid restriction; :616; :648.",
+            "fix": "State that rho_hat_C is taken on the common gated anchors that are predictor-valid under that CUTOFF policy's continuation (or on all of them), apply V0(c)'s floor to that set, and write rho_hat_R(s05) in reading 2."
+          }
+        ],
+        "verified": [
+          {
+            "id": "N1",
+            "severity": "medium",
+            "section": "4.5b Literal identity (:369) and world list (:364-367), versus 4.8 known-answer (:430), step 0.4 worlds (:548) and label table (:557), step 0.3 onset contrast (:505-507)",
+            "claim": "The new rule that the L2.1 identity test 'uses the literal Part 0 formula sign(a0)(KNEE - 3(|a0| - KNEE)), never physics.stall_slope' contradicts two slope-1.5 identity checks. One is 4.8's 'identity residual <= 1e-6' on the frozen central-quartile cells, whose critics were trained and whose Q^pi were saved at stall_slope 1.5 (:501). The other is step 0.4's 'stall_slope 1.5 (identity check only)' world. Both would fail by construction: 4.8 as a known-answer mismatch, which is INCOMPLETE at step 0.3, and step 0.4 as 'Identity residual > 1e-6', which is INCOMPLETE at :557. 4.5b's physics-receipt world list also names only stall 3.0, no-stall and step 0.4's 1.5 world. Step 0.3's slope-1.5 replays (Q^pi_1.5 for the onset contrast, and 4.8's saved-Q^pi reproduction) therefore have no 'named world's dict' to assert against.",
+            "evidence": "DRAFT_PROTOCOL.md:369 (literal slope 3, 'never physics.stall_slope'); :370 ('A deliberate slope-1.5 dataset must fail ... the identity test'); :430 (4.8 identity residual on the frozen cells); :501 ('stall_slope 1.5, which is what these critics were trained on'); :548 and :557; :505-506 (Q^pi_1.5 in step 0.3); :364-367 (world list with no step 0.3 entry).",
+            "fix": "Scope the literal-slope-3 identity to stall-3.0 data. For every slope-1.5 world (step 0.3, 4.8 and step 0.4), require a separate literal formula sign(a0)(KNEE - 1.5(|a0| - KNEE)), again never read from physics. Add 'step 0.3 / 4.8 slope-1.5 replay' to 4.5b's tagged world list with its full dict. State that the synthetic slope-1.5 fixture must fail the slope-3 identity specifically.",
+            "check": {
+              "id": "N1",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed. In r6, 4.5b:369 requires the L2.1 identity test to use the literal slope-3 formula, 'never physics.stall_slope', and Part 0:35 also defines T at slope 3. Step 0.4 still runs a 'stall_slope 1.5 (identity check only)' world (:548, :367), and its label table (:557) marks any identity residual above 1e-6*max(1,|Q|) as INCOMPLETE, with no world scoping. An identity test in a slope-1.5 world run against the slope-3 formula fails by construction. Nothing says that world is a negative control: the deliberately failing case is the separate synthetic fixture (:370). 4.8:430 has the same problem. Its 'identity residual <= 1e-6' runs on the frozen central-quartile cells, which were trained at slope 1.5 (:501) and whose saved Q^pi is reproduced to 1e-9 there; 4.8 never names a slope-3 world for that identity. The rerun1 code has no identity check, so this comes entirely from the new text. The 4.5b receipt world list (:364-367) also gives no world dict for step 0.3's Q^pi_1.5 replays (:505-506), yet 4.5b requires every replay and Q^pi evaluation to assert against a named world. The fix is sound: scope the literal formula per world, slope 3 for stall-3.0 and a literal slope-1.5 formula for the 1.5 worlds, both never read from physics. Also add the step 0.3 and 4.8 slope-1.5 replays to the tagged list."
+            }
+          },
+          {
+            "id": "N2",
+            "severity": "medium",
+            "section": "4.8 forced-probe critic path (:426)",
+            "claim": "The tolerance for 'reproduce the saved per-probe q1 and twin_min ... to 1e-6' does not say whether it is absolute or relative. The saved values are float32 with large magnitudes, so an absolute 1e-6 demands bit-exact reproduction. A one-ULP difference from a different batch shape (192 stacked forced rows at evaluation.py:434, versus whatever the new probe builder uses), XLA fusion or device would trigger 'Known-answer mismatch: INCOMPLETE, fix the evaluator, then a fresh A2'. Under 5.0's second-failure rule, that can end the step INCONCLUSIVE.",
+            "evidence": "Saved q1 max |q1| = 175.86 (ordinary) and 495.85 (strong current) in seed0_full__native__20000; all values round-trip exactly through float32. The float32 ULP is 1.53e-5 at 176 and 3.05e-5 at 496, so 1e-6 absolute is far below one ULP. The saved values are identical in continuation1 and rerun1 (sha256 prefixes match for all 18 files).",
+            "fix": "State a relative tolerance, for example |dq| <= 1e-6 x max(1, |q|), which is about 16 ULP at 496, or <= 4 float32 ULP. Do the same for twin_min, and say which saved directory is the reference.",
+            "check": {
+              "id": "N2",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed by reading the saved JSON. seed0_full__native__20000 has max |q1| = 175.86 (ordinary) and 495.85 (strong current), and seed0_hole has twin_min up to 497.31. Every value is exactly representable in float32. 4.8:426 says 'to 1e-6' without the word 'relative', while the neighbouring Q^pi line says '1e-9 relative' and L2.1 says '1e-6*max(1,|Q|)', so the natural reading is absolute. At these magnitudes that is far below one float32 ULP (1.5e-5 at 176, 3.05e-5 at 496), which demands bit-exact reproduction. The saved values came from a 192-row stacked forward pass (evaluation.py around :398-404). A new probe builder with a different batch shape or XLA fusion can differ by an ULP. A mismatch is INCOMPLETE at step 0.3, and the tolerance is a sealed threshold that a code-only fix cannot change. Under 5.0's second-failure rule, a repeat would make the step INCONCLUSIVE and end the line of work on numerics alone. A relative or ULP-based tolerance, plus naming the reference directory, is needed."
+            }
+          },
+          {
+            "id": "N3",
+            "severity": "medium",
+            "section": "Part 2 Link to Stage 1 (:201-204); V0(d) (:616); Part 8.2 (:789)",
+            "claim": "The reachability gates treat item 5's predictor tolerance inconsistently. K1c's gate is rho_hat_C(s10) >= 0.65, justified as 'the bar plus item 5's 0.15 tolerance', which assumes KC tracks the true rho while rho_hat may overstate it. K1a's gate, rho_hat_C(s05) >= 0.5 + 0.4 x rho_hat_R(s05), adds no 0.10 s05 tolerance. Under K1c's own logic, a correct, smooth critic can therefore still FAIL K1a by up to 0.10, which is exactly the misleading FAIL the gate exists to prevent. Under the stated model 'KC is about rho_hat' (:199), K1c's gate should instead be 0.5. Separately, 'rho_C >= rho_R (both >= 0.83) is sufficient' is slightly wrong: 0.6 x 0.83 = 0.498 < 0.5. The condition needs rho_C >= 5/6 and puts no lower bound on rho_R.",
+            "evidence": "Example: median rho_hat_R(s05) = 0.125 and median rho_hat_C(s05) = 0.55 pass the K1a gate (0.55 >= 0.55). Item 5 allows true rho_C = 0.45, so worst-case K1a is about 0.45 - 0.05 = 0.40 < 0.5. That gives a FAIL, and reading 2 attaches if KC_R <= 0.1 x rho_hat. DRAFT_PROTOCOL.md:204 versus :201.",
+            "fix": "Choose one model and apply it to both gates. Either K1a: rho_hat_C(s05) >= 0.6 + 0.4 x rho_hat_R(s05) and K1c: 0.65 (KC tracks rho), or K1a as written and K1c: 0.5 (KC tracks rho_hat). Mirror the choice in V0(d), Part 8.2 and Part 9 row 1. Replace 'both >= 0.83' with 'rho_C >= rho_R and rho_C >= 5/6'.",
+            "check": {
+              "id": "N3",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed. Item 5 (:184) bounds |min_k P_k - Q_nostall|, so rho_hat - rho lies within ±0.10 at s05 and ±0.15 at s10. K1c's gate (:204, :617) adds the 0.15 tolerance, which treats KC as tracking true rho. K1a's gate (:201, :617) adds no 0.10 tolerance, which treats KC as tracking rho_hat, and :199 states the rho_hat model. The two reachability gates in V0(d) therefore rest on different error models. Under K1c's model, a correct, smooth CUTOFF critic whose rho_hat_C overstates rho_C by 0.10 can pass the K1a gate and still miss K1a, which is the misleading FAIL the gate exists to prevent. The :203 caveat covers only the anchor-set mismatch, not predictor bias. The sufficiency clause is also slightly wrong: rho_C >= rho_R gives rho_C - 0.4 rho_R >= 0.6 rho_C, so it needs rho_C >= 5/6, and 0.6 x 0.83 = 0.498 < 0.5. It needs no lower bound on rho_R. Either fix the suggestion offers restores coherence; mirror it in Part 8.2 and Part 9 row 1."
+            }
+          },
+          {
+            "id": "N4",
+            "severity": "medium",
+            "section": "V0(d) reachability (:616-617) versus label precedence (:458-465) and Part 2 (:197)",
+            "claim": "Reachability sits inside V0, and INCONCLUSIVE outranks FAIL and PASS. A seed where a K1 criterion is 'not reachable' therefore voids the whole Stage 1 result even when K1a/K1c actually passed: for example, a critic whose over-valuation exceeds the smooth-extrapolation prediction. Part 2 and V0(d) describe the gate as turning a would-be FAIL into INCONCLUSIVE ('declared INCONCLUSIVE, never FAIL'). Its effect on an observed pass is never stated. KC is measured against true Q^pi, so an observed KC >= 0.5 is real over-valuation whatever rho_hat is. Discarding it costs power without adding validity.",
+            "evidence": "DRAFT_PROTOCOL.md:197 ('A criterion that a correct, smoothly extrapolating critic could not pass is declared INCONCLUSIVE, never FAIL'); :617; precedence table :458-465; decision rules apply 'in every seed' (:599).",
+            "fix": "Either apply reachability per criterion only to a miss (K1x fails and is not reachable in a seed: INCONCLUSIVE; a pass stands), or state explicitly that non-reachability voids an observed K1 pass, give the reason, and add that to Part 8.2.",
+            "check": {
+              "id": "N4",
+              "real": false,
+              "severity_after": "none",
+              "reason": "Refuted. V0(d) is a validity precondition that is checked whatever the outcome, and the label precedence (:458-465) states without ambiguity that INCONCLUSIVE outranks PASS, so the effect on an observed pass is defined. Part 8.2 (:789-791) already says unconditionally that if the gate fails, 'V0(d) makes Stage 1 INCONCLUSIVE', and it discloses the cost: 'a good learner can end the line of work without an answer'. :197 ('INCONCLUSIVE, never FAIL') does not claim a pass would stand. The r5 option (a) the user accepted was specified as 'INCONCLUSIVE otherwise'. The proposed change, applying the gate only to misses, would make the precondition depend on the outcome. That is an asymmetric, forking-path design, and voiding a pass whatever the outcome is the defensible choice. When rho_hat is small, an absolute KC_s10 >= 0.5 can also reflect generic approximation error rather than the hidden knee. This is consistent, disclosed and implemented coherently."
+            }
+          },
+          {
+            "id": "N5",
+            "severity": "medium",
+            "section": "V0(b) resolvability floor and ratio clause (:609-610); Part 8.2 (:786-791)",
+            "claim": "Lowering the floor from 0.85 to 0.20 shrinks the absolute allowance |median KC_s05(RANDOM)| <= 0.4 x rho_hat_R from at least 0.34 to as little as 0.08. The 0.4 coefficient was sized for multiplicative, scale-invariant kink rounding (:207). Additive critic-approximation noise in KC is not scale-invariant, so a correctly labelled, competent RANDOM learner with rho_hat_R of about 0.2-0.3 can fail the ratio clause on noise alone. Part 8.2 lists only reasons (i) and (ii) for a V0(b) INCONCLUSIVE, and its 'competent learners' bullet mentions only V0(d).",
+            "evidence": "DRAFT_PROTOCOL.md:609-610 and :786-791. The saved old critics show per-probe absolute Q1 errors with MAE of about 19-23 (panels.all_fixed in seed0_full__native__20000__ordinary.json). KC is offset-free over a 0.05 action step, but no KC noise floor has been measured anywhere.",
+            "fix": "Disclose a reason (iii) in Part 8.2: a competent RANDOM learner with small rho_R can fail the ratio clause through absolute KC noise. Optionally add an additive allowance c (|KC_R| <= 0.4 rho_hat_R + c), carry it into the K1a reachability gate (0.5 + 0.4 rho_hat_R + c), and report the absolute |KC15_s05| scale from step 0.3's onset contrast.",
+            "check": {
+              "id": "N5",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Partly confirmed. r6 lowers V0(b)'s floor from 0.85 to 0.20 (:609), so the absolute allowance 0.4 x rho_hat_R can shrink from >= 0.34 to 0.08. The 0.4 coefficient is justified only by scale-invariant kink rounding (:207-208). No additive KC noise floor is measured anywhere. The cited MAE of 19-23 is an offset error that mostly cancels over a 0.05 action difference, so it overstates the noise. Part 8.2 (:786-791) lists only reasons (i) and (ii) for a V0(b) INCONCLUSIVE, and its competent-learner bullet mentions V0(d) only. So the new risk that a competent RANDOM learner with small rho_R fails the ratio clause on additive KC noise is undisclosed. The risk is fairly unlikely, since rho_R near 0.2 implies |Q| of about 27 at E2 by the 0.0075|Q| scaling. It costs power, not validity: the result is INCONCLUSIVE and can never be a false PASS. Disclosing it as reason (iii) is the minimal fix; an additive allowance is optional."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Part 11: computed sha256 for all 26 listed files; every one matches (sha256sum -c OK). The table covers every file in panel/, screens/ (9 files), REACH_SCREEN_RULE.md, r1-r5 drafts and all 10 review files (r5 item 16 resolved; commit still pending user approval, as stated).",
+          "screens/stage2_oc.py fix (r5 item 4): one noise draw per row, with R2 evaluated for gaps 0 and 3 from the same bca_sC term (:20-30, :37). The scratch rerun reproduces stage2_oc_output.txt byte for byte (sha256 e521d8a9...).",
+          "Stage 2 joint figures at :710-712 match the output at bar -1.5: null 0.020/0.057; power 0.053/0.177/0.285; -3 cost 0.027/0.096/0.159. Part 8.7 says '2-6%', '5-18%', '28.5%'. P(R3|R1) 0.86/0.48/0.12, the -3.0 bar 0.95/0.70/0.27, unconditional 0.70/0.30, and R1-alone 5-10% null with power 0.3-0.4 all still match the regenerated output.",
+          "Item 1 (accepted design): the absolute L2 bars are confined to step 0.4 (:196, :559); item 1's median is back to 0.75; V0(b) uses the ratio clause plus a 0.20 resolvability floor and item 5 at >= 90%; V0(d) gates reachability and only reports items 1-4; Part 2 explains scaling with the continuation; Part 8.2 discloses the competent-learner risk; Part 9 rows 1 and 2 annotated. No residual 0.85 floor anywhere.",
+          "Item 5: Anchor sets moved above V0; V0 (a)-(e) re-parented correctly; the preamble now says 'common gated anchors (defined next)'; item 5 under RANDOM's continuation is an explicit >= 90% gate.",
+          "Item 9: rerun1/runtime.py line 226 is the seed lookup and 227-228 the two fold_in calls; cited as 226-228 at :666 and :1018; gamma binding at :138 confirmed.",
+          "Item 10: the 9-difference wording correctly says no common random numbers and expects a spread above 3.55.",
+          "Item 11: the rerun rule now counts any second failure on any check under code unchanged since the previous attempt.",
+          "Item 12: d12_e2_anchors named; convention aligned with KC (a1..a3 = 0).",
+          "Item 13: PROMISING qualifier present; K2/K3a for the replicate are already defined in 'damage reproduced'.",
+          "Item 14: step 0.4 Q^pi probes marked user-run.",
+          "Item 15: L2.2 qualified 'under any continuation clipped to +/-KNEE'; W- thrust (-0.8, -0.2] and R_deep- [-0.5, -0.2] are correct (T3(-1) = -0.20000005, T3(float32 -0.9) = -0.50000012); adapter clause lists BC-only and check-routine adapters; Part 7 Stage 2 row says 7M is a rescale, and the 1 h cap covers about 18M at 5,031/s.",
+          "Item 2 core: canonical defaults of 1.5 at thrusterchain.py:116, 143, 398 confirmed; stalled() and masks are slope-insensitive; T3(-1) = -0.2 versus T1.5(-1) = -0.5 confirmed with the canonical thrust(); reconstruction from float64 states is exact to about 1e-14 (cond(B) = 3.08), so the 1e-9 data-level check is feasible.",
+          "Item 3 data availability: all nine native-20k cells (ordinary and strong-current, continuation1 and rerun1 copies identical) contain per_probe actions (32,6,4), q1, twin_min (non-null) and qpi; slots 1-5 are exactly [-0.5, -0.25, 0, 0.25, 0.5] with a1..a3 = 0.",
+          "Item 8 source: R_lin's Q^pi(-0.5) and Q^pi(-0.25) exist as saved per-probe qpi slots 1 and 2 in the ordinary JSONs, so no new replay is needed.",
+          "Item 7 cap split: the gated 0.5M/30 min cap is separated from the onset contrast's 200k/10 min sub-caps, with 'not computed' on a bind; Part 7 updated; full-data critics named. The split also removes a potential gated-cap overrun (known-answer Q^pi replay of up to about 375k transitions plus the 170k contrast would have exceeded 0.5M).",
+          "Item 6: the K1a condition is stated as exact (0.5 + 0.4 rho_R), the sufficiency/necessity wording fixed, and the anchor-set difference disclosed as approximate.",
+          "Part 9 Review 6 table: 16 rows, severities matching the digest (4 medium/medium-low, 12 low)."
+        ]
+      },
+      {
+        "lens": "gates",
+        "verdict": "Revision 6 is not ready for A1. It is one short text pass away, and no script or data work is needed. The user's choice (reachability gates in V0(d) instead of absolute rho floors) is the right shape. As written, though, it does not deliver its stated promise that a criterion a correct critic could not pass ends INCONCLUSIVE, never FAIL, in either direction. (1) V0(d) is an unconditional V0 item, and INCONCLUSIVE outranks both FAIL and PASS (5.0, :458-465). So when K1a is unreachable in one seed, Stage 1 is labelled INCONCLUSIVE even if K1a actually passes, or K1c fails clearly (reading 1), or K2/K3 fail. That throws away informative outcomes. (2) The reachability statistic differs from K1a's statistic: it is a difference of medians, not the median of paired differences, and its anchor sets are not specified. Its tolerance treatment also disagrees with K1c's. So K1a can still FAIL in a case where it could not have passed. (3) 4.5b's 'literal identity' rule contradicts step 0.4's slope-1.5 identity check, so implementing it as written forces an INCOMPLETE. Smaller issues: V0(b)'s claim to cover softplus widths of 0.04-0.05 is stale now that the large floor is gone. Step 0.4's item-1 median dropped to 0.75, below the 0.834 that K1a reachability needs under equal continuations. 4.5b should name the float64 states field and the full no-stall physics dict. The stage2_oc.py fix is correct: rerunning it from a scratch copy gives byte-identical output, every quoted joint figure matches, and P(R3|R1) at -1.5 is unchanged. All 26 Part 11 hashes verify, and the thrust reconstruction in 4.5b is implementable exactly from the canonical B matrix.",
+        "low_findings": [
+          {
+            "id": "R6-5",
+            "severity": "low",
+            "section": "Part 2 Link to Stage 1 (:202, :204); V0(d) (:616)",
+            "claim": "K1a and K1c reachability treat predictor tolerance inconsistently, and the sufficiency statement has an arithmetic slip.",
+            "evidence": ":199 asserts KC ~ rho_hat. Under that model K1c is reachable at median rho_hat_C(s10) >= 0.5, yet :204 adds item 5's 0.15 tolerance (0.65). Under the alternative model KC ~ rho, with rho_hat up to 0.10 above rho at s05, K1a would need 0.6 + 0.4 x rho_hat_R, but :616 uses 0.5. In that model a K1a FAIL is possible where it could not pass, for example rho_hat_C = 0.5 + 0.4 rho_hat_R with rho_C = rho_hat_C - 0.10. Also :202 says 'rho_C >= rho_R (both >= 0.83) is sufficient'. At rho_C = rho_R = 0.83 the condition needs 0.5 + 0.4 x 0.83 = 0.832 > 0.83, so it fails. The correct statement is rho_C >= rho_R and rho_C >= 5/6 (0.834). rho_R needs no lower bound.",
+            "fix": "Pick one model and apply it to both. Either use KC ~ rho_hat with thresholds 0.5 + 0.4 rho_hat_R and 0.5, or add the tolerance to both: 0.6 + 0.4 rho_hat_R and 0.65. Correct :202 to 'rho_C >= rho_R and rho_C >= 0.834'."
+          },
+          {
+            "id": "R6-6",
+            "severity": "low",
+            "section": "Step 0.4 L2 item 1 (:186); step 0.4 label table (:559-560); Part 8.2 (:789)",
+            "claim": "Lowering item 1's median back to 0.75 was not part of the accepted option. It leaves no pre-Stage-1 signal for K1a reachability, so step 0.4 can PASS in a regime where V0(d) predicts INCONCLUSIVE for learners as competent as the reference.",
+            "evidence": "With equal continuations (rho_C = rho_R = r), the V0(d) K1a condition needs 0.6 r >= 0.5, so r >= 0.834. Step 0.4 now passes at a median rho_hat(s05) of 0.75-0.83 (:186), which is about 4 h of Stage 1 compute (Part 7) spent on a run its own arithmetic predicts will be INCONCLUSIVE. The protocol's own E2 clipped-LQR proxy (0.61, :195) is already below both 0.834 and 0.75, and Part 8.2 does not cite it as a forecast. The r5 digest's option (a) removed the floor from V0(b) only. It did not ask for item 1 to be lowered.",
+            "fix": "Add a flagged, not gated, row to step 0.4: if the median rho_hat(s05) under the reference continuation is < 0.834, or the median rho_hat(s10) is < 0.65, record '(pass, flagged): Stage 1 V0(d) may end INCONCLUSIVE', to be acknowledged at A4, mirroring step 0.3's flag. Quote the 0.61 E2 proxy in Part 8.2 as the current forecast."
+          },
+          {
+            "id": "R6-7",
+            "severity": "low",
+            "section": "4.5b Data-level check and physics assertion (:364-368)",
+            "claim": "The thrust reconstruction is exactly implementable, but the text does not name the float64 state field. It also does not give the full dicts that the as_dict() equality compares against.",
+            "evidence": "canonical B = 0.3 x base_input(1.0) (gapped_lq.py:245-251). Column 0 is nonzero only at rows 1 and 3, and row 1 belongs to thruster 0 alone. So thrust_0 = (x'_1 - (A x)_1)/0.3 exactly, given the full 13-dim x (the water push enters through A's CURRENT/WAVE1 columns, thrusterchain.py _matrices). From the float64 `states` field (datasets.py:24 '<f8'; replay agrees to 1e-13 at :370-371) the error is about 1e-12, well inside 1e-9. From float32 observations (|s| up to 300, ulp about 3e-5) the error is about 1e-4, a spurious INCOMPLETE. Also Physics.as_dict() includes stall_slope even in the no-stall world: NO_STALL gives 1.5 (:139-140), while world_physics('no_stall', 3.0) gives 3.0 (:143-149). 'No-stall: stall False' therefore does not determine the dict being compared.",
+            "fix": "Specify 'reconstructed from consecutive rows of the float64 states field (13-dim, including c and w1), subtracting B_k a_k for k = 1..3'. Pre-register the full expected dicts (knee, gain 0.3, throttle_cost 0.3, wave_turn 0.27, gamma 0.98, length 100, and an explicit stall_slope value for the no-stall world), or compare only (stall, stall_slope if stall) and say so. Optionally add the mirror check that reconstructed thrust equals a0 on no-stall W rows."
+          },
+          {
+            "id": "R6-8",
+            "severity": "low",
+            "section": "Part 2 L2 continuations (:158-160) and PASS rule (:183); Stage 1 reading 1 (:647)",
+            "claim": "After items 1-4 were removed from the Stage 1 gates, some wording still implies that the L2 PASS rule applies to Stage 1 learners. Model relevance under the learners is now established only through median reachability, never at the >= 70%-of-anchors level and never via item 4's true drop.",
+            "evidence": ":160 lists 'in Stage 1, each model's own actor' under L2's continuations, and :183 applies the PASS rule 'separately for each continuation seed'. These contradict :196 ('absolute L2 bars ... apply only in step 0.4') and :618. Reading 1 (:647) says 'even past a proven kink'. Under the learners, the kink's existence is proven by the identity, but its value size is gated only by median rho_hat_C(s10) >= 0.65. Item 4 (true drop >= 0.25) is no longer gated, which is acceptable because K3a measures harm directly. Elsewhere the text is honest (:194-197, :618, :789-791).",
+            "fix": "At :160/:183, say that the L2 PASS rule (items 1-6) is evaluated only in step 0.4. In Stage 1 only item 5, item 6 and reachability are gated, and items 1-4 are reported. In reading 1, replace 'proven kink' with 'a kink proven by the identity, with a gap at s10 shown reachable (V0(d))'."
+          }
+        ],
+        "verified": [
+          {
+            "id": "R6-1",
+            "severity": "medium",
+            "section": "Stage 1 V0(d) (DRAFT_PROTOCOL.md:614-618); 5.0 label precedence (:458-465); Part 2 (:197); Part 8.2 (:789-791)",
+            "claim": "The reachability gate is unconditional, and because INCONCLUSIVE outranks PASS and FAIL it masks valid outcomes. The design says 'INCONCLUSIVE, never FAIL', but the rule as written gives 'INCONCLUSIVE, never PASS or FAIL'. Unreachability of one criterion also masks every other criterion.",
+            "evidence": "V0(d) is listed among the V0 (INCONCLUSIVE) items with no condition on K1's outcome (:616-617). Labels take the first that applies, with INCONCLUSIVE above FAIL and PASS (:458-465). Consequences, per seed: (i) if KC_s05(C) - KC_s05(R) >= 0.5 although median rho_hat_C(s05) < 0.5 + 0.4 x median rho_hat_R(s05), a valid K1a PASS (a critic over-valuing beyond the smooth model) becomes INCONCLUSIVE; (ii) if K1a is unreachable while K1c is reachable and fails in every seed, reading 1 (:647), the protocol's main negative finding, is lost; (iii) failures of K2 (actor does not enter), K3a/K3b/K3c, which do not depend on rho, are relabelled INCONCLUSIVE. Part 2 :197 says the gate applies to 'a criterion that a correct ... critic could not pass', which is a per-criterion, on-failure rule; the V0 implementation is neither.",
+            "fix": "Make reachability per criterion and per seed, applied only when that criterion fails. If K1a (or K1c) fails in seed i and its reachability condition fails in seed i, record that criterion as 'not testable (unreachable)' in seed i. The step is INCONCLUSIVE only if no other criterion fails validly. Otherwise the remaining FAIL readings apply, with the untestable criterion's reading suppressed. A criterion that passes stands whatever its reachability. Remove reachability from the V0 list, or keep it as V0 only in this conditional form, and update Part 2 :197 and Part 8.2 to match.",
+            "check": {
+              "id": "R6-1",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed. DRAFT_PROTOCOL.md:616-617 puts the combined 'K1 is reachable' condition (K1a AND K1c) inside V0(d) with no condition on how K1 came out. Under the precedence table (:458-465) INCONCLUSIVE outranks both FAIL and PASS. This has three effects. (i) K1a unreachable while K1c is reachable and fails in every seed: reading 1 (:647) is valid but gets masked. (ii) A K1a/K1c pass that exceeds the smooth-model bound becomes INCONCLUSIVE. (iii) Failures of K2 and K3a-c, which do not depend on rho, are relabelled. The per-seed recording rule (:456) keeps the raw outcomes but attaches no label and no reading. The design rationale at :197 and :617 ('INCONCLUSIVE, never FAIL', 'could not pass it') is a per-criterion rule that applies on failure, so the V0 wording overshoots what the accepted design choice intends. Fixing this does not reverse the user's accepted choice; it only makes the gate conditional and per criterion."
+            }
+          },
+          {
+            "id": "R6-2",
+            "severity": "medium",
+            "section": "V0(d) K1a reachability (:616) vs K1a (:624); Part 2 Link to Stage 1 (:200-203); V0(c) (:613)",
+            "claim": "The K1a reachability statistic does not match K1a's statistic, and its anchor sets are undefined. So K1a can still FAIL where a smoothly extrapolating CUTOFF critic plus a worst-allowed RANDOM critic could not have passed.",
+            "evidence": "K1a is the median over common gated anchors of the per-anchor difference [KC_s05(C) - KC_s05(R)] (:624). The gate is a difference of medians, median rho_hat_C - 0.4 x median rho_hat_R (:616), with no anchor set stated for either median. rho_hat is only meaningful on predictor-valid anchors (:185). V0(b) takes rho_hat_R on the RANDOM-predictor-valid subset (:610). No set or floor is defined for anchors predictor-valid under CUTOFF's continuation, and V0(c) (:613) floors only the common set and the RANDOM-valid set. Counterexample with 3 anchors: rho_C = [1, 1, 0], rho_R = [2, 0, 0]. The gate gives 1 - 0.4 x 0 = 1 >= 0.5, so it passes. With KC_C,i = rho_C,i and worst-case KC_R,i = 0.4 rho_R,i, the per-anchor differences are [0.2, 1, 0], median 0.2 < 0.5, so K1a FAILs by construction. Part 2 :203 admits the set mismatch makes the worst case 'approximate', but the condition is now a gate that decides between INCONCLUSIVE and FAIL, so approximate is not good enough.",
+            "fix": "Define reachability with K1a's own form, on one named set: reach_K1a(i) = median over anchors that are common-gated AND predictor-valid under both continuations of [rho_hat_C,j - 0.4 rho_hat_R,j] >= 0.5. A more efficient alternative replaces 0.4 rho_hat_R,j with the observed KC_s05(RANDOM)_j, since V0 already uses RANDOM's KC. Add that both-valid set to V0(c) with a floor of 32. State that K1c's reachability median (rho_hat_C(s10)) is taken on the CUTOFF-predictor-valid common anchors.",
+            "check": {
+              "id": "R6-2",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Partly refuted. The anchor set is not undefined: :601 says 'K1a, K1c and V0 all use [the common gated anchors]', so V0(d)'s medians default to the common gated set. That set still includes up to 10% predictor-invalid anchors, which a median largely tolerates. The mismatch in form is real: the gate uses a difference of medians (:616), while K1a uses the median of per-anchor differences (:624). The 3-anchor counterexample is arithmetically valid and satisfies V0(b), since median KC_R = 0 <= 0.4 x 0. In it the gate passes, K1a fails by construction, and reading 2's guard (:648, median KC_R <= 0.1 rho_hat) does not block the misreading. Part 2 :203 admits this is only approximate. The impact is limited to K1a FAIL readings and needs anchor-level anticorrelation between rho_C and rho_R; K1c's gate has a consistent form. The fix (a per-anchor form on the both-predictor-valid set) is cheap, but the effect on validity is second-order."
+            }
+          },
+          {
+            "id": "R6-3",
+            "severity": "medium",
+            "section": "4.5b Literal identity (:369) vs step 0.4 worlds (:548-549) and label table (:557); 4.5 (:358)",
+            "claim": "The new rule that the identity test uses the literal slope-3 formula and 'never physics.stall_slope' contradicts step 0.4. Step 0.4 runs the L2.1 identity in a stall_slope-1.5 world ('identity check only') and forces 'the T-image of each W slot in each stall world'. With T3 hard-coded, the 1.5 world fails the identity by construction, which triggers INCOMPLETE.",
+            "evidence": ":369 says the identity uses 'sign(a0)(KNEE - 3(|a0| - KNEE)), never physics.stall_slope'. :548 lists 'stall_slope 1.5 (identity check only)' among the step 0.4 worlds, and :549 lists 'the T-image of each W slot in each stall world'. :557 makes an identity residual > 1e-6 INCOMPLETE. In the 1.5 world the true thrust is T1.5 (canonical thrusterchain.py thrust(), lines 205-210 region; docstring line 17), so Q(s, a) differs from Q(s, T3(a0)) - 0.3(a0^2 - T3^2) by O(0.1-1). 4.5b's own synthetic fixture (:370) relies on exactly this failure.",
+            "fix": "Use per-world literal constants. Hard-code T3 (slope 3.0) for the stall world and T1.5 (slope 1.5) for the identity-only world, and assert each against the physics dict recorded in that receipt, so a mix-up still breaks the identity. Reword :369 to say 'the literal Part 0 formula for the stall world, and a literal slope-1.5 formula for step 0.4's identity-only world, never read from physics.stall_slope'.",
+            "check": {
+              "id": "R6-3",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed, and wider than stated. :369 hard-codes T3 ('never physics.stall_slope') for 'the L2.1 identity test'. Step 0.4 runs a slope-1.5 world tagged 'identity check only' (:367, :548), and forced a0 includes 'the T-image of each W slot in each stall world' (:549). With T3 hard-coded, that world's identity residual is O(0.1-1), far above 1e-6, which is INCOMPLETE under :557. A second conflict: step 0.3's known-answer reproduction on the frozen central-quartile cells requires 'identity residual <= 1e-6' (:430). Those cells come from the stall_slope 1.5 world (:501, 'T15 ... which is what these critics were trained on'; canonical default stall_slope 1.5 at thrusterchain.py:116,143). So the literal-T3 rule makes step 0.3 INCOMPLETE by construction as well. The fix is literal constants per world, each asserted against that receipt's physics dict, covering step 0.3's cells too."
+            }
+          },
+          {
+            "id": "R6-4",
+            "severity": "medium",
+            "section": "V0(b) ratio clause and resolvability floor (:609-610); Part 2 coverage note (:205-208); Part 8.2(ii) (:788)",
+            "claim": "Without the large floor, V0(b)'s claim to cover kink rounding up to softplus width 0.04-0.05 no longer holds at the rho scales the protocol now expects. The resolvability floor's anchor set is also unspecified.",
+            "evidence": "Item 5 allows |rho_hat - rho| <= 0.10 at s05, so the worst case is rho = rho_hat_R + 0.10. A correctly labelled critic with KC/rho = r passes only if r <= 0.4 rho_hat_R / (rho_hat_R + 0.10). That ratio is 0.267 at the floor of 0.20 (covers width ~0.02), 0.333 at 0.5 (~0.035), 0.343 at 0.6 (~0.035), 0.358 at the old 0.85 floor and 0.364 at 1.0. :206 says the ratio 'does not depend on ... the scale of rho', which is true for KC/rho but not for the gated KC/rho_hat. :207 notes the predictor-bias dependence, but Part 8.2(ii) still says 0.04-0.05. Part 2 :195 itself expects learner-scale rho of about 0.6-0.7, where coverage is about 0.035. Separately, the floor clause (:609) names no anchor set, while the ratio clause (:610) uses the predictor-valid subset.",
+            "fix": "Either make the allowance use the upper end of the predictor tolerance, |median KC_s05(R)| <= 0.4 x (median rho_hat_R(s05) + 0.10), which restores width ~0.05 coverage at every scale. Or keep 0.4 x rho_hat_R and disclose in Part 2 and 8.2(ii) that coverage falls to about width 0.02-0.035 for rho_hat_R between 0.2 and 0.6. In either case, state that the 0.20 floor is evaluated on the RANDOM-predictor-valid subset, the same set as the ratio.",
+            "check": {
+              "id": "R6-4",
+              "real": true,
+              "severity_after": "low",
+              "reason": "The anchor-set half is refuted. :602 says 'V0(b) further restricts them to anchors that are predictor-valid under RANDOM's own clipped continuation' as a general statement for V0(b), so the 0.20 floor is on the same subset as the ratio. The coverage arithmetic is correct: worst case r <= 0.4 rho_hat/(rho_hat+0.10), which is 0.267 at 0.20 and 0.333 at 0.5. Against the stated KC/rho table (0.25/0.31/0.35 at widths 0.02/0.03/0.04), that is about width 0.035 at learner-scale rho, not 0.04-0.05. Part 2 :207 already discloses that coverage depends on predictor bias, but 8.2(ii) (:788-789) still states 0.04-0.05 without qualification. Lowering the floor from 0.85 to 0.20 in revision 6 makes this worse. The consequence is only a higher chance of a false INCONCLUSIVE, which the protocol already discloses, not an invalid FAIL or PASS. So this is a disclosure inaccuracy, low severity."
+            }
+          }
+        ],
+        "checked_ok": [
+          "stage2_oc.py fix: R2 at both gaps now reuses the e['bca_sC'] draw that R1 uses (one draw per row). Rerunning a scratch copy with -B -I gives output byte-identical to the saved file (sha256 e521d8a9...f756f524). At bar -1.5 the quoted joint figures match: null 0.020/0.057; G=+3 power 0.053/0.177/0.285; -3 cost 0.027/0.096/0.159.",
+          "P(R3|R1) at bar -1.5 is 0.860/0.481/0.122 and at bar -3.0 is 0.951/0.695/0.270; unconditional P(R3) is 0.697/0.301. All match the text at :705-707, so the R3 bar is unaffected.",
+          "Part 8.7 now reads 2-6% null and 5-18% power with 28.5% ignoring R2, consistent with the output.",
+          "All 26 full sha256 values in the Part 11 table match the files on disk.",
+          "rerun1/runtime.py lines 226-228 hold the seed lookup and the two fold_in calls (line 223 is validate()), now cited consistently at :666 and Part 11.",
+          "canonical thrusterchain.py: Physics default stall_slope 1.5 (line 116), world_physics default 1.5 (143), ThrusterChainEnv default 1.5 (398), and stalled() ignores the slope (261-267). The 4.5b motivation is accurate.",
+          "4.5b reconstruction is well posed: B has full column rank 4 (bidiagonal on the speed rows), and thrust_0 is identifiable from row 1 alone given s and the water push, which enters via A. T3(-1) = -0.2 against T1.5(-1) = -0.5. Near-knee W rows differ by 1.5d >= about 9e-8, which a 1e-9 tolerance resolves.",
+          "4.8 forced-probe reproduction: the saved per_probe arrays exist with shapes actions (32,6,4), q1/twin_min/qpi (32,6). Slots 1-5 are a0 in {-0.5,-0.25,0,0.25,0.5} with a1..a3 = 0; slot 0 is the actor's own action and is correctly outside the gated-array assertion.",
+          "R_lin's source: the saved per-probe slots -0.5 and -0.25 exist, with a1..a3 = 0.",
+          "The 4.4 single probe-building function and slot assertions cover KC, F, the onset contrast, the reach forecast, D1/D2 and the 4.8 reproduction.",
+          "Rerun rule (5.0 :454): 'any check, code unchanged since that unit's previous attempt' closes the r5 loophole.",
+          "Onset contrast: own sub-caps of 200k / 10 min, 'not computed' and never INCOMPLETE, full-data critics per seed; Part 7 row updated consistently.",
+          "D1/D2: dedicated d12_e2_anchors stream and the a1..a3 = 0 convention, aligned with KC.",
+          "PROMISING qualifier 'damage not reproduced in seed i' added; step 0.4 Q^pi probes marked user-run; the 9 replicate differences described as a non-CRN noise check.",
+          "W- thrust range (-0.8, -0.2] and R_deep- about [-0.5, -0.2] are correct for T3; the L2.2 'continuation clipped to +-KNEE' qualifier is correct.",
+          "Anchor sets moved above V0, with V0 (a)-(e) restored under V0. Item 5 under RANDOM's continuation is now explicitly a >= 90% gate (r5 item 5 resolved in substance, apart from the set questions in R6-2/R6-4).",
+          "The 0.20 resolvability floor as 'twice item 5's 0.10 tolerance' is a sensible lower bound: it guarantees a true rho_R >= 0.10 > 0 at the median, so the ratio clause separates a smooth critic (KC/rho about 1) from a kinked one (about 0). See R6-4 for its effect on coverage.",
+          "The honesty statements about rho scaling with continuation competence (:194-197, :618, Part 8.2 :789-791) are present and accurate."
+        ]
+      }
+    ],
+    "critic": {
+      "verdict": "Revision 6 is not ready for A1. It needs one more text-only pass. No new data, screens or user design choice are required.\n\nWhat r6 got right: it resolves most of the r5 list in substance, and the accepted item-1 design is written in coherently. That design removes the absolute rho floor from V0(b) and keeps a ratio clause with a 0.20 resolvability floor. It gates K1 reachability in V0(d), keeps the absolute L2 bars for step 0.4 only, and discloses the cost in Part 8.2. Both lenses independently confirmed four things. All 26 Part 11 hashes match. The fixed stage2_oc.py reproduces its saved output byte for byte. Every Stage 2 figure quoted in the text matches that output. The 4.5b thrust reconstruction is well posed.\n\nWhy it is not ready:\n1. Gate-logic defect (high). The new 4.5b 'literal identity' rule hard-codes slope 3 and says 'never physics.stall_slope'. It therefore fails by construction on the two identity checks that run at slope 1.5: the 4.8 known-answer check on the frozen central-quartile cells (trained at 1.5) and step 0.4's '1.5 identity check only' world. Step 0.3, the first executed step, would come out INCOMPLETE.\n2. Inconsistent reachability gates (medium). The two gates assume different predictor-error models. K1c adds item 5's 0.15 tolerance and K1a adds none. As a result, a smooth critic can still FAIL K1a by up to 0.10, which is exactly the outcome the gate exists to prevent. The 'both >= 0.83' sufficiency line is also arithmetically wrong.\n3. Unstated tolerance (medium). The 4.8 q1/twin_min reproduction gives '1e-6' without saying absolute or relative. Read as absolute, it is below one float32 ULP at |q| of about 500, so it effectively demands bit-exact replay of a sealed known-answer check.\n\nI adjudicated the one conflict between the lenses (R6-1 against N4) toward the accepted design. V0(d) stays an unconditional, outcome-independent validity precondition. The text must say plainly that it also voids an observed K1 pass and masks K2/K3. It must not be rewritten into an apply-only-on-failure rule. Everything else is wording or specification, and none of it opens a false-PASS path.",
+      "ready_for_A1_consideration": false,
+      "must_fix": [
+        {
+          "severity": "high",
+          "section": "4.5b Literal identity (:369) and world list (:364-367); 4.8 known-answer (:430); step 0.3 replay at slope 1.5 (:501, :505-507); step 0.4 worlds (:548-549) and label table (:557)",
+          "issue": "4.5b requires the L2.1 identity test to use the literal formula sign(a0)(KNEE - 3(|a0| - KNEE)), 'never physics.stall_slope'. Two identity checks run in slope-1.5 worlds, and both fail by construction with residuals of about 0.1-1, far above 1e-6. The first is 4.8's 'identity residual <= 1e-6' on the frozen central-quartile cells, whose critics were trained and whose Q^pi were saved at stall_slope 1.5 (:501). That makes it an INCOMPLETE at step 0.3. The second is step 0.4's 'stall_slope 1.5 (identity check only)' world, INCOMPLETE under :557. Neither is labelled a negative control; only the synthetic fixture (:370) is. The 4.5b receipt world list also gives no dict for step 0.3's Q^pi_1.5 replays or for the 4.8 saved-Q^pi reproduction, although 4.5b requires every replay to assert against a named world.",
+          "fix": "Scope the literal formulas per world, never reading either from physics. Stall-3.0 data uses sign(a0)(KNEE - 3(|a0| - KNEE)). Every slope-1.5 world (step 0.3 replays, the 4.8 frozen-cell reproduction, step 0.4's identity-only world) uses the literal sign(a0)(KNEE - 1.5(|a0| - KNEE)). Each receipt asserts its formula against that world's recorded physics dict, so a mix-up still breaks the identity. Add 'step 0.3 / 4.8 slope-1.5 replay' to the 4.5b tagged world list with its full dict. Reword :370 so that the synthetic slope-1.5 fixture must fail the slope-3 identity and the reconstruction check specifically."
+        },
+        {
+          "severity": "medium",
+          "section": "Part 2 Link to Stage 1 (:199-204); V0(d) reachability (:616-617); Part 8.2 (:789); Part 9 row 1",
+          "issue": "The two reachability gates rest on different predictor-error models. K1c's gate (median rho_hat_C(s10) >= 0.65) adds item 5's 0.15 tolerance, which treats KC as tracking the true rho. K1a's gate (median rho_hat_C(s05) >= 0.5 + 0.4 x median rho_hat_R(s05)) adds no 0.10 tolerance. A smooth critic whose rho_hat_C overstates rho_C by 0.10 can therefore pass the K1a gate and still miss K1a by construction. That is the misleading FAIL the gate exists to prevent, and reading 2 can attach to it. KC is measured against true Q^pi, so the true-rho model is the right one. Separately, ':202 rho_C >= rho_R (both >= 0.83) is sufficient' is wrong: at 0.83 the condition needs 0.832. The correct sufficient condition is rho_C >= rho_R and rho_C >= 5/6, with no lower bound on rho_R.",
+          "fix": "Apply the true-rho model to both gates. K1a: median rho_hat_C(s05) >= 0.6 + 0.4 x median rho_hat_R(s05), which is the bar plus item 5's 0.10 tolerance. K1c: keep 0.65. Mirror the change in V0(d), Part 8.2 and Part 9 row 1. Replace the :202 sentence with 'rho_C >= rho_R and rho_C >= 5/6 (0.834) is sufficient, not necessary; with the tolerance this becomes rho_C >= 1.0'. Update Part 8.2's competent-learner sentence to the new threshold."
+        },
+        {
+          "severity": "medium",
+          "section": "4.8 forced-probe critic path (:426)",
+          "issue": "'Reproduce the saved per-probe q1 and twin_min ... to 1e-6' does not say absolute or relative. The neighbouring lines say '1e-9 relative' and '1e-6*max(1,|Q|)', so the natural reading is absolute. The saved float32 values reach |q1| of about 496 and twin_min of about 497, where one ULP is 3.05e-5, so an absolute 1e-6 demands bit-exact replay. The saved values came from a 192-row stacked forward pass (evaluation.py around :398-434); a different batch shape, XLA fusion or device can differ by an ULP. A mismatch is INCOMPLETE. The tolerance is sealed, and a second failure under unchanged code makes the step INCONCLUSIVE (5.0), so the line of work could end on numerics alone.",
+          "fix": "State the tolerance as relative: |dq| <= 1e-6 x max(1, |q|), about 16 ULP at 496. Alternatively use a fixed ULP bound, such as <= 8 float32 ULP. Apply it to q1 and twin_min, and name the reference directory (rerun1 run/evaluation/*.json; continuation1 copies are identical). Keep saved lambda's 1e-6 consistent with the same convention."
+        },
+        {
+          "severity": "low",
+          "section": "V0(d) (:616-618); Part 2 (:197); Part 8.2 (:789-791)",
+          "issue": "Adjudication of R6-1 against N4: the accepted design ('INCONCLUSIVE otherwise', r5 option (a)) is an outcome-independent validity precondition, and it stands. The surrounding text still describes it as 'INCONCLUSIVE, never FAIL' and 'a correct critic could not pass it'. That undersells its scope. Because INCONCLUSIVE outranks PASS and FAIL (:458-465), it also voids an observed K1a/K1c pass. It masks reading 1 when only K1a is unreachable, and it relabels K2/K3 failures, which do not depend on rho. 'K1 is reachable' also bundles K1a and K1c into one condition without saying so.",
+          "fix": "Keep V0(d) unconditional. Reword :197 and :617-618 along these lines: 'Reachability is a validity precondition, checked whatever the outcome. If either K1a's or K1c's reachability condition fails in any seed, Stage 1 is INCONCLUSIVE, which voids any K1 pass and masks K2/K3. All criterion outcomes are still recorded per seed (5.0). Reason: when rho_hat is small, a KC pass cannot be attributed to the knee rather than to generic approximation error.' Add the masking cost to Part 8.2. Do not convert the gate to an on-failure-only rule, which would make it depend on the outcome."
+        },
+        {
+          "severity": "low",
+          "section": "V0(d) (:616); Anchor sets (:601-603); Part 2 (:203)",
+          "issue": "Two specification gaps in the reachability statistic. First, its form differs from K1a's: the gate is a difference of medians (median rho_hat_C - 0.4 x median rho_hat_R), while K1a is the median of per-anchor differences (:624). A 3-anchor counterexample (rho_C = [1, 1, 0], rho_R = [2, 0, 0]) passes the gate while K1a fails by construction. Second, no set is named for anchors predictor-valid under CUTOFF's continuation. The medians default to all common gated anchors (:601), which include up to 10% predictor-invalid ones. :203 says 'V0(d) gates it directly', but it gates the same approximate form.",
+          "fix": "Define reach_K1a per seed as the median, over common gated anchors predictor-valid under both continuations, of [rho_hat_C,j - 0.10 - 0.4 rho_hat_R,j] >= 0.5. That form matches K1a's and folds in the tolerance from the item above. Take K1c's median rho_hat_C(s10) on the common gated anchors that are CUTOFF-predictor-valid. Add both sets to V0(c) with a floor of 32. Reword :203 to match."
+        },
+        {
+          "severity": "low",
+          "section": "V0(b) ratio clause and 0.20 floor (:609-610); Part 2 coverage note (:205-208); Part 8.2(ii) (:788)",
+          "issue": "With the floor at 0.20 instead of 0.85, the claim that the 0.4 coefficient covers softplus widths up to about 0.04-0.05 no longer holds at the expected rho scale. Allowing rho_hat up to 0.10 below rho, coverage is KC/rho <= 0.4 rho_hat_R/(rho_hat_R + 0.10): 0.267 at 0.20, which is width about 0.02, and 0.333-0.343 at 0.5-0.6, which is width about 0.035. Part 8.2(ii) still says 0.04-0.05 without qualification. There is also an undisclosed path to INCONCLUSIVE: the absolute allowance can shrink to 0.08, so a competent RANDOM learner with small rho_R can fail the ratio clause on additive KC noise, which has never been measured. This costs power only, never validity. The anchor-set concern was refuted: :602 already restricts V0(b) to RANDOM-predictor-valid anchors.",
+          "fix": "In Part 2 :206-208 and Part 8.2(ii), state that coverage falls to about width 0.02-0.035 for rho_hat_R between 0.2 and 0.6, or switch the allowance to 0.4 x (median rho_hat_R + 0.10) to restore width 0.05 at every scale. If you switch, mirror the change in the K1a reachability gate. Add Part 8.2 reason (iii): a competent RANDOM learner with small rho_R can fail the ratio clause on absolute KC noise. Report the absolute |KC15_s05| scale from step 0.3's onset contrast."
+        },
+        {
+          "severity": "low",
+          "section": "4.5b physics assertion and data-level check (:364-368)",
+          "issue": "The 1e-9 thrust reconstruction is achievable only from the dataset's float64 `states` field: the error is about 1e-14 from states but about 3e-6 to 1e-4 from float32 observations, which would be a spurious INCOMPLETE. The text does not name the field. The no-stall dict is also underdetermined: Physics.as_dict() includes stall_slope, which is 1.5 under NO_STALL and 3.0 under world_physics('no_stall', 3.0), but the text pins only 'stall False'.",
+          "fix": "Write 'reconstructed from consecutive rows of the float64 `states` field (13-dim, including current and wave), subtracting B_k a_k for k = 1..3'. Pre-register the full expected as_dict() for each world: stall, stall_slope (including an explicit value for no-stall), knee, gain, throttle_cost, wave_turn, gamma and length. Alternatively assert only (stall, thrust-relevant slope, knee), and say that is the scope."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.4 L2 item 1 (:186); step 0.4 label table (:559-560); Part 8.2 (:789)",
+          "issue": "Step 0.4 passes at a median rho_hat(s05) of 0.75, while equal-continuation K1a reachability needs about 0.834, or about 1.0 once the tolerance fix above is applied. Step 0.4 gives no early signal that Stage 1, about 4 h of compute, is forecast to end INCONCLUSIVE through V0(d). The protocol's own E2 clipped-LQR proxy (0.61, :195) is already below both thresholds and is not quoted as a forecast.",
+          "fix": "Add a flagged, non-gating row to step 0.4. If the median rho_hat(s05) under the reference continuation is below the equal-continuation K1a reachability level, or the median rho_hat(s10) is below 0.65, record '(pass, flagged): Stage 1 V0(d) may end INCONCLUSIVE', to be acknowledged at A4. Quote the 0.61 proxy in Part 8.2 as the current forecast."
+        },
+        {
+          "severity": "low",
+          "section": "4.4 forced-probe arrays (:347); 4.8 (:426)",
+          "issue": "4.8 reproduces q1/twin_min 'at the saved per-probe actions'. That feeds stored arrays to the critic and bypasses the single probe builder that 4.4 says serves the 4.8 reproduction, so a0 placement and the a1..a3 fill go untested. 4.8 also claims to cover 'the AUROCs', but D1/D2 score the shadow auxiliary's U, which has its own path through `adjusted`. And 4.4's 'every gated probe array ... exactly 0.0 at indices 1-3' conflicts with the gated reach forecast, which uses the actor's own a1..a3.",
+          "fix": "In 4.8, build slots 1-5 with the probe builder from the slot values, assert equality with the saved `actions`, then compare q1/twin_min. Add reproduction of the saved per-probe `adjusted` (U = (q1 - adjusted)/3) under the same tolerance. In 4.4, name the reach-forecast arrays as exempt from the zero assertion."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.3 onset contrast (:507); R_lin (:509); convention (:499); Part 9 Review 6 row 7",
+          "issue": "Line 507 still says the onset contrast's Q^pi come 'by deterministic prefix replay within this step's cap', which contradicts its own 200k/10-min sub-caps (:494-495), yet Part 9 row 7 marks the item resolved. R_lin's saved Q^pi come from each old model's own unclipped continuation in the slope-1.5 world (evaluation.py:210), while the convention sentence groups R_lin with sources 'matching V0(b)', which uses clipped continuations.",
+          "fix": "Change :507 to 'within the onset contrast's own sub-caps'. Add to :509 that the saved Q^pi use each model's unclipped own continuation at stall_slope 1.5. Narrow :499's 'matching V0(b)' to the a1..a3 = 0 convention only."
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 L2 continuations (:158-160) and PASS rule (:183); Stage 1 reading 1 (:647); reading 2 (:648)",
+          "issue": "Some wording still implies the L2 PASS rule (items 1-6) applies to Stage 1 learners ('in Stage 1, each model's own actor'; 'separately for each continuation seed'), which contradicts :196 and :618. Reading 1 says 'even past a proven kink', but under the learners the gap size is shown only through median reachability. Reading 2 uses an unsubscripted rho_hat(s05) where rho_hat_R(s05) is meant.",
+          "fix": "At :160/:183, state that the full L2 PASS rule is evaluated only in step 0.4, and that in Stage 1 only items 5 and 6 and reachability are gated while items 1-4 are reported. In reading 1, write 'past a kink proven by the identity, with the s10 gap shown reachable (V0(d))'. In reading 2, write rho_hat_R(s05)."
+        }
+      ],
+      "residual_risks": [
+        "Even with every fix in place, a competent pair of Stage 1 learners can end the whole line of work INCONCLUSIVE through V0(d) with no answer about the hypothesis. The only current forecast (a clipped-LQR proxy giving rho of about 0.61 at the knee onset) already sits below the reachability level. That is the accepted cost of the item-1 design, and it is disclosed.",
+        "Because reachability is an outcome-independent precondition, an unreachable K1a in a single seed also hides clean K1c, K2 or K3 failures behind INCONCLUSIVE. They are still recorded per seed, but no reading is attached to them.",
+        "V0(b)'s ratio clause tolerates less kink rounding than the text claims at the expected rho scales (about softplus width 0.02-0.035, not 0.05). The additive noise floor of the KC statistic has never been measured, so a correctly labelled RANDOM control can still fail V0(b) on noise. This costs power, not validity.",
+        "The reachability arithmetic is a worst-case model built on medians and item 5's tolerance bands. Anchor-level correlations between the two arms' gaps can still make it approximate unless the per-anchor form is adopted.",
+        "Sealed numerical tolerances (known-answer reproduction, thrust reconstruction, identity residual) combine with the second-failure-is-INCONCLUSIVE rule. Any tolerance stated too tightly or ambiguously can end a step on float32 or GPU numerics rather than on the science.",
+        "The world-certification safeguards (literal per-world identity formulas, physics-dict assertions, float64 reconstruction) are only as strong as their exact wording. A slope mix-up is caught only if each receipt names its world's literal formula and full dict.",
+        "None of the r6 changes has been exercised in code yet. Every check here is a text and arithmetic review against saved evidence, and the new evaluator, probe builder and 4.5b checks will first run at step 0.3.",
+        "The commit of the r6 draft and its review files is still pending the user's approval, so Part 11's hashes certify only the working-tree files."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:resolution",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "abcb9834a126eb46e",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793318281982,
+      "queuedAt": 1793318281965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 6 resolves most of the r5 must-fix list in substan…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 6 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 5: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793318877795,
+      "tokens": 207774,
+      "toolCalls": 35,
+      "durationMs": 595812,
+      "resultPreview": "{\"verdict\":\"Revision 6 resolves most of the r5 must-fix list in substance, and the accepted item-1 design (reachability gates in V0(d), a ratio-plus-resolvability V0(b), absolute L2 bars kept for step 0.4 only) is written in coherently across Part 2, V0, Part 8.2 and Part 9. All 26 Part 11 sha256 values match their files. The fixed stage2_oc.py reproduces stage2_oc_output.txt byte for byte (e521d8…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:gates",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a85fa1969ff89ba5a",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793318281983,
+      "queuedAt": 1793318281965,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 6 is not ready for A1. It is one short text pass a…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 6 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 5: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793318694387,
+      "tokens": 186374,
+      "toolCalls": 18,
+      "durationMs": 409830,
+      "resultPreview": "{\"verdict\":\"Revision 6 is not ready for A1. It is one short text pass away, and no script or data work is needed. The user's choice (reachability gates in V0(d) instead of absolute rho floors) is the right shape. As written, though, it does not deliver its stated promise that a criterion a correct critic could not pass ends INCONCLUSIVE, never FAIL, in either direction. (1) V0(d) is an uncondition…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "verify:gates",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "ac7dd9012b6144c66",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793318696153,
+      "queuedAt": 1793318696137,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 6 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 5: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793318794687,
+      "tokens": 117806,
+      "toolCalls": 7,
+      "durationMs": 98533,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"R6-1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"Confirmed. DRAFT_PROTOCOL.md:616-617 puts the combined 'K1 is reachable' condition (K1a AND K1c) inside V0(d) with no condition on how K1 came out. Under the precedence table (:458-465) INCONCLUSIVE outranks both FAIL and PASS. This has three effects. (i) K1a unreachable while K1c is reachable and fails in every seed: readin…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "verify:resolution",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a987fa2548cdd8bf9",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793318879588,
+      "queuedAt": 1793318879584,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 6 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 5: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793319111941,
+      "tokens": 138059,
+      "toolCalls": 12,
+      "durationMs": 232352,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"N1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"Confirmed. In r6, 4.5b:369 requires the L2.1 identity test to use the literal slope-3 formula, 'never physics.stall_slope', and Part 0:35 also defines T at slope 3. Step 0.4 still runs a 'stall_slope 1.5 (identity check only)' world (:548, :367), and its label table (:557) marks any identity residual above 1e-6*max(1,|Q|) as I…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "ae1e50b3b1ee1fcb2",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793319113634,
+      "queuedAt": 1793319113620,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 6 is not ready for A1. It needs one more text-only…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 6 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 5: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793319251116,
+      "tokens": 124178,
+      "toolCalls": 3,
+      "durationMs": 137481,
+      "resultPreview": "{\"verdict\":\"Revision 6 is not ready for A1. It needs one more text-only pass. No new data, screens or user design choice are required.\\n\\nWhat r6 got right: it resolves most of the r5 list in substance, and the accepted item-1 design is written in coherently. That design removes the absolute rho floor from V0(b) and keeps a ratio clause with a 0.20 resolvability floor. It gates K1 reachability in …"
+    }
+  ],
+  "totalTokens": 774191,
+  "totalToolCalls": 75
+}

@@ -1,0 +1,286 @@
+{
+  "summary": "Final consistency check of revision 4 of the knee-edge OOD draft: resolution of round-3 items, skeptic, readiness critic",
+  "agentCount": 3,
+  "logs": [],
+  "result": {
+    "review": {
+      "verdict": "Revision 4 resolves all 15 items from the r3 digest, at least in form. Every outward-rounded bound matches random_control_mc_output.txt. All Part 11 hashes match the files on disk. The V0(b) arithmetic checks out: the softplus ratios are 0.246/0.312/0.353/0.380, and 0.6 x rho >= 0.5 holds iff rho >= 0.833. The edge-secant and equilibrium algebra is correct, and the joint PROMISING figures reproduce under the r3 model, in which R3's baseline was independent of R1's. The new content has one medium problem. R3 now subtracts the same stall-RANDOM term as R1, so H = G + (D_nsC - D_sC) and corr(G,H) is about 0.5. Given that R1 passes, R3 passes about 95% of the time at zero cost and about 70% at a true -3 cost. Those figures were not disclosed; the stated marginal values are 0.85 and 0.50. The quoted joint figures are therefore the old independent-baseline numbers. Several lower-severity problems follow from the same change. The A5 precondition still requires no-stall RANDOM, which no gate now uses. 15 of the 36 Stage 2 branches feed no gated rule. The K1a worst case mixes two continuations. The new rerun rule still allows GPU re-rolls. Step 0.3 has two a1..a3 conventions for the same seven points. The anchor sets used by V0(b) and K1a are underspecified. The protocol is not ready to seal until R3's conditional operating characteristics, or its baseline, and the stale no-stall RANDOM precondition are fixed.",
+      "findings": [
+        {
+          "id": "F1",
+          "severity": "medium",
+          "section": "Stage 2 R3 and joint operating characteristics (DRAFT_PROTOCOL.md:656-666; Part 8.7 :746)",
+          "claim": "R3 and R1 now share the stall-RANDOM term, so the two clauses are positively correlated. Given that R1 passes, R3 has lost most of its power to catch a cost of caution. The stated R3 and joint operating characteristics assume independence.",
+          "evidence": "G = D_sC - D_sR (:651) and H = D_nsC - D_sR (:657), so H = G + (D_nsC - D_sC) and, at per-seed SD 3.55 for each D, corr(G,H) = 3.55^2/5.02^2 = 0.5. A Monte Carlo with branch-level noise (scratch verify_wf_r4/critic/oc.py, 400k draws) gives the following. Given R1 passes, P(R3) is 0.95 at G=+3 with zero cost, 0.70 at a true -3 cost (0.50 with an independent baseline) and 0.27 at -6 (0.15). At G=0 and cost -3 it is 0.83. False PROMISING with R2 ignored, at G=+3 and cost -3: 0.23, against 0.165 under independence. The joint figures quoted at :664-665 (2%, 5%, 18%, 28%) reproduce only under the independent r3 baseline (1.9/5.4/17.9/28.1). With the shared term they are 2.2/5.9/19.7/31.5. The 'about 2%' null also assumes the distance arm equals BCA; if BCA beats distance by 3 it is about 6%. Separately, D_sR is not purely a 'generic gain'. In the stall world caution in W helps, and V0(b)'s R_deep- <= 0.10 (:579) constrains only Stage 1's native RANDOM branch, not the Stage 2 replicate or BCA branch (:658).",
+          "fix": "Do one of two things. (a) State R3's operating characteristics conditional on R1 (about 0.95 at zero cost, 0.70 at -3), recompute the joint figures with the shared term, and condition the null on the distance arm. Then either tighten R3's bar (about -1.5 restores roughly 0.5 power at -3 given R1) or accept the weaker screen in Part 8.7. (b) Use a baseline not shared with R1, or promote the reported no-stall CUTOFF R_deep- and Δclip differences (:662) to a gated clause. Under either option, write the identity H = G + (D_nsC - D_sC) into the text, so it is clear what R3 measures after R1 passes."
+        },
+        {
+          "id": "F2",
+          "severity": "medium",
+          "section": "Stage 2 A5 precondition and arms (:646, :625, :574; Part 7 :720)",
+          "claim": "The new A5 precondition still requires the no-stall RANDOM runs, which R3 no longer uses. Stage 2 also trains 15 branches that feed no gated rule.",
+          "evidence": ":646 reads 'the no-stall CUTOFF and RANDOM runs pass the Stage 1 adequacy floor ... R3 needs them'. Since revision 4, R3 uses no-stall CUTOFF and stall RANDOM only (:657). A non-learning no-stall RANDOM run can therefore block Stage 2 for no reason. The 36 branches (:625) come from all 12 forks. The gated clauses use BCA and replicate branches in sC, sR and nsC (18) plus distance in sC (3), 21 in all. The 9 no-stall RANDOM branches and the distance branches in sR and nsC (6) are used by no gate: about 15 x 500 s = 2.1 h of the roughly 5 h Stage 2 estimate. V0-S2 (:648) already omits no-stall RANDOM, which is consistent with R3 and inconsistent with :646.",
+          "fix": "Make the precondition 'the no-stall CUTOFF runs pass ...'. Either drop the no-stall RANDOM forks from Stage 2, or label their branches report-only, and cut Part 7's Stage 2 estimate and cap to match. Say what is recorded when the precondition fails (for example 'Stage 2 not requested (precondition)')."
+        },
+        {
+          "id": "F3",
+          "severity": "low",
+          "section": "L2 link to Stage 1 (:196-197); V0(b) (:577-578); L2 item 1 (:186)",
+          "claim": "The K1a worst case '0.6 x rho_hat(s05) >= 0.5 iff rho_hat >= 0.83' treats one rho for both arms. The 0.85 floor is applied under RANDOM's continuation, but K1a's CUTOFF term depends on rho under CUTOFF's continuation. The min-of-predictors rho_hat also understates the rounding coverage claimed.",
+          "evidence": "KC_s05(CUTOFF) is about rho_hat under CUTOFF's own continuation, floored by V0(d) and item 1. KC_s05(RANDOM) is up to 0.4 x rho_hat under RANDOM's continuation (:578). The actual worst case is rho_C - 0.4 rho_R >= 0.5. Example: rho_C = 0.85 and rho_R = 1.0 give 0.45, so K1a is unreachable even though both floors pass. rho_hat = min_k[P_k - Q_stall] can sit up to 0.10 below rho at s05 (item 5 tolerance, :184). At rho = 1.0 that makes the bar 0.36 rho, which covers softplus rounding only to about w = 0.04, not the 0.05 claimed at :196 and :738. Raising step 0.4's item 1 median to 0.85 adds a FAIL route under old full-data continuations. It is justified by a Stage 1 argument about different continuations, which V0(d) already enforces as INCONCLUSIVE.",
+          "fix": "State the worst case as median KC_C - 0.4 x median rho_hat_R, and say the floor makes K1a reachable only when rho_C is at least about rho_R. Alternatively, express V0(b)'s bar in terms of rho_hat under CUTOFF's continuation at the same anchors. Change 'covers up to about 0.05' to 'about 0.04-0.05, depending on rho_hat's predictor bias'. Consider keeping step 0.4's item 1 median at 0.75."
+        },
+        {
+          "id": "F4",
+          "severity": "low",
+          "section": "5.0 rerun rules (:426-430)",
+          "claim": "The new definition of 'identically' lets a deterministic-check failure be rerun without limit whenever its failing value changes. That re-rolls GPU nondeterminism, which :430 forbids. Code-only fixes are also unlimited, and completed sealed units are not required to stay reproducible under the fixed code.",
+          "evidence": ":429 says the second-failure rule applies only when the rerun fails with 'the same failing value or the same cap'. A tolerance check (an evaluator mismatch or identity residual) failing again under unchanged code with a different value is not 'identical', so another approved rerun is allowed, and so on. :430's own rationale ('a fresh attempt would re-roll GPU nondeterminism until something passed') applies to exactly this case. :428 places no limit on the number of fix-then-rerun cycles. It also does not require that the fix leave the code paths of already-sealed units unchanged, or that those units be re-verified bit for bit.",
+          "fix": "Trigger the second-failure rule on 'same unit and same check' under unchanged code, whatever the value. Allow at most one code-only fix per unit. Require the fix's diff to leave untouched the code that produced completed sealed units, or require those units to reproduce bit for bit under the fixed code."
+        },
+        {
+          "id": "F5",
+          "severity": "low",
+          "section": "Step 0.3 G0.5 points vs forward passes (:471 vs :487)",
+          "claim": "Step 0.3 now gives two conventions for the same seven a0 points. It is unclear which one the G0.5 gate F and the onset contrast use.",
+          "evidence": ":471 says Q1 is computed at the seven a0 values 'with other commands at 0'. :487 says the forward passes at every row, probes included, take 'the seven a0 values above' plus four slots 'at one convention: the actor's own a1..a3 ... The saved a1..a3 = 0 values are reported as descriptive.' Read literally, the gating F (INCONCLUSIVE below 25%, :506) and KC15_s05 would become descriptive or switch convention. The first action's a1..a3 in KC15's Q^pi rollouts is not stated. V0(b), which the onset contrast is meant to forecast, uses a1..a3 = 0 (:559).",
+          "fix": "Say explicitly that G0.5's F and KC15_s05 (with their Q^pi first actions) use a1..a3 = 0 to match V0(b), and that only the edge-slope forecast (s_edge, q2) uses the actor's own a1..a3. Limit the 'descriptive' sentence to the forecast."
+        },
+        {
+          "id": "F6",
+          "severity": "low",
+          "section": "Step 0.3 onset-contrast flag (:476-480, :505; Part 7 :717)",
+          "claim": "The onset-contrast warning is set exactly at V0(b)'s pass bar, while its calibration is optimistic. A cap overrun caused by this warning-only metric can also end step 0.3.",
+          "evidence": "The flag fires only when the median KC15/rho15 already exceeds 0.4. The old critics were trained on a uniform recorder, so they had density-0.5 labels across the whole fold at every load. RANDOM's high-load labels stop near depth 0.1 (L1.4, :147), so RANDOM's rounding is expected to be at least as wide as theirs. The flag also uses the median of per-probe ratios, with true rho15 in the denominator. V0(b) uses a ratio of medians, with rho_hat in the denominator, which is biased low (see F3). The onset contrast's roughly 170k transitions share step 0.3's 0.5M cap with the known-answer replay, about 216k by the r2 review's estimate: about 386k in total, a 23% margin. If the cap binds, the result is INCOMPLETE, and an unchanged-code rerun hitting the same cap becomes INCONCLUSIVE (:429).",
+          "fix": "Flag below the bar, for example at 0.3. Compute the flag as a ratio of medians, two-sided, to mirror V0(b). Run the onset contrast after the gated G0.5 and forecast items, under its own sub-cap, so that exhausting it is recorded as 'not computed' and does not count as an INCOMPLETE of step 0.3."
+        },
+        {
+          "id": "F7",
+          "severity": "low",
+          "section": "Anchor sets: V0(b) (:577-578), V0(c) (:581), decision rules (:571), Part 0 (:52-54)",
+          "claim": "Revision 4 does not say which anchor set V0(b) uses. Predictor validity is never evaluated under RANDOM's continuation. Nothing floors the common-anchor intersection that K1a and V0(b) use.",
+          "evidence": "V0(b)'s floor bullet names no anchor set, and the next bullet says 'at the same anchors', which points back to it. The floor 'matches L2 item 1', and item 1 is computed on predictor-valid anchors. But predictor validity (Part 0 :54, item 5) is evaluated only under the reference continuation (step 0.4) and CUTOFF's continuation (V0(d), :582), never under RANDOM's, so V0(b)'s rho_hat is unvalidated. V0(c) requires at least 32 valid gated anchors per arm. K1a and V0(b) use 'medians over anchors common to all arms' (:571), an intersection that can fall below 32 with no rule.",
+          "fix": "State that V0(b) uses gated anchors that are valid in both arms and predictor-valid under RANDOM's continuation, which means evaluating item 5 under that continuation (or say rho_hat is used unvalidated). Apply V0(c)'s floor of 32 to the common set used by K1a and V0(b)."
+        },
+        {
+          "id": "F8",
+          "severity": "low",
+          "section": "Stage 2 seeds (:626-630); Part 11 (:897)",
+          "claim": "'Keyed by (seed index, arm, world)' is ambiguous. If arm means the branch arm, it contradicts the common-random-numbers rule. The protocol also does not say how the frozen branch() lookup is fed.",
+          "evidence": "In runtime.py:217-228, branch()'s `arm` parameter is native/bca/distance. Keying seeds by that arm would give BCA, distance and the replicate different seeds, contradicting :630 ('All three Stage 2 branches from a fork share the Stage 2 seed and minibatch stream'). Part 0 uses 'arms' for CUTOFF and RANDOM, while :625 uses 'Arms' for the branches. runtime.py:226 reads protocol['seeds'][seed_index] and cannot be edited (Part 4 :271). Part 11 still cites lines 224-228, while :627 cites 223-228.",
+          "fix": "Write '(seed index, data arm CUTOFF/RANDOM, world), shared by the three branch arms'. State that the worker passes branch() a per-fork protocol view whose seeds[seed_index] holds that fork's Stage 2 seeds. Align the Part 11 citation."
+        },
+        {
+          "id": "F9",
+          "severity": "low",
+          "section": "V0-S2 (:648); R2 (:655)",
+          "claim": "The new adequacy floor leaves out the distance branch, so a non-learning distance arm makes R2 pass trivially and opens a false-PROMISING path. That is the same failure item 5 closed for the replicate and BCA branches.",
+          "evidence": "V0-S2 covers only the 'replicate and BCA branch' in sC, sR and nsC. R2 requires J(BCA,C) - J(distance,C) >= 0 in every seed, which is automatic if the distance branch fails to learn. The text says 'A branch that has not learned would distort R1 or R3' but does not mention R2.",
+          "fix": "Add the stall-CUTOFF distance branch to V0-S2's J_E1 >= +50 floor."
+        },
+        {
+          "id": "F10",
+          "severity": "low",
+          "section": "Bookkeeping (:544, :574, :799)",
+          "claim": "Three statements are stale or incomplete after the revision 4 edits.",
+          "evidence": "(a) R0 adequacy (:544) still says 'on 32 fresh E1 starts' and never names `r0_e1_starts`, which appears only in Part 3.10 (:264). (b) :574 says the no-stall runs' adequacy 'gates Stage 2's R3'. It now gates the A5 request (:646), and only no-stall CUTOFF matters (F2). (c) Part 9 Review 2 row 2 (:799) still says 'one replicate per fork gives no noise estimate', which contradicts the revised rationale at :671 (the 12 replicate-minus-Stage-1 differences give an empirical scale).",
+          "fix": "Name `r0_e1_starts` at :544. Reword :574 to 'gates the request for A5 (no-stall CUTOFF)'. Annotate :799 with 'rationale revised in revision 4 (:671)'."
+        }
+      ],
+      "checked_ok": [
+        "Item 1 (R3 baseline): the no-stall RANDOM baseline was replaced by stall RANDOM, and no-stall CUTOFF entry and Δclip differences are reported (:657-662). The new issue it introduces is F1.",
+        "Item 2: coefficient 0.4. Softplus KC/rho reproduced as (w/0.05)[ln2 - ln(1+e^{-0.05/w})] = 0.246/0.312/0.353/0.380 at w = 0.02-0.05, and the Gaussian values (0.159-0.316) are also below 0.4. The floor, the Part 8.2(ii) risk and the reading-2 guard were added. 0.6 x rho >= 0.5 iff rho >= 0.8333, so the 0.85 floor clears it.",
+        "Item 3: F05 removed. The onset contrast uses the -KNEE reference; Q^pi_1.5(-KNEE) equals the no-stall value under a clipped continuation, so 3 rollouts per probe. 170k plus about 216k known-answer replay fits under 0.5M (thin margin, F6).",
+        "Item 4: the joint figures 2/5/18/28% reproduce exactly under the r3 independent-baseline model (1.9/5.4/17.9/28.1), and R1 alone reproduces (null 0.086, power 0.33 at G = +3). They are stale only because of the r4 baseline change (F1).",
+        "Item 5: no-stall adequacy is moved before A5; V0-S2 extended to the replicate and BCA branches in sC, sR and nsC.",
+        "Item 6: Part 0 defines valid anchor over gated probes, with predictor-valid as a separate term and the excluded-and-counted rule restored. V0(c) and L2 use the two terms consistently.",
+        "Item 7: code-only fix allowed, 'identically' defined, and 4.7(i) named in both INCOMPLETE rows (:437, :529).",
+        "Item 8: K3b reading 5 added; the precondition rule is coherent with the ordered readings; the reading-2 guard is correctly signed; pooled NOT-PROMISING-consistent requires all seeds on the failing side.",
+        "Item 9: 11-point count correct (7 a0 values + 4 slots, with -0.5 shared); q2 refit at one convention.",
+        "Item 10: digests recorded on Stage 1 and Stage 2 branches. The phase-0 indices are reconstructable (train_worker.py:305-312 sample_indices). The 12-difference SD check was added.",
+        "Item 11: rows 22-23 sit under Review 2 (:819-820); row 1 annotated as superseded.",
+        "Item 12: 28,347 ± 284. The CUTOFF anchor closed form 0.49 x (-0.75)/0.506 = -0.72628 is consistent with the Monte Carlo -0.7264 ± 0.0010. Every bound in L1.4 and 4.7(ii) is rounded outward against the MC output: [2.00, 2.17], [2.00, 2.18], [1.82, 2.24], [0.503, 0.647], [0.036, 0.120], [0.087, 0.260], [26,643, 30,052], [0.479, 0.509], [0.187, 0.214], [-0.733, -0.720], [0.460, 0.504], [-0.781, -0.768], [17, 78].",
+        "The two-level-flag fault statement holds: pooled 2.136 inside [2.00, 2.17]; deep 2.239 against an upper bound of 2.24 is rejected about 49% of the time.",
+        "Item 13: Part 6.1 reworded.",
+        "Item 14: `r0_e1_starts` named in 3.10 and E1's role restated (but see F10a).",
+        "Item 15: AUROC step 0.1; slot -0.60000002; s_edge = [Q1(-0.5) - Q1(-0.69999999)]/0.19999999 with noise sqrt(2)σ/0.2 = 7.07σ; q1' = s_edge + 1.2 q2 and pi0 = (m + 2λ'q1')/(1 - 4λ'q2) are algebraically correct.",
+        "Part 11 hashes all match on disk (random_control_mc.py 0f9ab35d…29b6, output 2dc0c383…f716, panel bf4efe7e…1257, reach files).",
+        "Other MC-derived numbers unchanged and consistent: 48.2/42.4/67.6% retention, R_deep- about 18.5-19 high-load RANDOM rows, calibration 47.5 ± 5.0, first-W-step probabilities."
+      ]
+    },
+    "verdicts": [
+      {
+        "id": "F1",
+        "real": true,
+        "severity_after": "medium",
+        "reason": "I could not refute it. G = D_sC - D_sR (:651) and H = D_nsC - D_sR (:657) share the D_sR term. With the draft's own noise model (each D has SD 3.55, so per-seed SD(H) = sqrt(2) x 3.55 as stated at :661), corr(G,H) = 0.5. I re-ran the critic's Monte Carlo from my own scratch copy (verify_wf_r4/skeptic/oc_copy.py, 400k draws) and it reproduces every figure. The marginal R3 characteristics at :661 are correct as marginals (0.85 at zero cost, 0.50 at -3). But R3 only affects the label when R1 passes, and given R1, P(R3) is 0.95 at zero cost, 0.70 at -3 and 0.27 at -6. So R3 detects a -3 cost about 30% of the time, not the 50% the text implies. False PROMISING at G=+3 with a -3 cost and R2 ignored rises from 0.165 to 0.23. The joint figures at :664-665 and Part 8.7 (:746) are slightly understated: shared-baseline values are 2.2/5.9/19.7/31.5 against the quoted 2/5/18/28. The bigger gap is the unstated null of about 6% when BCA beats the distance arm by 3. The draft never mentions the correlation, although it chose the shared baseline on purpose (:658). One sub-point does not hold: a cautious BCA helping in stall RANDOM would raise D_sR, which lowers both G and H. That makes the screens more conservative, not more lenient. The decision mechanics are sound. The defect is that the pre-registered operating characteristics misstate how strong the cost-of-caution screen is in the only case where it applies, so I keep medium. The fix is mainly to state P(R3 | R1) and the identity H = G + (D_nsC - D_sC), recompute the joint figures, and either tighten the bar or accept the weaker screen explicitly."
+      },
+      {
+        "id": "F2",
+        "real": true,
+        "severity_after": "low",
+        "reason": "Confirmed in the text. :646 requires that 'the no-stall CUTOFF and RANDOM runs pass the Stage 1 adequacy floor ... R3 needs them'. Since revision 4, R3 (:657-658) uses no-stall CUTOFF and stall RANDOM only, and V0-S2 (:648) and :574 are consistent with that. A non-learning no-stall RANDOM run can therefore block A5 for no reason. The stated rationale ('could not issue PROMISING') is also wrong for that arm. No gated or reported rule uses the no-stall RANDOM branches or the distance branches in sR and nsC: R1 uses BCA and rep in sC and sR, R2 uses distance in sC, R3 uses BCA and rep in nsC and sR, and recovery and repair use stall arms. So about 15 of the 36 branches (:625, also counted at :328 and in Part 7 :720) feed nothing. This is a stale clause that can stop Stage 2 unnecessarily, plus a compute and consistency cost. It does not threaten the validity of any outcome that is issued, so I lower it to low. Fix: limit the precondition to no-stall CUTOFF, then drop or label the unused branches and adjust :328 and :720."
+      }
+    ],
+    "critic": {
+      "verdict": "NOT READY for A1. Revision 4 resolves all 15 r3 items in form. One medium item remains, and it is not purely bookkeeping. Moving R3's baseline to stall RANDOM makes H = G + (D_nsC - D_sC), so corr(G,H) = 0.5. In the only case where R3 can change the label (R1 passes), R3 catches a true -3 cost about 30% of the time, not the stated 50%. The quoted joint figures are the old independent-baseline numbers. I reproduced this independently: verify_wf_r4/critic2/oc2.py, 400k draws, gives P(R3|R1) = 0.952 / 0.695 / 0.273 at cost 0 / -3 / -6 with G=+3, and 0.826 at G=0 with cost -3. The marginals 0.85/0.50 and R1's 0.330/0.086 match the draft. Fixing this needs a sealed choice: keep R3's bar at -3.0 and state the weaker screen, tighten the bar (to about -1.5), or change the baseline. That choice can change gate logic. The skeptic's lowered severity on F2 is accepted, but it is still a stale clause in a gate, the A5 precondition. The other eight findings are low: rerun-rule loophole, anchor-set gaps, an unfloored distance arm, the K1a worst case, step 0.3 conventions, seed-key wording and stale cross-references. None was refuted; the only rejected point is F1's sub-claim that a cautious BCA helping in stall RANDOM makes the screens more lenient. It makes them stricter. Revision 5 could qualify once F1 is resolved by an explicit, sealed decision and F2's precondition is corrected.",
+      "ready_for_A1_consideration": false,
+      "must_fix": [
+        {
+          "severity": "medium",
+          "section": "Stage 2 R3 and joint operating characteristics (DRAFT_PROTOCOL.md:656-666; Part 8.7 :746)",
+          "issue": "R3 now subtracts the same stall-RANDOM term as R1 (G = D_sC - D_sR at :651; H = D_nsC - D_sR at :657), so H = G + (D_nsC - D_sC) and corr(G,H) = 0.5. The marginal R3 figures at :661 (0.85 at zero cost, 0.50 at -3) are correct, but R3 affects the label only when R1 passes. Given R1 passes, P(R3) is 0.95 at zero cost, 0.70 at -3 and 0.27 at -6, and 0.83 at G=0 with cost -3 (reproduced, critic2/oc2.py). So the cost-of-caution screen catches a -3 cost about 30% of the time. The joint figures at :664-665 and :746 (2/5/18/28%) are the r3 independent-baseline values. With the shared baseline they are about 2.2/5.9/19.7/31.5%. The roughly 2% null assumes the distance arm equals BCA; if BCA beats distance by 3 it is about 6%. The draft chose the shared baseline on purpose (:658) but never mentions the correlation.",
+          "fix": "Write the identity H = G + (D_nsC - D_sC) into R3. State R3's operating characteristics conditional on R1, recompute the joint figures and the null with the shared term (and the null conditional on the distance arm), and update Part 8.7. Then make and seal one choice: (i) keep -3.0 and state that R3 is a weak screen given R1, about 0.70 pass at a -3 cost; (ii) tighten the bar to about -1.5, which restores roughly 0.5 power at -3 given R1; or (iii) gate on the no-stall CUTOFF R_deep- and Δclip differences (:662) instead of a shared baseline."
+        },
+        {
+          "severity": "low",
+          "section": "Stage 2 A5 precondition and branch count (:646, :574, :625, :328; Part 7 :720)",
+          "issue": ":646 still requires the no-stall CUTOFF and RANDOM runs to pass adequacy because 'R3 needs them'. Since revision 4, R3 uses no-stall CUTOFF and stall RANDOM only, so a non-learning no-stall RANDOM run can block A5 for no reason, and the stated rationale ('could not issue PROMISING') is wrong for that arm. :574 says no-stall adequacy 'gates Stage 2's R3'. 15 of the 36 branches feed no gated or reported rule: the 9 no-stall RANDOM branches and the 6 distance branches in sR and nsC. That is about 2.1 h of the roughly 5 h Stage 2 estimate.",
+          "fix": "Restrict the precondition to the no-stall CUTOFF runs and record 'Stage 2 not requested (precondition)' when it fails. Reword :574 to 'gates the request for A5 (no-stall CUTOFF)'. Either drop the unused branches or label them report-only, and adjust :328 and Part 7's Stage 2 estimate and cap."
+        },
+        {
+          "severity": "low",
+          "section": "V0-S2 (:648) and R2 (:655)",
+          "issue": "The adequacy floor covers only replicate and BCA branches. A stall-CUTOFF distance branch that has not learned makes R2 (J(BCA,C) - J(distance,C) >= 0 in every seed) pass trivially, which opens a false-PROMISING path. Item 5 closed the same hole for the other branches.",
+          "fix": "Add the stall-CUTOFF distance branch to V0-S2's J_E1 >= +50 floor, and mention R2 in the rationale sentence."
+        },
+        {
+          "severity": "low",
+          "section": "5.0 rerun rules (:426-430)",
+          "issue": "'Identically' requires 'the same failing value or the same cap' (:429). A tolerance check that fails again under unchanged code with a different value can therefore be rerun without limit. That re-rolls GPU nondeterminism, which :430's own rationale forbids. Code-only fixes are also unlimited, and nothing requires sealed units to stay reproducible under the fixed code.",
+          "fix": "Trigger INCONCLUSIVE on a second failure of the same unit and the same check under unchanged code, whatever the value. Allow at most one code-only fix per unit. Require the fix's diff to leave untouched the code that produced sealed units, or require those units to reproduce bit for bit."
+        },
+        {
+          "severity": "low",
+          "section": "Anchor sets: V0(b) (:577-578), V0(c) (:581), decision preamble (:571), Part 0 (:52-54)",
+          "issue": "V0(b) names no anchor set. Predictor validity (item 5) is evaluated only under the reference and CUTOFF continuations, never under RANDOM's, so V0(b)'s rho_hat is unvalidated. K1a and V0(b) use medians over anchors common to all arms, and that intersection has no floor. V0(c) floors only each arm separately, at 32.",
+          "fix": "State that V0(b) uses gated anchors that are valid in both arms and predictor-valid under RANDOM's continuation, which means evaluating item 5 there. Otherwise disclose that it is unvalidated. Apply the 32-anchor floor to the common set."
+        },
+        {
+          "severity": "low",
+          "section": "L2 link to Stage 1 (:196-197); V0(b) (:577-578)",
+          "issue": "The worst case '0.6 x rho_hat >= 0.5 iff rho_hat >= 0.83' assumes one rho for both arms. In fact the CUTOFF term uses rho under CUTOFF's continuation and the RANDOM bound uses rho under RANDOM's, so the real worst case is rho_C - 0.4 rho_R. For example, rho_C = 0.85 and rho_R = 1.0 give 0.45, so K1a is unreachable even though both floors pass. rho_hat can sit up to 0.10 below rho (item 5), so the claimed softplus coverage of about 0.05 is nearer 0.04.",
+          "fix": "Restate the worst case as median KC_C - 0.4 x median rho_hat_R, and note that K1a is reachable only when rho_C is at least about rho_R. Change the coverage claim to 'about 0.04-0.05, depending on predictor bias'."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.3 conventions (:471 vs :487)",
+          "issue": "For the same seven a0 points, :471 uses a1..a3 = 0 while :487 says every forward pass, probes included, uses the actor's own a1..a3 and that the a1..a3 = 0 values are descriptive. Read literally, the gating F and KC15_s05 change convention or become descriptive. V0(b) uses a1..a3 = 0.",
+          "fix": "State that G0.5's F and KC15_s05 (including the first action of their Q^pi rollouts) use a1..a3 = 0, and that only s_edge and q2 use the actor's own a1..a3. Limit the 'descriptive' sentence to the forecast."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.3 onset-contrast flag (:476-480, :505; Part 7 :717)",
+          "issue": "The flag fires exactly at V0(b)'s 0.4 bar. It uses the median of per-probe ratios with the true rho15, while V0(b) uses a ratio of medians with rho_hat, which is biased low. Its roughly 170k transitions share step 0.3's 0.5M cap with the known-answer replay (about 386k in total), so a warning-only metric could cause an INCOMPLETE of a gated step.",
+          "fix": "Flag below the bar (for example 0.3), compute it as a ratio of medians, and run it last under its own sub-cap, so that exhausting the sub-cap records 'not computed' rather than an INCOMPLETE."
+        },
+        {
+          "severity": "low",
+          "section": "Stage 2 seeds (:626-630); Part 11 (:897)",
+          "issue": "'Keyed by (seed index, arm, world)' is ambiguous. runtime.py's branch() 'arm' means native/bca/distance, and keying by that would contradict the common-random-numbers rule at :630. The draft also does not say how the frozen branch(), which reads protocol['seeds'][seed_index], receives per-fork Stage 2 seeds. The citations disagree (223-228 vs 224-228).",
+          "fix": "Write '(seed index, data arm CUTOFF/RANDOM, world), shared by the three branch arms', state that the worker passes a per-fork protocol view, and align the line citations."
+        },
+        {
+          "severity": "low",
+          "section": "Bookkeeping (:544, :799)",
+          "issue": "R0 adequacy (:544) says '32 fresh E1 starts' without naming r0_e1_starts. Review 2 row 2 (:799) still says one replicate per fork gives no noise estimate, which contradicts :671.",
+          "fix": "Name r0_e1_starts at :544. Annotate :799 as revised in revision 4 (:671)."
+        }
+      ],
+      "residual_risks": [
+        "Even after the fixes, Stage 2 PROMISING is a weak screen. With three seeds and per-branch SD of about 3.55, a real +3 benefit passes only about 5-30% of the time, so NOT-PROMISING says little against BCA. A true null can still pass a few percent of the time, more if BCA beats the distance arm.",
+        "R3 rests on an untested cross-world assumption: that BCA's general gain is about the same in the stall and no-stall worlds. If the two differ, R3 can wrongly pass or wrongly block, and no gate checks it.",
+        "The noise level behind every operating characteristic (SD 3.55) comes from earlier proxy runs. Stage 2 reports its own check of that figure but does not act on it, so the stated pass rates could be off if the real noise is larger.",
+        "Results at single checkpoints flipped sign across seeds in the prior study. Gating at 20k is correct, but sign instability can produce INCONCLUSIVE or mixed outcomes for reasons unrelated to the hypothesis.",
+        "Stage 1's K1a reachability depends on rho under two different continuations. If CUTOFF's continuation gives a smaller predicted gap than RANDOM's, K1a can fail even when all the floors pass, which looks like a negative result but comes from the design.",
+        "Step 0.3 can stop the plan early on the old critics (fold test or reach forecast). Those critics were trained on different data, so a stop there is informative only about them, and the onset-contrast warning is optimistically calibrated.",
+        "GPU nondeterminism means reruns are not exact replicas. The rerun rules still leave some room to re-roll until a check passes, unless they are tightened.",
+        "Inference is conditional on the forks that pass Stage 1, which were selected for showing damage. Using the replicate reduces that bias, but the forks themselves are still selected."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:r4",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "aad6df2cf1d8fae5d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793314223497,
+      "queuedAt": 1793314223460,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 4 resolves all 15 items from the r3 digest, at lea…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 4 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC, method BCA). Revision 3: experiments/thrusterchain_bca/zeus_20261026_validation/knee…",
+      "promptFramed": true,
+      "lastProgressAt": 1793314766668,
+      "tokens": 191761,
+      "toolCalls": 16,
+      "durationMs": 543170,
+      "resultPreview": "{\"verdict\":\"Revision 4 resolves all 15 items from the r3 digest, at least in form. Every outward-rounded bound matches random_control_mc_output.txt. All Part 11 hashes match the files on disk. The V0(b) arithmetic checks out: the softplus ratios are 0.246/0.312/0.353/0.380, and 0.6 x rho >= 0.5 holds iff rho >= 0.833. The edge-secant and equilibrium algebra is correct, and the joint PROMISING figu…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "verify:r4",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "ae9f7d61fff04a502",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793314768501,
+      "queuedAt": 1793314768465,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 4 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC, method BCA). Revision 3: experiments/thrusterchain_bca/zeus_20261026_validation/knee…",
+      "promptFramed": true,
+      "lastProgressAt": 1793314851740,
+      "tokens": 110655,
+      "toolCalls": 6,
+      "durationMs": 83238,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"F1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"I could not refute it. G = D_sC - D_sR (:651) and H = D_nsC - D_sR (:657) share the D_sR term. With the draft's own noise model (each D has SD 3.55, so per-seed SD(H) = sqrt(2) x 3.55 as stated at :661), corr(G,H) = 0.5. I re-ran the critic's Monte Carlo from my own scratch copy (verify_wf_r4/skeptic/oc_copy.py, 400k draws) an…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "critic:r4",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "a8e5ec715885734c0",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793314853517,
+      "queuedAt": 1793314853498,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "NOT READY for A1. Revision 4 resolves all 15 r3 items in fo…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 4 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC, method BCA). Revision 3: experiments/thrusterchain_bca/zeus_20261026_validation/knee…",
+      "promptFramed": true,
+      "lastProgressAt": 1793314938959,
+      "tokens": 110929,
+      "toolCalls": 4,
+      "durationMs": 85441,
+      "resultPreview": "{\"verdict\":\"NOT READY for A1. Revision 4 resolves all 15 r3 items in form. One medium item remains, and it is not purely bookkeeping. Moving R3's baseline to stall RANDOM makes H = G + (D_nsC - D_sC), so corr(G,H) = 0.5. In the only case where R3 can change the label (R1 passes), R3 catches a true -3 cost about 30% of the time, not the stated 50%. The quoted joint figures are the old independent-b…"
+    }
+  ],
+  "totalTokens": 413345,
+  "totalToolCalls": 26
+}
