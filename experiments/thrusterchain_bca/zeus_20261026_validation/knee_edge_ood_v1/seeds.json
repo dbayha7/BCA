@@ -1,0 +1,303 @@
+{
+  "audit": {
+    "clean": true,
+    "derived_reset_seed_collisions": [],
+    "episodes_per_prior_entropy": 1300,
+    "named_values": 61,
+    "named_values_distinct": true,
+    "new_reset_seeds": 2048,
+    "prior_integers_scanned": 3478,
+    "raw_collisions": [],
+    "stream_keys_checked": [
+      1701,
+      1801,
+      1901
+    ]
+  },
+  "bank_stream_keys": {
+    "mixture": 1904,
+    "prefix": 1903,
+    "reset": 1901
+  },
+  "banks": {
+    "d12_e2_anchors": {
+      "count": 64,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        0,
+        25,
+        50,
+        75
+      ]
+    },
+    "r0_e1_starts": {
+      "count": 32,
+      "kind": "starts",
+      "law": "e1"
+    },
+    "r0_e2_starts": {
+      "count": 32,
+      "kind": "starts",
+      "law": "e2"
+    },
+    "stage1_e1_anchors": {
+      "count": 32,
+      "kind": "anchors",
+      "law": "e1",
+      "t_schedule": [
+        0,
+        25,
+        50,
+        75
+      ]
+    },
+    "stage1_e1_bank": {
+      "count": 64,
+      "kind": "starts",
+      "law": "e1"
+    },
+    "stage1_e2_anchors": {
+      "count": 64,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        0,
+        25,
+        50,
+        75
+      ]
+    },
+    "stage1_e2_bank": {
+      "count": 128,
+      "kind": "starts",
+      "law": "e2"
+    },
+    "stage2_e1_bank": {
+      "count": 64,
+      "kind": "starts",
+      "law": "e1"
+    },
+    "stage2_e2_anchors": {
+      "count": 64,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        0,
+        25,
+        50,
+        75
+      ]
+    },
+    "stage2_e2_bank": {
+      "count": 128,
+      "kind": "starts",
+      "law": "e2"
+    },
+    "step04_e1_anchors": {
+      "count": 32,
+      "kind": "anchors",
+      "law": "e1",
+      "t_schedule": [
+        0,
+        25,
+        50,
+        75
+      ]
+    },
+    "step04_e2_anchors_t0": {
+      "count": 16,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        0
+      ]
+    },
+    "step04_e2_anchors_t25": {
+      "count": 16,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        25
+      ]
+    },
+    "step04_e2_anchors_t50": {
+      "count": 16,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        50
+      ]
+    },
+    "step04_e2_anchors_t75": {
+      "count": 16,
+      "kind": "anchors",
+      "law": "e2",
+      "t_schedule": [
+        75
+      ]
+    }
+  },
+  "dataset_streams": {
+    "actions": 1803,
+    "mixture": 1804,
+    "reset": 1801,
+    "split": 1802
+  },
+  "derivation": "first 8 bytes of sha256('knee_edge_ood_v1/' + name); numpy: & (2**63 - 1); training: 1 + word % (2**31 - 2)",
+  "e1_law": "knee_mix15",
+  "e2_current": [
+    0.9,
+    1.1
+  ],
+  "numpy": {
+    "calibration_original": 8457309311019696257,
+    "calibration_replacement": 9072447114801883654,
+    "d12_e2_anchors": 2151789702836256281,
+    "dataset_entropy": 6389430777434573877,
+    "gradient_probes": 4366506021533410515,
+    "r0_e1_starts": 7547835631226525860,
+    "r0_e2_starts": 3875541294598097538,
+    "random_control": 4924799289909551594,
+    "scale_bank": 4036287590452262499,
+    "stage1_e1_anchors": 6643474157170201646,
+    "stage1_e1_bank": 2539671127041733767,
+    "stage1_e2_anchors": 8863987429230698122,
+    "stage1_e2_bank": 1096049343563704049,
+    "stage1_visited_sample": 8068428484377285039,
+    "stage2_e1_bank": 3622922198085157597,
+    "stage2_e2_anchors": 1870913480403193131,
+    "stage2_e2_bank": 8413629736620432606,
+    "step04_e1_anchors": 4591016045160604883,
+    "step04_e2_anchors_t0": 5234545291990132804,
+    "step04_e2_anchors_t25": 5777915193848731243,
+    "step04_e2_anchors_t50": 5231204595274313515,
+    "step04_e2_anchors_t75": 3637521667874098269
+  },
+  "schema": "knee_edge_ood_v1.seeds.v2",
+  "selections": {
+    "stage1_visited_sample": {
+      "kind": "visited",
+      "per_arm": 48,
+      "rule": "16 free episodes per t, without replacement, from PCG64(SeedSequence(seed, spawn_key=(1905, t))) over the Stage 1 E2 bank's 128 episodes",
+      "t_values": [
+        0,
+        25,
+        50
+      ]
+    }
+  },
+  "stage2_forks": [
+    {
+      "arm": "cutoff",
+      "branch_aux_seed": 1760794802,
+      "branch_native_seed": 1370738092,
+      "seed_index": 0,
+      "world": "stall3"
+    },
+    {
+      "arm": "cutoff",
+      "branch_aux_seed": 1409144077,
+      "branch_native_seed": 1962519738,
+      "seed_index": 0,
+      "world": "nostall"
+    },
+    {
+      "arm": "random",
+      "branch_aux_seed": 256554000,
+      "branch_native_seed": 253018802,
+      "seed_index": 0,
+      "world": "stall3"
+    },
+    {
+      "arm": "random",
+      "branch_aux_seed": 1200396026,
+      "branch_native_seed": 1203396944,
+      "seed_index": 0,
+      "world": "nostall"
+    },
+    {
+      "arm": "cutoff",
+      "branch_aux_seed": 1573380482,
+      "branch_native_seed": 749838998,
+      "seed_index": 1,
+      "world": "stall3"
+    },
+    {
+      "arm": "cutoff",
+      "branch_aux_seed": 1200663443,
+      "branch_native_seed": 1328716198,
+      "seed_index": 1,
+      "world": "nostall"
+    },
+    {
+      "arm": "random",
+      "branch_aux_seed": 145120000,
+      "branch_native_seed": 667005910,
+      "seed_index": 1,
+      "world": "stall3"
+    },
+    {
+      "arm": "random",
+      "branch_aux_seed": 1340857345,
+      "branch_native_seed": 1869532206,
+      "seed_index": 1,
+      "world": "nostall"
+    },
+    {
+      "arm": "cutoff",
+      "branch_aux_seed": 1479837843,
+      "branch_native_seed": 1068078983,
+      "seed_index": 2,
+      "world": "stall3"
+    },
+    {
+      "arm": "cutoff",
+      "branch_aux_seed": 922412700,
+      "branch_native_seed": 1801501883,
+      "seed_index": 2,
+      "world": "nostall"
+    },
+    {
+      "arm": "random",
+      "branch_aux_seed": 261729717,
+      "branch_native_seed": 1646335809,
+      "seed_index": 2,
+      "world": "stall3"
+    },
+    {
+      "arm": "random",
+      "branch_aux_seed": 950236137,
+      "branch_native_seed": 662071964,
+      "seed_index": 2,
+      "world": "nostall"
+    }
+  ],
+  "training": [
+    {
+      "aux_seed": 1423294274,
+      "bc_only_seed": 1655285800,
+      "branch_aux_seed": 757274628,
+      "branch_native_seed": 2029877813,
+      "index": 0,
+      "native_seed": 805062446
+    },
+    {
+      "aux_seed": 1173212307,
+      "bc_only_seed": 716416963,
+      "branch_aux_seed": 2033370813,
+      "branch_native_seed": 973364753,
+      "index": 1,
+      "native_seed": 49475526
+    },
+    {
+      "aux_seed": 1886438450,
+      "bc_only_seed": 481478468,
+      "branch_aux_seed": 683194258,
+      "branch_native_seed": 1568159475,
+      "index": 2,
+      "native_seed": 131399581
+    }
+  ],
+  "worlds_share_dataset_entropy": true
+}
