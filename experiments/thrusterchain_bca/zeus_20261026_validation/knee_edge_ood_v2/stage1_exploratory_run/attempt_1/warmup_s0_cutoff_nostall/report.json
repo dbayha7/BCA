@@ -1,0 +1,255 @@
+{
+  "assertions": [
+    {
+      "rows": 47932,
+      "sha256": "ecd3169b248b9924f1098dfec7bf32e00e4066586351b52387b4f5526fb1033a",
+      "stream": "train",
+      "w_rows": 0
+    },
+    {
+      "rows": 128,
+      "sha256": "be47c70060eba6ec44af1603f3814ceb62c9c86e0555a7b6d104e1217f594eef",
+      "stream": "heldout",
+      "w_rows": 0
+    },
+    {
+      "rows": 768,
+      "sha256": "cfb22ac6fb9f152970e9c8ad890f27db992082f4f94b9c7bcbef415724c52f40",
+      "stream": "probe",
+      "w_rows": 0
+    },
+    {
+      "rows": 256,
+      "sha256": "ae3408aee8f5d528897d9619c7be25c66f941aa121ef17c948da28359d31d106",
+      "stream": "scale_bank",
+      "w_rows": 0
+    },
+    {
+      "rows": 34049,
+      "sha256": "b8a8b635fb046908bce7942a5f5387993faa303ea920118b2abda13332d51b29",
+      "stream": "normalization_fixture",
+      "w_rows": 0
+    }
+  ],
+  "binding": {
+    "arm": "cutoff",
+    "dataset_sha256": "cc4dbb35d06203d72b1cd11a95faa81240cc7dca634ece9a340937665bd33ba7",
+    "streams": {
+      "heldout": {
+        "rows": 128,
+        "sha256": "be47c70060eba6ec44af1603f3814ceb62c9c86e0555a7b6d104e1217f594eef",
+        "w_rows": 0
+      },
+      "normalization_fixture": {
+        "rows": 34049,
+        "sha256": "b8a8b635fb046908bce7942a5f5387993faa303ea920118b2abda13332d51b29",
+        "w_rows": 0
+      },
+      "probe": {
+        "rows": 768,
+        "sha256": "cfb22ac6fb9f152970e9c8ad890f27db992082f4f94b9c7bcbef415724c52f40",
+        "w_rows": 0
+      },
+      "scale_bank": {
+        "rows": 256,
+        "sha256": "ae3408aee8f5d528897d9619c7be25c66f941aa121ef17c948da28359d31d106",
+        "w_rows": 0
+      },
+      "train": {
+        "rows": 47932,
+        "sha256": "ecd3169b248b9924f1098dfec7bf32e00e4066586351b52387b4f5526fb1033a",
+        "w_rows": 0
+      }
+    },
+    "world": "nostall"
+  },
+  "checkpoints": {
+    "010000": {
+      "actor": {
+        "path": "actor_010000.msgpack",
+        "sha256": "e4107a7ba4382553e6865969442fa6c98e9dc649bd0cd29c0cbda62930b3abae"
+      },
+      "actor_digest": "52e69d29ab42b20236f3c16ace6ac7934a3adbcfe729b6ec7171f57b1c7ce363",
+      "state": {
+        "path": "state_010000.msgpack",
+        "sha256": "ec6e58831abe6f26b7cd2be5f3619ccc457d700e60e838959a69acc0aa5d52da"
+      },
+      "state_digest": "e64fadbeb01ddffc88cfbd608ff0c9e1094efa07dac5a2ca0f650692d2f56e8e"
+    }
+  },
+  "checks": {
+    "duplicate_native_equal": true,
+    "native_and_aux_finite": true,
+    "positive_residual_unit": true,
+    "ready_reference_finite": true,
+    "reference_storage_valid": true,
+    "warmup_reference_shape": false
+  },
+  "counts": {
+    "actor": 5000,
+    "actor_target": 5000,
+    "aux_fit_attempts": 10000,
+    "auxiliary": 10000,
+    "critic": 10000,
+    "critic_budget": 10000,
+    "critic_target": 5000,
+    "last_refresh_critic": 10000,
+    "next_refresh_index": 1,
+    "outer_steps": 5000,
+    "phase": 0,
+    "reference_ready": true,
+    "refresh_accepted": 1,
+    "refresh_attempts": 1
+  },
+  "device_kinds": [
+    "NVIDIA GeForce RTX 5070 Ti Laptop GPU"
+  ],
+  "elapsed_seconds": 503.93866724400004,
+  "finished_utc": "2026-10-31T02:45:08.343874+00:00",
+  "gradient_audits": {
+    "10000": {
+      "path": "gradient_audit_010000.json",
+      "sha256": "e9eb1e883c3dc4fdd4210f0d238b72d68726491d3a0fb67fae7f1815463104ff",
+      "summary": {
+        "actor_past_knee_minus_high_load": 179,
+        "high_load_rows": 407,
+        "lambda_by_batch": [
+          0.11882241070270538,
+          0.11368022114038467,
+          0.11643632501363754
+        ],
+        "median_reach_radius_high_load": 0.3619531433764962,
+        "share_bc_pulls_back_when_past_knee": 1.0,
+        "share_dQ1_da0_negative_high_load": 0.515970515970516
+      }
+    }
+  },
+  "initial_parameter_hashes": {
+    "actor": "cad89845aca23f17666a8dc5548eebb8ae8a938dc6425ab0d32d67797c796886",
+    "auxiliary_scale": "6b8575ff035e518bce080efa6ef481b5893437c6a347f79433444ec9f2ab43a7",
+    "critic": "9539dd4d57f0e49a0a73d61b94887d09b85d354f3f6d3ab28854cc3b907ca8f7"
+  },
+  "job": "warmup_s0_cutoff_nostall",
+  "kind": "warmup",
+  "last_metrics": {
+    "arm": "native",
+    "auxiliary": {
+      "scale_fit_accepted": true,
+      "scale_inputs_valid": true,
+      "scale_loss": 0.013504669070243835
+    },
+    "committed": true,
+    "counts": {
+      "actor": 5000,
+      "actor_target": 5000,
+      "aux_fit_attempts": 10000,
+      "auxiliary": 10000,
+      "critic": 10000,
+      "critic_budget": 10000,
+      "critic_target": 5000,
+      "last_refresh_critic": 10000,
+      "next_refresh_index": 1,
+      "outer_steps": 5000,
+      "phase": 0,
+      "reference_ready": true,
+      "refresh_accepted": 1,
+      "refresh_attempts": 1
+    },
+    "kappa": 0.0,
+    "native": {
+      "actor_loss": 2.7361128330230713,
+      "actor_penalty_term": 0.0,
+      "bc_loss": 0.2530152201652527,
+      "critic_loss_this_call": 1.4271769523620605,
+      "outer_completed": true,
+      "penalty_mean": 0.0,
+      "q_loss": 1.4045288562774658,
+      "q_mean": -20.719223022460938,
+      "q_scale_coefficient": 0.11984510719776154,
+      "width_mean": 0.0
+    },
+    "refresh": {
+      "diagnostics": {
+        "certified": true,
+        "clamp_binds": false,
+        "lambda_hat": 1.074336687101437,
+        "lambda_hpd": 1.23765093879664,
+        "n_eff": 128.0,
+        "scores": 128,
+        "sigma_post": 0.06891763184676529,
+        "threshold": 1.23765093879664
+      },
+      "flags": {
+        "posterior_certified": true,
+        "posterior_inputs_valid": true
+      }
+    },
+    "refresh_due": true
+  },
+  "matching": {
+    "anchor_actor_digest": "52e69d29ab42b20236f3c16ace6ac7934a3adbcfe729b6ec7171f57b1c7ce363",
+    "bca_gradient_rms": 0.3494092347899504,
+    "calibration_calls": 0,
+    "distance_action_gradient_at_fork_actor": 0.0,
+    "distance_coefficient": 0.0359481394011468,
+    "distance_gradient_digest": "72bbdd459fec4337b3a4609f7c63158a13c7cbc0d4ee0d7bcae0c7bcee22bb93",
+    "distance_gradient_rms": 9.719814171489602,
+    "live_fork_distance_gradient_is_zero": true,
+    "matching_scope": "RMS action gradients at logged training actions only; excludes actor Jacobian and Q normalization",
+    "no_rematch": true,
+    "on_policy_strength_matched": false,
+    "optimizer_updates": 0,
+    "probe_rows": 768,
+    "reference_digest": "640e723acbbacca7b8a3a80abd3f7dbcd79cb36d2a4803916c7a68a3577f5e68",
+    "scope": "RMS action-gradient match on logged training actions only; not on-policy matching",
+    "unscaled_bca_gradient_digest": "acfc5bab76b8f8fc2b63465a9fda6609502bffa708833f1aa16ab7fff1c9f0c0"
+  },
+  "minibatches": {
+    "phase0_batches": 5000,
+    "phase0_minibatch_sha256": "057715195cd6f344cb37057e300e73be24e51a1189e7de1b8d425e138c90cd4b"
+  },
+  "normalization": {
+    "epsilon": 0.001,
+    "fixture_digest": "043cc5ce4119402f7c6556b2ebe57800e3a68bbb456af625bc6e50480a6a4a74",
+    "mean": [
+      -0.10994773358106613,
+      0.027442339807748795,
+      -0.0454583503305912,
+      0.022676408290863037,
+      -0.30203500390052795,
+      0.061381321400403976,
+      -0.1993575096130371,
+      0.06741829961538315,
+      -0.1304422914981842,
+      0.06530863791704178,
+      0.4329783618450165,
+      -0.03631625324487686,
+      0.0014409396098926663,
+      0.5066527128219604
+    ],
+    "rows": 34049,
+    "source": "Common hole/random retained-intersection training observations; identical all conditions",
+    "std": [
+      0.5578786730766296,
+      0.5523585677146912,
+      0.6077678799629211,
+      0.6550422310829163,
+      0.6420128345489502,
+      0.5999646186828613,
+      0.5023207068443298,
+      0.4926507771015167,
+      0.33811643719673157,
+      0.3381301760673523,
+      0.25456100702285767,
+      0.17943795025348663,
+      0.1846870332956314,
+      0.28871309757232666
+    ]
+  },
+  "producer_sha256": "b16d0265628ee4d4aa1ab896fa78fe03c330396aca1f1dadd8510527b2a9eb34",
+  "simulator_steps_exact": 1280,
+  "started_utc": "2026-10-31T02:36:44.405204+00:00",
+  "status": "completed",
+  "unit_label": "COMPLETE",
+  "untrained_actor_digest": "cad89845aca23f17666a8dc5548eebb8ae8a938dc6425ab0d32d67797c796886"
+}
