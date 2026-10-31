@@ -204,6 +204,7 @@ def run_job(job_path):
     job = json.loads(Path(job_path).read_text(encoding="utf-8"))
     out = Path(job_path).resolve().parent
     started = time.monotonic()
+    counter = None
     report = {"job": job["id"], "kind": job["kind"], "started_utc": datetime.now(timezone.utc).isoformat(),
               "producer_sha256": W1.producer(KINDS.get(job["kind"]))}
     try:
@@ -211,22 +212,19 @@ def run_job(job_path):
         step03.set_worker_environment()
         import units
         limit = int(job.get("transitions") or 0) or None       # precheck and evaluate: the stage allowance; branch: count only
-        with units.SimulatorCounter(limit) as counter:
+        counter = units.SimulatorCounter(limit)
+        with counter:
             report.update(KINDS[job["kind"]](job, out, W1.Deadline(job["timeout_seconds"])))
-        report["simulator_steps_exact"] = counter.steps
-        report["simulator_steps_attempted"] = counter.attempted       # v3 R3
         if limit is not None:                                   # the precheck's 2,400 anchor-rebuild steps count too
             report["transitions_prospective"] = report.get("transitions")
             report["transitions"] = counter.steps
-        changed = integrity.changed_files(job.get("integrity"))      # v3 R4
-        report["integrity_after"] = {"verified": len(job["integrity"]["files"]), "changed": changed}
-        require(not changed, "files changed while the job ran: " + ", ".join(changed))
         report.update(status="completed", unit_label="COMPLETE")
     except BaseException as exc:
         report.update(status="failed", unit_label="INCOMPLETE", error=f"{type(exc).__name__}: {exc}",
                       traceback=traceback.format_exc())
         if isinstance(exc, (KeyboardInterrupt, SystemExit)):
             report["interrupted"] = type(exc).__name__
+    W1._close_report(report, counter, job)
     report["elapsed_seconds"] = time.monotonic() - started
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
     step03._write_new(out / "report.json", W1.sanitize(report))

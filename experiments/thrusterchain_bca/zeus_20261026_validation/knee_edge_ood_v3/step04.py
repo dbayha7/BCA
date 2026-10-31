@@ -62,7 +62,7 @@ FLAG_ACK = ("I acknowledge that knee_edge_ood_v1 step 0.3 ended INCONCLUSIVE on 
 V1_A2_REPORT = HERE.parent / "knee_edge_ood_v1" / "step03_run" / "attempt_1" / "report.json"
 V1_A2_REPORT_SHA256 = "6c15575541f86ba024949655b987d27bd5f9288d242a428de0df92fedc504215"
 G05_STOP_REASON = "under 25% of steep ordinary probes have F <= 0.5 in seed "
-STEP_TRANSITIONS, STEP_SECONDS = 3_000_000, 60 * 60     # exact simulator steps (PROTOCOL_V2.md change 6); dry run 2,587,760
+STEP_TRANSITIONS, STEP_SECONDS = 3_000_000, 60 * 60     # exact simulator steps (PROTOCOL_V2.md change 6); dry run 2,841,200 under v3 counting (v2 counted 2,587,760)
 EPISODES = 1280
 E2_ANCHORS = ("step04_e2_anchors_t0", "step04_e2_anchors_t25", "step04_e2_anchors_t50", "step04_e2_anchors_t75")
 E1_ANCHORS = "step04_e1_anchors"
@@ -308,15 +308,16 @@ def execute(*, entropy=None, episodes=EPISODES, provenance="research", test_seed
     a2 = a2_outcome(plan["approval"])
     entropy = S.load()["numpy"]["dataset_entropy"] if entropy is None else entropy
     directory = RUN / f"attempt_{plan['attempt']}"
+    counter = UN.SimulatorCounter(STEP_TRANSITIONS)                    # every simulator step, whichever module takes it
+    terminal = UN.Terminal(lambda d, r: _finish(d, r), counter=counter)  # v3 R5: one terminal write, counts snapshotted
     directory.mkdir(parents=True, exist_ok=False)
     step03._write_new(directory / "ATTEMPT.json", {**plan, "a2": a2, "upstream": upstream})
     report = {"step": "0.4", "approval": plan, "a2": a2, "units": plan["units"], "failed_unit": "preflight"}
-    counter = UN.SimulatorCounter(STEP_TRANSITIONS).__enter__()       # every simulator step, whichever module takes it
-    terminal = UN.Terminal(lambda d, r: _finish(d, r), counter=counter)  # v3 R5: one terminal write, counts snapshotted
+    counter.__enter__()
     watchdog = threading.Timer(STEP_SECONDS, _watchdog, args=(directory, report, terminal))
     watchdog.daemon = True
-    watchdog.start()                                                   # the hour is a hard cap (PROTOCOL_V2.md change 6)
     try:
+        watchdog.start()                                               # the hour is a hard cap (PROTOCOL_V2.md change 6)
         step03.set_worker_environment()
         runtime, evaluate_worker, gradient_audit, rerun_inputs = step03.rerun1()
         ledger = {"reproduction_values": 0}
@@ -376,6 +377,8 @@ def execute(*, entropy=None, episodes=EPISODES, provenance="research", test_seed
             raise
     finally:
         watchdog.cancel()
+        if watchdog.is_alive() and watchdog is not threading.current_thread():
+            watchdog.join(5.0)                                         # a firing watchdog finishes its write (or exits)
         counter.__exit__(None, None, None)                             # the counts stay on the counter for the snapshot
     return terminal.end(directory, report)
 
@@ -386,11 +389,12 @@ def _watchdog(directory, report, terminal, exit=os._exit):
     v3 R5: the write goes through the attempt's single terminal owner, so the exact and attempted step counts are in
     the record and a main thread that finished first is never overwritten."""
     try:
-        terminal.finish(directory, report, label="INCOMPLETE", watchdog=True,
-                        reasons=[f"time cap {STEP_SECONDS} s exceeded: the watchdog ended the attempt"])
+        won = terminal.finish(directory, report, label="INCOMPLETE", watchdog=True,
+                              reasons=[f"time cap {STEP_SECONDS} s exceeded: the watchdog ended the attempt"]) is not None
     except BaseException:
-        pass
-    exit(3)
+        won = True                                    # the write failed, but the hour is still a hard cap
+    if won:                                           # the main thread finished first: nothing to end (review finding R5)
+        exit(3)
 
 
 def _finish(directory, report):

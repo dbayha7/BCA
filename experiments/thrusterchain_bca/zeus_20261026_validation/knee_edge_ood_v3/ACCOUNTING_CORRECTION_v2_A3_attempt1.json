@@ -16,7 +16,7 @@
     "episodes": 1280,
     "horizon": 100,
     "undercount_per_construction": 126720,
-    "other_dynamics_callers_checked": "qpi.raw_anchor_state and qpi.raw_values (2-D), stage1_eval free episodes (2-D), thrust_check (2-D after the boolean mask), dataset_knee._lineage (env.reset and recorder only; no simulator step)"
+    "other_dynamics_callers_checked": "qpi.raw_anchor_state (1-D: one transition per prefix step), qpi.raw_values (2-D), stage1_eval free episodes (2-D), thrust_check (2-D after the boolean mask), dataset_knee._lineage (env.reset and recorder only; no simulator step)"
   },
   "numbers": {
     "recorded_exact": 2587760,
@@ -28,5 +28,9 @@
   },
   "verification": "the v3 Windows dry run of the same code path on a 1,280-episode smoke collection asserts 2,841,200 exact and attempted steps (test_step04.DryRun.test_exact_count_is_recorded_and_within_cap)",
   "status": "source-derived accounting, not a new measurement; the attempt is not re-run",
-  "written_utc": "2026-10-31T04:05:00Z"
+  "written_utc": "2026-10-31T04:05:00Z",
+  "errata": [
+    {"utc": "2026-10-31T08:30:00Z", "source": "v3 review wf_f8d454e4-0ed (R3)",
+     "change": "other_dynamics_callers_checked said raw_anchor_state was a 2-D caller; it passes (13,) states. The numbers are unaffected."}
+  ]
 }

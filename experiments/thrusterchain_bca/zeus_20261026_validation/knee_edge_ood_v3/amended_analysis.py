@@ -11,7 +11,8 @@ What it computes from the attempt's evaluate and r0 reports:
 - R3: the exact simulator-step accounting corrected for v2's leading-dimension undercount: every KneeDataset
   construction replays episodes x 100 transitions and v2 counted it as `episodes`; the number of constructions per
   job kind comes from the worker's code path (warmup, branch, bc_only, r0: one world; evaluate: one per world it
-  evaluated), checked against the recorded count where the kind uses no other simulator path.
+  evaluated plus one more stall3 construction for the BC-only summary when the report carries one), checked against
+  the recorded count where the kind uses no other simulator path.
 
   /c/Users/David/dev/BCA/.venv/Scripts/python.exe -B amended_analysis.py <attempt directory> [--exploratory]
 """
@@ -74,7 +75,10 @@ def corrected_steps(unit, rep, episodes):
         loads, status = LOADS_BY_KIND[kind], "one stall3 construction (stage1_worker.r0 load_world)"
     elif kind == "evaluate":
         worlds_seen = {w for name in (rep.get("runs") or {}) for w in ("stall3", "nostall") if name.endswith(w)}
-        loads, status = len(worlds_seen) or 2, f"one construction per evaluated world ({sorted(worlds_seen) or ['stall3', 'nostall']})"
+        bc = 1 if rep.get("bc_only") else 0               # bc_summary loads stall3 again (stage1_worker.evaluate)
+        loads = (len(worlds_seen) or 2) + bc
+        status = (f"one construction per evaluated world ({sorted(worlds_seen) or ['stall3', 'nostall']})"
+                  + (" plus one stall3 construction for the BC-only summary" if bc else ""))
     else:
         return {"kind": kind, "recorded": recorded, "loads": 0, "corrected": recorded, "status": "no dataset construction in this kind"}
     return {"kind": kind, "recorded": recorded, "loads": loads, "per_load_undercount": per_load,

@@ -56,15 +56,27 @@ def kc(q1, qpi, names, slot):
 
 def kc_decomposition(q1, qpi_clip, qpi_unclipped, names, slot):
     """KC against both references at one slot, per anchor (PROTOCOL_V3.md R2):
-    kc_clip = dQ1 - dQ^pi_clip (the primary), kc_own = dQ1 - dQ^pi_unclipped, and D = kc_clip - kc_own =
-    dQ^pi_unclipped - dQ^pi_clip, the within-state difference of the two continuation-value gaps. The identity
-    kc_clip = kc_own + D is checked per anchor to DECOMPOSITION_TOL; a non-finite entry fails the check for that anchor
-    (`identity_ok` is per anchor, so a reader never certifies accuracy from a missing companion array)."""
+    kc_clip = dQ1 - dQ^pi_clip (the primary), kc_own = dQ1 - dQ^pi_unclipped, and D = dQ^pi_unclipped - dQ^pi_clip,
+    the within-state difference of the two continuation-value gaps, computed from the two Q^pi arrays alone (not from
+    the KC values). The identity kc_clip = kc_own + D is then a reconstruction from independent inputs, checked per
+    anchor to DECOMPOSITION_TOL; a non-finite entry fails it for that anchor, so a reader never certifies accuracy
+    from a missing companion array. (Review finding R2: v3's first version defined D as kc_clip - kc_own, which made
+    the check a finiteness test.)"""
     kc_clip = kc(q1, qpi_clip, names, slot)
     kc_own = kc(q1, qpi_unclipped, names, slot)
-    d = kc_clip - kc_own
-    identity_ok = np.isfinite(kc_clip) & np.isfinite(kc_own) & (np.abs(kc_clip - (kc_own + d)) <= DECOMPOSITION_TOL)
+    i, k = names.index(slot), names.index("edge_knee")
+    un, cl = np.asarray(qpi_unclipped, np.float64), np.asarray(qpi_clip, np.float64)
+    d = (un[:, i] - un[:, k]) - (cl[:, i] - cl[:, k])
+    identity_ok = (np.isfinite(kc_clip) & np.isfinite(kc_own) & np.isfinite(d)
+                   & (np.abs(kc_clip - (kc_own + d)) <= DECOMPOSITION_TOL))
     return {"kc_clip": kc_clip, "kc_own": kc_own, "D": d, "identity_ok": identity_ok}
+
+
+def finite_median(values, mask):
+    """Median over the finite entries of a mask, with both denominators (reported quantities only)."""
+    values, mask = np.asarray(values, np.float64), np.asarray(mask, bool)
+    keep = mask & np.isfinite(values)
+    return {"median": median(values[keep]), "n_finite": int(keep.sum()), "n_mask": int(mask.sum())}
 
 
 def gap_contrast(d_c, d_r, mask):

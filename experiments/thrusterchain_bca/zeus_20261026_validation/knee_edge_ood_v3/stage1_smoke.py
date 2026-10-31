@@ -117,6 +117,16 @@ def projection(result):
             "margin_note": "A4 also reloads the sealed collection from /mnt/c in every job; keep a margin"}
 
 
+def package_identity(a4_manifest, integrity_record):
+    """v3 R7 (review): the receipt alone identifies the package it exercised: every A4-listed file's hash and whether
+    they all match the manifest, the smoke driver's own hash and the size of the integrity record."""
+    listed = json.loads(a4_manifest.read_text(encoding="utf-8"))["files"] if a4_manifest.is_file() else {}
+    files = {f: sha_file(HERE / f) for f in sorted(listed)}
+    return {"folder": str(HERE), "a4_manifest_sha256": sha_file(a4_manifest) if a4_manifest.is_file() else None,
+            "a4_files": files, "a4_files_match": bool(listed) and all(files[f] == d for f, d in listed.items()),
+            "stage1_smoke_py_sha256": sha_file(HERE / "stage1_smoke.py"), "integrity_files": len(integrity_record["files"])}
+
+
 def main(out=None, dispatch=None, collect_fn=collect):
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     directory = (Path(out) if out else Path.home() / "knee_edge_smoke" / stamp).resolve()
@@ -132,21 +142,26 @@ def main(out=None, dispatch=None, collect_fn=collect):
               "scope": {"purpose": "structure only: job kinds run once on the real learner and GPU; not a protocol step",
                         "jobs": [j["id"] for j in JOBS], "provenance": "smoke", "entropy": SMOKE_ENTROPY,
                         "anchors": ANCHORS, "data": "2 x 1,280-episode smoke collection from a test entropy"},
-              "package": {"folder": str(HERE), "a4_manifest_sha256": sha_file(a4_manifest) if a4_manifest.is_file() else None,
-                          "integrity_files": len(integrity_record["files"]),
-                          "stage1_py_sha256": sha_file(HERE / "stage1.py"), "stage1_worker_py_sha256": sha_file(HERE / "stage1_worker.py")}}
+              "package": package_identity(a4_manifest, integrity_record)}
     options = {"provenance": "smoke", "collection_dir": str(collection_dir), "test_seeds": F.TEST_SEEDS,
                "training_seeds": smoke_training_seeds(), "visited_seed": VISITED_SEED, "integrity": integrity_record}
     dispatch = dispatch or stage1.default_dispatch
     caps = {"training_seconds": 0.0, "evaluation_seconds": 0.0, "evaluation_transitions": 0}
     dirs, status = {}, "completed"
+    collection_seconds, collection_steps, preflight_seconds = None, None, None
     try:
-        collect_fn(collection_dir)
+        import time
+        import units
+        started = time.monotonic()
+        with units.SimulatorCounter() as counter:
+            collect_fn(collection_dir)
+        collection_seconds, collection_steps = time.monotonic() - started, counter.steps
         pre = directory / "preflight"
         pre.mkdir()
         step03._write_new(pre / "job.json", {"id": "preflight", "kind": "preflight", "timeout_seconds": stage1.PREFLIGHT_SECONDS,
                                              **options})
         outcome = dispatch(pre, stage1.PREFLIGHT_SECONDS)
+        preflight_seconds = outcome.get("elapsed_seconds")
         pre_report = stage1._read(pre / "report.json") or {}
         result["jobs"]["preflight"] = {"completed": outcome.get("exit_code") == 0, "error": pre_report.get("error")}
         require(outcome.get("exit_code") == 0, "Preflight failed")
@@ -177,10 +192,13 @@ def main(out=None, dispatch=None, collect_fn=collect):
             raise
     finally:
         jobs = result["jobs"].values()
+        unknown = [k for k, j in result["jobs"].items() if k != "preflight" and j.get("simulator_steps_exact") is None]
         result["resources"] = {"training_seconds": caps["training_seconds"], "evaluation_seconds": caps["evaluation_seconds"],
                                "evaluation_transitions": caps["evaluation_transitions"],
-                               "simulator_steps_exact_total": sum(int(j.get("simulator_steps_exact") or 0) for j in jobs),
-                               "unknown_step_counts": [k for k, j in result["jobs"].items() if j.get("simulator_steps_exact") is None]}
+                               "collection_seconds": collection_seconds, "collection_simulator_steps_exact": collection_steps,
+                               "preflight_seconds": preflight_seconds,
+                               "simulator_steps_exact_total": (collection_steps or 0) + sum(int(j.get("simulator_steps_exact") or 0) for j in jobs),
+                               "unknown_step_counts": unknown + (["collection"] if collection_steps is None else [])}
         result.update(status=status, caps=caps, a4_training_projection=projection(result),
                       finished_utc=datetime.now(timezone.utc).isoformat())
         step03._write_new(directory / "SMOKE_RESULT.json", stage1.sanitize(result))

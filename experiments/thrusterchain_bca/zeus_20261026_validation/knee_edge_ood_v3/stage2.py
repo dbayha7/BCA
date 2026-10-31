@@ -43,7 +43,7 @@ MANIFEST = HERE / "A5_MANIFEST.json"
 APPROVAL = HERE / "A5_APPROVAL.json"
 A5_REQUIRED_FILES = {"stage2.py", "stage2_worker.py", "stage2_math.py", "test_stage2.py", "A5_README.md"}
 APPROVAL_WORDS = "I approve A5 (Stage 2, BCA comparison) for knee_edge_ood_v3"
-A4_MANIFEST_SHA256 = "24ad7bd604cb4d3ea46cdaa8aa75fbc87c6e1d9fb078968f161fbbd69fb01e33"     # v3 A4, sealed
+A4_MANIFEST_SHA256 = "c3ee0235a152319d39cb9129cedd4b970d1d51eddd3ba7945ad4a5634dda9d01"     # v3 A4, sealed
 JOB_SECONDS, TRAIN_SECONDS = 1_800, 4 * 3_600
 EVAL_SECONDS, EVAL_TRANSITIONS = 3_600, 18_000_000
 PREFLIGHT_SECONDS = 600
@@ -143,15 +143,17 @@ def execute(*, dispatch=None):
     sequence_ok, sequence = U.manifest_sequence_ok(plan)
     require(sequence_ok, f"At most one code-only fix (5.0): the package changed more than once over the attempts {sequence}")
     sealed, reference, unsealed = U.classify(RUN, plan)
+    integrity_record = stage1.U.integrity_record()           # v3: refusals here happen before an attempt folder exists
+    prior = U.ledger(RUN, current_attempt=f"attempt_{plan['attempt']}")                             # v3 R6
     directory = RUN / f"attempt_{plan['attempt']}"
     directory.mkdir(parents=True, exist_ok=False)
     step03._write_new(directory / "ATTEMPT.json", {**plan, "stage1": s1, "upstream": upstream, "sealed_after_supervisor": sealed,
                                                    "must_reproduce": reference, "unsealed_by_supervisor": unsealed})
     dispatch = dispatch or default_dispatch
-    options = {"provenance": "research", "collection_dir": s1["collection_dir"], "integrity": stage1.U.integrity_record()}
+    options = {"provenance": "research", "collection_dir": s1["collection_dir"], "integrity": integrity_record}
     terminal = U.Terminal(lambda d, r: _finish(d, r))                 # v3 R5
     report = {"stage": "2", "approval": plan, "stage1": s1, "units_run": [], "reproduced_units": [], "unit_dirs": {},
-              "failed_unit": "preflight", "ledger": U.ledger(RUN, current_attempt=directory.name)}   # v3 R6
+              "failed_unit": "preflight", "ledger": prior}
     caps = {"training_seconds": 0.0, "evaluation_seconds": 0.0, "evaluation_transitions": 0}
     dirs, reports = {}, {}
     try:
@@ -215,6 +217,7 @@ def execute(*, dispatch=None):
 
 def _finish(directory, report):
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
+    report["physical"] = U.physical(directory, report.get("ledger"))     # v3 R6
     A.finish(report)
     step03._write_new(directory / "report.json", sanitize(report))
     return report

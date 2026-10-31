@@ -1,4 +1,5 @@
-"""EXPLORATORY Stage 1 run of knee_edge_ood_v2, OUTSIDE the protocol. Not A4.
+"""EXPLORATORY Stage 1 run of knee_edge_ood_v3, OUTSIDE the protocol. Not A4. (v2 carried this wrapper first and ran it
+once, 2026-10-30/31; that run's record is in knee_edge_ood_v2/stage1_exploratory_run.)
 
 Step 0.4 (A3) ended INCONCLUSIVE (L2 item 5: 42 of 48 anchors predictor-valid in continuation seeds 1 and 2, bar 44),
 and the protocol's 5.0 rules stop the gated line there. The user chose to run Stage 1 anyway, as an exploratory study.
@@ -47,6 +48,8 @@ def a3_outcome_exploratory(approval):
     """Any completed step 0.4 attempt; its label and reasons are recorded, not required."""
     attempts = A.history(stage1.STEP04_RUN)
     require(attempts and (attempts[-1] / "report.json").is_file(), "No step 0.4 attempt to run on")
+    require(stage1.STEP04_REPORT_SHA256 is None or sha_file(attempts[-1] / "report.json") == stage1.STEP04_REPORT_SHA256,
+            "The step 0.4 report differs from the file pinned in v3 (PROTOCOL_V3.md change 8)")
     last = json.loads((attempts[-1] / "report.json").read_text(encoding="utf-8"))
     require(last.get("approval", {}).get("manifest_sha256") == stage1.V2_A3_MANIFEST_SHA256,
             "The step 0.4 report was not produced under the committed v2 A3 package")
@@ -59,6 +62,7 @@ def a3_outcome_exploratory(approval):
             "collection_dir": str(collection_dir), "collection_sha256": sha_file(collection_dir / "collection.json"),
             "EXPLORATORY": {"disclosure": DISCLOSURE, "step04_label_ignored": last.get("label"),
                             "step04_reasons": last.get("reasons"), "step04_l2": last.get("l2"),
+                            "step04_report_sha256": sha_file(attempts[-1] / "report.json"),
                             "driver_sha256": sha_file(HERE / "stage1_exploratory.py"),
                             "exploratory_manifest_sha256": sha_file(MANIFEST)}}
 
@@ -82,6 +86,7 @@ def check_manifest(approval_path=None, manifest_path=None):
 def _finish_exploratory(directory, report):
     report["EXPLORATORY"] = report.get("a3", {}).get("EXPLORATORY", {"disclosure": DISCLOSURE})
     report["protocol_label"] = None                     # the computed label is exploratory, not a protocol outcome
+    A.finish(report)                                    # the 5.0 relabel first (idempotent), so the two labels agree
     report["exploratory_label"] = report.get("label")
     return stage1_finish(directory, report)
 

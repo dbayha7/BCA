@@ -550,6 +550,7 @@ def run_job(job_path):
     job = json.loads(Path(job_path).read_text(encoding="utf-8"))
     out = Path(job_path).resolve().parent
     started = time.monotonic()
+    counter = None
     report = {"job": job["id"], "kind": job["kind"], "started_utc": datetime.now(timezone.utc).isoformat(),
               "producer_sha256": producer(KINDS.get(job["kind"]))}
     try:
@@ -558,25 +559,39 @@ def run_job(job_path):
         deadline = Deadline(job["timeout_seconds"])
         import units
         limit = int(job.get("transitions") or 0) or None       # evaluation kinds: the stage allowance; training: count only
-        with units.SimulatorCounter(limit) as counter:
+        counter = units.SimulatorCounter(limit)
+        with counter:
             report.update(KINDS[job["kind"]](job, out, deadline))
-        report["simulator_steps_exact"] = counter.steps
-        report["simulator_steps_attempted"] = counter.attempted       # v3 R3: reservations, equal to steps when nothing raised
         if limit is not None:                                   # charged to the stage cap: the exact count, not a formula
             report["transitions_prospective"] = report.get("transitions")
             report["transitions"] = counter.steps
-        changed = integrity.changed_files(job.get("integrity"))      # v3 R4: the closure is re-hashed after the work
-        report["integrity_after"] = {"verified": len(job["integrity"]["files"]), "changed": changed}
-        require(not changed, "files changed while the job ran: " + ", ".join(changed))
         report.update(status="completed", unit_label="COMPLETE")
     except BaseException as exc:
         report.update(status="failed", unit_label="INCOMPLETE", error=f"{type(exc).__name__}: {exc}",
                       traceback=traceback.format_exc())
         if isinstance(exc, (KeyboardInterrupt, SystemExit)):
             report["interrupted"] = type(exc).__name__
+    _close_report(report, counter, job)
     report["elapsed_seconds"] = time.monotonic() - started
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
     step03._write_new(out / "report.json", sanitize(report))
+    return report
+
+
+def _close_report(report, counter, job):
+    """v3 (review findings R3, R4): on every report, failed jobs included, the exact and attempted simulator steps and
+    the post-work integrity check; a job that completed while a recorded file changed is failed here."""
+    if counter is not None:
+        report["simulator_steps_exact"] = counter.steps
+        report["simulator_steps_attempted"] = counter.attempted
+    try:
+        changed = integrity.changed_files(job.get("integrity"))
+        report["integrity_after"] = {"verified": len(job["integrity"]["files"]), "changed": changed}
+    except BaseException as exc:
+        changed = None
+        report["integrity_after"] = {"error": f"{type(exc).__name__}: {exc}"}
+    if changed and report.get("status") == "completed":
+        report.update(status="failed", unit_label="INCOMPLETE", error="files changed while the job ran: " + ", ".join(changed))
     return report
 
 

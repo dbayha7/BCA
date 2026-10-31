@@ -61,17 +61,22 @@ v3 is not a new design and does not reopen either stop:
    does not depend on this. The lineage replay (`_lineage`) uses `env.reset` and the recorder only and takes no
    simulator step. The Windows dry run on the same code path now measures 2,841,200 exactly (test_step04).
    **For the v2 exploratory run**, each warmup, branch and BC-only job constructs one dataset (recorded 1,280 ->
-   corrected 128,000), r0 one, and each evaluate job one per world; `amended_analysis.py` writes the correction per
+   corrected 128,000), r0 one, and each evaluate job three (one per world, plus stall3 again for its BC-only summary); `amended_analysis.py` writes the correction per
    unit after the run is terminal, from the reports only.
 4. **R4, dependency closure** (`units.dependency_closure`, `integrity.py`, both workers). v2's record covered the
    package folder and rerun1's pinned sources. It omitted rerun1 `design.py` (loaded by path in `runtime.match` for
    the distance coefficient) and `matched_policy_pilot_v1/launch.py` (the supervisor every dispatch runs under). v3
    lists them in `EXTERNAL_DEPENDENCIES`, hashes them into every job record, refuses to start when any is missing,
    and the worker re-hashes the whole record after its work (`integrity.changed_files`; `integrity_after` in every
-   report), so an edit during a job is recorded and fails the job. Still outside the record, by design and as before:
-   the canonical core authenticates its own sources on load; Unifloral `td3_bc.py` is pinned by the preflight source
-   receipt and `bc.py` by the BC job's hash. A check-then-load window between the worker's first verification and
-   its imports remains; an immutable per-run code snapshot would close it and is not done here.
+   report), so an edit during a job is recorded and fails the job. After the v3 review (see the end of this file) the
+   record also holds the Unifloral payload modules rerun1 loads by path (`native_loader.py`, `candidate.py`,
+   `training.py`, `bca_bridge.py`, the Unifloral provenance JSON), the BCA pipeline's `uncertainty_source` package and
+   the canonical core's whole `thrusterchain` package (the environment wrapper and `canonical/__init__.py` included:
+   the core's own self-check covers only `canonical/thrusterchain.py` and `gapped_lq.py`). Every package `.py` file must
+   be listed by a sealed manifest, and an importable file added to the package folder after the record is reported as
+   `added:`. Still outside the record: the Unifloral upstream tree, which `native_loader.py` (recorded) verifies against
+   its own constants, and the Python/JAX installation. A check-then-load window between the worker's first
+   verification and its imports remains; an immutable per-run code snapshot would close it and is not done here.
 5. **R5, one terminal owner** (`units.Terminal`; `step04.py`, `stage1.py`, `stage2.py`). Every attempt's terminal
    write goes through one owner: the first of the main thread, an interruption handler or the watchdog to finish
    writes, later callers are no-ops, and the owner snapshots the exact and attempted step counts and the elapsed time
@@ -125,3 +130,40 @@ It does not run anything, approve anything, fetch, push, delete or move evidence
 `knee_edge_ood_v2`, their run folders or their manifests. The five unauthorized development packages listed in
 `UNTRACKED_PACKAGES_RECONCILIATION.md` are outside it. The GPU smoke of v3 has not been run; A4_MANIFEST.json still
 says it is required before any approval.
+
+## Review of v3 (2026-10-31, workflow wf_f8d454e4-0ed) and what changed
+
+A read-only adversarial review (one reviewer per repair item, plus safety and tests; every finding checked by two
+independent refuters) confirmed 27 findings and left 5 disputed; one was refuted. None changes a scientific result,
+a threshold or a label. All 32 confirmed or disputed findings were fixed in this version:
+
+- **R1:** no defect found.
+- **R2.** D is now computed from the two Q^pi arrays alone, so `identity_ok` is a reconstruction check and not a
+  finiteness test (the first v3 defined D as KC_clip - KC_own, which made the check tautological). The own-reference
+  medians are over finite anchors with both denominators (`finite_median`). A missing `qpi_unclipped` array now
+  shows as `identity_ok` False instead of turning the Stage 1 attempt INCOMPLETE.
+- **R3.** An evaluate job constructs three datasets, not two (the BC-only summary loads stall3 again):
+  `amended_analysis.py` counts it, and the exploratory run's corrected total rises by 3 x 126,720. The workers write
+  the exact and attempted step counts on every report, failed jobs included. The stale "dry run 2,587,760" comment and
+  manifest field now give 2,841,200 (v2's counting kept beside it). A closed-form prefix plus continuation test was
+  added. The accounting correction record's description of `raw_anchor_state` (1-D, not 2-D) has an erratum.
+- **R4.** The closure now covers the payload modules and the core package (change 4 above). Package sources must be
+  manifest-listed, and added importable files are reported. `integrity_after` is on every worker report, and a job that
+  completed while a recorded file changed is failed. The closure and the ledger are computed before the attempt
+  folder exists, so a missing dependency refuses without stranding an attempt.
+- **R5.** The terminal owner holds its lock through the write, writes a copy, and sets `done` only after the write
+  succeeded, so a failed write leaves it open for the interruption handler or the watchdog. A watchdog that loses the
+  race no longer kills the process. The exploratory writer applies the 5.0 relabel before it records
+  `exploratory_label`, so the two labels agree.
+- **R6.** A unit whose step count is missing is listed as unknown, with its allowance as the bound (or as unbounded for
+  training kinds and preflight), never counted as zero. Each entry names its seconds source and any `NOT_REPRODUCED`
+  marker. Every attempt report carries `physical` (this attempt's work and the cumulative total) beside the logical
+  `caps`.
+- **R7.** The exploratory wrapper checks the pinned step 0.4 report. The smoke receipt records the collection's and
+  preflight's resources and the hash of every A4-listed file.
+- **Tests.** The A5 rejection test now fails without the repair (positive control included). New fixtures cover a
+  failed write, simultaneous finishes, an interrupted step 0.4 with counted steps, a two-attempt ledger with reuse,
+  non-reproduction and lost counts, the worker's post-work integrity check, and `amended_analysis.py` on a synthetic
+  attempt (`test_amended_analysis.py`).
+- **Test receipt.** The suite is run on the sealed bytes after the last seal; its result and the manifest hashes it
+  ran against are in `TEST_RECEIPT.json`, which is not itself sealed (so writing it changes no manifest).

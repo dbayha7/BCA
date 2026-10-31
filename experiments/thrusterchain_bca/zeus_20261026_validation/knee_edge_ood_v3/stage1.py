@@ -47,7 +47,7 @@ A4_REQUIRED_FILES = {"integrity.py", "stage1.py", "stage1_worker.py", "stage1_ev
 APPROVAL_WORDS = "I approve A4 (Stage 1, native damage gate) for knee_edge_ood_v3"
 PREDICTION_ACK = ("I acknowledge the written predictions: Stage 1 V0(d) may end INCONCLUSIVE, and after the v1 step 0.3 "
                   "INCONCLUSIVE, Stage 1 V0(b) or V0(d) is likely to end INCONCLUSIVE")
-A3_MANIFEST_SHA256 = "792cf03f00959a4b7783a185b40b846072a24ec7ba7d3ad71a3b07ab29174bec"     # v3 A3, sealed (re-pinned at seal)
+A3_MANIFEST_SHA256 = "7fad5d4973afe1a31112eb94d76368315cde115c4fb810956ddc0fbfece51c87"     # v3 A3, sealed (re-pinned at seal)
 # v3 (PROTOCOL_V3.md change 8): step 0.4 ran once, in knee_edge_ood_v2 under v2's A3 manifest. Its attempt is read
 # there and its report pinned; the upstream pin above is this folder's own A3 manifest (hash anchor for the files).
 V2_A3_MANIFEST_SHA256 = "f681abb063d4f0d107e25a2bc9bfcc04b29e7eeed5130045b38b79c5777d0548"  # the record's producing package
@@ -160,16 +160,18 @@ def execute(*, provenance="research", test_seeds=None, training_seeds=None, visi
     sequence_ok, sequence = U.manifest_sequence_ok(plan)
     require(sequence_ok, f"At most one code-only fix (5.0): the package changed more than once over the attempts {sequence}")
     sealed, reference, unsealed = U.classify(RUN, plan)
+    integrity_record = U.integrity_record()                  # v3: refusals here happen before an attempt folder exists
+    prior = U.ledger(RUN, current_attempt=f"attempt_{plan['attempt']}")                             # v3 R6
     directory = RUN / f"attempt_{plan['attempt']}"
     directory.mkdir(parents=True, exist_ok=False)
     step03._write_new(directory / "ATTEMPT.json", {**plan, "a3": a3, "upstream": upstream, "sealed_after_supervisor": sealed,
                                                    "must_reproduce": reference, "unsealed_by_supervisor": unsealed})
     dispatch = dispatch or default_dispatch
     options = {"provenance": provenance, "collection_dir": a3["collection_dir"], "test_seeds": test_seeds,
-               "training_seeds": training_seeds, "visited_seed": visited_seed, "integrity": U.integrity_record()}
+               "training_seeds": training_seeds, "visited_seed": visited_seed, "integrity": integrity_record}
     terminal = U.Terminal(lambda d, r: _finish(d, r))                 # v3 R5: one terminal write, whoever ends first
     report = {"stage": "1", "approval": plan, "a3": a3, "units_run": [], "reproduced_units": [], "unit_dirs": {},
-              "failed_unit": "preflight", "ledger": U.ledger(RUN, current_attempt=directory.name)}   # v3 R6
+              "failed_unit": "preflight", "ledger": prior}
     caps = {"training_seconds": 0.0, "evaluation_seconds": 0.0, "evaluation_transitions": 0}
     dirs, reports = {}, {}
     try:
@@ -234,6 +236,7 @@ def execute(*, provenance="research", test_seeds=None, training_seeds=None, visi
 def _finish(directory, report):
     """The terminal write itself (called once per attempt through units.Terminal)."""
     report["finished_utc"] = datetime.now(timezone.utc).isoformat()
+    report["physical"] = U.physical(directory, report.get("ledger"))     # v3 R6: work run, this attempt and cumulative
     A.finish(report)
     step03._write_new(directory / "report.json", sanitize(report))
     return report
@@ -253,7 +256,8 @@ def anchor_inputs(entry, stall_trained):
     a = entry["anchors_e2"]
     names = a["gated_slots"]
     qpi, q1 = arr(a["qpi_clip"])[GATED], arr(a["q1"])[GATED]
-    unclipped = arr(a["qpi_unclipped"])[GATED]                        # v3 R2: the own-continuation reference
+    unclipped = (arr(a["qpi_unclipped"])[GATED] if "qpi_unclipped" in a     # v3 R2: the own-continuation reference;
+                 else np.full_like(qpi, np.nan))                               # missing -> identity_ok False, not INCOMPLETE
     dec = {s: SM.kc_decomposition(q1, qpi, unclipped, names, s) for s in ("s05", "s10")}
     out = {"valid": np.asarray(a["valid"], bool)[GATED], "kc_s05": SM.kc(q1, qpi, names, "s05"),
            "kc_s10": SM.kc(q1, qpi, names, "s10"), "names": names, "qpi": qpi, "q1": q1,
@@ -336,10 +340,10 @@ def decide(evaluations, r0, training):
             # D = KC_clip - KC_own, and the K1a contrast's uncancelled term D_C - D_R. The identity is checked per
             # anchor; a missing or non-finite companion array shows as identity_ok False, never as accuracy.
             "v3_own_reference": {
-                "kc_own_medians_common": {arm: {s: SM.median(x["kc_own"][s][sets["common"]]) for s in ("s05", "s10")}
+                "kc_own_medians_common": {arm: {s: SM.finite_median(x["kc_own"][s], sets["common"]) for s in ("s05", "s10")}
                                           for arm, x in (("cutoff", ci), ("random", ri))},
-                "k1a_contrast_own_reference_s05": SM.median(ci["kc_own"]["s05"][sets["common"]] - ri["kc_own"]["s05"][sets["common"]]),
-                "k1c_absolute_own_reference_s10": SM.median(ci["kc_own"]["s10"][sets["common"]]),
+                "k1a_contrast_own_reference_s05": SM.finite_median(ci["kc_own"]["s05"] - ri["kc_own"]["s05"], sets["common"]),
+                "k1c_absolute_own_reference_s10": SM.finite_median(ci["kc_own"]["s10"], sets["common"]),
                 "continuation_gap_contrast": {s: SM.gap_contrast(ci["D"][s], ri["D"][s], sets["common"]) for s in ("s05", "s10")},
                 "decomposition_identity_ok": {arm: {s: bool(np.all(x["decomposition_ok"][s][x["valid"]])) for s in ("s05", "s10")}
                                               for arm, x in (("cutoff", ci), ("random", ri))}},

@@ -543,6 +543,15 @@ class Supervisor(unittest.TestCase):
         self.assertEqual(result["parse_checks"]["anchor_times"], [0, 25, 50, 75])
         self.assertTrue(result["a4_training_projection"]["within_training_cap"])
         self.assertNotIn("seeds", result.get("r0_structure", {}))             # blinded: no outcome values
+        # v3 R7: scope, package identity and every resource category on the receipt
+        self.assertEqual(result["scope"]["jobs"], [j["id"] for j in stage1_smoke.JOBS])
+        self.assertTrue(result["package"]["a4_files_match"])
+        self.assertEqual(set(result["package"]["a4_files"]), set(json.loads((stage1.HERE / "A4_MANIFEST.json").read_text())["files"]))
+        for key in ("training_seconds", "evaluation_seconds", "evaluation_transitions", "collection_seconds",
+                    "collection_simulator_steps_exact", "preflight_seconds", "simulator_steps_exact_total", "unknown_step_counts"):
+            self.assertIn(key, result["resources"], key)
+        self.assertEqual(result["resources"]["collection_simulator_steps_exact"], 0)    # the fake collection takes no step
+        self.assertEqual(set(result["resources"]["unknown_step_counts"]), {j["id"] for j in stage1_smoke.JOBS})
         self.assertTrue((out / "SMOKE_RESULT.json").is_file())
         with self.assertRaises(ValueError):
             stage1_smoke.main(stage1.HERE / "smoke_inside", dispatch=dispatch, collect_fn=lambda d: None)

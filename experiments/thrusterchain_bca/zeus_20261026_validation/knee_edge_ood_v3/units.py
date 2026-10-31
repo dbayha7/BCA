@@ -227,22 +227,52 @@ def _mark(directory, unit, ref_dir, reason, diff):
 # ------------------------------------------------------------------------------------------ v2: integrity, exact counting
 
 INTEGRITY_SUFFIXES = (".py", ".json", ".md")
-# PROTOCOL_V3.md R4: files outside the package that a job reaches dynamically, not through RERUN1_SOURCES' hash pins.
-# rerun1 design.py: runtime.match() loads it by path for the distance coefficient. matched_policy_pilot_v1/launch.py:
-# the supervisor every dispatch runs under. Both are hashed into every job record and re-checked by the worker.
+# PROTOCOL_V3.md R4: files outside the package that a job reaches by path. Relative to the validation folder:
+# rerun1 design.py (runtime.match loads it for the distance coefficient) and the supervisor every dispatch runs under.
 EXTERNAL_DEPENDENCIES = ("central_quartile_training_v1_evaluation_rerun1/design.py", "matched_policy_pilot_v1/launch.py")
+# Relative to core.PAYLOAD: the Unifloral payload modules rerun1 runtime.py loads by path (native_loader also verifies
+# the upstream Unifloral sources against its own constants, so recording it pins them), and every source of the BCA
+# pipeline's uncertainty package and of the canonical core's `thrusterchain` package (the environment wrapper,
+# canonical/__init__.py with its SOURCE_HASHES, datasets.py). Review finding R4 (2026-10-31): v3's first closure
+# missed all of these.
+PAYLOAD_DEPENDENCIES = ("unifloral_td3bc_validation_v1/native_loader.py", "unifloral_td3bc_validation_v1/candidate.py",
+                        "unifloral_td3bc_validation_v1/provenance/unifloral.json", "unifloral_checkpoint_v1/training.py",
+                        "unifloral_bca_pipeline_validation_v1/bca_bridge.py",
+                        "unifloral_bca_pipeline_validation_v1/uncertainty_provenance.json")
+PAYLOAD_TREES = ("unifloral_bca_pipeline_validation_v1/uncertainty_source", "transfer_bundle/core_v4/thrusterchain")
+SEALED_MANIFESTS = ("MANIFEST.json", "A2_MANIFEST.json", "A3_MANIFEST.json", "A4_MANIFEST.json", "A5_MANIFEST.json",
+                    "EXPLORATORY_MANIFEST.json")
+
+
+def _tree(root):
+    return sorted(p for p in Path(root).rglob("*") if p.is_file() and p.suffix in (".py", ".json")
+                  and "__pycache__" not in p.parts)
 
 
 def dependency_closure():
     """Every file a job may load, as absolute paths: the package's sources, manifests, seeds, protocol and approval
-    files; rerun1's reused sources (step03.RERUN1_SOURCES, already hash-pinned); and EXTERNAL_DEPENDENCIES. The
-    canonical core (core_v4) authenticates its own sources on load; Unifloral td3_bc.py and bc.py are pinned by the
-    preflight source receipt and the BC job's hash (PROTOCOL_V2.md change 6)."""
+    files; rerun1's reused sources (step03.RERUN1_SOURCES, already hash-pinned); EXTERNAL_DEPENDENCIES; the payload
+    files and trees above. Every package .py file must be listed by a sealed manifest, so the record is the sealed
+    set and not whatever happens to be in the folder; `integrity.changed_files` also reports any importable file added
+    to the package folder after the record (review finding R4). Still outside: the Unifloral upstream tree (verified by
+    native_loader's constants, which the record pins) and the Python and JAX installation itself."""
+    import json
     import step03
-    from core import VALIDATION
+    from core import PAYLOAD, VALIDATION
     files = [p for p in sorted(HERE.iterdir()) if p.is_file() and p.suffix in INTEGRITY_SUFFIXES]
+    listed = set()
+    for name in SEALED_MANIFESTS:
+        if (HERE / name).is_file():
+            listed |= set(json.loads((HERE / name).read_text(encoding="utf-8")).get("files", {}))
+    unlisted = [p.name for p in files if p.suffix == ".py" and p.name not in listed]
+    require(not unlisted, f"dependency closure: package sources no sealed manifest lists: {unlisted}")
     files += [step03.RERUN1 / name for name in sorted(step03.RERUN1_SOURCES)]
     files += [VALIDATION / rel for rel in EXTERNAL_DEPENDENCIES]
+    files += [PAYLOAD / rel for rel in PAYLOAD_DEPENDENCIES]
+    for tree in PAYLOAD_TREES:
+        found = _tree(PAYLOAD / tree)
+        require(found, f"dependency closure: empty payload tree {tree}")
+        files += found
     for path in files:
         require(path.is_file(), f"dependency closure: missing {path}")
     return files
@@ -253,46 +283,111 @@ def integrity_record():
     every file in `dependency_closure()`. Written into every job.json by the supervisor; `integrity.verify` re-hashes
     the same paths in the worker before any package import, and `integrity.changed_files` again after the work."""
     return {"package_dir": str(HERE), "files": {str(p): sha_file(p) for p in dependency_closure()},
-            "external_dependencies": list(EXTERNAL_DEPENDENCIES)}
+            "external_dependencies": list(EXTERNAL_DEPENDENCIES), "payload_dependencies": list(PAYLOAD_DEPENDENCIES),
+            "payload_trees": list(PAYLOAD_TREES)}
+
+
+def _unit_spend(unit_dir):
+    """One unit directory's physical spend: seconds (the supervisor's measurement, else the worker's, with the source
+    named), exact simulator steps, completion, and explicit unknowns with their upper bounds."""
+    result, report, job = read(unit_dir / "SUPERVISOR_RESULT.json") or {}, read(unit_dir / "report.json") or {}, read(unit_dir / "job.json") or {}
+    if "elapsed_seconds" in result:
+        seconds, source = result["elapsed_seconds"], "supervisor"
+    elif "elapsed_seconds" in report:
+        seconds, source = report["elapsed_seconds"], "worker"
+    else:
+        seconds, source = None, None
+    steps = report.get("simulator_steps_exact")
+    entry = {"kind": job.get("kind"), "seconds": None if seconds is None else float(seconds), "seconds_source": source,
+             "simulator_steps": None if steps is None else int(steps),
+             "completed": bool(result["completed"]) if "completed" in result else report.get("status") == "completed"}
+    if seconds is None:
+        entry["upper_bound_seconds"] = float(job.get("timeout_seconds") or result.get("cap_seconds") or 0.0)
+    if steps is None:                              # evaluation kinds carry their allowance; training kinds count only
+        entry["upper_bound_simulator_steps"] = int(job["transitions"]) if job.get("transitions") else None
+    marker = read(unit_dir / "NOT_REPRODUCED.json")
+    if marker:
+        entry.update(not_reproduced=True, reference_dir=marker.get("reference_dir"))
+    return entry
+
+
+def attempt_spend(attempt_dir):
+    """Physical spend of one attempt directory, every unit counted once; unknown seconds and unknown steps are listed
+    with upper bounds (None when a training unit lost its count: unbounded), never added as zero."""
+    out = {"units": {}, "known_seconds": 0.0, "known_simulator_steps": 0, "unknown_seconds_units": [],
+           "unknown_seconds_upper_bound": 0.0, "unknown_step_units": [], "unknown_steps_upper_bound": 0,
+           "unbounded_step_units": [], "not_reproduced_units": []}
+    attempt_dir = Path(attempt_dir)
+    if not attempt_dir.is_dir():
+        return out
+    for unit_dir in sorted(p for p in attempt_dir.iterdir() if p.is_dir()):
+        e = _unit_spend(unit_dir)
+        out["units"][unit_dir.name] = e
+        if e["seconds"] is None:
+            out["unknown_seconds_units"].append(unit_dir.name)
+            out["unknown_seconds_upper_bound"] += e["upper_bound_seconds"]
+        else:
+            out["known_seconds"] += e["seconds"]
+        if e["simulator_steps"] is None:
+            out["unknown_step_units"].append(unit_dir.name)
+            if e["upper_bound_simulator_steps"] is None:
+                out["unbounded_step_units"].append(unit_dir.name)
+            else:
+                out["unknown_steps_upper_bound"] += e["upper_bound_simulator_steps"]
+        else:
+            out["known_simulator_steps"] += e["simulator_steps"]
+        if e.get("not_reproduced"):
+            out["not_reproduced_units"].append(unit_dir.name)
+    return out
 
 
 def ledger(run_dir, current_attempt=None):
-    """PROTOCOL_V3.md R6: cumulative physical spend over every attempt of a stage, apart from the logical per-attempt
-    caps. Reads every attempt's unit directories: SUPERVISOR_RESULT.json elapsed seconds (the worker report's when
-    there is none) and the worker report's exact simulator steps. A unit directory with neither is UNKNOWN work and
-    carries its cap as an upper bound, never zero. The current attempt is excluded when named (the supervisor charges
-    it live), so no unit is counted twice."""
+    """PROTOCOL_V3.md R6: physical spend of every PRIOR attempt of a stage (the current one, named, is excluded; its
+    physical spend is `physical(...)` at the terminal write). The attempt's `caps` remain the logical ledger, which
+    charges a reused unit at its original cost: caps and this ledger therefore overlap on reused units by design, and
+    cumulative physical spend is ledger + physical, never ledger + caps."""
     out = {"attempts": {}, "prior_known_seconds": 0.0, "prior_known_simulator_steps": 0, "prior_unknown_units": [],
-           "prior_unknown_seconds_upper_bound": 0.0, "excluded_current_attempt": current_attempt}
+           "prior_unknown_seconds_upper_bound": 0.0, "prior_unknown_step_units": [], "prior_unknown_steps_upper_bound": 0,
+           "prior_unbounded_step_units": [], "prior_nonreproducing_units": [], "excluded_current_attempt": current_attempt}
     run_dir = Path(run_dir)
     if not run_dir.is_dir():
         return out
     for attempt in sorted(p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("attempt_")):
         if attempt.name == current_attempt:
             continue
-        seen = {}
-        for unit_dir in sorted(p for p in attempt.iterdir() if p.is_dir()):
-            result, report, job = read(unit_dir / "SUPERVISOR_RESULT.json") or {}, read(unit_dir / "report.json") or {}, read(unit_dir / "job.json") or {}
-            seconds = result.get("elapsed_seconds", report.get("elapsed_seconds"))
-            steps = report.get("simulator_steps_exact")
-            if seconds is None:
-                bound = float(job.get("timeout_seconds") or result.get("cap_seconds") or 0.0)
-                out["prior_unknown_units"].append(f"{attempt.name}/{unit_dir.name}")
-                out["prior_unknown_seconds_upper_bound"] += bound
-                seen[unit_dir.name] = {"seconds": None, "simulator_steps": steps, "upper_bound_seconds": bound}
-                continue
-            out["prior_known_seconds"] += float(seconds)
-            out["prior_known_simulator_steps"] += int(steps or 0)
-            seen[unit_dir.name] = {"seconds": float(seconds), "simulator_steps": steps, "completed": bool(result.get("completed"))}
-        out["attempts"][attempt.name] = seen
+        s = attempt_spend(attempt)
+        out["attempts"][attempt.name] = s["units"]
+        out["prior_known_seconds"] += s["known_seconds"]
+        out["prior_known_simulator_steps"] += s["known_simulator_steps"]
+        out["prior_unknown_units"] += [f"{attempt.name}/{u}" for u in s["unknown_seconds_units"]]
+        out["prior_unknown_seconds_upper_bound"] += s["unknown_seconds_upper_bound"]
+        out["prior_unknown_step_units"] += [f"{attempt.name}/{u}" for u in s["unknown_step_units"]]
+        out["prior_unknown_steps_upper_bound"] += s["unknown_steps_upper_bound"]
+        out["prior_unbounded_step_units"] += [f"{attempt.name}/{u}" for u in s["unbounded_step_units"]]
+        out["prior_nonreproducing_units"] += [f"{attempt.name}/{u}" for u in s["not_reproduced_units"]]
     return out
 
 
+def physical(directory, prior):
+    """The current attempt's physical spend and the cumulative total with the prior attempts (`ledger`)."""
+    now = attempt_spend(directory)
+    prior = prior or {}
+    return {"current_attempt": {k: v for k, v in now.items() if k != "units"},
+            "cumulative_known_seconds": prior.get("prior_known_seconds", 0.0) + now["known_seconds"],
+            "cumulative_known_simulator_steps": prior.get("prior_known_simulator_steps", 0) + now["known_simulator_steps"],
+            "cumulative_unknown_seconds_upper_bound": prior.get("prior_unknown_seconds_upper_bound", 0.0) + now["unknown_seconds_upper_bound"],
+            "cumulative_unknown_steps_upper_bound": prior.get("prior_unknown_steps_upper_bound", 0) + now["unknown_steps_upper_bound"],
+            "cumulative_unbounded_step_units": len(prior.get("prior_unbounded_step_units", [])) + len(now["unbounded_step_units"]),
+            "note": "caps is the logical ledger (a reused unit is charged at its original cost); this block is work "
+                    "actually run, in this attempt and in all attempts of the stage"}
+
+
 class Terminal:
-    """PROTOCOL_V3.md R5: the single owner of an attempt's terminal write. Whoever finishes first (the main thread, an
-    interruption handler or the watchdog) wins; every later call is a no-op returning False. Before the write the
-    owner snapshots the counter (exact and attempted simulator steps) and the elapsed time into the report, so no
-    terminal record lacks its accounting and a timer that fires late cannot overwrite a finished attempt."""
+    """PROTOCOL_V3.md R5: the single owner of an attempt's terminal write. The lock is held through the write (review
+    finding R5): the first caller writes, a caller that arrives during the write waits and then returns None, and
+    `done` is set only after the write returned, so a write that raises leaves the owner open for the next caller.
+    The owner writes a copy of the report with the counter's exact and attempted simulator steps and the elapsed time
+    snapshotted into it, so no terminal record lacks its accounting and a timer that fires late cannot overwrite it."""
 
     def __init__(self, write, counter=None):
         import threading
@@ -309,19 +404,19 @@ class Terminal:
         return report
 
     def finish(self, directory, report, **fields):
+        """Write once. Returns the written record, or None when another caller has already written."""
         with self._lock:
             if self.done:
-                return False
+                return None
+            record = self.snapshot({**report, **fields})
+            written = self._write(directory, record)
             self.done = True
-        report.update(fields)
-        self.snapshot(report)
-        self._write(directory, report)
-        return True
+            return record if written is None else written
 
     def end(self, directory, report, **fields):
-        """finish() for the main thread: returns the report whether or not this call made the write."""
-        self.finish(directory, report, **fields)
-        return report
+        """finish() for the main thread: the written record, or the report when another caller wrote first."""
+        written = self.finish(directory, report, **fields)
+        return report if written is None else written
 
 
 class SimulatorCounter:

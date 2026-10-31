@@ -75,6 +75,26 @@ class R1V0f(unittest.TestCase):
 class R2Decomposition(unittest.TestCase):
     names = ["edge_knee", "s05", "s10"]
 
+    def test_d_is_computed_from_the_two_references_and_reconstructs_kc(self):
+        rng = np.random.default_rng(5)
+        qpi_un = rng.normal(size=(6, 3)) * 50
+        qpi_clip = qpi_un + rng.normal(size=(6, 3))
+        q1 = qpi_un + rng.normal(size=(6, 3)) * 3                        # a critic with its own, slot-specific errors
+        d = SM.kc_decomposition(q1, qpi_clip, qpi_un, self.names, "s10")
+        independent = (qpi_un[:, 2] - qpi_un[:, 0]) - (qpi_clip[:, 2] - qpi_clip[:, 0])
+        self.assertTrue(np.allclose(d["D"], independent, rtol=0, atol=1e-12))
+        self.assertFalse(np.allclose(d["kc_own"], 0.0))
+        self.assertTrue(np.all(d["identity_ok"]))
+        own = (q1[:, 2] - q1[:, 0]) - (qpi_un[:, 2] - qpi_un[:, 0])
+        self.assertTrue(np.allclose(d["kc_own"], own, rtol=0, atol=1e-12))
+        swapped = SM.kc_decomposition(q1, qpi_un, qpi_clip, self.names, "s10")       # references swapped: D flips sign
+        self.assertTrue(np.allclose(swapped["D"], -independent, rtol=0, atol=1e-12))
+
+    def test_finite_median_keeps_denominators(self):
+        out = SM.finite_median(np.asarray([1.0, np.nan, 3.0, 9.0]), np.asarray([True, True, True, False]))
+        self.assertEqual(out, {"median": 2.0, "n_finite": 2, "n_mask": 3})
+        self.assertIsNone(SM.finite_median(np.asarray([np.nan]), np.asarray([True]))["median"])
+
     def test_identity_holds_per_anchor_and_perfect_own_critic_has_zero_own_kc(self):
         rng = np.random.default_rng(3)
         qpi_un = rng.normal(size=(6, 3)) * 50
@@ -91,6 +111,8 @@ class R2Decomposition(unittest.TestCase):
         qpi_un[1, 1] = np.nan
         d = SM.kc_decomposition(np.ones((3, 3)), np.zeros((3, 3)), qpi_un, self.names, "s05")
         self.assertEqual(d["identity_ok"].tolist(), [True, False, True])
+        missing = SM.kc_decomposition(np.ones((3, 3)), np.zeros((3, 3)), np.full((3, 3), np.nan), self.names, "s05")
+        self.assertFalse(np.any(missing["identity_ok"]))                     # a missing companion never certifies
 
     def test_gap_contrast_cancels_only_when_the_arm_gaps_are_equal(self):
         d_c = np.asarray([0.5, -0.2, 0.9, 0.0])
@@ -160,6 +182,21 @@ class R3Counting(unittest.TestCase):
                 env.step(np.zeros(4, np.float32))
             self.assertEqual((c.steps, c.attempted), (5, 5))
 
+    def test_prefix_and_continuation_steps_reconcile_with_the_closed_form(self):
+        import fixtures as F
+        import qpi
+        rng = np.random.default_rng(11)
+        times = [0, 3, 7]
+        anchors = [{"reset_seed": 100 + t, "current": (0.5, 0.5),
+                    "prefix_actions": rng.uniform(-0.5, 0.5, size=(t, 4)).astype(np.float32)} for t in times]
+        slots = 2
+        first = np.zeros((len(times), slots, 4), np.float32)
+        with U.SimulatorCounter() as c:
+            qpi.raw_values(anchors, first, F.toy_actor(), "stall3")
+        prefix = sum(times)                                                   # raw_anchor_state: 1-D, one per step
+        continuation = sum(slots * (qpi.HORIZON - t) for t in times)          # every slot row to the horizon
+        self.assertEqual((c.steps, c.attempted), (prefix + continuation, prefix + continuation))
+
     def test_validation_replay_counts_every_transition(self):
         """The path v2 undercounted: KneeDataset validation replays (episodes, 100, 13) states in one dynamics call.
         A 12-episode smoke collection takes 1,200 environment steps to record and 1,200 transitions to replay."""
@@ -185,6 +222,76 @@ class R4Closure(unittest.TestCase):
                 integrity.verify_record(tampered, U.HERE)
         with self.assertRaises(SystemExit):
             integrity.changed_files({"no": "files"})
+
+    def test_payload_modules_and_core_wrapper_are_recorded(self):
+        from core import PAYLOAD
+        record = U.integrity_record()
+        for rel in ("unifloral_td3bc_validation_v1/native_loader.py", "unifloral_checkpoint_v1/training.py",
+                    "unifloral_td3bc_validation_v1/candidate.py", "unifloral_bca_pipeline_validation_v1/bca_bridge.py",
+                    "transfer_bundle/core_v4/thrusterchain/environment.py",
+                    "transfer_bundle/core_v4/thrusterchain/canonical/__init__.py"):
+            self.assertIn(str(PAYLOAD / rel), record["files"], rel)
+            tampered = {**record, "files": {**record["files"], str(PAYLOAD / rel): "0" * 64}}
+            self.assertEqual(integrity.changed_files(tampered), [str(PAYLOAD / rel)])
+
+    def test_an_added_importable_file_is_reported(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            (root / "a.py").write_text("x = 1", encoding="utf-8")
+            record = {"package_dir": str(root), "files": {str(root / "a.py"): sha_file(root / "a.py")}}
+            self.assertEqual(integrity.changed_files(record), [])
+            (root / "json.py").write_text("raise SystemExit", encoding="utf-8")       # would shadow an import
+            (root / "pkg").mkdir()
+            (root / "pkg" / "__init__.py").write_text("", encoding="utf-8")
+            (root / "run_dir").mkdir()                                                 # plain folders are fine
+            (root / "notes.md").write_text("", encoding="utf-8")                      # non-importable files are fine
+            self.assertEqual(integrity.changed_files(record), [f"added: {root / 'json.py'}", f"added: {root / 'pkg'}"])
+
+    def test_every_package_source_must_be_manifest_listed(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            (root / "MANIFEST.json").write_text(json.dumps({"files": {"a.py": "0"}}), encoding="utf-8")
+            (root / "a.py").write_text("", encoding="utf-8")
+            (root / "b.py").write_text("", encoding="utf-8")
+            with mock.patch.object(U, "HERE", root):
+                with self.assertRaisesRegex(ValueError, "no sealed manifest lists"):
+                    U.dependency_closure()
+
+    def test_worker_records_counts_and_integrity_after_on_every_report(self):
+        import stage1_worker as W
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            watched = root / "watched.py"
+            watched.write_text("x = 1", encoding="utf-8")
+            record = {"package_dir": str(root / "pkgdir"), "files": {str(watched): sha_file(watched)}}
+            (root / "pkgdir").mkdir()
+
+            def edits(job, out, deadline):
+                env = worlds.environment("stall3")
+                env.reset(seed=1, options={"start": {"current": (0.5, 0.5)}})
+                for _ in range(3):
+                    env.step(np.zeros(4, np.float32))
+                watched.write_text("x = 2", encoding="utf-8")
+                return {}
+
+            def fails(job, out, deadline):
+                env = worlds.environment("stall3")
+                env.reset(seed=1, options={"start": {"current": (0.5, 0.5)}})
+                env.step(np.zeros(4, np.float32))
+                raise RuntimeError("job failed")
+            for kind, fn in (("edits", edits), ("fails", fails)):
+                job_dir = root / kind
+                job_dir.mkdir()
+                (job_dir / "job.json").write_text(json.dumps({"id": kind, "kind": kind, "timeout_seconds": 60,
+                                                              "integrity": record}), encoding="utf-8")
+                with mock.patch.dict(W.KINDS, {kind: fn}), mock.patch.object(W, "producer", lambda f: None), \
+                        mock.patch.object(step03, "set_worker_environment", lambda: None):
+                    report = W.run_job(job_dir / "job.json")
+                self.assertEqual(report["status"], "failed", kind)
+                self.assertIn("integrity_after", report)
+                self.assertEqual(report["simulator_steps_exact"], 3 if kind == "edits" else 1)
+                self.assertEqual(report["simulator_steps_attempted"], report["simulator_steps_exact"])
+            self.assertEqual(json.loads((root / "edits" / "report.json").read_text())["integrity_after"]["changed"], [str(watched)])
 
     def test_missing_dependency_fails_closed(self):
         with mock.patch.object(U, "EXTERNAL_DEPENDENCIES", ("does_not_exist/nothing.py",)):
@@ -217,8 +324,85 @@ class R5Terminal(unittest.TestCase):
         t2 = U.Terminal(lambda d, r: written.append(dict(r)))
         t2.finish("x", {"label": "PASS"})                                              # the main thread finished first
         step04._watchdog(Path("x"), {"label": "PASS"}, t2, exit=exits.append)
-        self.assertEqual(exits, [3, 3])
+        self.assertEqual(exits, [3])                                                   # the losing watchdog does not exit
         self.assertEqual([w["label"] for w in written], ["INCOMPLETE", "PASS"])       # no second write
+
+    def test_a_failed_write_leaves_the_owner_open(self):
+        written, calls = [], []
+
+        def flaky(d, r):
+            calls.append(1)
+            if len(calls) == 1:
+                raise OSError("disk full")
+            written.append(dict(r))
+        t = U.Terminal(flaky, counter=self.Counter())
+        with self.assertRaises(OSError):
+            t.finish("dir", {"label": "PASS"})
+        self.assertFalse(t.done)
+        self.assertIsNotNone(t.finish("dir", {"label": "INCOMPLETE"}, interrupted="KeyboardInterrupt"))
+        self.assertEqual([w["label"] for w in written], ["INCOMPLETE"])
+        self.assertIsNone(t.finish("dir", {"label": "PASS"}))
+
+    def test_simultaneous_finish_writes_exactly_once(self):
+        import threading
+        import time
+        written, barrier = [], threading.Barrier(8)
+
+        def slow(d, r):
+            time.sleep(0.05)
+            written.append(r["who"])
+        t = U.Terminal(slow)
+        results = []
+
+        def go(i):
+            barrier.wait()
+            results.append(t.finish("dir", {"who": i}))
+        threads = [threading.Thread(target=go, args=(i,)) for i in range(8)]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        self.assertEqual(len(written), 1)
+        self.assertEqual(sum(r is not None for r in results), 1)
+
+    def test_interrupted_step04_records_its_counted_steps(self):
+        import fixtures as F
+        from types import SimpleNamespace
+        import os
+
+        def interrupted_collection(directory, budget, **kw):
+            env = worlds.environment("stall3")
+            env.reset(seed=1, options={"start": {"current": (0.5, 0.5)}})
+            for _ in range(7):
+                env.step(np.zeros(4, np.float32))
+            raise KeyboardInterrupt
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            manifest = {"files": {n: sha_file(step04.HERE / n) for n in sorted(step04.A3_REQUIRED_FILES)}}
+            (root / "A3_MANIFEST.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "A3_APPROVAL.json").write_text(json.dumps({"approval": step04.APPROVAL_WORDS + ", attempt 1",
+                                                               "package_manifest_sha256": sha_file(root / "A3_MANIFEST.json"),
+                                                               "attempt": 1}), encoding="utf-8")
+            rerun = (SimpleNamespace(load_native=lambda: "n", runtime_receipt=lambda n: {"device_kinds": [step03.K.RECORDED_DEVICE_KIND]}),
+                     SimpleNamespace(), None, SimpleNamespace(continuation_root=lambda: root))
+            patches = [mock.patch.object(step04, "RUN", root / "step04_run"), mock.patch.object(step04, "MANIFEST", root / "A3_MANIFEST.json"),
+                       mock.patch.object(step04, "APPROVAL", root / "A3_APPROVAL.json"),
+                       mock.patch.object(step04, "a2_outcome", lambda approval: {"label": "PASS"}),
+                       mock.patch.object(step04, "run_collection", interrupted_collection),
+                       mock.patch.object(step03, "rerun1", lambda: rerun), mock.patch.object(step03, "set_worker_environment", lambda: None),
+                       mock.patch.dict(os.environ, step03.WORKER_ENVIRONMENT)]
+            for p in patches:
+                p.start()
+            try:
+                with self.assertRaises(KeyboardInterrupt):
+                    step04.execute(entropy=F.TEST_ENTROPY + 1, episodes=1280, provenance="smoke", test_seeds=F.TEST_SEEDS)
+            finally:
+                for p in patches:
+                    p.stop()
+            report = json.loads((root / "step04_run" / "attempt_1" / "report.json").read_text(encoding="utf-8"))
+            self.assertEqual((report["label"], report["interrupted"]), ("INCOMPLETE", "KeyboardInterrupt"))
+            self.assertEqual((report["transitions"], report["simulator_steps_attempted"]), (7, 7))
+            self.assertIn("elapsed_seconds", report)
 
 
 class R6Ledger(unittest.TestCase):
@@ -241,6 +425,43 @@ class R6Ledger(unittest.TestCase):
             self.assertNotIn("attempt_2", ledger["attempts"])
             self.assertEqual(U.ledger(run)["prior_known_seconds"], 109.5)
             self.assertEqual(U.ledger(Path(root) / "missing")["attempts"], {})
+
+    def test_reuse_nonreproduction_and_lost_counts(self):
+        def unit(path, seconds=None, steps=None, job=None, completed=True, marker=None, worker_seconds=None):
+            path.mkdir(parents=True)
+            if seconds is not None:
+                (path / "SUPERVISOR_RESULT.json").write_text(json.dumps({"elapsed_seconds": seconds, "completed": completed}))
+            rep = {"status": "completed" if completed else "failed"}
+            if steps is not None:
+                rep["simulator_steps_exact"] = steps
+            if worker_seconds is not None:
+                rep["elapsed_seconds"] = worker_seconds
+            (path / "report.json").write_text(json.dumps(rep))
+            (path / "job.json").write_text(json.dumps(job or {}))
+            if marker:
+                (path / "NOT_REPRODUCED.json").write_text(json.dumps(marker))
+        with tempfile.TemporaryDirectory() as root:
+            run = Path(root) / "stage1_run"
+            a1, a2 = run / "attempt_1", run / "attempt_2"
+            unit(a1 / "warmup_a", 100.0, 1280, {"kind": "warmup"})                    # sealed, later reused (not copied)
+            unit(a1 / "evaluate_s0", 50.0, None, {"kind": "evaluate", "transitions": 18000}, completed=False)  # lost count
+            unit(a1 / "preflight", None, None, {"kind": "preflight"}, worker_seconds=3.0)
+            unit(a2 / "warmup_b", 90.0, 1280, {"kind": "warmup"},
+                 marker={"reference_dir": str(a1 / "warmup_b"), "reason": "the re-run does not reproduce"})
+            unit(a2 / "branch_a", 80.0, None, {"kind": "branch"}, completed=False)       # training kind: unbounded
+            prior = U.ledger(run, current_attempt="attempt_2")
+            self.assertEqual((prior["prior_known_seconds"], prior["prior_known_simulator_steps"]), (153.0, 1280))
+            self.assertEqual(prior["prior_unknown_step_units"], ["attempt_1/evaluate_s0", "attempt_1/preflight"])
+            self.assertEqual(prior["prior_unknown_steps_upper_bound"], 18000)
+            self.assertEqual(prior["attempts"]["attempt_1"]["preflight"]["seconds_source"], "worker")
+            phys = U.physical(a2, prior)
+            self.assertEqual(phys["current_attempt"]["known_seconds"], 170.0)
+            self.assertEqual(phys["current_attempt"]["not_reproduced_units"], ["warmup_b"])
+            self.assertEqual(phys["current_attempt"]["unbounded_step_units"], ["branch_a"])
+            self.assertEqual(phys["cumulative_known_seconds"], 323.0)                 # every physical unit once
+            self.assertEqual(phys["cumulative_known_simulator_steps"], 2560)
+            self.assertEqual(prior["prior_unbounded_step_units"], ["attempt_1/preflight"])   # no allowance: unbounded, listed
+            self.assertEqual(phys["cumulative_unbounded_step_units"], 2)
 
 
 class R7Wrapper(unittest.TestCase):
@@ -270,8 +491,32 @@ class R7Wrapper(unittest.TestCase):
                 {"label": "PASS", "protocol_label": None, "exploratory_label": "PASS", "EXPLORATORY": {"disclosure": "x"},
                  "approval": {"manifest_sha256": stage2.A4_MANIFEST_SHA256}, "a5_precondition": {"ok": True}}), encoding="utf-8")
             with mock.patch.object(stage1, "RUN", run):
-                with self.assertRaises(ValueError):
+                with self.assertRaisesRegex(ValueError, "cannot unlock A5"):
                     stage2.stage1_outcome()
+            clean = {"label": "PASS", "approval": {"manifest_sha256": stage2.A4_MANIFEST_SHA256}, "a5_precondition": {"ok": True}}
+            (run / "attempt_1" / "report.json").write_text(json.dumps(clean), encoding="utf-8")
+            with mock.patch.object(stage1, "RUN", run):                                # passes R7, stops later
+                with self.assertRaisesRegex(ValueError, "does not name every unit directory"):
+                    stage2.stage1_outcome()
+
+    def test_exploratory_reads_only_the_pinned_step04_record(self):
+        with tempfile.TemporaryDirectory() as root:
+            run = Path(root) / "step04_run"
+            (run / "attempt_1").mkdir(parents=True)
+            (run / "attempt_1" / "report.json").write_text(json.dumps({"label": "PASS"}), encoding="utf-8")
+            with mock.patch.object(stage1, "STEP04_RUN", run):
+                with self.assertRaisesRegex(ValueError, "differs from the file pinned"):
+                    X.a3_outcome_exploratory({"approval": stage1.PREDICTION_ACK})
+
+    def test_exploratory_labels_agree_after_the_5_0_relabel(self):
+        written = []
+        report = {"label": "INCOMPLETE", "failed_unit": "evaluate_s0", "reasons": ["x"],
+                  "approval": {"manifest_sha256": "m", "history": [{"failed_unit": "evaluate_s0", "counts_under_5_0": True,
+                                                                    "manifest_sha256": "m"}]}}
+        with mock.patch.object(X, "stage1_finish", lambda d, r: written.append(dict(r)) or r):
+            X._finish_exploratory(Path("x"), report)
+        self.assertEqual((written[0]["label"], written[0]["exploratory_label"]), ("INCONCLUSIVE", "INCONCLUSIVE"))
+        self.assertIsNone(written[0]["protocol_label"])
 
     def test_v3_words_name_v3(self):
         self.assertIn("knee_edge_ood_v3", X.APPROVAL_WORDS)
