@@ -1,0 +1,30 @@
+{
+  "a1_manifest_sha256": "b6c23e9432c91c43cda4995ceb6909f2f83022aadb9594b1db9b964a357124a6",
+  "a2_manifest_sha256": "655e3aa9ee218dff280136aa707ec1c32977a4511d3a1812bcd18e1bbd47d57b",
+  "a3_manifest_sha256": "792cf03f00959a4b7783a185b40b846072a24ec7ba7d3ad71a3b07ab29174bec",
+  "files": {
+    "A4_README.md": "203375db5e642ec34a4dca785ab2fadaec48b6d9f3695b5174d690b9295f229b",
+    "PROTOCOL_V2.md": "96210d0643bbeef653114840502758870e6ed19f4881e07b4d049b2dc43da834",
+    "PROTOCOL_V3.md": "aac32e7db97f73410925cd2ee09038bec16c2faeaa46c8770a17ba30172103c3",
+    "README_V3.md": "5f99aa30918179c49a7d92a54ea0cf74a5f8d1115d1f22a4f7e177b5335582b0",
+    "amended_analysis.py": "d1ae6a6d18a1b280e21df1e2c947bcd834c7b1738f7bdc0a190957616adefdf3",
+    "integrity.py": "ee58b682e7db446ff0f280f06d3171897a4245aac30ec9d7bdf188d4f08d06bd",
+    "stage1.py": "5ee9f44bb2e2013b7e8662e29ca6a28758cc090bba993ebdbdbdc741daa3cf51",
+    "stage1_eval.py": "6c4f23d8c2fe0eb82d42387ae9d99aad6351e89d6a2319917ecf173a65046212",
+    "stage1_math.py": "732831d653452fce14c7d87763c62d444fc18d1f7288f8f3a959ac86465dedd9",
+    "stage1_smoke.py": "dbaf7bcfd25bdda1d0610001d6abba491236b6cd28b7c668410d3203fdb48763",
+    "stage1_worker.py": "940c42d46fb52c60539a0abcf5e3c1f3c863f344cc447241d939c387e9f964f3",
+    "test_stage1.py": "94077859e99e1f6622b7ca592e617e2ca5c89eb35b676d5fd634ff62634048b5",
+    "test_v3_repairs.py": "fb048f3bc3806a3c57ccff9ac604463780016969aca0d21bb7cf0590b25d0069",
+    "units.py": "784d4e8c8ddce5d2e9bd38c11a237729982f3ddeb3f9240ed42a9d4fcdf70a88"
+  },
+  "gating": "requires a step 0.4 PASS; the carried v2 record is INCONCLUSIVE (PROTOCOL_V3.md, Gating status)",
+  "run": "wsl -d Ubuntu -- bash -lc \"cd /mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/ && PYTHONDONTWRITEBYTECODE=1 /home/david/bca-operator-audit-20261026/bin/python -B -u stage1.py --execute\"",
+  "schema": "knee_edge_ood_v3.a4_manifest.v1",
+  "smoke": "a GPU smoke from this folder is required before any approval; none has run under v3",
+  "step": "Stage 1 (approval A4), knee_edge_ood_v3; not approved",
+  "tests": {
+    "platform": "Windows .venv",
+    "result": "190 package tests OK on the Windows .venv (2026-10-31 01:10 EDT): the carried v2 suite with three fixture updates plus test_v3_repairs; the step 0.4 dry run measures 2,841,200 exact simulator steps"
+  }
+}
