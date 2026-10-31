@@ -1,0 +1,483 @@
+{
+ "note": "Post hoc, descriptive, fixed networks: the anchor-level trade-off between correcting the stall world's s10 ranking\nand adding false caution in the no-stall world, enumerated exactly (every knob value where an anchor's penalized sign\nchanges), in anchor counts.\n\nBCA: penalty kappa x dU. Even caution: a constant penalty c (Q units). One knob is shared by a seed-arm's stall and\nno-stall run (the deployed knob cannot know the world). Two tunings:\n- per seed-arm: a knob per seed-arm (an oracle that lets kappa absorb each network's U scale; favors BCA);\n- global: one knob for all six seed-arms, which is how kappa_A is used.\nGain = harmful stall anchors ranked correctly by the penalized Q minus by raw Q1 (net). False flips = non-harmful\nno-stall anchors (C_true >= 0) that raw Q1 ranks s10 at least as good and the penalized Q ranks worse.",
+ "s10": {
+  "per_seed_arm": {
+   "s0_cutoff": {
+    "harmful_stall": 42,
+    "non_harmful_nostall": 27,
+    "bca_at_kappa_A": {
+     "gain": 6,
+     "false_flips": 2
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      5,
+      6,
+      15,
+      15,
+      15,
+      16,
+      17,
+      17,
+      18
+     ],
+     "even": [
+      1,
+      5,
+      11,
+      13,
+      18,
+      18,
+      18,
+      18,
+      20
+     ]
+    }
+   },
+   "s0_random": {
+    "harmful_stall": 41,
+    "non_harmful_nostall": 41,
+    "bca_at_kappa_A": {
+     "gain": 9,
+     "false_flips": 19
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      3,
+      3,
+      3,
+      3
+     ],
+     "even": [
+      1,
+      6,
+      6,
+      6,
+      9,
+      12,
+      15,
+      16,
+      17
+     ]
+    }
+   },
+   "s1_cutoff": {
+    "harmful_stall": 43,
+    "non_harmful_nostall": 37,
+    "bca_at_kappa_A": {
+     "gain": 9,
+     "false_flips": 2
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      2,
+      4,
+      12,
+      16,
+      17,
+      18,
+      18,
+      23,
+      24
+     ],
+     "even": [
+      1,
+      1,
+      3,
+      4,
+      4,
+      6,
+      10,
+      10,
+      10
+     ]
+    }
+   },
+   "s1_random": {
+    "harmful_stall": 44,
+    "non_harmful_nostall": 41,
+    "bca_at_kappa_A": {
+     "gain": 15,
+     "false_flips": 13
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      0,
+      1,
+      1,
+      4,
+      4,
+      4,
+      8,
+      10,
+      11
+     ],
+     "even": [
+      0,
+      1,
+      1,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6
+     ]
+    }
+   },
+   "s2_cutoff": {
+    "harmful_stall": 41,
+    "non_harmful_nostall": 38,
+    "bca_at_kappa_A": {
+     "gain": 4,
+     "false_flips": 3
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      1,
+      3,
+      3,
+      6,
+      7,
+      8,
+      9,
+      10,
+      10
+     ],
+     "even": [
+      4,
+      5,
+      6,
+      7,
+      7,
+      9,
+      9,
+      11,
+      15
+     ]
+    }
+   },
+   "s2_random": {
+    "harmful_stall": 43,
+    "non_harmful_nostall": 36,
+    "bca_at_kappa_A": {
+     "gain": 4,
+     "false_flips": 4
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      4,
+      4,
+      4,
+      4,
+      8,
+      9,
+      9,
+      9,
+      9
+     ],
+     "even": [
+      5,
+      6,
+      6,
+      8,
+      8,
+      8,
+      11,
+      11,
+      11
+     ]
+    }
+   }
+  },
+  "global": {
+   "harmful_stall_total": 254,
+   "non_harmful_nostall_total": 220,
+   "bca_at_kappa_A": {
+    "gain": 47,
+    "false_flips": 43
+   },
+   "best_gain_at_false_flips": {
+    "0": {
+     "bca": 1,
+     "even": 1
+    },
+    "5": {
+     "bca": 9,
+     "even": 9
+    },
+    "11": {
+     "bca": 19,
+     "even": 28
+    },
+    "22": {
+     "bca": 32,
+     "even": 43
+    },
+    "33": {
+     "bca": 38,
+     "even": 55
+    },
+    "43": {
+     "bca": 48,
+     "even": 74
+    },
+    "66": {
+     "bca": 79,
+     "even": 99
+    },
+    "88": {
+     "bca": 110,
+     "even": 123
+    }
+   },
+   "budgets_even_ahead": 79,
+   "budgets_bca_ahead": 0
+  }
+ },
+ "s05": {
+  "per_seed_arm": {
+   "s0_cutoff": {
+    "harmful_stall": 41,
+    "non_harmful_nostall": 29,
+    "bca_at_kappa_A": {
+     "gain": 4,
+     "false_flips": 3
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      4,
+      4,
+      4,
+      13,
+      14,
+      15,
+      15,
+      16,
+      18
+     ],
+     "even": [
+      0,
+      3,
+      6,
+      11,
+      13,
+      16,
+      16,
+      16,
+      16
+     ]
+    }
+   },
+   "s0_random": {
+    "harmful_stall": 40,
+    "non_harmful_nostall": 42,
+    "bca_at_kappa_A": {
+     "gain": 10,
+     "false_flips": 20
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      1,
+      1,
+      2,
+      2,
+      2,
+      2,
+      3,
+      4,
+      4
+     ],
+     "even": [
+      4,
+      4,
+      7,
+      7,
+      10,
+      13,
+      15,
+      15,
+      15
+     ]
+    }
+   },
+   "s1_cutoff": {
+    "harmful_stall": 43,
+    "non_harmful_nostall": 38,
+    "bca_at_kappa_A": {
+     "gain": 9,
+     "false_flips": 3
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      1,
+      2,
+      5,
+      17,
+      17,
+      18,
+      21,
+      23,
+      24
+     ],
+     "even": [
+      1,
+      1,
+      1,
+      3,
+      4,
+      7,
+      7,
+      9,
+      10
+     ]
+    }
+   },
+   "s1_random": {
+    "harmful_stall": 44,
+    "non_harmful_nostall": 42,
+    "bca_at_kappa_A": {
+     "gain": 15,
+     "false_flips": 13
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      1,
+      2,
+      5,
+      6,
+      6,
+      7,
+      8,
+      11,
+      12
+     ],
+     "even": [
+      1,
+      1,
+      3,
+      3,
+      5,
+      5,
+      5,
+      6,
+      7
+     ]
+    }
+   },
+   "s2_cutoff": {
+    "harmful_stall": 41,
+    "non_harmful_nostall": 38,
+    "bca_at_kappa_A": {
+     "gain": 4,
+     "false_flips": 3
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      1,
+      3,
+      3,
+      6,
+      6,
+      6,
+      8,
+      10,
+      10
+     ],
+     "even": [
+      4,
+      4,
+      5,
+      7,
+      9,
+      9,
+      9,
+      12,
+      12
+     ]
+    }
+   },
+   "s2_random": {
+    "harmful_stall": 43,
+    "non_harmful_nostall": 37,
+    "bca_at_kappa_A": {
+     "gain": 3,
+     "false_flips": 2
+    },
+    "by_false_flips_0_to_8": {
+     "bca": [
+      4,
+      4,
+      4,
+      5,
+      7,
+      9,
+      9,
+      9,
+      9
+     ],
+     "even": [
+      5,
+      5,
+      6,
+      6,
+      6,
+      9,
+      9,
+      9,
+      9
+     ]
+    }
+   }
+  },
+  "global": {
+   "harmful_stall_total": 252,
+   "non_harmful_nostall_total": 226,
+   "bca_at_kappa_A": {
+    "gain": 45,
+    "false_flips": 44
+   },
+   "best_gain_at_false_flips": {
+    "0": {
+     "bca": 3,
+     "even": 8
+    },
+    "5": {
+     "bca": 8,
+     "even": 10
+    },
+    "11": {
+     "bca": 15,
+     "even": 24
+    },
+    "22": {
+     "bca": 29,
+     "even": 37
+    },
+    "33": {
+     "bca": 37,
+     "even": 49
+    },
+    "44": {
+     "bca": 45,
+     "even": 65
+    },
+    "66": {
+     "bca": 75,
+     "even": 94
+    },
+    "88": {
+     "bca": 105,
+     "even": 110
+    }
+   },
+   "budgets_even_ahead": 81,
+   "budgets_bca_ahead": 0
+  }
+ }
+}
