@@ -1,0 +1,493 @@
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/amended_analysis.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3_guard_repair_v1/amended_analysis.py
+@@ -1,4 +1,4 @@
+-"""Amended analysis of an existing Stage 1 attempt under the v3 rules (PROTOCOL_V3.md R1, R2, R3). Read-only on the
++"""Amended analysis of the pinned completed v2 Stage 1 attempt under the v3 rules (R1, R2, R3). Read-only on the
+ attempt: it opens JSON reports only (never a checkpoint or dataset), changes nothing in the attempt's folder, and
+ writes one separately labelled file under knee_edge_ood_v3/amended_analyses/. The attempt's original decision
+ record stays the record; this file is an amended analysis beside it, named as such.
+@@ -19,6 +19,7 @@
+ from datetime import datetime, timezone
+ from pathlib import Path
+ import argparse
++import hashlib
+ import json
+ import sys
+ 
+@@ -32,14 +33,47 @@
+ import stage1
+ import stage1_math as SM
+ import units as U
+-from core import require, sha_file
++from core import REPO, require, sha_file
+ from stage1_worker import sanitize
+ 
+ OUT = HERE / "amended_analyses"
+ HORIZON = 100
+ TRAINING_KINDS = ("warmup", "branch", "bc_only")
+ LOADS_BY_KIND = {"warmup": 1, "branch": 1, "bc_only": 1, "r0": 1}          # KneeDataset constructions per job kind
+-SCHEMA = "knee_edge_ood_v3.amended_analysis.v1"
++SCHEMA = "knee_edge_ood_v3_guard_repair_v1.amended_analysis.v2"
++CORRECTION_CONTRACT = HERE / "KNOWN_V2_CORRECTION.json"
++CORRECTION_CONTRACT_SHA256 = "904e794aba1056b9c03ed875f9dba20a5ca9faacfd2f005e0d00bc61c6b74f96"
++
++
++def correction_contract():
++    require(sha_file(CORRECTION_CONTRACT) == CORRECTION_CONTRACT_SHA256,
++            "Historical correction contract changed; review required")
++    return json.loads(CORRECTION_CONTRACT.read_text(encoding="utf-8"))
++
++
++def canonical_sha(value):
++    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":"),
++                                     allow_nan=False).encode()).hexdigest()
++
++
++def authenticate_attempt(attempt_dir):
++    """Allow only the pinned, completed legacy attempt, never infer a producer from a count.
++
++    Receipts and the saved producer source closure must still match. This establishes byte
++    identity with the reviewed historical evidence; it is not independent runtime attestation.
++    """
++    contract = correction_contract()
++    require(Path(attempt_dir).resolve() == (REPO / contract["attempt_relative"]).resolve(),
++            "Unsupported attempt: historical counter correction is restricted to the pinned completed v2 attempt")
++    for group in ("source_files", "receipt_files"):
++        for relative, expected in contract[group].items():
++            p = (REPO / relative).resolve()
++            require(p.is_relative_to(REPO.resolve()) and p.is_file() and sha_file(p) == expected,
++                    f"Historical correction evidence changed or missing: {relative}")
++    expected_reports = {u["report_relative"] for u in contract["units"].values()}
++    actual_reports = {p.relative_to(REPO).as_posix() for p in Path(attempt_dir).glob("*/report.json")}
++    require(actual_reports == expected_reports, "Historical attempt unit set changed")
++    return contract
+ 
+ 
+ def read(path):
+@@ -48,58 +82,57 @@
+ 
+ 
+ def unit_reports(attempt_dir, report):
+-    """Every unit report of the attempt (reused units are read where the report's unit_dirs point)."""
+-    out = {}
+-    for unit, path in (report.get("unit_dirs") or {}).items():
+-        p = Path(path) / "report.json"
+-        if p.is_file():
+-            out[unit] = read(p)
+-    for p in sorted(Path(attempt_dir).iterdir()):                      # units the attempt ran but did not link
+-        if p.is_dir() and p.name not in out and (p / "report.json").is_file():
+-            out[p.name] = read(p / "report.json")
+-    return out
++    """Only pinned local report paths; a report cannot redirect reads to an arbitrary producer."""
++    contract = authenticate_attempt(attempt_dir)
++    return {unit: read(REPO / item["report_relative"]) for unit, item in contract["units"].items()}
+ 
+ 
+ def corrected_steps(unit, rep, episodes):
+-    """R3: recorded exact steps plus (episodes x HORIZON - episodes) per dataset construction the job kind made."""
+-    kind = rep.get("kind") or unit.split("_")[0]
++    """Apply the legacy correction once, only to a byte-identified reviewed legacy report.
++
++    An unknown, partial, failed, edited or already corrected report is not a lower bound.
++    Its corrected count is unknown here. The original counter remains available separately.
++    """
++    kind = rep.get("kind")
+     recorded = rep.get("simulator_steps_exact")
+-    if recorded is None:
+-        return {"kind": kind, "recorded": None, "loads": None, "corrected": None, "status": "unknown: no exact count recorded"}
+-    per_load = episodes * HORIZON - episodes
+-    if kind in TRAINING_KINDS:
+-        loads, status = LOADS_BY_KIND[kind], "derived from the code path (training kinds use no other simulator path)"
+-        if recorded != loads * episodes:
+-            status = f"recorded {recorded} is not {loads} x {episodes}: the code path assumption does not hold; corrected is a lower bound"
+-    elif kind == "r0":
+-        loads, status = LOADS_BY_KIND[kind], "one stall3 construction (stage1_worker.r0 load_world)"
+-    elif kind == "evaluate":
+-        worlds_seen = {w for name in (rep.get("runs") or {}) for w in ("stall3", "nostall") if name.endswith(w)}
+-        bc = 1 if rep.get("bc_only") else 0               # bc_summary loads stall3 again (stage1_worker.evaluate)
+-        loads = (len(worlds_seen) or 2) + bc
+-        status = (f"one construction per evaluated world ({sorted(worlds_seen) or ['stall3', 'nostall']})"
+-                  + (" plus one stall3 construction for the BC-only summary" if bc else ""))
+-    else:
+-        return {"kind": kind, "recorded": recorded, "loads": 0, "corrected": recorded, "status": "no dataset construction in this kind"}
++    unknown = {"kind": kind, "recorded": recorded, "loads": None, "corrected": None,
++               "status": "unknown: report is not an authenticated completed legacy counter record"}
++    contract = correction_contract()
++    approved = contract["units"].get(unit)
++    if (not approved or type(episodes) is not int or episodes != contract["episodes"]
++            or rep.get("status") != "completed" or type(recorded) is not int
++            or recorded != approved["recorded"] or kind != approved["kind"]
++            or rep.get("producer_sha256") != approved["producer_sha256"]):
++        return unknown
++    try:
++        if canonical_sha(rep) != approved["canonical_report_sha256"]:
++            return unknown
++    except (TypeError, ValueError):
++        return unknown
++    loads = approved["dataset_loads"]
++    per_load = episodes * contract["horizon"] - episodes
+     return {"kind": kind, "recorded": recorded, "loads": loads, "per_load_undercount": per_load,
+-            "corrected": int(recorded) + loads * per_load, "status": status}
++            "corrected": recorded + loads * per_load,
++            "status": "exact reconstruction for pinned complete v2 report; not applicable to new producers",
++            "correction_contract_sha256": CORRECTION_CONTRACT_SHA256}
+ 
+ 
+ def analyse(attempt_dir, *, exploratory=False):
+     attempt_dir = Path(attempt_dir).resolve()
++    contract = authenticate_attempt(attempt_dir)
+     report, report_sha = read(attempt_dir / "report.json")
++    require(report_sha == contract["receipt_files"][(attempt_dir / "report.json").relative_to(REPO).as_posix()],
++            "Historical attempt report changed after authentication")
+     sources = {"attempt_report": {"path": str(attempt_dir / "report.json"), "sha256": report_sha}}
+     units = unit_reports(attempt_dir, report)
+     sources["unit_reports"] = {u: {"sha256": sha} for u, (_, sha) in units.items()}
+-    collection_dir = Path(report.get("a3", {}).get("collection_dir", ""))
+-    episodes = 1280
+-    if (collection_dir / "collection.json").is_file():
+-        collection, sha = read(collection_dir / "collection.json")
+-        sources["collection"] = {"path": str(collection_dir / "collection.json"), "sha256": sha}
+-        episodes = int(next(iter(collection.get("datasets", {}).values()), {}).get("episodes", episodes))
++    episodes = contract["episodes"]
++    sources["correction_contract"] = {"path": str(CORRECTION_CONTRACT), "sha256": CORRECTION_CONTRACT_SHA256}
+ 
+     # R3: accounting.
+     accounting = {u: corrected_steps(u, rep, episodes) for u, (rep, _) in units.items()}
++    require(all(a["corrected"] is not None for a in accounting.values()),
++            "Incomplete correction evidence; neither an exact total nor a scientific decision is available")
+     known = [a for a in accounting.values() if a["corrected"] is not None]
+     accounting_total = {"recorded_exact_total": sum(int(a["recorded"]) for a in known),
+                         "corrected_total": sum(int(a["corrected"]) for a in known),
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/stage1_worker.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3_guard_repair_v1/stage1_worker.py
+@@ -584,14 +584,20 @@
+     if counter is not None:
+         report["simulator_steps_exact"] = counter.steps
+         report["simulator_steps_attempted"] = counter.attempted
++    integrity_error = None
+     try:
+         changed = integrity.changed_files(job.get("integrity"))
+         report["integrity_after"] = {"verified": len(job["integrity"]["files"]), "changed": changed}
+     except BaseException as exc:
+         changed = None
+-        report["integrity_after"] = {"error": f"{type(exc).__name__}: {exc}"}
+-    if changed and report.get("status") == "completed":
+-        report.update(status="failed", unit_label="INCOMPLETE", error="files changed while the job ran: " + ", ".join(changed))
++        integrity_error = f"{type(exc).__name__}: {exc}"
++        report["integrity_after"] = {"verified": False, "error": integrity_error}
++    if (changed or integrity_error is not None) and report.get("status") == "completed":
++        if report.get("error") is not None:
++            report["error_before_integrity_check"] = report["error"]
++        error = ("post-work integrity check failed: " + integrity_error if integrity_error is not None
++                 else "files changed while the job ran: " + ", ".join(changed))
++        report.update(status="failed", unit_label="INCOMPLETE", error=error)
+     return report
+ 
+ 
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/test_amended_analysis.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3_guard_repair_v1/test_amended_analysis.py
+@@ -1,4 +1,8 @@
+-"""amended_analysis.py on a synthetic Stage 1 attempt (review finding: no test covered it). JSON only."""
++"""Unauthenticated synthetic attempts cannot inherit a historical counter correction. JSON only.
++
++The former fixture was accepted without producer evidence. It must now be rejected without
++changing its files; the pinned completed-input path is covered in test_guard_accounting.py.
++"""
+ from pathlib import Path
+ import json
+ import sys
+@@ -14,7 +18,7 @@
+ 
+ 
+ class AmendedAnalysis(unittest.TestCase):
+-    def test_reads_an_attempt_without_changing_it(self):
++    def test_rejects_unversioned_attempt_without_changing_it(self):
+         with tempfile.TemporaryDirectory() as root:
+             attempt = Path(root) / "stage1_run" / "attempt_1"
+             dirs = {}
+@@ -34,21 +38,15 @@
+                 dirs[name] = str(d)
+             (attempt / "report.json").write_text(json.dumps({"label": "PASS", "unit_dirs": dirs, "a3": {}}), encoding="utf-8")
+             before = {p: p.read_bytes() for p in attempt.rglob("*.json")}
+-            out = AA.analyse(attempt)
++            with self.assertRaisesRegex(ValueError, "Unsupported attempt"):
++                AA.analyse(attempt)
+             self.assertEqual({p: p.read_bytes() for p in attempt.rglob("*.json")}, before)     # read-only
+-            self.assertEqual(out["original"]["label"], "PASS")
+-            self.assertIn("V0f", out["R1_v3_rules"]["validity_by_seed"][0])
+-            units = out["R3_accounting"]["units"]
+-            self.assertEqual(units["warmup_s0_cutoff_stall3"]["corrected"], 128_000)
+-            self.assertEqual(units["evaluate_s0"]["loads"], 3)                               # two worlds plus BC-only
+-            self.assertEqual(units["evaluate_s0"]["corrected"], 5_000 + 3 * 128_000)
+-            self.assertEqual(units["r0"]["corrected"], 900 + 128_000)
+-            self.assertIsNone(units["branch_s0_cutoff_stall3"]["corrected"])                # no count: unknown, not zero
+-            self.assertEqual(out["R3_accounting"]["totals"]["units_without_counts"], ["branch_s0_cutoff_stall3"])
+-            own = out["R2_own_reference"][0]
+-            self.assertTrue(all(all(v.values()) for v in own["decomposition_identity_ok"].values()))
+-            self.assertEqual(own["continuation_gap_contrast"]["s05"]["median_D_C_minus_D_R"], 0.0)
+-            self.assertIn("sha256", out["sources"]["attempt_report"])
++            for unit, directory in dirs.items():
++                body = json.loads((Path(directory) / "report.json").read_text())
++                correction = AA.corrected_steps(unit, body, 1280)
++                self.assertIsNone(correction["corrected"], unit)   # apparent shape/counts are not provenance
++                self.assertIsNone(correction["loads"], unit)       # no guessed dataset-load count
++            self.assertEqual({p: p.read_bytes() for p in attempt.rglob("*.json")}, before)
+ 
+ 
+ if __name__ == "__main__":
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/test_v3_repairs.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3_guard_repair_v1/test_v3_repairs.py
+@@ -421,7 +421,10 @@
+             self.assertEqual(ledger["prior_known_seconds"], 10.5)
+             self.assertEqual(ledger["prior_known_simulator_steps"], 1280)
+             self.assertEqual(ledger["prior_unknown_units"], ["attempt_1/branch_x"])
+-            self.assertEqual(ledger["prior_unknown_seconds_upper_bound"], 300.0)
++            self.assertIsNone(ledger["prior_unknown_seconds_upper_bound"])
++            self.assertEqual(ledger["prior_unbounded_seconds_units"], ["attempt_1/branch_x"])
++            self.assertEqual(ledger["attempts"]["attempt_1"]["branch_x"]["configured_timeout_seconds"], 300.0)
++            self.assertIsNone(ledger["attempts"]["attempt_1"]["branch_x"]["upper_bound_seconds"])
+             self.assertNotIn("attempt_2", ledger["attempts"])
+             self.assertEqual(U.ledger(run)["prior_known_seconds"], 109.5)
+             self.assertEqual(U.ledger(Path(root) / "missing")["attempts"], {})
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/units.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3_guard_repair_v1/units.py
+@@ -21,6 +21,7 @@
+ import ast
+ import hashlib
+ import json
++import math
+ import symtable
+ from pathlib import Path
+ 
+@@ -287,22 +288,47 @@
+             "payload_trees": list(PAYLOAD_TREES)}
+ 
+ 
++def _duration(value):
++    """A JSON numeric duration; missing, booleans, strings and invalid numbers are unknown."""
++    if isinstance(value, bool) or not isinstance(value, (int, float)):
++        return None
++    value = float(value)
++    return value if math.isfinite(value) and value >= 0 else None
++
++
++def _add_bounds(left, right):
++    """An unknown bound must remain unknown through every aggregation level."""
++    return None if left is None or right is None else left + right
++
++
+ def _unit_spend(unit_dir):
+     """One unit directory's physical spend: seconds (the supervisor's measurement, else the worker's, with the source
+     named), exact simulator steps, completion, and explicit unknowns with their upper bounds."""
+     result, report, job = read(unit_dir / "SUPERVISOR_RESULT.json") or {}, read(unit_dir / "report.json") or {}, read(unit_dir / "job.json") or {}
+-    if "elapsed_seconds" in result:
+-        seconds, source = result["elapsed_seconds"], "supervisor"
+-    elif "elapsed_seconds" in report:
+-        seconds, source = report["elapsed_seconds"], "worker"
+-    else:
+-        seconds, source = None, None
++    seconds, source, timing_errors = None, None, []
++    for label, record in (("supervisor", result), ("worker", report)):
++        if "elapsed_seconds" not in record:
++            continue
++        candidate = _duration(record["elapsed_seconds"])
++        if candidate is None:
++            timing_errors.append(label + ": invalid elapsed_seconds")
++        else:
++            seconds, source = candidate, label
++            break
+     steps = report.get("simulator_steps_exact")
+     entry = {"kind": job.get("kind"), "seconds": None if seconds is None else float(seconds), "seconds_source": source,
+              "simulator_steps": None if steps is None else int(steps),
+              "completed": bool(result["completed"]) if "completed" in result else report.get("status") == "completed"}
++    if timing_errors:
++        entry["timing_errors"] = timing_errors
+     if seconds is None:
+-        entry["upper_bound_seconds"] = float(job.get("timeout_seconds") or result.get("cap_seconds") or 0.0)
++        # A nominal timeout is not a bound on physical elapsed time: process termination,
++        # scheduler delays and post-work bookkeeping can exceed it. A missing terminal
++        # receipt also does not establish that the timeout was enforced.
++        entry["upper_bound_seconds"] = None
++        caps = [_duration(job.get("timeout_seconds")), _duration(result.get("cap_seconds"))]
++        entry["configured_timeout_seconds"] = next((c for c in caps if c is not None), None)
++        entry["timing_unknown_reason"] = "no valid elapsed measurement; configured timeout is not a verified physical upper bound"
+     if steps is None:                              # evaluation kinds carry their allowance; training kinds count only
+         entry["upper_bound_simulator_steps"] = int(job["transitions"]) if job.get("transitions") else None
+     marker = read(unit_dir / "NOT_REPRODUCED.json")
+@@ -316,7 +342,7 @@
+     with upper bounds (None when a training unit lost its count: unbounded), never added as zero."""
+     out = {"units": {}, "known_seconds": 0.0, "known_simulator_steps": 0, "unknown_seconds_units": [],
+            "unknown_seconds_upper_bound": 0.0, "unknown_step_units": [], "unknown_steps_upper_bound": 0,
+-           "unbounded_step_units": [], "not_reproduced_units": []}
++           "unbounded_step_units": [], "unbounded_seconds_units": [], "not_reproduced_units": []}
+     attempt_dir = Path(attempt_dir)
+     if not attempt_dir.is_dir():
+         return out
+@@ -325,7 +351,9 @@
+         out["units"][unit_dir.name] = e
+         if e["seconds"] is None:
+             out["unknown_seconds_units"].append(unit_dir.name)
+-            out["unknown_seconds_upper_bound"] += e["upper_bound_seconds"]
++            out["unknown_seconds_upper_bound"] = _add_bounds(out["unknown_seconds_upper_bound"], e["upper_bound_seconds"])
++            if e["upper_bound_seconds"] is None:
++                out["unbounded_seconds_units"].append(unit_dir.name)
+         else:
+             out["known_seconds"] += e["seconds"]
+         if e["simulator_steps"] is None:
+@@ -348,7 +376,8 @@
+     cumulative physical spend is ledger + physical, never ledger + caps."""
+     out = {"attempts": {}, "prior_known_seconds": 0.0, "prior_known_simulator_steps": 0, "prior_unknown_units": [],
+            "prior_unknown_seconds_upper_bound": 0.0, "prior_unknown_step_units": [], "prior_unknown_steps_upper_bound": 0,
+-           "prior_unbounded_step_units": [], "prior_nonreproducing_units": [], "excluded_current_attempt": current_attempt}
++           "prior_unbounded_step_units": [], "prior_unbounded_seconds_units": [],
++           "prior_nonreproducing_units": [], "excluded_current_attempt": current_attempt}
+     run_dir = Path(run_dir)
+     if not run_dir.is_dir():
+         return out
+@@ -360,7 +389,8 @@
+         out["prior_known_seconds"] += s["known_seconds"]
+         out["prior_known_simulator_steps"] += s["known_simulator_steps"]
+         out["prior_unknown_units"] += [f"{attempt.name}/{u}" for u in s["unknown_seconds_units"]]
+-        out["prior_unknown_seconds_upper_bound"] += s["unknown_seconds_upper_bound"]
++        out["prior_unknown_seconds_upper_bound"] = _add_bounds(out["prior_unknown_seconds_upper_bound"], s["unknown_seconds_upper_bound"])
++        out["prior_unbounded_seconds_units"] += [f"{attempt.name}/{u}" for u in s["unbounded_seconds_units"]]
+         out["prior_unknown_step_units"] += [f"{attempt.name}/{u}" for u in s["unknown_step_units"]]
+         out["prior_unknown_steps_upper_bound"] += s["unknown_steps_upper_bound"]
+         out["prior_unbounded_step_units"] += [f"{attempt.name}/{u}" for u in s["unbounded_step_units"]]
+@@ -372,10 +402,16 @@
+     """The current attempt's physical spend and the cumulative total with the prior attempts (`ledger`)."""
+     now = attempt_spend(directory)
+     prior = prior or {}
++    # Old ledgers could claim zero (or a nominal cap) for an unknown duration.
++    # They contain no evidence of a physical upper bound; do not carry that claim forward.
++    prior_unknown = prior.get("prior_unknown_units", [])
++    prior_seconds_bound = None if prior_unknown else _duration(prior.get("prior_unknown_seconds_upper_bound", 0.0))
++    prior_unbounded = prior.get("prior_unbounded_seconds_units", prior_unknown)
+     return {"current_attempt": {k: v for k, v in now.items() if k != "units"},
+             "cumulative_known_seconds": prior.get("prior_known_seconds", 0.0) + now["known_seconds"],
+             "cumulative_known_simulator_steps": prior.get("prior_known_simulator_steps", 0) + now["known_simulator_steps"],
+-            "cumulative_unknown_seconds_upper_bound": prior.get("prior_unknown_seconds_upper_bound", 0.0) + now["unknown_seconds_upper_bound"],
++            "cumulative_unknown_seconds_upper_bound": _add_bounds(prior_seconds_bound, now["unknown_seconds_upper_bound"]),
++            "cumulative_unbounded_seconds_units": len(prior_unbounded) + len(now["unbounded_seconds_units"]),
+             "cumulative_unknown_steps_upper_bound": prior.get("prior_unknown_steps_upper_bound", 0) + now["unknown_steps_upper_bound"],
+             "cumulative_unbounded_step_units": len(prior.get("prior_unbounded_step_units", [])) + len(now["unbounded_step_units"]),
+             "note": "caps is the logical ledger (a reused unit is charged at its original cost); this block is work "
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v1/g2_feasibility.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_guard_repair_v1/g2_feasibility.py
+@@ -1,4 +1,4 @@
+-"""Development G2 feasibility screen for candidate knee_s10_v1, revision 3 (rules: G2_RULE_r3.md, written first).
++"""ISOLATED REPAIR; scientific main disabled. Historical development G2 feasibility screen for candidate knee_s10_v1, revision 3 (rules: G2_RULE_r3.md, written first).
+ 
+ No training and no checkpoint. Uses a test-entropy collection of 1,280 episodes per world under the widened recorder,
+ a test-only anchor stream, and exact Q^{pi_ref} from the raw float64 loop, with pi_ref version 2 (inside both arms'
+@@ -16,7 +16,7 @@
+ 
+ sys.dont_write_bytecode = True
+ HERE = Path(__file__).resolve().parent
+-V3 = HERE.parent / "knee_edge_ood_v3"
++V3 = HERE.parent / "knee_edge_ood_v3_guard_repair_v1"
+ for p in (str(V3), str(HERE)):
+     if p not in sys.path:
+         sys.path.insert(0, p)
+@@ -38,6 +38,7 @@
+ import region_independent as RI                             # noqa: E402
+ import seeds as S                                           # noqa: E402
+ import stage1_eval as E                                     # noqa: E402
++from retained_support import retained_l15
+ import step04_math as SM4                                   # noqa: E402
+ import worlds                                               # noqa: E402
+ from core import require                                    # noqa: E402
+@@ -75,7 +76,7 @@
+ 
+ 
+ def in_cutoff_support(obs, a):
+-    """Per row: is command a inside CUTOFF's retained data for the load band of obs (G2_RULE_r3.md B1)?"""
++    """Coordinate-range check only; does not establish empirical conditional or joint support."""
+     high = load_band(load_g(obs)) >= 1
+     a0, side = a[:, 0].astype(np.float64), np.abs(a[:, 1:].astype(np.float64))
+     lo = np.where(high, -KNEE, -KNEE)
+@@ -99,7 +100,7 @@
+         high = rows["bands"] >= 1
+         deep_ep = np.repeat(np.asarray(arrays["reset_component"])[rows["episodes"]] == 1, 100)
+         a_obs, a_t = np.stack([a["obs"] for a in anchors]), np.asarray([a["t"] for a in anchors])
+-        l15_all = SM4.l15(rows["obs"], rows["episode_ids"], rows["times"], deep_ep, starts, a_obs, a_t)
++        l15_retained = retained_l15(rows, cutoff, deep_ep, starts, a_obs, a_t)
+         lo, hi = D4_WINDOW
+         d4 = {}
+         for band, name in ((1, "mid"), (2, "deep")):
+@@ -119,7 +120,7 @@
+             "D2": {"cutoff_high_load_a0_at_or_past_s10": int(np.sum(retained_high <= S10)),
+                    "min_distance_to_s10": float(np.min(np.abs(retained_high - S10))),
+                    "ok": bool(np.sum(retained_high <= S10) == 0 and np.min(np.abs(retained_high - S10)) >= 0.0999)},
+-            "D3": {"start_share": l15_all["start_share"], "anchor_share": l15_all["anchor_share"], "ok": l15_all["pass"]},
++            "D3": l15_retained,
+             "D4": {**d4, "ok": bool(all(v["ok"] for v in d4.values()))},
+             "B1": {"share_inside_cutoff_support_pi_ref_v2": b1_v2, "share_pi_ref_v1_reported": b1_v1,
+                    "next_states": int(len(nxt)), "bar": B1_BAR, "ok": bool(b1_v2 >= B1_BAR)},
+@@ -191,7 +192,28 @@
+     return float(total.mean())
+ 
+ 
++def decision_labels(d, h):
++    """Missing support evidence is inconclusive, never a scientific failure or pass."""
++    labels = []
++    if not h["H1"]["ok"]:
++        labels.append("INCONCLUSIVE (H1: the stall = no-stall identity fails; an instrument fault)")
++    unknown = [w for w in d if d[w]["D3"].get("status") == "INCONCLUSIVE"]
++    if unknown:
++        labels.append("INCONCLUSIVE (retained-state support unavailable: " + ", ".join(unknown) + ")")
++    bad_d = [f"{w} {k}" for w in d for k in ("D1", "D2", "D3")
++             if not d[w][k]["ok"] and d[w][k].get("status") != "INCONCLUSIVE"]
++    if bad_d:
++        labels.append("NOT DATA-OOD (" + ", ".join(bad_d) + ")")
++    bad_t = [f"{w} {k}" for w in d for k in ("D4", "B1") if not d[w][k]["ok"]]
++    if not h["H2"]["ok"]:
++        bad_t.append("H2")
++    if bad_t:
++        labels.append("NOT TESTABLE (" + ", ".join(bad_t) + ")")
++    return labels
++
++
+ def main():
++    raise SystemExit("Repair-only package: no scientific run authorized or sealed. Use pure regression tests only.")
+     import stage1_smoke
+     require(STREAM not in stage1_smoke.sealed_values() and ENTROPY not in stage1_smoke.sealed_values(),
+             "Development stream or entropy collides with a sealed value")
+@@ -210,15 +232,7 @@
+     h["reported"]["mean_return_e2_starts"] = {"pi_ref_v2": mean_return(pi_ref.act, starts_x),
+                                               "pi_ref_v1": mean_return(pi_ref_v1_dev.act, starts_x),
+                                               "zero": mean_return(lambda o: np.zeros((len(o), 4), np.float32), starts_x)}
+-    labels = []
+-    if not h["H1"]["ok"]:
+-        labels.append("INCONCLUSIVE (H1: the stall = no-stall identity fails; an instrument fault)")
+-    bad_d = [f"{w} {k}" for w in d for k in ("D1", "D2", "D3") if not d[w][k]["ok"]]
+-    if bad_d:
+-        labels.append("NOT DATA-OOD (" + ", ".join(bad_d) + ")")
+-    bad_t = [f"{w} {k}" for w in d for k in ("D4", "B1") if not d[w][k]["ok"]] + ([] if h["H2"]["ok"] else ["H2"])
+-    if bad_t:
+-        labels.append("NOT TESTABLE (" + ", ".join(bad_t) + ")")
++    labels = decision_labels(d, h)
+     out = {"schema": "knee_s10_candidate_v1.g2_development.r3", "written_utc": datetime.now(timezone.utc).isoformat(),
+            "status": "DEVELOPMENT estimate of G2 under rule r3 (same test entropy and stream as the v1 run; outcomes "
+                      "of that run were known); not the formal G2; never confirmatory",
+--- experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v1/pi_ref.py
++++ experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_guard_repair_v1/pi_ref.py
+@@ -18,7 +18,8 @@
+     [-1.0, -0.6] that CUTOFF keeps;
+   - at low load, a0 is clipped to [-KNEE, KNEE]. The recorder is uniform on [-1, 1] there, and CUTOFF keeps
+     |a0| <= KNEE.
+-  So every pi_ref command lies inside both CUTOFF's and the twin's data. Neither arm bootstraps into W or off the data.
++  These projections avoid W and respect recorder coordinate ranges. They do not establish empirical joint
++  state/action coverage or prevent extrapolation at unsupported states.
+ - Observation: 14 float32 numbers, the 13 state numbers and remaining time (100 - t) / 100. The time step is recovered
+   as t = 100 - round(100 x obs[13]).
+ 
+@@ -85,7 +86,7 @@
+ 
+ 
+ def act(obs):
+-    """float32 (n, 14) observations -> float32 (n, 4) commands inside both arms' data."""
++    """float32 (n, 14) observations -> float32 (n, 4) commands within the stated coordinate bounds; empirical support is a separate check."""
+     obs = np.asarray(obs, np.float32)
+     u = raw(obs).astype(np.float32)
+     high = load_band(load_g(obs)) >= 1
