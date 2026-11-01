@@ -138,8 +138,9 @@ Where BCA does help, the source differs by seed-arm:
 - **The size of dU is not lower in the no-stall run.** Median |dU| is higher there in 5 of 6 pairs.
 
 **Bottom line (descriptive).** On these networks, BCA's U does not place caution where the critic is wrong any
-better than an even penalty does. With one knob, as BCA is actually used, the even penalty corrects more of the
-critic's wrong rankings at every level of no-stall false caution.
+better than an even penalty does. With one knob, as BCA is actually used, the even penalty is never behind. It
+corrects more of the critic's wrong rankings at 79 of the 81 no-stall false-flip budgets from 0 to 80, and ties at 0
+and 5. (Corrected 2026-10-31: the first version said "at every level".)
 
 ## What this does not show
 
