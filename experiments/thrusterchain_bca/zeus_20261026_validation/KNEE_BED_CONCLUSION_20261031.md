@@ -216,14 +216,14 @@ Nothing is deleted, and every record stays as it is.
 
 | What | Where | Committed? |
 |---|---|---|
-| Leverage readout | `bca_leverage_readout_v1/` (RULE.md, leverage.py, leverage_result.json) | no |
-| Direction note | `EXPERIMENT_DIRECTION_20261031.md` | no |
+| Leverage readout | `bca_leverage_readout_v1/` (RULE.md, leverage.py, leverage_result.json) | yes (72eca0ca, after its run) |
+| Direction note | `EXPERIMENT_DIRECTION_20261031.md` | yes (72eca0ca) |
 | Dose screen package and approval | `bca_dose_screen_v1/` | yes (3e05614e) |
-| Dose screen run records, including SCREEN_RESULT.json | `bca_dose_screen_v1/screen_run/` (checkpoints git-ignored) | no |
+| Dose screen run records, including SCREEN_RESULT.json | `bca_dose_screen_v1/screen_run/` (checkpoints git-ignored) | yes (72eca0ca) |
 | Dose screen readout | `bca_dose_screen_v1_readout/` | yes (5bd83a23) |
 | Signal check, rule first; its result and shelving note | `bca_q_error_signal_v1/` | yes (f79c4eb6; 8faf9e09) |
 | Bed and gates | `knee_edge_ood_v2/`: the package and the v1 step 0.3 record (a286fee5), step 0.4 and the exploratory Stage 1 (03cb0e6e); `knee_edge_ood_v3/` (cdebf428, fc12abf0) | yes |
-| This note | `KNEE_BED_CONCLUSION_20261031.md` | no |
+| This note | `KNEE_BED_CONCLUSION_20261031.md` | yes (db2e2c36) |
 
-The leverage rule is uncommitted. Its "written first" rests on file times (RULE.md 09:53:22, leverage.py 09:53:59,
+The leverage rule was committed only after its run. Its "written first" rests on file times (RULE.md 09:53:22, leverage.py 09:53:59,
 result 09:54:33 EDT) and on the rule hash recorded in its result, not on a prior commit.
