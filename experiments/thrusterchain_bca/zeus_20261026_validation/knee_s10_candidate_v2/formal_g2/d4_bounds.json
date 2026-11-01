@@ -1,0 +1,71 @@
+{
+  "schema": "knee_s10_candidate_v1.formal_g2.d4_bounds.v1",
+  "rule": "two-sided bounds mean -/+ 6 SD of the Monte Carlo, rounded outward to 3 decimals",
+  "monte_carlo": {
+    "datasets": 200,
+    "fitting_episodes": 768,
+    "steps": 100,
+    "seed": 20261031,
+    "window": [
+      -0.95,
+      -0.85
+    ],
+    "designed_density": 2.46,
+    "load_model": "random_control_mc.py: g = c + amp cos(phase + 0.27 t), knee_mix15 reset mixture"
+  },
+  "gated": [
+    "dens_mid",
+    "dens_deep"
+  ],
+  "reported": [
+    "dens_hi",
+    "share_hi",
+    "share_deep",
+    "rows_mid",
+    "rows_deep"
+  ],
+  "bounds": {
+    "dens_mid": {
+      "mean": 2.4575091298919096,
+      "sd": 0.021510746404674763,
+      "lower": 2.328,
+      "upper": 2.587
+    },
+    "dens_deep": {
+      "mean": 2.463289722027744,
+      "sd": 0.058147979934531246,
+      "lower": 2.114,
+      "upper": 2.813
+    },
+    "dens_hi": {
+      "mean": 2.458284660175446,
+      "sd": 0.020544744203013648,
+      "lower": 2.335,
+      "upper": 2.582
+    },
+    "share_hi": {
+      "mean": 0.5739846354166666,
+      "sd": 0.011831055810359608,
+      "lower": 0.502,
+      "upper": 0.645
+    },
+    "share_deep": {
+      "mean": 0.07736725260416667,
+      "sd": 0.006370221666154116,
+      "lower": 0.039,
+      "upper": 0.116
+    },
+    "rows_mid": {
+      "mean": 38140.215,
+      "sd": 753.3337757351097,
+      "lower": 33620.212,
+      "upper": 42660.218
+    },
+    "rows_deep": {
+      "mean": 5941.805,
+      "sd": 489.2330239606361,
+      "lower": 3006.406,
+      "upper": 8877.204
+    }
+  }
+}
