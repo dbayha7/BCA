@@ -1,16 +1,17 @@
-# The knee bed: what we found (2026-10-31)
+# The knee bed: where the BCA readouts stand (2026-10-31)
 
-The user stopped BCA work on this bed in a message at 19:50 EDT on 2026-10-31, after the three readouts below.
+**Correction (2026-10-31, 21:16 EDT).** An earlier version of this note said the user had stopped BCA work on this
+bed. That was wrong. The user did not cancel the experiment. The only track that is stopped is the Q-error
+method-change track, which its own pre-written rule shelved (8faf9e09). Everything else stays open, including the
+knee s10 experiment.
 
 - **Status of the evidence.** Everything here is exploratory, on development data, and supports no protocol claim.
-- **Scope of the stop.** It covers this bed only, not the BCA concept or other beds.
 
-**Shelving summary (standing format)**
+**Shelving summary for the Q-error track (standing format)**
 
 - **The idea:** place caution where the critic is wrong, using BCA's calibrated uncertainty.
 - **What we tested (and the kill rule):** three exploratory readouts, each with its own rule written before it ran
-  (sections 3 and 8). No kill rule was written for the bed as a whole; the stop is the user's decision after these
-  readouts.
+  (sections 3 and 8). The signal check's rule is the kill rule for the Q-error track.
 - **What happened:**
   - leverage: NO LEVERAGE;
   - dose screen: MIXED in both arms, so no claim;
@@ -181,19 +182,19 @@ None of these was tested as a mechanism. They are readings of the records.
 
   Testing either on this bed would be a rescue designed after seeing D.
 
-## 6. What stops with this decision
+## 6. Status of each package
 
 Nothing is deleted, and every record stays as it is.
 
 | Package | State |
 |---|---|
 | `knee_edge_ood_v3/` (seven repairs, R1-R7) | Committed (cdebf428, fc12abf0), never approved for any run; its GPU smoke never ran. It carries v2's step 0.4 record (INCONCLUSIVE), so its later steps could not be requested without an approved amendment. Its re-reading of the exploratory Stage 1 (`amended_analyses/`, still INCONCLUSIVE) stays on record. |
-| `knee_edge_ood_v2/` A4 (Stage 1) and A5 (the sealed Stage 2) | Already blocked by step 0.4 (INCONCLUSIVE) before this decision. A4 never ran under the protocol; an exploratory Stage 1 ran outside it (INCONCLUSIVE). A5 never ran. It had no even-caution or data-only arm, and its "distance" arm is a proximal control. |
+| `knee_edge_ood_v2/` A4 (Stage 1) and A5 (the sealed Stage 2) | Blocked by step 0.4 (INCONCLUSIVE). A4 never ran under the protocol; an exploratory Stage 1 ran outside it (INCONCLUSIVE). A5 never ran. It had no even-caution or data-only arm, and its "distance" arm is a proximal control. |
 | `knee_edge_ood_v1/` untracked A4-A5 drafts | Never run; v1 ended at step 0.3 (INCONCLUSIVE). |
 | `KNEE_EDGE_V2_EXPLORATORY_STAGE1_READOUT_PLAN.md` | Uncommitted; its open decisions (its section 8) stay undecided. |
-| `ood_definition_v4/` (DRAFT r3, never approved) | Paused; uncommitted. It is a study-wide draft, so this stop pauses only its use on the knee. |
-| `knee_s10_candidate_v1/` | Paused; uncommitted. Its development gate (G2) was INCONCLUSIVE under the first rule and PASS under the third revision (r3), which was written after that result and reused the same test stream. It was never run formally. |
-| The leverage rule's follow-ups (U at the evaluation anchors, the room screen), the fresh-seed higher-dose screen, and a Stage 2 with even-caution and data-only arms (`EXPERIMENT_DIRECTION_20261031.md` section 7) | Never written or never run. |
+| `ood_definition_v4/` (DRAFT r3, never approved) | Uncommitted. Adopting r3 is the user's decision, needed before the knee s10 formal G2. |
+| `knee_s10_candidate_v1/` | Open, and the next step for the experiment; uncommitted. Its development gate (G2) was INCONCLUSIVE under the first rule and PASS under the third revision (r3), which was written after that result and reused the same test stream. The formal G2, on a fresh test stream, is next. |
+| The leverage rule's follow-ups (U at the evaluation anchors, the room screen), the fresh-seed higher-dose screen, and a Stage 2 with even-caution and data-only arms (`EXPERIMENT_DIRECTION_20261031.md` section 7) | Not yet written or run. |
 | The Q-error variant (`bca_q_error_signal_v1/METHOD_DESIGN_NOTES.md`) | Already shelved by its own rule (8faf9e09); never built. |
 
 ## 7. Lessons for any next bed
