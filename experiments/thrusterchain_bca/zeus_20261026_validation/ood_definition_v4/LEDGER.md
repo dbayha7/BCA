@@ -49,3 +49,44 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   error; never a fourth). Nothing else changed: dose, control, data bytes and digests, seeds, units, reads, bars,
   readings, caps. 26 tests pass. Re-sealed; attempt 3 awaits the user's approval naming it, and the GPU, which the
   user's separate minimal-comparison recovery run holds as of 13:45.
+- **Native screen, attempt 3 (2026-11-01 14:01-14:05 EST, user-run, manifest e2d09d22…): INCONCLUSIVE, G1 NOT
+  REPRESENTABLE** (`../knee_s10_candidate_v2/native_screen/SCREEN_READOUT_20261101.md`; record
+  `screen_run/attempt_3/`). Instrument checks exact (I0 median rho 1.7652868718841468 to the last digit, H1 0.0,
+  F0 ok, upstream match). Stall3 fit at 20,000 updates: median KC(s10) over the 72 valid anchors 1.559 / 1.403 /
+  1.437 against the band −0.15 ≤ KC ≤ 0.980 (0.3 × median rho 2.767 + 0.15); L1 shares 0.111 / 0.222 / 0.236,
+  pooled 0.190 against 0.70; over-capture (the critic values s10 too high) 0.68 to 0.76; q* 0.111; in-support
+  resolution band 1.843 (median 0.812). Smooth placebo: median KC(s10) ≈ 0, 55 to 64 percent within 0.15. 60k
+  diagnostic: median KC 0.92 to 1.10, pooled share 0.389. Profile: the critic reproduces about half the drop at s05,
+  s10, s15 and s20 alike. Under section 5: stop this candidate on this host configuration; a changed host setting
+  or feature is a new candidate; data, slot and tolerance may not change. Nothing trained; GPU hours 0; 7,968,000
+  exact CPU steps. G2 PASS and RS1 stand as recorded. The screen's approval is spent; no attempt 4 exists.
+- **I0 platform rehearsal (2026-11-01 14:15 EST, `../knee_s10_candidate_v2/i0_platform_check_v1/`, attempt-free,
+  read-only):** before attempt 3 is approved, the screen's exact Windows-versus-Linux comparisons are rehearsed
+  outside any attempt: the g1 unit's I0 (median exact rho(s10) over the 96 anchors against the formal report at 1e-9
+  relative, and H1), the amendment A1 loader for both archives, and the data-plan re-derivation every job performs.
+  Windows: all equal exactly (relative difference 0.0; 201,600 exact steps). The WSL receipt decides whether attempt 3
+  is approved or I0 is amended first; it is the user's to run.
+- **Native screen attempt 3 (2026-11-01 14:01-14:05 EST, user-run, approval naming attempt 3, manifest e2d09d22…):**
+  the A1 loader read both archives; I0 passed exactly on Linux (median exact rho(s10) 1.7652868718841468, H1 0.0);
+  **G1 read NOT REPRESENTABLE** (stall3 fit at 20,000 updates: median KC(s10) 1.559 / 1.403 / 1.437 against the
+  0.98 band; share 0.111 / 0.222 / 0.236 against 0.60, pooled 0.190 against 0.70; 72 valid anchors; 60k diagnostic:
+  median 0.94 / 0.91 / 1.10, share 0.39 / 0.43 / 0.35; the no-stall placebo fits to within +-0.05 at every slot).
+  The screen read **INCONCLUSIVE (representation)**; nothing trained; 7,968,000 exact steps, 196.8 s, GPU time 0.
+  By G1_RULE.md the candidate knee_s10_v2 stops on this host configuration; a changed host setting is a new
+  candidate. Readout: `../knee_s10_candidate_v2/g1/G1_READOUT_20261101.md`. Attempt records uncommitted.
+
+## Outside the gate chain: the OOD-action overestimation comparison (2026-11-01, after G1 NOT REPRESENTABLE)
+
+- **`../knee_s10_candidate_v2/overestimation_v1/` (rule `OVERESTIMATION_RULE.md`, written first; the user's choice
+  18:25 EST: "Yes, build it").** The literature's question on the pieces already built: native versus BCA (kappa 63)
+  actors from the same 10k fork on the knee_s10_v2 CUTOFF stall3 data (digest c2a6d616…, W = |a0| > float32(0.8)
+  withheld), Unifloral TD3+BC host through the native screen's worker and its seven bindings. Per 20k policy:
+  128 common starts (returns, W exposure), 48 visited states (own-action critic error Q1 − Q^pi, own unclipped
+  exact continuation), 192 dataset rows (logged action and three withheld a0 magnitudes 0.85/0.9/1.0: critic error,
+  width U, and for BCA the penalized score's error). Paired per seed: dJ, de_own. Bars fixed: PROMISING = de_own ≤
+  −0.5 and dJ ≥ −2.0 in every seed; HARMFUL = dJ ≤ −2.0 in two seeds; NO EFFECT = all inside; NOT REACHED = native
+  W exposure < 0.01 everywhere; INCONCLUSIVE on the I1/I2 instrument checks. Seeds: the screen's unspent training
+  and data-plan rows plus two new audited names. Caps: 1,800 s per training job, 3.5 h; 900 s and 200,000
+  transitions per evaluation. 12 tests pass (the measurement runs on the real simulator with a fake policy; I1
+  identity holds). Sealed; awaits the user's approval (`OE_APPROVAL.json`) and launch. Exploratory; supports no
+  protocol claim; says nothing about the knee departure.
