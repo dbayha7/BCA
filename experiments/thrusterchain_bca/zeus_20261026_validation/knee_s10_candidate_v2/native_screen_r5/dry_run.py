@@ -96,7 +96,7 @@ def main(out=None, dispatch=None, collect_fn=collect):
     import platform
     result = {"schema": "knee_s10_candidate_v2.native_screen_r5.dry_run.v1", "started_utc": datetime.now(timezone.utc).isoformat(),
               "out": str(directory), "jobs": {}, "hashes": hashes, "platform": platform.system(),
-              "real_dispatch": dispatch is None and collect_fn is collect, "device_kinds_ok": None,
+              "real_dispatch": dispatch is None and collect_fn is collect, "device_kinds_ok": None, "device_kind": None,
               "blinded": "Outcome values are withheld; the smoke jobs' reports under `out` hold values and are not read",
               "scope": {"stage0": ["preflight", "i0 (real anchors, real archives, real data plans)"],
                         "smoke": [j["id"] for j in JOBS], "entropy": SMOKE_ENTROPY, "anchors": ANCHORS}}
@@ -148,7 +148,10 @@ def main(out=None, dispatch=None, collect_fn=collect):
             transitions = 0 if spec["kind"] in S.TRAINING_KINDS else S.EVAL_TRANSITIONS
             unit(spec, smoke, cap, transitions)
         warm = S._read(dirs[f"warmup_{RUN}"] / "report.json") or {}
-        result["device_kinds_ok"] = warm.get("device_kinds") == [step03.K.RECORDED_DEVICE_KIND]
+        pre = S._read(dirs["preflight"] / "report.json") or {}
+        kinds = (pre.get("receipt") or {}).get("device_kinds")
+        result["device_kind"] = kinds[0] if isinstance(kinds, list) and len(kinds) == 1 else None
+        result["device_kinds_ok"] = bool(result["device_kind"] in S.DK.ALLOWED_DEVICE_KINDS and warm.get("device_kinds") == kinds)
         if not result["device_kinds_ok"]:
             status = "completed with a failed check (device kind)"
     except BaseException as exc:

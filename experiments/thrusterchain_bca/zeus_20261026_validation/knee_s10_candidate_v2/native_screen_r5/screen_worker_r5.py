@@ -7,6 +7,10 @@ the BCA dose, and, for research jobs only, the amendment A1 dataset loader), plu
 `bca_branch` and `evaluate_bca` (the dose screen's, at kappa = KAPPA), `i0` (the stage-0 instrument unit) and `g1`
 (the reported calibration unit of REVISION_r5.md section 5). Smoke jobs (the dry run) read their own test collection
 through the unpatched loader, which regenerates data collected in the same environment.
+
+Binding 8 (amendment A2): for GPU jobs the recorded device kind (knee_edge_ood_v3 frozen_checks.RECORDED_DEVICE_KIND,
+read by the preflight and by every training bind) becomes the one allowed kind this machine has
+(`device_kinds.ALLOWED_DEVICE_KINDS`: Zeus's laptop GPU or Titan's desktop GPU), and every GPU report records it.
 """
 from datetime import datetime, timezone
 from pathlib import Path
@@ -54,9 +58,21 @@ try:
     import probes as P                                       # noqa: E402
     import step03                                            # noqa: E402
     import bindings as B                                     # noqa: E402
+    import device_kinds as DK                                # noqa: E402
     from core import require, sha_file                       # noqa: E402
 finally:
     sys.argv = _argv
+
+
+def bind_device_kind():
+    """Binding 8 (amendment A2): the recorded device kind is the one allowed kind this machine has. Called after the
+    worker environment is set and before the preflight or any training bind reads the recorded kind."""
+    import jax
+    kinds = sorted({d.device_kind for d in jax.devices()})
+    require(len(kinds) == 1 and kinds[0] in DK.ALLOWED_DEVICE_KINDS,
+            f"Device kinds {kinds} are not exactly one allowed kind {sorted(DK.ALLOWED_DEVICE_KINDS)}")
+    step03.K.RECORDED_DEVICE_KIND = kinds[0]
+    return kinds[0]
 
 KAPPA = SB.KAPPA
 SB.patch_dataset_entropy()
@@ -178,6 +194,7 @@ def run_job(job_path):
             report["environment"] = {"JAX_PLATFORMS": "cpu", "others": "step03.WORKER_ENVIRONMENT"}
         else:
             step03.set_worker_environment()
+            report["device_kind"] = bind_device_kind()      # binding 8 (A2)
         deadline = W1.Deadline(job["timeout_seconds"])
         import units
         limit = int(job.get("transitions") or 0) or None

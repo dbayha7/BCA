@@ -1,5 +1,15 @@
 # Native screen for candidate knee_s10_v2 under r5: how to run it
 
+**State after amendment A2 (2026-11-01 late):** attempt 1 ran on Zeus and was interrupted by the user (INCOMPLETE,
+on record under `screen_run/`). Attempt 2 runs on Titan. Because A2 changed the worker, the package is unsealed
+until the dry run is redone **on Titan**; the order below is for Titan, from a pulled clone, with the recorded
+operator environment at the same path. If Titan's interpreter lives elsewhere, substitute its path in every command.
+
+On Titan, in order: `git pull`; tests (step 1; the WSL interpreter works for them too, with `JAX_PLATFORMS=cpu`);
+the dry run (step 2; it must report `device_kind` "NVIDIA GeForce RTX 5070 Ti"); the seal (step 3); the approval
+with `--attempt 2` via `../approve_native_screen_r5.py`; commit and push; the run (step 5). Nothing may run on Zeus
+in the meantime.
+
 The rule is `SCREEN_RULE_r5.md`, written before any screen number exists; the definition is
 `../../ood_definition_v4/REVISION_r5.md`; the reasons are `../../ood_definition_v4/DESIGN_AUDIT_r4_20261101.md`. One
 package, one dry run, one seal, one approval, one run. Everything GPU is user-run in the recorded WSL environment;
@@ -34,10 +44,11 @@ PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -B experiments/thrusterchain_
 4. **Approve, at your terminal** (writes `SCREEN_APPROVAL.json`; refuses to overwrite). Read `SCREEN_RULE_r5.md`
    first: the dose, the control, the bars, the nulls, the budget and the RS1 sentence are yours to accept or change; a
    change is edited into the rule and re-sealed before any run. The sentences are matched exactly; `attempt` is 1, or
-   2 after an INCOMPLETE attempt 1 (stage-0 failures spend no attempt). Remove an older approval file first.
+   2 after an INCOMPLETE attempt 1 (stage-0 failures spend no attempt). Remove an older approval file first. The
+   helper lives outside the sealed folder (PowerShell quoting mangles the apostrophe in a one-liner):
 
 ```bash
-.venv/Scripts/python.exe -c "import json,hashlib;p='experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/native_screen_r5/';h=hashlib.sha256(open(p+'SCREEN_MANIFEST.json','rb').read()).hexdigest();open(p+'SCREEN_APPROVAL.json','x').write(json.dumps({'approval':'I approve the native screen for candidate knee_s10_v2 under OOD definition v4 r5 at kappa 63, attempt 1. I adopt definition v4 r5 for this candidate. RS1: the scored anchors are retained-supported; I overrule the start-share primary miss (121 of 128 against 122, a one-draw threshold); the secondary\\'s agreement with D3 is on record. And the BCA arm at kappa 63 is approved, and the screen is exploratory and supports no protocol claim.','package_manifest_sha256':h,'attempt':1},indent=2)+chr(10))"
+.venv/Scripts/python.exe experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/approve_native_screen_r5.py --attempt 2
 ```
 
 Commit the package and the approval under your identity:

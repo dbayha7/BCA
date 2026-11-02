@@ -155,11 +155,18 @@ class Instrument(unittest.TestCase):
 G1_DECISION = {"headline": "NOT REPRESENTABLE", "reported_only": True, "q_star": 0.11, "resolution_band": 1.8}
 
 
-def fake_dispatch(*, fail=(), i0_ok=True, r0_fail_early=False, entry_c=0.6):
+ZEUS, TITAN = "NVIDIA GeForce RTX 5070 Ti Laptop GPU", "NVIDIA GeForce RTX 5070 Ti"
+
+
+def fake_dispatch(*, fail=(), i0_ok=True, r0_fail_early=False, entry_c=0.6, device=ZEUS):
     def dispatch(job_dir, cap):
         job = json.loads((Path(job_dir) / "job.json").read_text(encoding="utf-8"))
         kind, i = job["kind"], job.get("seed_index", 0)
         report = {"job": job["id"], "kind": kind, "status": "completed", "transitions": 10}
+        if kind == "preflight":
+            report["receipt"] = {"device_kinds": [device]}
+        elif kind in S.GPU_KINDS:
+            report["device_kinds"] = [device]
         if kind == "i0":
             report.update(ok=i0_ok, I0={"ok": i0_ok}, loader={}, data_plan={})
         elif kind == "g1":
@@ -242,6 +249,27 @@ class Supervisor(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.execute(fake_dispatch())
 
+    def test_reuse_only_on_the_same_device_kind(self):
+        """Amendment A2: attempt 2 on Titan after an INCOMPLETE attempt 1 on Zeus reuses g1 but no Zeus GPU unit."""
+        out = self.execute(fake_dispatch(fail=("warmup_s1_cutoff_nostall",), device=ZEUS))
+        self.assertEqual(out["reading"], "INCOMPLETE")
+        self.write_approval(2)
+        out = self.execute(fake_dispatch(device=TITAN))
+        self.assertEqual(out["reading"], "GO", out.get("reasons"))
+        self.assertEqual(out["device_kinds"], [TITAN])
+        self.assertTrue(out["units"]["g1"].startswith("reused"))
+        self.assertEqual(out["units"]["warmup_s0_cutoff_stall3"], "completed")       # trained again, not Zeus's
+        self.assertEqual(out["units"]["preflight"], "completed")
+        started = json.loads((self.runs()[-1] / "TRAINING_STARTED.json").read_text())
+        self.assertEqual(started["device_kinds"], [TITAN])
+        self.write_approval(1)                                                          # an unknown GPU never trains:
+        out = S.execute(fake_dispatch(device="NVIDIA H100"), run_dir=self.tmp / "other", approval_path=self.approval,
+                        manifest_path=self.manifest, root=HERE, integrity={"package_dir": str(HERE), "files": {}}, require_dry_run=False)
+        self.assertEqual(out["reading"], "INCONCLUSIVE (instrument)")                   # stage 0, no attempt spent
+        self.assertFalse(out["attempt_counted"])
+        other_units = {p.name for p in (self.tmp / "other").iterdir() for p in [p] if p.is_dir()}
+        self.assertTrue(all(not any(u.startswith("warmup") for u in {q.name for q in r.iterdir()}) for r in (self.tmp / "other").iterdir()))
+
     def test_pre_bca_stops_train_no_bca_unit(self):
         out = self.execute(fake_dispatch(entry_c=0.3))
         self.assertEqual(out["reading"], "STOP: not reached")
@@ -261,11 +289,13 @@ class Supervisor(unittest.TestCase):
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes((HERE / f).read_bytes())
         receipt = root / "dry_run" / "DRY_RUN_RECEIPT.json"
-        good = {"status": "completed", "hashes": S.dry_run_hashes(root), "platform": "Linux", "real_dispatch": True, "device_kinds_ok": True}
+        good = {"status": "completed", "hashes": S.dry_run_hashes(root), "platform": "Linux", "real_dispatch": True,
+                "device_kinds_ok": True, "device_kind": TITAN}
         receipt.write_text(json.dumps(good), encoding="utf-8")
         self.assertEqual(S.check_dry_run(root)["status"], "completed")
         for bad in ({**good, "hashes": {k: "0" * 64 for k in S.DRY_RUN_HASHED}}, {**good, "platform": "Windows"},
-                    {**good, "real_dispatch": False}, {**good, "device_kinds_ok": False}, {**good, "status": "failed at r0"}):
+                    {**good, "real_dispatch": False}, {**good, "device_kinds_ok": False}, {**good, "status": "failed at r0"},
+                    {**good, "device_kind": "NVIDIA H100"}):
             receipt.write_text(json.dumps(bad), encoding="utf-8")
             with self.assertRaises(ValueError):
                 S.check_dry_run(root)

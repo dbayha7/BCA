@@ -30,6 +30,7 @@ for _p in (str(V3), str(F2), str(NATIVE), str(HERE)):
         sys.path.insert(0, _p)
 
 import screen_math_r5 as SM                                  # noqa: E402
+import device_kinds as DK                                    # noqa: E402
 import step03                                                # noqa: E402
 import units as U                                            # noqa: E402
 from core import VALIDATION, module, require, sha_file       # noqa: E402
@@ -54,9 +55,10 @@ PREFLIGHT_SECONDS, I0_SECONDS, I0_TRANSITIONS = 600, 600, 1_000_000
 MAX_ATTEMPTS, MAX_STAGE0_FAILURES = 2, 3
 SEEDS, WORLDS, ARMS = (0, 1, 2), ("stall3", "nostall"), ("cutoff", "random")
 TRAINING_KINDS = ("warmup", "branch", "bc_only", "bca_branch")
+GPU_KINDS = TRAINING_KINDS + ("r0", "evaluate", "evaluate_bca")      # reused only on the same device kind (A2)
 STAGE0_KINDS = ("preflight", "i0", "g1")
 REUSE_KEYS = ("id", "kind", "seed_index", "arm", "world")
-DRY_RUN_HASHED = ("screen_worker_r5.py", "screen_math_r5.py", "i0_unit.py", "g1_unit_r5.py",
+DRY_RUN_HASHED = ("screen_worker_r5.py", "screen_math_r5.py", "i0_unit.py", "g1_unit_r5.py", "device_kinds.py",
                   "../native_screen/screen_bind.py", "../native_screen/screen_data.py")
 
 
@@ -119,7 +121,8 @@ def check_dry_run(root=None, receipt_path=None):
     require(receipt.get("status") == "completed", f"The dry run did not complete: {receipt.get('status')}")
     require(receipt.get("hashes") == dry_run_hashes(root), "The dry run exercised different module files than the ones here")
     require(receipt.get("platform") == "Linux" and receipt.get("real_dispatch") is True and receipt.get("device_kinds_ok") is True,
-            "The dry run must be the real one in the recorded Linux environment (real dispatch, recorded device kind)")
+            "The dry run must be the real one in the recorded Linux environment (real dispatch, an allowed device kind)")
+    require(receipt.get("device_kind") in DK.ALLOWED_DEVICE_KINDS, "The dry run's device kind is not an allowed one (A2)")
     return receipt
 
 
@@ -217,14 +220,20 @@ class Screen:
                      "g1_seconds": 0.0, "g1_transitions": 0, "i0_seconds": 0.0, "preflight_seconds": 0.0}
         self.dirs, self.reports, self.units = {}, {}, {}
         self.training_started = False
+        self.device_kinds = None                             # set from this run's preflight receipt (A2)
 
     def reusable(self, spec):
+        """A completed unit of an earlier run with the same id, kind, seed, arm and world; a GPU unit only if its
+        report carries the device kinds of this run (amendment A2: a unit trained on another machine is never
+        continued here, and its checkpoints may not even be in this clone)."""
         for prev in reversed(self.plan["previous_runs"]):
             unit_dir = Path(prev) / spec["id"]
             sup, job = _read(unit_dir / "SUPERVISOR_RESULT.json") or {}, _read(unit_dir / "job.json") or {}
             if sup.get("completed") and all(job.get(k) == spec.get(k) for k in REUSE_KEYS):
                 report = _read(unit_dir / "report.json")
                 if report and report.get("status") == "completed":
+                    if spec["kind"] in GPU_KINDS and (self.device_kinds is None or report.get("device_kinds") != self.device_kinds):
+                        continue
                     return unit_dir, report
         return None, None
 
@@ -239,7 +248,8 @@ class Screen:
         if kind in TRAINING_KINDS:
             if not self.training_started:                   # r5 D8: the attempt is counted from the first training job
                 step03._write_new(self.directory / "TRAINING_STARTED.json",
-                                  {"attempt": self.plan["attempt"], "first_job": spec["id"], "utc": datetime.now(timezone.utc).isoformat()})
+                                  {"attempt": self.plan["attempt"], "first_job": spec["id"], "device_kinds": self.device_kinds,
+                                   "utc": datetime.now(timezone.utc).isoformat()})
                 self.training_started = True
             cap, transitions, cap_key = min(JOB_SECONDS, TRAIN_SECONDS - self.caps["training_seconds"]), 0, "training_seconds"
         elif kind == "g1":
@@ -301,6 +311,10 @@ def execute(dispatch=None, *, run_dir=None, approval_path=None, manifest_path=No
     try:
         pre = screen.run({"id": "preflight", "kind": "preflight"})
         result["preflight"] = pre.get("kind")
+        screen.device_kinds = list((pre.get("receipt") or {}).get("device_kinds") or [])
+        require(len(screen.device_kinds) == 1 and screen.device_kinds[0] in DK.ALLOWED_DEVICE_KINDS,
+                f"Preflight device kinds {screen.device_kinds} are not one allowed kind (A2)")
+        result["device_kinds"] = screen.device_kinds
         i0 = screen.run({"id": "i0", "kind": "i0"})
         result["i0"] = {k: i0.get(k) for k in ("I0", "loader", "data_plan", "ok", "finer_max_rel_diff")}
         if not i0.get("ok"):
