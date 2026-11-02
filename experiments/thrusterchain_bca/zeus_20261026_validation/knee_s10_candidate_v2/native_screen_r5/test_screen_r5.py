@@ -139,6 +139,19 @@ class Instrument(unittest.TestCase):
     def test_worker_kinds(self):
         self.assertEqual(set(SW.KINDS), {"preflight", "warmup", "branch", "bc_only", "r0", "evaluate", "bca_branch", "evaluate_bca", "g1", "i0"})
 
+    def test_stored_pi_ref_gains_are_the_pinned_ones(self):
+        """Amendment A3: the worker installs the Zeus-computed gains whose bytes hash to pi_ref's pin."""
+        import hashlib
+        import pi_ref
+        k = np.load(HERE / "pi_ref_gains.npy", allow_pickle=False)
+        self.assertEqual(k.shape, (pi_ref.HORIZON, 4, 13))
+        self.assertEqual(hashlib.sha256(np.ascontiguousarray(k).tobytes()).hexdigest(), pi_ref.GAINS_SHA256)
+        self.assertIsNotNone(pi_ref._K)                                                # installed by the worker import
+        self.assertTrue(np.array_equal(pi_ref._K, k))
+        self.assertEqual(SW.PI_REF_GAINS_SHA256, pi_ref.GAINS_SHA256)
+        self.assertIn("pi_ref_gains.npy", S.DRY_RUN_HASHED)
+        self.assertIn("pi_ref_gains.npy", S.manifest_body(HERE)["files"])
+
     def test_dry_run_import_order_in_a_fresh_interpreter(self):
         """The fault the first WSL dry run hit: a Stage 1 module imported before the widened recorder's substitution."""
         import subprocess
