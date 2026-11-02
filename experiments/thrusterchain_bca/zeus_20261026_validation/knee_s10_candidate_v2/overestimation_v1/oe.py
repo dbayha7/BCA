@@ -1,7 +1,8 @@
 """Overestimation comparison, native versus BCA on the knee_s10_v2 CUTOFF data: the supervisor
 (OVERESTIMATION_RULE.md). It never imports JAX: every job is a separate `oe_worker.py` process under
 matched_policy_pilot_v1's supervise() (an owned process group, killed at its cap). Units, in order, fail-fast:
-3 warmups, 3 native branches, 3 BCA branches at kappa 63, 6 evaluations (`oe_evaluate`), the decision
+in each of the two worlds (stall3 the honeypot, no-stall the placebo; amendment A2): 3 warmups, 3 native
+branches, 3 BCA branches at kappa 63, 6 evaluations (`oe_evaluate`); then the decision
 (oe_math.decide). One attempt; after INCOMPLETE (or, amendment A1, after INCONCLUSIVE on the named instrument
 cause) a second attempt under a new approval reuses every completed unit.
 OE_RESULT.json is always written. Run in WSL from PowerShell (README.md):
@@ -44,7 +45,7 @@ INSTRUMENT_CAUSE_REL = 1e-6                                 # amendment A1: atte
 JOB_SECONDS, TRAIN_SECONDS = 1_800, int(3.5 * 3_600)
 EVAL_JOB_SECONDS, EVAL_JOB_TRANSITIONS = 900, 200_000
 EVAL_SECONDS, EVAL_TRANSITIONS = int(1.5 * 3_600), 1_500_000
-SEEDS, WORLD, ARM = (0, 1, 2), "stall3", "cutoff"
+SEEDS, WORLDS, ARM = (0, 1, 2), ("stall3", "nostall"), "cutoff"       # amendment A2: the placebo world
 TRAINING_KINDS = ("warmup", "branch", "bca_branch")
 REUSE_KEYS = ("id", "kind", "seed_index", "arm", "world")
 
@@ -184,23 +185,28 @@ def execute(dispatch=None, *, run_dir=None, approval_path=None, manifest_path=No
     result = {"package": "knee_s10_candidate_v2/overestimation_v1", "kappa": KAPPA, "attempt": plan["attempt"],
               "manifest_sha256": plan["manifest_sha256"], "units": runner.units, "caps": runner.caps, "reading": "INCOMPLETE"}
     try:
-        for i in SEEDS:
-            runner.run({"id": f"warmup_s{i}", "kind": "warmup", "seed_index": i, "arm": ARM, "world": WORLD})
-        for i in SEEDS:
-            runner.run({"id": f"branch_s{i}", "kind": "branch", "seed_index": i, "arm": ARM, "world": WORLD,
-                        "warmup_dir": str(runner.dirs[f"warmup_s{i}"])})
-        for i in SEEDS:
-            runner.run({"id": f"bca_branch_s{i}", "kind": "bca_branch", "seed_index": i, "arm": ARM, "world": WORLD,
-                        "warmup_dir": str(runner.dirs[f"warmup_s{i}"]), "native_branch_dir": str(runner.dirs[f"branch_s{i}"])})
-        native, bca = {}, {}
-        for i in SEEDS:
-            native[i] = runner.run({"id": f"eval_native_s{i}", "kind": "oe_evaluate", "seed_index": i, "arm": "native", "world": WORLD,
-                                    "runs": {"warmup": str(runner.dirs[f"warmup_s{i}"]), "branch": str(runner.dirs[f"branch_s{i}"])}})
-            bca[i] = runner.run({"id": f"eval_bca_s{i}", "kind": "oe_evaluate", "seed_index": i, "arm": "bca", "world": WORLD,
-                                 "runs": {"warmup": str(runner.dirs[f"warmup_s{i}"]), "branch": str(runner.dirs[f"bca_branch_s{i}"])}})
-        decision = OM.decide(native, bca, KAPPA)
+        results = {}
+        for world in WORLDS:                                  # stall3 first (attempt 1's ids, unsuffixed), then nostall
+            sfx = "" if world == "stall3" else f"_{world}"
+            for i in SEEDS:
+                runner.run({"id": f"warmup_s{i}{sfx}", "kind": "warmup", "seed_index": i, "arm": ARM, "world": world})
+            for i in SEEDS:
+                runner.run({"id": f"branch_s{i}{sfx}", "kind": "branch", "seed_index": i, "arm": ARM, "world": world,
+                            "warmup_dir": str(runner.dirs[f"warmup_s{i}{sfx}"])})
+            for i in SEEDS:
+                runner.run({"id": f"bca_branch_s{i}{sfx}", "kind": "bca_branch", "seed_index": i, "arm": ARM, "world": world,
+                            "warmup_dir": str(runner.dirs[f"warmup_s{i}{sfx}"]), "native_branch_dir": str(runner.dirs[f"branch_s{i}{sfx}"])})
+            native, bca = {}, {}
+            for i in SEEDS:
+                native[i] = runner.run({"id": f"eval_native_s{i}{sfx}", "kind": "oe_evaluate", "seed_index": i, "arm": "native", "world": world,
+                                        "runs": {"warmup": str(runner.dirs[f"warmup_s{i}{sfx}"]), "branch": str(runner.dirs[f"branch_s{i}{sfx}"])}})
+                bca[i] = runner.run({"id": f"eval_bca_s{i}{sfx}", "kind": "oe_evaluate", "seed_index": i, "arm": "bca", "world": world,
+                                     "runs": {"warmup": str(runner.dirs[f"warmup_s{i}{sfx}"]), "branch": str(runner.dirs[f"bca_branch_s{i}{sfx}"])}})
+            results[world] = {"native": native, "bca": bca}
+        decision = OM.decide(results, KAPPA)
         step03._write_new(directory / "decision.json", sanitize(decision))
-        result.update(reading=decision["reading"], all_labels=decision["all_labels"], reasons=decision["reasons"],
+        result.update(reading=decision["reading"], validity=decision["validity"], honeypot=decision["honeypot"],
+                      placebo=decision["placebo"], all_labels=decision["all_labels"], reasons=decision["reasons"],
                       paired=decision["paired"], canonical=decision["canonical"])
     except (U.UnitFailed, step03.CapExhausted) as exc:
         result.update(reading="INCOMPLETE", reasons=[f"{type(exc).__name__}: {exc}"])
@@ -232,13 +238,16 @@ def decide_only(run_dir=None):
             r = S._read(unit / "report.json")
             if unit.is_dir() and r and r.get("status") == "completed":
                 reports[unit.name] = r
-    native = {i: reports[f"eval_native_s{i}"] for i in SEEDS}
-    bca = {i: reports[f"eval_bca_s{i}"] for i in SEEDS}
-    return OM.decide(native, bca, KAPPA)
+    results = {}
+    for world in WORLDS:
+        sfx = "" if world == "stall3" else f"_{world}"
+        results[world] = {"native": {i: reports[f"eval_native_s{i}{sfx}"] for i in SEEDS},
+                          "bca": {i: reports[f"eval_bca_s{i}{sfx}"] for i in SEEDS}}
+    return OM.decide(results, KAPPA)
 
 
 def summary(out):
-    return {k: out.get(k) for k in ("reading", "all_labels", "reasons", "paired", "canonical", "attempt", "caps")}
+    return {k: out.get(k) for k in ("reading", "validity", "honeypot", "placebo", "all_labels", "reasons", "paired", "canonical", "attempt", "caps")}
 
 
 if __name__ == "__main__":

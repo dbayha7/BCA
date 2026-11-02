@@ -80,3 +80,25 @@ Overestimation comparison v1, attempt 1: INCONCLUSIVE (I1 1.1e-7 to 2.4e-7 again
 float32 batch effect); computed PROMISING in every seed (dJ +11.9, +41.3, +22.8; de_own −0.6, −16.2, −28.9); native
 W exposure 0.67 to 0.70, own-action over-valuation about +180; e_W − e_data +0.4 to +0.9; U_W − U_data +0.01 to
 +0.03. GPU 1.24 h; 335,448 exact transitions.
+
+## Post-hoc diagnostic (2026-11-01 20:35 EST; not pre-registered, computed from the saved attempt-1 reports)
+
+Prompted by an outside review's "dose selectivity" question (does the uncertainty concentrate where the critic
+over-values?), per unit over the 768 dataset probes (192 rows × 4 slots):
+
+| unit | U given over-valued | U given under-valued | ratio | corr(e, U) | corr(\|e\|, U) | under-valued share | mean error when under |
+|---|---|---|---|---|---|---|---|
+| native s0 | 2.593 | 2.508 | 1.03 | +0.42 | +0.42 | 0.32 | −3.6 |
+| native s1 | 2.250 | 2.130 | 1.06 | +0.49 | +0.47 | 0.40 | −4.3 |
+| native s2 | 2.516 | 2.494 | 1.01 | +0.26 | +0.26 | 0.36 | −4.0 |
+| BCA s0 | 2.714 | 2.614 | 1.04 | +0.41 | +0.41 | 0.45 | −4.1 |
+| BCA s1 | 2.320 | 2.205 | 1.05 | +0.45 | +0.43 | 0.46 | −4.0 |
+| BCA s2 | 2.322 | 2.288 | 1.02 | +0.31 | +0.32 | 0.32 | −3.4 |
+
+Reading, which refines point 4 above: U does carry the error's magnitude (correlation 0.26 to 0.49 with the error,
+the same with its absolute value) but not its sign (the ratio of U on over- to under-valued probes is 1.01 to 1.06).
+The width is a symmetric scale of the critic's miss, as its calibration to |target − Q| implies, so the penalty
+kappa·U falls on under-valued probes (about a third of dataset probes, mean miss about −4) as it does on over-valued
+ones. The earlier sentence "the width does not flag the withheld action" stands as written: U_W − U_data is 0.01 to
+0.03. This table says, in addition, that U is informative about how wrong the critic is and uninformative about
+which way. Not pre-registered; reported only.

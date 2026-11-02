@@ -1,4 +1,5 @@
-"""The `oe_evaluate` job (OVERESTIMATION_RULE.md, "Reads, per unit"): one 20k policy (native or BCA) of one seed.
+"""The `oe_evaluate` job (OVERESTIMATION_RULE.md, "Reads, per unit"): one 20k policy (native or BCA) of one seed in
+one world (stall3, the honeypot; nostall, the placebo; amendment A2).
 Rollouts from the 128 common starts, own-action probes at 48 visited states, logged and withheld probes at 192
 dataset rows, each against the policy's own exact unclipped continuation. Imported by oe_worker.py inside the
 worker process (GPU); the pure helpers (`dataset_probe_rows`, `w_probes`) are tested on the CPU."""
@@ -18,7 +19,7 @@ from core import require                                    # noqa: E402
 from knee_region import KNEE, SLOTS, past_knee_a0           # noqa: E402
 import oe_seeds as OS                                       # noqa: E402
 
-WORLD, DATA_ARM, CHECKPOINT = "stall3", "cutoff", "020000"
+WORLDS, DATA_ARM, CHECKPOINT = ("stall3", "nostall"), "cutoff", "020000"   # amendment A2: honeypot and placebo worlds
 W_SLOTS = ("s05", "s10", "s20")                             # withheld a0 magnitudes 0.85, 0.9, 1.0 (|float32 slot value|; the table is W-)
 PROBE_NAMES = ("logged",) + W_SLOTS
 N_ROWS = 192
@@ -74,11 +75,11 @@ def probe_values(policy, states, obs, times, probes, world, budget):
     return {"qpi": values, "q1": q1, "q2": q2, "u": u, "forward_calls": int(calls), "receipt": receipt}
 
 
-def measure(policy, arrays, bank, seeds, budget, deadline):
+def measure(policy, arrays, bank, seeds, budget, deadline, world):
     """Every read of one policy (OVERESTIMATION_RULE.md "Reads, per unit"), given the dataset arrays, the 128 start
     states and the package seeds. Pure simulator and policy calls; tested on the CPU with a fake policy."""
     require(bank.shape == (128, 13), "The E2 bank is the formal G2 v2's 128 starts")
-    roll = E.rollouts(bank, policy.act, WORLD, "pi", budget)
+    roll = E.rollouts(bank, policy.act, world, "pi", budget)
     rates = E.step_rates(roll["executed"], roll["obs"])
     deadline()
     states, obs, times, rows = E.visited_states(roll, seeds["visited_states"])
@@ -86,14 +87,14 @@ def measure(policy, arrays, bank, seeds, budget, deadline):
     executed_there = np.stack([roll["executed"][e, t] for e, t in rows])
     i2_max_abs = float(np.max(np.abs(own.astype(np.float64) - executed_there.astype(np.float64))))
     i2_ok = bool(i2_max_abs <= ACTION_TOL)
-    own_vals = probe_values(policy, states, obs, times, own[:, None, :], WORLD, budget)
+    own_vals = probe_values(policy, states, obs, times, own[:, None, :], world, budget)
     t0 = times == 0
     starts = np.asarray([e for e, t in rows if t == 0])
     i1_rel = float(np.max(np.abs(own_vals["qpi"][t0, 0] - roll["returns"][starts]) / np.maximum(1.0, np.abs(roll["returns"][starts]))))
     deadline()
     ds = dataset_probe_rows(arrays, seeds["dataset_rows"])
     probes = w_probes(ds["logged"])
-    d_vals = probe_values(policy, ds["states"], ds["obs"], ds["times"], probes, WORLD, budget)
+    d_vals = probe_values(policy, ds["states"], ds["obs"], ds["times"], probes, world, budget)
     return {"returns": roll["returns"], "J": float(np.mean(roll["returns"])), "rates": rates, "exposure_w": rates["w_any_depth"],
             "rollout_receipt": roll["receipt"],
             "own": {"rows": rows, "times": times, "actions": own, "executed": executed_there, "qpi": own_vals["qpi"][:, 0], "q1": own_vals["q1"][:, 0],
@@ -110,18 +111,19 @@ def measure(policy, arrays, bank, seeds, budget, deadline):
 def oe_evaluate(job, out, deadline):
     import screen_worker as SW                              # the worker process has imported it already
     W1 = SW.W1
-    require(job.get("arm") in ("native", "bca") and job.get("world", WORLD) == WORLD, "oe_evaluate: arm native|bca, world stall3")
+    world = job.get("world")
+    require(job.get("arm") in ("native", "bca") and world in WORLDS, "oe_evaluate: arm native|bca, world stall3|nostall")
     runtime, evaluate_worker, _, _ = SW.rerun1()
     budget = W1.Budget(job["transitions"], job["timeout_seconds"])
     seeds = OS.load()["numpy"]
-    dataset, plan = W1.load_world(job, WORLD)
+    dataset, plan = W1.load_world(job, world)
     dirs = {"warmup": job["runs"]["warmup"], "branch": job["runs"]["branch"]}
     restore = W1.policies if job["arm"] == "native" else SW.policies_bca
     _, pols, assertions, adapter = restore(job, runtime, evaluate_worker, dataset, plan, DATA_ARM, dirs, (CHECKPOINT,))
     policy = pols[CHECKPOINT]
     deadline()
-    reads = measure(policy, dataset.arrays, E.bank_states(W1.E2_BANK), seeds, budget, deadline)
+    reads = measure(policy, dataset.arrays, E.bank_states(W1.E2_BANK), seeds, budget, deadline, world)
     policy.assert_unchanged()
     return {"kind": "oe_evaluate", "package": "knee_s10_candidate_v2/overestimation_v1", "arm": job["arm"], "kappa": SW.KAPPA,
-            "seed_index": job["seed_index"], "checkpoint": CHECKPOINT, "world": WORLD, "assertions": assertions,
+            "seed_index": job["seed_index"], "checkpoint": CHECKPOINT, "world": world, "assertions": assertions,
             "dataset_sha256": dataset.digest, "seeds": dict(seeds), **reads}

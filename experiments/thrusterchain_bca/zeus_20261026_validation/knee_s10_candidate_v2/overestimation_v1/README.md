@@ -21,13 +21,14 @@ Read `OVERESTIMATION_RULE.md` first: the dose, the probes, the bars and the budg
 change is edited into the rule and re-sealed before any run. The sentences are matched exactly (case included).
 The command below names attempt 2 (attempt 1 is on record as INCONCLUSIVE by the instrument tolerances alone,
 amendment A1); remove the attempt-1 approval file first, since the writer refuses to overwrite. Attempt 2 reuses
-the nine training units and reruns the six evaluations (about three minutes).
+the nine stall3 training units, reruns the six stall3 evaluations, and adds the no-stall placebo world of
+amendment A2 (nine training jobs, six evaluations).
 
 ```bash
 .venv/Scripts/python.exe -c "import json,hashlib;p='experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/overestimation_v1/';h=hashlib.sha256(open(p+'OE_MANIFEST.json','rb').read()).hexdigest();open(p+'OE_APPROVAL.json','x').write(json.dumps({'approval':'I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, attempt 2. And the BCA arm at kappa 63 is approved, and the comparison is exploratory and supports no protocol claim.','package_manifest_sha256':h,'attempt':2},indent=2)+chr(10))"
 ```
 
-## Run (PowerShell launches the `Ubuntu` distro; about 1.5 to 2 hours; nothing else of yours on the GPU)
+## Run (PowerShell launches the `Ubuntu` distro; attempt 2 is about 1.5 hours: the nine no-stall training jobs plus twelve evaluations; nothing else of yours on the GPU)
 
 ```bash
 wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/overestimation_v1 && PYTHONDONTWRITEBYTECODE=1 /home/david/bca-operator-audit-20261026/bin/python -B -u oe.py --execute 2>&1 | tee oe_console.log"

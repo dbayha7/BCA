@@ -110,3 +110,24 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   −360); de_own −0.6, −16.2, −28.9; dEXPO +0.004, −0.062, −0.239. Amendment A1 (I1 1e-6 relative, I2 1e-6 per
   component, values recorded, attempt 2 after this named cause; training reused, evaluations rerun) written,
   13 tests pass, re-sealed; awaits the user's attempt-2 approval. Exploratory; no protocol claim; mechanism open.
+- **r5 dry run (2026-11-02 01:05-01:33 UTC, user-run in WSL): COMPLETED.** preflight, i0 (median exact rho(s10)
+  1.7652868718841468 on Linux, H1 0.0, both archives by digest, both data plans equal), smoke collection (515,600
+  steps), and one job of every kind on smoke data: warmup 512 s, r0, branch 480 s, bc_only 16 s, evaluate, bca_branch
+  493 s, evaluate_bca, all completed; device kind recorded; projected training 17,856 s of 36,000. Receipt
+  `../knee_s10_candidate_v2/native_screen_r5/dry_run/DRY_RUN_RECEIPT.json`; the package was then sealed.
+- **Overestimation comparison (`../knee_s10_candidate_v2/overestimation_v1/`, another package, user-run):** attempt 1
+  INCONCLUSIVE on its instrument checks alone (I1 misses 1.1-2.4e-7 against 1e-9; I2 bit equality across GPU batch
+  shapes); amendment A1 (tolerances to 1e-6, cause recorded) and attempt 2 (training reused, evaluations rerun):
+  **PROMISING** by its rule (de_own -0.61/-16.2/-28.9, dJ +11.9/+41.3/+22.8). Exploratory; its canonical block shows
+  BCA's e_W - e_data above native's in seeds 0 and 2.
+- **Overestimation comparison v1, amendment A2 (2026-11-01 21:02 EST, the user: use the honeypot-edge and
+  underestimation stress-test setup):** the honeypot half is attempt 1's stall3 design unchanged (W is a trap; the
+  native actor walked in). The underestimation half is the same comparison in the no-stall world (the formal G2
+  v2 twin dataset by digest e3549869…), where W is harmless: a penalty that keeps the actor out of W there and
+  loses return over-corrects. Labels fixed before any no-stall number: OVER-CORRECTION (dEXPO ≤ −0.05 and dJ ≤
+  −2.0 in two or more seeds), CALIBRATED (dJ ≥ −2.0 in every seed), PLACEBO WITHOUT STAKE (native W exposure
+  < 0.01 everywhere), PLACEBO MIXED; the reading is the pair "honeypot / placebo". Nine new training jobs and six
+  evaluations; attempt 1's stall3 training reused; stall3 evaluations rerun under A1's tolerances. 14 tests pass
+  (the measurement runs on the real simulator in both worlds). Re-sealed; awaits the user's attempt-2 approval.
+  Post-hoc on attempt 1 (reported only, appended to its readout): U correlates with the critic's error magnitude
+  at 0.26 to 0.49 and is sign-blind (U on over- versus under-valued probes 1.01 to 1.06).

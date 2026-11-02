@@ -91,7 +91,7 @@ class Measure(unittest.TestCase):
         ds = SB.load_dataset("stall3")
         bank = SB.bank_states("stage1_e2_bank")
         budget = OW.SW.W1.Budget(200_000, 600.0)
-        reads = OE.measure(FakePolicy(), ds.arrays, bank, OS.load()["numpy"], budget, lambda: None)
+        reads = OE.measure(FakePolicy(), ds.arrays, bank, OS.load()["numpy"], budget, lambda: None, "stall3")
         self.assertEqual(reads["returns"].shape, (128,))
         self.assertTrue(reads["instrument"]["I1_ok"], reads["instrument"])             # own value at t=0 equals the rollout return
         self.assertTrue(reads["instrument"]["I2_ok"])
@@ -108,6 +108,12 @@ class Measure(unittest.TestCase):
         self.assertTrue(0.0 <= reads["exposure_w"] <= 1.0)
         r = OM.unit_reads({**reads, "J": reads["J"], "exposure_w": reads["exposure_w"]}, KAPPA)
         self.assertTrue(r["finite"])
+        ns = SB.load_dataset("nostall")                                                   # the placebo world (A2)
+        reads_ns = OE.measure(FakePolicy(), ns.arrays, bank, OS.load()["numpy"], OW.SW.W1.Budget(200_000, 600.0), lambda: None, "nostall")
+        self.assertTrue(reads_ns["instrument"]["I1_ok"] and reads_ns["instrument"]["I2_ok"])
+        self.assertIn("nostall", json.dumps(reads_ns["rollout_receipt"]["world"]))
+        self.assertIn("stall3", json.dumps(reads["rollout_receipt"]["world"]))
+        self.assertNotEqual(float(reads_ns["J"]), float(reads["J"]))                        # different physics, same policy
 
 
 # ------------------------------------------------------------------------------------------------ synthetic reports
@@ -124,10 +130,16 @@ def report(*, arm, seed, j, e_own, e_data, e_w, u_data=0.1, u_w=0.5, expo=0.1, n
             "data": {"slots": ["logged", "s05", "s10", "s20"], "qpi": qpi_d, "q1": q1_d, "q2": q1_d, "u": u}}
 
 
-def pair(dj=(0.0, 0.0, 0.0), de=(0.0, 0.0, 0.0), native_expo=(0.1, 0.1, 0.1), **kw):
+def pair(dj=(0.0, 0.0, 0.0), de=(0.0, 0.0, 0.0), native_expo=(0.1, 0.1, 0.1), bca_expo=(0.05, 0.05, 0.05), **kw):
     native = {i: report(arm="native", seed=i, j=-80.0, e_own=3.0, e_data=0.5, e_w=4.0, expo=native_expo[i], **kw) for i in range(3)}
-    bca = {i: report(arm="bca", seed=i, j=-80.0 + dj[i], e_own=3.0 + de[i], e_data=0.5, e_w=4.0, expo=0.05, **kw) for i in range(3)}
-    return native, bca
+    bca = {i: report(arm="bca", seed=i, j=-80.0 + dj[i], e_own=3.0 + de[i], e_data=0.5, e_w=4.0, expo=bca_expo[i], **kw) for i in range(3)}
+    return {"native": native, "bca": bca}
+
+
+def both(stall3=None, nostall=None):
+    """results for decide(): stall3 defaults to a clean PROMISING, nostall to a clean CALIBRATED."""
+    return {"stall3": stall3 or pair(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8)),
+            "nostall": nostall or pair(dj=(0.3, 0.2, -0.5), native_expo=(0.3, 0.3, 0.3), bca_expo=(0.3, 0.29, 0.31))}
 
 
 class Reads(unittest.TestCase):
@@ -142,37 +154,59 @@ class Reads(unittest.TestCase):
         self.assertEqual(r["share_over_w"], 1.0)
         self.assertTrue(r["finite"] and r["I1_ok"] and r["I2_ok"])
 
-    def test_promising_no_effect_harmful_mixed(self):
-        self.assertEqual(OM.decide(*pair(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8)), KAPPA)["reading"], "PROMISING")
-        self.assertEqual(OM.decide(*pair(dj=(0.5, -1.0, 1.0), de=(-0.2, 0.1, -0.4)), KAPPA)["reading"], "NO EFFECT")
-        self.assertEqual(OM.decide(*pair(dj=(-2.5, -3.0, 1.0), de=(-0.6, -1.2, -0.8)), KAPPA)["reading"], "HARMFUL")
-        self.assertEqual(OM.decide(*pair(dj=(0.5, -1.0, 1.0), de=(-0.6, 0.3, -0.8)), KAPPA)["reading"], "MIXED")
-        out = OM.decide(*pair(dj=(0.5, -2.5, 1.0), de=(-0.6, -1.2, -0.8)), KAPPA)   # one return loss of 2.5: not PROMISING
-        self.assertEqual(out["reading"], "MIXED")
+    def test_honeypot_labels(self):
+        hp = lambda **k: OM.decide(both(stall3=pair(**k)), KAPPA)["honeypot"]
+        self.assertEqual(hp(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8)), "PROMISING")
+        self.assertEqual(hp(dj=(0.5, -1.0, 1.0), de=(-0.2, 0.1, -0.4)), "NO EFFECT")
+        self.assertEqual(hp(dj=(-2.5, -3.0, 1.0), de=(-0.6, -1.2, -0.8)), "HARMFUL")
+        self.assertEqual(hp(dj=(0.5, -1.0, 1.0), de=(-0.6, 0.3, -0.8)), "MIXED")
+        out = OM.decide(both(stall3=pair(dj=(0.5, -2.5, 1.0), de=(-0.6, -1.2, -0.8))), KAPPA)   # one return loss of 2.5
+        self.assertEqual(out["honeypot"], "MIXED")
         self.assertNotIn("PROMISING", out["all_labels"])
+        self.assertEqual(out["reading"], "MIXED / CALIBRATED")
+
+    def test_placebo_labels(self):
+        pl = lambda **k: OM.decide(both(nostall=pair(**k)), KAPPA)
+        out = pl(dj=(0.3, 0.2, -0.5), native_expo=(0.3, 0.3, 0.3), bca_expo=(0.3, 0.29, 0.31))
+        self.assertEqual(out["placebo"], "CALIBRATED")
+        self.assertEqual(out["reading"], "PROMISING / CALIBRATED")
+        out = pl(dj=(-3.0, -4.0, 0.5), native_expo=(0.3, 0.3, 0.3), bca_expo=(0.1, 0.1, 0.3))
+        self.assertEqual(out["placebo"], "OVER-CORRECTION")
+        self.assertEqual(out["reading"], "PROMISING / OVER-CORRECTION")
+        out = pl(dj=(-3.0, -4.0, 0.5), native_expo=(0.3, 0.3, 0.3), bca_expo=(0.3, 0.3, 0.3))   # loses return without leaving W
+        self.assertEqual(out["placebo"], "PLACEBO MIXED")
+        out = pl(dj=(-3.0, -4.0, 0.5), native_expo=(0.0, 0.005, 0.009), bca_expo=(0.0, 0.0, 0.0))
+        self.assertEqual(out["placebo"], "PLACEBO WITHOUT STAKE")                  # the stake label outranks the rest
+        self.assertIn("PLACEBO MIXED", out["all_labels"])
 
     def test_not_reached_and_inconclusive(self):
-        out = OM.decide(*pair(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), native_expo=(0.0, 0.005, 0.009)), KAPPA)
+        out = OM.decide(both(stall3=pair(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), native_expo=(0.0, 0.005, 0.009))), KAPPA)
         self.assertEqual(out["reading"], "NOT REACHED")
         self.assertIn("PROMISING", out["all_labels"])                               # every label computed
-        out = OM.decide(*pair(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), native_expo=(0.0, 0.005, 0.02)), KAPPA)
-        self.assertEqual(out["reading"], "PROMISING")                               # one seed reaches
-        native, bca = pair(i1=False)
-        self.assertEqual(OM.decide(native, bca, KAPPA)["reading"], "INCONCLUSIVE")
-        self.assertAlmostEqual(OM.decide(*pair(), KAPPA)["canonical"][0]["native_e_w_minus_e_data"], 3.5)
+        self.assertEqual(out["honeypot"], "PROMISING")
+        out = OM.decide(both(stall3=pair(dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), native_expo=(0.0, 0.005, 0.02))), KAPPA)
+        self.assertEqual(out["reading"], "PROMISING / CALIBRATED")                  # one seed reaches
+        out = OM.decide(both(nostall=pair(i1=False)), KAPPA)                       # a placebo instrument miss is a miss
+        self.assertEqual(out["reading"], "INCONCLUSIVE")
+        self.assertAlmostEqual(OM.decide(both(), KAPPA)["canonical"]["stall3"][0]["native_e_w_minus_e_data"], 3.5)
 
 
 # ------------------------------------------------------------------------------------------------ the supervisor
 
-def fake_dispatch(*, fail=(), dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), instrument=None):
+def fake_dispatch(*, fail=(), dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), instrument=None, ns_dj=(0.3, 0.2, -0.5),
+                  ns_expo=((0.3, 0.3), (0.3, 0.29), (0.3, 0.31))):
     def dispatch(job_dir, cap):
         job = json.loads((Path(job_dir) / "job.json").read_text())
         kind, exit_code = job["kind"], 0
-        rep = {"job": job["id"], "kind": kind, "status": "completed", "transitions": 10}
+        rep = {"job": job["id"], "kind": kind, "status": "completed", "transitions": 10, "world": job.get("world")}
         if kind == "oe_evaluate":
-            i = job["seed_index"]
-            rep.update(report(arm=job["arm"], seed=i, j=-80.0 + (dj[i] if job["arm"] == "bca" else 0.0),
-                              e_own=3.0 + (de[i] if job["arm"] == "bca" else 0.0), e_data=0.5, e_w=4.0, **(instrument or {})))
+            i, bca = job["seed_index"], job["arm"] == "bca"
+            if job["world"] == "stall3":
+                rep.update(report(arm=job["arm"], seed=i, j=-80.0 + (dj[i] if bca else 0.0),
+                                  e_own=3.0 + (de[i] if bca else 0.0), e_data=0.5, e_w=4.0, **(instrument or {})))
+            else:
+                rep.update(report(arm=job["arm"], seed=i, j=-60.0 + (ns_dj[i] if bca else 0.0), e_own=1.0, e_data=0.3, e_w=0.4,
+                                  expo=ns_expo[i][1 if bca else 0], **(instrument or {})))
             rep["returns"] = rep["returns"].tolist()
             for part in ("own", "data"):
                 rep[part] = {k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in rep[part].items()}
@@ -202,9 +236,13 @@ class Supervisor(unittest.TestCase):
 
     def test_promising_end_to_end(self):
         out = self.execute(fake_dispatch())
-        self.assertEqual(out["reading"], "PROMISING", out.get("reasons"))
+        self.assertEqual(out["reading"], "PROMISING / CALIBRATED", out.get("reasons"))
         units = {p.name for p in (self.run / "attempt_1").iterdir() if p.is_dir()}
-        self.assertEqual(len(units), 15)
+        self.assertEqual(len(units), 30)
+        self.assertIn("bca_branch_s2_nostall", units)
+        job = json.loads((self.run / "attempt_1" / "eval_bca_s1_nostall" / "job.json").read_text())
+        self.assertEqual((job["world"], job["arm"]), ("nostall", "bca"))
+        self.assertTrue(job["runs"]["branch"].endswith("bca_branch_s1_nostall"))
         self.assertTrue((self.run / "attempt_1" / "decision.json").is_file())
         self.assertTrue((self.run / "attempt_1" / "OE_RESULT.json").is_file())
         job = json.loads((self.run / "attempt_1" / "eval_bca_s2" / "job.json").read_text())
@@ -212,7 +250,7 @@ class Supervisor(unittest.TestCase):
         self.assertEqual(job["arm"], "bca")
         job = json.loads((self.run / "attempt_1" / "bca_branch_s0" / "job.json").read_text())
         self.assertTrue(job["native_branch_dir"].endswith("branch_s0") and job["arm"] == "cutoff")
-        self.assertEqual(oe.decide_only(self.run)["reading"], "PROMISING")
+        self.assertEqual(oe.decide_only(self.run)["reading"], "PROMISING / CALIBRATED")
 
     def test_incomplete_then_reuse_on_attempt_2_and_no_attempt_3(self):
         out = self.execute(fake_dispatch(fail=("bca_branch_s1",)))
@@ -220,11 +258,12 @@ class Supervisor(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.execute(fake_dispatch())                                           # attempt 1 again is refused
         self.write_approval(2)
-        out = self.execute(fake_dispatch(dj=(0.1, 0.2, -0.1), de=(0.1, -0.2, 0.3)))
-        self.assertEqual(out["reading"], "NO EFFECT", out.get("reasons"))
+        out = self.execute(fake_dispatch(dj=(0.1, 0.2, -0.1), de=(0.1, -0.2, 0.3), ns_dj=(-3.0, -4.0, 0.5), ns_expo=((0.3, 0.1), (0.3, 0.1), (0.3, 0.3))))
+        self.assertEqual(out["reading"], "NO EFFECT / OVER-CORRECTION", out.get("reasons"))
         self.assertTrue(out["units"]["warmup_s0"].startswith("reused"))
         self.assertTrue(out["units"]["branch_s2"].startswith("reused"))
         self.assertEqual(out["units"]["bca_branch_s1"], "completed")
+        self.assertEqual(out["units"]["warmup_s0_nostall"], "completed")             # nothing of the placebo world existed
         self.write_approval(3)
         with self.assertRaises(ValueError):
             self.execute(fake_dispatch())
@@ -236,9 +275,9 @@ class Supervisor(unittest.TestCase):
         self.assertIn("PROMISING", out["all_labels"])
         self.write_approval(2)
         out = self.execute(fake_dispatch())
-        self.assertEqual(out["reading"], "PROMISING", out.get("reasons"))
-        self.assertTrue(all(out["units"][f"{k}_s{i}"].startswith("reused") for k in ("warmup", "branch", "bca_branch") for i in range(3)))
-        self.assertTrue(all(out["units"][f"eval_{a}_s{i}"] == "completed" for a in ("native", "bca") for i in range(3)))
+        self.assertEqual(out["reading"], "PROMISING / CALIBRATED", out.get("reasons"))
+        self.assertTrue(all(out["units"][f"{k}_s{i}{x}"].startswith("reused") for k in ("warmup", "branch", "bca_branch") for i in range(3) for x in ("", "_nostall")))
+        self.assertTrue(all(out["units"][f"eval_{a}_s{i}{x}"] == "completed" for a in ("native", "bca") for i in range(3) for x in ("", "_nostall")))
         other = self.tmp / "other"                                                   # a different INCONCLUSIVE: no attempt 2
         self.write_approval(1)
         out = self.execute(fake_dispatch(instrument={"i1": False, "i1_rel": 3e-3}), run=other)
