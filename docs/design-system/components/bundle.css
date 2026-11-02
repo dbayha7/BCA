@@ -379,6 +379,15 @@ svg.chart .shade-region { fill: var(--region); }
 svg.chart .ln-ref { stroke: var(--m-ref); } svg.chart .ln-rawq { stroke: var(--m-rawq); } svg.chart .ln-bca { stroke: var(--m-bca); }
 svg.chart .pt-ref { fill: var(--m-ref); } svg.chart .pt-rawq { fill: var(--m-rawq); } svg.chart .pt-bca { fill: var(--m-bca); }
 svg.chart .pt-dist { fill: var(--m-dist); } svg.chart .pt-native { fill: var(--m-native); }
+/* the React Chart's reading: a crosshair, a dot on each line, and the values in words under the chart */
+svg.chart[tabindex] { cursor: crosshair; touch-action: pan-y; }
+svg.chart:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+svg.chart .xhair { stroke: var(--ink-2); stroke-width: 1; }
+svg.chart .xdot { stroke: var(--surface); stroke-width: 2; }
+.chart-read { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; min-height: 1.45em; font-size: 14px;
+  line-height: 1.45; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.chart-read b { color: var(--ink); font-weight: 600; }
+.chart-read-i { display: inline-flex; align-items: center; gap: 7px; }
 
 /* ---- Dot-and-range: one row per arm; the dot is the mean over seeds, the line the lowest to highest seed */
 .chartbox.drbox { max-width: 780px; }
@@ -407,6 +416,25 @@ svg.chart .pt-dist { fill: var(--m-dist); } svg.chart .pt-native { fill: var(--m
   background: currentColor; box-shadow: 0 0 0 2px var(--surface); }
 .dr-row.hi { color: var(--dr-hi); } .dr-row.lo { color: var(--dr-lo); } .dr-row.ref { color: var(--ink-2); }
 .dr-row.ref .dr-dot { background: var(--surface); border: 2px solid currentColor; }
+.dr-tip { display: none; position: absolute; bottom: calc(100% + 1px); background: var(--surface); color: var(--ink);
+  border: 1px solid var(--rule-strong); box-shadow: var(--shadow-tip);
+  font-size: 12.5px; line-height: 1.35; padding: 3px 8px; border-radius: 5px; white-space: nowrap; z-index: 3;
+  pointer-events: none; }
+.dr-tip::before { content: ""; display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%;
+  vertical-align: 0; background: currentColor; }
+.dr-row.hi .dr-tip::before { background: var(--dr-hi); } .dr-row.lo .dr-tip::before { background: var(--dr-lo); }
+.dr-row.ref .dr-tip::before { background: var(--surface); box-shadow: inset 0 0 0 2px var(--ink-2); }
+.dr-row:hover .dr-tip, .dr-row:focus .dr-tip { display: block; }
+@media (max-width: 560px) {
+  .dr-axis, .dr-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .dr-track, .dr-ticks { grid-column: 1 / -1; }
+  .dr-axlab > .dr-name, .dr-axlab > .dr-val { display: none; }
+  .dr-head > .dr-val { padding-right: 0; }
+  .dr-name { font-size: 13.5px; }
+}
+@media (max-width: 1023px) {
+  .dr-tip { left: 0 !important; right: auto !important; white-space: normal; max-width: 100%; }
+}
 
 /* ---- color never alone, and nothing moves for people who ask for less motion */
 @media (forced-colors: active) { .key, .km, .pipe-card::before { forced-color-adjust: none; } }

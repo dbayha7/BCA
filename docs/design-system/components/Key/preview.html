@@ -1,4 +1,4 @@
-<!-- @dsCard group="Labels" height=210 -->
+<!-- @dsCard group="Labels" height=220 -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,29 +9,27 @@
 </style>
 </head>
 <body>
-<div style="display:flex;flex-direction:column;gap:10px">
-  <div class="legend">
-    <span><i class="key dot" data-sit="recorded"></i>Recorded conditions</span>
-    <span><i class="key dot" data-sit="strong_current"></i>Strong current</span>
-    <span><i class="key dot" data-sit="big_waves"></i>Big waves</span>
-    <span><i class="key dot" data-sit="big_kicks"></i>Big starting pushes</span>
-    <span><i class="key sitall"></i>The situation you picked</span>
-  </div>
-  <div class="legend">
-    <span><i class="key line" data-world="stall"></i>Stalling world</span>
-    <span><i class="key line" data-world="no_stall"></i>No-stall world</span>
-    <span><i class="key line" data-k="learn"></i>Critic, actor and band</span>
-    <span><i class="key line" data-k="stall_aware"></i>Stall-aware controller</span>
-    <span><i class="key dash" data-k="no_throttle"></i>No throttle</span>
-    <span><i class="key dots"></i>Throttle cost</span>
-  </div>
-  <div class="legend">
-    <span><i class="key tile" data-k="region"></i>Full-throttle region</span>
-    <span><i class="key removed" data-k="region"></i>Removed: the densest 15%</span>
-    <span><i class="key removed" data-k="hold"></i>Removed: the 80% hold</span>
-    <span><i class="key ring"></i>A float</span>
-  </div>
-  <p class="note">The <span class="km" data-k="recording">recording controller</span> drives in the <span class="km" data-sit="recorded">recorded conditions</span> of the <span class="km" data-world="stall">stalling world</span>; its most common command, the <span class="km" data-k="region">full-throttle command</span>, puts thruster 1 past 80%.</p>
-</div>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+function Demo() {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+    h(B.Legend, { items: [
+      { shape: 'dot', sit: 'recorded', label: 'Recorded conditions' }, { shape: 'dot', sit: 'strong_current', label: 'Strong current' },
+      { shape: 'dot', sit: 'big_waves', label: 'Big waves' }, { shape: 'dot', sit: 'big_kicks', label: 'Big starting pushes' },
+      { shape: 'sitall', label: 'The situation you picked' }] }),
+    h(B.Legend, { items: [
+      { shape: 'line', world: 'stall', label: 'Stalling world' }, { shape: 'line', world: 'no_stall', label: 'No-stall world' },
+      { shape: 'line', k: 'learn', label: 'Critic, actor and band' }, { shape: 'line', k: 'stall_aware', label: 'Stall-aware controller' },
+      { shape: 'dash', k: 'no_throttle', label: 'No throttle' }, { shape: 'dots', label: 'Throttle cost' }] }),
+    h(B.Legend, { items: [
+      { shape: 'tile', k: 'region', label: 'Full-throttle region' }, { shape: 'removed', k: 'region', label: 'Removed: the densest 15%' },
+      { shape: 'removed', k: 'hold', label: 'Removed: the 80% hold' }, { shape: 'ring', label: 'A float' }] }),
+    h('p', { className: 'note' }, 'The ', h(B.Mention, { k: 'recording' }, 'recording controller'), ' drives in the ',
+      h(B.Mention, { sit: 'recorded' }, 'recorded conditions'), ' of the ', h(B.Mention, { world: 'stall' }, 'stalling world'),
+      '; its most common command, the ', h(B.Mention, { k: 'region' }, 'full-throttle command'), ', puts thruster 1 past 80%.'));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
 </body>
 </html>

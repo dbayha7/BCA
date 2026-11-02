@@ -1,4 +1,4 @@
-<!-- @dsCard group="Navigation" height=470 -->
+<!-- @dsCard group="Navigation" height=560 -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,41 +9,19 @@
 </style>
 </head>
 <body>
-<div style="display:flex;flex-direction:column;gap:18px">
-<nav class="pipe" aria-label="The experiment in five steps">
-  <ol>
-    <li class="pipe-step" data-step="collect"><div class="pipe-card">
-      <p class="pipe-head"><span class="pipe-n">1</span><span class="pipe-t">Collect the data</span></p>
-      <p class="pipe-d">The recording controller, a fixed controller, drives 100-step episodes in the <span class="km" data-sit="recorded">recorded conditions</span> of the stalling world. Each step becomes one row of the data.</p>
-      <a class="pipe-go" href="#dataset">The recorded data</a></div></li>
-    <li class="pipe-step" data-step="remove"><div class="pipe-card">
-      <p class="pipe-head"><span class="pipe-n">2</span><span class="pipe-t">Remove commands</span></p>
-      <p class="pipe-d"><b><i class="key removed" data-k="region"></i>Main test:</b> the densest-15% removal deletes the recording controller's full-throttle cluster.</p>
-      <a class="pipe-go" href="#shift">The distribution shift</a></div></li>
-    <li class="pipe-step" data-step="train"><div class="pipe-card">
-      <p class="pipe-head"><span class="pipe-n">3</span><span class="pipe-t">Train TD3+BC</span></p>
-      <p class="pipe-d">On the rows that are left, TD3+BC trains a critic, which scores every command in every state, and with it an actor.</p>
-      <a class="pipe-go" href="#methods">Methods</a></div></li>
-    <li class="pipe-step" data-step="band"><div class="pipe-card">
-      <p class="pipe-head"><span class="pipe-n">4</span><span class="pipe-t">Add BCA's band</span></p>
-      <p class="pipe-d">BCA builds a band, a range around the critic's estimate, sized on recorded rows kept out of training.</p>
-      <a class="pipe-go" href="#bca-test">The BCA test</a></div></li>
-    <li class="pipe-step" data-step="test"><div class="pipe-card">
-      <p class="pipe-head"><span class="pipe-n">5</span><span class="pipe-t">Test the actor</span></p>
-      <p class="pipe-d">Every actor is scored on each situation's 1,000 fixed starts: <span class="km" data-sit="recorded">recorded</span>, <span class="km" data-sit="strong_current">strong current</span>, <span class="km" data-sit="big_waves">big waves</span>, <span class="km" data-sit="big_kicks">big starting pushes</span>.</p>
-      <a class="pipe-go" href="#starting-state">Starting State</a></div></li>
-  </ol>
-</nav>
-<nav class="pipe pipe-sm" aria-label="Where this panel sits">
-  <ol>
-    <li class="pipe-step" data-step="collect"><a href="#dataset"><span class="pipe-n">1</span>Collect</a></li>
-    <li class="pipe-step" data-step="remove"><a href="#shift"><span class="pipe-n">2</span>Remove</a></li>
-    <li class="pipe-step is-here" data-step="train"><a href="#methods"><span class="pipe-n">3</span>Train</a></li>
-    <li class="pipe-step is-here" data-step="band"><a href="#bca-test"><span class="pipe-n">4</span>Band</a></li>
-    <li class="pipe-step" data-step="test"><a href="#starting-state"><span class="pipe-n">5</span>Test</a></li>
-  </ol>
-</nav>
-<p class="stepnote"><span class="stepchip" data-step="collect">Step 1</span><span class="stepchip" data-step="remove">Step 2</span><span class="stepchip" data-step="train">Step 3</span><span class="stepchip" data-step="band">Step 4</span><span class="stepchip" data-step="test">Step 5</span> Step chips name a step inside a note or an option line.</p>
-</div>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+var STEPS = [{"step": "collect", "title": "Collect the data", "short": "Collect", "href": "#dataset", "go": "The recorded data", "text": "The recording controller, a fixed controller, drives 100-step episodes in the recorded conditions of the stalling world. Each step becomes one row of the data."}, {"step": "remove", "title": "Remove commands", "short": "Remove", "href": "#shift", "go": "The distribution shift", "text": "Main test: the densest-15% removal deletes the 15% of recorded commands that sit closest together, which here is the recording controller's full-throttle cluster."}, {"step": "train", "title": "Train TD3+BC", "short": "Train", "href": "#methods", "go": "Methods", "text": "On the rows that are left, TD3+BC trains a critic, which scores every command in every state, and with it an actor, the learned controller."}, {"step": "band", "title": "Add BCA's band", "short": "Band", "href": "#bca-test", "go": "The BCA test", "text": "BCA builds a band, a range around the critic's estimate, sized on recorded rows kept out of training."}, {"step": "test", "title": "Test the actor", "short": "Test", "href": "#starting-state", "go": "Starting State", "text": "Every actor is scored exactly on each situation's 1,000 fixed starts: in the recorded conditions and in three shifted situations."}];
+function Demo() {
+  var s = useState(['train']), here = s[0];
+  var cur = STEPS.filter(function (x) { return x.step === here[0]; })[0];
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '18px' } },
+    h(B.PipelineStrip, { steps: STEPS }),
+    h(B.PipelineStrip, { steps: STEPS, compact: true, selectable: true, here: here, onHereChange: s[1] }),
+    h('p', { className: 'stepnote' }, h(B.StepChip, { step: cur.step }), cur.title, ': ', cur.text));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
 </body>
 </html>

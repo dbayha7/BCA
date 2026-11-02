@@ -4,7 +4,7 @@ A bordered table in its own scrolling box, numbers in mono and right-aligned, wi
 
 **Use for** every set of numbers a reader compares, and beside every chart whose exact values matter.
 
-**Markup**
+**Markup** (CSS only; the React component renders the same)
 
 ```html
 <div class="tblwrap"><span class="hint"></span>
@@ -26,3 +26,17 @@ A bordered table in its own scrolling box, numbers in mono and right-aligned, wi
 - `tr.hl`: a row on `warn-soft`, for a row about the stall; `tr.anchor`: the reference row (the stall-aware controller), its first cell 600.
 - `table.grouped` adds a centered group-heading row (`tr.grp`) underlined in `rule-strong`.
 - `caption` sits on top, 14px `ink-2`, and says how to read the table.
+
+**React** (`window.BCA`, React 18; hand-written from the page's markup in `page_build/wf7/build/core_v27.html`)
+
+```js
+const { Table } = window.BCA;
+<Table caption="…how to read it, with the scale…"
+  columns={[{ key: 'ctrl', label: 'Controller' },
+            { key: 'pts', label: 'Points', numeric: true, desc: "This is the controller's score in this situation…" }]}
+  rows={[{ group: 'Strong current', sit: 'strong_current' },
+         { cells: { ctrl: 'Stall-aware controller', pts: '100.0' }, anchor: true },
+         { cells: { ctrl: 'Rising-thrust controller', pts: '−54.1' }, highlight: true }]} />
+```
+
+A column with `desc` gets a dotted underline and explains itself in the shared tooltip on hover or focus. A row is either a group (`group`, plus `sit` for its tint) or `cells` keyed by column; `highlight` marks a row about the stall, `anchor` the reference row. When the table is wider than its box, the "scroll sideways" hint appears on its own.

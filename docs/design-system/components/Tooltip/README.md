@@ -23,3 +23,13 @@ One shared box that explains whatever the pointer or focus is on: a term, a colu
 - It fades in over 120ms, and not at all under reduced motion.
 
 **Do** write the tooltip as a definition in one or two sentences, starting with the term. **Don't** hide anything in a tooltip that the page needs to make its point.
+
+**React** (`window.BCA`, React 18; hand-written from the page's markup in `page_build/wf7/build/core_v27.html`)
+
+```js
+const { Tooltip, TooltipBox } = window.BCA;
+The <Tooltip title="Episode" text="An episode is one run of 100 steps from one starting state.">episodes</Tooltip> …
+<TooltipBox title="Recording controller" text="…" more="Used in: pipeline step 1." />   // a static box, for docs
+```
+
+The term gets a dotted underline and a tab stop; on hover or focus the shared box opens below it (above it near the bottom of the screen), is linked with `aria-describedby`, and closes on Escape, blur or pointer leave. `more` adds a second part under a rule.

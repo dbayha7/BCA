@@ -18,3 +18,16 @@ A 1920 by 1080 slide in the deck's own look: navy slides for the cover, parts an
 **Code panel**: `deck-code`, `radius-deck`, 16px by 28px; code in `dk-code` `deck-code-ink`, strings `deck-code-string`, numbers `deck-step`; the file-and-lines caption above it in mono `deck-step-off`.
 
 **Rules**: nothing under 24px; one idea per slide; the slide title carries the figure's title, so figures have none.
+
+**React** (`window.BCA`, React 18; hand-written from the page's markup in `page_build/wf7/build/core_v27.html`)
+
+```js
+const { DeckSlide } = window.BCA;
+<DeckSlide progress={{ current: 1, total: 7 }} kicker="Part 3 · Question 1 of 7"
+  lead="The models are defined. …" title="Is our WBCP code right?" body="Paper Table 1: …" />
+<DeckSlide kind="paper" kicker="Part 4 · What it adds up to" title="What the dots add up to"
+  caution="Not yet shown: …" footnote="All D4RL evidence: …">{table}</DeckSlide>
+<DeckSlide cover kicker="BCA project · calibration rewrite" title="WBCP Experiments: Essential Questions" lead="…" />
+```
+
+The slide is drawn at 1920 by 1080 and scaled by `scale` (0.25 by default) into a box of the scaled size, so it can sit in a page or a thumbnail strip. `kind` is `navy` (default) or `paper`; `cover` gives the navy slide the cover's sizes and orange rule. The preview steps through the deck's seven question slides with their real text.

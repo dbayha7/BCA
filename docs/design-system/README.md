@@ -81,6 +81,13 @@ BCA is the visual system of the BCA project: Bayesian Conformal Aggregation, a c
 
 There is no icon set and no logo. The project's name is set in Bricolage Grotesque. Every mark is drawn in CSS by the `Key` component (dot, line, dash, dotted line, tile, hatched tile, ring, four-quarter dot), so marks inherit the theme. Arrows and checks are text characters (→, ✓). Drawings of the environment (floats, thrusters, water) are inline SVG styled by the same tokens. No emoji, no pictograms.
 
+## Components
+
+- The components are React 18, on `window.BCA` from `components/bundle.js`, loaded after React, `tokens.css` and `components/bundle.css`. Each renders the reference page's own markup and classes, so the same HTML with `bundle.css` alone gives the same look without the behavior.
+- Their behavior is the page's: options select one thing per question; a term, a column name or a dot-and-range row explains itself on hover and on keyboard focus; a chart reads every line at one point under the pointer or the arrow keys; a table that outgrows its box says so; a legend folds away. Everything that responds to the pointer also responds to the keyboard, and Escape closes what opened.
+- Name colored things only through `sit`, `world` and `k` (or an option's `group` and `value`), never with a color: the component picks the color, its tint and its key shape.
+- Props and examples are in each component's guide and in `components/index.d.ts`.
+
 ## Slides and figures
 
 - Slides are 1920 by 1080 with 128px margins; nothing under 24px. Navy slides (`deck-ink`, text `deck-on-ink`) open the deck, each part and each question; paper slides (`deck-paper`, text `deck-ink` and `deck-soft`) carry the content. See `DeckSlide`.
@@ -95,4 +102,4 @@ There is no icon set and no logo. The project's name is set in Bricolage Grotesq
 - **The research interface (`docs/thrusterchain/site/site.css`):** its neutrals, `accent`, `warn` (amber there), `water`, `stall`, `good`, `bad` and `focus` share names with the reference page's tokens but have different values; the reference page's values are used. Only its method series came across, renamed `m-*`.
 - **Older surfaces:** the mechanism explainer (`docs/bca_mechanics`, Georgia serif with works/caveat/fails verdict badges) and the OOD demo (`docs/ood-demo`) predate the system and are not part of it, nor are the per-analysis matplotlib palettes in `analysis/`.
 - **Fonts:** Google-hosted, no files in the repository; none fetched.
-- **Components:** the repository has no component library. The components here are the reference page's own CSS classes, shipped as `components/bundle.css` with an HTML preview each; there is no `bundle.js`. Not included: the live simulation panel, the critic viewer (`qviewer`), the step-by-step lesson (`ls-*`), the page navigation (`nv-*`), the walkthrough dialog and the stall-chart widget.
+- **Components:** the repository has no component library. The React components in `components/bundle.js` are hand-written from the reference page's markup (`page_build/wf7/build/core_v27.html`) over its own CSS classes (`components/bundle.css`); React 18.3.1 is carried in `components/lib/`. Two pieces are new, since the page draws them differently: the chart's crosshair reading (`.xhair`, `.xdot`, `.chart-read`) and the Transport's Step and Reset buttons. Not included: the live simulation panel, the critic viewer (`qviewer`), the step-by-step lesson (`ls-*`), the page navigation (`nv-*`), the walkthrough dialog and the stall-chart widget.

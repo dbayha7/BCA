@@ -4,7 +4,7 @@ One filled button in the accent for the main action of a control row, and a ghos
 
 **Use for** playing, pausing and stepping a live figure, or applying a setting. A choice between things on the page (a situation, a world, a controller) is an `Option`, not a button.
 
-**Markup**
+**Markup** (CSS only; the React component renders the same)
 
 ```html
 <div class="transport">
@@ -21,3 +21,14 @@ One filled button in the accent for the main action of a control row, and a ghos
 - Focus: 2px solid `accent`, 2px offset.
 
 **Do** write the verb ("Play", "Step", "Reset"). **Don't** put more than one filled button in a row, or use a category color on a button.
+
+**React** (`window.BCA`, React 18; hand-written from the page's markup in `page_build/wf7/build/core_v27.html`)
+
+```js
+const { Button, Transport } = window.BCA;
+<Button onClick={apply}>Apply</Button>
+<Button variant="ghost">Reset</Button>
+<Transport t={t} onChange={setT} max={99} />   // Play / Pause, Step, Reset, a range and "t = 37"
+```
+
+`Button` takes every button attribute plus `variant` (`primary` by default, or `ghost`). `Transport` is controlled (`t`, `onChange`) or not (`defaultT`); it plays one step every `stepMs` (120ms) and stops at `max`.

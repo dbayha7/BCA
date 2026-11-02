@@ -1,4 +1,4 @@
-<!-- @dsCard group="Data" height=330 -->
+<!-- @dsCard group="Data" height=400 -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,19 +9,16 @@
 </style>
 </head>
 <body>
-<div class="tbl"><table>
-  <caption>The fixed controllers in two situations of the stalling world. Points: 0 = recording controller, 100 = stall-aware controller.</caption>
-  <thead><tr><th>Controller</th><th class="n">States past 80%</th><th class="n">In the full-throttle region</th><th class="n">Loss from pushing past 80% (points)</th><th class="n">Points</th></tr></thead>
-  <tbody>
-    <tr class="sub" data-sit="recorded"><td colspan="5"><span class="km" data-sit="recorded">Recorded conditions</span></td></tr>
-    <tr><td>Recording controller</td><td class="n">13.9%</td><td class="n">27.9%</td><td class="n">15.2</td><td class="n">0.0</td></tr>
-    <tr class="anchor"><td>Stall-aware controller</td><td class="n">0.0%</td><td class="n">27.9%</td><td class="n">0.0</td><td class="n">100.0</td></tr>
-    <tr><td>Rising-thrust controller</td><td class="n">9.7%</td><td class="n">27.9%</td><td class="n">16.4</td><td class="n">83.6</td></tr>
-    <tr class="sub" data-sit="strong_current"><td colspan="5"><span class="km" data-sit="strong_current">Strong current</span></td></tr>
-    <tr><td>Recording controller</td><td class="n">46.9%</td><td class="n">93.7%</td><td class="n">56.6</td><td class="n">0.0</td></tr>
-    <tr class="anchor"><td>Stall-aware controller</td><td class="n">0.0%</td><td class="n">93.7%</td><td class="n">0.0</td><td class="n">100.0</td></tr>
-    <tr class="hl"><td>Rising-thrust controller</td><td class="n">84.0%</td><td class="n">93.7%</td><td class="n">154.1</td><td class="n">−54.1</td></tr>
-  </tbody>
-</table></div>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+function Demo() {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+    h(B.Table, { caption: 'The fixed controllers in two situations of the stalling world. Points: 0 = recording controller, 100 = stall-aware controller.',
+      columns: [{"key": "ctrl", "label": "Controller"}, {"key": "past", "label": "States past 80%", "numeric": true, "desc": "This is the share of visited states at which the command exceeds 80% on any thruster, throttles that the training data no longer show."}, {"key": "region", "label": "In the full-throttle region", "numeric": true, "desc": "This is the share of visited states in the full-throttle region, where the water's push c + w₁ is above 0.565."}, {"key": "loss", "label": "Loss from pushing past 80% (points)", "numeric": true, "desc": "This is the number of points lost by going past 80%: the exact return of the same controller with its throttles capped at 80%, minus its own return, in points."}, {"key": "pts", "label": "Points", "numeric": true, "desc": "This is the controller's score in this situation, where 0 is the recording controller and 100 is the stall-aware controller."}], rows: [{"group": "Recorded conditions", "sit": "recorded"}, {"cells": {"ctrl": "Recording controller", "past": "13.9%", "region": "27.9%", "loss": "15.2", "pts": "0.0"}}, {"cells": {"ctrl": "Stall-aware controller", "past": "0.0%", "region": "27.9%", "loss": "0.0", "pts": "100.0"}, "anchor": true}, {"cells": {"ctrl": "Rising-thrust controller", "past": "9.7%", "region": "27.9%", "loss": "16.4", "pts": "83.6"}}, {"group": "Strong current", "sit": "strong_current"}, {"cells": {"ctrl": "Recording controller", "past": "46.9%", "region": "93.7%", "loss": "56.6", "pts": "0.0"}}, {"cells": {"ctrl": "Stall-aware controller", "past": "0.0%", "region": "93.7%", "loss": "0.0", "pts": "100.0"}, "anchor": true}, {"cells": {"ctrl": "Rising-thrust controller", "past": "84.0%", "region": "93.7%", "loss": "154.1", "pts": "−54.1"}, "highlight": true}] }),
+    h('p', { className: 'note' }, 'Point at or focus a column name with a dotted underline to read what it measures.'));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!-- @dsCard group="Actions" height=96 -->
+<!-- @dsCard group="Actions" height=110 -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,12 +9,16 @@
 </style>
 </head>
 <body>
-<div class="transport">
-  <button class="btn">Play</button>
-  <button class="btn ghost">Step</button>
-  <button class="btn ghost">Reset</button>
-  <input type="range" min="0" max="99" value="37" aria-label="State">
-  <span class="tlabel">t = 37</span>
-</div>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+function Demo() {
+  var s = useState(0), t = s[0];
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+    h(B.Transport, { t: t, onChange: s[1], max: 99, ariaLabel: 'State of the episode' }),
+    h('p', { className: 'note' }, 'State ', h('b', null, t), ' of the episode\u2019s 100, counted from 0. Play steps through them; Step and Reset stop playing.'));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
 </body>
 </html>

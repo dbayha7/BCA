@@ -4,7 +4,7 @@ A toggle card that names one thing (a situation, a world or a controller), descr
 
 **Use for** the choices of a live panel: one group per question, numbered, each with its buttons in a grid underneath. One option per group is pressed.
 
-**Markup**
+**Markup** (CSS only; the React component renders the same)
 
 ```html
 <div class="optgroup">
@@ -24,3 +24,18 @@ A toggle card that names one thing (a situation, a world or a controller), descr
 - An optional `<span class="opt-step">` line says which pipeline step the option stands for, with a `StepChip`.
 
 **Do** keep the name to a few words and the line to one sentence. **Don't** use an option for an action, or color an option that names no thing (it falls back to `rule`/`accent`).
+
+**React** (`window.BCA`, React 18; hand-written from the page's markup in `page_build/wf7/build/core_v27.html`)
+
+```js
+const { Panel, OptionGroup, Option } = window.BCA;
+<Panel>
+  <div className="opts">
+    <OptionGroup n={2} question="Which world?" group="world" value={world} onChange={setWorld}
+      options={[{ value: 'stall', name: 'Stalling world', description: 'Past 80% throttle the propeller stalls…' },
+                { value: 'no_stall', name: 'No-stall comparison world', description: 'Push keeps rising…' }]} />
+  </div>
+</Panel>
+```
+
+`OptionGroup` owns one pressed option (controlled with `value`/`onChange`, or `defaultValue`); `value` must be one of the page's keys (situations, worlds or controllers) so the option wears that thing's color. A single `Option` takes `group`, `value`, `name`, `description`, `selected`, `onSelect`, `dash` and `step`. `KeyValue` is the two-column list the live panel uses to say what is chosen.

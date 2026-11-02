@@ -1,4 +1,4 @@
-<!-- @dsCard group="Data" height=250 -->
+<!-- @dsCard group="Data" height=200 -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,11 +9,24 @@
 </style>
 </head>
 <body>
-<p class="note" style="margin-bottom:12px">The <i data-tip="x">recording controller</i>, a fixed controller, drives 100-step <i data-tip="x">episodes</i> in the recorded conditions.</p>
-<div class="tt on" role="tooltip" style="position:static">
-  <div class="tt-h">Recording controller</div>
-  <div class="tt-b">The recording controller is the fixed controller that made the training data. It drives normally, within 80%, but in the full-throttle region it flips a coin in each state and on half of them puts thruster 1 at full throttle. It is the 0 of the points scale.</div>
-  <div class="tt-col"><b>Used in:</b> pipeline step 1, the points scale, the recorded data.</div>
-</div>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+var T = B.Tooltip;
+function Demo() {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '760px' } },
+    h('p', null, 'The ',
+      h(T, { title: 'Recording controller', text: 'The recording controller is the fixed controller that made the training data. It drives normally, within 80%, but in the full-throttle region it flips a coin in each state and on half of them puts thruster 1 at full throttle. It is the 0 of the points scale.' }, 'recording controller'),
+      ', a fixed controller, drives 100-step ',
+      h(T, { title: 'Episode', text: 'An episode is one run of 100 steps from one starting state. Nothing ends it early; it is cut off after 100 steps (states 0 to 99).' }, 'episodes'),
+      ' in the recorded conditions of the stalling world. Each step becomes one ',
+      h(T, { title: 'Row', text: 'A row is one recorded step: the observation, the command, its reward and the next observation.' }, 'row'),
+      ' of the data. Its most common command puts thruster 1 past 80% ',
+      h(T, { title: 'Throttle', text: 'A throttle is the command for one thruster, from \u22121 (full throttle upstream, against the water) to 1 (full throttle downstream), and 0 is off. Its throttle cost is 0.3 times its square.' }, 'throttle'),
+      '.'),
+    h('p', { className: 'note' }, 'Point at or focus a dotted term; Escape closes the tooltip.'));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
 </body>
 </html>
