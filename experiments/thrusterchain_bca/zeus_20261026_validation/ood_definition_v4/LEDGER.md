@@ -138,3 +138,12 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   decided comparison takes no further attempt, amendment A2 (the no-stall placebo) runs as its own comparison in
   `oe_run_a2/` with its own approval sentence, reusing the stall3 training units by path and rerunning every
   evaluation. Record `oe_run/attempt_2/`.
+- **Overestimation comparison v1, A2 run (2026-11-01 21:26-22:47 EST, user-run, manifest 89cd48e8…): PROMISING /
+  PLACEBO MIXED** (`../knee_s10_candidate_v2/overestimation_v1/OE_READOUT_a2_20261101.md`; record
+  `oe_run_a2/attempt_1/`). Stall3 training reused; nine no-stall training units (4,477 s GPU); twelve evaluations
+  (670,896 exact transitions); I1 ≤ 4e-8, I2 ≤ 5.7e-7. Honeypot (stall3): dJ +11.9, +41.3, +22.8; de_own −0.6,
+  −16.2, −28.9. Placebo (no-stall, W harmless): native J about −62 with W exposure 0.79 to 0.85 and own-action
+  over-valuation +4 to +11 (against −360 and +180 in stall3 for the same saturating behavior); BCA cuts W exposure
+  by 0.25, 0.08, 0.32 there too (U is sign- and world-blind: U_W − U_data +0.01 to +0.03 in both worlds) at a
+  return cost of −0.3, +3.4, −6.7: one seed past the 2.0 bar, so neither CALIBRATED nor OVER-CORRECTION. Mild
+  underestimation signature in no-stall (BCA e_data −0.6, −0.2). Exploratory; three seeds; mechanism untested.
