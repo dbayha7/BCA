@@ -1,0 +1,42 @@
+<!-- @dsCard group="Actions" height=430 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Option</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div class="panel">
+  <div class="opts">
+    <div class="optgroup">
+      <p class="optlbl"><span class="optn">1</span>Which situation? <span class="q">Each actor is scored on 1,000 fixed starts per situation.</span></p>
+      <div class="optbtns">
+        <button class="opt" data-group="sit" data-value="recorded" aria-pressed="true"><b>Recorded conditions</b><span>In distribution: where the data come from.</span></button>
+        <button class="opt" data-group="sit" data-value="strong_current" aria-pressed="false"><b>Strong current</b><span>Dynamics extrapolation.</span></button>
+        <button class="opt" data-group="sit" data-value="big_waves" aria-pressed="false"><b>Big waves</b><span>Disturbance shift.</span></button>
+        <button class="opt" data-group="sit" data-value="big_kicks" aria-pressed="false"><b>Big starting pushes</b><span>Initial-state shift.</span></button>
+      </div>
+    </div>
+    <div class="optgroup">
+      <p class="optlbl"><span class="optn">2</span>Which world?</p>
+      <div class="optbtns">
+        <button class="opt" data-group="world" data-value="stall" aria-pressed="true"><b>Stalling world</b><span>Past 80% throttle the propeller stalls: push 0.65 at 90%, 0.5 at full throttle. The data were recorded here.</span></button>
+        <button class="opt" data-group="world" data-value="no_stall" aria-pressed="false"><b>No-stall comparison world</b><span>Push keeps rising to 100% throttle. Identical to the stalling world at or below 80%.</span></button>
+      </div>
+    </div>
+    <div class="optgroup">
+      <p class="optlbl"><span class="optn">3</span>Who drives?</p>
+      <div class="optbtns">
+        <button class="opt" data-group="ctrl" data-value="recording" aria-pressed="false"><b><span class="sw"></span>Recording controller</b><span>Made the data. Sometimes gives the full-throttle command.</span></button>
+        <button class="opt" data-group="ctrl" data-value="stall_aware" aria-pressed="true"><b><span class="sw"></span>Stall-aware controller</b><span>The textbook command, capped at 80%. Never stalls.</span></button>
+        <button class="opt" data-group="ctrl" data-value="rising_thrust" aria-pressed="false"><b><span class="sw"></span>Rising-thrust controller</b><span>The same textbook command, up to 100%. Assumes push keeps rising.</span></button>
+        <button class="opt" data-group="ctrl" data-value="no_throttle" aria-pressed="false"><b><span class="sw dash"></span>No throttle</b><span>All thrusters off: the water acting alone.</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

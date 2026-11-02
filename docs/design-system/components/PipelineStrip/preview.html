@@ -1,0 +1,49 @@
+<!-- @dsCard group="Navigation" height=470 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PipelineStrip</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;gap:18px">
+<nav class="pipe" aria-label="The experiment in five steps">
+  <ol>
+    <li class="pipe-step" data-step="collect"><div class="pipe-card">
+      <p class="pipe-head"><span class="pipe-n">1</span><span class="pipe-t">Collect the data</span></p>
+      <p class="pipe-d">The recording controller, a fixed controller, drives 100-step episodes in the <span class="km" data-sit="recorded">recorded conditions</span> of the stalling world. Each step becomes one row of the data.</p>
+      <a class="pipe-go" href="#dataset">The recorded data</a></div></li>
+    <li class="pipe-step" data-step="remove"><div class="pipe-card">
+      <p class="pipe-head"><span class="pipe-n">2</span><span class="pipe-t">Remove commands</span></p>
+      <p class="pipe-d"><b><i class="key removed" data-k="region"></i>Main test:</b> the densest-15% removal deletes the recording controller's full-throttle cluster.</p>
+      <a class="pipe-go" href="#shift">The distribution shift</a></div></li>
+    <li class="pipe-step" data-step="train"><div class="pipe-card">
+      <p class="pipe-head"><span class="pipe-n">3</span><span class="pipe-t">Train TD3+BC</span></p>
+      <p class="pipe-d">On the rows that are left, TD3+BC trains a critic, which scores every command in every state, and with it an actor.</p>
+      <a class="pipe-go" href="#methods">Methods</a></div></li>
+    <li class="pipe-step" data-step="band"><div class="pipe-card">
+      <p class="pipe-head"><span class="pipe-n">4</span><span class="pipe-t">Add BCA's band</span></p>
+      <p class="pipe-d">BCA builds a band, a range around the critic's estimate, sized on recorded rows kept out of training.</p>
+      <a class="pipe-go" href="#bca-test">The BCA test</a></div></li>
+    <li class="pipe-step" data-step="test"><div class="pipe-card">
+      <p class="pipe-head"><span class="pipe-n">5</span><span class="pipe-t">Test the actor</span></p>
+      <p class="pipe-d">Every actor is scored on each situation's 1,000 fixed starts: <span class="km" data-sit="recorded">recorded</span>, <span class="km" data-sit="strong_current">strong current</span>, <span class="km" data-sit="big_waves">big waves</span>, <span class="km" data-sit="big_kicks">big starting pushes</span>.</p>
+      <a class="pipe-go" href="#starting-state">Starting State</a></div></li>
+  </ol>
+</nav>
+<nav class="pipe pipe-sm" aria-label="Where this panel sits">
+  <ol>
+    <li class="pipe-step" data-step="collect"><a href="#dataset"><span class="pipe-n">1</span>Collect</a></li>
+    <li class="pipe-step" data-step="remove"><a href="#shift"><span class="pipe-n">2</span>Remove</a></li>
+    <li class="pipe-step is-here" data-step="train"><a href="#methods"><span class="pipe-n">3</span>Train</a></li>
+    <li class="pipe-step is-here" data-step="band"><a href="#bca-test"><span class="pipe-n">4</span>Band</a></li>
+    <li class="pipe-step" data-step="test"><a href="#starting-state"><span class="pipe-n">5</span>Test</a></li>
+  </ol>
+</nav>
+<p class="stepnote"><span class="stepchip" data-step="collect">Step 1</span><span class="stepchip" data-step="remove">Step 2</span><span class="stepchip" data-step="train">Step 3</span><span class="stepchip" data-step="band">Step 4</span><span class="stepchip" data-step="test">Step 5</span> Step chips name a step inside a note or an option line.</p>
+</div>
+</body>
+</html>
