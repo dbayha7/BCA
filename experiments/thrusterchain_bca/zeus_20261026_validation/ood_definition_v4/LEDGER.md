@@ -194,3 +194,15 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   was then refused because aabfadc0 was already on the remote. The user chose 14 h. The merge keeps aabfadc0's
   files, removes that `SCREEN_MANIFEST.json` and `SCREEN_APPROVAL.json` (they bind the 12 h files), and the package
   is re-sealed and re-approved under 14 h. Nothing ran under the 12 h seal; no attempt was spent.
+- **r5 native screen, attempt 2 on Titan (2026-11-02 11:58-12:30 UTC, user-run, manifest 904542fd…, approval
+  7e5887b1): INCOMPLETE, killed from outside.** Stage 0 passed (preflight, i0); warmups `s0_cutoff_stall3` (794 s) and
+  `s0_random_stall3` (743 s) completed; `s0_cutoff_nostall` stood at 3,500 of 10,000 steps when Windows Update
+  restarted Titan to finish Windows 11 26H2 (User32 event 1074 at 12:30:05 UTC, "Operating System: Service pack
+  (Planned)"; shutdown 12:30:37; Titan's active hours were 13:00-07:00 local, so 07:30 local was outside them). No
+  `SCREEN_RESULT.json` (a power-off cannot write one); no evaluation, read or outcome value existed. Attempt counted
+  (`TRAINING_STARTED.json`). Run folder `screen_run/run_20261102T115816759197Z` committed as found (checkpoints
+  git-ignored). Windows updates on Titan were then paused until 2026-11-30.
+- **Amendment A5 (2026-11-02, the user's decision after attempt 2):** attempt limit 2 -> 3, and a counted attempt
+  with no readable `SCREEN_RESULT.json` reads INCOMPLETE (`screen_r5.py` `recorded_reading`); attempt 3 reuses
+  attempt 2's two Titan warmups and attempt 1's g1 under the existing reuse rules; no attempt 4. Dry-run receipt
+  unchanged (`screen_r5.py` is not dry-run-hashed); package re-sealed; attempt 3 needs the user's approval.

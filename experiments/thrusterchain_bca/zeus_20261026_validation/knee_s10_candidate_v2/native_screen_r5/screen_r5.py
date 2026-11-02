@@ -52,7 +52,7 @@ JOB_SECONDS, TRAIN_SECONDS = 1_800, 14 * 3_600                 # amendment A4: 1
 EVAL_SECONDS, EVAL_TRANSITIONS = 2 * 3_600, 36_000_000
 G1_SECONDS, G1_TRANSITIONS = 3_600, 9_000_000
 PREFLIGHT_SECONDS, I0_SECONDS, I0_TRANSITIONS = 600, 600, 1_000_000
-MAX_ATTEMPTS, MAX_STAGE0_FAILURES = 2, 3
+MAX_ATTEMPTS, MAX_STAGE0_FAILURES = 3, 3                       # amendment A5: 2 -> 3 (attempt 2 killed from outside)
 SEEDS, WORLDS, ARMS = (0, 1, 2), ("stall3", "nostall"), ("cutoff", "random")
 TRAINING_KINDS = ("warmup", "branch", "bc_only", "bca_branch")
 GPU_KINDS = TRAINING_KINDS + ("r0", "evaluate", "evaluate_bca")      # reused only on the same device kind (A2)
@@ -130,6 +130,14 @@ def _runs(run_dir):
     return sorted((p for p in run_dir.iterdir() if p.is_dir() and p.name.startswith("run_")), key=lambda p: p.name) if run_dir.is_dir() else []
 
 
+def recorded_reading(result, counted):
+    """Amendment A5: every ending the supervisor sees writes SCREEN_RESULT.json, so a counted attempt without a
+    readable one was killed from outside (attempt 2: a forced Windows restart) and reads INCOMPLETE."""
+    if result is None:
+        return "INCOMPLETE" if counted else None
+    return result.get("reading")
+
+
 def check_approval(approval_path=None, manifest_path=None, run_dir=None, root=None, require_dry_run=True):
     approval_path, manifest_path, run_dir = approval_path or APPROVAL, manifest_path or MANIFEST, run_dir or RUN
     root = root or manifest_path.parent
@@ -154,11 +162,11 @@ def check_approval(approval_path=None, manifest_path=None, run_dir=None, root=No
     require(approval.get("package_manifest_sha256") == sha_file(manifest_path), "Approval names a different package")
     history = []
     for p in runs:
-        result = _read(p / "SCREEN_RESULT.json") or {}
-        history.append({"run": p.name, "attempt_counted": p in attempts, "reading": result.get("reading")})
+        history.append({"run": p.name, "attempt_counted": p in attempts,
+                        "reading": recorded_reading(_read(p / "SCREEN_RESULT.json"), p in attempts)})
     if attempts:
-        last = _read(attempts[-1] / "SCREEN_RESULT.json") or {}
-        require(last.get("reading") == "INCOMPLETE", f"No re-attempt after {last.get('reading')}")
+        last = recorded_reading(_read(attempts[-1] / "SCREEN_RESULT.json"), True)
+        require(last == "INCOMPLETE", f"No re-attempt after {last}")
     return {"approval": approval, "attempt": attempt, "manifest_sha256": sha_file(manifest_path), "manifest": manifest,
             "history": history, "previous_runs": [str(p) for p in runs], "stage0_failures": len(stage0_failures)}
 
