@@ -33,11 +33,14 @@ import units as U                                            # noqa: E402
 from core import require, sha_file                           # noqa: E402
 from stage1_worker import sanitize                           # noqa: E402
 
-RUN = HERE / "oe_run"
+A1_RUN = HERE / "oe_run"                                   # the honeypot comparison under A1: decided (attempt 2, PROMISING)
+RUN = HERE / "oe_run_a2"                                   # amendment A2: its own run and attempt count
+REUSE_SOURCES = tuple(A1_RUN / f"attempt_{k}" for k in (1, 2))   # completed training units reused by path; evaluations never
 MANIFEST, APPROVAL = HERE / "OE_MANIFEST.json", HERE / "OE_APPROVAL.json"
 KAPPA = S.KAPPA
 WORDS = (
-    "I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, attempt {attempt}",
+    "I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, "
+    "with the no-stall placebo world (amendment A2), attempt {attempt}",
     "the BCA arm at kappa 63 is approved",
     "the comparison is exploratory and supports no protocol claim",
 )
@@ -173,8 +176,11 @@ class Runner:
         return report
 
 
-def execute(dispatch=None, *, run_dir=None, approval_path=None, manifest_path=None, root=None, integrity=None):
+def execute(dispatch=None, *, run_dir=None, approval_path=None, manifest_path=None, root=None, integrity=None, reuse_sources=None):
     plan = check_approval(approval_path, manifest_path, run_dir, root)
+    sources = [str(p) for p in (REUSE_SOURCES if reuse_sources is None else reuse_sources) if Path(p).is_dir()]
+    plan["reuse_sources"] = sources
+    plan["previous_attempts"] = sources + plan["previous_attempts"]      # reversed() in reusable: this run's latest attempt wins
     found = S.inputs()
     directory = (run_dir or RUN) / f"attempt_{plan['attempt']}"
     directory.mkdir(parents=True, exist_ok=False)

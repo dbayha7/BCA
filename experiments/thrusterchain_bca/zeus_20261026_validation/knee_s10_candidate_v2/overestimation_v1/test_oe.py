@@ -230,9 +230,21 @@ class Supervisor(unittest.TestCase):
         text = " ".join([oe.WORDS[0].format(attempt=attempt)] + list(oe.WORDS[1:]))
         self.approval.write_text(json.dumps({"approval": text, "package_manifest_sha256": sha_file(self.manifest), "attempt": attempt}))
 
-    def execute(self, dispatch, run=None):
+    def execute(self, dispatch, run=None, reuse_sources=()):
         return oe.execute(dispatch, run_dir=run or self.run, approval_path=self.approval, manifest_path=self.manifest, root=HERE,
-                          integrity={"package_dir": str(HERE), "files": {}})
+                          integrity={"package_dir": str(HERE), "files": {}}, reuse_sources=reuse_sources)
+
+    def test_training_reused_from_another_run_by_path(self):
+        self.execute(fake_dispatch(fail=("warmup_s0_nostall",)))                    # an earlier run holding stall3 units only
+        self.write_approval(1)
+        other = self.tmp / "a2_run"
+        out = self.execute(fake_dispatch(), run=other, reuse_sources=[self.run / "attempt_1"])
+        self.assertEqual(out["reading"], "PROMISING / CALIBRATED", out.get("reasons"))
+        self.assertTrue(all(out["units"][f"{k}_s{i}"].startswith("reused") for k in ("warmup", "branch", "bca_branch") for i in range(3)))
+        self.assertTrue(all(out["units"][f"{k}_s{i}_nostall"] == "completed" for k in ("warmup", "branch", "bca_branch") for i in range(3)))
+        self.assertTrue(all(out["units"][f"eval_{a}_s{i}{x}"] == "completed" for a in ("native", "bca") for i in range(3) for x in ("", "_nostall")))
+        attempt = json.loads((other / "attempt_1" / "ATTEMPT.json").read_text())
+        self.assertEqual(attempt["reuse_sources"], [str(self.run / "attempt_1")])
 
     def test_promising_end_to_end(self):
         out = self.execute(fake_dispatch())

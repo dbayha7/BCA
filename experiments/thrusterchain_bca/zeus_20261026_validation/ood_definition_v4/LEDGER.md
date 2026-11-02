@@ -131,3 +131,10 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   (the measurement runs on the real simulator in both worlds). Re-sealed; awaits the user's attempt-2 approval.
   Post-hoc on attempt 1 (reported only, appended to its readout): U correlates with the critic's error magnitude
   at 0.26 to 0.49 and is sign-blind (U on over- versus under-valued probes 1.01 to 1.06).
+- **Overestimation comparison v1, attempt 2 under A1 (2026-11-01 20:37-20:40 EST, user-run, manifest 64d331e4…):
+  PROMISING in every seed.** Training reused from attempt 1; six evaluations rerun; I1 0.0 relative, I2 ≤ 5.7e-7.
+  Paired reads equal attempt 1's: dJ +11.94, +41.30, +22.79; de_own −0.61, −16.23, −28.91; dEXPO +0.004, −0.062,
+  −0.239. The honeypot half is decided; exploratory, no protocol claim, mechanism open (U sign-blind). Because a
+  decided comparison takes no further attempt, amendment A2 (the no-stall placebo) runs as its own comparison in
+  `oe_run_a2/` with its own approval sentence, reusing the stall3 training units by path and rerunning every
+  evaluation. Record `oe_run/attempt_2/`.

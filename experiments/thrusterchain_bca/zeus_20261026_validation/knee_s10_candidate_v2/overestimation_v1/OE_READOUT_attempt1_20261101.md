@@ -102,3 +102,12 @@ kappa·U falls on under-valued probes (about a third of dataset probes, mean mis
 ones. The earlier sentence "the width does not flag the withheld action" stands as written: U_W − U_data is 0.01 to
 0.03. This table says, in addition, that U is informative about how wrong the critic is and uninformative about
 which way. Not pre-registered; reported only.
+
+## Attempt 2 under amendment A1 (2026-11-01 20:37 to 20:40 EST, manifest 64d331e4…): PROMISING
+
+The user ran attempt 2 with the amended tolerances. The nine training units were reused from attempt 1; the six
+evaluations reran (142 s, 335,448 exact transitions). I1 held exactly (0.0 relative) and I2 to 1.8e-7 to 5.7e-7 per
+component against 1e-6. Every paired read equals attempt 1's to the printed digits (dJ +11.94, +41.30, +22.79;
+de_own −0.61, −16.23, −28.91). **The honeypot comparison is decided: PROMISING in every seed**, with the caveats of
+"What this does not say" above. Record: `oe_run/attempt_2/`. The no-stall placebo world (amendment A2) runs as its
+own comparison in `oe_run_a2/`.

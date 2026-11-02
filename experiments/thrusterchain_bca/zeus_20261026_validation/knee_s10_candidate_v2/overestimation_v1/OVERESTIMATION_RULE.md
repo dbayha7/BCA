@@ -112,16 +112,21 @@ failed job ends the attempt INCOMPLETE. No bar, dose, slot or seed changes after
 ## Attempts
 
 One attempt. After INCOMPLETE, a second attempt under a new approval naming attempt 2 reuses every unit an earlier
-attempt completed (same id, kind, seed, arm; the six evaluations always rerun) and runs the rest. Amendment A1: after INCONCLUSIVE too, only when
-every evaluation of the previous attempt recorded its I1 identity within 1e-6 relative (the named instrument cause
-below); the supervisor checks the saved reports. Training units are reused; the six evaluations rerun. No attempt
-3. `--decide` recomputes the decision from the saved reports.
+attempt completed (same id, kind, seed, arm; the evaluations always rerun) and runs the rest. Amendment A1: after
+INCONCLUSIVE too, only when every evaluation of the previous attempt recorded its I1 identity within 1e-6 relative
+(the named instrument cause below); the supervisor checks the saved reports. No attempt 3. `--decide` recomputes
+the decision from the saved reports.
+
+Amendment A2 runs in its own folder, `oe_run_a2/`, with its own attempt count and its own approval sentence,
+because the honeypot comparison under A1 is decided (`oe_run/attempt_2`, PROMISING) and a decided comparison takes
+no further attempt. A2's supervisor reuses, by path, the completed stall3 training units of `oe_run/attempt_1` and
+`oe_run/attempt_2` (same id, kind, seed, arm, world) and reruns every evaluation.
 
 ## What the user's approval states
 
 `OE_APPROVAL.json`, written at the user's terminal, must contain these sentences, the manifest's sha256 and the attempt:
 
-1. "I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, attempt {n}"
+1. "I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, with the no-stall placebo world (amendment A2), attempt {n}" (the A1 run's sentence ended "kappa 63, attempt {n}")
 2. "the BCA arm at kappa 63 is approved"
 3. "the comparison is exploratory and supports no protocol claim"
 
