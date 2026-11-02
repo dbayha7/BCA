@@ -159,3 +159,8 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   PLACEBO WITHOUT STAKE; PLACEBO MIXED. Profile flags: exposure monotone in kappa; honeypot gain monotone. Thirty
   training jobs (about 4 h) and twenty-four evaluations; caps 1,800 s per job, 5 h training, 2 h evaluation. 10
   tests pass. Sealed; awaits the user's approval and launch.
+- **r5 native screen, attempt 1 on Zeus (2026-11-02 03:49-04:4x UTC): INCOMPLETE, interrupted by the user** to move
+  the run to Titan. Stage 0 passed (i0 exact; g1 REPRESENTABLE under the r5 relative reading, reported: median
+  KC(s10) 0.67 / 0.79 / 1.12 against in-support bands 0.90 / 0.95 / 1.05 at 200k updates, capture 76 / 72 / 60%);
+  two warmups completed. Attempt counted. **Amendment A2** (device kinds, same-device reuse, dry run on the running
+  machine) committed; the package is unsealed until Titan's dry run; attempt 2 is Titan's under a new approval.
