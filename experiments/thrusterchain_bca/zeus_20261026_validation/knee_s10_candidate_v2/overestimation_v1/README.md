@@ -19,9 +19,12 @@ PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -B -m unittest discover -s ex
 
 Read `OVERESTIMATION_RULE.md` first: the dose, the probes, the bars and the budget are yours to accept or change. A
 change is edited into the rule and re-sealed before any run. The sentences are matched exactly (case included).
+The command below names attempt 2 (attempt 1 is on record as INCONCLUSIVE by the instrument tolerances alone,
+amendment A1); remove the attempt-1 approval file first, since the writer refuses to overwrite. Attempt 2 reuses
+the nine training units and reruns the six evaluations (about three minutes).
 
 ```bash
-.venv/Scripts/python.exe -c "import json,hashlib;p='experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/overestimation_v1/';h=hashlib.sha256(open(p+'OE_MANIFEST.json','rb').read()).hexdigest();open(p+'OE_APPROVAL.json','x').write(json.dumps({'approval':'I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, attempt 1. And the BCA arm at kappa 63 is approved, and the comparison is exploratory and supports no protocol claim.','package_manifest_sha256':h,'attempt':1},indent=2)+chr(10))"
+.venv/Scripts/python.exe -c "import json,hashlib;p='experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/overestimation_v1/';h=hashlib.sha256(open(p+'OE_MANIFEST.json','rb').read()).hexdigest();open(p+'OE_APPROVAL.json','x').write(json.dumps({'approval':'I approve the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, kappa 63, attempt 2. And the BCA arm at kappa 63 is approved, and the comparison is exploratory and supports no protocol claim.','package_manifest_sha256':h,'attempt':2},indent=2)+chr(10))"
 ```
 
 ## Run (PowerShell launches the `Ubuntu` distro; about 1.5 to 2 hours; nothing else of yours on the GPU)

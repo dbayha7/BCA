@@ -95,6 +95,8 @@ class Measure(unittest.TestCase):
         self.assertEqual(reads["returns"].shape, (128,))
         self.assertTrue(reads["instrument"]["I1_ok"], reads["instrument"])             # own value at t=0 equals the rollout return
         self.assertTrue(reads["instrument"]["I2_ok"])
+        self.assertEqual(reads["instrument"]["I2_max_abs"], 0.0)                    # a CPU numpy actor is batch-invariant
+        self.assertEqual(reads["own"]["executed"].shape, (48, 4))
         self.assertEqual(reads["own"]["qpi"].shape, (48,))
         self.assertEqual(reads["data"]["qpi"].shape, (192, 4))
         self.assertEqual(reads["data"]["u"].shape, (192, 4))
@@ -110,14 +112,14 @@ class Measure(unittest.TestCase):
 
 # ------------------------------------------------------------------------------------------------ synthetic reports
 
-def report(*, arm, seed, j, e_own, e_data, e_w, u_data=0.1, u_w=0.5, expo=0.1, n_own=48, n_rows=192, i1=True, i2=True):
+def report(*, arm, seed, j, e_own, e_data, e_w, u_data=0.1, u_w=0.5, expo=0.1, n_own=48, n_rows=192, i1=True, i2=True, i1_rel=0.0):
     rng = np.random.default_rng(seed + (0 if arm == "native" else 100))
     qpi_own = -20 + rng.normal(size=n_own)
     qpi_d = -20 + rng.normal(size=(n_rows, 4))
     q1_d = qpi_d + np.concatenate([np.full((n_rows, 1), e_data), np.full((n_rows, 3), e_w)], axis=1)
     u = np.concatenate([np.full((n_rows, 1), u_data), np.full((n_rows, 3), u_w)], axis=1)
     return {"kind": "oe_evaluate", "arm": arm, "seed_index": seed, "status": "completed", "J": j, "exposure_w": expo,
-            "returns": np.full(128, j), "instrument": {"I1_ok": i1, "I2_ok": i2, "I1_max_rel": 0.0},
+            "returns": np.full(128, j), "instrument": {"I1_ok": i1, "I2_ok": i2, "I1_max_rel": i1_rel},
             "own": {"qpi": qpi_own, "q1": qpi_own + e_own, "q2": qpi_own + e_own, "u": np.full(n_own, u_data)},
             "data": {"slots": ["logged", "s05", "s10", "s20"], "qpi": qpi_d, "q1": q1_d, "q2": q1_d, "u": u}}
 
@@ -162,7 +164,7 @@ class Reads(unittest.TestCase):
 
 # ------------------------------------------------------------------------------------------------ the supervisor
 
-def fake_dispatch(*, fail=(), dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8)):
+def fake_dispatch(*, fail=(), dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8), instrument=None):
     def dispatch(job_dir, cap):
         job = json.loads((Path(job_dir) / "job.json").read_text())
         kind, exit_code = job["kind"], 0
@@ -170,7 +172,7 @@ def fake_dispatch(*, fail=(), dj=(0.5, -1.0, 1.0), de=(-0.6, -1.2, -0.8)):
         if kind == "oe_evaluate":
             i = job["seed_index"]
             rep.update(report(arm=job["arm"], seed=i, j=-80.0 + (dj[i] if job["arm"] == "bca" else 0.0),
-                              e_own=3.0 + (de[i] if job["arm"] == "bca" else 0.0), e_data=0.5, e_w=4.0))
+                              e_own=3.0 + (de[i] if job["arm"] == "bca" else 0.0), e_data=0.5, e_w=4.0, **(instrument or {})))
             rep["returns"] = rep["returns"].tolist()
             for part in ("own", "data"):
                 rep[part] = {k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in rep[part].items()}
@@ -226,6 +228,24 @@ class Supervisor(unittest.TestCase):
         self.write_approval(3)
         with self.assertRaises(ValueError):
             self.execute(fake_dispatch())
+
+    def test_attempt_2_after_inconclusive_only_for_the_named_cause(self):
+        gpu = {"i1": False, "i2": False, "i1_rel": 2.4e-7}                          # attempt 1 as it happened
+        out = self.execute(fake_dispatch(instrument=gpu))
+        self.assertEqual(out["reading"], "INCONCLUSIVE")
+        self.assertIn("PROMISING", out["all_labels"])
+        self.write_approval(2)
+        out = self.execute(fake_dispatch())
+        self.assertEqual(out["reading"], "PROMISING", out.get("reasons"))
+        self.assertTrue(all(out["units"][f"{k}_s{i}"].startswith("reused") for k in ("warmup", "branch", "bca_branch") for i in range(3)))
+        self.assertTrue(all(out["units"][f"eval_{a}_s{i}"] == "completed" for a in ("native", "bca") for i in range(3)))
+        other = self.tmp / "other"                                                   # a different INCONCLUSIVE: no attempt 2
+        self.write_approval(1)
+        out = self.execute(fake_dispatch(instrument={"i1": False, "i1_rel": 3e-3}), run=other)
+        self.assertEqual(out["reading"], "INCONCLUSIVE")
+        self.write_approval(2)
+        with self.assertRaises(ValueError):
+            self.execute(fake_dispatch(), run=other)
 
     def test_approval_wording_and_manifest_are_checked(self):
         self.approval.write_text(json.dumps({"approval": "I approve something else", "package_manifest_sha256": sha_file(self.manifest), "attempt": 1}))

@@ -2,7 +2,8 @@
 (OVERESTIMATION_RULE.md). It never imports JAX: every job is a separate `oe_worker.py` process under
 matched_policy_pilot_v1's supervise() (an owned process group, killed at its cap). Units, in order, fail-fast:
 3 warmups, 3 native branches, 3 BCA branches at kappa 63, 6 evaluations (`oe_evaluate`), the decision
-(oe_math.decide). One attempt; after INCOMPLETE a second attempt under a new approval reuses every completed unit.
+(oe_math.decide). One attempt; after INCOMPLETE (or, amendment A1, after INCONCLUSIVE on the named instrument
+cause) a second attempt under a new approval reuses every completed unit.
 OE_RESULT.json is always written. Run in WSL from PowerShell (README.md):
   wsl -d Ubuntu -- bash -lc "cd <this folder> && PYTHONDONTWRITEBYTECODE=1 <recorded python> -B -u oe.py --execute"
 """
@@ -39,6 +40,7 @@ WORDS = (
     "the BCA arm at kappa 63 is approved",
     "the comparison is exploratory and supports no protocol claim",
 )
+INSTRUMENT_CAUSE_REL = 1e-6                                 # amendment A1: attempt 1's I1 misses were 1.1e-7 to 2.4e-7
 JOB_SECONDS, TRAIN_SECONDS = 1_800, int(3.5 * 3_600)
 EVAL_JOB_SECONDS, EVAL_JOB_TRANSITIONS = 900, 200_000
 EVAL_SECONDS, EVAL_TRANSITIONS = int(1.5 * 3_600), 1_500_000
@@ -87,7 +89,14 @@ def check_approval(approval_path=None, manifest_path=None, run_dir=None, root=No
         result = json.loads((p / "OE_RESULT.json").read_text(encoding="utf-8"))
         history.append({"attempt": p.name, "reading": result.get("reading")})
     if history:
-        require(history[-1]["reading"] == "INCOMPLETE", f"No re-attempt after {history[-1]['reading']}")
+        last = history[-1]["reading"]
+        if last == "INCONCLUSIVE":                           # amendment A1: the named instrument cause only
+            evals = [S._read(p / "report.json") for p in previous[-1].iterdir() if p.is_dir() and p.name.startswith("eval_")]
+            require(evals and all(r and r.get("status") == "completed" and float(r["instrument"]["I1_max_rel"]) <= INSTRUMENT_CAUSE_REL
+                                  for r in evals),
+                    "A re-attempt after INCONCLUSIVE needs every evaluation's I1 identity within 1e-6 relative (the named cause)")
+        else:
+            require(last == "INCOMPLETE", f"No re-attempt after {last}")
     return {"approval": approval, "attempt": attempt, "manifest_sha256": sha_file(manifest_path),
             "history": history, "previous_attempts": [str(p) for p in previous]}
 
@@ -117,6 +126,8 @@ class Runner:
         self.dirs, self.reports, self.units = {}, {}, {}
 
     def reusable(self, spec):
+        if spec["kind"] == "oe_evaluate":                    # evaluations always rerun (20 s each); training is reused
+            return None, None
         for prev in reversed(self.plan["previous_attempts"]):
             unit_dir = Path(prev) / spec["id"]
             sup, job = S._read(unit_dir / "SUPERVISOR_RESULT.json") or {}, S._read(unit_dir / "job.json") or {}

@@ -90,3 +90,23 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   transitions per evaluation. 12 tests pass (the measurement runs on the real simulator with a fake policy; I1
   identity holds). Sealed; awaits the user's approval (`OE_APPROVAL.json`) and launch. Exploratory; supports no
   protocol claim; says nothing about the knee departure.
+- **Design audit and r5 (2026-11-01 evening):** `DESIGN_AUDIT_r4_20261101.md` (defects D1-D8 against evidence on
+  file: the native TD critic resolves a 0.1 step in a0 to 0.05-0.15 where the truth is smooth and misses the kink by
+  about 85% when present; G1's regression at 20k was 10-50x coarser than the TD critic in support). `REVISION_r5.md`
+  and the package `../knee_s10_candidate_v2/native_screen_r5/` (rule written first; 17 tests; unsealed, awaiting the
+  WSL dry run, then the seal and the user's approval). G1 becomes a reported calibration unit; twin learnability
+  becomes findings; returns reported; B2 judged against shuffled-U and constant-penalty nulls on net gain; pooled
+  anchor reads; MIXED removed; stage 0 exempt from attempts; dry run required before the seal.
+- **Overestimation comparison v1, attempt 1 (2026-11-01 18:39-20:00 EST, user-run, manifest 9834a461…):
+  INCONCLUSIVE by the instrument tolerances alone; computed PROMISING in every seed**
+  (`../knee_s10_candidate_v2/overestimation_v1/OE_READOUT_attempt1_20261101.md`; record `oe_run/attempt_1/`). All
+  15 units completed (GPU 4,475 s; 335,448 exact transitions). I1 held to 1.1e-7 to 2.4e-7 relative against a 1e-9
+  bar and I2 was not bit-equal: the float32 GPU actor differs in the last place across batch sizes (128 rollout, 48
+  probes, shrinking continuation); the bar had been calibrated on the CPU float64 identity. Reads: native actor
+  saturates a0 at −1 (median |a0| 0.993, W− side) for 67 to 70 percent of steps; own-action over-valuation about
+  +180 (Q1 median −80 against exact −305, every probe over-valued); at dataset states e_data +24, e_W +25 (the
+  error is carried by state shift, not the withheld action alone); U_W − U_data +0.01 to +0.03 (the width does not
+  flag withheld actions; U is about 0.5 higher off-data). BCA at kappa 63: dJ +11.9, +41.3, +22.8 (base about
+  −360); de_own −0.6, −16.2, −28.9; dEXPO +0.004, −0.062, −0.239. Amendment A1 (I1 1e-6 relative, I2 1e-6 per
+  component, values recorded, attempt 2 after this named cause; training reused, evaluations rerun) written,
+  13 tests pass, re-sealed; awaits the user's attempt-2 approval. Exploratory; no protocol claim; mechanism open.

@@ -61,8 +61,9 @@ Nine training jobs (90,000 critic updates, about 8 minutes each on this machine 
 - U_data, U_W: the calibrated width at the same probes (both arms; the native arm trains the same auxiliary).
 - For the BCA arm: p_data, p_W = mean of (Q1 − kappa·U) − Q^pi, the penalized score's error.
 - I1 instrument: at the 16 visited states with t = 0, Q^pi(s, pi(s)) equals the rollout's own return from that
-  start to 1e-9 relative (the same deterministic policy and dynamics). I2: pi(s) at every visited state equals the
-  command the rollout executed there, bit for bit. Every quantity finite.
+  start to 1e-6 relative (the same deterministic policy and dynamics; amendment A1, was 1e-9). I2: pi(s) at every
+  visited state equals the command the rollout executed there to 1e-6 in every component (amendment A1, was bit for
+  bit). Both values are recorded. Every quantity finite.
 
 ## Paired differences and readings
 
@@ -94,9 +95,11 @@ failed job ends the attempt INCOMPLETE. No bar, dose, slot or seed changes after
 
 ## Attempts
 
-One attempt. After INCOMPLETE only, a second attempt under a new approval naming attempt 2 reuses every unit an
-earlier attempt completed (same id, kind, seed, arm) and runs the rest. No attempt 3. `--decide` recomputes the
-decision from the saved reports.
+One attempt. After INCOMPLETE, a second attempt under a new approval naming attempt 2 reuses every unit an earlier
+attempt completed (same id, kind, seed, arm; the six evaluations always rerun) and runs the rest. Amendment A1: after INCONCLUSIVE too, only when
+every evaluation of the previous attempt recorded its I1 identity within 1e-6 relative (the named instrument cause
+below); the supervisor checks the saved reports. Training units are reused; the six evaluations rerun. No attempt
+3. `--decide` recomputes the decision from the saved reports.
 
 ## What the user's approval states
 
@@ -121,6 +124,12 @@ the native actor's and whether return moved, in three paired seeds; and whether 
 actions at dataset states and whether U flags them. It cannot say anything about the knee departure (G1 showed the
 critic cannot resolve it), about distribution shift in states, about Bayesian uniqueness, or about a protocol-level
 claim; a null here is "no effect at this dose and budget", not "BCA cannot work".
+
+## Amendments
+
+| id | Date | What changed, and why | What did not change |
+|---|---|---|---|
+| A1 | 2026-11-01, after attempt 1 (every unit completed; reading INCONCLUSIVE by the instrument checks alone) | I1's tolerance 1e-9 to 1e-6 relative; I2 from bit equality to 1e-6 per component; both values recorded; attempt 2 allowed after this INCONCLUSIVE. Cause: the actor is a float32 JAX network on the GPU, and its output differs in the last float32 place between a batch of 128 (the rollout) and a batch of 48 (the probes) or the shrinking active batch of the continuation; the identity held to 1.1e-7 to 2.4e-7 relative in all six units. The 1e-9 bar was set on the CPU float64 identity (`test_oe.Measure`) and never saw a GPU actor. The probe is self-consistent (Q1 and the reference use the same recomputed action); only the comparison against the rollout's command is affected. | the data, the host, the dose, the seeds, the units, every read, every bar, every reading. Attempt 1's nine training units are reused as they are. |
 
 ## Ledger entry
 

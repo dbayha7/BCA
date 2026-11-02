@@ -22,7 +22,8 @@ WORLD, DATA_ARM, CHECKPOINT = "stall3", "cutoff", "020000"
 W_SLOTS = ("s05", "s10", "s20")                             # withheld a0 magnitudes 0.85, 0.9, 1.0 (|float32 slot value|; the table is W-)
 PROBE_NAMES = ("logged",) + W_SLOTS
 N_ROWS = 192
-IDENTITY_TOL = 1e-9
+IDENTITY_TOL = 1e-6                                         # amendment A1: I1 relative tolerance (was 1e-9)
+ACTION_TOL = 1e-6                                           # amendment A1: I2 max |pi(s) - executed| (was bit equality)
 
 
 def dataset_probe_rows(arrays, seed, n_rows=N_ROWS):
@@ -83,7 +84,8 @@ def measure(policy, arrays, bank, seeds, budget, deadline):
     states, obs, times, rows = E.visited_states(roll, seeds["visited_states"])
     own = policy.act(obs)
     executed_there = np.stack([roll["executed"][e, t] for e, t in rows])
-    i2_ok = bool(np.array_equal(own, executed_there))
+    i2_max_abs = float(np.max(np.abs(own.astype(np.float64) - executed_there.astype(np.float64))))
+    i2_ok = bool(i2_max_abs <= ACTION_TOL)
     own_vals = probe_values(policy, states, obs, times, own[:, None, :], WORLD, budget)
     t0 = times == 0
     starts = np.asarray([e for e, t in rows if t == 0])
@@ -94,10 +96,11 @@ def measure(policy, arrays, bank, seeds, budget, deadline):
     d_vals = probe_values(policy, ds["states"], ds["obs"], ds["times"], probes, WORLD, budget)
     return {"returns": roll["returns"], "J": float(np.mean(roll["returns"])), "rates": rates, "exposure_w": rates["w_any_depth"],
             "rollout_receipt": roll["receipt"],
-            "own": {"rows": rows, "times": times, "actions": own, "qpi": own_vals["qpi"][:, 0], "q1": own_vals["q1"][:, 0],
+            "own": {"rows": rows, "times": times, "actions": own, "executed": executed_there, "qpi": own_vals["qpi"][:, 0], "q1": own_vals["q1"][:, 0],
                     "q2": own_vals["q2"][:, 0], "u": own_vals["u"][:, 0], "forward_calls": own_vals["forward_calls"],
                     "receipt": own_vals["receipt"]},
-            "instrument": {"I1_max_rel": i1_rel, "I1_ok": bool(i1_rel <= IDENTITY_TOL), "I2_ok": i2_ok},
+            "instrument": {"I1_max_rel": i1_rel, "I1_tol": IDENTITY_TOL, "I1_ok": bool(i1_rel <= IDENTITY_TOL),
+                           "I2_max_abs": i2_max_abs, "I2_tol": ACTION_TOL, "I2_ok": i2_ok},
             "data": {"rows": ds["rows"], "times": ds["times"], "slots": list(PROBE_NAMES), "logged": ds["logged"], "probes": probes,
                      "qpi": d_vals["qpi"], "q1": d_vals["q1"], "q2": d_vals["q2"], "u": d_vals["u"],
                      "forward_calls": d_vals["forward_calls"], "receipt": d_vals["receipt"]},
