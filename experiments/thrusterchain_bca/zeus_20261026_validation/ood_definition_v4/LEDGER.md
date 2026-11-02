@@ -164,3 +164,33 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   KC(s10) 0.67 / 0.79 / 1.12 against in-support bands 0.90 / 0.95 / 1.05 at 200k updates, capture 76 / 72 / 60%);
   two warmups completed. Attempt counted. **Amendment A2** (device kinds, same-device reuse, dry run on the running
   machine) committed; the package is unsealed until Titan's dry run; attempt 2 is Titan's under a new approval.
+- **r5 native screen on Titan, dry run 1 (2026-11-02 09:30 UTC, user-run over SSH from Zeus): failed in stage 0, i0,
+  after 6 s** with "pi_ref gains differ from the pinned GAINS_SHA256". The A2 preflight had passed (device kind
+  "NVIDIA GeForce RTX 5070 Ti", the frozen runtime versions). Cause: `knee_s10_candidate_v1/pi_ref.py` recomputes
+  its LQR gains (a 100-step float64 Riccati recursion through OpenBLAS) at first use and pins their bytes by sha256,
+  computed on Zeus; Titan's CPU selects different OpenBLAS kernels and reproduces the recursion one last bit off.
+  Nothing spent (the dry run is outside the attempt count). **Amendment A3 (environment, not code):** every WSL
+  invocation on Titan sets `OPENBLAS_CORETYPE=Haswell`, under which the recursion reproduces Zeus's bytes exactly and
+  the pin passes; the pin itself verifies this in stage 0 of every run. A stored-gains code route was committed and
+  reverted unused (d84a38b5, 96e16267) because the environment route changes no file on either machine; A3 is text
+  only (`SCREEN_RULE_r5.md` amendments table, README Titan commands; commit 4535d9b7). Dry run 2 started 09:39 UTC
+  under A3: preflight and i0 completed, warmup and r0 completed by 09:55; result pending.
+- **Titan dry run 2 (2026-11-02 09:39-10:28 UTC): INCOMPLETE on a GPU driver fault, not a code fault.** Preflight, i0
+  (A3 working), warmup, r0, branch, bc_only and evaluate completed; bca_branch reached 8,500 of 10,000 updates and
+  died at 10:26:35 UTC with CUDA_ERROR_UNKNOWN. At the same second Windows logged nvlddmkm event 14 ("GPU recovery
+  action changed from 0x0 (None) to 0x1 (PF FLR)"); afterwards the RTX 5070 Ti shows Status Error in Windows,
+  nvidia-smi cannot reach the driver on Windows or in WSL. Titan had been up since 2026-10-15. Nothing spent (the
+  dry run is outside the attempt count); the package stays unsealed until a dry run completes.
+- **Titan dry run 3 (2026-11-02 10:46-11:36 UTC, after a reboot at 05:43 EST cleared the driver fault): COMPLETED.**
+  All nine units completed, the BCA branch included (all 10,000 updates; no fault); receipt status completed,
+  platform Linux, real dispatch, device kind "NVIDIA GeForce RTX 5070 Ti" allowed; 19 package tests pass on Titan's
+  interpreter. Titan trains about 1.8 times slower per job than Zeus (smoke warmup 889 s, branch 952 s, BCA branch
+  792 s against 512, 480, 493 s), projecting 31,674 s of training against the 36,000 s cap. **Amendment A4 (the
+  user's choice before the seal):** total training cap 10 h -> 14 h; a kill rule only, no read, bar, dose or seed
+  changed; `screen_r5.py` is outside the dry-run hashes, so the receipt stands.
+- **A superseded 12 h A4, seal and approval (2026-11-02 ~11:43-11:50 UTC, Titan, never run).** A second session on
+  Titan wrote its own A4 at the same time (training cap 12 h, commit 465493ee, one minute after aabfadc0's 14 h),
+  sealed it (manifest 4d93ecb9…b234e24e) and the user approved attempt 2 against that manifest (66028ac0); the push
+  was then refused because aabfadc0 was already on the remote. The user chose 14 h. The merge keeps aabfadc0's
+  files, removes that `SCREEN_MANIFEST.json` and `SCREEN_APPROVAL.json` (they bind the 12 h files), and the package
+  is re-sealed and re-approved under 14 h. Nothing ran under the 12 h seal; no attempt was spent.

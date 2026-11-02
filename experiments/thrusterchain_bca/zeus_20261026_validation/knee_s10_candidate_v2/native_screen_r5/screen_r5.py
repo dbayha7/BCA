@@ -48,7 +48,7 @@ WORDS = (
     "the BCA arm at kappa 63 is approved",
     "the screen is exploratory and supports no protocol claim",
 )
-JOB_SECONDS, TRAIN_SECONDS = 1_800, 12 * 3_600                 # A4: 12 h of training (was 10 h)
+JOB_SECONDS, TRAIN_SECONDS = 1_800, 14 * 3_600                 # amendment A4: 10 h -> 14 h (Titan's measured speed)
 EVAL_SECONDS, EVAL_TRANSITIONS = 2 * 3_600, 36_000_000
 G1_SECONDS, G1_TRANSITIONS = 3_600, 9_000_000
 PREFLIGHT_SECONDS, I0_SECONDS, I0_TRANSITIONS = 600, 600, 1_000_000

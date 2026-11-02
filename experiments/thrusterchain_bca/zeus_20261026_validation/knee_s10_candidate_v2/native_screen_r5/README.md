@@ -69,8 +69,7 @@ Commit the package and the approval under your identity:
 git add experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/native_screen_r5 experiments/thrusterchain_bca/zeus_20261026_validation/ood_definition_v4/REVISION_r5.md experiments/thrusterchain_bca/zeus_20261026_validation/ood_definition_v4/DESIGN_AUDIT_r4_20261101.md && git commit -m "Seal and approve the r5 native screen for candidate knee_s10_v2 (kappa 63, attempt 1)"
 ```
 
-5. **Run** (WSL; stage 0 takes about 5 minutes, then GPU training plus evaluation: Titan's dry run projects about
-   8.8 h of training, under the 12 h cap of amendment A4; on Titan use the command under "Titan specifics" above):
+5. **Run** (WSL; stage 0 takes about 5 minutes, then about 6 to 8 GPU hours of training on Zeus or 9 to 10 on Titan, plus evaluation; training cap 14 h, amendment A4):
 
 ```powershell
 wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/native_screen_r5 && PYTHONDONTWRITEBYTECODE=1 /home/david/bca-operator-audit-20261026/bin/python -B -u screen_r5.py --execute 2>&1 | tee screen_console.log"
