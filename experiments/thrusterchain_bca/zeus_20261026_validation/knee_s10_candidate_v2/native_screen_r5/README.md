@@ -1,6 +1,12 @@
 # Native screen for candidate knee_s10_v2 under r5: how to run it
 
-**State after amendment A2 (2026-11-01 late):** attempt 1 ran on Zeus and was interrupted by the user (INCOMPLETE,
+**State after amendment A5 (2026-11-02):** attempt 2 ran on Titan and was killed 32 minutes in by a forced Windows
+Update restart (INCOMPLETE, on record under `screen_run/`; no outcome value existed). Attempt 3, the last, runs on
+Titan with Windows updates paused. Titan's dry run of 2026-11-02 stands (A5 changes only `screen_r5.py` and the
+tests), so the order is: tests; the seal; the approval with `--attempt 3`; commit and push; the run (the Titan
+command below), in a window on Titan itself.
+
+**Earlier state, after amendment A2 (2026-11-01 late):** attempt 1 ran on Zeus and was interrupted by the user (INCOMPLETE,
 on record under `screen_run/`). Attempt 2 runs on Titan. Because A2 changed the worker, the package is unsealed
 until the dry run is redone **on Titan**; the order below is for Titan, from a pulled clone, with the recorded
 operator environment at the same path. If Titan's interpreter lives elsewhere, substitute its path in every command.
@@ -55,12 +61,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -B experiments/thrusterchain_
 
 4. **Approve, at your terminal** (writes `SCREEN_APPROVAL.json`; refuses to overwrite). Read `SCREEN_RULE_r5.md`
    first: the dose, the control, the bars, the nulls, the budget and the RS1 sentence are yours to accept or change; a
-   change is edited into the rule and re-sealed before any run. The sentences are matched exactly; `attempt` is 1, or
-   2 after an INCOMPLETE attempt 1 (stage-0 failures spend no attempt). Remove an older approval file first. The
+   change is edited into the rule and re-sealed before any run. The sentences are matched exactly; `attempt` is 1,
+   2 after an INCOMPLETE attempt 1, or 3 after an INCOMPLETE or killed attempt 2 (amendment A5; stage-0 failures
+   spend no attempt). Remove an older approval file first. The
    helper lives outside the sealed folder (PowerShell quoting mangles the apostrophe in a one-liner):
 
 ```bash
-.venv/Scripts/python.exe experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/approve_native_screen_r5.py --attempt 2
+.venv/Scripts/python.exe experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/approve_native_screen_r5.py --attempt 3
 ```
 
 Commit the package and the approval under your identity:

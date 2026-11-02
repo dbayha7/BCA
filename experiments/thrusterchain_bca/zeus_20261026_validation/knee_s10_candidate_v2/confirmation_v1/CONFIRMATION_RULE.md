@@ -32,7 +32,7 @@ this run is not a confirmed dose and the rule says so now.
 Per world (stall3, then no-stall; ids suffixed `_<world>`): `warmup_s{i}`, `branch_s{i}`, `bca_branch_s{i}_k{kappa}`
 for kappa in 21, 63, 189, then `eval_native_s{i}` and `eval_bca_s{i}_k{kappa}` (kind `cf_evaluate`, the
 exploratory `measure` with the fresh seeds). Thirty training jobs (about 8 minutes each on this machine: about 4
-hours) and twenty-four evaluations (about 25 s each). Then the decision (`cf_math.decide`), `decision.json`,
+hours on Zeus, about 7.5 on Titan, up to about 13 at the slowest pace either machine has shown) and twenty-four evaluations (about 25 s each). Then the decision (`cf_math.decide`), `decision.json`,
 `CF_RESULT.json` always written.
 
 ## Reads
@@ -67,7 +67,7 @@ is a description of this run.
 
 ## Kill rules and caps
 
-Training: 1,800 s per job, 5 h in all. Evaluation: 900 s and 200,000 exact transitions per job, 2 h and
+Training: 1,800 s per job, 13 h in all (amendments A1 and A2; was 5 h). Evaluation: 900 s and 200,000 exact transitions per job, 2 h and
 3,000,000 in all. A failed job ends the attempt INCOMPLETE. No bar, dose, slot or seed changes after the approval.
 
 ## Attempts
@@ -85,6 +85,13 @@ only when every evaluation of the previous attempt recorded its I1 identity with
 2. "the BCA arms at kappa 21, 63 and 189 are approved"
 3. "the confirmation seeds are fresh: no run has used them"
 4. "the dose being confirmed is 63; the other doses are a profile"
+
+## Amendments
+
+| # | When | Change | Unchanged |
+|---|---|---|---|
+| A1 | 2026-11-02, after attempt 1 ended INCOMPLETE (04:12 UTC: the user interrupted `warmup_s0_stall3` after 286 s, before any checkpoint, report or evaluation existed; no number from the fresh seeds was produced) | **Total training cap 5 h -> 9 h**, set by the user before the attempt-2 approval. The rule's 5 h assumed about 8 minutes per job (the overestimation runs' 480 to 530 s). On the same machine the r5 screen's real warmups took 880 s and 1,286 s (the second overlapped this package's attempt 1 on the GPU), so the 30 jobs could need about 7 to 8.5 h; at the 5 h cap the last allowed attempt would end INCOMPLETE on time alone. A kill rule only: 9 h covers about 1,080 s per job. Approval sentence 3 ("the confirmation seeds are fresh: no run has used them") stands in the sense that no result from them exists: attempt 1's 286 s of seed-0 training produced no checkpoint and is rerun from the start. | the per-job cap (1,800 s), the evaluation caps, the doses, the seeds, the reads, the bars, the readings, the two-attempt limit, the approval words. |
+| A2 | 2026-11-02, before the attempt-2 approval; the user moved the run to Titan ("I want this done on hpc cluster or titan", then "Titan, after r5") | **Change 4, device kinds.** knee_edge_ood_v3 pins Zeus's GPU kind in every research training bind, so on Titan the first training job would refuse and end the last attempt INCOMPLETE. The worker now sets the recorded kind to the one allowed kind the machine has (`device_kinds.py`, the same list as the r5 screen's A2: Zeus's laptop GPU or Titan's "NVIDIA GeForce RTX 5070 Ti"), right after the worker environment is set; every report keeps the runtime's device kinds. Attempt 1 left no completed unit, so nothing from Zeus is reused. **Training cap 9 h -> 13 h:** Titan runs about 1.8 times slower per job than Zeus (the r5 dry run: about 900 s), about 7.5 h for the 30 jobs; 13 h covers about 1,550 s per job, the slowest pace either machine has shown under load. Kill rule only. Runs on Titan after the r5 screen finishes, never alongside it. | the evaluation caps, the doses, the seeds, the reads, the bars, the readings, the two-attempt limit, the approval words. |
 
 ## Integrity
 

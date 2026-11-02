@@ -1,6 +1,7 @@
 """r5 native screen tests (Windows, CPU): the frozen reads and every reading on synthetic evaluations, the B2 nulls,
 the g1 calibration reading, the i0 comparison, and the supervisor end to end with a fake dispatcher (stage 0 exempt
-from the attempt count, GO, INCOMPLETE then reuse on attempt 2, no attempt 3, the dry-run receipt requirement, the
+from the attempt count, GO, INCOMPLETE then reuse on attempt 2, a killed attempt read as INCOMPLETE and attempt 3
+(amendment A5), no attempt 4, the dry-run receipt requirement, the
 approval words). No GPU, no checkpoint opened, no sealed file touched."""
 from pathlib import Path
 import json
@@ -251,6 +252,28 @@ class Supervisor(unittest.TestCase):
         self.write_approval(3)
         with self.assertRaises(ValueError):
             self.execute(fake_dispatch())
+
+    def test_killed_attempt_reads_incomplete_then_attempt_3_then_no_fourth(self):
+        """Amendment A5: a counted attempt with no SCREEN_RESULT.json (killed from outside) reads INCOMPLETE; attempt 3
+        follows under a new approval and reuses the completed same-device units; there is no attempt 4."""
+        self.execute(fake_dispatch(fail=("warmup_s1_cutoff_nostall",), device=TITAN))     # attempt 1: INCOMPLETE
+        self.write_approval(2)
+        out = self.execute(fake_dispatch(fail=("warmup_s2_cutoff_nostall",), device=TITAN))
+        self.assertTrue(out["attempt_counted"])
+        (self.runs()[-1] / "SCREEN_RESULT.json").unlink()                                 # attempt 2 killed: no result
+        self.assertEqual(S.recorded_reading(None, True), "INCOMPLETE")
+        self.assertIsNone(S.recorded_reading(None, False))
+        with self.assertRaises(ValueError):                                                # still names attempt 2
+            self.execute(fake_dispatch(device=TITAN))
+        self.write_approval(3)
+        out = self.execute(fake_dispatch(fail=("warmup_s2_random_nostall",), device=TITAN))
+        self.assertEqual(out["attempt"], 3)
+        self.assertEqual(out["reading"], "INCOMPLETE", out.get("reasons"))
+        self.assertTrue(out["units"]["warmup_s0_cutoff_stall3"].startswith("reused"))
+        self.assertTrue(out["units"]["warmup_s2_random_stall3"].startswith("reused"))     # finished in the killed attempt
+        self.write_approval(4)
+        with self.assertRaises(ValueError):                                                # there is no attempt 4
+            self.execute(fake_dispatch(device=TITAN))
 
     def test_reuse_only_on_the_same_device_kind(self):
         """Amendment A2: attempt 2 on Titan after an INCOMPLETE attempt 1 on Zeus reuses g1 but no Zeus GPU unit."""

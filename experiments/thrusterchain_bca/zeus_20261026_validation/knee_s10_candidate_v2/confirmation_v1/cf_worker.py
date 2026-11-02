@@ -8,7 +8,11 @@ runtime before the branch and checked by the branch and the policy restore; (3) 
 exploratory package's `measure` with the confirmation's visited-state and probe-row seeds. Integrity: this worker
 verifies its own job's record (this folder as the package folder) before any package import, refuses importable
 files added to this folder, the exploratory package's or the native screen's, and hides --job from the native
-screen worker's own check."""
+screen worker's own check.
+
+Change 4 (amendment A2): the recorded device kind is the one allowed kind this machine has (`device_kinds.py`: Zeus's
+laptop GPU or Titan's desktop GPU), bound right after the worker environment is set, before any training bind or
+policy restore reads it; every report keeps the runtime's device kinds."""
 from pathlib import Path
 import argparse
 import json
@@ -42,10 +46,33 @@ finally:
 import numpy as np                                           # noqa: E402
 import oe_eval as OE_EVAL                                    # noqa: E402
 import cf_seeds as CS                                        # noqa: E402
+import device_kinds as DK                                    # noqa: E402
 from core import require                                     # noqa: E402
 
 DOSES = (21.0, 63.0, 189.0)
 SB, W1, E = SW.SB, SW.W1, SW.E
+
+
+def bind_device_kind():
+    """Change 4 (amendment A2): the recorded device kind is the one allowed kind this machine has."""
+    import jax
+    kinds = sorted({d.device_kind for d in jax.devices()})
+    require(len(kinds) == 1 and kinds[0] in DK.ALLOWED_DEVICE_KINDS,
+            f"Device kinds {kinds} are not exactly one allowed kind {sorted(DK.ALLOWED_DEVICE_KINDS)}")
+    SW.step03.K.RECORDED_DEVICE_KIND = kinds[0]
+    return kinds[0]
+
+
+_set_worker_environment = SW.step03.set_worker_environment
+
+
+def set_worker_environment():
+    """The recorded worker environment (unchanged), then change 4's device-kind binding."""
+    _set_worker_environment()
+    bind_device_kind()
+
+
+SW.step03.set_worker_environment = set_worker_environment
 
 
 def protocol_view(job):

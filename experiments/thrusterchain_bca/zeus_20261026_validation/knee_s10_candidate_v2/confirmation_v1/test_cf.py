@@ -64,6 +64,29 @@ class Worker(unittest.TestCase):
         finally:
             CW.SW.step03.rerun1, CW.SW.KAPPA = original_rerun1, original_kappa
 
+    def test_device_kind_binding_amendment_a2(self):
+        """Change 4: the recorded kind becomes the machine's one allowed kind, set with the worker environment."""
+        import types
+        import jax
+        import device_kinds as DK
+        K = CW.SW.step03.K
+        recorded, devices = K.RECORDED_DEVICE_KIND, jax.devices
+        self.assertIs(CW.SW.step03.set_worker_environment, CW.set_worker_environment)
+        try:
+            for kind in DK.ALLOWED_DEVICE_KINDS:
+                jax.devices = lambda *a, kind=kind: [types.SimpleNamespace(device_kind=kind)]
+                self.assertEqual(CW.bind_device_kind(), kind)
+                self.assertEqual(K.RECORDED_DEVICE_KIND, kind)
+            jax.devices = lambda *a: [types.SimpleNamespace(device_kind="NVIDIA A100-SXM4-80GB")]
+            with self.assertRaises(ValueError):
+                CW.bind_device_kind()
+        finally:
+            K.RECORDED_DEVICE_KIND, jax.devices = recorded, devices
+        self.assertEqual(set(DK.ALLOWED_DEVICE_KINDS), {"NVIDIA GeForce RTX 5070 Ti Laptop GPU", "NVIDIA GeForce RTX 5070 Ti"})
+
+    def test_caps_amendment_a1(self):
+        self.assertEqual((cf.JOB_SECONDS, cf.TRAIN_SECONDS, cf.EVAL_SECONDS, cf.EVAL_TRANSITIONS), (1_800, 13 * 3_600, 2 * 3_600, 3_000_000))
+
     def test_kinds(self):
         self.assertIs(CW.SW.KINDS["cf_evaluate"], CW.cf_evaluate)
         self.assertTrue({"warmup", "branch", "bca_branch"} <= set(CW.SW.KINDS))
