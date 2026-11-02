@@ -1,0 +1,5062 @@
+{
+  "provenance": {
+    "report_sha256": "c11b32408b59815cb7a75585b9c3aeacb97655827e40ab1110250a981adcefd7",
+    "checks_sha256": "2f8afe4e1057f7a6bc84405039090fa6a9ff350d03dfdce3b2e696e0830ed529",
+    "raw_banks_sha256": "cb87c6fe809e94d38715fc45df07605a386222fb9bc2c9a33059c708463d576b",
+    "protocol_sha256": "b30d1c5cb88004135070f12050bb97b3b1059f436017f25ca005bf52087f3aa2",
+    "checkpoint_state_sha256": "874d65b7f4dcb5ec285a0d4360439c73a787b5e8c567ff7c0138e0c1e22948e8",
+    "all_receipt_identity_links_verified": true,
+    "worker_seconds": 42.85285249100001,
+    "supervisor_seconds": 46.505334037
+  },
+  "ledger": {
+    "schema": "unifloral.operator_alignment.execution.v1",
+    "status": "completed_bounded_operator_execution",
+    "transition_rows_attempted": 1152,
+    "transition_rows_completed": 1152,
+    "max_transition_rows": 1152,
+    "full_continuations": 0,
+    "current_actor_rows": 128,
+    "current_critic_rows": 1408,
+    "width_rows": 1408,
+    "target_actor_rows": 1408,
+    "target_critic_rows": 5632,
+    "max_target_critic_rows": 5632,
+    "native_smoothing_draws": 8,
+    "max_native_smoothing_draws": 8,
+    "fitting_transition_rows_read": 256,
+    "new_diagnostic_fits": 0,
+    "policy_optimizer_updates": 0,
+    "calibrator_updates": 0,
+    "new_candidate_actions": 0,
+    "confirmation_files_read": 0,
+    "checkpoint_rng_advanced": false,
+    "conditional_continuation_mc_error": 0,
+    "native_smoothing_draws_are_new_not_original_refresh_replay": true
+  },
+  "runtime": {
+    "python": "3.12.14 | packaged by Anaconda, Inc. | (main, Aug 27 2026, 14:46:43) [GCC 14.3.0]",
+    "executable": "/home/david/bca-operator-audit-20261026/bin/python",
+    "packages": {
+      "jax": "0.6.2",
+      "jaxlib": "0.6.2",
+      "jax-cuda12-plugin": "0.6.2",
+      "jax-cuda12-pjrt": "0.6.2",
+      "numpy": "2.5.4",
+      "flax": "0.10.7",
+      "optax": "0.2.8",
+      "distrax": "0.1.5",
+      "chex": "0.1.90",
+      "tensorflow-probability": "0.25.0",
+      "scipy": "1.18.1"
+    },
+    "devices": [
+      "cuda:0"
+    ],
+    "device_kinds": [
+      "NVIDIA GeForce RTX 5070 Ti Laptop GPU"
+    ],
+    "backend": "gpu",
+    "matmul_precision": "highest",
+    "jax_disable_jit": false,
+    "jax_enable_x64": false,
+    "environment": {
+      "XLA_FLAGS": "--xla_gpu_triton_gemm_any=True",
+      "JAX_PLATFORMS": "cuda",
+      "JAX_DEFAULT_MATMUL_PRECISION": "highest",
+      "PYTHONUNBUFFERED": "1"
+    }
+  },
+  "forward_replays": [
+    {
+      "name": "current actor",
+      "rows": 128,
+      "max_abs_difference": 1.1920928955078125e-07,
+      "rtol": 2e-05,
+      "atol": 2e-06,
+      "passed": true
+    },
+    {
+      "name": "current twin Q",
+      "rows": 1152,
+      "max_abs_difference": 1.52587890625e-05,
+      "rtol": 2e-05,
+      "atol": 2e-06,
+      "passed": true
+    },
+    {
+      "name": "frozen width radius",
+      "rows": 1152,
+      "max_abs_difference": 9.5367431640625e-07,
+      "rtol": 2e-05,
+      "atol": 2e-06,
+      "passed": true
+    }
+  ],
+  "accounting_identity": {
+    "passed": true,
+    "max_abs_difference": 1.7763568394002505e-15,
+    "max_fraction_of_allowed_roundoff": 0.003145801492401626,
+    "epsilon_multiplier": 64,
+    "evaluated_row_draw_pairs": 4608,
+    "distinct_from_float32_forward_replay": true
+  },
+  "development_draw_summary": {
+    "relationships": {
+      "u_abs_residual": {
+        "per_draw": [
+          0.0400997342496761,
+          0.0919801909907921,
+          0.10393778949508692,
+          0.038243996289731526
+        ],
+        "defined_draws": 4,
+        "mean": 0.06856542775632166,
+        "min": 0.038243996289731526,
+        "max": 0.10393778949508692,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "u_signed_error": {
+        "per_draw": [
+          -0.16130780345756934,
+          -0.16130780345756934,
+          -0.16130780345756934,
+          -0.16130780345756934
+        ],
+        "defined_draws": 4,
+        "mean": -0.16130780345756934,
+        "min": -0.16130780345756934,
+        "max": -0.16130780345756934,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "u_positive_error": {
+        "per_draw": [
+          -0.20113899683037553,
+          -0.20113899683037553,
+          -0.20113899683037553,
+          -0.20113899683037553
+        ],
+        "defined_draws": 4,
+        "mean": -0.20113899683037553,
+        "min": -0.20113899683037553,
+        "max": -0.20113899683037553,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "u_absolute_error": {
+        "per_draw": [
+          -0.15934728153578356,
+          -0.15934728153578356,
+          -0.15934728153578356,
+          -0.15934728153578356
+        ],
+        "defined_draws": 4,
+        "mean": -0.15934728153578356,
+        "min": -0.15934728153578356,
+        "max": -0.15934728153578356,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "abs_residual_signed_error": {
+        "per_draw": [
+          0.0009359910045139627,
+          0.046989405974023964,
+          -0.028635677171251477,
+          0.016292158164990016
+        ],
+        "defined_draws": 4,
+        "mean": 0.008895469493069116,
+        "min": -0.028635677171251477,
+        "max": 0.046989405974023964,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "abs_residual_positive_error": {
+        "per_draw": [
+          0.07869825962905039,
+          0.1111135008917346,
+          0.059852411151834706,
+          0.07891011801900655
+        ],
+        "defined_draws": 4,
+        "mean": 0.08214357242290657,
+        "min": 0.059852411151834706,
+        "max": 0.1111135008917346,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "R_with_E": {
+        "per_draw": [
+          0.3416511008499149,
+          0.31179788840191847,
+          0.3071417496319994,
+          0.31521026279580283
+        ],
+        "defined_draws": 4,
+        "mean": 0.31895025041990893,
+        "min": 0.3071417496319994,
+        "max": 0.3416511008499149,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "H_with_E": {
+        "per_draw": [
+          0.2006338629576647,
+          0.2006338629576647,
+          0.2006338629576647,
+          0.2006338629576647
+        ],
+        "defined_draws": 4,
+        "mean": 0.2006338629576647,
+        "min": 0.2006338629576647,
+        "max": 0.2006338629576647,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "G_with_E": {
+        "per_draw": [
+          0.6915393790893408,
+          0.709074511334519,
+          0.7052287491529963,
+          0.7089890938545402
+        ],
+        "defined_draws": 4,
+        "mean": 0.7037079333578491,
+        "min": 0.6915393790893408,
+        "max": 0.709074511334519,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      }
+    },
+    "centered_action_rms": {
+      "E": {
+        "per_draw": [
+          1.7717566275437073,
+          1.7717566275437073,
+          1.7717566275437073,
+          1.7717566275437073
+        ],
+        "defined_draws": 4,
+        "mean": 1.7717566275437073,
+        "min": 1.7717566275437073,
+        "max": 1.7717566275437073,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "R": {
+        "per_draw": [
+          1.1200509319673846,
+          1.1289066652203659,
+          1.1312342283633336,
+          1.0986596084034908
+        ],
+        "defined_draws": 4,
+        "mean": 1.1197128584886438,
+        "min": 1.0986596084034908,
+        "max": 1.1312342283633336,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "H": {
+        "per_draw": [
+          0.4221456849944785,
+          0.4221456849944785,
+          0.4221456849944785,
+          0.4221456849944785
+        ],
+        "defined_draws": 4,
+        "mean": 0.4221456849944785,
+        "min": 0.4221456849944785,
+        "max": 0.4221456849944785,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      },
+      "G": {
+        "per_draw": [
+          1.646041160615915,
+          1.7068853159386697,
+          1.7051305876210376,
+          1.6698382703434398
+        ],
+        "defined_draws": 4,
+        "mean": 1.6819738336297656,
+        "min": 1.646041160615915,
+        "max": 1.7068853159386697,
+        "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+      }
+    },
+    "radius_containment": {
+      "per_draw": [
+        0.974826388888889,
+        0.9817708333333334,
+        0.982638888888889,
+        0.9869791666666667
+      ],
+      "defined_draws": 4,
+      "mean": 0.9815538194444444,
+      "min": 0.974826388888889,
+      "max": 0.9869791666666667,
+      "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+    }
+  },
+  "fitting_draw_summary": {
+    "pearson_u_abs_residual": {
+      "per_draw": [
+        0.22331679095913765,
+        0.23553425493799118,
+        0.23430477515309223,
+        0.18541841833645437
+      ],
+      "defined_draws": 4,
+      "mean": 0.21964355984666886,
+      "min": 0.18541841833645437,
+      "max": 0.23553425493799118,
+      "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+    },
+    "row_containment": {
+      "per_draw": [
+        0.9453125,
+        0.953125,
+        0.94921875,
+        0.94921875
+      ],
+      "defined_draws": 4,
+      "mean": 0.94921875,
+      "min": 0.9453125,
+      "max": 0.953125,
+      "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+    },
+    "equal_group_containment": {
+      "per_draw": [
+        0.9434389140271493,
+        0.9502262443438914,
+        0.9532428355957767,
+        0.9457013574660633
+      ],
+      "defined_draws": 4,
+      "mean": 0.9481523378582202,
+      "min": 0.9434389140271493,
+      "max": 0.9532428355957767,
+      "interpretation": "Descriptive finite four-draw summary, not an expected operator or independent-episode expansion"
+    }
+  },
+  "fitting_rows": 256,
+  "fitting_groups": 221,
+  "limitations": [
+    "Definitions fixed before new one-step evaluator calls, after previous development diagnostics. This is exploratory mechanism validation, not fresh confirmation or method selection.",
+    "These are new declared native-operator draws, not reconstruction of the consumed original calibration refresh noise. Four draws describe only this finite noise bank, not an exact expected operator or four times as many independent episodes.",
+    "Weak target tracking suggests limited width fit/generalization on that bank, not automatically a calibration theorem violation. Tracking its residual while poorly aligning with Q1 optimism supports a proxy-mismatch hypothesis. H/G accounting identifies algebraic differences, not causal proof that changing them improves decisions. G mixes target approximation, lag, smoothing and policy differences.",
+    "Training-distribution fitting diagnostic, not held-out calibration, fresh in-distribution validation, or empirical evidence of a conformal coverage guarantee. Multiple rows from one episode are dependent; report unique group count and group-weighted summaries separately.",
+    "Saved V is a deterministic numerical continuation conditional on state/action/current actor, with no Monte Carlo return sampling noise. New randomness here is native target-policy smoothing only. Numerical error, population variation and training-seed variation remain separate.",
+    "Centered RMS terms can cancel; their magnitudes do not partition error variance or identify causal contributions.",
+    "Development candidates are not an in-distribution calibration set. Descriptive containment is not a conformal coverage guarantee.",
+    "Constant-vector correlations are undefined and omitted only with explicit counts; states and draws are never inflated into independent action samples.",
+    "The math module relies on the caller's source/runtime/replay/transition and frozen-state proof; it performs no model or simulator calls."
+  ],
+  "prespecified_strata": [
+    {
+      "stratum": "overall",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 128,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0400997342496761,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16130780345756934,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": -0.20113899683037553,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15934728153578356,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0009359910045139627,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": 0.07869825962905039,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "R_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3416511008499149,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 101,
+          "undefined_states": 27,
+          "equal_state_mean": 0.2006338629576647,
+          "undefined_reasons": {
+            "constant_predictor": 27
+          }
+        },
+        "G_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6915393790893408,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7717566275437073,
+        "R": 1.1200509319673846,
+        "H": 0.4221456849944785,
+        "G": 1.646041160615915
+      },
+      "equal_state_radius_containment": 0.974826388888889,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06490402239159067,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.19116279808853265,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": -0.2205143616725039,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15319190117826775,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.020461758197779383,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.06839032352236005,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3003486366250155,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 51,
+          "undefined_states": 13,
+          "equal_state_mean": 0.18028573147818158,
+          "undefined_reasons": {
+            "constant_predictor": 13
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6796901006689617,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7773171820455498,
+        "R": 1.1419732561896865,
+        "H": 0.37348985771372567,
+        "G": 1.6861505456514858
+      },
+      "equal_state_radius_containment": 0.96875,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.015295446107761547,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.131452808826606,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": -0.18136821637922412,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16550266189329943,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.018589776188751437,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": 0.08921656177873438,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3829535650748144,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.22138895706673759,
+          "undefined_reasons": {
+            "constant_predictor": 14
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7033886575097199,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7661960730418653,
+        "R": 1.0981286077450825,
+        "H": 0.4708015122752314,
+        "G": 1.6059317755803446
+      },
+      "equal_state_radius_containment": 0.9809027777777779,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=0",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0765521375164695,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.025100837233412228,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.005226802357634114,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.016267653800301936,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16299351202158133,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.15667162031758503,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.20475053999380072,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 30,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2621253905087166,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6689247882835492,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8015613520788378,
+        "R": 1.2873809758717638,
+        "H": 0.6402518227012011,
+        "G": 1.8702506036056583
+      },
+      "equal_state_radius_containment": 0.9618055555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=25",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.024684220520261896,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.31788107439713587,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": -0.3485087191661666,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3126164397959959,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.053086305572914036,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": 0.11565733567836047,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.37847881198061095,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.23966702583800853,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7289308402618315,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.9193839359429719,
+        "R": 1.2416669358720744,
+        "H": 0.31473558898879744,
+        "G": 1.713311298865586
+      },
+      "equal_state_radius_containment": 0.9722222222222222,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=50",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.03125155519352141,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.384093551654895,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": -0.5679339054741852,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.36178099796798335,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10134617339961025,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": 0.2506161548662156,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.4449549870139618,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 25,
+          "undefined_states": 7,
+          "equal_state_mean": 0.01358944786393909,
+          "undefined_reasons": {
+            "constant_predictor": 7
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7191341335152773,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8134364902139755,
+        "R": 1.1220318697205474,
+        "H": 0.3409335089671063,
+        "G": 1.5799267185839203
+      },
+      "equal_state_radius_containment": 0.9756944444444444,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=75",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.09041413415549446,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08184424945516583,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.10179612307842305,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.020740657820542928,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.012304997067112897,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.21824227799665796,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.33842006441128625,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.28470350663434635,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6491677542967051,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.5526447319390453,
+        "R": 0.8291239464051519,
+        "H": 0.39266181932080946,
+        "G": 1.4206760214084957
+      },
+      "equal_state_radius_containment": 0.9895833333333334,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=0",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06661898642052556,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.11434467471971006,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.07658530011380865,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.029252762993681163,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16470184776086275,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.15727206891448983,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.20976215158100753,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 14,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2910230245124103,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6144753289650742,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7494940055060457,
+        "R": 1.339471689928088,
+        "H": 0.48911661750746377,
+        "G": 1.8201787295070049
+      },
+      "equal_state_radius_containment": 0.9444444444444444,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=25",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.07974330895016099,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.05594515320875481,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.05594515320875481,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3229330010395175,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.05164192722232587,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7406080306599168,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.1526801006498046,
+        "R": 1.418542722268256,
+        "H": 0.35783575409855817,
+        "G": 2.0030922297898233
+      },
+      "equal_state_radius_containment": 0.9652777777777777,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=50",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06274520896229208,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2657418834927024,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": -0.5122161059728255,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3114238331027466,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.11795024161052706,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.2359958619469598,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.366159522753012,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.037628808153885876,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.682259460377632,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.549781255277226,
+        "R": 0.9848257365714645,
+        "H": 0.3212404517118028,
+        "G": 1.4071736506356793
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=75",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.05050858523338404,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.025002142532993682,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.12860747986327553,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1374757680580686,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.07265348573269838,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.27595120009726354,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3025398711265249,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 11,
+          "undefined_states": 5,
+          "equal_state_mean": 0.35997549112025123,
+          "undefined_reasons": {
+            "constant_predictor": 5
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6814175826732238,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6573133667491229,
+        "R": 0.825052875990937,
+        "H": 0.32576660753707787,
+        "G": 1.514157572673435
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=0",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08648528861241345,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06414300025288559,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06167178928877949,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.061788070594285024,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16128517628229994,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15610869975798675,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.19973892840659388,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.23683996075548458,
+          "undefined_reasons": {}
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7233742476020241,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8536286986516295,
+        "R": 1.2352902618154395,
+        "H": 0.7913870278949384,
+        "G": 1.9203224777043115
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=25",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.030374867909637202,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.22619537211955992,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.2670979758214395,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2156661029172799,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.050227457937073276,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.195273578971168,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.4340246229217044,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.48409965403839605,
+          "undefined_reasons": {
+            "constant_predictor": 6
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7172536498637463,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6860877712361395,
+        "R": 1.0647911494758933,
+        "H": 0.2716354238790367,
+        "G": 1.4235303679413487
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=50",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.12524831934933492,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.5024452198170877,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.6097222551002052,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.4121381628332201,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08474210518869348,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.26158137455565744,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.5237504512749116,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.012453192450169943,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7560088066529228,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.0770917251507246,
+        "R": 1.2592380028696304,
+        "H": 0.36062656622240963,
+        "G": 1.7526797865321617
+      },
+      "equal_state_radius_containment": 0.9722222222222222,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=75",
+      "draw": 0,
+      "noise_seed": 2026103041,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13031968307760483,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13868635637733795,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.07200572665080918,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.09599445241698276,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.0480434915984726,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.15412125344042965,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.37430025769604747,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.21570418752226686,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6169179259201865,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.4479760971289677,
+        "R": 0.8331950168193667,
+        "H": 0.45955703110454094,
+        "G": 1.3271944701435565
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "overall",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 128,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0919801909907921,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16130780345756934,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": -0.20113899683037553,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15934728153578356,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.046989405974023964,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": 0.1111135008917346,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "R_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.31179788840191847,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 101,
+          "undefined_states": 27,
+          "equal_state_mean": 0.2006338629576647,
+          "undefined_reasons": {
+            "constant_predictor": 27
+          }
+        },
+        "G_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.709074511334519,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7717566275437073,
+        "R": 1.1289066652203659,
+        "H": 0.4221456849944785,
+        "G": 1.7068853159386697
+      },
+      "equal_state_radius_containment": 0.9817708333333334,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10038262698329568,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.19116279808853265,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": -0.2205143616725039,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15319190117826775,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.09948601978543224,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.1372346300819014,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.30932739474606497,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 51,
+          "undefined_states": 13,
+          "equal_state_mean": 0.18028573147818158,
+          "undefined_reasons": {
+            "constant_predictor": 13
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6976174376961122,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7773171820455498,
+        "R": 1.1482049721923473,
+        "H": 0.37348985771372567,
+        "G": 1.6993866929803216
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08357775499828851,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.131452808826606,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": -0.18136821637922412,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16550266189329943,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.0055072078373842905,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": 0.08445928743238075,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.31426838205777197,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.22138895706673759,
+          "undefined_reasons": {
+            "constant_predictor": 14
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.720531584972926,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7661960730418653,
+        "R": 1.1096083582483842,
+        "H": 0.4708015122752314,
+        "G": 1.7143839388970181
+      },
+      "equal_state_radius_containment": 0.984375,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=0",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.2191676821554852,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.025100837233412228,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.005226802357634114,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.016267653800301936,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.060509970159821395,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.03829728856067974,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.17725804229898545,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 30,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2621253905087166,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6304019227277293,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8015613520788378,
+        "R": 1.3410851851661585,
+        "H": 0.6402518227012011,
+        "G": 1.9616874277842582
+      },
+      "equal_state_radius_containment": 0.9756944444444444,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=25",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1575413704036385,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.31788107439713587,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": -0.3485087191661666,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3126164397959959,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.036042307251862034,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": 0.08580193619953211,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3616696707917758,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.23966702583800853,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7351503330957265,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.9193839359429719,
+        "R": 1.2700119693993486,
+        "H": 0.31473558898879744,
+        "G": 1.8140427710073113
+      },
+      "equal_state_radius_containment": 0.9722222222222223,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=50",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.08587424037138255,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.384093551654895,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": -0.5679339054741852,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.36178099796798335,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.14364839431776427,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": 0.24579356675461553,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.37914852304422336,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 25,
+          "undefined_states": 7,
+          "equal_state_mean": 0.01358944786393909,
+          "undefined_reasons": {
+            "constant_predictor": 7
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7604638389184539,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8134364902139755,
+        "R": 1.1166539915893066,
+        "H": 0.3409335089671063,
+        "G": 1.6608089317369972
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=75",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0770859517754272,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08184424945516583,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.10179612307842305,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.020740657820542928,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06877689248629096,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.24333333780152502,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.32911531747268924,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.28470350663434635,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7102819505961663,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.5526447319390453,
+        "R": 0.7878755147266497,
+        "H": 0.39266181932080946,
+        "G": 1.3910021332261122
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=0",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.31289285937348743,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.11434467471971006,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.07658530011380865,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.029252762993681163,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.08601860539551913,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.04043799644479078,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.11417510430481262,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 14,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2910230245124103,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.5694667958042139,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7494940055060457,
+        "R": 1.3774505928702587,
+        "H": 0.48911661750746377,
+        "G": 1.99507900472981
+      },
+      "equal_state_radius_containment": 0.9652777777777778,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=25",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.17983652708857673,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.03829076340633926,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.03829076340633926,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.428557835350293,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.05164192722232587,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7272093182359909,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.1526801006498046,
+        "R": 1.4656726955045152,
+        "H": 0.35783575409855817,
+        "G": 2.00224489512689
+      },
+      "equal_state_radius_containment": 0.9583333333333333,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=50",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.09552970445682196,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2657418834927024,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": -0.5122161059728255,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3114238331027466,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.18089700547504373,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.3142339179604703,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3365233819462343,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.037628808153885876,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7795586670854431,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.549781255277226,
+        "R": 0.9532128223847783,
+        "H": 0.3212404517118028,
+        "G": 1.3611075578309082
+      },
+      "equal_state_radius_containment": 1.0,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=75",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.004330825927940499,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.025002142532993682,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.12860747986327553,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1374757680580686,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.2647749156558651,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.4027543974621272,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.35805325738291993,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 11,
+          "undefined_states": 5,
+          "equal_state_mean": 0.35997549112025123,
+          "undefined_reasons": {
+            "constant_predictor": 5
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7142349696588003,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6573133667491229,
+        "R": 0.7964837780098366,
+        "H": 0.32576660753707787,
+        "G": 1.439115314233678
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=0",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.125442504937483,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06414300025288559,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06167178928877949,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.061788070594285024,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.035001334924123675,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.03629037491932559,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.24034098029315826,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.23683996075548458,
+          "undefined_reasons": {}
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6913370496512448,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8536286986516295,
+        "R": 1.3047197774620578,
+        "H": 0.7913870278949384,
+        "G": 1.9282958508387065
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=25",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13524621371870027,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.22619537211955992,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.2670979758214395,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2156661029172799,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.033793851097384815,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.14915016659045593,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.2947815062332585,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.48409965403839605,
+          "undefined_reasons": {
+            "constant_predictor": 6
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7430913479554622,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6860877712361395,
+        "R": 1.0743512432941822,
+        "H": 0.2716354238790367,
+        "G": 1.6258406468877322
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=50",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.07621877628594315,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.5024452198170877,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.6097222551002052,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.4121381628332201,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10639978316048482,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.1944633033502244,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.4217736641422124,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.012453192450169943,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7413690107514648,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.0770917251507246,
+        "R": 1.280095160793835,
+        "H": 0.36062656622240963,
+        "G": 1.9605103056430861
+      },
+      "equal_state_radius_containment": 0.9722222222222222,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=75",
+      "draw": 1,
+      "noise_seed": 2026103042,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.14984107762291388,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13868635637733795,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.07200572665080918,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.09599445241698276,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.12722113068328317,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.06619882706752252,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.30017737756245855,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.21570418752226686,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7063289315335324,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.4479760971289677,
+        "R": 0.7792672514434629,
+        "H": 0.45955703110454094,
+        "G": 1.3428889522185465
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "overall",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 128,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10393778949508692,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16130780345756934,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": -0.20113899683037553,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15934728153578356,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.028635677171251477,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": 0.059852411151834706,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "R_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3071417496319994,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 101,
+          "undefined_states": 27,
+          "equal_state_mean": 0.2006338629576647,
+          "undefined_reasons": {
+            "constant_predictor": 27
+          }
+        },
+        "G_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7052287491529963,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7717566275437073,
+        "R": 1.1312342283633336,
+        "H": 0.4221456849944785,
+        "G": 1.7051305876210376
+      },
+      "equal_state_radius_containment": 0.982638888888889,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08269601941157599,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.19116279808853265,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": -0.2205143616725039,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15319190117826775,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.02807704760962821,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.06161664986721384,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3077873857844586,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 51,
+          "undefined_states": 13,
+          "equal_state_mean": 0.18028573147818158,
+          "undefined_reasons": {
+            "constant_predictor": 13
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6955145306845076,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7773171820455498,
+        "R": 1.1527034969381322,
+        "H": 0.37348985771372567,
+        "G": 1.7398448798904513
+      },
+      "equal_state_radius_containment": 0.9756944444444444,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.12517955957859786,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.131452808826606,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": -0.18136821637922412,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16550266189329943,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.029194306732874736,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": 0.058052167564713125,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.30649611347954026,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.22138895706673759,
+          "undefined_reasons": {
+            "constant_predictor": 14
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7149429676214848,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7661960730418653,
+        "R": 1.1097649597885348,
+        "H": 0.4708015122752314,
+        "G": 1.6704162953516235
+      },
+      "equal_state_radius_containment": 0.9895833333333334,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=0",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10835040608621942,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.025100837233412228,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.005226802357634114,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.016267653800301936,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.14424239565255742,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.1215003879832394,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.20568804412023264,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 30,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2621253905087166,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6443649643613543,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8015613520788378,
+        "R": 1.4433079591814115,
+        "H": 0.6402518227012011,
+        "G": 1.9446132372240208
+      },
+      "equal_state_radius_containment": 0.9722222222222222,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=25",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.19263578031078776,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.31788107439713587,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": -0.3485087191661666,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3126164397959959,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.05808477160562116,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": -0.0038335550038304583,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3466392815672949,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.23966702583800853,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7504933489118333,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.9193839359429719,
+        "R": 1.191723831920889,
+        "H": 0.31473558898879744,
+        "G": 1.7235701905683514
+      },
+      "equal_state_radius_containment": 0.9791666666666666,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=50",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.05264749640821809,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.384093551654895,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": -0.5679339054741852,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.36178099796798335,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.049777404170672584,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": 0.2647218464481315,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.41960173093980624,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 25,
+          "undefined_states": 7,
+          "equal_state_mean": 0.01358944786393909,
+          "undefined_reasons": {
+            "constant_predictor": 7
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7603911583455508,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8134364902139755,
+        "R": 1.082121332495031,
+        "H": 0.3409335089671063,
+        "G": 1.6657172158532079
+      },
+      "equal_state_radius_containment": 0.9826388888888888,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=75",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.16741246799155862,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08184424945516583,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.10179612307842305,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.020740657820542928,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.03800705440250013,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.2231621840109762,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.25663794190066386,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.28470350663434635,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6656655249932466,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.5526447319390453,
+        "R": 0.8077837898560025,
+        "H": 0.39266181932080946,
+        "G": 1.4866217068385699
+      },
+      "equal_state_radius_containment": 0.9965277777777778,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=0",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1275299343601864,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.11434467471971006,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.07658530011380865,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.029252762993681163,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.19062938882007174,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.1654239425713941,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.27252563954041453,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 14,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2910230245124103,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.5869536441062322,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7494940055060457,
+        "R": 1.4670037963131501,
+        "H": 0.48911661750746377,
+        "G": 1.9251375750680686
+      },
+      "equal_state_radius_containment": 0.9583333333333333,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=25",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1599927062305719,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.009429999839564773,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.009429999839564773,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3552927577488929,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.05164192722232587,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7530417506994489,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.1526801006498046,
+        "R": 1.359282815323797,
+        "H": 0.35783575409855817,
+        "G": 1.9478107496933434
+      },
+      "equal_state_radius_containment": 0.9652777777777777,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=50",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.09284440985961946,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2657418834927024,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": -0.5122161059728255,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3114238331027466,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.003586212189334456,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.3468736135847597,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.4011669603506291,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.037628808153885876,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7535920665389553,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.549781255277226,
+        "R": 0.9564236931782137,
+        "H": 0.3212404517118028,
+        "G": 1.4578289594277087
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=75",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13610584691516517,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.025002142532993682,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.12860747986327553,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1374757680580686,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.07247741073132859,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.2289449112235729,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.20216418549789772,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 11,
+          "undefined_states": 5,
+          "equal_state_mean": 0.35997549112025123,
+          "undefined_reasons": {
+            "constant_predictor": 5
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6884706613933942,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6573133667491229,
+        "R": 0.8281036829373674,
+        "H": 0.32576660753707787,
+        "G": 1.6286022353726848
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=0",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08917087781225247,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06414300025288559,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06167178928877949,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.061788070594285024,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.0978554024850431,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.08032205555684435,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13885044870005073,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.23683996075548458,
+          "undefined_reasons": {}
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7017762846164761,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8536286986516295,
+        "R": 1.4196121220496725,
+        "H": 0.7913870278949384,
+        "G": 1.964088899379973
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=25",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.22527885439100365,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.22619537211955992,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.2670979758214395,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2156661029172799,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.1255995430508071,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.02151829479502408,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.33798580538569684,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.48409965403839605,
+          "undefined_reasons": {
+            "constant_predictor": 6
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7479449471242176,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6860877712361395,
+        "R": 1.0241648485179806,
+        "H": 0.2716354238790367,
+        "G": 1.4993296314433597
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=50",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.012450582956816704,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.5024452198170877,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.6097222551002052,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.4121381628332201,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10314102053067963,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.20310802109566026,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.43803650152898344,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.012453192450169943,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7671902501521464,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.0770917251507246,
+        "R": 1.2078189718118484,
+        "H": 0.36062656622240963,
+        "G": 1.8736054722787068
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=75",
+      "draw": 2,
+      "noise_seed": 2026103043,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.19871908906795208,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13868635637733795,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.07200572665080918,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.09599445241698276,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0035366980736716708,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.2167369315525354,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.31111169830342994,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.21570418752226686,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6428603885930991,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.4479760971289677,
+        "R": 0.7874638967746377,
+        "H": 0.45955703110454094,
+        "G": 1.344641178304455
+      },
+      "equal_state_radius_containment": 1.0,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "overall",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 128,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.038243996289731526,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16130780345756934,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": -0.20113899683037553,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15934728153578356,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.016292158164990016,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 99,
+          "undefined_states": 29,
+          "equal_state_mean": 0.07891011801900655,
+          "undefined_reasons": {
+            "constant_outcome": 29
+          }
+        },
+        "R_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.31521026279580283,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 101,
+          "undefined_states": 27,
+          "equal_state_mean": 0.2006338629576647,
+          "undefined_reasons": {
+            "constant_predictor": 27
+          }
+        },
+        "G_with_E": {
+          "defined_states": 128,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7089890938545402,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7717566275437073,
+        "R": 1.0986596084034908,
+        "H": 0.4221456849944785,
+        "G": 1.6698382703434398
+      },
+      "equal_state_radius_containment": 0.9869791666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.0054509258659297295,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.19116279808853265,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": -0.2205143616725039,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.15319190117826775,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.035878114323141246,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.08223385714701523,
+          "undefined_reasons": {
+            "constant_outcome": 14
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.28725435299578156,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 51,
+          "undefined_states": 13,
+          "equal_state_mean": 0.18028573147818158,
+          "undefined_reasons": {
+            "constant_predictor": 13
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6892929264629891,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7773171820455498,
+        "R": 1.116407868286669,
+        "H": 0.37348985771372567,
+        "G": 1.6990899862814053
+      },
+      "equal_state_radius_containment": 0.982638888888889,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 64,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.07103706671353333,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.131452808826606,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": -0.18136821637922412,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.16550266189329943,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": -0.0032937979931611863,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 49,
+          "undefined_states": 15,
+          "equal_state_mean": 0.07551854748022217,
+          "undefined_reasons": {
+            "constant_outcome": 15
+          }
+        },
+        "R_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3431661725958241,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 50,
+          "undefined_states": 14,
+          "equal_state_mean": 0.22138895706673759,
+          "undefined_reasons": {
+            "constant_predictor": 14
+          }
+        },
+        "G_with_E": {
+          "defined_states": 64,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7286852612460915,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7661960730418653,
+        "R": 1.0809113485203126,
+        "H": 0.4708015122752314,
+        "G": 1.6405865544054747
+      },
+      "equal_state_radius_containment": 0.9913194444444444,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=0",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.04957101197356758,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.025100837233412228,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.005226802357634114,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.016267653800301936,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.14853162432135492,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 31,
+          "undefined_states": 1,
+          "equal_state_mean": -0.16090647583476775,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.19277788770409202,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 30,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2621253905087166,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6276459361713278,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8015613520788378,
+        "R": 1.3726356845296794,
+        "H": 0.6402518227012011,
+        "G": 1.9141306721190188
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=25",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06085646013514312,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.31788107439713587,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": -0.3485087191661666,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3126164397959959,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.07462061270818107,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 28,
+          "undefined_states": 4,
+          "equal_state_mean": 0.11985603302487399,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3685380039495224,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.23966702583800853,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7362320031604933,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.9193839359429719,
+        "R": 1.2116200606168728,
+        "H": 0.31473558898879744,
+        "G": 1.75020762708888
+      },
+      "equal_state_radius_containment": 0.9791666666666667,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=50",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.01832333691092191,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.384093551654895,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": -0.5679339054741852,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": -0.36178099796798335,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.11948184723574551,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 21,
+          "undefined_states": 11,
+          "equal_state_mean": 0.2722254518654263,
+          "undefined_reasons": {
+            "constant_outcome": 11
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.4048615310912414,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 25,
+          "undefined_states": 7,
+          "equal_state_mean": 0.01358944786393909,
+          "undefined_reasons": {
+            "constant_predictor": 7
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7768700841962926,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8134364902139755,
+        "R": 1.0702920669200204,
+        "H": 0.3409335089671063,
+        "G": 1.5734994345899591
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "t=75",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 32,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06087184996113733,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08184424945516583,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.10179612307842305,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.020740657820542928,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.019597797037388454,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 19,
+          "undefined_states": 13,
+          "equal_state_mean": 0.19618415899415922,
+          "undefined_reasons": {
+            "constant_outcome": 13
+          }
+        },
+        "R_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.29466362843835553,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 23,
+          "undefined_states": 9,
+          "equal_state_mean": 0.28470350663434635,
+          "undefined_reasons": {
+            "constant_predictor": 9
+          }
+        },
+        "G_with_E": {
+          "defined_states": 32,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6952083518900473,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.5526447319390453,
+        "R": 0.7400906215473905,
+        "H": 0.39266181932080946,
+        "G": 1.4415153475759013
+      },
+      "equal_state_radius_containment": 0.9965277777777778,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=0",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.031017789501591064,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.11434467471971006,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.07658530011380865,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.029252762993681163,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.18181971788626217,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 15,
+          "undefined_states": 1,
+          "equal_state_mean": -0.21364726478435983,
+          "undefined_reasons": {
+            "constant_outcome": 1
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.18485635685690163,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 14,
+          "undefined_states": 2,
+          "equal_state_mean": 0.2910230245124103,
+          "undefined_reasons": {
+            "constant_predictor": 2
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.5312109215738321,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.7494940055060457,
+        "R": 1.4345929480833235,
+        "H": 0.48911661750746377,
+        "G": 1.9060245553180142
+      },
+      "equal_state_radius_containment": 0.9583333333333334,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=25",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.013766026014708839,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.40956677667471186,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10823976592124222,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10823976592124222,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3846383625808003,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.05164192722232587,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7186686085945339,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.1526801006498046,
+        "R": 1.349590144541801,
+        "H": 0.35783575409855817,
+        "G": 1.965639262486537
+      },
+      "equal_state_radius_containment": 0.9722222222222222,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=50",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.025786513611122976,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2657418834927024,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": -0.5122161059728255,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.3114238331027466,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.08976778299571411,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.2357334645933905,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.2688994552550706,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 13,
+          "undefined_states": 3,
+          "equal_state_mean": 0.037628808153885876,
+          "undefined_reasons": {
+            "constant_predictor": 3
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.8020587331036695,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.549781255277226,
+        "R": 0.9555023427442987,
+        "H": 0.3212404517118028,
+        "G": 1.4126193628515824
+      },
+      "equal_state_radius_containment": 1.0,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_1/t=75",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.04876662566370397,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.025002142532993682,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.12860747986327553,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.1374757680580686,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.12732462626187077,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.3462964393035769,
+          "undefined_reasons": {
+            "constant_outcome": 6
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.31062323729035374,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 11,
+          "undefined_states": 5,
+          "equal_state_mean": 0.35997549112025123,
+          "undefined_reasons": {
+            "constant_predictor": 5
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7052334425799207,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6573133667491229,
+        "R": 0.7259460377772526,
+        "H": 0.32576660753707787,
+        "G": 1.512076764469487
+      },
+      "equal_state_radius_containment": 1.0,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=0",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06812423444554408,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06414300025288559,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.06167178928877949,
+          "undefined_reasons": {}
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.061788070594285024,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.11524353075644768,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.11146198619452513,
+          "undefined_reasons": {}
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.2006994185512824,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.23683996075548458,
+          "undefined_reasons": {}
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7240809507688235,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.8536286986516295,
+        "R": 1.3106784209760356,
+        "H": 0.7913870278949384,
+        "G": 1.9222367889200236
+      },
+      "equal_state_radius_containment": 1.0,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=25",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.10794689425557741,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.22619537211955992,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.2670979758214395,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.2156661029172799,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.04100145949511991,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.1353443891630497,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.3524376453182444,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 10,
+          "undefined_states": 6,
+          "equal_state_mean": 0.48409965403839605,
+          "undefined_reasons": {
+            "constant_predictor": 6
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7537953977264528,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.6860877712361395,
+        "R": 1.0736499766919447,
+        "H": 0.2716354238790367,
+        "G": 1.5347759916912231
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=50",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.06243318743296681,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.5024452198170877,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.6097222551002052,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.4121381628332201,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.14919591147577688,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.299594442319453,
+          "undefined_reasons": {
+            "constant_outcome": 4
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.5408236069274123,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": -0.012453192450169943,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.7516814352889157,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 2.0770917251507246,
+        "R": 1.1850817910957425,
+        "H": 0.36062656622240963,
+        "G": 1.7343795063283358
+      },
+      "equal_state_radius_containment": 0.9861111111111112,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    },
+    {
+      "stratum": "development_2/t=75",
+      "draw": 3,
+      "noise_seed": 2026103044,
+      "states": 16,
+      "relationships": {
+        "u_abs_residual": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.17051032558597862,
+          "undefined_reasons": {}
+        },
+        "u_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.13868635637733795,
+          "undefined_reasons": {}
+        },
+        "u_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.07200572665080918,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "u_absolute_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.09599445241698276,
+          "undefined_reasons": {}
+        },
+        "abs_residual_signed_error": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": -0.08812903218709384,
+          "undefined_reasons": {}
+        },
+        "abs_residual_positive_error": {
+          "defined_states": 9,
+          "undefined_states": 7,
+          "equal_state_mean": 0.02939273642813961,
+          "undefined_reasons": {
+            "constant_outcome": 7
+          }
+        },
+        "R_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.27870401958635727,
+          "undefined_reasons": {}
+        },
+        "H_with_E": {
+          "defined_states": 12,
+          "undefined_states": 4,
+          "equal_state_mean": 0.21570418752226686,
+          "undefined_reasons": {
+            "constant_predictor": 4
+          }
+        },
+        "G_with_E": {
+          "defined_states": 16,
+          "undefined_states": 0,
+          "equal_state_mean": 0.6851832612001738,
+          "undefined_reasons": {}
+        }
+      },
+      "mean_state_centered_action_rms": {
+        "E": 1.4479760971289677,
+        "R": 0.7542352053175283,
+        "H": 0.45955703110454094,
+        "G": 1.3709539306823155
+      },
+      "equal_state_radius_containment": 0.9930555555555556,
+      "containment_guarantee_claimed": false,
+      "independence_unit": "episode/state, not actions or noise draws"
+    }
+  ],
+  "fitting_per_draw": [
+    {
+      "draw": 0,
+      "noise_seed": 2026103051,
+      "pearson_u_abs_residual": {
+        "defined": true,
+        "value": 0.22331679095913765,
+        "reason": null,
+        "rows": 256
+      },
+      "row_weighted_radius_containment": 0.9453125,
+      "equal_episode_group_radius_containment": 0.9434389140271493,
+      "U_magnitude": {
+        "mean": 5.0951838586479425,
+        "median": 5.0517497062683105,
+        "min": 3.9960241317749023,
+        "max": 7.179719924926758,
+        "rms": 5.123542496962691
+      },
+      "absolute_residual_magnitude": {
+        "mean": 2.163846166455187,
+        "median": 1.469491958618164,
+        "min": 0.0087738037109375,
+        "max": 31.991519927978516,
+        "rms": 3.739760463233716
+      },
+      "signed_residual_magnitude": {
+        "mean": -0.6729919280624017,
+        "median": -0.5632781982421875,
+        "min": -31.991519927978516,
+        "max": 7.896412521600723,
+        "rms": 3.739760463233716
+      }
+    },
+    {
+      "draw": 1,
+      "noise_seed": 2026103052,
+      "pearson_u_abs_residual": {
+        "defined": true,
+        "value": 0.23553425493799118,
+        "reason": null,
+        "rows": 256
+      },
+      "row_weighted_radius_containment": 0.953125,
+      "equal_episode_group_radius_containment": 0.9502262443438914,
+      "U_magnitude": {
+        "mean": 5.0951838586479425,
+        "median": 5.0517497062683105,
+        "min": 3.9960241317749023,
+        "max": 7.179719924926758,
+        "rms": 5.123542496962691
+      },
+      "absolute_residual_magnitude": {
+        "mean": 2.165627327398397,
+        "median": 1.4464664459228516,
+        "min": 0.01505279541015625,
+        "max": 31.991519927978516,
+        "rms": 3.7705855706309293
+      },
+      "signed_residual_magnitude": {
+        "mean": -0.5882031390210614,
+        "median": -0.2657794952392578,
+        "min": -31.991519927978516,
+        "max": 7.896412521600723,
+        "rms": 3.7705855706309293
+      }
+    },
+    {
+      "draw": 2,
+      "noise_seed": 2026103053,
+      "pearson_u_abs_residual": {
+        "defined": true,
+        "value": 0.23430477515309223,
+        "reason": null,
+        "rows": 256
+      },
+      "row_weighted_radius_containment": 0.94921875,
+      "equal_episode_group_radius_containment": 0.9532428355957767,
+      "U_magnitude": {
+        "mean": 5.0951838586479425,
+        "median": 5.0517497062683105,
+        "min": 3.9960241317749023,
+        "max": 7.179719924926758,
+        "rms": 5.123542496962691
+      },
+      "absolute_residual_magnitude": {
+        "mean": 2.1929014433408156,
+        "median": 1.3968524932861328,
+        "min": 0.001194000244140625,
+        "max": 31.991519927978516,
+        "rms": 3.7804934171636226
+      },
+      "signed_residual_magnitude": {
+        "mean": -0.6407670885091648,
+        "median": -0.46738433837890625,
+        "min": -31.991519927978516,
+        "max": 8.96551513671875,
+        "rms": 3.7804934171636226
+      }
+    },
+    {
+      "draw": 3,
+      "noise_seed": 2026103054,
+      "pearson_u_abs_residual": {
+        "defined": true,
+        "value": 0.18541841833645437,
+        "reason": null,
+        "rows": 256
+      },
+      "row_weighted_radius_containment": 0.94921875,
+      "equal_episode_group_radius_containment": 0.9457013574660633,
+      "U_magnitude": {
+        "mean": 5.0951838586479425,
+        "median": 5.0517497062683105,
+        "min": 3.9960241317749023,
+        "max": 7.179719924926758,
+        "rms": 5.123542496962691
+      },
+      "absolute_residual_magnitude": {
+        "mean": 2.1205652254866436,
+        "median": 1.4122867584228516,
+        "min": 0.004665374755859375,
+        "max": 31.991519927978516,
+        "rms": 3.7002917449827586
+      },
+      "signed_residual_magnitude": {
+        "mean": -0.6184358744649217,
+        "median": -0.6026458740234375,
+        "min": -31.991519927978516,
+        "max": 8.042198181152344,
+        "rms": 3.7002917449827586
+      }
+    }
+  ]
+}

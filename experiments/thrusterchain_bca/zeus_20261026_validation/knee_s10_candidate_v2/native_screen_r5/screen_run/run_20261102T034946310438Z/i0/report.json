@@ -1,0 +1,113 @@
+{
+  "I0": {
+    "formal_report_value": 1.7652868718841468,
+    "h1_max_rel": 0.0,
+    "median_rho_s10": 1.7652868718841468,
+    "ok": true,
+    "rel_diff": 0.0,
+    "tol": 1e-09
+  },
+  "anchors": 96,
+  "bind": {
+    "changes": [
+      "dataset entropy",
+      "data-plan seeds",
+      "training seeds",
+      "E2 bank",
+      "E2 anchors",
+      "bca kappa",
+      "dataset loader"
+    ],
+    "dataset_loader": {
+      "archives": {
+        "nostall": {
+          "archive_sha256": "5f4933fc5d687fc0b6f60e85c96809e7f0ace7023b91209ab89a9e373111b71e",
+          "content_sha256": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+          "file": "knee_s10_v2_nostall.npz"
+        },
+        "stall3": {
+          "archive_sha256": "125131d77f54600497ce4a5d95abff885c1cefbf8ccbafd2d74fd4d52da4bdb2",
+          "content_sha256": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533",
+          "file": "knee_s10_v2_stall3.npz"
+        }
+      },
+      "limitations": [
+        "The producer's validation is established by its sealed, successful run record, not by a standalone receipt.",
+        "The recorded Linux environment's exact reset regeneration failed by one ULP in episode 16; it is not relabeled.",
+        "This loader performs no reset, recorder or dynamics replay; it returns the recorded bytes unchanged."
+      ],
+      "loader": "screen_data.load (authenticated reuse, no regeneration)",
+      "producer": {
+        "collection_sha256": "bb256064091864270e14fb623b710704b0ba14735ad5660cc2a296db7dd7780f",
+        "manifest_sha256": "e7be6e218b77623dd5c4c67791dbb1f000f3c4269f7bf30911d8ab34806de2be",
+        "report_sha256": "a9c99a2067ed2aacfe3848100791e0cadee859d86c7d07e1e901244ddab83efb",
+        "validation_reused": "generate -> KneeDataset.__init__ -> validate(check_dynamics=True), before digest and save",
+        "verified_source_files": 44
+      },
+      "resets": 0,
+      "simulator_steps": 0
+    },
+    "digests": {
+      "nostall": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+      "stall3": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533"
+    },
+    "entropy": 6846509946489100059,
+    "formal_manifest_sha256": "e7be6e218b77623dd5c4c67791dbb1f000f3c4269f7bf30911d8ab34806de2be",
+    "kappa": 63.0
+  },
+  "by_unit": {
+    "anchor_values_nostall": 100800,
+    "anchor_values_stall3": 100800
+  },
+  "data_plan": {
+    "nostall": {
+      "ok": true,
+      "receipts_equal_by_arm": {
+        "cutoff": true,
+        "random": true
+      }
+    },
+    "stall3": {
+      "ok": true,
+      "receipts_equal_by_arm": {
+        "cutoff": true,
+        "random": true
+      }
+    }
+  },
+  "elapsed_seconds": 5.806467466000001,
+  "environment": {
+    "JAX_PLATFORMS": "cpu",
+    "others": "step03.WORKER_ENVIRONMENT"
+  },
+  "finer_max_rel_diff": 0.0,
+  "finished_utc": "2026-11-02T03:50:07.312743+00:00",
+  "integrity_after": {
+    "changed": [],
+    "verified": 170
+  },
+  "job": "i0",
+  "kappa": 63.0,
+  "kind": "i0",
+  "loader": {
+    "nostall": {
+      "digest": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+      "ok": true
+    },
+    "stall3": {
+      "digest": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533",
+      "ok": true
+    }
+  },
+  "nonpositive_rho_anchors": 24,
+  "ok": true,
+  "provenance": "research",
+  "screen": "knee_s10_candidate_v2/native_screen_r5",
+  "simulator_steps_attempted": 211200,
+  "simulator_steps_exact": 211200,
+  "started_utc": "2026-11-02T03:50:01.506275+00:00",
+  "status": "completed",
+  "transitions": 211200,
+  "transitions_prospective": 201600,
+  "unit_label": "COMPLETE"
+}

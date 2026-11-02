@@ -1,0 +1,88 @@
+{
+  "schema": "bca.runtime_validation.interruption_archive.v1",
+  "status": "user_interrupted_terminal_receipt_missing",
+  "archived_utc": "2026-10-28T19:38:17.6616114Z",
+  "attempt_ordinal": 1,
+  "original_directory": "runtime_validation_v1",
+  "archive_directory": "runtime_validation_v1_archived_interrupted_20261028T193817Z",
+  "original_files": [
+    {
+      "name": "progress.json",
+      "bytes": 923,
+      "sha256": "c0be94f554c345aefb203423c7f78cef3d174efafa5b3e93a014a47533aa7bfb",
+      "last_write_utc": "2026-10-28T19:10:31.5590501Z"
+    },
+    {
+      "name": "RESERVATION.json",
+      "bytes": 230,
+      "sha256": "a846649734e7b39a4a631116fbca6602246bd43e6f6bebdc4d3737f90cac3727",
+      "last_write_utc": "2026-10-28T19:10:11.7990598Z"
+    },
+    {
+      "name": "WORKER_ENTRY.json",
+      "bytes": 172,
+      "sha256": "1a1eac814f6d9deed53a86fdd91e651943dc1542dbba33fbd5478ac9d1cbf1df",
+      "last_write_utc": "2026-10-28T19:10:25.2247117Z"
+    },
+    {
+      "name": "worker.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "last_write_utc": "2026-10-28T19:10:11.8111151Z"
+    }
+  ],
+  "protocol_sha256": "95a9dbe042bbe82e868cceb02810e7f1ffa71c0949925996ea17ea3f54d4cdfd",
+  "prepared_sha256": "5aea3dca7b643a6f00d415508660af237e10dde866ee6e77a4bdfa341ff63764",
+  "process_evidence": {
+    "source": "User-supplied terminal output, 2026-10-28; observation clock time not supplied",
+    "command": "wsl -d Ubuntu -- ps -p 390,549 -o pid,ppid,lstart,etime,stat,args",
+    "result": "Header only; neither recorded PID exists at observation time",
+    "scope": "Recorded supervisor and worker only; not global process absence",
+    "warning": "Failed to start systemd user session; ps returned header"
+  },
+  "last_durable_progress": {
+    "counts_scope": "Last durable snapshot; a killed worker may have later unrecorded completions",
+    "elapsed_seconds": 6.327726551999994,
+    "gymnasium_ledger": {
+      "resets_attempted": 0,
+      "resets_completed": 0,
+      "transitions_attempted": 0,
+      "transitions_completed": 0
+    },
+    "initialization_progress": null,
+    "model_progress": {
+      "counts": {
+        "attempted": {
+          "actor": 0,
+          "auxiliary": 0,
+          "calibration": 0,
+          "critic": 0
+        },
+        "verified": {
+          "actor": 0,
+          "auxiliary": 0,
+          "calibration": 0,
+          "critic": 0
+        }
+      },
+      "execution_counts_known": true,
+      "inflight": false,
+      "stage": "synthetic_initialization"
+    },
+    "production_attempt_reserved": false,
+    "production_data_rows": 0,
+    "real_data_optimizer_updates": 0,
+    "stage": "real_model_synthetic_check",
+    "status": "running",
+    "utc": "2026-10-28T15:10:31.55181-04:00"
+  },
+  "prior_worker_elapsed_seconds_lower_bound": 6.327726551999994,
+  "prior_supervisor_elapsed_seconds_lower_bound": 19.75672,
+  "prior_final_counts_known": false,
+  "prior_actual_elapsed_seconds": null,
+  "prior_per_attempt_cap_seconds": 900,
+  "scientific_validation_passed": false,
+  "production_attempt_reserved": false,
+  "training_hold_remains": true,
+  "automatic_retry": false
+}

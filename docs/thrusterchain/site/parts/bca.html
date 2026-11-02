@@ -1,0 +1,126 @@
+<section class="part" id="part-bca" data-title="BCA explained">
+  <header>
+    <p class="eyebrow">Part 3 · Host algorithm first, then each BCA component from the source</p>
+    <h1>What BCA computes, line by line</h1>
+    <p class="lede">Every equation below was read from the pinned source in this checkout (the full audit with line numbers is <code>docs/thrusterchain/site/BCA_AUDIT.md</code>). The host is unchanged Unifloral TD3+BC. Original BCA adds an auxiliary model that predicts how large the critic's own training residual tends to be, calibrates a threshold for it with a Bayesian bootstrap, and subtracts the resulting width from the critic's value inside the actor's objective. It touches nothing else.</p>
+  </header>
+
+  <section class="sec" id="bca-host">
+    <h2>The host: Unifloral TD3+BC, exactly as run</h2>
+    <p><b>Identity.</b> Unifloral revision <code>f2dc1278eae18ed3e22c92255119c54885414d17</code>, file <code>algorithms/td3_bc.py</code> with sha256 <code>6f5ab6f9…</code>, loaded as a hash-checked slice of eight definitions and nothing else. Settings for ThrusterChain: discount 0.98, batch 256, Adam at 3·10⁻⁴, two critic updates per actor update, target smoothing noise 0.2 clipped at 0.5, Polyak step 0.005, BC weight α = 2.5.</p>
+    <p><b>Networks.</b> Two independent critic heads, each: normalized observation and action → 256 → 256 → 1 with ReLU. One deterministic actor: normalized observation → 256 → 256 → 4 → tanh. Normalization is <code>(obs − mean)/(std + 0.001)</code> with the training set's statistics, inside every network.</p>
+    <h3>One outer step of the host</h3>
+    <ol class="steps">
+      <li>Sample one minibatch of 256 logged transitions <code>(s, a, r, s', done)</code>.</li>
+      <li>Twice on the same minibatch: smooth the target action <code>a' = clip(π_target(s') + clip(N(0, 0.2²), ±0.5), ±1)</code>; form <code>y = r + 0.98·(1 − done)·min(Q1_target, Q2_target)(s', a')</code>; take one Adam step on <code>mean over batch and over both heads of (Q_h(s, a) − y)²</code>.</li>
+      <li>Once: the actor's action <code>a_π = π(s)</code>; the first head's value <code>q = Q1(s, a_π)</code>; the detached normalizer <code>λ = 2.5 / (mean|q| + 10⁻⁷)</code>; the behavior-cloning term <code>BC = mean over the 4 coordinates of (a_π − a)²</code>; one Adam step on <code>L_actor = −λ·mean(q) + mean(BC)</code>.</li>
+      <li>Polyak-average the actor target and the critic targets with step 0.005.</li>
+    </ol>
+    <p class="note">Source: <code>td3_bc.py</code> lines 174–279 (train step), 65–114 (networks), 38–46 (settings). The actor sees head 1 only; the target uses the minimum of the two heads. <code>done</code> is 1 on the hundredth transition, so nothing is bootstrapped past the horizon.</p>
+  </section>
+
+  <section class="sec" id="bca-overview">
+    <h2>The BCA addition in one picture</h2>
+    <p>Five components, in the order data flow. The first four run on every critic update or at a refresh; only the fifth changes what the actor learns.</p>
+    <div class="grid3">
+      <div class="card"><h4>1 · Residual and unit</h4><p><b>In:</b> minibatch, current and target critics.<br><b>Out:</b> residual <code>y − q</code> per row; a running scale <code>u</code>.<br><b>Purpose:</b> define the error the width is about.</p></div>
+      <div class="card"><h4>2 · Local scale network η(s, a)</h4><p><b>In:</b> observation, action.<br><b>Out:</b> a positive number per row.<br><b>Purpose:</b> predict where residuals are large, in units of <code>u</code>.</p></div>
+      <div class="card"><h4>3 · Calibration threshold R</h4><p><b>In:</b> 128 held-out rows, frozen η and <code>u</code>.<br><b>Out:</b> one number <code>R</code>, or a refusal.<br><b>Purpose:</b> scale η so the band covers 90% of held-out residuals with 95% posterior credibility.</p></div>
+      <div class="card"><h4>4 · Width U and the frozen reference</h4><p><b>In:</b> <code>R, u, η</code> frozen at the last refresh; a live action.<br><b>Out:</b> <code>U(s, a) = R·u·max(η(s, a), 10⁻⁶)</code>.<br><b>Purpose:</b> the quantity the actor subtracts.</p></div>
+      <div class="card"><h4>5 · Actor-side penalty</h4><p><b>In:</b> <code>Q1, U, κ</code>.<br><b>Out:</b> the actor objective with <code>Q1 − κU</code>.<br><b>Purpose:</b> steer the actor away from actions whose value is uncertain. Critic loss and target are untouched.</p></div>
+    </div>
+  </section>
+
+  <section class="sec" id="bca-residual">
+    <h2>Component 1: the residual and its unit</h2>
+    <div class="formula">y  = stop_gradient( r + (1 − done)·0.98·min_h Q_h,target(s', a') ),   a' = clip(π_target(s') + clipped noise)
+q  = stop_gradient( min_h Q_h(s, a_logged) )                 current critic, twin minimum, LOGGED action
+residual = y − q
+u ← 0.99·u + 0.01·max( std_batch(y − q), 10⁻⁶ )              starts at 1.0; updated after every accepted fit</div>
+    <p>This is the host's own temporal-difference error, measured at the logged action with the twin minimum on both sides and one fresh smoothing draw per row. Three things it is <em>not</em>: it is not the error of <code>Q1</code> against the simulator reference; it carries no sign once the absolute value is taken in the next steps; and it is measured at logged actions, while the penalty will be read at the actor's actions. The pipeline validation makes the gap concrete with a fixture in which <code>Q1 = 10, Q2 = 0</code>, reward 0 and target 0: the twin-min residual is 0, so the width is 0, while <code>Q1</code> is wrong by 10.</p>
+    <p class="note">Source: <code>uncertainty_source/historical/td3_bc_bca.py</code> lines 146–156 (target), 170–174 (q), 196–198 (unit); pipeline check 17.</p>
+  </section>
+
+  <section class="sec" id="bca-scale">
+    <h2>Component 2: the local scale network and its fit</h2>
+    <p><code>η(s, a)</code> is a small network: normalized observation and action → 64 → 64 → 1 with ReLU, then <code>η = softplus(·) + 0.01</code>, so it is always above 0.01. It is fitted once per critic update on the same 256-row minibatch, after that critic update, with Adam at 10⁻³.</p>
+    <ol class="steps">
+      <li>Compute <code>y</code> and <code>q</code> as in component 1 (both detached).</li>
+      <li>Draw Bayesian-bootstrap weights: <code>E_i ~ Exp(1)</code>, <code>p_i = E_i / Σ_j E_j</code>, one draw per fit.</li>
+      <li>Soft two-sided coverage per row: <code>c_i = σ(20·(y_i/u − (q_i/u − η_i))) · σ(20·((q_i/u + η_i) − y_i/u))</code>.</li>
+      <li>Loss: <code>(Σ_i p_i c_i − 0.9)² + 0.005·Σ_i p_i η_i²</code>, so the band aims at 90% coverage and is otherwise as narrow as possible.</li>
+      <li>One Adam step; then the unit update of component 1. Accept only if every input, the loss, the gradient, <code>η &gt; 0</code> and <code>u &gt; 0</code> are finite; otherwise keep the previous state.</li>
+    </ol>
+    <p class="note">Source: <code>calibration/network.py</code> lines 8–46; <code>td3_bc_bca.py</code> lines 159–231; <code>training.py</code> (order: microstep, then fit on the same batch). The checkpoint made 20,000 such fits.</p>
+  </section>
+
+  <section class="sec" id="bca-calibration">
+    <h2>Component 3: the calibration threshold, a Bayesian bootstrap over 128 held-out rows</h2>
+    <p>At critic updates 10,000, 15,000 and 20,000 (and at 21,000 in the continuation pilot) the scale network and the unit are frozen and a threshold is selected on the held-out bank: one logged row from each of 128 episodes that never train.</p>
+    <ol class="steps">
+      <li>For each held-out row: a fresh target <code>y_j</code>, the twin-min <code>q_j</code>, the frozen <code>η_j</code>; score <code>S_j = |y_j − q_j| / (max(η_j, 10⁻⁶)·u)</code>, in float64.</li>
+      <li><code>λ̂</code> = the smallest sorted score at which the cumulative count reaches 90% of the 128 (an exact-rational empirical quantile).</li>
+      <li>For each of <b>1,000 draws</b>: weights <code>E_1 … E_128</code> plus one extra <code>E_129</code> for the unseen test point, all Exp(1); the draw's crossing is the smallest score at which the cumulative weighted mass reaches 90% of the total including the test atom, or +∞ if the test atom alone exceeds 10%.</li>
+      <li><code>λ_hpd</code> = the 950th smallest crossing (95% credibility).</li>
+      <li><code>R = max(λ̂, λ_hpd)</code>; <code>n_eff = 128</code> with unit weights. Store <code>R, λ̂, λ_hpd, u</code> and the frozen η parameters as the reference, with <code>ready = true</code>.</li>
+    </ol>
+    <p>Meanings: α = 0.1 is the target miscoverage, β = 0.95 the posterior credibility, and the 1,000 are <b>draws over the threshold</b>, each a reweighting of the same 128 scores. They are not critic heads, not model samples and not samples of Q. With unit weights this is the exchangeable case of weighted Bayesian conformal prediction (BQ-CP). The code accepts importance weights, but no caller in the current work passes any, so importance-weighted BCA remains a proposal. If fewer than 950 draws cross, <code>R</code> is +∞ and the refresh is refused; the trainers never commit a non-finite reference.</p>
+    <div class="callout"><p><b>What the threshold promises.</b> With posterior probability 0.95, at least 90% of exchangeable held-out one-step twin-min residuals at logged actions fall within <code>R·u·η</code>. It promises nothing about <code>Q1</code>'s error against the simulator, about the actor's own actions (which are not logged actions), about starts outside the recorded law, or about return.</p></div>
+    <p class="note">Source: <code>calibration/reference.py</code> lines 17–20, 124–194; <code>calibration/wbcp.py</code> lines 43–117; <code>td3_bc_bca.py</code> lines 234–280. Pipeline check 4 on a test snapshot recorded <code>R = 4.8746, λ̂ = 4.5344, λ_hpd = 4.8746</code>; the trained checkpoint's own values at update 20,000 live in the runtime assets and are not shown here.</p>
+  </section>
+
+  <section class="sec" id="bca-width">
+    <h2>Component 4: the width and the frozen reference</h2>
+    <div class="formula">U(s, a) = R · u · max( η_frozen(s, a), 10⁻⁶ )        parameters R, u, η frozen at the last refresh; the action a stays live
+not ready (before the first refresh): U = 0 and "usable" = false
+unusable or non-finite in the continuation adapter: the step is refused, never trained with a silent zero</div>
+    <p>The actor always consumes the reference frozen at the last refresh, not the live scale network, so a refresh changes what the <em>next</em> actor step sees. Because the parameters are frozen but the action is not, <code>dU/da</code> reaches the actor through η: this is what makes the penalty action-specific. Pipeline check 15 measured the gradient through the frozen reference at exactly 0 and the same gradient with the freeze removed at 1.76.</p>
+    <p class="note">Source: <code>historical/direct_extension.py</code> lines 47–70; <code>continuation.py</code> lines 72–77 and 247–249.</p>
+  </section>
+
+  <section class="sec" id="bca-penalty">
+    <h2>Component 5: the actor objective with the penalty</h2>
+    <div class="formula">L_actor,BCA = −λ · mean_B( Q1(s, a_π) − κ · U(s, a_π) ) + mean_B(BC)
+            = L_actor,host  +  λ · κ · mean_B U(s, a_π)
+λ computed from the UNPENALIZED Q1 and detached;  κ = 0 reproduces the host bit for bit (check 7)
+critic loss, target y, data, BC term: unchanged</div>
+    <p>Only the actor's gradient changes. The critic parameters are constants inside the actor loss, but <code>dQ1/da</code> and <code>dη/da</code> are live, so the actor is pushed toward actions with higher value <em>and</em> smaller width. Checks 8 to 14 confirm the identity <code>grad(BCA) = grad(host) + λκ·grad(mean U)</code> for κ in {0, 0.03, 0.1, 0.3, 1, 3, 10}.</p>
+    <h3>A worked score on a real saved state</h3>
+    <p>The same subtraction scores a fixed candidate bank. For the first state of development batch 1 (nine candidates, saved <code>Q1</code> and <code>U</code>), the table shows <code>Q1 − 3U</code> computed by this page from the saved arrays, next to the simulator reference.</p>
+    <div class="tbl-wrap"><table><thead><tr><th>Candidate</th><th class="num">Q1</th><th class="num">U</th><th class="num">3·U</th><th class="num">Q1 − 3U</th><th class="num">reference V</th></tr></thead><tbody id="bca-worked"></tbody></table></div>
+    <p id="bca-worked-note" class="note"></p>
+    <h3>Strengths used</h3>
+    <div class="tbl-wrap"><table><thead><tr><th>Where</th><th class="num">κ</th><th>Role</th></tr></thead><tbody>
+      <tr><td>20k checkpoint training</td><td class="num">0</td><td>native host; auxiliary fitted alongside, no penalty</td></tr>
+      <tr><td>development decision grids</td><td class="num">0.03 to 10</td><td>all reported; none selected</td></tr>
+      <tr><td>one-sided pilot's frozen ranking</td><td class="num">1</td><td>variant, screen failed</td></tr>
+      <tr><td>matched-policy pilot; support pilot</td><td class="num">3</td><td>original BCA as trained</td></tr>
+    </tbody></table></div>
+    <p>Scale: because the penalty sits inside the same λ bracket as <code>Q1</code>, its weight relative to <code>Q1</code> is exactly κ (check 18). In the matched pilot the scalar penalty term <code>λκ·mean U</code> at the final minibatch was about 0.55 for BCA against about 0.00045 for the distance control; those are loss levels, not gradient norms, which is why the support pilot matches action-gradient energy instead.</p>
+  </section>
+
+  <section class="sec" id="bca-variants">
+    <h2>Variants, controls and proposals, kept apart from original BCA</h2>
+    <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>What it changes</th><th>Status</th></tr></thead><tbody>
+      <tr><td><b>Original BCA</b> (direct Q)</td><td>as above; two-sided residual, Bayesian-bootstrap threshold, actor-side <code>Q1 − κU</code></td><td>the method under test</td></tr>
+      <tr><td>One-sided BCA</td><td>warm-start copy of the scale network refitted to the event <code>y ≥ Q1 − U</code>; scores <code>max(Q1 − y, 0)/(u·η)</code>; coefficient 1</td><td>completed; exploratory screen failed; not promoted</td></tr>
+      <tr><td>Actor-distance control</td><td><code>Q1 − c·19.296·mean((a − π_anchor(s))²)</code>; coefficient 0.1 in the matched pilot, gradient-matched in the support pilot</td><td>a simple comparator, not a BCA method</td></tr>
+      <tr><td>Twin-disagreement control</td><td>penalty <code>κ·½|Q1 − Q2|</code> in place of <code>U</code></td><td>control arm in the kernel; contrast-matched version in the batch-2 grid</td></tr>
+      <tr><td>Stronger BC</td><td>BC term multiplied by 2</td><td>control arm in the kernel; not run in the pilots</td></tr>
+      <tr><td>Mean-native-target and lower-only selectors</td><td>scores that use the evaluator's reward and next state</td><td>privileged controls on saved banks; not deployable</td></tr>
+      <tr><td>Adaptive signed signal</td><td>a signal meant to detect under- as well as overestimation</td><td>proposal; Titan screen reported, not available here</td></tr>
+      <tr><td>Importance-weighted BCA</td><td>weights in the calibration threshold</td><td>accepted by the code, no caller passes weights: proposal</td></tr>
+      <tr><td>Head-count sweep</td><td>more critic heads</td><td>deferred; no receipt</td></tr>
+    </tbody></table></div>
+  </section>
+
+  <section class="sec" id="bca-limits">
+    <h2>What calibration does not buy</h2>
+    <ul>
+      <li>A calibrated band on the training residual is not a bound on <code>Q1</code>'s true error at the actor's action. The operator audit measured how far apart they are.</li>
+      <li>An absolute band has no sign. It cannot say whether an action is over- or underestimated; it can only make every value smaller.</li>
+      <li>A width that is constant across a state's actions has zero action gradient and cannot move the actor or change a ranking. Only the <em>contrast</em> between actions matters for decisions.</li>
+      <li>Exchangeability holds for held-out logged rows under the recorded start law. The actor's own actions, and any shifted start law, are outside that guarantee.</li>
+    </ul>
+  </section>
+</section>

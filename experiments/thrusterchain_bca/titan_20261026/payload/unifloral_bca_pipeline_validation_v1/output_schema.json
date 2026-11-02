@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bounded UniFloral BCA pipeline supervisor report",
+  "type": "object",
+  "required": ["schema_version", "started_utc", "status", "scientific_validation_status", "limits", "stages"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["pending", "pass", "blocked_or_failed"]},
+    "scientific_validation_status": {"const": "incomplete_design_review_required"},
+    "limits": {"type": "object", "required": ["primary_critic_optimizer_updates", "actor_optimizer_updates", "auxiliary_optimizer_attempts", "refresh_calls", "environment_rollouts"], "properties": {"primary_critic_optimizer_updates": {"const": 0}, "actor_optimizer_updates": {"const": 0}, "auxiliary_optimizer_attempts": {"const": 4}, "refresh_calls": {"const": 3}, "environment_rollouts": {"const": 0}}},
+    "stages": {"type": "array", "maxItems": 2, "items": {"type": "object", "required": ["stage", "exit_code", "elapsed_seconds", "log"], "properties": {"stage": {"enum": ["probe", "pipeline"]}, "exit_code": {"type": ["integer", "null"]}, "elapsed_seconds": {"type": "number", "minimum": 0}, "log": {"type": "string"}}}},
+    "error": {"type": "object", "required": ["type", "message"]}
+  },
+  "$defs": {
+    "check": {"type": "object", "required": ["name", "status"], "properties": {"name": {"type": "string"}, "status": {"enum": ["pass", "fail", "skipped"]}, "details": {"type": "object"}, "error": {"type": "string"}}},
+    "pipeline_worker": {"type": "object", "required": ["stage", "status"], "properties": {"stage": {"const": "pipeline"}, "status": {"enum": ["running", "pass", "fail"]}, "pipeline": {"type": "object", "required": ["passed", "checks"], "properties": {"passed": {"type": "boolean"}, "checks": {"type": "array", "items": {"$ref": "#/$defs/check"}}}}}}
+  }
+}

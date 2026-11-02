@@ -1,0 +1,133 @@
+{
+  "mode": "train",
+  "started_utc": "2026-10-23T18:32:48.749364+00:00",
+  "status": "training_complete_export_blocked",
+  "identity_before": {
+    "unifloral_checkpoint_v1": {
+      "manifest_sha256": "92b1497f1d5169b985c6ba1cbf497807807a533ef6c5da055e5cb4359d6e8b86",
+      "verified_files": 10
+    },
+    "unifloral_td3bc_validation_v1": {
+      "manifest_sha256": "1e26f713822020275179845f30c8691467951745d6c7c829ff017b7045904516",
+      "verified_files": 7
+    },
+    "unifloral_bca_pipeline_validation_v1": {
+      "manifest_sha256": "6eb91c5bcc6c2edddc1ab93c19424307e12a3c8363bf9063fa4bbe2664180478",
+      "verified_files": 22
+    },
+    "unifloral_frozen_usefulness_v1": {
+      "manifest_sha256": "9219ea2797b14c054c8e7a4787e290ce247c2682ec865a6e1f978b80cc2d9509",
+      "verified_files": 10
+    }
+  },
+  "runtime": {
+    "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+    "executable": "/home/dbayha/bca-gpu/bin/python",
+    "packages": {
+      "jax": "0.6.2",
+      "jaxlib": "0.6.2",
+      "jax-cuda12-plugin": "0.6.2",
+      "jax-cuda12-pjrt": "0.6.2",
+      "numpy": "2.5.4",
+      "flax": "0.10.7",
+      "optax": "0.2.8",
+      "distrax": "0.1.5",
+      "chex": "0.1.90",
+      "tensorflow-probability": "0.25.0",
+      "scipy": "1.18.1"
+    },
+    "devices": [
+      "cuda:0"
+    ],
+    "device_kinds": [
+      "NVIDIA GeForce RTX 5070 Ti"
+    ],
+    "backend": "gpu",
+    "matmul_precision": "highest",
+    "jax_disable_jit": false,
+    "jax_enable_x64": false,
+    "environment": {
+      "XLA_FLAGS": "--xla_gpu_triton_gemm_any=True",
+      "JAX_PLATFORMS": "cuda",
+      "JAX_DEFAULT_MATMUL_PRECISION": "highest",
+      "PYTHONUNBUFFERED": "1"
+    }
+  },
+  "counts": {
+    "critic": 20000,
+    "actor": 10000,
+    "actor_target": 10000,
+    "critic_target": 10000,
+    "outer_steps": 10000,
+    "phase": 0,
+    "auxiliary": 20000,
+    "aux_fit_attempts": 20000,
+    "refresh_attempts": 3,
+    "refresh_accepted": 3,
+    "last_refresh_critic": 20000,
+    "next_refresh_index": 3,
+    "reference_ready": true,
+    "critic_budget": 20000
+  },
+  "latest_checkpoint": {
+    "path": "/mnt/c/Users/David Bayha/Documents/Codex/2026-10-22/task/unifloral_checkpoint_v1/train_20261023T183248_552877Z/checkpoints/critic_020000_terminal",
+    "receipt": {
+      "directory": "/mnt/c/Users/David Bayha/Documents/Codex/2026-10-22/task/unifloral_checkpoint_v1/train_20261023T183248_552877Z/checkpoints/critic_020000_terminal",
+      "commit_sha256": "686b034f2793c2a6e70be5dc72d1595f22b22977916d41bee634f18843114570",
+      "files": {
+        "state.msgpack": {
+          "sha256": "874d65b7f4dcb5ec285a0d4360439c73a787b5e8c567ff7c0138e0c1e22948e8",
+          "bytes": 10328701
+        },
+        "metadata.json": {
+          "sha256": "b2a4b47570974319efbc7548083bda1f3362ce0c325eb8c5443bc9a71c58329b",
+          "bytes": 49814
+        }
+      },
+      "counts": {
+        "critic": 20000,
+        "actor": 10000,
+        "actor_target": 10000,
+        "critic_target": 10000,
+        "outer_steps": 10000,
+        "phase": 0,
+        "auxiliary": 20000,
+        "aux_fit_attempts": 20000,
+        "refresh_attempts": 3,
+        "refresh_accepted": 3,
+        "last_refresh_critic": 20000,
+        "next_refresh_index": 3,
+        "reference_ready": true,
+        "critic_budget": 20000
+      },
+      "bindings_sha256": "a1cc0ccfc5879de076d85d3fe1267420edddac8be4bb00b39366907aa057a0ef",
+      "state_sha256": "874d65b7f4dcb5ec285a0d4360439c73a787b5e8c567ff7c0138e0c1e22948e8"
+    }
+  },
+  "export_error": {
+    "type": "CheckpointError",
+    "message": "Full episode seed provenance is missing, duplicated or overlaps evaluator reservations"
+  },
+  "identity_after": {
+    "unifloral_checkpoint_v1": {
+      "manifest_sha256": "92b1497f1d5169b985c6ba1cbf497807807a533ef6c5da055e5cb4359d6e8b86",
+      "verified_files": 10
+    },
+    "unifloral_td3bc_validation_v1": {
+      "manifest_sha256": "1e26f713822020275179845f30c8691467951745d6c7c829ff017b7045904516",
+      "verified_files": 7
+    },
+    "unifloral_bca_pipeline_validation_v1": {
+      "manifest_sha256": "6eb91c5bcc6c2edddc1ab93c19424307e12a3c8363bf9063fa4bbe2664180478",
+      "verified_files": 22
+    },
+    "unifloral_frozen_usefulness_v1": {
+      "manifest_sha256": "9219ea2797b14c054c8e7a4787e290ce247c2682ec865a6e1f978b80cc2d9509",
+      "verified_files": 10
+    }
+  },
+  "finished_utc": "2026-10-23T19:08:59.472336+00:00",
+  "exit_code": 1,
+  "elapsed_seconds": 2338.9622588079656,
+  "interrupted": false
+}

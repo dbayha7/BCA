@@ -1,0 +1,1001 @@
+{
+  "stage": "parity",
+  "started_utc": "2026-10-23T16:22:32.803186+00:00",
+  "status": "pass",
+  "harness_before": {
+    "passed": true,
+    "files": {
+      "candidate.py": "e0af0aed323f0b8d33dc56d9308f862b4c7a231508d747213308022ef8801ce6",
+      "DESIGN.md": "602a8bf2e5d48d32922ea4d7cda23d0886a6f7b000cdbd879943204822972490",
+      "native_loader.py": "8490d002db184d081aaef8879bc430bb0b895b3efa9e2058e49c6dcb322c57f8",
+      "parity_checks.py": "c51db06160813a21734d6fd9ec73df3dd2290b83fb19b45be641393e2e097f1d",
+      "protocol.json": "888417225f163c673c34d65c5cfbb69720215c3efe25ddb84ed28c47a14c2655",
+      "README.md": "396affc1f094b9b807c36c7bd98e49dcc6fa7a9282ad0c24ad5758c178111c85",
+      "run_checks.py": "ed5a1756e7694f04793b82385f8014afe90d5a1705a7477a8bfeb132df2cb5e6"
+    }
+  },
+  "packages": {
+    "jax": "0.6.2",
+    "jaxlib": "0.6.2",
+    "numpy": "2.5.4",
+    "flax": "0.10.7",
+    "optax": "0.2.8",
+    "distrax": "0.1.5",
+    "chex": "0.1.90",
+    "tensorflow-probability": "0.25.0",
+    "jax-cuda12-plugin": "0.6.2",
+    "jax-cuda12-pjrt": "0.6.2"
+  },
+  "upstream_constraint_checks": [
+    {
+      "package": "jax",
+      "installed": "0.6.2",
+      "upstream_constraint": "<0.6",
+      "satisfied": false
+    },
+    {
+      "package": "numpy",
+      "installed": "2.5.4",
+      "upstream_constraint": "<2.0",
+      "satisfied": false
+    }
+  ],
+  "explicit_constraint_override": true,
+  "source_before": {
+    "passed": true,
+    "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+    "manifest_sha256": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+    "source_sha256": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+    "files": {
+      ".gitignore": "2b83c00f4c0cce03bf2f7e4ecb86639ae996e992f41f2cdfa20ae4445b01d6ad",
+      ".pylintrc": "888b28cccf969e5073d4dda98db63bcc771f1a535402cf3ece850383ab70f7f7",
+      "Dockerfile": "9336740e9eed70a1946e5bfca3f483ebdabdc6434288b18022e6512d16791754",
+      "LICENSE": "af878c708defb49f47c78cd9293386ad09fbbae07f20f24cf9e26ac98a834c95",
+      "README.md": "fe9a4699115cced43988f38334b4a9f1ea5652138aaa05c6e2c498a9711bd725",
+      "algorithms/bc.py": "5f181ca725410d82a9818e6555561d4e1655ac337a1e305c75bd8610f253b44c",
+      "algorithms/combo.py": "ed760fb421001dc1f0294caee65fc976baaffea9e03e3ed42e0aca277cb8d4ae",
+      "algorithms/cql.py": "41edbf1c11ad7b408ee6eafd94420e8fd1932afc8bbf72032bc1b9ff47213061",
+      "algorithms/dynamics.py": "e8cd737c0cd5b5e55a892029fdbaea29b5bc1f691162b8269b9c49fa440b4136",
+      "algorithms/edac.py": "fca7fef1711e4041e30a5bdcf0d709c7fb2734ecfe80b1221eebe1218b7e4d21",
+      "algorithms/iql.py": "088fca23120fc76fc9e33d01dfe6511726de9790dd3063c806d6a3e2a96992d7",
+      "algorithms/mopo.py": "a330f2420b22a9d11caceaac8375629c0e37bb8a618b901496d31949157bdcdd",
+      "algorithms/morel.py": "ec41dcfeaeed5b441dd7f7013c9ba8ab4b375561e270733af6b07dd93d378d0a",
+      "algorithms/rebrac.py": "d7ea2b2bdf59b35ea6fb2370ca926b8d291bcad566bd0f5a9adbeafe74178d4f",
+      "algorithms/sac_n.py": "a95f027c625ffbacb3fcf8210eba658b5ba39f289c30e45dd1a30ed54b0c6ddc",
+      "algorithms/td3_bc.py": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+      "algorithms/termination_fns.py": "6df2991b12ed2c5e8be1f42193c4e964085c8c793e7c82989c854b333ea8882c",
+      "algorithms/unifloral.py": "14a9bcdbc6d96fad85544a9d98957e98a7e46db13b89d74d54e3c5ce246517c8",
+      "configs/algorithms/bc.yaml": "70cd6d6d19df523296e5b311f2e98d67a7bbf3bcceb4a23c376a9d8d8e1c2628",
+      "configs/algorithms/combo.yaml": "0f95ae2162b1ab7689de5dd2eb03e044e92348373b54472e177884947803bc56",
+      "configs/algorithms/cql.yaml": "9c40f52f71499f84f678281f194e61cef34f3f53b1cf60ce943a310e8bcec7d5",
+      "configs/algorithms/edac.yaml": "2a62078ae01d28b919306f1c0a3792632781e54ba59a98044e6684debe57f726",
+      "configs/algorithms/iql.yaml": "3d19e6cda2e1424be112f5c26ef6ec4ce329d84478b4f8f3c3393a01f6fadce8",
+      "configs/algorithms/mopo.yaml": "b8c22a3a6b6d9264ff7eb4aedfca4afcd8aa07d8fdcb6c99b6d476b66ee88ced",
+      "configs/algorithms/morel.yaml": "e8375d09fc1c03575e5436fc2c29399a9f59959e8e924c473fd02a63878f8910",
+      "configs/algorithms/rebrac.yaml": "edc5f7ebef037480c2965a6a17144aecb10e3ccbd9dd8434ea05247249de320f",
+      "configs/algorithms/sac_n.yaml": "b60fb1e3a879d361e559c36a23743c759137cf919280c37995827ec61f1bb982",
+      "configs/algorithms/td3_bc.yaml": "b5d4f5d06bebf55cdb585fafe375eda64cd8490386b978af8def6f6d2d03ef16",
+      "configs/dynamics.yaml": "4b70f81d01ff22d82a5f43f65129523198c17c91ea9b98542fb09d2d12562147",
+      "configs/unifloral/bc.yaml": "1a57cfc6045f4a5ba7df4d5d33a709919969545e4dbe1ebcdd70d6bdb7ce6352",
+      "configs/unifloral/edac.yaml": "445c734c823414d87797da508934162f1501559da6e2b6695b214b9eb117662d",
+      "configs/unifloral/iql.yaml": "ce2b422928fba5faa969cbb6094843dd714641cde879c6e1711559e274a19f8e",
+      "configs/unifloral/mobrac.yaml": "167b610fe7932265134d3268bbd0bb185ab468dc67aff6b893f751fba826c214",
+      "configs/unifloral/rebrac.yaml": "ad11f7547c2c56322300531ecb255eaf596c5f2d1b386269cde3deedd4f4614b",
+      "configs/unifloral/sac_n.yaml": "962e09f59b4a35c115cca7a4032364e3988e6f03797d92a945b25d2aab5829a2",
+      "configs/unifloral/td3_awr.yaml": "42f4011302c73fd432bc6eec2d23833cc1dcc94d6d2a96ccb0637896599dd0d9",
+      "configs/unifloral/td3_bc.yaml": "bca175eb2acc2ce710d4d7d643a8b3a00c5403c80eed8656fcaf1277473a29d9",
+      "evaluation.py": "2f39892e07ebd35357cca3127d3df0a60d371b275f0dc4298bcffd41e6642753",
+      "evaluation_plots.ipynb": "0165399e361edd48e0a561c8e26c5794c1cbb6c8ef42ab3d7c4aade877ec8806",
+      "requirements.txt": "f0a26f2a13a2482b60b8d5af1269b23e36d7e09a18d322e6e8d2590a1d568d9d"
+    }
+  },
+  "runtime": {
+    "python": "3.12.3",
+    "executable": "/home/dbayha/bca-gpu/bin/python",
+    "packages": {
+      "jax": "0.6.2",
+      "jaxlib": "0.6.2",
+      "numpy": "2.5.4",
+      "flax": "0.10.7",
+      "optax": "0.2.8",
+      "distrax": "0.1.5",
+      "chex": "0.1.90",
+      "tensorflow-probability": "0.25.0",
+      "jax-cuda12-plugin": "0.6.2",
+      "jax-cuda12-pjrt": "0.6.2"
+    },
+    "backend": "gpu",
+    "devices": [
+      "cuda:0"
+    ],
+    "device_kinds": [
+      "NVIDIA GeForce RTX 5070 Ti"
+    ],
+    "effective_matmul_precision": "highest",
+    "jax_enable_x64": false,
+    "jax_disable_jit": false,
+    "environment": {
+      "JAX_PLATFORMS": "cuda",
+      "JAX_DEFAULT_MATMUL_PRECISION": "highest",
+      "XLA_FLAGS": "--xla_gpu_triton_gemm_any=True",
+      "XLA_PYTHON_CLIENT_PREALLOCATE": "false",
+      "PYTHONUNBUFFERED": "1",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    }
+  },
+  "native_slice": {
+    "passed": true,
+    "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+    "manifest_sha256": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+    "source_sha256": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+    "files": {
+      ".gitignore": "2b83c00f4c0cce03bf2f7e4ecb86639ae996e992f41f2cdfa20ae4445b01d6ad",
+      ".pylintrc": "888b28cccf969e5073d4dda98db63bcc771f1a535402cf3ece850383ab70f7f7",
+      "Dockerfile": "9336740e9eed70a1946e5bfca3f483ebdabdc6434288b18022e6512d16791754",
+      "LICENSE": "af878c708defb49f47c78cd9293386ad09fbbae07f20f24cf9e26ac98a834c95",
+      "README.md": "fe9a4699115cced43988f38334b4a9f1ea5652138aaa05c6e2c498a9711bd725",
+      "algorithms/bc.py": "5f181ca725410d82a9818e6555561d4e1655ac337a1e305c75bd8610f253b44c",
+      "algorithms/combo.py": "ed760fb421001dc1f0294caee65fc976baaffea9e03e3ed42e0aca277cb8d4ae",
+      "algorithms/cql.py": "41edbf1c11ad7b408ee6eafd94420e8fd1932afc8bbf72032bc1b9ff47213061",
+      "algorithms/dynamics.py": "e8cd737c0cd5b5e55a892029fdbaea29b5bc1f691162b8269b9c49fa440b4136",
+      "algorithms/edac.py": "fca7fef1711e4041e30a5bdcf0d709c7fb2734ecfe80b1221eebe1218b7e4d21",
+      "algorithms/iql.py": "088fca23120fc76fc9e33d01dfe6511726de9790dd3063c806d6a3e2a96992d7",
+      "algorithms/mopo.py": "a330f2420b22a9d11caceaac8375629c0e37bb8a618b901496d31949157bdcdd",
+      "algorithms/morel.py": "ec41dcfeaeed5b441dd7f7013c9ba8ab4b375561e270733af6b07dd93d378d0a",
+      "algorithms/rebrac.py": "d7ea2b2bdf59b35ea6fb2370ca926b8d291bcad566bd0f5a9adbeafe74178d4f",
+      "algorithms/sac_n.py": "a95f027c625ffbacb3fcf8210eba658b5ba39f289c30e45dd1a30ed54b0c6ddc",
+      "algorithms/td3_bc.py": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+      "algorithms/termination_fns.py": "6df2991b12ed2c5e8be1f42193c4e964085c8c793e7c82989c854b333ea8882c",
+      "algorithms/unifloral.py": "14a9bcdbc6d96fad85544a9d98957e98a7e46db13b89d74d54e3c5ce246517c8",
+      "configs/algorithms/bc.yaml": "70cd6d6d19df523296e5b311f2e98d67a7bbf3bcceb4a23c376a9d8d8e1c2628",
+      "configs/algorithms/combo.yaml": "0f95ae2162b1ab7689de5dd2eb03e044e92348373b54472e177884947803bc56",
+      "configs/algorithms/cql.yaml": "9c40f52f71499f84f678281f194e61cef34f3f53b1cf60ce943a310e8bcec7d5",
+      "configs/algorithms/edac.yaml": "2a62078ae01d28b919306f1c0a3792632781e54ba59a98044e6684debe57f726",
+      "configs/algorithms/iql.yaml": "3d19e6cda2e1424be112f5c26ef6ec4ce329d84478b4f8f3c3393a01f6fadce8",
+      "configs/algorithms/mopo.yaml": "b8c22a3a6b6d9264ff7eb4aedfca4afcd8aa07d8fdcb6c99b6d476b66ee88ced",
+      "configs/algorithms/morel.yaml": "e8375d09fc1c03575e5436fc2c29399a9f59959e8e924c473fd02a63878f8910",
+      "configs/algorithms/rebrac.yaml": "edc5f7ebef037480c2965a6a17144aecb10e3ccbd9dd8434ea05247249de320f",
+      "configs/algorithms/sac_n.yaml": "b60fb1e3a879d361e559c36a23743c759137cf919280c37995827ec61f1bb982",
+      "configs/algorithms/td3_bc.yaml": "b5d4f5d06bebf55cdb585fafe375eda64cd8490386b978af8def6f6d2d03ef16",
+      "configs/dynamics.yaml": "4b70f81d01ff22d82a5f43f65129523198c17c91ea9b98542fb09d2d12562147",
+      "configs/unifloral/bc.yaml": "1a57cfc6045f4a5ba7df4d5d33a709919969545e4dbe1ebcdd70d6bdb7ce6352",
+      "configs/unifloral/edac.yaml": "445c734c823414d87797da508934162f1501559da6e2b6695b214b9eb117662d",
+      "configs/unifloral/iql.yaml": "ce2b422928fba5faa969cbb6094843dd714641cde879c6e1711559e274a19f8e",
+      "configs/unifloral/mobrac.yaml": "167b610fe7932265134d3268bbd0bb185ab468dc67aff6b893f751fba826c214",
+      "configs/unifloral/rebrac.yaml": "ad11f7547c2c56322300531ecb255eaf596c5f2d1b386269cde3deedd4f4614b",
+      "configs/unifloral/sac_n.yaml": "962e09f59b4a35c115cca7a4032364e3988e6f03797d92a945b25d2aab5829a2",
+      "configs/unifloral/td3_awr.yaml": "42f4011302c73fd432bc6eec2d23833cc1dcc94d6d2a96ccb0637896599dd0d9",
+      "configs/unifloral/td3_bc.yaml": "bca175eb2acc2ce710d4d7d643a8b3a00c5403c80eed8656fcaf1277473a29d9",
+      "evaluation.py": "2f39892e07ebd35357cca3127d3df0a60d371b275f0dc4298bcffd41e6642753",
+      "evaluation_plots.ipynb": "0165399e361edd48e0a561c8e26c5794c1cbb6c8ef42ab3d7c4aade877ec8806",
+      "requirements.txt": "f0a26f2a13a2482b60b8d5af1269b23e36d7e09a18d322e6e8d2590a1d568d9d"
+    },
+    "selected_nodes": [
+      {
+        "line": 1,
+        "end_line": 1,
+        "sha256": "584f00916a4cc0e466656e9c8945f930ce365cf21bb48900c33d7f573ea875ab"
+      },
+      {
+        "line": 2,
+        "end_line": 2,
+        "sha256": "b9387f3dbc66bc04167ba8aa497fe2f6525193cf1d0e7004d17c9746e7552446"
+      },
+      {
+        "line": 7,
+        "end_line": 7,
+        "sha256": "6ff6ae8dfef3c44e5a9734c932202b945328fed9bc43db3cf0d826eb6b0b165a"
+      },
+      {
+        "line": 9,
+        "end_line": 9,
+        "sha256": "571297117d5cd7e04a2a51efb4f578a04dfbeeeee6a5e79239329b946ab43160"
+      },
+      {
+        "line": 10,
+        "end_line": 10,
+        "sha256": "c5fb33e682dfb0c4736fe85c3189f869b2f81652c13b04caf09017ba7debc3d8"
+      },
+      {
+        "line": 12,
+        "end_line": 12,
+        "sha256": "7092dc714ea0a1135ffe0a20496c8bc78a9411dac6f7d463e755e4edf7b555dc"
+      },
+      {
+        "line": 13,
+        "end_line": 13,
+        "sha256": "bcaa0f38ece01b2658eb8831d8975545e45fcb1d2f71fe536498ec6b36060989"
+      },
+      {
+        "line": 15,
+        "end_line": 15,
+        "sha256": "769fae2d87dda8152da6424f294282220a0cdc54b8ecd1c7473e3ec0e692edad"
+      },
+      {
+        "line": 23,
+        "end_line": 46,
+        "sha256": "82fd5189c4a95ba68c9b0a28a01e5525d467b4b71d05fb5fbe6069de25d0c99c"
+      },
+      {
+        "line": 59,
+        "end_line": 61,
+        "sha256": "e63d46f4f042135522c291c58db72873a72655688a8774767786b16e41af530c"
+      },
+      {
+        "line": 62,
+        "end_line": 62,
+        "sha256": "19bac8d0da70ad2cbc4544b3b8beeab4cc9cb9e621cb55353deb11738f947109"
+      },
+      {
+        "line": 65,
+        "end_line": 77,
+        "sha256": "2bffb19582b952f1a8bc9cfb8c8092d60aef758ae6515cecb53b896bd6df9ed2"
+      },
+      {
+        "line": 80,
+        "end_line": 95,
+        "sha256": "862bf4722e97a707c6d37ea75c88ee7e4de89be84259c65bd31db3727a97348c"
+      },
+      {
+        "line": 98,
+        "end_line": 114,
+        "sha256": "376eeeef687644775bfe28016c24c674c625ba04615f380a4bdc0faaa625a413"
+      },
+      {
+        "line": 117,
+        "end_line": 122,
+        "sha256": "f862063abc7512b1383be556fa7de02be284375052be2f2abd476b3424bf1e0b"
+      },
+      {
+        "line": 174,
+        "end_line": 279,
+        "sha256": "943728ce35cab3f49115f21b5fc6725a0510374f0ef41f6b5e17e0c4ccce3076"
+      }
+    ],
+    "scope": "Unmodified computational AST nodes; CLI, evaluation and data ingestion excluded",
+    "omitted_side_effect": "Upstream XLA_FLAGS assignment; worker sets the same value before imports"
+  },
+  "parity": {
+    "schema": "unifloral_td3bc_validation.parity.v1",
+    "passed": true,
+    "checks": [
+      {
+        "name": "native_and_candidate_initialization",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "native_initial_sha256": "f1797af06e8208f7259234775529db1486012b07cfbe66a42fd80c7d1f7b5d8a",
+          "candidate_initial_sha256": "f1797af06e8208f7259234775529db1486012b07cfbe66a42fd80c7d1f7b5d8a",
+          "microstep_initial_sha256": "b4a61e7e150a10c7b916203c0b8883506ea520e147b884e37ddd8801acc4bceb",
+          "rng": [
+            986835537,
+            4050963567
+          ],
+          "counts": {
+            "phase": 0,
+            "critic_calls": 0,
+            "actor_calls": 0,
+            "actor_target_updates": 0,
+            "critic_target_updates": 0,
+            "outer_steps": 0
+          },
+          "comparison": "exact initial numerical state and RNG; no optimizer updates"
+        }
+      },
+      {
+        "name": "native_outer_step_1_vs_two_microsteps",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "outer_step": 1,
+          "counts": {
+            "phase": 0,
+            "critic_calls": 2,
+            "actor_calls": 1,
+            "actor_target_updates": 1,
+            "critic_target_updates": 1,
+            "outer_steps": 1
+          },
+          "all_parameters_optimizer_states_and_targets_max_abs_error": 0.0,
+          "native_metric_max_abs_errors": {
+            "actor_loss": 0.0,
+            "bc_loss": 0.0,
+            "q_scale_coefficient": 0.0,
+            "q_loss": 0.0,
+            "q_mean": 0.0
+          },
+          "rng_exact": true,
+          "batch_reused_exactly": true,
+          "batch_indices": [
+            3,
+            23,
+            12,
+            22,
+            13,
+            4,
+            8,
+            10
+          ],
+          "native_rng": [
+            2072743232,
+            2477170498
+          ]
+        }
+      },
+      {
+        "name": "native_outer_step_2_vs_two_microsteps",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "outer_step": 2,
+          "counts": {
+            "phase": 0,
+            "critic_calls": 4,
+            "actor_calls": 2,
+            "actor_target_updates": 2,
+            "critic_target_updates": 2,
+            "outer_steps": 2
+          },
+          "all_parameters_optimizer_states_and_targets_max_abs_error": 0.0,
+          "native_metric_max_abs_errors": {
+            "actor_loss": 0.0,
+            "bc_loss": 0.0,
+            "q_scale_coefficient": 0.0,
+            "q_loss": 0.0,
+            "q_mean": 0.0
+          },
+          "rng_exact": true,
+          "batch_reused_exactly": true,
+          "batch_indices": [
+            13,
+            11,
+            5,
+            27,
+            22,
+            15,
+            7,
+            25
+          ],
+          "native_rng": [
+            1724531918,
+            1385014265
+          ]
+        }
+      },
+      {
+        "name": "native_outer_step_3_vs_two_microsteps",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "outer_step": 3,
+          "counts": {
+            "phase": 0,
+            "critic_calls": 6,
+            "actor_calls": 3,
+            "actor_target_updates": 3,
+            "critic_target_updates": 3,
+            "outer_steps": 3
+          },
+          "all_parameters_optimizer_states_and_targets_max_abs_error": 0.0,
+          "native_metric_max_abs_errors": {
+            "actor_loss": 0.0,
+            "bc_loss": 0.0,
+            "q_scale_coefficient": 0.0,
+            "q_loss": 0.0,
+            "q_mean": 0.0
+          },
+          "rng_exact": true,
+          "batch_reused_exactly": true,
+          "batch_indices": [
+            10,
+            25,
+            11,
+            5,
+            9,
+            7,
+            30,
+            27
+          ],
+          "native_rng": [
+            3095887021,
+            727642500
+          ]
+        }
+      },
+      {
+        "name": "native_outer_step_4_vs_two_microsteps",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "outer_step": 4,
+          "counts": {
+            "phase": 0,
+            "critic_calls": 8,
+            "actor_calls": 4,
+            "actor_target_updates": 4,
+            "critic_target_updates": 4,
+            "outer_steps": 4
+          },
+          "all_parameters_optimizer_states_and_targets_max_abs_error": 0.0,
+          "native_metric_max_abs_errors": {
+            "actor_loss": 0.0,
+            "bc_loss": 0.0,
+            "q_scale_coefficient": 0.0,
+            "q_loss": 0.0,
+            "q_mean": 0.0
+          },
+          "rng_exact": true,
+          "batch_reused_exactly": true,
+          "batch_indices": [
+            18,
+            19,
+            7,
+            23,
+            15,
+            31,
+            15,
+            27
+          ],
+          "native_rng": [
+            3427837300,
+            4253492100
+          ]
+        }
+      },
+      {
+        "name": "native_outer_step_5_vs_two_microsteps",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "outer_step": 5,
+          "counts": {
+            "phase": 0,
+            "critic_calls": 10,
+            "actor_calls": 5,
+            "actor_target_updates": 5,
+            "critic_target_updates": 5,
+            "outer_steps": 5
+          },
+          "all_parameters_optimizer_states_and_targets_max_abs_error": 0.0,
+          "native_metric_max_abs_errors": {
+            "actor_loss": 0.0,
+            "bc_loss": 0.0,
+            "q_scale_coefficient": 0.0,
+            "q_loss": 0.0,
+            "q_mean": 0.0
+          },
+          "rng_exact": true,
+          "batch_reused_exactly": true,
+          "batch_indices": [
+            31,
+            30,
+            4,
+            25,
+            15,
+            0,
+            21,
+            6
+          ],
+          "native_rng": [
+            535184750,
+            665298168
+          ]
+        }
+      },
+      {
+        "name": "native_outer_step_6_vs_two_microsteps",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "outer_step": 6,
+          "counts": {
+            "phase": 0,
+            "critic_calls": 12,
+            "actor_calls": 6,
+            "actor_target_updates": 6,
+            "critic_target_updates": 6,
+            "outer_steps": 6
+          },
+          "all_parameters_optimizer_states_and_targets_max_abs_error": 0.0,
+          "native_metric_max_abs_errors": {
+            "actor_loss": 0.0,
+            "bc_loss": 0.0,
+            "q_scale_coefficient": 0.0,
+            "q_loss": 0.0,
+            "q_mean": 0.0
+          },
+          "rng_exact": true,
+          "batch_reused_exactly": true,
+          "batch_indices": [
+            0,
+            29,
+            17,
+            31,
+            3,
+            17,
+            14,
+            16
+          ],
+          "native_rng": [
+            2507448802,
+            4030242690
+          ]
+        }
+      },
+      {
+        "name": "mid_schedule_checkpoint_serialization_and_resume",
+        "category": "resume",
+        "status": "pass",
+        "details": {
+          "checkpoint": "microstep_after_000001.msgpack",
+          "checkpoint_sha256": "553c3ce5fc30ca1e9d2e09f4870c4a096ae4a0b6399f64706eca29d656ecaa9f",
+          "checkpoint_bytes": 5104076,
+          "saved_critic_calls": 1,
+          "saved_phase": 1,
+          "saved_batch_sha256": "148a2ff21d470fc8b166b171b9367f2ffc68f8b42e1d107a3c823a0c9c0a7612",
+          "saved_reference_sha256": "4607502bc1e8ce6d34b000e2673197ac13c8504d6c32470dd83c989725c95d5c",
+          "replay_critic_calls": 3,
+          "replay_actor_calls": 2,
+          "full_resumed_state_max_abs_error": 0.0,
+          "rng_and_counters_exact": true
+        }
+      },
+      {
+        "name": "positive_kappa_four_critic_calls",
+        "category": "parity",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 1.0,
+          "boundaries": [
+            {
+              "critic_calls": 2,
+              "actor_calls": 1,
+              "width_mean": 0.7185077667236328,
+              "penalty_mean": 0.7185077667236328,
+              "actor_loss": 10.040375709533691
+            },
+            {
+              "critic_calls": 4,
+              "actor_calls": 2,
+              "width_mean": 0.709460973739624,
+              "penalty_mean": 0.709460973739624,
+              "actor_loss": 7.224850654602051
+            }
+          ],
+          "reference_frozen_exactly": true,
+          "synthetic_width_only": true
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_0",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 0.0,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 0.0,
+          "identity_max_abs_error": 0.0,
+          "loss_identity_abs_error": 0.0,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_0.03",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 0.03,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 1.0077212733275425,
+          "identity_max_abs_error": 7.078051567077637e-08,
+          "loss_identity_abs_error": 2.9802322387695312e-08,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_0.1",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 0.1,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 3.359071133678064,
+          "identity_max_abs_error": 1.043081283569336e-07,
+          "loss_identity_abs_error": 5.960464477539063e-08,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_0.3",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 0.3,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 10.077213497545948,
+          "identity_max_abs_error": 2.384185791015625e-07,
+          "loss_identity_abs_error": 1.1920928955078125e-07,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_1",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 1.0,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 33.59071162751859,
+          "identity_max_abs_error": 4.76837158203125e-07,
+          "loss_identity_abs_error": 0.0,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_3",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 3.0,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 100.77213949191324,
+          "identity_max_abs_error": 1.9073486328125e-06,
+          "loss_identity_abs_error": 1.9073486328125e-06,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "actor_gradient_identity_kappa_10",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "kappa_penalty": 10.0,
+          "q_scale_coefficient": 7.98626708984375,
+          "width_actor_gradient_norm": 4.206059116736019,
+          "actor_gradient_delta_norm": 335.907109894801,
+          "identity_max_abs_error": 3.814697265625e-06,
+          "loss_identity_abs_error": 0.0,
+          "identity": "grad(L_k)-grad(L_0)=q_scale_coefficient*kappa*grad(mean(U))",
+          "reference": "frozen synthetic width; no BCA calibrator integrated"
+        }
+      },
+      {
+        "name": "synthetic_reference_gradient_is_frozen",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "actual_actor_loss_reference_gradient_norm": 0.0,
+          "unblocked_fixture_reference_gradient_norm": 1.0252269643582996,
+          "assertion": "actual candidate blocks the complete reference tree exactly"
+        }
+      },
+      {
+        "name": "actual_candidate_preserves_live_width_action_gradient",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "action_gradient_delta_norm": 8.85080582361627,
+          "width_action_gradient_norm": 1.0399834250507742,
+          "identity_max_abs_error": 9.5367431640625e-07,
+          "probe": "one shared 4D action vector across the fixed 8-row bank"
+        }
+      },
+      {
+        "name": "zero_kappa_bypasses_synthetic_width_callback",
+        "category": "gradient",
+        "status": "pass",
+        "details": {
+          "width_callback_called": false,
+          "scope": "actual zero-kappa actor-loss branch"
+        }
+      }
+    ],
+    "check_count": 19,
+    "update_counts": {
+      "attempted": {
+        "critic": 31,
+        "actor": 16
+      },
+      "verified": {
+        "critic": 31,
+        "actor": 16
+      },
+      "branches": {
+        "candidate_zero_kappa": {
+          "attempted": {
+            "critic": 12,
+            "actor": 6
+          },
+          "verified": {
+            "critic": 12,
+            "actor": 6
+          }
+        },
+        "native": {
+          "attempted": {
+            "critic": 12,
+            "actor": 6
+          },
+          "verified": {
+            "critic": 12,
+            "actor": 6
+          }
+        },
+        "resume_replay": {
+          "attempted": {
+            "critic": 3,
+            "actor": 2
+          },
+          "verified": {
+            "critic": 3,
+            "actor": 2
+          }
+        },
+        "candidate_positive_kappa": {
+          "attempted": {
+            "critic": 4,
+            "actor": 2
+          },
+          "verified": {
+            "critic": 4,
+            "actor": 2
+          }
+        }
+      },
+      "maximum_critic": 31,
+      "maximum_actor": 16,
+      "maximum_optimizer_total": 47,
+      "environment_rollouts": 0,
+      "accounting": "verified deltas read from returned TrainState step counters; failed dispatch may leave attempted above verified"
+    },
+    "effective_args": {
+      "seed": 174,
+      "dataset": "synthetic_14d_4a_validation_only",
+      "algorithm": "td3_bc",
+      "num_updates": 6,
+      "eval_interval": 2500,
+      "eval_workers": 8,
+      "eval_final_episodes": 0,
+      "log": false,
+      "wandb_project": "unifloral",
+      "wandb_team": "flair",
+      "wandb_group": "debug",
+      "lr": 0.0003,
+      "batch_size": 8,
+      "gamma": 0.99,
+      "polyak_step_size": 0.005,
+      "td3_alpha": 2.5,
+      "noise_clip": 0.5,
+      "policy_noise": 0.2,
+      "num_critic_updates_per_step": 2
+    },
+    "fixture_seed": 191,
+    "fixture_sha256": "051a1a2a3ff220929b6e60f5fa82f49066901e3c54fd3ffea3d1fd99136de08c",
+    "synthetic_reference_sha256": "4607502bc1e8ce6d34b000e2673197ac13c8504d6c32470dd83c989725c95d5c",
+    "fixture": {
+      "rows": 32,
+      "observation_dimensions": 14,
+      "action_dimensions": 4,
+      "batch_size": 8,
+      "terminal_rows": 5,
+      "nonterminal_rows": 27,
+      "is_environment_dataset": false
+    },
+    "source": {
+      "passed": true,
+      "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+      "manifest_sha256": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+      "source_sha256": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+      "files": {
+        ".gitignore": "2b83c00f4c0cce03bf2f7e4ecb86639ae996e992f41f2cdfa20ae4445b01d6ad",
+        ".pylintrc": "888b28cccf969e5073d4dda98db63bcc771f1a535402cf3ece850383ab70f7f7",
+        "Dockerfile": "9336740e9eed70a1946e5bfca3f483ebdabdc6434288b18022e6512d16791754",
+        "LICENSE": "af878c708defb49f47c78cd9293386ad09fbbae07f20f24cf9e26ac98a834c95",
+        "README.md": "fe9a4699115cced43988f38334b4a9f1ea5652138aaa05c6e2c498a9711bd725",
+        "algorithms/bc.py": "5f181ca725410d82a9818e6555561d4e1655ac337a1e305c75bd8610f253b44c",
+        "algorithms/combo.py": "ed760fb421001dc1f0294caee65fc976baaffea9e03e3ed42e0aca277cb8d4ae",
+        "algorithms/cql.py": "41edbf1c11ad7b408ee6eafd94420e8fd1932afc8bbf72032bc1b9ff47213061",
+        "algorithms/dynamics.py": "e8cd737c0cd5b5e55a892029fdbaea29b5bc1f691162b8269b9c49fa440b4136",
+        "algorithms/edac.py": "fca7fef1711e4041e30a5bdcf0d709c7fb2734ecfe80b1221eebe1218b7e4d21",
+        "algorithms/iql.py": "088fca23120fc76fc9e33d01dfe6511726de9790dd3063c806d6a3e2a96992d7",
+        "algorithms/mopo.py": "a330f2420b22a9d11caceaac8375629c0e37bb8a618b901496d31949157bdcdd",
+        "algorithms/morel.py": "ec41dcfeaeed5b441dd7f7013c9ba8ab4b375561e270733af6b07dd93d378d0a",
+        "algorithms/rebrac.py": "d7ea2b2bdf59b35ea6fb2370ca926b8d291bcad566bd0f5a9adbeafe74178d4f",
+        "algorithms/sac_n.py": "a95f027c625ffbacb3fcf8210eba658b5ba39f289c30e45dd1a30ed54b0c6ddc",
+        "algorithms/td3_bc.py": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+        "algorithms/termination_fns.py": "6df2991b12ed2c5e8be1f42193c4e964085c8c793e7c82989c854b333ea8882c",
+        "algorithms/unifloral.py": "14a9bcdbc6d96fad85544a9d98957e98a7e46db13b89d74d54e3c5ce246517c8",
+        "configs/algorithms/bc.yaml": "70cd6d6d19df523296e5b311f2e98d67a7bbf3bcceb4a23c376a9d8d8e1c2628",
+        "configs/algorithms/combo.yaml": "0f95ae2162b1ab7689de5dd2eb03e044e92348373b54472e177884947803bc56",
+        "configs/algorithms/cql.yaml": "9c40f52f71499f84f678281f194e61cef34f3f53b1cf60ce943a310e8bcec7d5",
+        "configs/algorithms/edac.yaml": "2a62078ae01d28b919306f1c0a3792632781e54ba59a98044e6684debe57f726",
+        "configs/algorithms/iql.yaml": "3d19e6cda2e1424be112f5c26ef6ec4ce329d84478b4f8f3c3393a01f6fadce8",
+        "configs/algorithms/mopo.yaml": "b8c22a3a6b6d9264ff7eb4aedfca4afcd8aa07d8fdcb6c99b6d476b66ee88ced",
+        "configs/algorithms/morel.yaml": "e8375d09fc1c03575e5436fc2c29399a9f59959e8e924c473fd02a63878f8910",
+        "configs/algorithms/rebrac.yaml": "edc5f7ebef037480c2965a6a17144aecb10e3ccbd9dd8434ea05247249de320f",
+        "configs/algorithms/sac_n.yaml": "b60fb1e3a879d361e559c36a23743c759137cf919280c37995827ec61f1bb982",
+        "configs/algorithms/td3_bc.yaml": "b5d4f5d06bebf55cdb585fafe375eda64cd8490386b978af8def6f6d2d03ef16",
+        "configs/dynamics.yaml": "4b70f81d01ff22d82a5f43f65129523198c17c91ea9b98542fb09d2d12562147",
+        "configs/unifloral/bc.yaml": "1a57cfc6045f4a5ba7df4d5d33a709919969545e4dbe1ebcdd70d6bdb7ce6352",
+        "configs/unifloral/edac.yaml": "445c734c823414d87797da508934162f1501559da6e2b6695b214b9eb117662d",
+        "configs/unifloral/iql.yaml": "ce2b422928fba5faa969cbb6094843dd714641cde879c6e1711559e274a19f8e",
+        "configs/unifloral/mobrac.yaml": "167b610fe7932265134d3268bbd0bb185ab468dc67aff6b893f751fba826c214",
+        "configs/unifloral/rebrac.yaml": "ad11f7547c2c56322300531ecb255eaf596c5f2d1b386269cde3deedd4f4614b",
+        "configs/unifloral/sac_n.yaml": "962e09f59b4a35c115cca7a4032364e3988e6f03797d92a945b25d2aab5829a2",
+        "configs/unifloral/td3_awr.yaml": "42f4011302c73fd432bc6eec2d23833cc1dcc94d6d2a96ccb0637896599dd0d9",
+        "configs/unifloral/td3_bc.yaml": "bca175eb2acc2ce710d4d7d643a8b3a00c5403c80eed8656fcaf1277473a29d9",
+        "evaluation.py": "2f39892e07ebd35357cca3127d3df0a60d371b275f0dc4298bcffd41e6642753",
+        "evaluation_plots.ipynb": "0165399e361edd48e0a561c8e26c5794c1cbb6c8ef42ab3d7c4aade877ec8806",
+        "requirements.txt": "f0a26f2a13a2482b60b8d5af1269b23e36d7e09a18d322e6e8d2590a1d568d9d"
+      },
+      "selected_nodes": [
+        {
+          "line": 1,
+          "end_line": 1,
+          "sha256": "584f00916a4cc0e466656e9c8945f930ce365cf21bb48900c33d7f573ea875ab"
+        },
+        {
+          "line": 2,
+          "end_line": 2,
+          "sha256": "b9387f3dbc66bc04167ba8aa497fe2f6525193cf1d0e7004d17c9746e7552446"
+        },
+        {
+          "line": 7,
+          "end_line": 7,
+          "sha256": "6ff6ae8dfef3c44e5a9734c932202b945328fed9bc43db3cf0d826eb6b0b165a"
+        },
+        {
+          "line": 9,
+          "end_line": 9,
+          "sha256": "571297117d5cd7e04a2a51efb4f578a04dfbeeeee6a5e79239329b946ab43160"
+        },
+        {
+          "line": 10,
+          "end_line": 10,
+          "sha256": "c5fb33e682dfb0c4736fe85c3189f869b2f81652c13b04caf09017ba7debc3d8"
+        },
+        {
+          "line": 12,
+          "end_line": 12,
+          "sha256": "7092dc714ea0a1135ffe0a20496c8bc78a9411dac6f7d463e755e4edf7b555dc"
+        },
+        {
+          "line": 13,
+          "end_line": 13,
+          "sha256": "bcaa0f38ece01b2658eb8831d8975545e45fcb1d2f71fe536498ec6b36060989"
+        },
+        {
+          "line": 15,
+          "end_line": 15,
+          "sha256": "769fae2d87dda8152da6424f294282220a0cdc54b8ecd1c7473e3ec0e692edad"
+        },
+        {
+          "line": 23,
+          "end_line": 46,
+          "sha256": "82fd5189c4a95ba68c9b0a28a01e5525d467b4b71d05fb5fbe6069de25d0c99c"
+        },
+        {
+          "line": 59,
+          "end_line": 61,
+          "sha256": "e63d46f4f042135522c291c58db72873a72655688a8774767786b16e41af530c"
+        },
+        {
+          "line": 62,
+          "end_line": 62,
+          "sha256": "19bac8d0da70ad2cbc4544b3b8beeab4cc9cb9e621cb55353deb11738f947109"
+        },
+        {
+          "line": 65,
+          "end_line": 77,
+          "sha256": "2bffb19582b952f1a8bc9cfb8c8092d60aef758ae6515cecb53b896bd6df9ed2"
+        },
+        {
+          "line": 80,
+          "end_line": 95,
+          "sha256": "862bf4722e97a707c6d37ea75c88ee7e4de89be84259c65bd31db3727a97348c"
+        },
+        {
+          "line": 98,
+          "end_line": 114,
+          "sha256": "376eeeef687644775bfe28016c24c674c625ba04615f380a4bdc0faaa625a413"
+        },
+        {
+          "line": 117,
+          "end_line": 122,
+          "sha256": "f862063abc7512b1383be556fa7de02be284375052be2f2abd476b3424bf1e0b"
+        },
+        {
+          "line": 174,
+          "end_line": 279,
+          "sha256": "943728ce35cab3f49115f21b5fc6725a0510374f0ef41f6b5e17e0c4ccce3076"
+        }
+      ],
+      "scope": "Unmodified computational AST nodes; CLI, evaluation and data ingestion excluded",
+      "omitted_side_effect": "Upstream XLA_FLAGS assignment; worker sets the same value before imports"
+    },
+    "tolerances": {
+      "float_rtol": 2e-05,
+      "float_atol": 2e-06,
+      "rng_counters_batch_reuse_reference_blocking": "exact"
+    },
+    "precision": "highest",
+    "limitations": [
+      "No real BCA residual fitting or calibration integrated.",
+      "No efficacy, reward-scale robustness, full-budget readiness, or ThrusterChain task claim.",
+      "Floating-state parity is tolerance-based, not a bitwise floating-point claim."
+    ]
+  },
+  "source_after": {
+    "passed": true,
+    "revision": "f2dc1278eae18ed3e22c92255119c54885414d17",
+    "manifest_sha256": "7d0c0eccda6730c0b40bf9085cdbc31f565acbd8010db337b01ef5e64cf26a58",
+    "source_sha256": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+    "files": {
+      ".gitignore": "2b83c00f4c0cce03bf2f7e4ecb86639ae996e992f41f2cdfa20ae4445b01d6ad",
+      ".pylintrc": "888b28cccf969e5073d4dda98db63bcc771f1a535402cf3ece850383ab70f7f7",
+      "Dockerfile": "9336740e9eed70a1946e5bfca3f483ebdabdc6434288b18022e6512d16791754",
+      "LICENSE": "af878c708defb49f47c78cd9293386ad09fbbae07f20f24cf9e26ac98a834c95",
+      "README.md": "fe9a4699115cced43988f38334b4a9f1ea5652138aaa05c6e2c498a9711bd725",
+      "algorithms/bc.py": "5f181ca725410d82a9818e6555561d4e1655ac337a1e305c75bd8610f253b44c",
+      "algorithms/combo.py": "ed760fb421001dc1f0294caee65fc976baaffea9e03e3ed42e0aca277cb8d4ae",
+      "algorithms/cql.py": "41edbf1c11ad7b408ee6eafd94420e8fd1932afc8bbf72032bc1b9ff47213061",
+      "algorithms/dynamics.py": "e8cd737c0cd5b5e55a892029fdbaea29b5bc1f691162b8269b9c49fa440b4136",
+      "algorithms/edac.py": "fca7fef1711e4041e30a5bdcf0d709c7fb2734ecfe80b1221eebe1218b7e4d21",
+      "algorithms/iql.py": "088fca23120fc76fc9e33d01dfe6511726de9790dd3063c806d6a3e2a96992d7",
+      "algorithms/mopo.py": "a330f2420b22a9d11caceaac8375629c0e37bb8a618b901496d31949157bdcdd",
+      "algorithms/morel.py": "ec41dcfeaeed5b441dd7f7013c9ba8ab4b375561e270733af6b07dd93d378d0a",
+      "algorithms/rebrac.py": "d7ea2b2bdf59b35ea6fb2370ca926b8d291bcad566bd0f5a9adbeafe74178d4f",
+      "algorithms/sac_n.py": "a95f027c625ffbacb3fcf8210eba658b5ba39f289c30e45dd1a30ed54b0c6ddc",
+      "algorithms/td3_bc.py": "6f5ab6f98d706d902a18f11e1c81e99e2691dc4c8a53843bf6521c9f95d00eee",
+      "algorithms/termination_fns.py": "6df2991b12ed2c5e8be1f42193c4e964085c8c793e7c82989c854b333ea8882c",
+      "algorithms/unifloral.py": "14a9bcdbc6d96fad85544a9d98957e98a7e46db13b89d74d54e3c5ce246517c8",
+      "configs/algorithms/bc.yaml": "70cd6d6d19df523296e5b311f2e98d67a7bbf3bcceb4a23c376a9d8d8e1c2628",
+      "configs/algorithms/combo.yaml": "0f95ae2162b1ab7689de5dd2eb03e044e92348373b54472e177884947803bc56",
+      "configs/algorithms/cql.yaml": "9c40f52f71499f84f678281f194e61cef34f3f53b1cf60ce943a310e8bcec7d5",
+      "configs/algorithms/edac.yaml": "2a62078ae01d28b919306f1c0a3792632781e54ba59a98044e6684debe57f726",
+      "configs/algorithms/iql.yaml": "3d19e6cda2e1424be112f5c26ef6ec4ce329d84478b4f8f3c3393a01f6fadce8",
+      "configs/algorithms/mopo.yaml": "b8c22a3a6b6d9264ff7eb4aedfca4afcd8aa07d8fdcb6c99b6d476b66ee88ced",
+      "configs/algorithms/morel.yaml": "e8375d09fc1c03575e5436fc2c29399a9f59959e8e924c473fd02a63878f8910",
+      "configs/algorithms/rebrac.yaml": "edc5f7ebef037480c2965a6a17144aecb10e3ccbd9dd8434ea05247249de320f",
+      "configs/algorithms/sac_n.yaml": "b60fb1e3a879d361e559c36a23743c759137cf919280c37995827ec61f1bb982",
+      "configs/algorithms/td3_bc.yaml": "b5d4f5d06bebf55cdb585fafe375eda64cd8490386b978af8def6f6d2d03ef16",
+      "configs/dynamics.yaml": "4b70f81d01ff22d82a5f43f65129523198c17c91ea9b98542fb09d2d12562147",
+      "configs/unifloral/bc.yaml": "1a57cfc6045f4a5ba7df4d5d33a709919969545e4dbe1ebcdd70d6bdb7ce6352",
+      "configs/unifloral/edac.yaml": "445c734c823414d87797da508934162f1501559da6e2b6695b214b9eb117662d",
+      "configs/unifloral/iql.yaml": "ce2b422928fba5faa969cbb6094843dd714641cde879c6e1711559e274a19f8e",
+      "configs/unifloral/mobrac.yaml": "167b610fe7932265134d3268bbd0bb185ab468dc67aff6b893f751fba826c214",
+      "configs/unifloral/rebrac.yaml": "ad11f7547c2c56322300531ecb255eaf596c5f2d1b386269cde3deedd4f4614b",
+      "configs/unifloral/sac_n.yaml": "962e09f59b4a35c115cca7a4032364e3988e6f03797d92a945b25d2aab5829a2",
+      "configs/unifloral/td3_awr.yaml": "42f4011302c73fd432bc6eec2d23833cc1dcc94d6d2a96ccb0637896599dd0d9",
+      "configs/unifloral/td3_bc.yaml": "bca175eb2acc2ce710d4d7d643a8b3a00c5403c80eed8656fcaf1277473a29d9",
+      "evaluation.py": "2f39892e07ebd35357cca3127d3df0a60d371b275f0dc4298bcffd41e6642753",
+      "evaluation_plots.ipynb": "0165399e361edd48e0a561c8e26c5794c1cbb6c8ef42ab3d7c4aade877ec8806",
+      "requirements.txt": "f0a26f2a13a2482b60b8d5af1269b23e36d7e09a18d322e6e8d2590a1d568d9d"
+    }
+  },
+  "harness_after": {
+    "passed": true,
+    "files": {
+      "candidate.py": "e0af0aed323f0b8d33dc56d9308f862b4c7a231508d747213308022ef8801ce6",
+      "DESIGN.md": "602a8bf2e5d48d32922ea4d7cda23d0886a6f7b000cdbd879943204822972490",
+      "native_loader.py": "8490d002db184d081aaef8879bc430bb0b895b3efa9e2058e49c6dcb322c57f8",
+      "parity_checks.py": "c51db06160813a21734d6fd9ec73df3dd2290b83fb19b45be641393e2e097f1d",
+      "protocol.json": "888417225f163c673c34d65c5cfbb69720215c3efe25ddb84ed28c47a14c2655",
+      "README.md": "396affc1f094b9b807c36c7bd98e49dcc6fa7a9282ad0c24ad5758c178111c85",
+      "run_checks.py": "ed5a1756e7694f04793b82385f8014afe90d5a1705a7477a8bfeb132df2cb5e6"
+    }
+  },
+  "finished_utc": "2026-10-23T16:22:59.885022+00:00"
+}

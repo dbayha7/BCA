@@ -1,0 +1,42 @@
+{
+  "name": "legacy_infinite_ready_fallback_and_proposed_rejection",
+  "category": "scientific_gate",
+  "status": "pass",
+  "details": {
+    "cases": [
+      {
+        "case": "not_ready",
+        "ready": false,
+        "threshold": "+Infinity",
+        "legacy_storage_valid": true,
+        "legacy_width_valid": true,
+        "legacy_width_usable": false,
+        "legacy_width_mean": 0.0,
+        "legacy_positive_kappa_actor_equals_native": true,
+        "proposed_ready_but_nonfinite_rejection": false
+      },
+      {
+        "case": "ready_infinite",
+        "ready": true,
+        "threshold": "+Infinity",
+        "legacy_storage_valid": true,
+        "legacy_width_valid": true,
+        "legacy_width_usable": false,
+        "legacy_width_mean": 0.0,
+        "legacy_positive_kappa_actor_equals_native": true,
+        "proposed_ready_but_nonfinite_rejection": true
+      }
+    ],
+    "design_change_approved": false,
+    "scope": "Exposes existing zero-penalty fallback and a separate proposed rejection predicate; no consumption policy was changed"
+  },
+  "work_ledger_after": {
+    "auxiliary_attempts": 4,
+    "auxiliary_returned_step_increments": 3,
+    "refresh_calls": 2,
+    "refresh_inputs_accepted": 2,
+    "primary_critic_updates": 0,
+    "actor_updates": 0,
+    "environment_rollouts": 0
+  }
+}

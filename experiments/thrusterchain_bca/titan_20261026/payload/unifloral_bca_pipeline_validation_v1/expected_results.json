@@ -1,0 +1,19 @@
+{
+  "status": "expected_only_not_executed",
+  "must_hold": [
+    "Pinned UniFloral, stage-one candidate, and copied uncertainty sources authenticate before and after",
+    "Actual Calibrator fits and actual held-out refresh produce recorded diagnostics on fixed disjoint synthetic banks",
+    "Native parameters, optimizer states, targets, update counters and RNG remain unchanged",
+    "kappa_penalty=0 bypasses width and retains native actor loss and gradient",
+    "For actual finite frozen width, grad(L_k)-grad(L_0)=c*kappa*grad(mean(U)) with c held constant",
+    "Reference parameters, threshold and residual unit receive zero gradients; action gradient remains nonzero",
+    "Auxiliary checkpoint replay reproduces fitter state, residual scale, reference and auxiliary RNG",
+    "Coherent positive unit changes co-scale U; native epsilon-aware actor coefficient predictions match",
+    "Invalid fit is rejected without corrupting prior state",
+    "Unready behavior and ready/infinite-threshold fail-open behavior are reported separately",
+    "A proposed ready-invalid rejection predicate rejects the legacy fail-open case without changing its implementation",
+    "Twin-min residual counterexample demonstrates why this is not a Q1 error guarantee"
+  ],
+  "not_expected": ["Evidence of improved return", "A preferred penalty coefficient", "A statistical Q1 error guarantee", "Approval of production scientific choices", "A full production adapter or training run"],
+  "on_failure": "Preserve results and traceback; stop without changing tolerances, sources, runtime precision or package versions"
+}

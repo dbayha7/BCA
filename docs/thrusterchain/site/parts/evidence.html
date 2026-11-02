@@ -1,0 +1,66 @@
+<section class="part" id="part-evidence" data-title="Evidence and downloads">
+  <header>
+    <p class="eyebrow">Part 6 · The manifest behind every number</p>
+    <h1>Evidence, sources and gaps</h1>
+    <p class="lede">The results manifest lists every experiment with its status, the numbers this interface displays and the files they come from. The build resolves each number from its source at assembly time and refuses to publish if one cannot be found. Paths are relative to the repository root of branch <code>codex/thrusterchain-bca-handoff-20261026</code>.</p>
+  </header>
+
+  <section class="sec" id="ev-status">
+    <h2>Status board</h2>
+    <p id="status-counts-2"></p>
+    <div class="status-board" id="status-board"></div>
+  </section>
+
+  <section class="sec" id="ev-table">
+    <h2>Every experiment, its headline numbers and its sources</h2>
+    <div class="tbl-wrap"><table><thead><tr><th>Experiment</th><th>Status</th><th>Headline numbers (resolved from the source at build time)</th><th>Sources</th></tr></thead><tbody id="evidence-rows"></tbody></table></div>
+  </section>
+
+  <section class="sec" id="ev-files">
+    <h2>Files delivered with this page and how to check them</h2>
+    <ul>
+      <li><code>docs/thrusterchain/index.html</code>: this page, self-contained; opens from the file system with no network.</li>
+      <li><code>docs/thrusterchain/site/manifest.json</code>: the manifest with source paths and JSON paths; <code>site/data/manifest_resolved.json</code> is the same with every value filled in by the build.</li>
+      <li><code>docs/thrusterchain/site/data/environment.json</code>: the environment contract, frozen matrices, fixtures and five playback trajectories, with the build's replay validation.</li>
+      <li><code>docs/thrusterchain/site/data/results.json</code>: the 128-state banks (Q1, Q2, U, V, commands), the official selector tables, the matched-pilot returns and the cached comparisons, with the build's cross-check records.</li>
+      <li><code>docs/thrusterchain/site/BCA_AUDIT.md</code>: the source-anchored audit of the host and every BCA component, with line numbers.</li>
+      <li><code>docs/thrusterchain/site/SOURCE_MAP.md</code>: where each part of this page came from and what was left out.</li>
+      <li><code>docs/thrusterchain/site/build/</code>: the extraction and assembly scripts; <code>build_receipt.json</code> records hashes and every check the last build ran.</li>
+    </ul>
+    <h3>Independent verification commands already shipped with the reports</h3>
+    <pre>.\.venv\Scripts\python.exe -B experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run_analysis/verify_integrity.py
+.\.venv\Scripts\python.exe -B experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/run_analysis/verify_saved_arithmetic.py
+.\.venv\Scripts\python.exe -B experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/verify_saved_arrays.py
+.\.venv\Scripts\python.exe -B experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_score_mechanism_v1/verify_cached_comparison.py
+.\.venv\Scripts\python.exe -B experiments/thrusterchain_bca/zeus_20261026_validation/operator_analysis/cached_lower_only_v1/verify_lower_only.py</pre>
+    <p class="note">These read saved files only. They are not launchers; the reports ask that reserved attempts never be rerun.</p>
+    <h3>Rebuilding this page</h3>
+    <pre>python -I docs/thrusterchain/site/build/extract_environment.py
+.venv\Scripts\python.exe -I docs/thrusterchain/site/build/extract_results.py
+python -I docs/thrusterchain/site/build/build.py</pre>
+  </section>
+
+  <section class="sec" id="ev-gaps">
+    <h2>Remaining evidence gaps</h2>
+    <ol>
+      <li><b>Titan-only folders.</b> The held-out evaluation, the explicit OOD diagnostic, the adaptive-signal screen and recovery, and the reported support-pilot completion are not in this checkout. Their rows show the user's report and no numbers.</li>
+      <li><b>Independent seeds.</b> No completed Unifloral-era result on this machine compares independently initialized policies.</li>
+      <li><b>State shift.</b> The three shifted start families are defined and unused; every reference and return here is under the recorded law.</li>
+      <li><b>Separately trained controls on the banks.</b> The decision banks score one checkpoint with alternative scores; separately trained native and distance models exist only in the policy pilot.</li>
+      <li><b>The checkpoint's own calibration numbers.</b> Threshold, empirical quantile and posterior quantile at update 20,000 are inside the runtime assets and were not extracted.</li>
+      <li><b>Coverage after training.</b> Containment of the frozen band on the held-out bank is reported for the development transitions, not for the calibration bank itself after the last refresh.</li>
+      <li><b>Stall-boundary validity assay.</b> Prepared; no run receipt.</li>
+    </ol>
+  </section>
+
+  <section class="sec" id="ev-archive">
+    <h2>Archived earlier-host pages (not Unifloral)</h2>
+    <p>Preserved on disk exactly as delivered. They report the repository's CORL-derived TD3+BC, 100k-update checkpoints, a 95k calibration reference and a gamma-1 oracle, so none of their numbers appears in this interface.</p>
+    <ul>
+      <li><code>docs/thrusterchain/thrusterchain.html</code>: the earlier environment page (version 16) with the main test, the weighting test and the critic viewer.</li>
+      <li><code>experiments/thrusterchain_diagnostics/*/presentation/</code>: diagnostics pages v3 through v7; v7 contains the saved-bank Explorer (32 states × 12 candidates) built from <code>v7_ui/explorer.html</code>.</li>
+      <li><code>docs/bca_mechanics/index.html</code>: the component-by-component mechanics page for the earlier host (modules M1 to M11).</li>
+      <li><code>docs/decks/</code>, <code>outputs/thrusterchain_page/</code>: older decks and templates.</li>
+    </ul>
+  </section>
+</section>

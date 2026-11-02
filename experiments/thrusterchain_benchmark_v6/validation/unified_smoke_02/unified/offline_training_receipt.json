@@ -1,0 +1,83 @@
+{
+  "schema": "thrusterchain.offline_training.v4",
+  "dataset_sha256": "d1a0e3cbdd295ab064d629cb436b2948711b97b257ff1177efa38211eabd27f6",
+  "split_sha256": {
+    "train": "5d3e2d00e1b6f73f761e4e7917ce72d1e2a69e2b922e6ab0859ddd9e96c6cfe0"
+  },
+  "preprocessing_source": "train_only",
+  "learner_visible_split": "train",
+  "provenance": "smoke",
+  "environment_config_sha256": "faa14a001cfc3507b759e114b7896b197ae1f91d6f9ccbd4ffdd785662f5d42a",
+  "adapter_id": "unifloral_unified_td3bc_outer_v6_1",
+  "fit_semantics": "optimizer_steps",
+  "primary_optimizer": "actor",
+  "requested_primary_optimizer_updates": 2,
+  "status": "trained",
+  "config": {
+    "budget": {
+      "updates": 2,
+      "batch_size": 8
+    },
+    "seed": 62003,
+    "learning_settings": {
+      "allow_outside_upstream_constraints": true
+    }
+  },
+  "config_sha256": "cd6841a8661340bfc6d476ad8485231bb922206fa3ad4c88e10c31429f691d44",
+  "effective_learning_settings": {
+    "allow_outside_upstream_constraints": true
+  },
+  "effective_learning_settings_sha256": "84ee8e49e50690a042e7145e8f744b25e4d23286363990b6f61ee12183722069",
+  "budget": {
+    "source": "explicit_offline_optimizer_budget",
+    "requested": {
+      "updates": 2,
+      "batch_size": 8
+    },
+    "effective": {
+      "updates": 2,
+      "batch_size": 8
+    },
+    "executed": {
+      "updates": 2,
+      "primary_optimizer_updates": 2,
+      "optimizer_steps_total": 6,
+      "batch_size": 8,
+      "environment_interactions": 0
+    }
+  },
+  "optimizer_steps_before": 0,
+  "optimizer_steps_after": 6,
+  "executed_primary_optimizer_updates": 2,
+  "executed_optimizer_steps_total": 6,
+  "optimizer_step_counts": {
+    "actor": 2,
+    "critic": 4
+  },
+  "optimizer_step_deltas": {
+    "actor": 2,
+    "critic": 4
+  },
+  "checkpoint_sha256": "480805f66c49abcb05b19cdcb519054936c0ff079cbc06a9c48b0e0ede042935",
+  "resumed_from_sha256": null,
+  "resume_semantics": "additional updates; full adapter state plus offline PCG64 sampler restored",
+  "sampling": {
+    "bit_generator": "PCG64",
+    "with_replacement": true,
+    "stream": "offline_batches",
+    "stream_key": 7101
+  },
+  "environment_interactions": 0,
+  "last_update_metrics": {
+    "abs_actor_q": 0.07087439298629761,
+    "actor_loss": 2.844846725463867,
+    "actor_q": -0.07087439298629761,
+    "bc_coef": 1.0,
+    "bc_loss": 0.34484991431236267,
+    "critic_loss": 0.5253716707229614,
+    "critic_next_v": -0.00873754732310772,
+    "entropy_loss": 0.0,
+    "q_loss": 0.07087439298629761
+  },
+  "receipt_sha256": "93c63e8ec4ebfb3a538f0d58fed7a8aae827f97327f44bd920c1a6d64bbddeda"
+}

@@ -1,0 +1,411 @@
+{
+  "summary": "Narrow verification of revision 9 edits to the knee-edge OOD draft (wording, disclosures, 4.4/4.8 rescoping); skeptic; readiness critic",
+  "agentCount": 5,
+  "logs": [
+    "3 high/medium findings survived the skeptic"
+  ],
+  "result": {
+    "packed": [
+      {
+        "lens": "logic",
+        "verdict": "I checked r9 first. It changes no gate formula, threshold, anchor set or approval rule. All of its numbers recompute correctly: c(0.05) = 0.3799, so the requirement is 0.968 at equal rho and 1.103 at rho_R = 1.2 rho_C (the r8 digest's 1.11 was slightly high). The other figures also check out: the 49-anchor example, the 48-anchor K1c example, the 44th percentile and the 0.34 bound. The new gate-meaning text is still not right, though. The new 'What a K1a miss means' text, repeated in V0(d) and Part 8.2(iii), says reading 2's guard stops a mechanistic reading when a positive RANDOM KC helped cause a K1a miss. It does not. The guard only bounds median KC_R. In a 47-anchor case, both gate clauses give 0.9, median KC_R = 0, and CUTOFF sits at the smooth lower end at 43 anchors. K1a still misses (0.45) only because of RANDOM's +0.45 at 23 anchors, and reading 2 ('not caused by withholding') would be attached. The same text also says 'when the gate passes, a K1a miss is FAIL' with no precedence qualifier. The dominance scoping reached Part 2's pessimistic-anchors bullet and Part 8.2(iv), but not Part 2's K1c line, V0(d)'s 'K1c is reachable', the anchor-set bullet or reading 1. In the disclosed 48-anchor case, a smooth critic that over-values (median KC_s10 0.66) would get reading 1, 'does not over-value'. The draft's description of the non-adopted alignment option leaves out that consequence. These are text fixes (or a guard option for the user's sign-off), not gate changes. A further text-only pass is needed before calling r9 clean.",
+        "low_findings": [
+          {
+            "id": "G9-4",
+            "severity": "low",
+            "section": "Part 2 lines 206 and 215",
+            "claim": "Statement (1), 'a miss that a smoothly extrapolating CUTOFF critic would suffer because of RANDOM's KC is INCONCLUSIVE', holds only if 'smooth' means noise-free at the lower end: KC_C,j >= rho_hat_C,j - 0.10 at every C-valid common anchor. Line 206 now says a smooth critic clears the bars only 'up to its own KC noise'. Under that looser reading of 'smooth', statement (1) is false.",
+            "evidence": "check.py 'noise': 47 anchors, rho_hat_C = 0.8, KC_R = +0.2. Gate (i) = 0.50 (pass). A smooth critic with -0.02 noise has KC_C = 0.68, giving K1a = 0.48 (FAIL). With KC_R = 0 it would pass at 0.68. So RANDOM's KC causes the miss, and the label is FAIL, not INCONCLUSIVE.",
+            "fix": "Define the term once: 'smoothly extrapolating' means KC_C,j >= rho_hat_C,j - tol at every C-valid common anchor. Then say that misses involving CUTOFF's KC noise fall under the 'joint statement' sentence, not statement (1)."
+          },
+          {
+            "id": "G9-5",
+            "severity": "low",
+            "section": "Part 2 line 209",
+            "claim": "Wrong cross-reference. The relative-clause gap and its example are in Part 8.2(iv), not 8.2(iii).",
+            "evidence": "Line 209 cites '(Part 8.2(iii))'. The K1c relative-clause disclosure is at line 864, under (iv). Review 9 row 2 correctly says 8.2(iv).",
+            "fix": "Change it to (Part 8.2(iv))."
+          },
+          {
+            "id": "G9-6",
+            "severity": "low",
+            "section": "Part 8.2(iv) line 860",
+            "claim": "The 49-anchor example cannot occur: Stage 1 has at most 48 gated (and so common) anchors (line 625). The obvious 48-anchor rebalancing, 24/24, fails gate (ii). The first companion's 'at or above K1a's median difference' is also undefined for ties and for non-C-valid anchors.",
+            "evidence": "The example's arithmetic is correct at 49: gate (i) 0.60, gate (ii) 0.60, median KC_R 0, smooth K1a 0.70, companion share 24/25 = 0.96. At 48 with 24/24 (one KC_R = 0, 23 at +0.45), gate (ii) = 0.375. A 23/25 split with two KC_R = 0 anchors gives 0.60 / 0.60 / median KC_R 0 / K1a 0.70.",
+            "fix": "Use the 48-anchor version: 23 low-gap anchors, 2 with KC_R = 0, 23 with KC_R = +0.45. For the companion, say that non-C-valid anchors count as rho_hat_C = -inf (low-gap), and that 'at or above' uses the computed median, including even-count averaging."
+          },
+          {
+            "id": "G9-7",
+            "severity": "low",
+            "section": "Step 0.4 line 592; Part 2 line 200; Part 8.2 line 848",
+            "claim": "The new 'reported, not gated' step 0.4 medians are under-specified, and one Part 8.2 sentence is now stale. The base set is not named (gated anchors, or valid anchors under each continuation seed). Per-seed reporting is not stated. The bars to compare against are not given: 0.60 at s05 (floor (ii) plus 0.10) and 0.65 at s10. Step 0.4's predictor-validity is under the reference continuations, while V0(d)'s C-validity is under CUTOFF's own, so k may differ in Stage 1. Part 8.2's 'stricter than step 0.4's medians suggest' contradicts step 0.4 now reporting the convention medians.",
+            "evidence": "Line 592 says only 'anchors that are not predictor-valid enter as minus infinity'. Line 52 says valid and predictor-valid are distinct sets. Line 644 says Stage 1's base set is 'valid in every arm compared'. The quantile (50 - k)/(100 - k) = 0.444 at k = 10 is correct, and k <= 10 follows from item 5's 90% rule.",
+            "fix": "Step 0.4 should report, per continuation seed, over the valid gated anchors with non-predictor-valid anchors as -inf, median rho_hat(s05) against 0.60 and median rho_hat(s10) against 0.65. Note that Stage 1's k is set by CUTOFF's own continuation. Line 848: change 'step 0.4's medians' to 'step 0.4's gated item 1 and 2 medians'."
+          }
+        ],
+        "verified": [
+          {
+            "id": "G9-1",
+            "severity": "high",
+            "section": "Part 2 'What a K1a miss means' (line 215); V0(d) line 670; Part 8.2(iii) line 856; Review 9 row 1 (line 1082)",
+            "claim": "r9 says that when the gate passes and a positive RANDOM KC contributes to a K1a miss, the label is FAIL 'with no mechanistic reading (reading 2's guard)'. That is false. Reading 2's guard is median KC_s05(RANDOM) <= 0.1 x median rho_hat_R (line 701). It bounds only the median. A positive KC_R confined to the anchors that set K1a's median passes the guard, so reading 2 is attached to a miss that RANDOM caused.",
+            "evidence": "Script scratchpad/verify_wf_r9/gate_meaning/check.py, 'CX v2'. 47 common anchors, all C-valid, rho_hat_C(s05) = 1.0. Group A (20 anchors): KC_R = -0.2, KC_C = 0.9. Group B (4): KC_R = 0, KC_C = 0.4. Group C (23): KC_R = +0.45, KC_C = 0.9. Results: gate (i) = 0.9, gate (ii) = 0.9 (both pass); K1a = 0.45 (miss). With KC_R = 0 at group C, K1a = 0.9 (pass), so RANDOM's positive KC caused the miss. CUTOFF falls below rho_hat_C - 0.10 at only 4 of 47 anchors. Median KC_R = 0, so V0(b) holds and reading 2's guard passes at any rho_hat_R > 0. A 48-anchor version (20/5/23) gives the same result. If this repeats in all seeds with K1c passing, the result is FAIL-consistent. Reading 2 then states 'over-valuation at the knee's onset is not caused by withholding', although CUTOFF over-values by its full lower-end gap at 43 of 47 anchors. Part 8.2(iv)'s companion 'median KC_s05(CUTOFF) alone' would show 0.9, but nothing ties it to reading 2.",
+            "fix": "Text-only fix: replace '(reading 2's guard)' in all three places with an accurate statement. Reading 2's guard bounds only median KC_R, so it withholds the reading only when RANDOM's positive KC is broad. A contribution concentrated at the anchors that set K1a's median can pass the guard. Then reading 2 can be attached even though RANDOM caused the miss, and the 8.2(iv) companions must be read alongside it. Separately, offer the user a per-anchor guard for sign-off, without adopting it. One option: withhold reading 2 when K1a computed with KC_R clipped at 0 would pass, or when median KC_C alone is >= 0.5. That is a rule change.",
+            "check": {
+              "id": "G9-1",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed. r9 states in three places that a FAIL to which a positive RANDOM KC contributed carries no mechanistic reading because of reading 2's guard: line 215 ('FAIL with no mechanistic reading (reading 2's guard)'), line 670 ('reading 2's guard then withholds the reading') and line 856. Review 9 row 1 (line 1082) repeats this as the resolution. The guard at line 701 tests only median KC_s05(RANDOM) <= 0.1 x median rho_hat_R(s05) on the R-valid anchors, so it does not withhold the reading in general. I recomputed the CX by hand. With 47 anchors split 20/4/23, gate (i) = 0.9 and gate (ii) = 0.9, so both pass. K1a = 0.45, which misses. Setting KC_R to 0 in group C gives K1a = 0.9, a pass. Median KC_R = 0, so the guard passes and reading 2 ('not caused by withholding') is attached if this repeats across seeds with K1c passing. A simpler case shows the same thing without concentration: a uniform KC_R of 0.07 at rho_hat_R = 0.75 is under the 0.075 guard and can still tip a near-miss K1a. Line 857 discloses that scoping is not adopted, and 8.2(iv) adds companions that are reported only. Neither ties those companions to reading 2 or qualifies the 'withholds' claim. No label or gate changes, so the label is still FAIL. The problem is a false assurance about which reading gets attached, which matters for interpreting the result. I rate it medium rather than high."
+            }
+          },
+          {
+            "id": "G9-2",
+            "severity": "medium",
+            "section": "Part 2 line 215; V0(d) line 670; Part 8.2(iii) line 856",
+            "claim": "'When the gate passes, a K1a miss ... the label is then FAIL' and 'a K1a miss is FAIL even if RANDOM's positive KC contributed' leave out the precedence INCOMPLETE > INCONCLUSIVE > FAIL > PASS. Read literally, this sentence overrides the other validity items. That is the kind of silent label change r9 was not supposed to make.",
+            "evidence": "Line 497 says the first label that applies wins. When K1a's reachability gate passes, the outcome is still INCONCLUSIVE if any of these fails: V0(a), V0(b), V0(c), V0(e), K1c's reachability (line 664), or item 5/6 under CUTOFF's continuation (line 660). It is INCOMPLETE on any V1 failure. Also, line 506 attaches mechanistic readings only to FAIL-consistent, so whether a reading exists depends on the seed pattern as well as on the guard.",
+            "fix": "Add the qualifier everywhere: 'is FAIL, provided no V1 or other V0 item applies (Part 5 precedence)'. In V0(d), say that 'the gate' means both reachability conditions plus the item 5/6 checks.",
+            "check": {
+              "id": "G9-2",
+              "real": false,
+              "severity_after": "none",
+              "reason": "Refuted as a label change. Precedence is stated globally at line 497 ('the first that applies wins', INCOMPLETE > INCONCLUSIVE > FAIL > PASS). V0(d) itself, three lines before the sentence at issue, says 'INCONCLUSIVE outranks PASS and FAIL' (line 666). In context, 'the gate' at lines 215, 670 and 856 means K1a's reachability gate, and the sentence contrasts two K1a outcomes. It does not claim to override V1 or other V0 items. r8's matching sentence ('INCONCLUSIVE, not FAIL') also had no precedence qualifier, and no reader would take either version as overriding the table. The other point, that a reading attaches only to FAIL-consistent (line 506), is the substance of G9-1 and is not a separate label defect. At most this is a wording nicety, not a silent change to a gate or label."
+            }
+          },
+          {
+            "id": "G9-3",
+            "severity": "medium",
+            "section": "Part 2 line 222; Part 5 anchor sets line 647; V0(d) line 664; reading 1 line 700; Part 8.2(iv) line 864",
+            "claim": "Dominance was scoped to 'K1a and K1c's absolute clause' only in Part 2's pessimistic-anchors bullet (lines 207-209) and in Part 8.2(iv). Several places still claim full K1c reachability: Part 2 ('K1c ... It is reachable when median >= 0.65'), V0(d) ('K1c is reachable'), the anchor-set bullet ('over the same common set as the criteria') and reading 1 ('with the s10 gap shown reachable (V0(d))'). The disclosure of the non-adopted alignment option also omits its consequence: reading 1 can be attached to a critic that does over-value.",
+            "evidence": "48-anchor example from line 864, recomputed. The gate median is 0.66 (pass). A smooth critic has median KC_s10 = 0.66, which clears the absolute bar of 0.5. The relative bar is 0.5 x median over the 44 C-valid anchors = 0.5 x 1.4 = 0.70, so it misses. If this repeats in all three seeds, K1c is the first criterion failing in every seed, giving FAIL-consistent. Reading 1 then states 'this Unifloral critic does not over-value past a dense edge ... with the s10 gap shown reachable', although the critic over-values by 0.66 at the median.",
+            "fix": "Text-only fix: say 'K1c's absolute clause is reachable' at lines 222 and 664. At line 647, say 'over the same common set as K1a and K1c's absolute clause'. Qualify reading 1's 'shown reachable' the same way. In Part 8.2(iv) and the sign-off note, state that under the current anchor sets a K1c FAIL that comes only from the relative clause can carry reading 1. The alignment option M - 0.15 >= 0.5M for M >= 0.3 would remove that.",
+            "check": {
+              "id": "G9-3",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Partly refuted, partly real. Lines 222 and 664 ('K1c is reachable') name the gate condition and do not claim dominance. Line 647 is followed in the same bullet by 'K1c's relative clause takes its rho_hat_C(s10) median over the C-valid anchors'. Lines 207-209 and 8.2(iv) (line 864) explicitly scope dominance to K1a and K1c's absolute clause. So the scoping itself is disclosed. What is real is the omitted consequence. Reading 1 (line 700) attaches whenever K1c fails in every seed, and it asserts 'does not over-value past a dense edge ... with the s10 gap shown reachable (V0(d))'. In 8.2(iv)'s own 48-anchor example, a fully smooth critic with median KC_s10 = 0.66 fails only the relative bar (0.70). If this repeats in all seeds, reading 1 is attached to a critic that over-values by about its true gap. I recomputed the example: the C-valid median of 44 anchors is 1.4 and the bar is 0.70. The disclosure of the non-adopted alignment option (line 865) does not mention this effect on reading 1, so the user's sign-off decision is under-informed. This is text only, no gate is changed, and the scenario needs a specific skew to repeat in all three seeds, so I rate it low."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Statement (2) is correct as stated. If gate (i) passes and K1a misses, CUTOFF has KC_C < rho_hat_C - 0.10 at one or more C-valid common anchors. This follows from per-anchor dominance with -inf at non-C-valid anchors. 'Enough anchors' can mean as few as 4 of 47 (counterexample in G9-1).",
+          "Statement (1) holds for a noise-free lower-end smooth critic (per-anchor dominance, so gate (i) <= smooth K1a).",
+          "Joint tolerance: KC_R <= rho_hat_C - 0.6. Ratios (rho - 0.6)/rho = 0.0164 / 0.20 / 0.40 at rho = 0.61 / 0.75 / 1.0.",
+          "c(w) = 1 - (w/d)(softplus(d/w) - ln 2) at d = 0.05000001 gives 0.2457 / 0.3121 / 0.3530 / 0.3799 at w = 0.02 / 0.03 / 0.04 / 0.05. Equal rho requires 0.968 (about 0.97). rho_R = 1.2 rho_C requires 0.6/(1 - 0.456) = 1.103 (about 1.10; the r8 digest's 1.11 is slightly high).",
+          "Worst-case form: 0.72 at rho_hat_R = 0.2, and 0.64/0.6 = 1.067 at equal rho.",
+          "V0(b): 0.4 x (0.75 + 0.10) = 0.34 at median rho_hat_R = 0.75; minimum allowance 0.12 at rho_hat_R = 0.2.",
+          "Quantile: (50 - k)/(100 - k) = 0.444, the 44th percentile at k = 10. k <= 10 is consistent with item 5's 90% rule.",
+          "Sufficiency: KC_s05,R <= 0.15 at every anchor plus median rho_hat >= 0.75 gives gate (i) >= 0.5. The direction is right; it is a one-sided upper bound, sufficient but not necessary.",
+          "Partial forecast is exact when all anchors are predictor-valid: item 1 median 0.75 >= 0.60 and item 2 median 0.75 >= 0.65.",
+          "49-anchor example arithmetic: gate (i) 0.60, gate (ii) 0.60, median KC_R 0, smooth K1a 0.70 (0.60 at the lower end).",
+          "48-anchor K1c example: gate median 0.66; smooth median KC_s10 0.66 (0.51 at the lower end); relative bar 0.5 x 1.4 = 0.70; item 5 at 44/48 = 91.7%; 44 C-valid >= V0(c)'s 32.",
+          "Alignment fix: smooth median >= M - 0.15 >= 0.5 M when M >= 0.3, and the gate ensures M >= 0.65. Correct.",
+          "The K1a-only scoping option (Part 8.2(iii) line 857) and the relative-clause alignment option are both described as not adopted pending the user's sign-off. Their non-adoption is not counted as a defect.",
+          "Standing prediction: in Part 5 Stage 1 (line 605), referenced from the step 0.4 PASS row (line 601), Part 2 (line 203) and Part 8.2 (line 847). It adds only a written acknowledgement already required in r8 and changes no approval rule.",
+          "V0(d) line 668 'for the median gap' wording is consistent with floor (ii).",
+          "No r9 edit changes a gate formula, threshold, anchor set or precedence ordering. The only label-level overreach is the unqualified 'is FAIL' wording (G9-2).",
+          "Valid and predictor-valid are distinct sets (line 52), so the -inf convention is not vacuous."
+        ]
+      },
+      {
+        "lens": "resolution",
+        "verdict": "Revision 9 resolves all 12 items in the r8 digest in substance, and I found no r9 sentence that changes a gate, a clause of the label precedence, or an approval rule. The 12 rows of the Review 9 table match the digest's severities (one medium, eleven low).\n\nThe source checks behind the 4.8 rescoping hold:\n- `fixed_candidate_bank` (evaluation.py:57-65) is fed by `reference.actor_actions` (evaluation.py:426-427). `actor_actions` returns `deployed_actions` (reference.py:126), which asserts |a| <= 1 and does not clip. So the saved per_probe `actions[:, 0]` is the actor's own command, not clipped to ±KNEE. In all 18 native-20k JSONs, slot-0 a0 reaches 0.997 and slot-0 a1..a3 reach 0.818.\n- q1 and twin_min come from that same bank (evaluation.py:428-439). Adjusted is q1 - 3*width (evaluate_worker.py:382), so U = (q1 - adjusted)/3 holds.\n- Q^pi takes its first action from the same bank (reference.py:260-266). So r9's \"feed slot 0 the saved `actions[:, 0]`\" reproduces exactly what was stored.\n- Slots 1-5 equal FIXED_A0 with zero a1..a3 in all 18 files.\n- All 35 hashes in Part 11 match, including the three new rows.\n- The new arithmetic is correct: 1.10, 0.444, the 49-anchor example (0.60 / 0.60 / 0 / 0.70 / 96%) and the K1c example (0.66 against 0.70, item 5 at 44/48).\n\nWhat remains is mostly wording and bookkeeping. One item is medium. r9's new sentences say a gate-passing K1a FAIL always gets \"no mechanistic reading (reading 2's guard)\". But reading 2's guard is a conditional median test, so that misstates when a reading is attached. A smaller inconsistency: 4.5b now says `reference.py` reproduces the 4.8 values, while 4.8 says the new evaluator does the reproduction. The other items are a wrong cross-reference, an incomplete note after the Review 8 table, companion metrics that are not wired into Part 5, citations only partly applied at the R_lin site, and a tolerance tension that r9's own re-batching rationale exposes. Both design options that were not adopted (K1a-only scoping and aligning K1c's relative-clause anchor set) are described accurately and flagged for the user's sign-off. With the medium item reworded, r9 is ready for A1 consideration.",
+        "low_findings": [
+          {
+            "id": "R9-2",
+            "severity": "low",
+            "section": "4.5b (:395) vs 4.8 (:459) and step 0.3 label table (:571)",
+            "claim": "r9 says that reference.py 'is used only to reproduce saved stall15_identity values (4.8)'. But 4.8 says the 'Known-answer reproduction [is] by the new evaluator', and step 0.3's consequence is 'Fix the evaluator'. If reference.py did the 4.8 reproduction, the known-answer check would not test the new evaluator's stall15_identity path. That path is the point of 4.8.",
+            "evidence": ":395: 'It is used only to reproduce saved `stall15_identity` values (4.8). Every new replay in every world ... uses the new evaluator.' :459: 'Known-answer reproduction by the new evaluator on the frozen central-quartile native 20k cells'. :571: 'Known-answer mismatch | INCOMPLETE | Fix the evaluator'.",
+            "fix": "Rewrite :395 as: 'reference.py is the recorded specification of the saved stall15_identity values that 4.8 reproduces; no new step runs it. The 4.8 reproduction and every new replay in every world, including step 0.3's slope-1.5 replays and onset contrast, use the new evaluator.'"
+          },
+          {
+            "id": "R9-3",
+            "severity": "low",
+            "section": "Part 2 Pessimistic anchors (:209)",
+            "claim": "The new cross-reference points to the wrong subsection. The K1c relative-clause gap and its example are in Part 8.2(iv), not Part 8.2(iii).",
+            "evidence": ":209 ends '(Part 8.2(iii))'. The disclosure is at :864-865 under '(iv) The gates bound medians, not anchors', and Review 9 row 2 (:1083) correctly cites 'Part 8.2(iv)'.",
+            "fix": "Change :209's cross-reference to '(Part 8.2(iv))'."
+          },
+          {
+            "id": "R9-4",
+            "severity": "low",
+            "section": "Part 9, note after the Review 8 table (:1073)",
+            "claim": "The note lists only Review 8 rows 1, 2, 3 and 6 as refined in r9. r9 also refined rows 5, 7, 10 and 11. This is the same class of stale history that r8 item 8 flagged.",
+            "evidence": "Row 5 (:1065) still gives the 0.016/0.20/0.40 joint tolerance unqualified, while r9 qualifies it as 'Taking rho_R = rho_C' (:218, :853). Row 7 (:1067): r9 added 'and equal rho' at :221. Row 10 (:1070): r9 changed the physics citation from 'pinned at 36-57' to `_dynamics` 198-199 (:467, :549). Row 11 (:1071), 'reference.py restricted to stall15_identity': r9 narrowed it to reproducing saved values only (:395).",
+            "fix": "Change the note to 'Rows 1, 2, 3, 5, 6, 7, 10 and 11 ...'. Add: 'equal-rho assumption stated; physics citation moved to `_dynamics`; reference.py limited to saved-value reproduction'."
+          },
+          {
+            "id": "R9-5",
+            "severity": "low",
+            "section": "Part 8.2(iv) (:861-863) vs Part 5 Stage 1 evaluation and reported lists (:621-640, :684-696)",
+            "claim": "r9 adds two RANDOM-independent companions, 'reported, not gated, per seed', but only in the risks section. Part 5's Stage 1 evaluation and consistency-check lists do not include them. The first companion's anchor set is also unspecified: K1a is over common anchors, but rho_hat_C is undefined at non-C-valid anchors.",
+            "evidence": "grep 'companion' hits only :861 and the Review 9 row 3 (:1084), and Part 5 never mentions 'KC_s05(CUTOFF) alone'. By contrast, the new step 0.4 reported medians are wired into Part 5 (:592).",
+            "fix": "Add both companions to Part 5 Stage 1's reported lists. For the share, define its set: 'among common gated anchors at or above K1a's median difference; non-C-valid anchors counted as rho_hat_C - 0.10 < 0.5'."
+          },
+          {
+            "id": "R9-6",
+            "severity": "low",
+            "section": "Step 0.3 R_lin (:549); 4.8 Q^pi (:467); Review 9 row 11 (:1092)",
+            "claim": "Review 9 row 11 says the citations now give `_dynamics` 198-199 for the physics, `authenticate_core` 36-57 for the contract and `actor_actions` 115-130, as the digest asked for at both sites. :549 cites only `_dynamics` (no contract, no actor_actions), and :467 omits actor_actions. `authenticate_core` actually spans lines 36-61.",
+            "evidence": ":549: 'physics bound in `_dynamics` at 198-199' only. :467: '`deployed_actions` lines 91-96 and `continuation_values` 242-276; ... `_dynamics` ... `authenticate_core` 36-57'. reference.py: the require on constructed physics is at 57-58 and the return is at 59-61. actor_actions is cited only at :463. The substance is still supported, because continuation_values calls actor_actions at :269, which calls deployed_actions.",
+            "fix": "At :549, add 'and `authenticate_core` 36-61 (contract); `actor_actions` 115-130'. At :467, add `actor_actions` 115-130. Or narrow row 11 to say where each citation was added."
+          },
+          {
+            "id": "R9-7",
+            "severity": "low",
+            "section": "4.8 (:463, :467)",
+            "claim": "r9's rationale for loosening slot 0, 'A re-batched forward pass need not be bit-identical', applies just as much to the saved Q^pi that r9 now reproduces at 1e-9 relative on all six slots. Each Q^pi continuation makes up to 100 actor forward passes per row.",
+            "evidence": "In reference.py continuation_values (:263-272), actor_actions is called at every offset on the 'active' subset of the 192 rows, so the batch composition changes as horizons end. If a new evaluator's actor outputs differ at about 1e-7 (16 float32 ULP), the continuation's actions differ, and accumulated Q^pi differences can exceed 1e-9 relative. That fails closed as INCOMPLETE and costs a fresh A2 with no real fault (the same failure mode r8 item 9 removed for slot 0).",
+            "fix": "Either require the Q^pi reproduction to use the original batching (all 192 rows per offset, in the original order, jitted the same way), or state why 1e-9 still holds under re-batching. Otherwise, use a tolerance consistent with the slot 0 rationale."
+          }
+        ],
+        "verified": [
+          {
+            "id": "R9-1",
+            "severity": "medium",
+            "section": "Part 2 'What a K1a miss means' (DRAFT_PROTOCOL.md:215); V0(d) (:670); Part 8.2(iii) (:856)",
+            "claim": "r9 says that when the gate passes, a K1a miss is FAIL 'with no mechanistic reading (reading 2's guard)', and that 'reading 2's guard then withholds the reading'. Reading 2's guard (:701) is conditional: the reading is withheld only if median KC_s05(RANDOM) > 0.1 x median rho_hat_R(s05) on R-valid anchors. So the sentence misstates when a reading is attached, and it reads like a new reading rule.",
+            "evidence": "Counterexample at the median level: the gate passes and K1c passes in every seed. Median KC_R = +0.05 and median rho_hat_R = 0.75, so the guard bar is 0.075 and the guard is satisfied. K1a = 0.48 (it would be 0.53 with an exact RANDOM). Reading 2 ('not caused by withholding') IS attached, although RANDOM's positive KC contributed. Counterexample at the anchor level: r9's own 8.2(iv) example has median KC_R = 0 with KC_R = +0.45 at 24 of 49 anchors. The guard passes there too. So r9's 8.2(iv) contradicts the unconditional 'no mechanistic reading' sentence at :215, :670 and :856.",
+            "fix": "Reword the three places: 'When the gate passes, a K1a miss is FAIL even if RANDOM's positive KC contributed. Reading 2 is then attached only if its guard holds (:701). The guard bounds a median, so a small or anchor-concentrated positive RANDOM KC can contribute to a FAIL that still carries reading 2.' Add one line to 8.2(iv) noting that the guard is also a median bound. The labels do not change.",
+            "check": {
+              "id": "R9-1",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed: all three sentences are new in r9. The diff shows :215, :670 and :856 added in r9, and r8 has no such wording. Each one says that when the gate passes and a positive RANDOM KC contributed to a K1a miss, the result is FAIL 'with no mechanistic reading (reading 2's guard)' or that 'reading 2's guard then withholds the reading'. The guard at DRAFT_PROTOCOL.md:701 is conditional. Reading 2 is withheld only if median KC_s05(RANDOM) > 0.1 x median rho_hat_R(s05) on R-valid anchors in some seed. Otherwise it is attached, even when RANDOM's KC is positive and contributed. The skeptic's median-level counterexample holds: KC_R = +0.05, rho_hat_R = 0.75, bar 0.075, so the guard passes and reading 2 attaches to a FAIL that RANDOM helped cause. r9's own 8.2(iv) shows a positive RANDOM KC concentrated at a few anchors (+0.45 at 24/49) with median KC_R = 0, which the guard does not catch. In that particular example K1a passes, so 'contradicts' overstates the case. Still, a FAIL with that RANDOM profile and a less smooth CUTOFF would carry reading 2. The FAIL and INCONCLUSIVE labels are unchanged; the gate, the precedence and the readings list at :692-707 still govern. But r9's prose states a different reading-attachment rule from :701 in three places, and r9 was meant to be text only. A reader could withhold reading 2 when the protocol attaches it, or think the guard covers every positive RANDOM contribution. Fix as proposed: say reading 2 is attached only if :701's guard holds, and that the guard bounds a median, so a small or anchor-concentrated positive RANDOM KC can contribute to a FAIL that still carries reading 2. Add the same note to 8.2(iv)."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Digest item 1: Part 2 :214-215 now says 'median gap required', and the K1a FAIL path is disclosed and mirrored in V0(d) :670 and Part 8.2(iii) :856. No label changed. The 5.0 precedence is unchanged. The INCONCLUSIVE path is correct: a smooth critic's miss implies gate (i) <= the smooth K1a < 0.5. When the gate passes, a miss implies KC_C < rho_hat_C - 0.10 at some C-valid anchor.",
+          "Digest item 2: dominance is scoped to K1a and K1c's absolute clause (:207-209). The K1c relative-clause gap is disclosed with a valid example. The example: 48 anchors, 4 not C-valid, 21 at 0.66 and 23 at 1.4. The gate median is 0.66 (24th and 25th values). The C-valid median is 1.4, so the bar is 0.70. The smooth median KC is 0.66. Item 5 passes at 44/48 = 91.7%, which fixes the digest's 5/48 example (89.6% would fail item 5). M - 0.15 >= 0.5M iff M >= 0.3 is correct. The alignment option is accurately described as awaiting the user's sign-off.",
+          "Digest item 3: the 49-anchor example re-derived. Gate (i) median = 0.60 (24 x 0.15, 25 x 0.60). Gate (ii) = 0.60. Median KC_R = 0. Smooth K1a = 0.70. The share companion = 24/25 = 96%.",
+          "Digest item 4: the partial forecast is restated correctly. The quantile (50-k)/(100-k) = 0.444 at k = 10. KC_R <= 0.15 at every anchor gives term >= 0.75 - 0.25 = 0.5, which is sufficient. 0.34 = 0.4 x (0.75 + 0.10). The step 0.4 reported medians under the convention are wired into Part 5 (:592) as reported, not gated.",
+          "Digest item 5: 4.4 (:365-370) is coherent. The builder serves only slots 1-5 of 4.8, and the exemption list no longer names 4.8. The 4.8 arrays are outside the gated-probe assertion. Slots 1-5 are checked by exact equality, which the saved data confirm: FIXED_A0 with zero a1..a3 in all 18 native-20k JSONs, shape (32, 6, 4). Slot 0 is checked as a full 4-vector. 'slot 0 of the 4.8 reproduction' and 'Three sets are exempt' are gone.",
+          "Digest item 6: the joint tolerance states rho_R = rho_C, with the general form c(w) x rho_R <= rho_hat_C - 0.6. 0.6/(1 - 0.38) = 0.968, about 0.97. 0.6/(1 - 0.456) = 1.103, about 1.10. 'and equal rho' was added to the worst-case comparison.",
+          "Digest item 7: the Standing prediction paragraph sits under the Stage 1 (A4) header (:605). The step 0.4 PASS row (:601) and Part 8.2 (:847) refer to it, and the cross-references resolve. This wires in a requirement r8 already stated; it is not a new approval rule.",
+          "Digest item 8: Review 6 row 3 and row 6 are annotated (:1019, :1022), and the note after the Review 7 table now lists rows 2, 4, 5, 6, 8 and 9 (:1052).",
+          "Digest item 9: the slot 0 tolerance is relative 1e-6 x max(1, |value|), stated once at :464 and referenced from :463 and :370. q1, twin_min and adjusted are reproduced on all six slots, with slot 0 fed saved actions[:,0]. This matches the source: evaluation.py:426-439 builds the bank from reference.actor_actions and queries q1 and twin_min on that same bank. Adjusted is q1 - 3*width (evaluate_worker.py:376-382), so U = (q1 - adjusted)/3 holds. Q^pi takes its first action from the same bank (reference.py:260-266). The per_probe 'actions' stored are that bank (evaluation.py:216).",
+          "'Unclipped' for slot 0 and the continuation is accurate. deployed_actions (reference.py:91-96) asserts |a| <= 1 with 'no hidden clipping' and does not clip, and actor_actions (115-130) returns it. FrozenPolicy.act (evaluate_worker.py:355-359) applies the same assertion. Saved slot-0 a0 reaches 0.997 and a1..a3 reach 0.818, past KNEE, so slot 0 is not clipped to ±KNEE.",
+          "Digest item 10: the 4.5b rows for nostall and stall15_identity now list the 4.5 cross-check, consistent with 4.5's 'in all three worlds' (:381).",
+          "Digest item 11: evaluation.py line 209 is the 'reference' string, and line 210 is band_boundary. reference.py _dynamics binds core.Physics(stall=True, stall_slope=1.5) at 198-199, line 151 is _env with stall_slope=1.5, and actor_actions is 115-130 (130 is the return). 'line 210', 'physics pinned' and 'pinned at' no longer appear.",
+          "Digest item 12: 'certainly clears' was replaced by 'up to its own KC noise' (:206). CUTOFF-side KC noise and -KNEE contamination (Part 8 item 5) were added to 8.2(iii) next to 'This costs power, not validity' (:854-855).",
+          "Part 11: sha256 of DRAFT_PROTOCOL_r8.md (fea9f40d...), reviews/VERIFY_WORKFLOW_r8.json (82be4cdf...) and reviews/VERIFY_CRITIC_DIGEST_r8.txt (54decddf...) match. All 35 rows in Part 11 match the files on disk.",
+          "The stale-wording search finds 'certainly clears' and 'is then INCONCLUSIVE, not FAIL' only in the Review 9 history row, and 'CR-valid' only in history rows (:1044, :1052, :1063, :1077). 'implies K1c' appears only in the corrected :199. 'only if |KC', 'slot 0 of the 4.8', 'evaluation.py line 210', 'passes the criterion' and '115-131' appear nowhere.",
+          "The header (:1, :3, :8) is updated, and DRAFT_PROTOCOL_r1.md through _r8.md all exist.",
+          "The Review 9 table has 12 rows, with row 1 Medium and rows 2-12 Low, which matches the digest. Its item descriptions match digest items 1-12 in order.",
+          "No r9 sentence changes a gate, the label precedence or an approval rule. The V0(d) clauses (:661-665), the K1a and K1c table rows (:677-678), the step 0.4 label table and readings 1-6 are byte-unchanged from r8. The only new obligations are reported-only outputs and a statement that new replays use the new evaluator."
+        ]
+      }
+    ],
+    "critic": {
+      "verdict": "I checked r9 first. It stayed text-only. Every diff hunk (1, 3, 8, 199-221, 365-370, 392-395, 463-467, 549, 592, 601, 605-606, 668-670, 847-865, 1019-1022, 1052, 1073-1094, 1148-1150) falls inside the declared regions. The operative rules are byte-identical to r8: the V0(d) clauses (661-666), the K1a and K1c table rows (677-678), the label precedence (497-507), the step 0.4 label table and readings 1-6 (698-707). The new \"Standing prediction\" (605-606) only wires in the A4 acknowledgement that r8 Part 2 already required, so it is not a new approval rule. The one sentence that reads like a rule change is the new claim, repeated at 215, 670 and 856 and in Review 9 row 1, that a gate-passing K1a FAIL to which a positive RANDOM KC contributed carries \"no mechanistic reading (reading 2's guard)\". That is not what the operative rule says. Reading 2's guard (701) is a conditional median test, median KC_s05(RANDOM) <= 0.1 x median rho_hat_R(s05). So a small positive KC_R (for example +0.05 at rho_hat_R = 0.75, under the 0.075 bar), or one concentrated at the anchors that set K1a's median (47-anchor case: both gate clauses 0.9, median KC_R 0, K1a 0.45, and it would be 0.9 with KC_R clipped at 0), still gets reading 2 attached. The operative rule wins, so no label actually changes, but the prose misstates it in three places. That is the only medium item. G9-2, which said the unqualified \"is FAIL\" overrides precedence, is refuted: line 497 is global, and V0(d) line 666 states INCONCLUSIVE > FAIL three lines earlier.\n\nOn the disclosures:\n- **K1a FAIL path:** accurate apart from the reading-2 clause above. Statement (1) assumes \"smooth\" means noise-free at the lower end, which conflicts with 206's \"up to its own KC noise\" (low).\n- **Medians-not-anchors (8.2(iv)):** the mechanism and arithmetic are right, but the 49-anchor example cannot occur because Stage 1 has at most 48 gated anchors (585, 629). The 48-anchor split 23/2/23 reproduces it exactly: 0.60 / 0.60 / median KC_R 0 / smooth K1a 0.70. The companions are not wired into Part 5 and their anchor set is undefined.\n- **K1c relative clause:** accurate. The 48-anchor example recomputes correctly (gate 0.66, bar 0.70, item 5 at 44/48). The alignment option is described correctly as unadopted, but the description leaves out its consequence: reading 1 (\"does not over-value\") can be attached to a smooth critic that fully over-values.\n- **Quantile cost:** (50-k)/(100-k) = 0.444 at k = 10 is correct. Line 848's \"stricter than step 0.4's medians suggest\" is now stale, since step 0.4 reports the convention medians.\n- **Partial forecast:** accurate. It is exact when every anchor is predictor-valid, and KC_R <= 0.15 at every anchor is sufficient.\n- **Other numbers:** c(0.05) = 0.38, 1.103 (about 1.10), 0.968, 0.34 and 0.016/0.20/0.40 all check out.\n- **4.4/4.8 rescoping:** matches the source (fixed_candidate_bank, then actor_actions, then deployed_actions, which asserts |a| <= 1 without clipping).\n\nEvery remaining item is wording or bookkeeping and none changes a gate's logic, so r9 is ready for A1 consideration after one more text-only pass.\n\nOn the two open user decisions:\n- **K1a-only scoping:** affects power only. A K1a reachability miss masks K1c/K2/K3 outcomes, but they are still recorded and never mislabelled.\n- **K1c relative-clause alignment:** does not affect any gate's validity, but it does affect the validity of a reading. Under the current anchor sets, a smooth, fully over-valuing critic can fail only the relative clause; if that repeats in all three seeds, it gets reading 1, which says the opposite of the truth. That needs a specific skew to recur in every seed, so it is unlikely, but it is an interpretive validity risk, not just a power cost.",
+      "ready_for_A1_consideration": true,
+      "must_fix": [
+        {
+          "severity": "medium",
+          "section": "Part 2 'What a K1a miss means' (line 215); V0(d) (line 670); Part 8.2(iii) (line 856); Review 9 row 1 (line 1082)",
+          "issue": "r9 says that when the gate passes and a positive RANDOM KC contributed to a K1a miss, the FAIL has 'no mechanistic reading (reading 2's guard)' and that 'reading 2's guard then withholds the reading'. The guard at line 701 is conditional: median KC_s05(RANDOM) <= 0.1 x median rho_hat_R(s05) on R-valid anchors. Reading 2 is withheld only when RANDOM's positive KC is large at the median. Counterexample 1: median KC_R = +0.05 at rho_hat_R = 0.75 (bar 0.075) passes the guard while tipping a near-miss K1a. Counterexample 2: 47 anchors split 20/4/23. Both gate clauses give 0.9, median KC_R = 0, K1a = 0.45, and K1a would be 0.9 with KC_R clipped at 0 in group C. In both cases reading 2 ('not caused by withholding') is attached to a FAIL that RANDOM caused. The operative rule at 701 is unchanged, but the prose states a different reading-attachment rule in four places.",
+          "fix": "Replace the clause in all four places with: 'When the gate passes, a K1a miss is FAIL even if RANDOM's positive KC contributed. Reading 2 is attached only if its guard (Part 5, reading 2) holds. The guard bounds a median, so a small positive RANDOM KC, or one concentrated at the anchors that set K1a's median, can contribute to a FAIL that still carries reading 2. Read the Part 8.2(iv) companions alongside it.' Add one line to 8.2(iv) saying the reading-2 guard is also a median bound. Optionally, offer the user a per-anchor guard for sign-off without adopting it. For example: withhold reading 2 if K1a recomputed with KC_R clipped at 0 would pass, or if the median KC_s05(CUTOFF)-alone companion is >= 0.5. State plainly that this would be a rule change."
+        },
+        {
+          "severity": "low",
+          "section": "Part 8.2(iv) K1c relative-clause disclosure (lines 864-865); reading 1 (line 700); Part 2 lines 207-209",
+          "issue": "Dominance is correctly scoped to K1a and K1c's absolute clause, and the relative-clause gap is disclosed. What is missing is the consequence for interpretation. In the draft's own 48-anchor example, a fully smooth critic (median KC_s10 0.66, true over-valuation) fails only the relative bar (0.70). If that repeats in all seeds, the result is FAIL-consistent with reading 1 ('this Unifloral critic does not over-value past a dense edge ... with the s10 gap shown reachable'), which is false. So the user's sign-off decision on alignment is under-informed.",
+          "fix": "In 8.2(iv) and in the sign-off note, add: 'Under the current anchor sets, a K1c FAIL that comes only from the relative clause can carry reading 1 even when the critic over-values by about the true gap. Aligning the relative clause's set (M - 0.15 >= 0.5M for M >= 0.3) removes this.' Qualify reading 1's 'shown reachable (V0(d))' as 'absolute clause shown reachable'. Do not change the criterion."
+        },
+        {
+          "severity": "low",
+          "section": "Part 8.2(iv) 49-anchor example (line 860); Review 9 row 3 (line 1084)",
+          "issue": "Stage 1 has at most 48 gated anchors (lines 585, 629), so the 49-anchor example cannot occur. The obvious 24/24 rebalancing fails gate (ii) at 0.375. The first companion, 'share of anchors at or above K1a's median difference with rho_hat_C(s05) - 0.10 < 0.5', is undefined at non-C-valid anchors, where rho_hat_C does not exist, and undefined for ties.",
+          "fix": "Use 48 anchors: 23 at rho_hat_C = 0.25 with KC_R = -0.45, 2 at 0.70 with KC_R = 0, and 23 at 0.70 with KC_R = +0.45. This gives gate (i) 0.60, gate (ii) 0.60, median KC_R 0 and smooth K1a 0.70 (verified). Update Review 9 row 3 to '48-anchor'. Define the companion's set: common gated anchors whose difference is >= the computed median (even-count averaging included), with non-C-valid anchors counted as low-gap (rho_hat_C = -inf)."
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 Pessimistic anchors (line 209)",
+          "issue": "Wrong cross-reference. The K1c relative-clause gap and its example are in Part 8.2(iv) (line 864), not 8.2(iii). Review 9 row 2 correctly says 8.2(iv).",
+          "fix": "Change '(Part 8.2(iii))' to '(Part 8.2(iv))'."
+        },
+        {
+          "severity": "low",
+          "section": "4.5b (line 395) vs 4.8 (line 459); Review 9 row 10 (line 1091)",
+          "issue": "Line 395 says reference.py 'is used only to reproduce saved stall15_identity values (4.8)'. Line 459 says the known-answer reproduction is 'by the new evaluator', and step 0.3's consequence is 'Fix the evaluator'. If reference.py did the reproduction, 4.8 would not test the new evaluator's stall15_identity path, which is the point of 4.8.",
+          "fix": "Rewrite line 395 as: 'reference.py is the recorded specification of the saved stall15_identity values that 4.8 reproduces; no new step runs it. The 4.8 reproduction and every new replay in every world, including step 0.3's slope-1.5 replays and onset contrast, use the new evaluator.' Align Review 9 row 10 to match."
+        },
+        {
+          "severity": "low",
+          "section": "Part 8.2(iv) companions (lines 861-863) vs Part 5 Stage 1 reported lists (lines 621-640)",
+          "issue": "The two RANDOM-independent companions are 'reported, not gated, per seed' only in the risks section. Part 5 Stage 1's evaluation and reported outputs never mention them, unlike the step 0.4 reported medians, which are wired in at line 592.",
+          "fix": "Add both companions (with the set definition from the 49-anchor item above) to Part 5 Stage 1's reported list, next to reading 2."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.4 (line 592); Part 8.2 (line 848); Part 2 (line 200)",
+          "issue": "The new 'reported, not gated' step 0.4 medians do not name the base set (gated anchors valid under each continuation seed), per-seed reporting, or the bars to compare against (0.60 at s05 for floor (ii), 0.65 at s10). They also do not say that Stage 1's k comes from CUTOFF's own continuation, not the reference continuation. Line 848's 'stricter than step 0.4's medians suggest' is stale now that step 0.4 reports the convention medians.",
+          "fix": "Step 0.4: 'per continuation seed, over the valid gated anchors with non-predictor-valid anchors as -inf, report median rho_hat(s05) against 0.60 and median rho_hat(s10) against 0.65; Stage 1's k is set by CUTOFF's own continuation and may differ.' Line 848: change to 'than step 0.4's gated item 1 and 2 medians suggest'."
+        },
+        {
+          "severity": "low",
+          "section": "Part 2 lines 206 and 215",
+          "issue": "Statement (1), 'a miss that a smoothly extrapolating CUTOFF critic would suffer because of RANDOM's KC is INCONCLUSIVE', holds only if 'smooth' means KC_C,j >= rho_hat_C,j - 0.10 at every C-valid common anchor. Line 206's new 'up to its own KC noise' loosens 'smooth', and under that reading statement (1) is false. Example: 47 anchors, rho_hat_C 0.8, KC_R +0.2, CUTOFF noise -0.02. Gate (i) is 0.50 (pass), K1a is 0.48 (FAIL), and it would be 0.68 with KC_R = 0.",
+          "fix": "Define 'smoothly extrapolating' once as KC_C,j >= rho_hat_C,j - tol at every C-valid common anchor. Say that misses involving CUTOFF's own KC noise fall under the joint-statement sentence, not statement (1)."
+        },
+        {
+          "severity": "low",
+          "section": "Part 9 note after the Review 8 table (line 1073)",
+          "issue": "The note says only rows 1, 2, 3 and 6 were refined in r9. r9 also refined row 5 (equal-rho qualification at 218/853), row 7 ('and equal rho' at 221), row 10 (physics citation moved to _dynamics 198-199) and row 11 (reference.py narrowed to saved-value reproduction). This is the same class of stale history that r8 item 8 flagged.",
+          "fix": "Change to 'Rows 1, 2, 3, 5, 6, 7, 10 and 11 ...' and add a short clause for each of the four extra rows."
+        },
+        {
+          "severity": "low",
+          "section": "Step 0.3 R_lin (line 549); 4.8 Q^pi (line 467); 4.5b (line 395); Review 9 row 11 (line 1092)",
+          "issue": "Row 11 says the citations now give _dynamics 198-199, authenticate_core 36-57 and actor_actions 115-130. Line 549 cites only _dynamics, and line 467 omits actor_actions. authenticate_core actually spans reference.py 34-61, with the constructed-physics check at 57-58. The substance holds, because continuation_values calls actor_actions (269), which calls deployed_actions.",
+          "fix": "At line 549, add 'authenticate_core 34-61 (contract); actor_actions 115-130'. At line 467, add 'actor_actions 115-130'. Correct 36-57 to 34-61 wherever it appears, or narrow row 11 to say where each citation was added."
+        },
+        {
+          "severity": "low",
+          "section": "4.8 Q^pi reproduction (line 467) vs slot-0 rationale (line 463)",
+          "issue": "r9 relaxes slot 0 because 'a re-batched forward pass need not be bit-identical', but it keeps saved Q^pi at 1e-9 relative on all six slots. Each Q^pi row runs up to 100 actor calls on a shrinking 'active' subset (reference.py 263-272), so a re-batched new evaluator can drift past 1e-9 with no real fault. That fails closed as INCOMPLETE and costs a fresh A2. The 1e-9 is inherited from r8, but r9's own rationale exposes the tension.",
+          "fix": "Either require the Q^pi reproduction to use the original batching (all active rows per offset, in the original order, same jit), or state why 1e-9 holds under re-batching, or use a tolerance consistent with the slot-0 rationale."
+        }
+      ],
+      "residual_risks": [
+        "Reading 2 can still be attached to a K1a FAIL that RANDOM's positive KC helped cause. Its guard checks only RANDOM's median KC, so a small or anchor-concentrated contribution slips through. The label (FAIL) is right; the explanation attached to it may not be. The proposed fix is a disclosure; a per-anchor guard would need the user's sign-off.",
+        "K1c relative-clause anchor mismatch (open user decision): this is not just a power issue. If the same skew recurs in all three seeds, a critic that does over-value can fail only the relative clause and receive reading 1 ('does not over-value'). That is a wrong conclusion, though one that needs an unusual pattern to recur in every seed.",
+        "K1a-only scoping (open user decision): affects power only. A K1a reachability miss in any seed makes Stage 1 INCONCLUSIVE and hides clean K1c/K2/K3 results behind it. They are recorded but get no reading.",
+        "Reach remains the main practical risk. The clipped-LQR forecast puts rho(s05) at about 0.61, right at the roughly 0.6 floor, before any positive RANDOM KC (which at equal rho pushes the requirement to about 0.97 for w = 0.05 rounding, and about 1.10 if RANDOM's states are 20% larger). Stage 1 may well end INCONCLUSIVE, as the A4 standing prediction already says.",
+        "Learner competence: competent Stage 1 continuations shrink the value gap, and anchors that fail predictor validity count as minus infinity, so the reachability median sits near the 44th percentile at 10% invalid anchors. Step 0.4's forecast is optimistic relative to Stage 1.",
+        "Gates and K1a act on medians, so K1a's margin can come from RANDOM under-valuing at low-gap anchors rather than from CUTOFF over-valuing. The two companions report this but do not gate it, and they are not yet wired into Part 5.",
+        "Noise in both critics' KC (never measured on new learners) can cost power through V0(b) and V0(d). Step 0.3's onset contrast measures it only on old critics.",
+        "The 1e-9 Q^pi known-answer tolerance may fail closed under a re-batched evaluator, costing a fresh A2 with no real fault."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:logic",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a9db9afb51ead030e",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793350107435,
+      "queuedAt": 1793350107417,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "I checked r9 first. It changes no gate formula, threshold, …",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 9 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 8: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793350446230,
+      "tokens": 165718,
+      "toolCalls": 11,
+      "durationMs": 338794,
+      "resultPreview": "{\"verdict\":\"I checked r9 first. It changes no gate formula, threshold, anchor set or approval rule. All of its numbers recompute correctly: c(0.05) = 0.3799, so the requirement is 0.968 at equal rho and 1.103 at rho_R = 1.2 rho_C (the r8 digest's 1.11 was slightly high). The other figures also check out: the 49-anchor example, the 48-anchor K1c example, the 44th percentile and the 0.34 bound. The …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:resolution",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a5f19299c97661ec2",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793350107435,
+      "queuedAt": 1793350107417,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 9 resolves all 12 items in the r8 digest in substa…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 9 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 8: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793350580646,
+      "tokens": 209998,
+      "toolCalls": 29,
+      "durationMs": 471968,
+      "resultPreview": "{\"verdict\":\"Revision 9 resolves all 12 items in the r8 digest in substance, and I found no r9 sentence that changes a gate, a clause of the label precedence, or an approval rule. The 12 rows of the Review 9 table match the digest's severities (one medium, eleven low).\\n\\nThe source checks behind the 4.8 rescoping hold:\\n- `fixed_candidate_bank` (evaluation.py:57-65) is fed by `reference.actor_acti…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "verify:logic",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "ae6c1cfdde5bf24ec",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793350448800,
+      "queuedAt": 1793350448786,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 9 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 8: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793350526857,
+      "tokens": 115275,
+      "toolCalls": 6,
+      "durationMs": 78057,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"G9-1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"Confirmed. r9 states in three places that a FAIL to which a positive RANDOM KC contributed carries no mechanistic reading because of reading 2's guard: line 215 ('FAIL with no mechanistic reading (reading 2's guard)'), line 670 ('reading 2's guard then withholds the reading') and line 856. Review 9 row 1 (line 1082) repeats …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "verify:resolution",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a82f51661c3e57ab1",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793350587359,
+      "queuedAt": 1793350587354,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 9 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 8: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793350641925,
+      "tokens": 105157,
+      "toolCalls": 3,
+      "durationMs": 54566,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"R9-1\",\"real\":true,\"severity_after\":\"medium\",\"reason\":\"Confirmed: all three sentences are new in r9. The diff shows :215, :670 and :856 added in r9, and r8 has no such wording. Each one says that when the gate passes and a positive RANDOM KC contributed to a K1a miss, the result is FAIL 'with no mechanistic reading (reading 2's guard)' or that 'reading 2's guard then withholds t…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "a638bc0be44a77a09",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793350643730,
+      "queuedAt": 1793350643716,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "I checked r9 first. It stayed text-only. Every diff hunk (1…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 9 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 8: experiments/thrusterchain_bca/zeus_20261026…",
+      "promptFramed": true,
+      "lastProgressAt": 1793350854781,
+      "tokens": 132584,
+      "toolCalls": 9,
+      "durationMs": 211050,
+      "resultPreview": "{\"verdict\":\"I checked r9 first. It stayed text-only. Every diff hunk (1, 3, 8, 199-221, 365-370, 392-395, 463-467, 549, 592, 601, 605-606, 668-670, 847-865, 1019-1022, 1052, 1073-1094, 1148-1150) falls inside the declared regions. The operative rules are byte-identical to r8: the V0(d) clauses (661-666), the K1a and K1c table rows (677-678), the label precedence (497-507), the step 0.4 label table…"
+    }
+  ],
+  "totalTokens": 728732,
+  "totalToolCalls": 58
+}

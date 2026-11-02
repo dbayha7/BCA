@@ -1,0 +1,563 @@
+{
+  "schema_version": 1,
+  "comparison_goal": "Compare five fixed controllers and capped versus raw and symmetric action selection on fresh starts.",
+  "generalization_claim": "within_tasks",
+  "experiments": [
+    {
+      "id": "actor",
+      "algorithm": "frozen TD3+BC checkpoint; fixed actor controller",
+      "source": {
+        "repository": "BCA",
+        "commit": "84202ebd1d089534180b454e8fa1f1e80d866718",
+        "entrypoint": "capped_width_bca_dev_v5/reranker_runner.py",
+        "resolved_config_sha256": "1a363ff33fc1bb0ef31e7eb415955b82c4415a203014190e1116216d1a4e0ca9",
+        "composition": "Uncommitted v5 source and fixed 20k native or BCA checkpoint; see source seal and terminal result"
+      },
+      "dataset": {
+        "id": "ThrusterChain retained hole",
+        "version": "core_v4",
+        "sha256": null,
+        "transitions": 67108
+      },
+      "training": {
+        "actor_updates": 0,
+        "critic_updates": 0,
+        "batch_size": null,
+        "sampled_transitions": null,
+        "wall_seconds": null,
+        "device": "CPU",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "online_selection",
+        "rule": "Fixed methods and cap from training probes before fresh outcomes; prior online development was used",
+        "search_space_sha256": "5687f99e7db3bfcb26ca4f1c8d46366084ce21a0b07b86729f69ff37c7e39cf7",
+        "candidates_trained": null,
+        "online_eval_episodes": null,
+        "online_eval_env_steps": null,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": null
+      },
+      "splits": {
+        "tuning_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "report_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "tuning_datasets": [
+          "retained hole"
+        ],
+        "report_datasets": [
+          "retained hole"
+        ],
+        "training_seeds": [
+          0,
+          1,
+          2
+        ],
+        "selection_eval_seeds": null,
+        "report_eval_seeds": [
+          2026130000,
+          2026130001,
+          2026130002,
+          2026130003,
+          2026130004,
+          2026130005,
+          2026130006,
+          2026130007,
+          2026130008,
+          2026130009,
+          2026130010,
+          2026130011,
+          2026130012,
+          2026130013,
+          2026130014,
+          2026130015,
+          2026130100,
+          2026130101,
+          2026130102,
+          2026130103,
+          2026130104,
+          2026130105,
+          2026130106,
+          2026130107,
+          2026130108,
+          2026130109,
+          2026130110,
+          2026130111,
+          2026130112,
+          2026130113,
+          2026130114,
+          2026130115
+        ],
+        "holdout_policy": "Fresh resets; prior development on same dataset and contexts, no independent dataset holdout"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 20k hole checkpoints, fixed before outcomes",
+        "episodes_per_trained_seed": 32,
+        "total_env_steps": 38400,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "raw_q1",
+      "algorithm": "frozen TD3+BC checkpoint; fixed raw_q1 controller",
+      "source": {
+        "repository": "BCA",
+        "commit": "84202ebd1d089534180b454e8fa1f1e80d866718",
+        "entrypoint": "capped_width_bca_dev_v5/reranker_runner.py",
+        "resolved_config_sha256": "1a363ff33fc1bb0ef31e7eb415955b82c4415a203014190e1116216d1a4e0ca9",
+        "composition": "Uncommitted v5 source and fixed 20k native or BCA checkpoint; see source seal and terminal result"
+      },
+      "dataset": {
+        "id": "ThrusterChain retained hole",
+        "version": "core_v4",
+        "sha256": null,
+        "transitions": 67108
+      },
+      "training": {
+        "actor_updates": 0,
+        "critic_updates": 0,
+        "batch_size": null,
+        "sampled_transitions": null,
+        "wall_seconds": null,
+        "device": "CPU",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "online_selection",
+        "rule": "Fixed methods and cap from training probes before fresh outcomes; prior online development was used",
+        "search_space_sha256": "5687f99e7db3bfcb26ca4f1c8d46366084ce21a0b07b86729f69ff37c7e39cf7",
+        "candidates_trained": null,
+        "online_eval_episodes": null,
+        "online_eval_env_steps": null,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": null
+      },
+      "splits": {
+        "tuning_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "report_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "tuning_datasets": [
+          "retained hole"
+        ],
+        "report_datasets": [
+          "retained hole"
+        ],
+        "training_seeds": [
+          0,
+          1,
+          2
+        ],
+        "selection_eval_seeds": null,
+        "report_eval_seeds": [
+          2026130000,
+          2026130001,
+          2026130002,
+          2026130003,
+          2026130004,
+          2026130005,
+          2026130006,
+          2026130007,
+          2026130008,
+          2026130009,
+          2026130010,
+          2026130011,
+          2026130012,
+          2026130013,
+          2026130014,
+          2026130015,
+          2026130100,
+          2026130101,
+          2026130102,
+          2026130103,
+          2026130104,
+          2026130105,
+          2026130106,
+          2026130107,
+          2026130108,
+          2026130109,
+          2026130110,
+          2026130111,
+          2026130112,
+          2026130113,
+          2026130114,
+          2026130115
+        ],
+        "holdout_policy": "Fresh resets; prior development on same dataset and contexts, no independent dataset holdout"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 20k hole checkpoints, fixed before outcomes",
+        "episodes_per_trained_seed": 32,
+        "total_env_steps": 38400,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "symmetric",
+      "algorithm": "frozen TD3+BC checkpoint; fixed symmetric controller",
+      "source": {
+        "repository": "BCA",
+        "commit": "84202ebd1d089534180b454e8fa1f1e80d866718",
+        "entrypoint": "capped_width_bca_dev_v5/reranker_runner.py",
+        "resolved_config_sha256": "1a363ff33fc1bb0ef31e7eb415955b82c4415a203014190e1116216d1a4e0ca9",
+        "composition": "Uncommitted v5 source and fixed 20k native or BCA checkpoint; see source seal and terminal result"
+      },
+      "dataset": {
+        "id": "ThrusterChain retained hole",
+        "version": "core_v4",
+        "sha256": null,
+        "transitions": 67108
+      },
+      "training": {
+        "actor_updates": 0,
+        "critic_updates": 0,
+        "batch_size": null,
+        "sampled_transitions": null,
+        "wall_seconds": null,
+        "device": "CPU",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "online_selection",
+        "rule": "Fixed methods and cap from training probes before fresh outcomes; prior online development was used",
+        "search_space_sha256": "5687f99e7db3bfcb26ca4f1c8d46366084ce21a0b07b86729f69ff37c7e39cf7",
+        "candidates_trained": null,
+        "online_eval_episodes": null,
+        "online_eval_env_steps": null,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": null
+      },
+      "splits": {
+        "tuning_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "report_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "tuning_datasets": [
+          "retained hole"
+        ],
+        "report_datasets": [
+          "retained hole"
+        ],
+        "training_seeds": [
+          0,
+          1,
+          2
+        ],
+        "selection_eval_seeds": null,
+        "report_eval_seeds": [
+          2026130000,
+          2026130001,
+          2026130002,
+          2026130003,
+          2026130004,
+          2026130005,
+          2026130006,
+          2026130007,
+          2026130008,
+          2026130009,
+          2026130010,
+          2026130011,
+          2026130012,
+          2026130013,
+          2026130014,
+          2026130015,
+          2026130100,
+          2026130101,
+          2026130102,
+          2026130103,
+          2026130104,
+          2026130105,
+          2026130106,
+          2026130107,
+          2026130108,
+          2026130109,
+          2026130110,
+          2026130111,
+          2026130112,
+          2026130113,
+          2026130114,
+          2026130115
+        ],
+        "holdout_policy": "Fresh resets; prior development on same dataset and contexts, no independent dataset holdout"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 20k hole checkpoints, fixed before outcomes",
+        "episodes_per_trained_seed": 32,
+        "total_env_steps": 38400,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "capped",
+      "algorithm": "frozen TD3+BC checkpoint; fixed capped controller",
+      "source": {
+        "repository": "BCA",
+        "commit": "84202ebd1d089534180b454e8fa1f1e80d866718",
+        "entrypoint": "capped_width_bca_dev_v5/reranker_runner.py",
+        "resolved_config_sha256": "1a363ff33fc1bb0ef31e7eb415955b82c4415a203014190e1116216d1a4e0ca9",
+        "composition": "Uncommitted v5 source and fixed 20k native or BCA checkpoint; see source seal and terminal result"
+      },
+      "dataset": {
+        "id": "ThrusterChain retained hole",
+        "version": "core_v4",
+        "sha256": null,
+        "transitions": 67108
+      },
+      "training": {
+        "actor_updates": 0,
+        "critic_updates": 0,
+        "batch_size": null,
+        "sampled_transitions": null,
+        "wall_seconds": null,
+        "device": "CPU",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "online_selection",
+        "rule": "Fixed methods and cap from training probes before fresh outcomes; prior online development was used",
+        "search_space_sha256": "5687f99e7db3bfcb26ca4f1c8d46366084ce21a0b07b86729f69ff37c7e39cf7",
+        "candidates_trained": null,
+        "online_eval_episodes": null,
+        "online_eval_env_steps": null,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": null
+      },
+      "splits": {
+        "tuning_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "report_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "tuning_datasets": [
+          "retained hole"
+        ],
+        "report_datasets": [
+          "retained hole"
+        ],
+        "training_seeds": [
+          0,
+          1,
+          2
+        ],
+        "selection_eval_seeds": null,
+        "report_eval_seeds": [
+          2026130000,
+          2026130001,
+          2026130002,
+          2026130003,
+          2026130004,
+          2026130005,
+          2026130006,
+          2026130007,
+          2026130008,
+          2026130009,
+          2026130010,
+          2026130011,
+          2026130012,
+          2026130013,
+          2026130014,
+          2026130015,
+          2026130100,
+          2026130101,
+          2026130102,
+          2026130103,
+          2026130104,
+          2026130105,
+          2026130106,
+          2026130107,
+          2026130108,
+          2026130109,
+          2026130110,
+          2026130111,
+          2026130112,
+          2026130113,
+          2026130114,
+          2026130115
+        ],
+        "holdout_policy": "Fresh resets; prior development on same dataset and contexts, no independent dataset holdout"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 20k hole checkpoints, fixed before outcomes",
+        "episodes_per_trained_seed": 32,
+        "total_env_steps": 38400,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    },
+    {
+      "id": "guarded",
+      "algorithm": "frozen TD3+BC checkpoint; fixed guarded controller",
+      "source": {
+        "repository": "BCA",
+        "commit": "84202ebd1d089534180b454e8fa1f1e80d866718",
+        "entrypoint": "capped_width_bca_dev_v5/reranker_runner.py",
+        "resolved_config_sha256": "1a363ff33fc1bb0ef31e7eb415955b82c4415a203014190e1116216d1a4e0ca9",
+        "composition": "Uncommitted v5 source and fixed 20k native or BCA checkpoint; see source seal and terminal result"
+      },
+      "dataset": {
+        "id": "ThrusterChain retained hole",
+        "version": "core_v4",
+        "sha256": null,
+        "transitions": 67108
+      },
+      "training": {
+        "actor_updates": 0,
+        "critic_updates": 0,
+        "batch_size": null,
+        "sampled_transitions": null,
+        "wall_seconds": null,
+        "device": "CPU",
+        "online_update_env_steps": 0,
+        "synthetic_transitions": 0,
+        "model_based": false,
+        "dynamics_protocol": null
+      },
+      "selection": {
+        "regime": "online_selection",
+        "rule": "Fixed methods and cap from training probes before fresh outcomes; prior online development was used",
+        "search_space_sha256": "5687f99e7db3bfcb26ca4f1c8d46366084ce21a0b07b86729f69ff37c7e39cf7",
+        "candidates_trained": null,
+        "online_eval_episodes": null,
+        "online_eval_env_steps": null,
+        "prior_development_env_steps": null,
+        "curve_episode_budgets": null
+      },
+      "splits": {
+        "tuning_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "report_tasks": [
+          "ordinary",
+          "strong_current"
+        ],
+        "tuning_datasets": [
+          "retained hole"
+        ],
+        "report_datasets": [
+          "retained hole"
+        ],
+        "training_seeds": [
+          0,
+          1,
+          2
+        ],
+        "selection_eval_seeds": null,
+        "report_eval_seeds": [
+          2026130000,
+          2026130001,
+          2026130002,
+          2026130003,
+          2026130004,
+          2026130005,
+          2026130006,
+          2026130007,
+          2026130008,
+          2026130009,
+          2026130010,
+          2026130011,
+          2026130012,
+          2026130013,
+          2026130014,
+          2026130015,
+          2026130100,
+          2026130101,
+          2026130102,
+          2026130103,
+          2026130104,
+          2026130105,
+          2026130106,
+          2026130107,
+          2026130108,
+          2026130109,
+          2026130110,
+          2026130111,
+          2026130112,
+          2026130113,
+          2026130114,
+          2026130115
+        ],
+        "holdout_policy": "Fresh resets; prior development on same dataset and contexts, no independent dataset holdout"
+      },
+      "evaluation": {
+        "action_mode": "deterministic",
+        "checkpoint_rule": "final 20k hole checkpoints, fixed before outcomes",
+        "episodes_per_trained_seed": 32,
+        "total_env_steps": 38400,
+        "holdout_protected": true,
+        "uncertainty_unit": "trained_seed",
+        "normalization": {
+          "kind": "raw",
+          "ref_min": null,
+          "ref_max": null,
+          "source": null,
+          "clip": false
+        }
+      }
+    }
+  ],
+  "accounting_note": "Per controller: 19,200 complete-rollout and 19,200 first-action-continuation transitions; 104 shared simulator-parity steps excluded from per-controller total. Prior development selection interactions are unknown and intentionally null."
+}

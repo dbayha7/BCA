@@ -1,0 +1,18 @@
+{
+  "schema": "thrusterchain.explorer-interface.v1",
+  "benchmark_id": "thrusterchain_benchmark_20261022_v1",
+  "canonical_fixtures": "contracts/dynamics_fixtures.json",
+  "canonical_playback": "contracts/trajectory_bank.json",
+  "environment_contract": "contracts/environment_contract.json",
+  "coverage_contract": "contracts/coverage_contract.json",
+  "results_path": "results/smoke_v2/benchmark_results.json",
+  "physical_animation_requirement": "verify every fixture against its original canonical step; physical illustration is qualitative, not an SI simulator",
+  "state_order": ["p0", "v0", "p1", "v1", "p2", "v2", "p3", "v3", "p4", "v4", "current", "wave1", "wave2"],
+  "policy_observation": "13 physical coordinates plus remaining_steps/100",
+  "default_task_semantics": "finite_horizon: new wrapper terminates at 100; canonical source truncates at 100",
+  "readonly_consumer": true,
+  "trajectory_density": "continuous requested-action density known; executed float32 mass not evaluated; closed-loop state occupancy unknown",
+  "diagnostic_density": "independent controlled state/action design, never trajectory occupancy",
+  "evidence_policy": "smoke integration results are not completed nine-cell policy training or a BCA win",
+  "status": "contracts available; result consumers must check file presence and its smoke profile before displaying evidence"
+}

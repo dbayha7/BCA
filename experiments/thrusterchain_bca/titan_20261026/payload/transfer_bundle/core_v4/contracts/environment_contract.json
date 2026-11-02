@@ -1,0 +1,328 @@
+{
+  "schema_version": 1,
+  "contract_id": "thrusterchain-benchmark-environment-v1",
+  "canonical_sources": [
+    {
+      "original_path": "experiments/shift/thruster_chain.py",
+      "vendored_path": "thrusterchain/canonical/thrusterchain.py",
+      "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+      "bytes": 23731
+    },
+    {
+      "original_path": "experiments/signal/gapped_lq.py",
+      "vendored_path": "thrusterchain/canonical/gapped_lq.py",
+      "sha256": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+      "bytes": 60931
+    }
+  ],
+  "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1",
+  "default_config": {
+    "physics": {
+      "stall": true,
+      "stall_slope": 1.5,
+      "knee": 0.800000011920929,
+      "gain": 0.3,
+      "throttle_cost": 0.3,
+      "wave_turn": 0.27,
+      "gamma": 0.98,
+      "length": 100
+    },
+    "state_dim": 13,
+    "action_dim": 4,
+    "observation_dim": 14,
+    "observation_mode": "time_aware",
+    "task_semantics": "finite_horizon",
+    "objective_gamma": 0.98,
+    "horizon": 100,
+    "terminal_reward": 0.0,
+    "terminal_bootstrap": false,
+    "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1"
+  },
+  "state": {
+    "shape": [
+      13
+    ],
+    "dtype": "float64",
+    "order": [
+      "p1",
+      "v1",
+      "p2",
+      "v2",
+      "p3",
+      "v3",
+      "p4",
+      "v4",
+      "p5",
+      "v5",
+      "current",
+      "wave1",
+      "wave2"
+    ],
+    "units": "Dimensionless model coordinates; no SI scale or physical seconds are specified by canonical source. One transition is one model step.",
+    "state_is_complete_with_time": true,
+    "nondimensional_note": "p/v labels describe oscillator coordinates; spring and fluid description is an interpretation of the fixed discrete linear plant, not an SI-calibrated mechanical simulation."
+  },
+  "observation": {
+    "shape": [
+      14
+    ],
+    "dtype": "float32",
+    "order": [
+      "p1",
+      "v1",
+      "p2",
+      "v2",
+      "p3",
+      "v3",
+      "p4",
+      "v4",
+      "p5",
+      "v5",
+      "current",
+      "wave1",
+      "wave2",
+      "remaining_fraction"
+    ],
+    "time_coordinate": "(100-t)/100",
+    "bounds_low": [
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      -300.0,
+      0.0,
+      -1.0,
+      -1.0,
+      0.0
+    ],
+    "bounds_high": [
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      300.0,
+      1.5,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "precision": "Rounded observation only; internal transition and reward use exact carried float64 state. Float32 observation aliasing remains; time augmentation addresses hidden horizon, not quantization.",
+    "world": "stall or no_stall is fixed by construction; different worlds are different configured tasks; no world bit is included."
+  },
+  "action": {
+    "shape": [
+      4
+    ],
+    "dtype": "float32",
+    "bounds": [
+      -1.0,
+      1.0
+    ],
+    "units": "Dimensionless command fraction",
+    "input_policy": "Exact shape (4,), finite real numeric values; booleans, strings, complex values and malformed shapes rejected. Cast float32 then float64 then clip [-1,1], as canonical Env. Values becoming nonfinite in float32 are rejected.",
+    "low_level_dynamics": "Canonical dynamics itself casts float64 and clips; callers needing environment parity must quantize the command to float32 first."
+  },
+  "dynamics": {
+    "state_partition": "x=(s[10], c, w1, w2)",
+    "equations": {
+      "s_next": "A10*s + 0.3*B1*thrust(a) + 0.3*v*(c+w1)",
+      "current_next": "c",
+      "wave_next": "[[cos(0.27),-sin(0.27)],[sin(0.27),cos(0.27)]] * [w1,w2]",
+      "thrust_stall": "clip(a,-k,k) - slope*sign(a)*max(abs(a)-k,0)",
+      "thrust_no_stall": "a",
+      "reward": "-(sum_{j=0..9} s_j^2 + 0.3*sum_{k=0..3} a_k^2)"
+    },
+    "knee": 0.800000011920929,
+    "supported_stall_slopes": [
+      1.5,
+      3.0
+    ],
+    "v": "[0,1,0,1,0,1,0,1,0,1]",
+    "B1": "B1[2*k+1,k]=B1[2*(k+1)+1,k]=1 for k=0..3; other entries zero",
+    "A10_provenance": "Exact Stage0 export: radii .98-.96, angles [.10,.20,.35,.55,.80], Gaussian coupling norm .02 seed20261011 attempt0. Frozen matrix avoids BLAS-dependent regeneration.",
+    "controllability": {
+      "model": "Canonical x_next=A*x+B*u with effective thrust u; same matrices in stall and no-stall worlds.",
+      "augmented": {
+        "state_dimension": 13,
+        "matrix": "[B,A*B,...,A^12*B]",
+        "matrix_shape": [13, 52],
+        "rank": 10,
+        "fully_controllable": false
+      },
+      "actuated_subsystem": {
+        "state_dimension": 10,
+        "matrix": "[Bs,As*Bs,...,As^9*Bs], As=A[:10,:10], Bs=B[:10,:]",
+        "matrix_shape": [10, 40],
+        "rank": 10,
+        "fully_controllable_linear_model": true
+      },
+      "exogenous_coordinates": ["current", "wave1", "wave2"],
+      "exact_zero_blocks": ["B[10:,:]", "A[10:,:10]"],
+      "exogenous_behavior": "Current is constant; waves rotate by 0.27 radians per model step with constant amplitude in exact arithmetic. Commands cannot stop, set, or damp these coordinates.",
+      "rank_method": "SVD, NumPy default sigma_max*max(matrix.shape)*eps(float64) and each stated absolute tolerance.",
+      "absolute_rank_tolerances": [1e-14, 1e-12, 1e-10, 1e-8, 1e-6],
+      "limits": "Linear rank does not establish global reachability under bounded, stalled, float32 commands. Remaining time is observed, not actuated.",
+      "evidence": "audits/revision_v2_claims/claims_receipt.json",
+      "dynamics_changed": false
+    },
+    "noise": "None in transition or reward; randomness only in reset.",
+    "arithmetic": "Original fixed-column float64 sums; batch and scalar operations have same order.",
+    "reward_time": "Pre-transition state and clipped command; energy uses command, including stalled magnitude."
+  },
+  "reset": {
+    "api": "reset(*,seed=None,options=None) -> (observation,info)",
+    "default_start": "recorded",
+    "start_laws": {
+      "recorded": {
+        "current": [
+          0.1,
+          0.7
+        ],
+        "wave": [
+          0.1,
+          0.4
+        ],
+        "kick": 0.5
+      },
+      "strong_current": {
+        "current": [
+          0.7,
+          1.1
+        ],
+        "wave": [
+          0.1,
+          0.4
+        ],
+        "kick": 0.5
+      },
+      "big_waves": {
+        "current": [
+          0.1,
+          0.7
+        ],
+        "wave": [
+          0.4,
+          0.7
+        ],
+        "kick": 0.5
+      },
+      "big_kicks": {
+        "current": [
+          0.1,
+          0.7
+        ],
+        "wave": [
+          0.1,
+          0.4
+        ],
+        "kick": 1.5
+      }
+    },
+    "options": "Exactly one of state[13] or start law overrides; neither means default law. Unknown options rejected. Start overrides current(lo,hi),wave(lo,hi),kick >=0, all finite.",
+    "validity": {
+      "state_shape": [
+        13
+      ],
+      "all_finite": true,
+      "float_l2_radius_max": 100.0,
+      "current_range": [
+        0.0,
+        1.5
+      ],
+      "wave_l2_radius_max": 1.000000001
+    },
+    "draw_order": [
+      "kick * rng.standard_normal((1,10))",
+      "current uniform",
+      "wave amplitude uniform",
+      "wave phase uniform [0,2*pi)"
+    ],
+    "gaussian_tail": "Gaussian starts are unbounded mathematically; a draw outside validity set raises, with no rejection sampling or silent clipping.",
+    "rng": "Gymnasium per-instance np_random; seed resets it; seed=None continues it; explicit state does not draw. action_space.seed is independent."
+  },
+  "step": {
+    "api": "step(action) -> (observation,float_reward,terminated,truncated,info)",
+    "requires_reset": true,
+    "post_end_step": "RuntimeError; reset required",
+    "finite_horizon": {
+      "horizon": 100,
+      "gamma": 0.98,
+      "objective": "G_t=sum_{k=0}^{99-t} gamma^k r_{t+k}",
+      "terminal_reward": 0.0,
+      "end_flags": {
+        "terminated": true,
+        "truncated": false
+      },
+      "bootstrap_mask_at_end": 0.0,
+      "reason": "The 100-step endpoint is intrinsic to this benchmark task and remaining time is observed."
+    },
+    "continuing_time_limit": {
+      "end_flags": {
+        "terminated": false,
+        "truncated": true
+      },
+      "bootstrap_mask_at_end": 1.0,
+      "reason": "Explicit legacy replay of a continuing task collected in 100-step segments; do not mix objective labels with finite_horizon."
+    },
+    "legacy_observation_mode": "physical (13 coordinates) available only with continuing_time_limit",
+    "info_fields": [
+      "state",
+      "t",
+      "remaining_steps",
+      "bootstrap_mask",
+      "continuation_discount",
+      "canonical_terminated",
+      "canonical_truncated",
+      "task_semantics",
+      "push (step only)",
+      "thrust (step only)",
+      "stalled (step only)",
+      "command (step only)"
+    ]
+  },
+  "validation": {
+    "canonical_fixture_file": "contracts/dynamics_fixtures.json",
+    "physical_state_parity": "Exact binary equality required for saved NumPy fixtures; browser cross-language validation may use declared float64 tolerance.",
+    "source_identity": "Byte-identical original source files authenticated at import; frozen full matrices hash checked.",
+    "observation_bound": "Canonical contraction/input bound <300 from allowed starts; adapter checks declared space on every reset/step.",
+    "environment_checker": "Gymnasium check_env included in unittest suite."
+  },
+  "reference_capabilities": {
+    "exact_transition_and_reward": true,
+    "deterministic_policy_rollout": "Physical transitions permit float64 finite-horizon rollouts under an explicitly specified policy.",
+    "globally_optimal_controller": "Not claimed by the environment adapter; capped linear feedback is only a baseline unless a separate certificate is provided.",
+    "policy_value": "Must use same world, command quantization, gamma .98, time and horizon; finite task terminal continuation is zero.",
+    "historical_studies": "Historical continuous diagnostics used obs15=[physical13,regime,time] and default gamma1; models/returns require explicit audited adaptation, never interchangeable."
+  },
+  "wrapper_changes": [
+    "strict input shape/type/finiteness validation",
+    "time-aware default observation",
+    "explicit finite_horizon versus continuing_time_limit flags and masks",
+    "finite supported canonical stall slopes",
+    "frozen Stage0 matrix bridge replacing repository-only imports",
+    "suppressed global Gym registration"
+  ],
+  "primary_api_reference": "https://gymnasium.farama.org/tutorials/gymnasium_basics/handling_time_limits/",
+  "information_access": {
+    "policy_input": "public observation14 only",
+    "learner_default": "public observations, actions, rewards and boundary fields from declared training split",
+    "diagnostic_only": [
+      "exact float64 info.state",
+      "push",
+      "thrust",
+      "stalled"
+    ],
+    "restriction": "No diagnostic fields as actor inputs or additional model features in the observation-only benchmark. Exact-state learning requires a separately declared information tier.",
+    "identified_model_baseline": "Fits first13 public float32 observation coordinates; no exact info states."
+  }
+}

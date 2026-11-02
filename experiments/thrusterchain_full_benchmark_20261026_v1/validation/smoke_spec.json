@@ -1,0 +1,41 @@
+{
+  "schema": "thrusterchain.full_benchmark_spec.v1",
+  "profile": "smoke",
+  "cases": [
+    {
+      "id": "random-r1",
+      "behavior": "random",
+      "data_seed": 2026102701,
+      "train_seed": 2026102801
+    }
+  ],
+  "methods": [
+    "td3bc",
+    "iql",
+    "cql",
+    "rebrac",
+    "unifloral-unified"
+  ],
+  "episodes_per_dataset": 10,
+  "critic_rounds": 4,
+  "chunk_critic_rounds": 2,
+  "batch_size": 8,
+  "starts": [
+    "recorded",
+    "strong_current",
+    "big_waves",
+    "big_kicks"
+  ],
+  "shifts": [
+    "baseline",
+    "attenuated_thruster",
+    "bounded_disturbance",
+    "combined"
+  ],
+  "evaluation_seeds": [
+    2036102701
+  ],
+  "expectations": {
+    "purpose": "Bounded plumbing validation only; no performance or equivalence conclusions."
+  }
+}

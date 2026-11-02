@@ -1,4 +1,17 @@
-# ThrusterChain page
+# ThrusterChain pages
+
+**Canonical entrypoint (27 October 2026): `index.html`**, the consolidated research interface for Bayesian Conformal
+Aggregation on the Unifloral TD3+BC host. It is self-contained and opens offline. Its sources, build scripts, data,
+manifest, audit and change notes are in `site/` (`site/CHANGES.md`, `site/SOURCE_MAP.md`, `site/BCA_AUDIT.md`).
+Rebuild with the three commands in `site/SOURCE_MAP.md`.
+
+`thrusterchain.html` below is the earlier environment page (version 16). It and the diagnostics pages under
+`experiments/thrusterchain_diagnostics/*/presentation/` report the repository's CORL-derived host; they are preserved
+unchanged and are not part of the canonical interface's evidence.
+
+---
+
+# ThrusterChain page (version 16, archived)
 
 `thrusterchain.html` is the ThrusterChain documentation page, version 16, published as a private claude.ai artifact
 (https://claude.ai/artifact/8VbJdfNyQr1qDmr7JN1Ha7). It is an HTML fragment; publishing adds the doctype, head and body.

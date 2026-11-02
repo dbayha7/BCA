@@ -1,0 +1,64 @@
+{
+  "arrays_sha256": "943b0997a3a6b42769596b52451e54c6c830f2d7ce5fe3af827f2e14042a73c6",
+  "backend": "cpu",
+  "dataset_sha256": "157f788fbe560fb62c0329a13cf72410c3842b37fe06cec45bb2226bd6f354ca",
+  "devices": [
+    "TFRT_CPU_0"
+  ],
+  "initial_checkpoint_file_sha256": "caa701208c5f4825d7b44b1c16db6e909424c16ade3b5a83a06afb86f2e04e0f",
+  "leaf_count": 51,
+  "metrics": {
+    "abs_actor_q": 0.024074388667941093,
+    "actor_loss": -1.3218567371368408,
+    "actor_q": 0.024074388667941093,
+    "bc_coef": 1.0,
+    "bc_loss": 1.1781331300735474,
+    "critic_loss": 94.1021957397461,
+    "critic_next_v": -0.005622389260679483,
+    "entropy_loss": 0.0,
+    "q_loss": -0.024074388667941093
+  },
+  "mode": "cpu",
+  "optimizer_counts": {
+    "actor": 1,
+    "critic": 2
+  },
+  "plan_sha256": "596d67aa60507ea834662ef612fc3b717aea273be149a7d51a28f4b68d24ac9e",
+  "precision": "highest",
+  "rows": [
+    0,
+    1,
+    99,
+    102,
+    199
+  ],
+  "runtime": {
+    "constraint_check_scope": "JAX and NumPy upper bounds only; other upstream requirements are not certified",
+    "distrax": "0.1.5",
+    "flax": "0.10.4",
+    "jax": "0.5.3",
+    "jaxlib": "0.5.3",
+    "numpy": "1.26.4",
+    "optax": "0.2.4",
+    "tensorflow_probability": "0.25.0",
+    "upstream_constraints_met": true
+  },
+  "schema": "thrusterchain.unified_elementwise_device_check.v1",
+  "scope": "one update, same checkpoint and batch; not training-trajectory equivalence",
+  "script_sha256": "79339e5accfd6dbe381bd1048e6b016d4982f55eae08a31494a6bdf3ab5bba08",
+  "source_sha256": "72ee69256129c9d48216acc69a505c87575e7f9016b912f14f664dfd09cf4abc",
+  "status": "cpu_reference",
+  "structure": {
+    "actor_optimizer": "PyTreeDef((CustomNode(namedtuple[ScaleByAdamState], [*, {'params': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}}, {'params': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}}]), CustomNode(namedtuple[EmptyState], [])))",
+    "actor_params": "PyTreeDef({'params': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}})",
+    "actor_target": "PyTreeDef({'params': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}})",
+    "critic_optimizer": "PyTreeDef((CustomNode(namedtuple[ScaleByAdamState], [*, {'params': {'VmapSoftQNetwork_0': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}}}, {'params': {'VmapSoftQNetwork_0': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}}}]), CustomNode(namedtuple[EmptyState], [])))",
+    "critic_params": "PyTreeDef({'params': {'VmapSoftQNetwork_0': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}}})",
+    "critic_target": "PyTreeDef({'params': {'VmapSoftQNetwork_0': {'Dense_0': {'bias': *, 'kernel': *}, 'Dense_1': {'bias': *, 'kernel': *}, 'Dense_2': {'bias': *, 'kernel': *}}}})",
+    "rng": "PyTreeDef(*)"
+  },
+  "tolerance": {
+    "atol": 0.0001,
+    "rtol": 0.005
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema": "thrusterchain.td3bc_numerics_diagnostic.v1",
+  "intent": "Descriptive bounded GPU comparison of eager and compiled executions; no selection or claim that the retained strict parity gate passed.",
+  "behavior": "mixed_random_strong",
+  "episodes_per_dataset": 10,
+  "fixture_pairs": [[733, 834], [744, 845], [755, 856]],
+  "batch_size": 256,
+  "critic_steps": 64,
+  "checkpoints": [0, 1, 2, 4, 8, 16, 32, 64],
+  "action_observation_split": "tuning_validation",
+  "action_observation_count": 64,
+  "selection_rule": "first observations in trajectory order, including only the first horizon observations per trajectory",
+  "batch_rule": "PCG64 offline_batches sampler with replacement; identical rows in both executions",
+  "state_rule": "separate paths advance from identical initialized states; compare raw target, loss, parameter, optimizer, target-network, and action differences",
+  "common_state_rule": "compare eager and jitted Bellman target calculations at the same eager state, RNG, and minibatch on every update",
+  "counter_rng_rule": "check exact counters and RNG values each update",
+  "finite_rule": "report nonfinite values and fail diagnostic if encountered",
+  "interpretation": "Raw descriptive differences only; no post-observation equivalence threshold. Previously failed strict parity remains failed."
+}

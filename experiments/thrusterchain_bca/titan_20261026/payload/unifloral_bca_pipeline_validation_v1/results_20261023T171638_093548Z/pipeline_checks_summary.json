@@ -1,0 +1,970 @@
+{
+  "schema": "unifloral_bca_pipeline_validation.v1",
+  "status": "pass",
+  "passed": true,
+  "checks": [
+    {
+      "name": "initialize_fixed_native_and_actual_auxiliary",
+      "category": "pipeline",
+      "status": "pass",
+      "details": {
+        "native_snapshot_sha256": "f1797af06e8208f7259234775529db1486012b07cfbe66a42fd80c7d1f7b5d8a",
+        "native_rng_sha256": "0588bdea6a63d8da278bd3e1ae1cc83793276e36f5b32bdc7338d80310a51483",
+        "training_sha256": "876d6e612075c882bb815e06282cc8f58c6235cc116cf446c5a710ff2ac823ac",
+        "heldout_sha256": "489230175c213c8ccf3e2f54821e9b7e453120f16fc9d4d46de0b97dc2f582d0",
+        "training_rows": 32,
+        "heldout_rows": 128,
+        "batch_size": 8,
+        "heldout_ids_sha256": "fb3caf13d32b7d1bcc5a3da3a9ad9c8eb64a4aa7191b85358aa9d7dca0719ba2",
+        "seeds": {
+          "native": 174,
+          "fixture": 2026102307,
+          "auxiliary": 2026102308
+        },
+        "preprocessing": "Declared fixture binding: raw observations; Calibrator uses native train-only mean/std and divides by std+0.001. Not old portable preprocessing parity.",
+        "config": {
+          "arm": "bca",
+          "posterior": {
+            "alpha": 0.1,
+            "credibility": 0.95,
+            "draws": 1000
+          },
+          "blend": 1.0,
+          "cal_lr": 0.001,
+          "cal_beta": 20.0,
+          "width_penalty": 0.005,
+          "scale_ema": 0.99
+        },
+        "native_args": {
+          "seed": 174,
+          "dataset": "synthetic_bca_pipeline_only",
+          "algorithm": "td3_bc",
+          "num_updates": 0,
+          "eval_interval": 2500,
+          "eval_workers": 8,
+          "eval_final_episodes": 0,
+          "log": false,
+          "wandb_project": "unifloral",
+          "wandb_team": "flair",
+          "wandb_group": "debug",
+          "lr": 0.0003,
+          "batch_size": 8,
+          "gamma": 0.99,
+          "polyak_step_size": 0.005,
+          "td3_alpha": 2.5,
+          "noise_clip": 0.5,
+          "policy_noise": 0.2,
+          "num_critic_updates_per_step": 2
+        },
+        "source_receipt": {
+          "passed": true,
+          "provenance_sha256": "f4ddaa7f4fdfc38457a44015a1fa6d4c65ff7d9a086067bafed3fab07300b3ff",
+          "files": {
+            "historical/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+            "historical/direct_extension.py": "6af068817b3e3ca8b3c183d8a203ad88c44d3f18ab19046ba03e0f8894f1f462",
+            "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+            "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+            "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+            "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+            "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+            "portable/kernel.py": "8b08ec19ba8ff1b97b21569966a2a5f94101a0201fb4976123df130f87ce4df3",
+            "portable/adapter.py": "1368d5d93ef91e55518e410987daf20203ff6ebafa292ca4c4ebc605673e5c96",
+            "portable/dependencies.py": "48b001fe3f22906c07848f17c2d46fbc5a1dcddcc189155cf24f8b81876c6bb2",
+            "provenance/dependency_pins.json": "5c7b68dbc9feb483d0445d267f3960e059fb4168dc2d1d2a337eedc1af1b1f7f",
+            "provenance/PORTABILITY_RECEIPT.json": "821b3b1a5530e52a287bfcf75fa4eb8493b82710fcc7b312ae4d4ae744496a07"
+          },
+          "declarations": {
+            "native_host": "Pinned UniFloral standalone TD3+BC; supplied by independently verified stage-one loader",
+            "normalization": "Raw full observations; Calibrator receives the exact native actor obs_mean and obs_std, so all observations normalize once by (obs-mean)/(std+0.001). This differs from portable ThrusterChain physical13-plus-time preprocessing.",
+            "aux_discount": "native_args.gamma, 0.99 for the stage fixture; no ThrusterChain gamma=0.98 claim",
+            "aux_noise": "Original legacy batch-shaped target normal draws, clips and fold-in labels remain unchanged; they do not consume native host RNG",
+            "calibrator_initialization": "Independent supplied seed; fold_in(PRNGKey(seed),1128352841), original Calibrator and Adam(cal_lr)",
+            "residual": "One-step twin-min Bellman residual at recorded action; not Q1 value-error guarantee",
+            "unusable_width": "Original live_width returns valid zero penalty for unready or valid ready+infinite threshold; strict policy is a separate diagnostic",
+            "production_cadence": "Not implemented or decided by this component bridge",
+            "no_primary_updates": true
+          },
+          "selected_nodes": {
+            "historical/td3_bc_bca.py": [
+              {
+                "name": "_real",
+                "line": 25,
+                "end_line": 31,
+                "ast_sha256": "626fd53372e96c6435ca81f99a27fcd10fe82f1de4cc32037fb1744b922a3dae"
+              },
+              {
+                "name": "Config",
+                "line": 35,
+                "end_line": 62,
+                "ast_sha256": "caca43eac0a8c32ba41d0e3eb99c82afff68b33378f8f5a9cee8ee800099353f"
+              },
+              {
+                "name": "State",
+                "line": 65,
+                "end_line": 69,
+                "ast_sha256": "bcfdfa2fb05f0417bdfa5e58079ac262bb8d03b36309f671ad2dcecb8aa00c60"
+              },
+              {
+                "name": "_ids",
+                "line": 72,
+                "end_line": 82,
+                "ast_sha256": "84a5e8d9cf18a4421113467d7315b08ae95aec70a9547d2dd325b7b83eb8ecc0"
+              },
+              {
+                "name": "native_target",
+                "line": 146,
+                "end_line": 156,
+                "ast_sha256": "277ecd2a06a3b277d2bd47b790cb4bbe55fa1d2bff58c2a711587ec468edc40f"
+              },
+              {
+                "name": "fit_scale",
+                "line": 159,
+                "end_line": 231,
+                "ast_sha256": "d34d73e73907fff7fc2be2b76512ee17463f326039404c914f88686afa6fb0b7"
+              },
+              {
+                "name": "refresh",
+                "line": 234,
+                "end_line": 280,
+                "ast_sha256": "6e988edc145989cfd9d621c552abbdac694b09ff27d936c78793e2383dfb5241"
+              }
+            ],
+            "historical/direct_extension.py": [
+              {
+                "name": "live_width",
+                "line": 47,
+                "end_line": 70,
+                "ast_sha256": "ddb3e771ade8e9400cc2f7283c0106f46dac50d0013d72343689ccf671ee5c0d"
+              }
+            ]
+          },
+          "historical_host_imported": false,
+          "scope": "Unchanged uncertainty AST and exact calibration modules; no historical host update"
+        },
+        "data_scope": "Independent synthetic row banks; no environment/trajectory/coverage claim"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 0,
+        "auxiliary_returned_step_increments": 0,
+        "refresh_calls": 0,
+        "refresh_inputs_accepted": 0,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_auxiliary_fit_one",
+      "category": "pipeline",
+      "status": "pass",
+      "details": {
+        "flags": {
+          "scale_inputs_valid": true,
+          "scale_fit_accepted": true,
+          "scale_loss": 0.748507022857666
+        },
+        "auxiliary_step": 1,
+        "residual_scale": 1.00282883644104
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 1,
+        "auxiliary_returned_step_increments": 1,
+        "refresh_calls": 0,
+        "refresh_inputs_accepted": 0,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_auxiliary_fit_two",
+      "category": "pipeline",
+      "status": "pass",
+      "details": {
+        "flags": {
+          "scale_inputs_valid": true,
+          "scale_fit_accepted": true,
+          "scale_loss": 0.568662703037262
+        },
+        "auxiliary_step": 2,
+        "residual_scale": 1.0056596994400024
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 2,
+        "auxiliary_returned_step_increments": 2,
+        "refresh_calls": 0,
+        "refresh_inputs_accepted": 0,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "manual_actual_reference_refresh",
+      "category": "pipeline",
+      "status": "pass",
+      "details": {
+        "flags": {
+          "posterior_inputs_valid": true,
+          "posterior_certified": true
+        },
+        "diagnostics": {
+          "certified": true,
+          "threshold": 4.874597328561943,
+          "lambda_hat": 4.534385932917895,
+          "lambda_hpd": 4.874597328561943,
+          "sigma_post": 0.2939582289660717,
+          "n_eff": 128.0,
+          "clamp_binds": false,
+          "scores": 128
+        },
+        "reference_sha256": "cbaa51890334953c89de49090886a7563f8eabbf76adaddfddde04b4aed55848",
+        "schedule": "Manual refresh after two auxiliary fits: test-only; production warmup 10000 and interval 5000 are not exercised or changed"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 2,
+        "auxiliary_returned_step_increments": 2,
+        "refresh_calls": 1,
+        "refresh_inputs_accepted": 1,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "auxiliary_serialization_and_exact_replay",
+      "category": "resume",
+      "status": "pass",
+      "details": {
+        "checkpoint": "auxiliary_after_000001.msgpack",
+        "checkpoint_sha256": "c26aef8e9203b2e4a547cf1ac2e27e2e026677034b881f6bab129aeccfe6bf6b",
+        "checkpoint_bytes": 5190786,
+        "restored_full_state_exact": true,
+        "fit_and_refresh_replay_exact": true,
+        "diagnostics": {
+          "certified": true,
+          "threshold": 4.874597328561943,
+          "lambda_hat": 4.534385932917895,
+          "lambda_hpd": 4.874597328561943,
+          "sigma_post": 0.2939582289660717,
+          "n_eff": 128.0,
+          "clamp_binds": false,
+          "scores": 128
+        },
+        "includes": [
+          "auxiliary parameters and Adam state",
+          "frozen reference",
+          "residual unit",
+          "fit RNG",
+          "refresh RNG",
+          "native RNG",
+          "native snapshot",
+          "counters"
+        ]
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 3,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "invalid_auxiliary_fit_preserves_snapshot",
+      "category": "rejection",
+      "status": "pass",
+      "details": {
+        "flags": {
+          "scale_inputs_valid": false,
+          "scale_fit_accepted": false,
+          "scale_loss": "NaN"
+        },
+        "state_rng_and_counters_unchanged_exactly": true,
+        "scope": "Existing auxiliary rejection plus explicit test transaction; no production policy change"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_and_zero_kappa_native_equivalence",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "width_mean": 3.3155672550201416,
+        "width_min": 2.5651073455810547,
+        "native_loss_error": 0.0,
+        "native_actor_gradient_max_abs_error": 0.0,
+        "native_actor_gradient_norm": 4.700179514568512,
+        "q_scale_coefficient": 5.775669097900391,
+        "zero_kappa_width_callback_bypassed": true
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_0",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 0.0,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 0.0,
+        "loss_identity_error": 0.0,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 0.0,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 0.0,
+        "actor_penalty_to_baseline_gradient_ratio": 0.0,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 0.0,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 0.0,
+        "action_gradient_identity_max_abs_error": 0.0,
+        "action_loss_identity_error": 0.0,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_0.03",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 0.03,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 4.377216100692749e-08,
+        "loss_identity_error": 0.0,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 0.2060996265687676,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 0.05162905547704986,
+        "actor_penalty_to_baseline_gradient_ratio": 0.0438493095699746,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 0.0316104365069568,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 0.0553468817129496,
+        "action_gradient_identity_max_abs_error": 1.3504177331924438e-08,
+        "action_loss_identity_error": 0.0,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_0.1",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 0.1,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 8.288770914077759e-08,
+        "loss_identity_error": 1.1920928955078125e-07,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 0.6869988616408664,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 0.17209687824684972,
+        "actor_penalty_to_baseline_gradient_ratio": 0.14616438787315864,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 0.10536814018319471,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 0.18448963808991728,
+        "action_gradient_identity_max_abs_error": 2.9802322387695312e-08,
+        "action_loss_identity_error": 0.0,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_0.3",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 0.3,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 1.1920928955078125e-07,
+        "loss_identity_error": 4.76837158203125e-07,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 2.0609964785709534,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 0.5162906080988947,
+        "actor_penalty_to_baseline_gradient_ratio": 0.4384931409923304,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 0.31610440400552264,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 0.5534688853026665,
+        "action_gradient_identity_max_abs_error": 2.9802322387695312e-08,
+        "action_loss_identity_error": 0.0,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_1",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 1.0,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 2.980232238769531e-07,
+        "loss_identity_error": 0.0,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 6.869987400493749,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 1.7209684778753271,
+        "actor_penalty_to_baseline_gradient_ratio": 1.4616436200361662,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 1.0536813512678591,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 1.8448962923662418,
+        "action_gradient_identity_max_abs_error": 1.4901161193847656e-07,
+        "action_loss_identity_error": 0.0,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_3",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 3.0,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 8.046627044677734e-07,
+        "loss_identity_error": 3.814697265625e-06,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 20.609962437681848,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 5.162905492795491,
+        "actor_penalty_to_baseline_gradient_ratio": 4.3849309103620255,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 3.1610436569440603,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 5.534688182235282,
+        "action_gradient_identity_max_abs_error": 2.980232238769531e-07,
+        "action_loss_identity_error": 3.814697265625e-06,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_width_gradient_kappa_10",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "kappa_penalty": 10.0,
+        "q_scale_coefficient": 5.775669097900391,
+        "width_mean": 3.3155672550201416,
+        "actor_gradient_identity_max_abs_error": 3.337860107421875e-06,
+        "loss_identity_error": 0.0,
+        "width_actor_gradient_norm": 1.1894703626158802,
+        "actor_penalty_gradient_norm": 68.69986622308838,
+        "actor_q_gradient_norm": 3.991930990493967,
+        "actor_baseline_gradient_norm": 4.700179514568512,
+        "actor_penalty_to_q_gradient_ratio": 17.209682829358574,
+        "actor_penalty_to_baseline_gradient_ratio": 14.61643454471232,
+        "width_action_gradient_norm": 0.185871299427765,
+        "action_penalty_gradient_norm": 10.536812694866823,
+        "action_q_gradient_norm": 0.5711331068460331,
+        "action_penalty_to_q_gradient_ratio": 18.448961491751433,
+        "action_gradient_identity_max_abs_error": 9.5367431640625e-07,
+        "action_loss_identity_error": 0.0,
+        "action_probe": "One shared predetermined 4D action across eight rows",
+        "interpretation": "Gradient dosage diagnostic, not a selected kappa or performance result"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "actual_reference_gradient_freeze",
+      "category": "gradient",
+      "status": "pass",
+      "details": {
+        "actual_actor_reference_gradient_norm": 0.0,
+        "all_differentiable_reference_fields": [
+          "cal_params",
+          "residual_scale",
+          "threshold",
+          "lambda_hat",
+          "lambda_hpd",
+          "n_eff"
+        ],
+        "unblocked_calibrator_parameter_gradient_norm": 1.758779812662784,
+        "frozen_reference_sha256": "cbaa51890334953c89de49090886a7563f8eabbf76adaddfddde04b4aed55848",
+        "actor_steps": 0
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "legacy_infinite_ready_fallback_and_proposed_rejection",
+      "category": "scientific_gate",
+      "status": "pass",
+      "details": {
+        "cases": [
+          {
+            "case": "not_ready",
+            "ready": false,
+            "threshold": "+Infinity",
+            "legacy_storage_valid": true,
+            "legacy_width_valid": true,
+            "legacy_width_usable": false,
+            "legacy_width_mean": 0.0,
+            "legacy_positive_kappa_actor_equals_native": true,
+            "proposed_ready_but_nonfinite_rejection": false
+          },
+          {
+            "case": "ready_infinite",
+            "ready": true,
+            "threshold": "+Infinity",
+            "legacy_storage_valid": true,
+            "legacy_width_valid": true,
+            "legacy_width_usable": false,
+            "legacy_width_mean": 0.0,
+            "legacy_positive_kappa_actor_equals_native": true,
+            "proposed_ready_but_nonfinite_rejection": true
+          }
+        ],
+        "design_change_approved": false,
+        "scope": "Exposes existing zero-penalty fallback and a separate proposed rejection predicate; no consumption policy was changed"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 2,
+        "refresh_inputs_accepted": 2,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "twin_min_residual_is_not_q1_error",
+      "category": "scientific_gate",
+      "status": "pass",
+      "details": {
+        "fixture": "Explicit controlled terminal predictions: reward=0, Q1=10, Q2=0; not measured model behavior",
+        "target": 0.0,
+        "absolute_twin_min_td_residual": 0.0,
+        "absolute_q1_td_residual": 10.0,
+        "actual_calibrated_threshold": 0.0,
+        "actual_width_mean": 0.0,
+        "diagnostics": {
+          "certified": true,
+          "threshold": 0.0,
+          "lambda_hat": 0.0,
+          "lambda_hpd": 0.0,
+          "sigma_post": 0.0,
+          "n_eff": 128.0,
+          "clamp_binds": false,
+          "scores": 128
+        },
+        "conclusion": "A certified twin-min TD-residual width does not establish a Q1-error bound; residual target choice remains unresolved"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 3,
+        "refresh_inputs_accepted": 3,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "coherent_q_and_width_scale_with_native_epsilon",
+      "category": "scale",
+      "status": "pass",
+      "details": {
+        "fixed_state_results": [
+          {
+            "scale": 0.1,
+            "width_ratio_expected": 0.1,
+            "width_mean": 0.3315567076206207,
+            "q_scale_coefficient": 57.756568908691406,
+            "native_epsilon": 1e-07,
+            "mean_abs_unscaled_q1": 0.432850182056427,
+            "penalty_ratio_including_native_epsilon": 0.9999978542327881,
+            "penalty_loss_error": 0.0,
+            "penalty_gradient_error": 2.384185791015625e-07,
+            "penalty_gradient_norm": 6.8699721740424025,
+            "actual_aux_target_scale_error": 1.4901161193847656e-08,
+            "actual_min_q_residual_scale_error": 2.9802322387695312e-08,
+            "dimensionless_score_invariance_error": 4.76837158203125e-07,
+            "actual_soft_coverage_invariance_error": 2.541098841762901e-20,
+            "ema_unit": 0.10082951933145523,
+            "ema_unit_minus_scaled_baseline": 0.0,
+            "ema_std_floor_active": false
+          },
+          {
+            "scale": 1.0,
+            "width_ratio_expected": 1.0,
+            "width_mean": 3.3155672550201416,
+            "q_scale_coefficient": 5.775669097900391,
+            "native_epsilon": 1e-07,
+            "mean_abs_unscaled_q1": 0.432850182056427,
+            "penalty_ratio_including_native_epsilon": 1.0,
+            "penalty_loss_error": 0.0,
+            "penalty_gradient_error": 0.0,
+            "penalty_gradient_norm": 6.869987400493749,
+            "actual_aux_target_scale_error": 0.0,
+            "actual_min_q_residual_scale_error": 0.0,
+            "dimensionless_score_invariance_error": 0.0,
+            "actual_soft_coverage_invariance_error": 0.0,
+            "ema_unit": 1.0082951784133911,
+            "ema_unit_minus_scaled_baseline": 0.0,
+            "ema_std_floor_active": false
+          },
+          {
+            "scale": 10.0,
+            "width_ratio_expected": 10.0,
+            "width_mean": 33.15567398071289,
+            "q_scale_coefficient": 0.5775671005249023,
+            "native_epsilon": 1e-07,
+            "mean_abs_unscaled_q1": 0.432850182056427,
+            "penalty_ratio_including_native_epsilon": 1.000000238418579,
+            "penalty_loss_error": 1.9073486328125e-06,
+            "penalty_gradient_error": 2.682209014892578e-07,
+            "penalty_gradient_norm": 6.869989601126748,
+            "actual_aux_target_scale_error": 3.814697265625e-06,
+            "actual_min_q_residual_scale_error": 3.814697265625e-06,
+            "dimensionless_score_invariance_error": 4.76837158203125e-07,
+            "actual_soft_coverage_invariance_error": 1.868022623563356e-27,
+            "ema_unit": 10.082951545715332,
+            "ema_unit_minus_scaled_baseline": 0.0,
+            "ema_std_floor_active": false
+          }
+        ],
+        "analytic_epsilon_examples": [
+          {
+            "mean_abs_q": 0.0,
+            "scale": 0.1,
+            "q_scale_coefficient": 25000000.0,
+            "penalty_ratio": 0.1
+          },
+          {
+            "mean_abs_q": 0.0,
+            "scale": 1.0,
+            "q_scale_coefficient": 25000000.0,
+            "penalty_ratio": 1.0
+          },
+          {
+            "mean_abs_q": 0.0,
+            "scale": 10.0,
+            "q_scale_coefficient": 25000000.0,
+            "penalty_ratio": 10.0
+          },
+          {
+            "mean_abs_q": 1e-09,
+            "scale": 0.1,
+            "q_scale_coefficient": 24975024.975024976,
+            "penalty_ratio": 0.10089910089910091
+          },
+          {
+            "mean_abs_q": 1e-09,
+            "scale": 1.0,
+            "q_scale_coefficient": 24752475.247524753,
+            "penalty_ratio": 1.0
+          },
+          {
+            "mean_abs_q": 1e-09,
+            "scale": 10.0,
+            "q_scale_coefficient": 22727272.72727273,
+            "penalty_ratio": 9.181818181818182
+          },
+          {
+            "mean_abs_q": 1e-07,
+            "scale": 0.1,
+            "q_scale_coefficient": 22727272.72727273,
+            "penalty_ratio": 0.18181818181818182
+          },
+          {
+            "mean_abs_q": 1e-07,
+            "scale": 1.0,
+            "q_scale_coefficient": 12500000.0,
+            "penalty_ratio": 1.0
+          },
+          {
+            "mean_abs_q": 1e-07,
+            "scale": 10.0,
+            "q_scale_coefficient": 2272727.2727272725,
+            "penalty_ratio": 1.818181818181818
+          },
+          {
+            "mean_abs_q": 1.0,
+            "scale": 0.1,
+            "q_scale_coefficient": 24.999975000025,
+            "penalty_ratio": 0.9999991000009001
+          },
+          {
+            "mean_abs_q": 1.0,
+            "scale": 1.0,
+            "q_scale_coefficient": 2.499999750000025,
+            "penalty_ratio": 1.0
+          },
+          {
+            "mean_abs_q": 1.0,
+            "scale": 10.0,
+            "q_scale_coefficient": 0.24999999750000004,
+            "penalty_ratio": 1.0000000899999992
+          }
+        ],
+        "analytic_ema_std_floor_examples": [
+          {
+            "residual_std": 0.0,
+            "scale": 0.1,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 1e-07
+          },
+          {
+            "residual_std": 0.0,
+            "scale": 1.0,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 1e-06
+          },
+          {
+            "residual_std": 0.0,
+            "scale": 10.0,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 9.999999999999999e-06
+          },
+          {
+            "residual_std": 1e-08,
+            "scale": 0.1,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 1e-07
+          },
+          {
+            "residual_std": 1e-08,
+            "scale": 1.0,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 1e-06
+          },
+          {
+            "residual_std": 1e-08,
+            "scale": 10.0,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 9.999999999999999e-06
+          },
+          {
+            "residual_std": 1e-06,
+            "scale": 0.1,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 1e-07
+          },
+          {
+            "residual_std": 1e-06,
+            "scale": 1.0,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 1e-06,
+            "coherent_expected_floor_term": 1e-06
+          },
+          {
+            "residual_std": 1e-06,
+            "scale": 10.0,
+            "unscaled_floor_term": 1e-06,
+            "scaled_floor_term": 9.999999999999999e-06,
+            "coherent_expected_floor_term": 9.999999999999999e-06
+          },
+          {
+            "residual_std": 0.001,
+            "scale": 0.1,
+            "unscaled_floor_term": 0.001,
+            "scaled_floor_term": 0.0001,
+            "coherent_expected_floor_term": 0.0001
+          },
+          {
+            "residual_std": 0.001,
+            "scale": 1.0,
+            "unscaled_floor_term": 0.001,
+            "scaled_floor_term": 0.001,
+            "coherent_expected_floor_term": 0.001
+          },
+          {
+            "residual_std": 0.001,
+            "scale": 10.0,
+            "unscaled_floor_term": 0.001,
+            "scaled_floor_term": 0.01,
+            "coherent_expected_floor_term": 0.01
+          }
+        ],
+        "native_zero_q_coefficient": 25000000.0,
+        "zero_and_near_zero_q_behavior": "Native epsilon yields finite coefficient amplification; no new rejection or denominator normalization",
+        "initial_residual_unit": 1.0,
+        "scale_caveats": [
+          "Initial residual unit stays 1 unless explicitly transformed.",
+          "The fixed 1e-6 residual-std floor can break coherent EMA scaling.",
+          "The native 1e-7 Q denominator epsilon breaks exact penalty scale invariance."
+        ],
+        "scope": "Fixed-state Q outputs, diagnostic rewards and residual unit scaled coherently; actual auxiliary target/coverage functions evaluated without fitting, refresh or optimizer updates",
+        "normalization_decision": "Unresolved; fixed-state identities do not establish cross-environment robustness"
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 3,
+        "refresh_inputs_accepted": 3,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    },
+    {
+      "name": "native_integrity_and_bounded_work",
+      "category": "integrity",
+      "status": "pass",
+      "details": {
+        "native_state_and_rng_unchanged_exactly": true,
+        "ledger": {
+          "auxiliary_attempts": 4,
+          "auxiliary_returned_step_increments": 3,
+          "refresh_calls": 3,
+          "refresh_inputs_accepted": 3,
+          "primary_critic_updates": 0,
+          "actor_updates": 0,
+          "environment_rollouts": 0
+        },
+        "no_candidate_step_or_native_train_step_called": true
+      },
+      "work_ledger_after": {
+        "auxiliary_attempts": 4,
+        "auxiliary_returned_step_increments": 3,
+        "refresh_calls": 3,
+        "refresh_inputs_accepted": 3,
+        "primary_critic_updates": 0,
+        "actor_updates": 0,
+        "environment_rollouts": 0
+      }
+    }
+  ],
+  "check_count": 19,
+  "work_ledger": {
+    "auxiliary_attempts": 4,
+    "auxiliary_returned_step_increments": 3,
+    "refresh_calls": 3,
+    "refresh_inputs_accepted": 3,
+    "primary_critic_updates": 0,
+    "actor_updates": 0,
+    "environment_rollouts": 0
+  },
+  "maximum_auxiliary_attempts": 4,
+  "maximum_refresh_calls": 3,
+  "tolerances": {
+    "rtol": 2e-05,
+    "atol": 2e-06,
+    "replay_native_state_rng_reference_gradients": "exact",
+    "nonvacuous_gradient_floor": 1e-08
+  },
+  "legacy_behavior_exposure_is_not_design_approval": true,
+  "limitations": [
+    "No primary critic, actor, target updates or environment rollouts.",
+    "Frozen native snapshots; no production auxiliary scheduling chosen.",
+    "Manual early refreshes are test-only; production warmup/interval retained as recorded context.",
+    "Synthetic banks do not validate environmental dynamics or statistical coverage.",
+    "Twin-min TD residual versus Q1 error and ready-infinite rejection remain scientific decisions.",
+    "No efficacy, kappa selection, reward-scale robustness or full-budget readiness claim."
+  ]
+}

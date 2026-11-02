@@ -1,0 +1,151 @@
+{
+  "name": "initialize_fixed_native_and_actual_auxiliary",
+  "category": "pipeline",
+  "status": "pass",
+  "details": {
+    "native_snapshot_sha256": "f1797af06e8208f7259234775529db1486012b07cfbe66a42fd80c7d1f7b5d8a",
+    "native_rng_sha256": "0588bdea6a63d8da278bd3e1ae1cc83793276e36f5b32bdc7338d80310a51483",
+    "training_sha256": "876d6e612075c882bb815e06282cc8f58c6235cc116cf446c5a710ff2ac823ac",
+    "heldout_sha256": "489230175c213c8ccf3e2f54821e9b7e453120f16fc9d4d46de0b97dc2f582d0",
+    "training_rows": 32,
+    "heldout_rows": 128,
+    "batch_size": 8,
+    "heldout_ids_sha256": "fb3caf13d32b7d1bcc5a3da3a9ad9c8eb64a4aa7191b85358aa9d7dca0719ba2",
+    "seeds": {
+      "native": 174,
+      "fixture": 2026102307,
+      "auxiliary": 2026102308
+    },
+    "preprocessing": "Declared fixture binding: raw observations; Calibrator uses native train-only mean/std and divides by std+0.001. Not old portable preprocessing parity.",
+    "config": {
+      "arm": "bca",
+      "posterior": {
+        "alpha": 0.1,
+        "credibility": 0.95,
+        "draws": 1000
+      },
+      "blend": 1.0,
+      "cal_lr": 0.001,
+      "cal_beta": 20.0,
+      "width_penalty": 0.005,
+      "scale_ema": 0.99
+    },
+    "native_args": {
+      "seed": 174,
+      "dataset": "synthetic_bca_pipeline_only",
+      "algorithm": "td3_bc",
+      "num_updates": 0,
+      "eval_interval": 2500,
+      "eval_workers": 8,
+      "eval_final_episodes": 0,
+      "log": false,
+      "wandb_project": "unifloral",
+      "wandb_team": "flair",
+      "wandb_group": "debug",
+      "lr": 0.0003,
+      "batch_size": 8,
+      "gamma": 0.99,
+      "polyak_step_size": 0.005,
+      "td3_alpha": 2.5,
+      "noise_clip": 0.5,
+      "policy_noise": 0.2,
+      "num_critic_updates_per_step": 2
+    },
+    "source_receipt": {
+      "passed": true,
+      "provenance_sha256": "f4ddaa7f4fdfc38457a44015a1fa6d4c65ff7d9a086067bafed3fab07300b3ff",
+      "files": {
+        "historical/td3_bc_bca.py": "3f8452df67b1ac51c78b67c36a6f6269c849aa9746f5e15df771d553fce0536e",
+        "historical/direct_extension.py": "6af068817b3e3ca8b3c183d8a203ad88c44d3f18ab19046ba03e0f8894f1f462",
+        "calibration/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "calibration/network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+        "calibration/dose.py": "6d2fab35cb772952103adeeb6e9ca5f0a17040c0bc05217e5704c278ad617470",
+        "calibration/wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023",
+        "calibration/bank.py": "406862dba1f0232f6ed2a58db51ee1355814458d79be07ca7a45c812b5db5b00",
+        "calibration/reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+        "portable/kernel.py": "8b08ec19ba8ff1b97b21569966a2a5f94101a0201fb4976123df130f87ce4df3",
+        "portable/adapter.py": "1368d5d93ef91e55518e410987daf20203ff6ebafa292ca4c4ebc605673e5c96",
+        "portable/dependencies.py": "48b001fe3f22906c07848f17c2d46fbc5a1dcddcc189155cf24f8b81876c6bb2",
+        "provenance/dependency_pins.json": "5c7b68dbc9feb483d0445d267f3960e059fb4168dc2d1d2a337eedc1af1b1f7f",
+        "provenance/PORTABILITY_RECEIPT.json": "821b3b1a5530e52a287bfcf75fa4eb8493b82710fcc7b312ae4d4ae744496a07"
+      },
+      "declarations": {
+        "native_host": "Pinned UniFloral standalone TD3+BC; supplied by independently verified stage-one loader",
+        "normalization": "Raw full observations; Calibrator receives the exact native actor obs_mean and obs_std, so all observations normalize once by (obs-mean)/(std+0.001). This differs from portable ThrusterChain physical13-plus-time preprocessing.",
+        "aux_discount": "native_args.gamma, 0.99 for the stage fixture; no ThrusterChain gamma=0.98 claim",
+        "aux_noise": "Original legacy batch-shaped target normal draws, clips and fold-in labels remain unchanged; they do not consume native host RNG",
+        "calibrator_initialization": "Independent supplied seed; fold_in(PRNGKey(seed),1128352841), original Calibrator and Adam(cal_lr)",
+        "residual": "One-step twin-min Bellman residual at recorded action; not Q1 value-error guarantee",
+        "unusable_width": "Original live_width returns valid zero penalty for unready or valid ready+infinite threshold; strict policy is a separate diagnostic",
+        "production_cadence": "Not implemented or decided by this component bridge",
+        "no_primary_updates": true
+      },
+      "selected_nodes": {
+        "historical/td3_bc_bca.py": [
+          {
+            "name": "_real",
+            "line": 25,
+            "end_line": 31,
+            "ast_sha256": "626fd53372e96c6435ca81f99a27fcd10fe82f1de4cc32037fb1744b922a3dae"
+          },
+          {
+            "name": "Config",
+            "line": 35,
+            "end_line": 62,
+            "ast_sha256": "caca43eac0a8c32ba41d0e3eb99c82afff68b33378f8f5a9cee8ee800099353f"
+          },
+          {
+            "name": "State",
+            "line": 65,
+            "end_line": 69,
+            "ast_sha256": "bcfdfa2fb05f0417bdfa5e58079ac262bb8d03b36309f671ad2dcecb8aa00c60"
+          },
+          {
+            "name": "_ids",
+            "line": 72,
+            "end_line": 82,
+            "ast_sha256": "84a5e8d9cf18a4421113467d7315b08ae95aec70a9547d2dd325b7b83eb8ecc0"
+          },
+          {
+            "name": "native_target",
+            "line": 146,
+            "end_line": 156,
+            "ast_sha256": "277ecd2a06a3b277d2bd47b790cb4bbe55fa1d2bff58c2a711587ec468edc40f"
+          },
+          {
+            "name": "fit_scale",
+            "line": 159,
+            "end_line": 231,
+            "ast_sha256": "d34d73e73907fff7fc2be2b76512ee17463f326039404c914f88686afa6fb0b7"
+          },
+          {
+            "name": "refresh",
+            "line": 234,
+            "end_line": 280,
+            "ast_sha256": "6e988edc145989cfd9d621c552abbdac694b09ff27d936c78793e2383dfb5241"
+          }
+        ],
+        "historical/direct_extension.py": [
+          {
+            "name": "live_width",
+            "line": 47,
+            "end_line": 70,
+            "ast_sha256": "ddb3e771ade8e9400cc2f7283c0106f46dac50d0013d72343689ccf671ee5c0d"
+          }
+        ]
+      },
+      "historical_host_imported": false,
+      "scope": "Unchanged uncertainty AST and exact calibration modules; no historical host update"
+    },
+    "data_scope": "Independent synthetic row banks; no environment/trajectory/coverage claim"
+  },
+  "work_ledger_after": {
+    "auxiliary_attempts": 0,
+    "auxiliary_returned_step_increments": 0,
+    "refresh_calls": 0,
+    "refresh_inputs_accepted": 0,
+    "primary_critic_updates": 0,
+    "actor_updates": 0,
+    "environment_rollouts": 0
+  }
+}

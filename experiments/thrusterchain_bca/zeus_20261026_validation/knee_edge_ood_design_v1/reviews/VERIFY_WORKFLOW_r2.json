@@ -1,0 +1,775 @@
+{
+  "summary": "Second verification round on revision 2 of the knee-edge OOD draft: three lenses, skeptic re-check, completeness critic",
+  "agentCount": 7,
+  "logs": [
+    "17 high/medium findings survived the skeptic"
+  ],
+  "result": {
+    "packed": [
+      {
+        "lens": "resolution",
+        "verdict": "Revision 2 deals with most of the 23 digest items on paper. The numeric reconciliation is now coherent. The anchors -0.7263/-0.7747, retention 48.2% (42.4/67.6), the L1.4 bands, the removal bounds and the R_deep- counts (19 vs 1,105) all match screens/random_control_mc_output.txt. The slot table checks out in float32. Citations to td3_bc.py, runtime.py and thrusterchain.py check out. The budget arithmetic reproduces. But several resolutions are mis-built in ways that matter. (1) The Stage 2 'native replicate' fix depends on the replicate being independent of the Stage 1 native branch. The prior pipeline derives the branch key from the fork RNG plus a per-seed branch_native_seed (runtime.py:225-228), and r2 never says Stage 2 uses a different seed. So the replicate can be a bit-for-bit rerun. In that case V0-S2 passes automatically, R3's noise-calibrated delta collapses to 2.0, and the regression-to-the-mean rationale is unmet. (2) The text says RANDOM 'copies' control_masks, but that function stratifies on a 2-level load flag, not the 3 bands the sealed values were simulated with. A verbatim copy fails the sealed L1.4 bars about half the time. (3) The new label system still has holes. L1.4 and the 4.7 count bounds carry both INCOMPLETE and INCONCLUSIVE. The INCOMPLETE rerun rule never terminates for failures that recur deterministically. R0's FAIL-early skips validity precedence. Stage 2 reuses 'INCONCLUSIVE' for screens that are only reported. (4) The calibration replacement rule departs from the prior rule it claims to follow, and it oversamples post-stall successor states. A few items are only partly resolved: the corrected step 0.3 forecast is uncomputed and undisclosed, there is no power statement, and the recovery guard has no lower confidence bound. Several terms that r1 defined are now undefined. All of this can be fixed on paper before A1, but the protocol should not be sealed as written.",
+        "low_findings": [
+          {
+            "id": "R2-8",
+            "severity": "low",
+            "section": "Stage 1 Q probes (:503-508) vs V0(d) (:522), K1c (:529), Part 6.10 (:612)",
+            "claim": "The Stage 1 probe list does not provide some quantities that gated or promised rules need.",
+            "evidence": "V0(d) requires L2 estimator validity, max_k |P_k - Q_nostall|, under each stall CUTOFF policy's own continuation. The probe list gives 'exact own-continuation Q^pi', with world swap mentioned only for free rollouts (:501), so Q_nostall at the anchors is never listed. Part 6.10 promises 'Q1 contrasts at a1 = ±KNEE against ±0.7', but the Stage 1 forced slots are a0-only (S9, s05..s20, p10, own action).",
+            "fix": "Add no-stall Q^pi at s05, s10 and s20 under the stall CUTOFF policies' clipped continuations, plus the a1 = ±KNEE/±0.7 forced probes, to the Stage 1 probe list. Recheck the 5.5M transition estimate."
+          },
+          {
+            "id": "R2-9",
+            "severity": "low",
+            "section": "Part 9 table rows 2, 15, 21 (:706, :719, :725)",
+            "claim": "Part 9 marks three items resolved that are only partly resolved.",
+            "evidence": "Item 2's fix required the recovery denominator's lower confidence bound to be above 0. R2's guard is 'every seed > 0, mean >= +3.0' (:587), and R1's paired t-interval is reported only (:582). Item 15 required 'Pre-register a power statement built from the saved spreads'. R2 says 'No power estimate exists' (:547) and builds none, although the noise spreads are quoted at :545. Item 21 asked for a gated magnitude control on supported |a1|. R2 reports it only (:575).",
+            "fix": "Either do these or change the Part 9 'Where resolved' column to say 'declined, because ...'."
+          },
+          {
+            "id": "R2-10",
+            "severity": "low",
+            "section": "Part 0 / body terms (:37, :171-176, :443, :499, :521, :544, :669, :735)",
+            "claim": "Several terms are undefined or dangling, some newly so, because r1 defined them and r2 dropped the definitions.",
+            "evidence": "pi_clipall (:499) and 'the triple difference of J' (:544) were defined in r1 (r1:415, r1:452) and now have no definition. 'Valid gated anchors' in V0(c) is undefined. The L2 rule numbers items 1-4 and then 6, with no item 5, yet step 0.4 and V0(d) cite 'items 1-4 and 6'. Part 0 cites L2.2 for load being action-independent, but L2.2 never mentions load. Step 0.3 overloads alpha and c (Q1 = alpha + b a0 + c a0^2) next to current c and td3_alpha. KEC-W v1, KEC-v1, C/D and mix15 are used without definition. Steps 0.1 and 0.3 use a raw '-0.9' (:412, :428), contradicting line 75's 'Every rule names its slot'. 4.4 says 'the warmup' (:303), but Stage 1 has 12 warmups.",
+            "fix": "Restore the definitions of pi_clipall and the triple difference. Define 'valid anchor'. Renumber L2 items (or name the validity clause item 5). Fix the L2.2 reference. Rename the quadratic coefficients. Add the design labels to Part 0. Use slot names. Write '12 warmups'."
+          },
+          {
+            "id": "R2-11",
+            "severity": "low",
+            "section": "Part 8.1 (:646)",
+            "claim": "The numerical statement about mix15/D's window edge is wrong. The edge equals s05; it is not 1e-8 beyond it.",
+            "evidence": "float32(-0.85) = -0.8500000238418579, which is the same float32 as s05's executed value -0.85000002 (Part 0 table). R2 says the edge 'lies only 1e-8 beyond s05'. The rationale still holds, and is in fact stronger: RANDOM would have zero labelled depth beyond s05.",
+            "fix": "Say that the window edge is exactly s05."
+          }
+        ],
+        "verified": [
+          {
+            "id": "R2-1",
+            "severity": "high",
+            "section": "Stage 2 Arms (DRAFT_PROTOCOL.md:563-565), R3 (:585), V0-S2 (:580); digest item 3/2",
+            "claim": "The native replicate's seed is never separated from the Stage 1 native branch's. Under the reused pipeline the replicate can be a deterministic rerun of the Stage 1 branch. That would make V0-S2 pass automatically and would collapse R3's delta.",
+            "evidence": "In the prior pipeline, branch() sets native_key = fold_in(fork rng, seed['branch_native_seed']) and aux_key = fold_in(aux_rng, seed['branch_aux_seed']), with one value per seed index (runtime.py:225-228; protocol.json:354-372). The sampler draws from that key (runtime.py:208-210). R2 says only that 'All three branches from a fork share one pre-registered branch seed and one minibatch stream' (:564). It never says that seed differs from the Stage 1 native branch's. If it is the same, J(rep) - J(Stage 1 native) differs only by GPU nondeterminism. Then delta = max(2.0, 2 x SD) = 2.0, and V0-S2 (K2 and K3a in every seed) repeats the Stage 1 PASS. The selection/regression rationale (:565) is then unaddressed. With delta = 2 and a branch noise SD of about 3.55 (the prior BCA-minus-native SD, :583), R3 passes in all 3 seeds under zero true cost with probability Phi(2/3.55)^3 = 0.36.",
+            "fix": "In seeds.json, give Stage 2 its own branch_native_seed and branch_aux_seed per fork, distinct from Stage 1's and collision-audited. Assert that the replicate's minibatch-index digest differs from the Stage 1 branch's. State that R3's SD is computed over independent replicates.",
+            "check": {
+              "id": "R2-1",
+              "real": true,
+              "severity_after": "high",
+              "reason": "Revision 2 never separates the Stage 2 replicate's seed from the Stage 1 native branch's seed. In the reused pipeline the branch key does not depend on the arm: branch() uses protocol['seeds'][seed_index]['branch_native_seed'] for native, bca and distance alike. So a replicate forked from the same 10k state is the same run as the Stage 1 native branch, apart from GPU nondeterminism. That undoes the selection fix that V0-S2 and the replicate exist to provide. It also collapses R3's delta to its 2.0 floor, because the SD of J(rep) - J(Stage 1 native) is about 0 when the bank is shared, or only evaluation noise otherwise. Nothing elsewhere in the draft covers this: Part 9 item 21 asks only that the three Stage 2 branches share one seed, which is the shared-random-numbers fix, not independence from Stage 1.",
+              "evidence": "DRAFT_PROTOCOL.md:564 says only 'All three branches from a fork share one pre-registered branch seed and one minibatch stream'. No line distinguishes that seed from Stage 1's (grep for seeds/branch seed: lines 418, 488, 564, 725 only). runtime.py:224-226: seed = protocol['seeds'][seed_index]; native_key = fold_in(state.microstep.rng, seed['branch_native_seed']); aux_key = fold_in(state.aux_rng, seed['branch_aux_seed']). The arm is used only for kappa (line 230). The sampler draws from that key (runtime.py:208-210). R3 (:585) uses SD across forks of [J(rep) - J(Stage 1 native)] as 'branch noise'. If the two are identical, delta = 2.0. With a difference SD of 3.55 and zero true cost, P(pass in all 3 seeds) = Phi(0.563)^3 = 0.713^3 = 0.36."
+            }
+          },
+          {
+            "id": "R2-2",
+            "severity": "medium",
+            "section": "Part 3.7 (:226), Part 6.1 (:603), L1.4 known-fault tests (:130), screens/random_control_mc.py:52,68",
+            "claim": "The text says RANDOM 'copies' the prior control_masks 'exact rule', but that rule stratifies on a 2-level high-load flag. The sealed values assume 3 bands. A verbatim copy is neither accepted nor reliably rejected by L1.4.",
+            "evidence": "geometry.py:114 builds strata = (episode, time//bin, regions['high']), which has 2 levels. R2 specifies low/mid/deep bands and the MC uses 3 (random_control_mc.py:52). I re-simulated the verbatim 2-band rule (scratchpad verify_wf_r2/resolution/twoband.py, 60 reps). Pooled density is 2.137 (SD 0.017) against the bar [2.00, 2.16], so it fails with P = 0.09. Deep-band density is 2.233 (SD 0.042) against [1.80, 2.24], so it fails with P = 0.43. W retention is 0.490 and the anchor is -0.7761, both inside bounds. The MC's 'band-blind' known fault (sid2 = ep*100 + tb*3 + 0, line 68) has no load term at all, so it is not the 2-band variant. An implementer following 'copies control_masks' therefore gets a coin-flip L1.4 outcome.",
+            "fix": "State that the rule is control_masks modified to three load bands, and change Part 6.1 to match. Add the verbatim 2-band variant to the MC and seal its expected values. Either make it a known-fault test that must fail (the bars would need tightening), or accept it explicitly.",
+            "check": {
+              "id": "R2-2",
+              "real": false,
+              "severity_after": "none",
+              "reason": "The sentence the finding cites states the three-band stratification explicitly: 'in each stratum (episode x ten-step bin x load band) ... The bands are low (g < 0.4), mid (0.4 <= g < 1.0) and deep (g >= 1.0)' (:226). load_band is defined in 4.1 (:257) and Part 6.1 says 'load band'. 'Copies control_masks' refers to the uniform count-matching mechanics. A literal verbatim copy is not even possible, because the prior third stratum key is regions['high'], an observation-feature region (geometry.py:110), not g >= 0.4. An implementer must use the specified load_band either way. I reproduced the arithmetic (two-band pooled density 2.137 SD 0.017, deep 2.233 SD 0.042, W retention 0.490). L1.4's weak power against a non-compliant two-band variant is a minor coverage nit, not a validity defect: the two variants are scientifically near-equivalent, and the spec rules the two-band one out.",
+              "evidence": "DRAFT_PROTOCOL.md:226 defines the three bands in the same sentence as 'copies'. geometry.py:110 builds strata = (episodes, times//time_bin, regions['high']), with regions from region_masks(obs, actions), an observation-based region rather than load g. My re-simulation (scratchpad verify_wf_r2/skeptic_resolution/twoband.py, 60 reps): d3 = 2.083, d2 = 2.137, deep d2 = 2.233, deep d3 = 2.029, wr2 = 0.490."
+            }
+          },
+          {
+            "id": "R2-3",
+            "severity": "medium",
+            "section": "5.0 labels/rerun rule (:390, :396), 4.7 (:346-359), Step 0.4 table (:478-479), Step 0.2 table (:421), Part 3.6 (:222)",
+            "claim": "L1.4 and the 4.7 reconciliation bounds carry two labels. The INCOMPLETE rerun rule has no exit for deterministic failures. Some 'sealed' values cannot be re-derived from the named script.",
+            "evidence": "4.7 lists 'L1.4 bands as stated there', RANDOM retention and anchor bounds as count reconciliation. 5.0 and the step 0.4 table map 'count mismatch' to INCOMPLETE, while the same table maps 'L1.4 outside its bands' to INCONCLUSIVE. Precedence makes it INCOMPLETE. The rerun rule repeats the unit 'with identical seeds and streams' (:390). Collection is seeded, so a realized value outside a sealed bound recurs identically, and so does an 'exhausted cap'. No terminal label exists. Separately, 4.7 says its values are 'sealed at A1 from random_control_mc.py', but that script outputs no high-load share, deep share or P(g >= 1.0) (random_control_mc_output.txt). So the bounds [0.53, 0.62], [0.05, 0.11] and 0.078/17.3% fail step 0.2's own rule ('cannot be re-derived from the sealed script: INCOMPLETE').",
+            "fix": "Split 4.7 into plumbing checks (INCOMPLETE) and expected-value checks (L1.4, retention, anchors: INCONCLUSIVE). After a second identical INCOMPLETE on a deterministic unit or cap, label the step INCONCLUSIVE and stop. Add the shares and the deep-share/P(g >= 1) statistics to random_control_mc.py and derive their bounds there.",
+            "check": {
+              "id": "R2-3",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Two defects are confirmed. (1) 4.7 places expected-value bounds under 'count reconciliation': CUTOFF removed count and fractions, RANDOM W retention, anchors, shares, and 'L1.4 bands as stated there'. The step 0.4 table maps 'count mismatch' to INCOMPLETE, and the only remedy for INCOMPLETE is a rerun 'with identical seeds and streams' (:390). Collection is seeded, so a realized value outside a 6-SD bound recurs exactly, and the protocol has no terminal label or exit. The L1.4 double-listing is a lesser ambiguity, because the step 0.4 table names L1.4 explicitly as INCONCLUSIVE. (2) 4.7 says its values are 'sealed at A1 from random_control_mc.py', but that script outputs no high-load share, no deep share and no P(g >= 1.0). By step 0.2's own rule, those bounds are 'reconciliation value[s] that cannot be re-derived from the sealed script: INCOMPLETE'. The step 0.2 defect is fixable on paper. The deterministic-rerun dead end is a real gap in the label logic.",
+              "evidence": "DRAFT_PROTOCOL.md:346-359 (4.7 bounds, including 'L1.4 bands as stated there'). :390 rerun with identical seeds and streams. :396 INCOMPLETE includes 'count mismatch'. :478-479 step 0.4 table. :421 step 0.2 re-derivation rule. screens/random_control_mc_output.txt lists w_ret, dens_*, anchor_*, rdeep_*, removed*, dens_hi_unstrat and dens_hi_bandblind, plus the first-W-step distribution. It has no high-load share, deep share, or P(g >= 1.0)/17.3% statistics, and grep finds no 0.078 or 17.3 in screens/."
+            }
+          },
+          {
+            "id": "R2-4",
+            "severity": "medium",
+            "section": "Stage 1 R0 (:492-494) vs 5.0 precedence (:392-401)",
+            "claim": "FAIL-early is issued at 10k with no validity check and with a mechanistic reading. That contradicts 'first label that applies wins' and 'readings only for FAIL-consistent'.",
+            "evidence": "R0 checks only the stall CUTOFF R_deep- rate < 0.05 on 32 E2 starts. V0(a), (c), (e) and V1 are all defined at 20k (:515-523), so none is evaluated before R0 stops the run. A collapsed or untrained actor, or a mis-bound dataset, also gives a rate < 0.05. Yet R0 attaches the reading 'the host contained the extrapolation at 10k' (:493), while 5.0 says 'A mechanistic reading is attached only to FAIL-consistent' (:401).",
+            "fix": "Before R0, require 10k validity: the 4.4 assertions passed, and J_E1 for stall CUTOFF and RANDOM is at least the untrained value + 50 at 10k (a V0(a) analogue). Otherwise label INCONCLUSIVE. Either drop the mechanistic reading or declare FAIL-early, which needs every seed, a FAIL-consistent subtype.",
+            "check": {
+              "id": "R2-4",
+              "real": true,
+              "severity_after": "low",
+              "reason": "R0 issues a terminal FAIL-early at 10k on the stall-CUTOFF R_deep- rate alone, with no validity precondition. The V0 items are all defined at 20k (:515-523). V1/4.4 in-worker assertions would catch a mis-bound dataset as INCOMPLETE, so that part of the finding is covered. A collapsed or undertrained actor is not covered, and it would also give a rate < 0.05. R0 also attaches a mechanistic reading ('the host contained the extrapolation at 10k'), while 5.0 says a reading is attached only to FAIL-consistent. The error is in the conservative direction: it can cause a false stop, never a false PASS. So it matters less than the 20k gates, but the asymmetry with V0(a) and the contradiction with 5.0 are real.",
+              "evidence": "DRAFT_PROTOCOL.md:492-494 R0 rule and reading. :398 FAIL-early defined as a FAIL subtype. :401 'A mechanistic reading is attached only to FAIL-consistent'. :515-523 V0(a)-(e), all at 20k. Only V1 (numerical/assertion failures, 5.0 table) applies at 10k."
+            }
+          },
+          {
+            "id": "R2-5",
+            "severity": "medium",
+            "section": "Stage 2 labels and screens (:576-597)",
+            "claim": "Stage 2 reuses reserved label words for screens that are only reported. Its NOT-PROMISING subtypes cannot be applied to its pooled criteria, and some screens have no aggregation rule.",
+            "evidence": "Recovery 'Otherwise ... INCONCLUSIVE' (:589) and the KC repair screen 'otherwise INCONCLUSIVE' (:593) use the same word as the gate label. Under 'INCOMPLETE > INCONCLUSIVE > ... > PROMISING' (:596) with first-applies-wins, a reported-only recovery could override PROMISING. 'NOT-PROMISING (consistent or mixed, as in 5.0)' needs per-seed criteria, but R1's three-seed-mean clause and R3's 12-fork delta are pooled. DETECTION-FAIL ranks below INCONCLUSIVE, yet V0-S2 cannot be evaluated when detection fails, because no branches are trained. Repair screens 2 and 3 give no seed aggregation. D2 (:570) names no world. 5.0's table does not list DETECTION-FAIL, PROMISING or NOT-PROMISING.",
+            "fix": "Rename the sub-screen outcomes (for example 'not computed (guard)'). Define NOT-PROMISING for pooled clauses. State that DETECTION-FAIL ends Stage 2 before V0-S2 exists. Give every screen an aggregation rule. Name D2's world (stall). Add the Stage 2 labels to 5.0.",
+            "check": {
+              "id": "R2-5",
+              "real": true,
+              "severity_after": "low",
+              "reason": "These are mostly wording and completeness defects in the Stage 2 label logic, and some are substantive. D2 (:570) names no world: D1 says 'in stall CUTOFF', and the 'stall world unless stated' header (:578) comes after the detection block. 'NOT-PROMISING (consistent or mixed, as in 5.0)' is undefined for R1's pooled three-seed-mean clause and for R3's pooled delta. 'Otherwise ... INCONCLUSIVE' inside the reported-only recovery and KC repair screens reuses a reserved label word. Context ('reported only') limits the damage. Not real as claimed: DETECTION-FAIL vs V0-S2. The text says 'Stop ... no BCA branches are trained' (:574), so Stage 2 ends at detection and V0-S2 is never reached, despite the precedence order. Repair screens 2 and 3 are reported only, so their missing aggregation does not affect any label.",
+              "evidence": "DRAFT_PROTOCOL.md:569 (D1, stall CUTOFF) vs :570 (D2, no world). :574 DETECTION-FAIL says Stop with no branches trained. :582 R1 pooled mean clause. :585 R3 pooled delta. :589 and :593 use 'INCONCLUSIVE' inside reported-only screens. :596 precedence list."
+            }
+          },
+          {
+            "id": "R2-6",
+            "severity": "medium",
+            "section": "Part 3.9 calibration (:233-236); digest item 9",
+            "claim": "The calibration replacement rule is not the prior rule it claims to follow, and it systematically oversamples states that come right after a stall.",
+            "evidence": "The prior calibration_plan keeps the original row if eligible, 'otherwise uniform eligible row in same episode using separate fixed PCG64 seed' (geometry.py:327-346), and fails rather than backfills when an episode has no eligible row. R2 replaces a W row with 'the next row in fixed time order that is not in W'. The W share is 0.575 x 0.494 + 0.425 x 0.2 = 0.369, so about 47 of 128 calibration rows are replacements. Each is the first non-W row after a W run, which is the successor state where the twin worlds first diverge (:218). Calibration therefore over-weights post-stall states in the stall world and differs systematically between worlds. R2 gives no fallback when no later non-W row exists.",
+            "fix": "Use the prior rule verbatim: the original seeded row, or else a uniform eligible row in the same episode from a separate seed, with no backfill and failing closed. Report the count of replacements.",
+            "check": {
+              "id": "R2-6",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "The replacement rule is a new rule, not the prior one. The prior rule takes a uniform eligible row from the same episode with a separate PCG64 seed and fails when an episode has no eligible row. The 'next non-W row' rule also has no fallback when every later row in the episode is in W, and simulation shows that case is likely to occur. It also shifts the replacements toward high load, because g is autocorrelated in time and the neighbor of a W row is usually also high load. The calibration stays common across arms within a world, so the arm comparison is not confounded. The 'differs between worlds' sub-claim is overstated: row indices are world-identical, and states diverge after the first W row under either rule.",
+              "evidence": "DRAFT_PROTOCOL.md:234 'If the selected row is in W, the next row in fixed time order that is not in W replaces it'. geometry.py:337-346 prior rule (uniform eligible row in the same episode, separate seed; failed_empty_eligible_episode). Simulation (scratchpad verify_wf_r2/skeptic_resolution/calib.py, 2,000 reps x 128 episodes, stated reset law and recorder): 47.4 replacements per world, 0.877 expected episodes with no later non-W row, P(at least one) = 0.59. The high-load share of replacements is 0.714 under the next-row rule vs 0.596 under the prior uniform-eligible rule."
+            }
+          },
+          {
+            "id": "R2-7",
+            "severity": "medium",
+            "section": "Step 0.3 gating fit (:434-445), Part 8.1/8.9 (:643-662); digest item 1 and its missing check",
+            "claim": "Item 1 is fixed in rule text, but whether mix15/C stays feasible under the corrected model is unknown and undisclosed. The antagonism with G0.5 is reduced, not removed.",
+            "evidence": "The saved per-probe data hold Q1 only at FIXED_A0 = (-.5, -.25, 0, .25, .5) (evaluation.py:17), so the four-point fit on {-0.5, -0.6, -0.7, -KNEE} cannot be computed before A2. It will be computed only after A1 seals the protocol. Part 8.9's 'Not yet verified' list omits it, although the digest flagged it as missing. A smooth network that represents the slope-1.5 fold, which G0.5 requires, also bends Q1 at -0.7 and -KNEE next to the labelled kink. So supported-point slopes are still pulled toward non-reach. The visited rows (current >= 0.9, about 72 per cell) are post-hoc reading 3, under which the written rule would have chosen mix25/D (REACH_SENSITIVITY.md:19).",
+            "fix": "Add the uncomputed four-point forecast to Part 8.9. State that fold-induced bending near -KNEE can still lower the forecast. Note that the visited row set is reading 3, fixed before step 0.3 and not used for selection.",
+            "check": {
+              "id": "R2-7",
+              "real": false,
+              "severity_after": "low",
+              "reason": "Item 1 is fixed: the gating fit now uses only the supported points {-0.5, -0.6, -0.7, -KNEE} (:438-440). The forecast under the corrected model is indeed uncomputed, since the saved Q1 is only at FIXED_A0 (evaluation.py:17). But step 0.3 is itself the gate that resolves this before any data collection. The draft discloses reach as 'the main risk', with thin margins and extrapolated slopes (Part 8.1 :643-646; step 0.1 :410; REACH_SENSITIVITY.md 'Limits shared by every reading'). A fold-induced low forecast can only cause a conservative stop, never a false positive (:458). The visited set with current >= 0.9 is a gate row set fixed before A2. No step 0.3 outcome can change the recorder or the candidate (:388), so it does not re-open selection, and REACH_SENSITIVITY.md already discloses that reading 3 would have picked mix25/D. The only residual is that Part 8.9 does not list the step 0.3 forecast. That is a disclosure nit, not a validity problem.",
+              "evidence": "evaluation.py:17 FIXED_A0 = (-.5, -.25, 0., .25, .5). DRAFT_PROTOCOL.md:438-440 four-point gating fit. :456 FAIL(reach) stops before collection. :458 'cannot create a false positive'. :388 outcomes cannot change the recorder. :643-646 reach is the main risk. REACH_SENSITIVITY.md:19 and :24 disclose reading 3 and mix25/D. :657-662 'Not yet verified' omits the step 0.3 forecast."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Item 1 rule text: the gating fit uses only {-0.5,-0.6,-0.7,-KNEE}, and the six-point fit is descriptive; the equilibrium pi0=(m+2λ'b)/(1-4λ'c) follows from td3_bc's mean-over-4-dims BC loss (td3_bc.py:239-245)",
+          "Item 4: the G0.5 STOP is now INCONCLUSIVE and matches Part 8 item 2; FAIL-consistent and FAIL-mixed no longer overlap; the precedence table exists; the step 0.3 G0.5 rows are exhaustive (>=50% / 25-50% / <25% per seed); identity residual -> INCOMPLETE",
+          "Item 5: K1c is an absolute bar on s10; V0(b) is two-sided; K1b is a consistency check; the L2-K1a link is stated as necessary only (0.75=0.5+0.25)",
+          "Item 6: K3c is now the world swap of the same stall-trained policy, consistent with L3c, Part 6.3 and Part 8.4; no-stall policy entry rate <0.05 makes its result uninformative",
+          "Item 7 numbers: L1.4 bars [2.00,2.16]/[2.00,2.18]/[1.80,2.24], W retention [0.460,0.504], anchors [-0.781,-0.768]/[-0.733,-0.720], removed [26,606,30,072], removed fractions, 48.2/42.4/67.6%, R_deep- 19 vs 1,105 all match random_control_mc_output.txt to rounding; unstratified 3.10 and load-blind 2.46 are rejected",
+          "Anchors -0.7263/-0.7747 agree across Part 3.7, 4.7, step 0.3 (m), Part 8.3 and reach_grid_output (mix15 C m=-0.7263)",
+          "CUTOFF removal 0.575*0.494+0.425*0.2=0.369 -> about 28,340 of 76,800, consistent with 28,339±289",
+          "Slot table: float32 values and float64 depths for s05/s10/s15/s20/p10, -0.77499998, -0.72500002, -0.69999999 and -0.40000001 verified; float32(-0.9) is not in R_deep-",
+          "L2.1 examples: T(-0.9)=-0.5 gives 0.168; T(-1)=-0.2 gives 0.288; G0.5 constant 0.3(1-0.5000000298^2)=0.22499999 and T15(-1) verified",
+          "Item 8: make_adapter (runtime.py:197-216) does bind context.train_transition and sample from it; it is called at warmup (runtime.py:173) and every branch (runtime.py:233); heldout is at runtime.py:303 and the normalization fixture at 131-163",
+          "Item 10: L2.2 restated for per-tuple learners, citing td3_bc.py 186-245",
+          "Item 11: K2b is a report; the criterion count is 'six criteria and five V0 items' (K1a, K1c, K2, K3a, K3b, K3c)",
+          "Item 12: 'post-hoc' wording; d=0.10 counts 2/5/3 match REACH_SENSITIVITY.md; step 0.1 minima 0.562/0.317 against bars 0.40/0.30 match reach_grid_output",
+          "Items 13, 14, 16, 17, 18, 19, 22 (citations td3_bc 207/240/243-245/199-200/40; thrusterchain START_LAWS 87-92, draw_starts 308-315, dynamics cost on clipped a; draw order kick-current-amp-phase), 23 (Part 6.10 and the rollout counters)",
+          "Anchor counts are consistent: 64 E2 (16 per t, 48 gated) plus 32 E1 = 96; V0(c) needs 32 of 48; 48 visited states; Stage 2 64/48",
+          "Branch counts are consistent: 12 Stage 1 runs, 36 Stage 2 branches from 12 forks, matching 4.4",
+          "Budget: 12x(~490+500)s ≈ 3.3 h; 36x500 s = 5.0 h; 5.5M/5,031/s ≈ 18 min; 12M ≈ 40 min; step 0.4 ≈ 1.6-1.9M under the 2.5M cap; step 0.3 known-answer replay ≈ 216k continuation steps under the 0.5M cap",
+          "Recovery/R1 now uses a DiD against RANDOM; ratio guards are backed by V0-S2 (Δclip(rep) >= 2, rate >= 0.25) and KC_s10 >= +0.5",
+          "Part 1 no longer claims the Hole was interpolation in the hull sense; 'tested neither extrapolation' holds along a0"
+        ]
+      },
+      {
+        "lens": "newrules",
+        "verdict": "Revision 2 fixes the structure of the rule system. FAIL-consistent and FAIL-mixed are now mutually exclusive. G0.5 is relabelled INCONCLUSIVE. K3c is the same-policy world swap, V0(b) is two-sided, and the ratio screens are guarded. Several of the new rules, though, still do not measure what they claim, or are too noisy to decide anything. (1) Digest item 1 is not actually resolved. Fitting the step 0.3 quadratic only on {-0.5,-0.6,-0.7,-KNEE} still measures the old critics' labelled fold, because a critic that rounds the slope-1.5 kink bends Q1 at -0.7 and -KNEE. With a rounding width of only 0.02 in a0, the forecast moves from -0.95 to -0.85 (not in R_deep-) while G0.5's F stays at 0.000. The 4-point design also multiplies critic noise by 25x in the extrapolated slope, so the forecast drifts toward about 50% whatever the true slopes are. (2) Stage 2 R1 is weak. Using the saved same-fork BCA-minus-native spreads, which share CRN exactly as Stage 2 will, its false-positive rate under the null is about 9-10%, and its power against a true +3 gain is only about 33%. The prior study's own hole-vs-random cells at strong current, 15k, pass both R1 (+2.68/+1.61/+10.17) and R2, although that study found nothing hole-specific. Episode-level SEs are 0.3-0.6, so the noise is branch-training noise, and a larger bank cannot fix it. (3) V0(b)'s 0.25 bar at s05 is about what a well-labelled but smooth RANDOM critic produces (0.20-0.43 under kink rounding). G0.5, which measures error at a0 = -1, cannot warn about this. (4) The Stage 2 replicate is undermined two ways. V0-S2 gates on the same replicate that serves as comparator, which brings the selection bias back. And nothing stops the replicate from reusing the Stage 1 native branch seed, in which case it would be a deterministic copy of that branch. (5) R3's noise-calibrated delta is either nearly vacuous or fails often under zero true cost, depending on scales nobody has measured. A generic BCA effect makes it pass regardless. (6) INCONCLUSIVE outranks FAIL, but its consequence and re-attempt policy are undefined at step 0.4, Stage 1 and Stage 2. The mechanistic readings are not conditioned on each other either, so a K2 failure automatically produces the reading \"harm not from the hidden knee\". All of this can be fixed on paper before A1. Items 1, 2, 3 and 4 should be fixed before sealing.",
+        "low_findings": [
+          {
+            "id": "R2-S9",
+            "severity": "low",
+            "section": "K3c (DRAFT_PROTOCOL.md:533), Part 6.3 (605), secondary A(pi) (543)",
+            "claim": "K3c is algebraically identical to the world swap A(pi_CUTOFF) = J_nostall(pi) - J_stall(pi). It does not need clipping, it duplicates a 'secondary' outcome, and it is at least K3a whenever going past the knee helps in no-stall. Its failure modes include drift to off-distribution states and a1..a3 stalls rather than anything specific to the knee.",
+            "evidence": "pi_clip never sends |a0| past KNEE, and thrust is bit-identical within the knee (L2.2). If a1..a3 also stay at or below KNEE, J(pi_clip, stall) = J(pi_clip, nostall) on the same starts, so K3c = Delta-clip(stall) - Delta-clip(nostall) = A(pi_C). Then K3a = A + Delta-clip(nostall). In no-stall, clipping an entry of depth d costs about (beta - 0.48) d < 0 per step, so K3c >= K3a. K3c can fail only if clipping helps in no-stall. That happens with generic over-actuation, or when the stall-trained policy behaves badly on post-entry no-stall states it never saw. pi_clip clips only a0, so stalls of a1..a3 (up to 0.5% under V0(e)) break the identity. Separately, K3b is close to K3a once V0(b) bounds RANDOM's rate at 0.10.",
+            "fix": "State K3c as A(pi_CUTOFF) >= +2, and use pi_clipall for the identity. Acknowledge that K3c is near-implied by K3a and that attribution to withholding rests on K3b alone. Report visited-state typicality of the no-stall swap rollouts."
+          },
+          {
+            "id": "R2-S10",
+            "severity": "low",
+            "section": "R0 FAIL-early (DRAFT_PROTOCOL.md:492-494, 398)",
+            "claim": "FAIL-early is declared at 10k with no validity check: none of V0(a) to (e) can be evaluated there. A run that is not learning, or is mis-bound, but passes the binding assertions, gets the mechanistic reading 'the host contained the extrapolation'.",
+            "evidence": "R0 tests only CUTOFF's R_deep- rate < 0.05 on 32 E2 starts in every seed. V0(a), J_E1(RANDOM) - J_E1(untrained) >= 50, is measured only at 20k. Because INCONCLUSIVE outranks FAIL, a validity failure would win at 20k, but at 10k the FAIL-early label pre-empts it.",
+            "fix": "At the 10k fork, before declaring FAIL-early, run a cheap learning check (V0(a) at 10k, or lambda and critic loss within sealed ranges). If it fails, label the outcome INCONCLUSIVE."
+          },
+          {
+            "id": "R2-S11",
+            "severity": "low",
+            "section": "K1a pairing (DRAFT_PROTOCOL.md:528), probes (505), L2 link (181-183)",
+            "claim": "The 'paired' K1a difference is paired by state only. Each arm's KC uses its own actor's a1..a3 and its own continuation, and exclusions are per arm. The L2 coherence note reasons with medians of each arm, while K1a uses the median of differences, and the note leaves out K1c's new relative clause.",
+            "evidence": "Line 505 sets a1..a3 'at the actor's values', which differ between the CUTOFF and RANDOM actors at the same anchor, so KC_C - KC_R compares different (s, a) points. Line 183's statement 'if RANDOM sits at +0.25, K1a has zero margin' holds for a difference of medians, not for the median of paired differences used in line 528. Line 182 states K1c as only '>= +0.5', omitting '>= 0.5 x median rho_hat(s10)'.",
+            "fix": "Fix a1..a3 at a common value for the gated KC probes, for example 0 or the recorder-prefix action at the anchor, and report the actor-valued version separately. Restate the L2 link with K1c's full rule and the paired-median statistic."
+          },
+          {
+            "id": "R2-S12",
+            "severity": "low",
+            "section": "Stage 2 labels (596), D2 (570), G0.5 sign (431, 453-455)",
+            "claim": "Several rule details are underspecified. FAIL-consistent and FAIL-mixed are undefined for R1, which has a pooled-mean clause. The within-anchor AUROC for D2 does not state how ties are handled. G0.5 is one-sided (F <= 0.5) while the V0(b) it is meant to warn about is two-sided.",
+            "evidence": "R1's '3-seed mean >= +3' cannot fail 'in all three seeds', so the 'consistent or mixed, as in 5.0' classification on line 596 is undefined for it. D2 compares one OOD slot against 5 near-edge slots per anchor, so per-anchor AUROC lies in {0, 0.2, ..., 1}, and a state-only U makes every comparison a tie. Ties counted as 0.5 give 0.5 per anchor, while ties counted as 0 or 1 change D2. A critic with F = -3 (exaggerated fold) passes G0.5 but would fail the lower side of V0(b).",
+            "fix": "Define the NOT-PROMISING subtypes per screen. Fix ties at 0.5 in the AUROC. Make G0.5 two-sided (|F| <= 0.5), or justify the asymmetry."
+          }
+        ],
+        "verified": [
+          {
+            "id": "R2-S1",
+            "severity": "high",
+            "section": "Step 0.3 gating fit (DRAFT_PROTOCOL.md:439-445) vs G0.5 (427-432, 450-456)",
+            "claim": "The 4-supported-point quadratic does not resolve digest item 1. The old critics' labels past the knee still contaminate Q1 at -0.7 and -KNEE through kink rounding. The 4-point quadratic is also so poorly conditioned that the forecast measures critic roughness more than slope. A critic that passes G0.5 cleanly can still trigger the reach FAIL.",
+            "evidence": "Scratch rounding.py models a critic that is exact everywhere except a softplus rounding of the slope-1.5 fold of width w. The true equilibrium is -0.95 (beta=4.05, lambda'=0.0368x0.751, m=-0.7263). With w=0.02, the 4-point fit gives c=-3.47 and pi0=-0.850, which is not in R_deep-. With w=0.05 it gives c=-6.96 and pi0=-0.785. G0.5's F(-1) is 0.000 and -0.008 in those two cases, a clean pass. Noise propagation (fit4.py, fit4b.py): on {-0.5,-0.6,-0.7,-KNEE}, sd(c)=50.0 sigma and sd(Q'(-0.9))=25.4 sigma. For comparison, step 0.1's 5-slot design gives sd(c)=4.28 sigma, and the 6-point fit gives sd(Q'(-0.9))=5.5 sigma. The saved 5-slot quadratic residual SD is 0.039-0.069 per cell. At sigma=0.05, a row whose true pi0 is -0.85 is counted as reaching R_deep- 24% of the time, and a row at -0.95 only 76% of the time. At sigma=0.1 the figures are 36% and 64%. The forecast is therefore pulled toward about 0.5 whatever the true slopes. The saved 20k lambdas are 0.0361-0.0372, so 1-4 lambda' c <= 0 needs c >= about 9. A curvature artifact from noise of 0.2 reaches that threshold on 18% of rows.",
+            "fix": "Drop the quadratic. Fit a straight line on {-0.5,-0.6} or {-0.5,-0.6,-0.7}, away from the rounding zone, and extrapolate linearly. Alternatively, take curvature c from the wide 5-slot fit used in step 0.1 and take only the edge slope from the supported points. Report the 4-point and 6-point fits as descriptive only. Seal this model at A1.",
+            "check": {
+              "id": "R2-S1",
+              "real": true,
+              "severity_after": "high",
+              "reason": "Revision 2 fixes the gating fit as a quadratic on {-0.5,-0.6,-0.7,-KNEE} (DRAFT_PROTOCOL.md:439-441). The point -KNEE sits exactly on the old critics' stall-1.5 fold, which they learned from labels past the knee, so any rounding of that fold pushes Q1(-KNEE) down. A 4-point quadratic with 0.1 spacing turns a single-point depression d into c = -25d. Nothing in revision 2 guards against this: the six-point fit is descriptive only, G0.5 tests F only at -1, and Part 8.5 addresses target smoothing for KC, not this fit. The bias points toward FAIL(reach) (line 455), a stop that records the wrong conclusion, 'old critics forecast no reach'. Line 458's defence, that a lenient bar cannot create a false positive, does not cover a false stop.",
+              "evidence": "I re-ran rounding.py: with true equilibrium -0.95 (beta 4.05), w=0.02 gives c=-3.47, pi0=-0.850 and F(-1)=-0.000. w=0.05 gives c=-6.96, pi0=-0.785 and F(-1)=-0.008. So G0.5 passes cleanly while the row drops out of R_deep-. The analytic check agrees: the orthogonal quadratic on 4 points at h=0.1 gives sd(c)=sigma/(4h^2)^0.5 ... = 50 sigma, confirmed by fit4.py, which also gives sd(Q'(-0.9)) of 25.4 sigma for the 4-point fit vs 5.5 sigma for 6 points. Saved 20k lambdas are 0.0361-0.0372, so the denominator threshold is c of about 9. fit4b.py: at sigma=0.05, a row with true pi0=-0.85 counts as reaching 23.8% of the time, and one at -0.95 only 76.1%. Caveat: the noise sigma is taken from 5-slot residuals at 0.25 spacing and may overstate roughness at 0.1 spacing, but the kink-rounding mechanism alone is enough."
+            }
+          },
+          {
+            "id": "R2-S2",
+            "severity": "high",
+            "section": "Stage 2 R1 (DRAFT_PROTOCOL.md:582-583) and R2 (584)",
+            "claim": "R1 (G>0 in every seed, mean >= +3) has a material false-positive rate under the null and low power. The prior study's real data show a false pass of both R1 and R2 under the same CRN branching.",
+            "evidence": "The prior pipeline already shared branch PRNG streams and replay mappings across arms within a cell (rerun1 PROTOCOL.md:23), so its BCA-minus-native spreads are the right proxy. Scratch did.py and fpr.py on the saved free returns (32 episodes per bank) give the following. Strong current, 15k, hole vs random: G = +2.68 / +1.61 / +10.17, mean +4.82, so R1 passes. BCA-minus-distance in the hole cells is +3.99 / +1.07 / +3.98, so R2 passes. The prior study found no hole-specific effect. The same seeds at 20k give G = -1.02 / +6.22 / -1.94, so G changes sign between checkpoints. The episode-level SE of each Delta is 0.13-0.58, while the between-cell SD of Delta is 2.6-4.1 at strong current. Under G ~ N(0, 2 sigma^2) the null false-positive rate is 0.086 at sigma=3.55, 0.095 at 4.0 and 0.103 at 4.5. Power at a true G=+3 is 0.33 / 0.31 / 0.29. The reported paired t-interval has half-width about 4.30 x 5.0 / sqrt(3) = 12.4, so it carries no information.",
+            "fix": "Pre-register a noise model before A1. One option is two or more native replicates per fork, so that branch noise is estimated inside Stage 2. Gate on a lower confidence bound for mean G (for example the lower bound of a paired interval > 0, built from per-fork branch noise), or raise the seed count. Report the expected null false-positive rate and power next to the rule. State that PROMISING is a screen with roughly 10% null pass probability.",
+            "check": {
+              "id": "R2-S2",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "R1 (line 582) gates on G>0 in every seed plus a mean >= +3, with no stated null pass rate and no power. The only power disclosure in the draft (line 547, Part 8.7) covers Stage 1. The paired t-interval is reported, not gated. The proxy data support a null R1 pass rate of about 5-10% and power of about 0.3 at G=+3. The joint null rate of PROMISING is lower, because R2 and R3 must also pass. PROMISING is called a screen, so this is a disclosure and design weakness, not a fatal one. Its severity is medium, not high: the cited real-data 'false pass' happens at 15k, while the gate uses 20k, where the same G is -1.02/+6.22/-1.94 and R1 fails.",
+              "evidence": "rerun1 PROTOCOL.md:23 confirms shared branch PRNG streams and replay mappings across arms within a cell, so BCA-minus-native is a valid CRN proxy. did.py at strong current, 15k: G[hole-random] = +2.68/+1.61/+10.17 (passes R1), and BCA-minus-distance in hole = +3.99/+1.07/+3.98 (passes R2). At 20k R1 fails. fpr.py: between-cell SD of Delta at strong current is 2.30-4.05. Null pass rate is 0.051 at sigma 2.5, 0.086 at 3.55 and 0.103 at 4.5. Power at +3 is 0.40/0.33/0.29."
+            }
+          },
+          {
+            "id": "R2-S3",
+            "severity": "medium",
+            "section": "V0(b) (DRAFT_PROTOCOL.md:520), G0.5 early warning (454), Part 8.2 (648-650), L2 link (181-183)",
+            "claim": "The two-sided bar |median KC_s05(RANDOM)| <= 0.25 sits at or below what a correctly labelled but smooth RANDOM critic produces at the onset of the knee. Stage 1 may therefore end INCONCLUSIVE whatever the hypothesis. G0.5 measures error at a0=-1, where kink rounding is invisible, so it cannot warn of this. The rate clause also does not test transfer of the fold across load as claimed.",
+            "evidence": "Take a critic that rounds the slope-3 kink with softplus width w. Then KC_s05 = 4 beta [0.05 - sp(0.05) + sp(0)]. With beta about 4.0-5.6 (implied by step 0.1's rho(-0.9) median of 2.12-2.58), w=0.02 gives 0.20-0.28 and w=0.05 gives 0.31-0.43. In the same model, F(-1) is 0.000 to -0.01. In the saved native critics, even fully labelled interior gaps show a systematic slope error: the median of [Q1(-0.25)-Q1(-0.5)] - [Qpi(-0.25)-Qpi(-0.5)] is +0.36 to +0.63 at ordinary current (kc_prior.py), which is about +0.1 per 0.05 before any kink. RANDOM keeps dense high-load labels across the band [-0.9,-0.8], which contains s05 (L1.4: 42.4% retention). So its high-load onset labels alone already show Q falling past -KNEE, and its actor's R_deep- rate <= 0.10 needs no transfer from low load. L2's zero-margin note (line 183) and K1a then require CUTOFF to extrapolate 60-100% of the edge slope.",
+            "fix": "Add a0=s05 (-0.85000002) to the G0.5 points and gate the early warning on KC-like error at s05 rather than at -1. Scale V0(b) to the measured gap, for example |median KC_s05(R)| <= 0.3 x median rho_hat(s05). Restate the rationale of the rate clause: it tests onset labels at high load, not transfer across load.",
+            "check": {
+              "id": "R2-S3",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "V0(b) (line 520) uses a fixed two-sided bar, |median KC_s05(RANDOM)| <= 0.25. A RANDOM critic that is correctly labelled but rounds the stall-3 kink over a modest width already reaches about 0.25 under KC's -KNEE reference (line 59). Part 8.2 (lines 648-650) says G0.5 gives early warning, but G0.5 measures F at a0=-1 (line 431), where such rounding is invisible. The rationale for the rate clause is also mis-stated. L1.4 (lines 131-135) shows RANDOM keeps 42.4% of high-load W labels, dense at depths below 0.1. So high-load onset labels alone can bend Q down before -0.9 without any transfer across load. At the L2 floor (median rho_hat(s05)=0.75, line 172) with RANDOM at +0.25, K1a needs CUTOFF to extrapolate the full edge slope, as line 183 itself concedes.",
+              "evidence": "For softplus rounding of width w: KC_s05 = 4 beta [0.05 - sp(0.05) + sp(0)]. w=0.02 gives 0.01226 x 4 beta, and w=0.05 gives 0.0190 x 4 beta. If beta is inferred from step 0.1's rho(-0.9) = 2.12-2.58 via rho(0.1) of about 0.4 beta, then beta is about 5.3-6.5. That gives KC_s05(RANDOM) of 0.26-0.32 at w=0.02 and 0.40-0.49 at w=0.05, both at or above the bar. The finder's beta of 4-5.6 gives 0.20-0.28. In the same model rounding.py shows |F(-1)| <= 0.01 for w <= 0.05."
+            }
+          },
+          {
+            "id": "R2-S4",
+            "severity": "medium",
+            "section": "Stage 2 V0-S2 (DRAFT_PROTOCOL.md:580), repair screens (590-593), R1 (582)",
+            "claim": "V0-S2 gates on the same native replicate that then serves as comparator. That reintroduces exactly the selection-for-damage bias the replicate was added to remove.",
+            "evidence": "Conditioning on the replicate meeting K2 >= 0.25 and K3a (Delta-clip >= 2) in every seed skews J(rep, C) downward and Delta-clip(rep) and R_deep-(rep) upward relative to their unconditional distributions. BCA is not conditioned. So E[J(BCA,C) - J(rep,C) | V0-S2 pass] is biased upward, and the repair screens 'Delta-clip(BCA) <= 0.5 x Delta-clip(rep)' and 'R_deep-(BCA) - R_deep-(rep) <= -0.15' are biased toward repair. RANDOM's replicate is not conditioned, so the bias does not cancel in G. Line 565 states the same rationale for the Stage 1 branch: 'selected for showing damage'.",
+            "fix": "Use two native replicates per CUTOFF fork. One decides V0-S2 and the other is the comparator. Alternatively, condition only on the Stage 1 damage and report the replicate's damage without gating on it.",
+            "check": {
+              "id": "R2-S4",
+              "real": true,
+              "severity_after": "low",
+              "reason": "V0-S2 (line 580) requires the native replicate itself to meet K2 and K3a (delta-clip >= 2) in every seed. The same replicate is then the comparator in R1 and the repair screens. Line 592 even relies on this ('V0-S2 guarantees delta-clip(rep) >= 2'). Conditioning on the comparator's damage truncates J(rep,C) downward and delta-clip(rep) upward, while BCA and RANDOM's replicate are unconditioned. The bias is real. Its size depends on how close the replicate's damage sits to the thresholds. V0-S2 only stops or continues, and it does not pick among replicates, so the effect is a truncation bias, not outright selection. Severity is low to medium.",
+              "evidence": "Line 565 gives the rationale for the replicate: the Stage 1 branch was 'selected for showing damage'. V0-S2 applies the same filter (K2 >= 0.25 and K3a >= 2 in all 3 seeds) to the replicate. Because delta-clip = J(clip) - J and J(clip) varies less, conditioning on delta-clip(rep) >= 2 lowers E[J(rep,C)], which biases G upward. If the replicate's delta-clip is near 2 (plausible by regression from a selected Stage 1 branch), the truncation shift approaches 0.8 SD."
+            }
+          },
+          {
+            "id": "R2-S5",
+            "severity": "medium",
+            "section": "Stage 2 arms and CRN (DRAFT_PROTOCOL.md:563-565), R3 delta definition (585)",
+            "claim": "The draft never says how the replicate's branch seed relates to the Stage 1 native branch seed. The prior pipeline derives the branch RNG deterministically from the fork state and branch_native_seed, so a shared seed makes the replicate a copy of the selected Stage 1 branch. Delta in R3 is also ill-defined: it does not say which bank, and it pools forks that differ in kind.",
+            "evidence": "rerun1 runtime.py:227 sets native_key = fold_in(state.microstep.rng, seed['branch_native_seed']), restores exactly (runtime.py:625-658, rng_exact, float rtol 2e-5), and shares the replay mapping. With the same seed, J(rep) = J(Stage 1 native) up to GPU nondeterminism. Then the SD over the 12 forks is about 0, delta = max(2, ~0) = 2, and the regression-to-the-mean protection disappears. Even with distinct seeds, J(Stage 1 native) was measured on the Stage 1 bank and J(rep) on the new Stage 2 bank (line 566). No re-evaluation is specified, so bank differences enter the SD. The 12 forks mix worlds and arms, and the 3 stall-CUTOFF forks carry a systematic regression shift (they were selected by Stage 1 PASS), which inflates the SD. The SD estimator (ddof) is also unspecified.",
+            "fix": "Require the replicate's branch seed to differ from, and not be derived identically to, the Stage 1 branch seed, and add a seed-collision check. Re-evaluate the Stage 1 native branch on the Stage 2 bank. Compute delta from the 9 forks that were not selected for damage, or within each arm-world cell, with a stated estimator.",
+            "check": {
+              "id": "R2-S5",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Line 564 says only that the three Stage 2 branches share 'one pre-registered branch seed'. Nothing requires it to differ from the Stage 1 native branch seed. The reused pipeline derives the branch RNG deterministically from the fork state and one branch_native_seed per seed index. A natural implementation would therefore make the replicate a copy of the Stage 1 branch. delta would then collapse to max(2, ~0) = 2, and the regression-to-the-mean rationale would vanish. The Stage 1 evaluation streams are 'never reused in Stage 2' (line 496), and Stage 2 uses a new bank (line 566). J(Stage 1 native) is therefore either on a different bank, which inflates the SD with bank noise, or needs a re-evaluation that is not specified. The SD pooling across the 12 heterogeneous forks and the ddof are also unspecified.",
+              "evidence": "rerun1 runtime.py:224-228: seed = protocol['seeds'][seed_index]; native_key = fold_in(state.microstep.rng, seed['branch_native_seed']), shared across the native, bca and distance arms. launch.py:53 reads one branch_native_seed per seed index. In DRAFT_PROTOCOL.md, grep finds no requirement on the replicate seed beyond line 564. The R3 delta definition (line 585) names no bank."
+            }
+          },
+          {
+            "id": "R2-S6",
+            "severity": "medium",
+            "section": "Stage 2 R3 cost of caution (DRAFT_PROTOCOL.md:585)",
+            "claim": "R3 cannot detect a caution cost specific to the knee. Its delta comes from native-vs-native noise, while the tested quantity carries the heterogeneity of BCA's effect plus a generic BCA bonus. Depending on the unmeasured scales, R3 either fails often under zero cost or passes under substantial cost.",
+            "evidence": "Proxies: the SD of saved distance-minus-native at strong current, 20k, is 2.04, so delta = max(2, 2x2.04) = about 4.1. The SD of BCA-minus-native is 3.55 and its mean is +3.65. Monte Carlo of P(all 3 seeds >= -delta), giving the mean of J(BCA)-J(rep) first: with delta=4.1 and sd 3.55, the pass probability is 0.67 at mu=0, 0.24 at mu=-3, 0.06 at mu=-5 and 0.955 at mu=+3.6 (the generic BCA effect). With delta=7.1 the figures are 0.93, 0.67, 0.38 and 0.996. A true knee-specific cost of -3 combined with the generic +3.6 nets about +0.6 and passes. Delta also grows with any extra run noise, so noisier Stage 2 runs loosen the bar.",
+            "fix": "Make R3 a difference-in-differences like R1: [J(BCA)-J(rep)] in no-stall CUTOFF minus the same quantity in no-stall RANDOM, or minus the stall-RANDOM contrast. Fix delta as a sealed number from saved spreads before A5, and report power against a stated cost.",
+            "check": {
+              "id": "R2-S6",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "R3 (line 585) is a raw J(BCA) - J(rep) contrast in no-stall CUTOFF. R1 (lines 582-583) explicitly removes a generic BCA effect of about +3.6 with a difference-in-differences; R3 does not. A knee-specific caution cost is therefore confounded with any generic BCA gain, which is internally inconsistent with R1's own rationale. delta also widens with run noise, so noisier Stage 2 runs loosen the bar. Revision 2 has no control for this, such as a no-stall RANDOM contrast.",
+              "evidence": "Proxies at strong current, 20k: SD of distance-minus-native across cells is about 2.0, giving delta of about 4.1. BCA-minus-native has mean +3.65 and SD 3.55 (fpr.py). With per-seed J difference ~N(mu, 3.55) and 3 seeds all >= -4.1, the pass probability is about 0.67 at mu=0, about 0.24 at mu=-3, and about 0.95 at mu=+3.6. A -3 knee-specific cost plus a +3.6 generic gain nets about +0.6 and passes most of the time."
+            }
+          },
+          {
+            "id": "R2-S7",
+            "severity": "medium",
+            "section": "5.0 labels and precedence (DRAFT_PROTOCOL.md:388-401); step 0.4 table (479); Stage 1 V0 (518-523); Stage 2 labels (595-597)",
+            "claim": "INCONCLUSIVE outranks FAIL, yet nothing says what follows an INCONCLUSIVE at step 0.4, Stage 1 or Stage 2. Only FAIL explicitly stops the plan, and the rerun rule covers INCOMPLETE only. A clean three-seed K failure plus any single V0 miss becomes INCONCLUSIVE, which leaves a fresh approval and a re-roll open.",
+            "evidence": "Line 401 says only 'Every FAIL stops the plan'. Line 390's rerun rule is limited to INCOMPLETE. The step 0.4 INCONCLUSIVE row (479) and V0 (518) carry no consequence, and Stage 2's V0-S2 has none either. Example: K2 fails in all 3 seeds, but V0(e) (a1..a3 past the knee > 0.5% in the no-stall RANDOM arm) or V0(a) in the no-stall world fails in one seed. Neither is related to the hypothesis, yet the label is INCONCLUSIVE, and no 'K2 FAIL-consistent' reading is recorded. Line 390 itself cites GPU nondeterminism, so even an identical-seed re-attempt can change the outcome.",
+            "fix": "State that INCONCLUSIVE stops the plan at that step, with no re-attempt under the same design. Record the K outcomes next to the INCONCLUSIVE label. Apply V0 items that concern only control or no-stall arms in a way that cannot mask a valid FAIL on the primary arm, or justify why they must.",
+            "check": {
+              "id": "R2-S7",
+              "real": true,
+              "severity_after": "low",
+              "reason": "This is partly handled. Progression is blocked, because only PASS permits the next request (step 0.4 table line 480, Stage 1 line 556, Stage 2 'only after a Stage 1 PASS' at line 561), so INCONCLUSIVE does stop forward progress in practice. Two gaps remain. First, the rerun rule (line 390) covers INCOMPLETE only, while 'one attempt per approval' (line 388) leaves a fresh-approval re-attempt after INCONCLUSIVE unforbidden; with GPU nondeterminism (line 390) that is a re-roll path. Second, there is no requirement to record K outcomes beside an INCONCLUSIVE, so a clean K FAIL masked by an unrelated V0(e) miss in a control or no-stall arm is lost. Step 0.3 says 'Stop' for INCONCLUSIVE (line 453), but step 0.4 and Stage 1 do not.",
+              "evidence": "Line 401 says 'Every FAIL stops the plan', with no equivalent for INCONCLUSIVE. V0(e) (line 523) applies 'in every arm and world', so a single-seed miss in no-stall RANDOM overrides a three-seed K2 failure in stall CUTOFF under the precedence at line 392."
+            }
+          },
+          {
+            "id": "R2-S8",
+            "severity": "medium",
+            "section": "Stage 1 readings for FAIL-consistent (DRAFT_PROTOCOL.md:549-554)",
+            "claim": "The readings are not hierarchical. When the actor never enters W, K3a, K3b and K3c fail in every seed automatically, which attaches the reading 'harm does not come from the hidden knee' to a run with no harm at all. Several criteria that are FAIL-consistent at once produce conflicting readings.",
+            "evidence": "If K2 fails because entry is about 0, then Delta-clip is about 0 in both worlds, so K3a, K3b and K3c (each needing >= +2) also fail in all three seeds. They are FAIL-consistent by the line 398 definition. The reading on line 554 is unconditional, unlike line 553, which is conditional on K2. 'K1 passes and K2 fails' does not say whether 'passes' means in all seeds. With K1a failing in one seed and K2 in all three, no reading applies, or a wrong one does.",
+            "fix": "Apply the readings in order K1, then K2, then K3. Give a K3 reading only when K2 passes in every seed, and define 'passes' as passing in all three seeds. Name the single first-failing criterion as the governing reading.",
+            "check": {
+              "id": "R2-S8",
+              "real": true,
+              "severity_after": "low",
+              "reason": "The readings (lines 549-554) are unordered. If entry is about 0, delta-clip is about 0, so K3a, K3b and K3c (each >= +2) all fail in every seed, and each is FAIL-consistent under line 396. The unconditional reading at line 554, 'the harm does not come from the hidden knee', then attaches to a run with no harm, alongside the K2 reading. Line 553 is conditioned on K2 passing, but line 554 is not. 'K1 passes' is also undefined as all-seed or some-seed. This affects interpretation text only, not the FAIL decision, so severity is low.",
+              "evidence": "K3c rule (line 533): delta-clip(stall) - delta-clip(no-stall) >= +2. With K2 failing because the R_deep- rate is about 0, both terms are about 0 and K3c fails in all 3 seeds. Line 554 has no K2 precondition."
+            }
+          }
+        ],
+        "checked_ok": [
+          "FAIL-consistent ('same named criterion fails in all three seeds') and FAIL-mixed are now mutually exclusive, and together they cover every non-early FAIL (line 398). Digest item 4's overlap is resolved.",
+          "The equilibrium formula pi0 = (m + 2 lambda' b)/(1 - 4 lambda' c) is correct for Unifloral's actor loss. bc_loss is averaged over the 4 action dimensions (td3_bc.py:239, 244), so pi0 = m + 2 lambda Q'. The saved 20k lambdas are 0.0361-0.0372.",
+          "K1c's relative clause is coherent with V0(d), since it uses the same own continuation and the same anchors, and it is not easier than K1a. With a critic that reproduces a fraction f of smooth extrapolation, K1c needs f >= 0.5 at s10, while K1a needs f*rho(s05) - KC_R >= 0.5, or f >= about 0.2-0.75 given rho(s05) of about 1.05-1.3 and |KC_R| <= 0.25.",
+          "Two-sided V0(b) closes r1's KC_R = -0.6 / KC_C = -0.1 loophole for K1a.",
+          "K3c is now the same stall-trained policy evaluated in both worlds, which matches L3c (digest item 6 resolved in structure).",
+          "D2's within-anchor contrast correctly fails a U that grows monotonically with |a0| (both arms' AUROC is 1, so the difference is 0) and a U that depends only on state (all ties). An action-density-sensitive U passes, which is the intended behaviour.",
+          "G0.5's constant 0.22499999 = 0.3(1 - T15(-1)^2) is exact, so F is an exact critic error at slope 1.5. The G0.5 label table is exhaustive, and its precedence settles the overlap between the flagged and INCONCLUSIVE rows.",
+          "Stage 2 CRN is consistent with the prior pipeline: branch PRNG and replay mapping are shared within a cell (rerun1 PROTOCOL.md:23). That makes the saved BCA-minus-native spreads a valid null proxy.",
+          "The draft's noise references reproduce from saved JSON. BCA-minus-native at strong current, 20k, has mean +3.65 and SD 3.55. Native hole-minus-random at strong current, 20k, is +4.9 / -11.5 / -41.0.",
+          "The repair-ratio denominators are guarded: Delta-clip(rep) >= 2 by V0-S2, and KC_s10(rep) >= 0.5 is required before the ratio is computed. Recovery has a guard.",
+          "Gated anchors are restricted to t in {0, 25, 50}, and K1a and K1c use medians over anchors common to both arms (digest item 15 resolved)."
+        ]
+      },
+      {
+        "lens": "facts",
+        "verdict": "Almost every number in revision 2 checks out. I recomputed the float32 slot table and depths, KNEE bits, T-images, the identity constants, the fold constant 0.22499999, P(g>=0.4)=0.575, P(g>=1.0)=0.078, the 17.3% episode share, the first-W-step probabilities, the CUTOFF removal and anchor figures, RANDOM retention and anchors, the L1.4 6-SD bands, the reach and sensitivity tables, the noise spreads, the +3.6 (SD 3.55) BCA gain, the timing receipts, the 5,031 per second evaluation rate, and the Part 11 hashes. Each matches the saved evidence or my independent Monte Carlo. The cited source lines (td3_bc.py, datasets.py, thrusterchain.py, runtime.py, data.py) say what the draft claims. The defects are in claims about provenance and rules, not in the arithmetic. (1) The RANDOM rule is described as a copy of geometry.py control_masks. That function stratifies on a binary high/low load split and contains the central-quartile hole predicate. A literal copy passes every count bar but fails the deep-band L1.4 bar about half the time, and no known-fault test covers it, so step 0.4 becomes a coin-flip INCONCLUSIVE. (2) 361/3,519 is the count over all three arms, not over full-data actors, whose count is 117/1,242. (3) The calibration replacement 'next non-W row' differs from the prior rule, which drew a uniform eligible row from a separate seed. It is also undefined for about 0.65% of episodes, so P(at least one of the 128 episodes is affected) is about 56%. (4) The high-load and deep share bars in 4.7 are not produced by the sealed script and are tighter than 6 SD. That breaks the draft's own re-derivation rule. Fix these before A1. The remaining items are low-severity wording and budget completeness.",
+        "low_findings": [
+          {
+            "id": "N5",
+            "severity": "low",
+            "section": "Part 7 Stage 1 row (line 633); 4.4 (line 303)",
+            "claim": "The Stage 1 training estimate omits the 3 BC-only runs. 4.4 counts 'the warmup', but Stage 1 has 12 warmups, one per run. The evaluation figure of about 5.5M transitions is not reconstructable from the listed work.",
+            "evidence": "Receipts: warmups 470.3-511.8 s and native branches 492.4-520.0 s, so 12 x (about 490 + about 503) = 11.9k s = 3.31 h. That covers only the 12 runs. BC-only runs have no saved timing because no BC adapter exists. My count of the listed evaluation: free rollouts 192 starts x 100 steps x 3 variants for 12 runs, plus world swaps for 6, at 15k and 20k, is about 2.07M. Q probes (96 anchors x 15 actions x 2 continuations x 62.5 mean horizon) are about 2.16M at 20k only, or 4.32M at both checkpoints. Visited-state KC adds about 1.3-2.6M. The total is about 5.7-9.3M. Both ends fit the 1 h cap (18.1M at 5,031 per second), so this is completeness, not a cap risk.",
+            "fix": "Add BC-only time to the Stage 1 estimate, or mark it as unmeasured. Say 'each of the 12 warmups' in 4.4. Itemize the evaluation count and say which checkpoints get Q probes."
+          },
+          {
+            "id": "N6",
+            "severity": "low",
+            "section": "L1.5 (line 139)",
+            "claim": "'Stall-world entry into W- produces thrusts of -0.5 to -0.2, which the recorder never delivered at high load' is false. The uniform floor delivers those thrusts directly, and CUTOFF retains them.",
+            "evidence": "At high load, floor rows (probability 0.02, a0 ~ U[-1, 1]) with a0 in [-0.5, -0.2] are within the knee, so thrust equals a0. That is 0.02 x 0.15 = 0.3% of high-load rows, about 44,160 x 0.003 = 132 retained rows per world. W rows with a0 in [-1, -0.9] (about 44 rows) also deliver T in [-0.5, -0.2] before CUTOFF removes them.",
+            "fix": "Replace 'never delivered' with 'rarely delivered (about 0.3% of high-load rows, via the floor)'."
+          },
+          {
+            "id": "N7",
+            "severity": "low",
+            "section": "Part 8.1 (line 646); Part 3.10 (line 238)",
+            "claim": "Two small numeric misstatements.",
+            "evidence": "(a) float32(-0.85) = -0.85000002384 is s05 itself, so window D's lowest executed command equals s05, not '1e-8 beyond' it. The conclusion (no RANDOM labels at depth >= 0.05 under D) is unaffected. (b) 'minimum 0.5006' for E2 load is a sample statistic. The law's infimum is 0.5 (c = 0.9, amplitude 0.4, cos = -1), and only 'g >= 0.5' and 'half >= 1.0' (exact by symmetry) are properties of the law.",
+            "fix": "Say 'equals s05'. Drop 0.5006 or label it as observed in a named sample."
+          },
+          {
+            "id": "N8",
+            "severity": "low",
+            "section": "Part 3.8 (line 229); Part 8.9 (line 659)",
+            "claim": "Gamma resolution is listed as not yet verified, but the reused pipeline already passes gamma explicitly.",
+            "evidence": "rerun1 runtime.py:137-138: native.Args(..., num_updates=10000, gamma=.98, batch_size=256). The upstream default 0.99 (td3_bc.py:40) applies only if this is dropped. The cadence claim in 4.6 is confirmed by progress.json: actor 5,000, critic 10,000, critic_target 5,000.",
+            "fix": "Cite runtime.py:137-138 as the existing binding and keep the 0.98 assertion as a regression test."
+          }
+        ],
+        "verified": [
+          {
+            "id": "N1",
+            "severity": "medium",
+            "section": "Part 3.7 (line 226), Part 6.1 (line 603), L1.4 (lines 122-130), 4.4 fixtures (lines 313-318); screens/random_control_mc.py docstring",
+            "claim": "The RANDOM rule is said to copy geometry.py control_masks, the prior study's exact rule, with three load bands. That function cannot be reused unchanged and does not have three bands. A literal copy is not caught by any known-fault test and fails the deep L1.4 bar about half the time.",
+            "evidence": "geometry.py:97-134. The strata are (episode, times//10, regions['high']), where high is the binary load >= 0.4 (line 112). hole_keep = ~region_masks(...)['hole'], with hole = high & |a0| <= 0.25 (lines 86-91), so the function counts the central-quartile hole, not W. My MC (120 datasets x 768 episodes, float32-cast load) of the exact binary-strata rule with the W predicate gives: W retention 0.4906 (bar [0.460, 0.504], passes); RANDOM anchor -0.7760 (bar [-0.781, -0.768], passes); pooled density 2.138 (bar [2.00, 2.16], passes, P(miss) about 0.07); mid band 2.123 (passes); deep band 2.234 +/- 0.040 against an upper bar of 2.24, so P(miss) is about 0.44. Overall about 48% of datasets land outside L1.4. Under Step 0.4 that is INCONCLUSIVE and stops the plan with no retry. The three-band rule gives 2.083 / 2.092 / 2.027, matching random_control_mc_output.txt. The known-fault tests are only 'unstratified' (3.10) and 'no load stratification at all' (2.46).",
+            "fix": "Replace 'copies control_masks' and 'exact rule' with: 'reimplements the control_masks sampling procedure (PCG64 seed, stable lexsort, rng.choice per stratum) with the knee predicate and three load bands'. Add a 'binary high/low strata (prior geometry)' known-fault fixture to 4.4 and 4.6, with its expected values (deep 2.23, pooled 2.14). Name the new control seed in seeds.json.",
+            "check": {
+              "id": "N1",
+              "real": true,
+              "severity_after": "low",
+              "reason": "The main premise is overstated. Revision 2 does not tell anyone to reuse control_masks unchanged: the same bullet (line 226) defines the strata as episode x ten-step bin x load band and names three bands with inclusive lower edges, line 603 says 'load band', and the random_control_mc.py docstring describes the three-band rule. A careful implementer would not literally copy binary strata or the hole predicate. The remaining defect is real but narrow. 'Copies control_masks' and 'the prior study's exact rule' invite one plausible slip, keeping geometry.py's binary high/low strata, and no known-fault test covers it. L1.4 catches that slip only about half the time, so it is neither reliably rejected nor reliably accepted. When L1.4 does catch it at step 0.4, the plan stops with no outcome-driven retry. Fix: reword lines 226 and 603 and add a binary-strata fixture to 4.4/4.6. Severity is low because the text already states the correct rule.",
+              "evidence": "geometry.py:112 builds strata as (episodes, times//time_bin, regions['high']) and line 113 sets hole_keep = ~regions['hole'], so binary load and the central-quartile predicate are confirmed. My MC (120 datasets x 768 episodes, binary g>=0.4 strata, W predicate, script verify_wf_r2/skeptic_facts/binary.py): pooled 2.1375 (SD 0.0137), mid 2.1206, deep 2.2439 (SD 0.0453), W retention 0.4907. P(deep > 2.24) = 0.56, P(pooled > 2.16) = 0.06, P(any L1.4 bar fails) = 0.56. The known-fault list at lines 130 and 318 names only unstratified (3.10) and band-blind (2.46) variants. The three-band output (random_control_mc_output.txt) gives mid 2.0904, deep 2.0201 and pooled 2.0809, which matches the draft's bars."
+            }
+          },
+          {
+            "id": "N2",
+            "severity": "medium",
+            "section": "4.8 (line 379); Part 9 Review 0 entry",
+            "claim": "'For all nine native 20k cells, full-data actors' commands go past the knee at 361 of 3,519 logged high-load probe rows (10.3%)' gives the wrong population. 361/3,519 pools full, hole and random actors.",
+            "evidence": "I recounted |actor_actions[:,0]| > KNEE on high_load rows of the nine native gradient_audit_020000.json files (authorized1, plus continuation1 for seed2_random): full 117/1,242 (9.4%), hole 118/1,140, random 126/1,137, total 361/3,519 (10.26%). This matches PANEL_OUTPUT.json line 192. 4.8 lists this as a known-answer reproduction item ('past-knee counts recomputed exactly'), so a checker following the text would compare full-data actors only (117/1,242) against 361/3,519 and report a false mismatch.",
+            "fix": "Restate as: 'native 20k actors of all three arms, 361/3,519 (10.3%); full-data actors 117/1,242 (9.4%)'. Seal both figures with the per-arm breakdown.",
+            "check": {
+              "id": "N2",
+              "real": true,
+              "severity_after": "low",
+              "reason": "Confirmed. Line 379 assigns 361/3,519 to 'full-data actors', but that figure pools the native 20k actors of all three arms. 4.8 lists past-knee counts as an exact known-answer item, so a checker restricted to full-data actors would get 117/1,242 and record a false mismatch, which is an INCOMPLETE at A2. The fix is only a relabel. The pooled figure itself is right.",
+              "evidence": "I recounted from the per_row.actor_actions and per_row.high_load fields of the nine native gradient_audit_020000.json files (authorized1, with seed2_random taken from continuation1), using |a0| > float32(0.8): full 117/1242, hole 118/1140, random 126/1137, total 361/3519 (10.26%). PANEL_OUTPUT.json line 192 gives the same per-arm breakdown. DRAFT_PROTOCOL.md:379 reads 'full-data actors' commands go past the knee at 361 of 3,519'."
+            }
+          },
+          {
+            "id": "N3",
+            "severity": "medium",
+            "section": "Part 3.9 (line 234)",
+            "claim": "The calibration source is attributed to the prior study's rule, but the replacement differs from the prior rule and is undefined in a case that is likely to occur.",
+            "evidence": "Prior rule: logged_data.py:69-73 takes the first 128 code-1 episodes by group id, with original times from PCG64(2026102362).integers(0,100,128); this part matches. geometry.py:311-346 calibration_plan then replaces a forbidden row with a 'uniform eligible row in same episode using separate fixed PCG64 seed' (2026102812). Revision 2 instead uses 'the next row in fixed time order that is not in W'. That is a new rule, not the prior one, and the draft gives no rule when every row from the selected time to t=99 is in W. My MC of this rule under knee_mix15 and recorder C (400k episodes): P(selected row in W) = 0.369, about 47 replacements expected among 128 episodes. P(no later non-W row) = 0.0065 per episode (0.0092 in deep episodes). The expected number of undefined episodes among 128 is 0.83, so P(at least one) is about 0.56. The draft also does not say whether the original-time seed 2026102362 is reused.",
+            "fix": "Either adopt the prior replacement exactly (uniform eligible row in the same episode, separate PCG64 seed, fail closed on an empty episode), or define a wrap or previous-row fallback. Name both seeds. Report the replaced-row count against its expected value (about 47 +/- 5).",
+            "check": {
+              "id": "N3",
+              "real": true,
+              "severity_after": "medium",
+              "reason": "Confirmed. Line 234 takes the selection from the prior rule and then defines its own forward-scan replacement. The prior rule (geometry.py calibration_plan) instead draws a uniform eligible row in the same episode with seed 2026102812 and fails closed when an episode has no eligible row. The draft never says what happens when every row from the selected time through t=99 is in W, and that case has better-than-even odds of occurring among 128 episodes. Neither seed is named, and there is no expected replacement count against which to check the counted replacements. Under Step 0.2 or 0.4 an undefined case leads to an ad hoc decision or an INCOMPLETE.",
+              "evidence": "geometry.py:24-25 has CALIBRATION_SEED 2026102362 and CALIBRATION_REPLACEMENT_SEED 2026102812. geometry.py:338-343 has the eligible-row replacement and the 'failed_empty_eligible_episode' status. logged_data.py:73 has PCG64(2026102362).integers(0,100,128). My MC (200k episodes, knee_mix15, recorder C; scratch calib.py): P(selected row in W) = 0.3708, giving 47.5 +/- 5.5 replacements per 128 episodes. P(no non-W row from t to 99) = 0.00663 (0.00959 in deep episodes), expected 0.85 per 128, P(at least one) = 0.57. DRAFT_PROTOCOL.md:234 has no fallback for this case and no seed."
+            }
+          },
+          {
+            "id": "N4",
+            "severity": "medium",
+            "section": "4.7 Shares (line 349); Part 11 (line 758); Step 0.2 label table (line 421)",
+            "claim": "The high-load share bar [0.53, 0.62] and the deep share bar [0.05, 0.11] are not produced by random_control_mc.py, which computes neither share. They are also narrower than the 6-SD convention used for every other bar. Under Step 0.2's own rule ('any reconciliation value that cannot be re-derived from the sealed script: INCOMPLETE'), these two bars fail.",
+            "evidence": "random_control_mc_output.txt has no share rows. My MC: high-load share 0.578 (analytic 0.575), SD 0.0120, 6-SD band [0.507, 0.650]. Deep share 0.0788, SD 0.0065, 6-SD band [0.040, 0.118]. The draft's bars sit at about +/-3.7 SD and +/-4.4 SD. Part 11 also hashes reach_grid.py, reach_variants.py and their outputs, but not random_control_mc.py or its output, even though 4.7 says its values are 'sealed at A1'.",
+            "fix": "Add both shares to random_control_mc.py, regenerate the output, take 6-SD bands from it, and record sha256 for the script and output in Part 11.",
+            "check": {
+              "id": "N4",
+              "real": true,
+              "severity_after": "low",
+              "reason": "The provenance part is confirmed. 4.7 says its values are 'sealed at A1 from random_control_mc.py', but that script computes no share quantities, and the share bars came unchanged from revision 1 (r1 line 266). Part 11 line 758 lists random_control_mc.py and its output without sha256, while every other screen in Part 11 is hashed. The 'narrower than 6 SD' part matters little in practice. Loads do not depend on actions and masks are byte-identical across worlds, so the bars would wrongly fail with probability around 1e-4. The bars are inconsistent with the stated convention, not a likely false stop. Severity is low. The fix is to add both shares to the script, take 6-SD bands from it, and hash the script and its output.",
+              "evidence": "random_control_mc_output.txt has no share rows (16 quantities plus first-W). My MC (300 datasets x 768 episodes; scratch shares.py): high-load share 0.5747, SD 0.0118, 6-SD band [0.504, 0.645]; deep share 0.0775, SD 0.0067, 6-SD band [0.037, 0.118]. The draft's [0.53, 0.62] is +/-3.8 SD and [0.05, 0.11] is -4.1/+4.9 SD. DRAFT_PROTOCOL.md:349 has the share bars, line 421 has the 'cannot be re-derived from the sealed script: INCOMPLETE' rule, and line 758 has no hashes, while lines 753-757 are hashed."
+            }
+          }
+        ],
+        "checked_ok": [
+          "Slot table recomputed in float32: s05 -0.85000002, depth 0.05000001; s10 = float32(-(KNEE+0.1)) = -0.90000004, depth 0.10000002, in R_deep-; s15 -0.94999999, depth 0.14999998; s20 -1, depth 0.19999999; p10 +0.90000004; float32(-0.9) = -0.89999998, depth 0.09999996, not in R_deep-; near-edge slots -0.77499998, -0.72500002, -0.69999999 are correct.",
+          "KNEE = 0.800000011920929 with bits 0x3F4CCCCD; the 671,090 float32 values with |x| in [0.79, 0.81] is consistent with 2 x 0.02 / 2^-24.",
+          "T-images at slope 3: T(s05) = -0.65, T(s10) = -0.49999994, T(s15) = -0.35000008, T(s20) = -0.20000005. Identity penalties 0.16800004 at s10 and 0.288 at -1. All match thrusterchain.py thrust() (clip minus slope*sign*max) and the reward on the clipped command (dynamics, lines 207, 218-221).",
+          "Fold constant: T15(-1) = -0.5000000298, so 0.3(1 - T^2) = 0.22499999. The R_lin formula is consistent with linear chord extrapolation against the true identity drop. Saved per-probe slots include -0.5 and -0.25.",
+          "P(g>=0.4) = 0.575 exactly (symmetry argument verified, MC 0.57479 at n = 2e6); P(g>=1.0) = 0.078 (MC 0.07785); 17.3% of episodes with g >= 1.0 (analytic 0.1736); E2 half >= 1.0 by symmetry.",
+          "Wave and load: the simulator rotates (w1, w2) by 0.27 rad per step and load = c + w1 = push(). It is action-independent, so the MC closed form c + A cos(ph + 0.27t) is right. Omitting the float32 cast in the MC is immaterial (my cast version reproduces dens_hi 2.083 against 2.081).",
+          "First-W-step probabilities 0.58 / 0.86 / 0.97 with median 1 reproduce random_control_mc_output.txt (0.581 / 0.855 / 0.969).",
+          "CUTOFF analytic: high-load removal 0.98 x 0.5 + 0.02 x 0.2 = 0.494; low-load 0.200; expected removed 76,800 x (0.575 x 0.494 + 0.425 x 0.2) = 28,343 (MC 28,339 +/- 289); renormalization 0.506 / 0.800; anchor -0.3675 / 0.506 = -0.72628.",
+          "RANDOM: retention 48.2% / 42.4% / 67.6%, density 2.08 / 2.09 / 2.02, anchor -0.7747, R_deep- counts about 19 at high load and about 1,105 at low load, and every 6-SD L1.4 and 4.7 band (pooled [2.00, 2.16], mid [2.00, 2.18], deep [1.80, 2.24], retention [0.460, 0.504], anchors, removed count and fractions) match the script output. My independent three-band MC agrees within SE. Known-fault values 3.10 and 2.46 confirmed.",
+          "random_control_mc.py implements the stated reset mixture (0.85/0.15, own uniform per episode), wave amplitude U[0.1, 0.4], uniform phase, recorder window C with 2% floor, float32 action cast, strict |a0| > KNEE, the band edge a0 >= float32(-0.9), and uniform sampling without replacement within strata (equivalent in law to geometry.py's rng.choice).",
+          "Reach screen: scale 0.751 reproduced from the linear fit (E[c^2] = 0.312, mean|Q1| = 96.0); the binding cell 40/126 against ceil(0.3 x 126) = 38; probe minimum 0.562 and visited minimum 0.317; REACH_SENSITIVITY counts 2(8) / 5(15) / 3(12) and mix15/D margins 0.381-0.50 match reach_variants_output.txt; 72 visited rows per cell, so 648 total.",
+          "The equilibrium pi0 = (m + 2 lambda b)/(1 - 4 lambda c) is consistent with td3_bc.py:239-245 (bc_loss is a mean over 4 action dims, lambda = 2.5/(mean|q| + 1e-7) with stop-gradient).",
+          "Hashes in Part 11 confirmed: PANEL_OUTPUT.json bf4efe7e...1257, REACH_SCREEN_RULE.md 8d4cae03...db46, reach_grid.py a260741b...84a3 and output 9909de46...e81b99, reach_variants.py e1eff4c5...36e7 and output 738c9b5f...7f33.",
+          "Noise reference reproduced from the rerun1 evaluation JSON: strong-current native 20k hole minus random +4.91 / -11.47 / -41.01; free-episode SD 23.0-44.3; BCA minus native gain mean +3.65, SD 3.55 over nine cells; undiscounted/discounted about 2.37; critic offset +22.7 to +32.8 (tables/07_critic_error_by_action.csv).",
+          "Budget receipts: warmups 470.3-511.8 s; native branches 492.4-520.0 s (median 502.8); BCA and distance branches 484-518 s; evaluation 1,975,304 transitions in 392.6 s (supervisor), 5,031 per second; R0 saving 12 x about 500 s = 1.7 h; Stage 2 36 x about 500 s = 5.0 h under the 6 h cap; step 0.4 about 1.9-2.1M transitions (overestimated with 22 forced actions), about 7 min.",
+          "File:line citations verified: td3_bc.py 40 (gamma 0.99), 186-245, 199-200 (noise), 207 (twin minimum), 240 (q[0]), 243-245 (lambda); bc.py 199 (own dataset mean); thrusterchain.py 87-92, 124-131, 207, 218-221, 308-315; datasets.py 33-35, 135-140 (gives 768/256/128/128 for 1,280), 171, 234 (lineage hard-codes START_LAWS['recorded']), 255, 264, 277, 338, 343-346, and REGIONS a0 > 0.5 at lines 31-32; rerun1 data.py 70 ('Recorder law changed'), 145-187 (CUTOFF∩RANDOM-style intersection, epsilon 1e-3), 155 (leakage check between disjoint episodes, vacuous as stated); runtime.py 131-163, 197-209 (binds context.train_transition, samples directly), 303 (heldout refresh).",
+          "The calibration source 'first 128 code-1 episodes by group id, one row per episode by an outcome-independent rule' matches logged_data.py:69-73 for the original selection (PCG64 2026102362 times). Only the replacement step departs (finding N3).",
+          "Cadence (actor 5,000 / critic 10,000 per 10k) confirmed in native progress.json.",
+          "The leakage-check vacuity claim is correct: normalization ids come from code-0 rows and calibration ids from code-1 episodes."
+        ]
+      }
+    ],
+    "critic": {
+      "verdict": "Revision 2 is NOT ready to seal at A1. Two high-severity defects remain, and both change gate logic. (1) Nothing separates the Stage 2 native replicate's seed from the Stage 1 native branch's seed. The reused pipeline derives the branch key from the fork RNG and a per-seed-index branch_native_seed (runtime.py:224-228), and the arm does not enter that key. So the replicate can be a bit-for-bit rerun of the selected Stage 1 branch. V0-S2 would then pass automatically, R3's delta would collapse to its 2.0 floor, and the regression-to-the-mean fix would be lost. (2) The step 0.3 reach gating fit is a four-point quadratic on {-0.5,-0.6,-0.7,-KNEE}. The -KNEE point sits on the old critics' labelled fold. Rounding that kink over 0.02 moves the forecast from -0.95 to -0.85, out of R_deep-, while G0.5 stays clean (F(-1)=0.000). The design also amplifies noise to sd(c)=50 sigma. Seven medium items remain: R1 has roughly 5-10% null pass and about 0.3 power, with neither disclosed. R3 has no difference-in-differences, so a generic BCA gain masks a knee-specific cost. The V0(b) bar of 0.25 is near what a smooth but correctly labelled RANDOM critic produces. The 4.7 expected-value bounds are routed to INCOMPLETE with a deterministic rerun and no exit, and the share bars are not derivable from the sealed script. The calibration replacement rule is new and undefined in a case with P about 0.57. Arithmetic, citations, slot table, L1.4 bands, anchors, budget and hashes all check out. Refuted, or downgraded to wording only: the 'copies control_masks' validity claim (the text states three bands) and the step 0.3 forecast-disclosure item (step 0.3 is itself the gate, and its error runs in the conservative direction). I made three spot-checks no lens covered. (a) Part 3.10 says E1 is 'reported only' (DRAFT_PROTOCOL.md:239), yet V0(a) gates on J_E1 (:519). V0(a) also checks RANDOM's learning only: CUTOFF has no adequacy check, so a CUTOFF actor that does not learn but passes the binding assertions gives a K2 FAIL-consistent with the wrong reading 'the BC anchor contains the over-valuation'. The +50 bar is lenient: in the prior study, untrained to native-20k ordinary discounted J rose from -237/-261/-313 to about -76 to -81, a gain of 155-235. (b) R0's 32 E2 starts have no named stream, and the text does not say how they relate to the 128-start gated bank (:492 vs :496-497). (c) thrust() applies the knee elementwise to all four thrusters (thrusterchain.py:190-198). The design's a1..a3 bound of 0.7 together with V0(e) and Part 6.10 handles this consistently, so it is checked OK.",
+      "ready_for_A1_consideration": false,
+      "must_fix": [
+        {
+          "severity": "high",
+          "section": "Stage 2 Arms (:563-565), V0-S2 (:580), R3 delta (:585)",
+          "issue": "Nothing requires the replicate's branch seed to differ from the Stage 1 native branch seed. In runtime.py:224-228, native_key = fold_in(fork rng, seed['branch_native_seed']), one per seed index and independent of the arm. A replicate forked from the same 10k state is then the Stage 1 branch again, apart from GPU nondeterminism. Consequences: V0-S2 repeats the Stage 1 PASS, SD of [J(rep) - J(Stage 1 native)] is about 0 so delta = 2.0, and with a true branch-noise SD of about 3.55 R3 passes in all 3 seeds under zero cost with P = Phi(2/3.55)^3 = 0.36. R3 also names no bank: the Stage 1 native branch was evaluated on the Stage 1 bank and the replicate on a new Stage 2 bank (:566), and the SD's pooling across 12 heterogeneous forks and its ddof are unspecified.",
+          "fix": "In seeds.json, give Stage 2 its own branch_native_seed and branch_aux_seed per fork, distinct from Stage 1's and collision-audited. Assert that the replicate's minibatch-index digest differs from the Stage 1 branch's. Re-evaluate the Stage 1 native branch on the Stage 2 bank before computing delta, or seal delta as a number now (see R3 item). Compute any SD from the 9 forks not selected for damage, or within each arm-world cell, with ddof stated.",
+          "source": "resolution R2-1; newrules R2-S5 (merged)"
+        },
+        {
+          "severity": "high",
+          "section": "Step 0.3 gating fit (:434-445) vs G0.5 (:427-432, :450-456)",
+          "issue": "The four-point quadratic on {-0.5,-0.6,-0.7,-KNEE} still carries the old critics' labelled fold, because -KNEE is the kink. Softplus rounding of width 0.02 gives c=-3.47 and pi0=-0.850, which is not in R_deep-, while F(-1)=0.000. Width 0.05 gives pi0=-0.785. The design is also ill-conditioned: sd(c)=50 sigma and sd(Q'(-0.9))=25.4 sigma, against 5.5 sigma for six points. At sigma=0.05, a row whose true pi0 is -0.95 counts as reaching only 76% of the time, and a row at -0.85 counts 24% of the time, so the forecast is pulled toward 50%. The error runs toward a false FAIL(reach) that records 'old critics forecast no reach'. Line 458's defence covers false positives only.",
+          "fix": "Fit a straight line on {-0.5,-0.6} or {-0.5,-0.6,-0.7}, away from the rounding zone, and extrapolate linearly. Alternatively, take c from the wide five-slot fit (step 0.1) and only the edge slope from the supported points. Keep the four- and six-point fits descriptive. Seal the chosen model at A1. Add the uncomputed step 0.3 forecast to Part 8.9 'Not yet verified', with a note that fold rounding biases it low.",
+          "source": "newrules R2-S1; resolution R2-7 (disclosure part only)"
+        },
+        {
+          "severity": "medium",
+          "section": "Stage 2 R1 (:582-583), Part 8.7 power (:547)",
+          "issue": "R1 has no stated null pass rate or power. From saved same-fork, shared-random-number proxies, the null pass rate is 0.05-0.10 for a between-cell SD of 2.5-4.5, and power at a true G=+3 is 0.29-0.40. The reported paired t-interval has half-width about 12, so it carries no information. Part 9 item 15 ('pre-register a power statement') is marked resolved but was declined.",
+          "fix": "Pre-register the expected null false-positive rate and power next to R1. Either gate on a lower confidence bound built from per-fork branch noise (needs two or more native replicates per fork) or add seeds. State plainly that PROMISING is a screen with roughly 5-10% null pass probability. Correct the Part 9 row.",
+          "source": "newrules R2-S2; resolution R2-9"
+        },
+        {
+          "severity": "medium",
+          "section": "Stage 2 R3 (:585)",
+          "issue": "R3 is a raw J(BCA)-J(rep) contrast in no-stall CUTOFF. A generic BCA gain of about +3.6 (SD 3.55) is not removed, although R1 removes it by difference-in-differences. A -3 knee-specific cost plus a +3.6 generic gain nets +0.6 and passes. Delta also grows with run noise, so noisier runs loosen the bar. Pass probabilities at delta about 4.1: 0.67 at mu=0, 0.24 at mu=-3, 0.95 at mu=+3.6.",
+          "fix": "Make R3 a difference-in-differences: [J(BCA)-J(rep)] in no-stall CUTOFF minus the same in no-stall RANDOM. Fix delta as a sealed number derived now from saved spreads. Report power against a stated cost.",
+          "source": "newrules R2-S6"
+        },
+        {
+          "severity": "medium",
+          "section": "V0(b) (:520), Part 8.2 (:648-650), L2 link (:181-183)",
+          "issue": "A RANDOM critic that is correctly labelled but rounds the slope-3 kink gives KC_s05 = 4 beta [0.05 - sp(0.05) + sp(0)]. That is 0.20-0.32 at w=0.02 and 0.31-0.49 at w=0.05, at or above the 0.25 bar, so Stage 1 can end INCONCLUSIVE whatever the hypothesis. G0.5 measures F at a0=-1, where this rounding is invisible (|F|<=0.01), so it cannot give the promised early warning. The rate clause's rationale (transfer across load) is wrong: RANDOM keeps 42.4% of high-load W labels, dense near s05.",
+          "fix": "Add s05 to the step 0.3 G0.5 points and base the early warning on KC-type error at s05. Scale V0(b) to the measured gap, for example |median KC_s05(R)| <= 0.3 x median rho_hat(s05). Restate the rate clause as a test of high-load onset labels.",
+          "source": "newrules R2-S3"
+        },
+        {
+          "severity": "medium",
+          "section": "4.7 (:346-359), 5.0 rerun rule (:390, :396), step 0.4 table (:478-479), step 0.2 (:421), Part 11 (:758)",
+          "issue": "4.7 files expected-value bounds (removed counts, W retention, anchors, shares, 'L1.4 bands as stated there') under count reconciliation. 'Count mismatch' maps to INCOMPLETE, whose only remedy is a rerun with identical seeds and streams. Collection is seeded, so an out-of-bound realized value, or an exhausted cap, recurs exactly, and there is no terminal label. The share bars [0.53,0.62] and [0.05,0.11] and the 0.078/17.3% figures are not produced by random_control_mc.py. By step 0.2's own rule that makes them INCOMPLETE. They also sit at about +/-4 SD, not the stated 6 SD (6-SD bands are about [0.504,0.645] and [0.037,0.118]). random_control_mc.py and its output carry no sha256 in Part 11, although 4.7 says the values are sealed from them.",
+          "fix": "Split 4.7 into plumbing checks (INCOMPLETE) and expected-value checks (INCONCLUSIVE). After a second identical INCOMPLETE on a deterministic unit or cap, label the step INCONCLUSIVE and stop. Add both shares and P(g>=1.0) to random_control_mc.py, take 6-SD bands from its output, and record sha256 for the script and output in Part 11.",
+          "source": "resolution R2-3; facts N4 (merged)"
+        },
+        {
+          "severity": "medium",
+          "section": "Part 3.9 calibration (:233-236)",
+          "issue": "The replacement rule 'next row in fixed time order not in W' is new. The prior rule (geometry.py:327-346) draws a uniform eligible row in the same episode with PCG64 seed 2026102812 and fails closed. About 47 +/- 5.5 of 128 rows are replacements. P(no later non-W row) is about 0.0066 per episode, so P(at least one undefined episode among 128) is about 0.57, and no fallback exists. The rule also over-weights post-stall, high-load successor states (high-load share of replacements 0.71 vs 0.60 under the prior rule). Neither seed (2026102362 for the original times, the replacement seed) is named.",
+          "fix": "Adopt the prior replacement verbatim (uniform eligible row in the same episode, separate named PCG64 seed, fail closed on an empty episode). Name both seeds in seeds.json. Report the replacement count against an expected 47 +/- 5.5.",
+          "source": "resolution R2-6; facts N3 (merged)"
+        },
+        {
+          "severity": "low",
+          "section": "V0(a) (:519) vs Part 3.10 (:239); R0 (:492-494)",
+          "issue": "Spot-check. Part 3.10 says E1 is 'reported only', yet V0(a) gates on J_E1. V0(a) checks RANDOM's learning only, so a CUTOFF actor that does not learn but passes the assertions produces a K2 FAIL-consistent with the reading 'the BC anchor contains the over-valuation'. R0 issues FAIL-early at 10k with no validity check at all, and attaches a mechanistic reading that 5.0 (:401) reserves for FAIL-consistent. Prior data: untrained to trained ordinary discounted J gains were 155-235, so +50 is a lenient floor.",
+          "fix": "Fix the 3.10 wording to 'E1 gates V0(a) only'. Apply V0(a) to CUTOFF too. Before R0, require a 10k adequacy check (the V0(a) analogue for stall CUTOFF and RANDOM), else INCONCLUSIVE. Either drop the R0 reading or define FAIL-early as a subtype that carries a reading.",
+          "source": "completeness spot-check; resolution R2-4; newrules R2-S10"
+        },
+        {
+          "severity": "low",
+          "section": "5.0 labels (:388-401); step 0.4 (:479); Stage 1 V0 (:518-523)",
+          "issue": "Nothing forbids a fresh-approval re-attempt after an INCONCLUSIVE, and GPU nondeterminism (:390) makes that a re-roll path. K outcomes are not required to be recorded beside an INCONCLUSIVE, so a clean three-seed K2 failure masked by a one-seed V0(e) miss in no-stall RANDOM is lost.",
+          "fix": "State that INCONCLUSIVE stops that step with no re-attempt under the same design. Always record per-seed K outcomes. Justify, or restrict, V0 items that concern only control or no-stall arms.",
+          "source": "newrules R2-S7"
+        },
+        {
+          "severity": "low",
+          "section": "Stage 2 V0-S2 (:580), repair screens (:590-593)",
+          "issue": "V0-S2 gates on the same replicate that is the comparator. The truncation biases J(rep,C) down and Delta-clip(rep) up, which favours G and the repair screens.",
+          "fix": "Either use two native replicates per CUTOFF fork (one for V0-S2, one as comparator) or report the replicate's damage without gating on it.",
+          "source": "newrules R2-S4"
+        },
+        {
+          "severity": "low",
+          "section": "Stage 1 readings (:549-554)",
+          "issue": "The readings have no order. Zero entry makes K3a, K3b and K3c all FAIL-consistent, and the unconditional K3c reading 'harm not from the hidden knee' then attaches to a run with no harm. 'K1 passes' is undefined as all-seed or some-seed.",
+          "fix": "Apply readings in order K1, then K2, then K3, with the first all-seed failure governing. Give a K3 reading only if K2 passes in all seeds.",
+          "source": "newrules R2-S8"
+        },
+        {
+          "severity": "low",
+          "section": "Stage 2 labels (:569-597); G0.5 (:431)",
+          "issue": "Reported-only screens reuse the reserved word INCONCLUSIVE (:589, :593). NOT-PROMISING consistent/mixed is undefined for pooled clauses (R1's mean, R3's delta). D2 names no world. AUROC tie handling is unspecified, and per-anchor AUROC takes values in {0,0.2,...,1}. G0.5 is one-sided while V0(b) is two-sided. The Stage 2 labels are missing from the 5.0 table.",
+          "fix": "Rename the sub-screen outcomes (for example 'not computed (guard)'). Define NOT-PROMISING per screen. Name D2's world as stall. Count ties as 0.5. Either use |F|<=0.5 or justify the one-sided form. Add the Stage 2 labels to 5.0.",
+          "source": "resolution R2-5; newrules R2-S12"
+        },
+        {
+          "severity": "low",
+          "section": "Part 3.7 (:226), Part 6.1 (:603), 4.4/4.6 fixtures",
+          "issue": "'Copies control_masks' and 'exact rule' invite keeping geometry.py's binary high/low strata and its hole predicate. That variant fails L1.4 about 50% of the time (deep-band density 2.23-2.24 against an upper bar of 2.24), and no known-fault test covers it. The text already specifies three bands, so this is wording plus test coverage.",
+          "fix": "Reword as 'reimplements the control_masks sampling procedure with the knee predicate and three load bands'. Add a binary-strata known-fault fixture (deep about 2.23, pooled about 2.14). Name the control seed.",
+          "source": "facts N1; resolution R2-2 (validity refuted, wording kept)"
+        },
+        {
+          "severity": "low",
+          "section": "4.8 (:379)",
+          "issue": "The 361/3,519 (10.3%) past-knee count pools all three arms. Full-data actors alone are 117/1,242 (9.4%). As written, the known-answer check would report a false mismatch.",
+          "fix": "Restate the count with the per-arm breakdown: full 117/1,242, hole 118/1,140, random 126/1,137.",
+          "source": "facts N2"
+        },
+        {
+          "severity": "low",
+          "section": "Stage 1 probes (:503-508); K1a (:528); K3c (:533)",
+          "issue": "Q_nostall at the anchors under the stall CUTOFF clipped continuations (needed by V0(d)) and the a1 = +/-KNEE probes (promised in Part 6.10) are not in the probe list. KC probes use each actor's own a1..a3, so K1a pairs by state only. K3c equals A(pi_C) when a1..a3 stay supported and is nearly implied by K3a. pi_clip clips a0 only.",
+          "fix": "Add these probes and recheck the 5.5M estimate. Fix a1..a3 at a common value for the gated KC probes. State K3c via pi_clipall and acknowledge that it nearly duplicates K3a.",
+          "source": "resolution R2-8; newrules R2-S9, R2-S11"
+        },
+        {
+          "severity": "low",
+          "section": "Part 0 / body terms; Part 9 rows 2, 15, 21",
+          "issue": "pi_clipall, 'the triple difference of J' and 'valid gated anchor' are undefined. The L2 items skip 5, yet V0(d) cites '1-4 and 6'. The L2.2 citation for load is wrong. alpha and c are overloaded in step 0.3. KEC-W v1, KEC-v1, C/D and mix15 are undefined. Steps 0.1 and 0.3 use a raw '-0.9'. 4.4 says 'the warmup' where there are 12. Part 9 marks items 2, 15 and 21 resolved although they were partly declined.",
+          "fix": "Restore the definitions, renumber the L2 items, rename the quadratic coefficients, use slot names, and change the Part 9 status to 'declined, because ...' where applicable.",
+          "source": "resolution R2-9, R2-10"
+        },
+        {
+          "severity": "low",
+          "section": "Part 8.1 (:646), 3.10 (:238), L1.5 (:139), 3.8/8.9 (:229, :659), Part 7 (:633), R0 (:492)",
+          "issue": "Numeric and completeness nits. Window D's edge is exactly s05, not 1e-8 beyond. 0.5006 is a sample minimum, and the law's infimum is 0.5. 'Never delivered' is false: the floor delivers -0.5 to -0.2 at about 0.3% of high-load rows (about 132 per world). Gamma is already bound at runtime.py:137-138. The BC-only runs are absent from the Stage 1 time estimate, and the 5.5M evaluation count is not itemized (2.07M rollouts plus 2.2-4.3M Q probes plus 1.3-2.6M visited, fine under the cap). R0's 32 E2 starts have no named stream.",
+          "fix": "Correct each statement. Itemize the evaluation count. Name the R0 start stream and its separation from the 128-start bank.",
+          "source": "resolution R2-11; facts N5-N8; completeness spot-check"
+        }
+      ],
+      "residual_risks": [
+        "Even after the fixes, Stage 2's PROMISING label is a weak screen. With 3 seeds and branch-training noise of about 3.5 return units, a method with no real knee-specific benefit passes R1 roughly 5-10% of the time, and a real +3 benefit is detected only about a third of the time. Treat PROMISING as 'worth a bigger study', not as evidence that BCA works.",
+        "Stage 1 has no power estimate. Six criteria and five validity items must hold in every one of three seeds, so a true effect can still come out FAIL-mixed. A FAIL-mixed says nothing either way.",
+        "Reach is the main feasibility risk. The old critics' slopes near the knee are extrapolated and the margins are thin, so step 0.3 or R0 may stop the plan early. Those stops cost little compute but end the line of work. A false stop is more likely than a false pass.",
+        "The validity bar on RANDOM's knee representation (V0(b)) may trip for a correctly labelled but smooth critic, which would make Stage 1 INCONCLUSIVE regardless of the hypothesis unless the bar is rescaled.",
+        "Several sealed expected values (count bounds, shares, L1.4 bands) are deterministic given the seeds. If the realized data fall outside a bound, the current rules have no way to finish. That needs the INCOMPLETE/INCONCLUSIVE split before sealing.",
+        "Every claim is confined to Unifloral TD3+BC on the stall_slope 3.0 world of knee_edge_v1, with a1..a3 bounded to 0.7. Thruster commands in (0.7, 0.8] are unlogged in every arm, so a shared extrapolation region exists that the knee condition does not control.",
+        "The prior study's own data show how fragile checkpoint-level contrasts are. The hole-vs-random gain flipped from +2.68/+1.61/+10.17 at 15k to -1.02/+6.22/-1.94 at 20k. Gating on 20k alone is correct, but expect sign instability across seeds."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:resolution",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "af0c813685ea22529",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793310876742,
+      "queuedAt": 1793310876716,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 2 deals with most of the 23 digest items on paper.…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311433679,
+      "tokens": 215842,
+      "toolCalls": 17,
+      "durationMs": 556936,
+      "resultPreview": "{\"verdict\":\"Revision 2 deals with most of the 23 digest items on paper. The numeric reconciliation is now coherent. The anchors -0.7263/-0.7747, retention 48.2% (42.4/67.6), the L1.4 bands, the removal bounds and the R_deep- counts (19 vs 1,105) all match screens/random_control_mc_output.txt. The slot table checks out in float32. Citations to td3_bc.py, runtime.py and thrusterchain.py check out. T…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "review:newrules",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a3f885063a85d8685",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793310876742,
+      "queuedAt": 1793310876716,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 2 fixes the structure of the rule system. FAIL-con…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311508819,
+      "tokens": 204918,
+      "toolCalls": 21,
+      "durationMs": 629123,
+      "resultPreview": "{\"verdict\":\"Revision 2 fixes the structure of the rule system. FAIL-consistent and FAIL-mixed are now mutually exclusive. G0.5 is relabelled INCONCLUSIVE. K3c is the same-policy world swap, V0(b) is two-sided, and the ratio screens are guarded. Several of the new rules, though, still do not measure what they claim, or are too noisy to decide anything. (1) Digest item 1 is not actually resolved. Fi…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "review:facts",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "ae75e777ab79c01e9",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793310876742,
+      "queuedAt": 1793310876716,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Almost every number in revision 2 checks out. I recomputed …",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311598576,
+      "tokens": 242445,
+      "toolCalls": 43,
+      "durationMs": 718879,
+      "resultPreview": "{\"verdict\":\"Almost every number in revision 2 checks out. I recomputed the float32 slot table and depths, KNEE bits, T-images, the identity constants, the fold constant 0.22499999, P(g>=0.4)=0.575, P(g>=1.0)=0.078, the 17.3% episode share, the first-W-step probabilities, the CUTOFF removal and anchor figures, RANDOM retention and anchors, the L1.4 6-SD bands, the reach and sensitivity tables, the …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "verify:resolution",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a26ef290c3480c457",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793311435647,
+      "queuedAt": 1793311435629,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311636676,
+      "tokens": 144180,
+      "toolCalls": 11,
+      "durationMs": 201029,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"R2-1\",\"real\":true,\"severity_after\":\"high\",\"reason\":\"Revision 2 never separates the Stage 2 replicate's seed from the Stage 1 native branch's seed. In the reused pipeline the branch key does not depend on the arm: branch() uses protocol['seeds'][seed_index]['branch_native_seed'] for native, bca and distance alike. So a replicate forked from the same 10k state is the same run as …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "verify:newrules",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "afd794c3a643a4040",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793311510689,
+      "queuedAt": 1793311510682,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311754272,
+      "tokens": 139277,
+      "toolCalls": 12,
+      "durationMs": 243583,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"R2-S1\",\"real\":true,\"severity_after\":\"high\",\"reason\":\"Revision 2 fixes the gating fit as a quadratic on {-0.5,-0.6,-0.7,-KNEE} (DRAFT_PROTOCOL.md:439-441). The point -KNEE sits exactly on the old critics' stall-1.5 fold, which they learned from labels past the knee, so any rounding of that fold pushes Q1(-KNEE) down. A 4-point quadratic with 0.1 spacing turns a single-point depr…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "verify:facts",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a7213c00136b25a07",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793311600386,
+      "queuedAt": 1793311600381,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311774889,
+      "tokens": 124921,
+      "toolCalls": 16,
+      "durationMs": 174503,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"N1\",\"real\":true,\"severity_after\":\"low\",\"reason\":\"The main premise is overstated. Revision 2 does not tell anyone to reuse control_masks unchanged: the same bullet (line 226) defines the strata as episode x ten-step bin x load band and names three bands with inclusive lower edges, line 603 says 'load band', and the random_control_mc.py docstring describes the three-band rule. A …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "ad6acec651a79408c",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793311776750,
+      "queuedAt": 1793311776731,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "Revision 2 is NOT ready to seal at A1. Two high-severity de…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool uses POSIX syntax; Python: C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe, run with -B).\nDocument under review: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 2 of a draft protocol for an out-of-distribution (OOD) action condition in the ThrusterChain offline RL benchmark (host Unifl…",
+      "promptFramed": true,
+      "lastProgressAt": 1793311982259,
+      "tokens": 152700,
+      "toolCalls": 12,
+      "durationMs": 205508,
+      "resultPreview": "{\"verdict\":\"Revision 2 is NOT ready to seal at A1. Two high-severity defects remain, and both change gate logic. (1) Nothing separates the Stage 2 native replicate's seed from the Stage 1 native branch's seed. The reused pipeline derives the branch key from the fork RNG and a per-seed-index branch_native_seed (runtime.py:224-228), and the arm does not enter that key. So the replicate can be a bit-…"
+    }
+  ],
+  "totalTokens": 1224283,
+  "totalToolCalls": 132
+}

@@ -1,0 +1,36 @@
+{
+  "utc": "2026-10-27T00:04:01.409300+00:00",
+  "scientific_execution_during_preparation": false,
+  "real_model_restorations": 0,
+  "real_optimizer_updates": 0,
+  "real_calibration_calls": 0,
+  "real_reset_calls": 0,
+  "real_simulator_transitions": 0,
+  "gpu_calls": 0,
+  "wsl_calls": 0,
+  "status": "pass_synthetic_evaluation_and_static_integration",
+  "tests_passed": 16,
+  "combined_suite_tests": 42,
+  "combined_suite_seconds": 7.959,
+  "files": {
+    "evaluate_worker.py": "59e80b67a95dde8e5a57a01766f4c57475a4ab00ef9ddd6dcc5ec181e5530391",
+    "test_evaluation.py": "dad7c32ddde1ad01673dc21ccf10c3b505a9b88ade58dba88308765646e60fa2",
+    "EVALUATION_SEEDS.json": "71582905d5c4fe139661696d6a535f69d849bbfc73bb97c1090c01b91cd7394a",
+    "protocol.json": "df37c490612e4d489a27a083305284bd4a244708735e482f0164629936465908"
+  },
+  "core_integrity_readonly": {
+    "bundle_manifest_sha256": "3443280fd4340ba64aef4d9601136257014bf2a6c61ca8c890eba06afa76690a",
+    "verified_core_files": 71,
+    "canonical_source_sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+    "matrix_sha256": "289afb581b4fdbc97fd68566c0b42ff6244b20686e9e49ba177e7e6bd57454a1"
+  },
+  "checks": [
+    "Exact pinned canonical task and reset law; float64 physical states and discounted return, float32 actor deployment, horizon100 with terminal reward included and no bootstrap.",
+    "All six final exports required and checked through supervisor/report/manifest/parameter hash chain.",
+    "224episodes/22400transition cap; pre-dispatch charges, reset uncertainty, owned final actors unchanged.",
+    "Both controls in both streams required; fixed numerical bands and2000paired bootstrap draws, no confidence-based tuning.",
+    "Same128logged-state probe; all13physical-coordinate state displacement separately; no OOD claim."
+  ],
+  "fixture_limit": "Two100step arithmetic fixtures use in-memory journals because Windows intermittently denied rapid atomic replacements; separate short fixtures test actual atomic files. Linux runtime integration remains manual.",
+  "remaining_blockers": []
+}

@@ -1,0 +1,102 @@
+{
+  "schema": "unifloral.matched_policy.implementation_review.v1",
+  "status": "pass_static_and_synthetic_continuation_review",
+  "utc": "2026-10-26T23:56:07.190128+00:00",
+  "reviewed_file_sha256": {
+    "continuation.py": "5da65a7c9054fdb8ef4c032859f5fc2e2266b69becf28fd8e8e18fdb1f323f2c",
+    "train_worker.py": "75a919d74b08c52b03265383b7cf2dba6da4ba4daa7d4606518d3787f18c46e3",
+    "launch.py": "87eb187eb65066b8362f6ebaafe9395ed990a0140d9dc77a0d65dfff809677fc",
+    "protocol.json": "df37c490612e4d489a27a083305284bd4a244708735e482f0164629936465908",
+    "test_continuation.py": "45e6ed393f5f332e9371f824011ef8ce4e61d1a5d4e3fce2b19d9438d7459089",
+    "test_launch.py": "baef5a3cb2af076891d1e73d3efba3464a1d3cc0f1a0221f7988adb462470cb3",
+    "EVALUATION_SEEDS.json": "71582905d5c4fe139661696d6a535f69d849bbfc73bb97c1090c01b91cd7394a"
+  },
+  "review_scope": [
+    "Approved three-arm/two-stream continuation protocol",
+    "continuation.py including initial reference binding, independent continuation validator and atomic step",
+    "train_worker.py restoration, protocol/count enforcement, normalization ownership, original snapshot and artifact seals",
+    "launch.py focused reservation, sequential dispatch, owned-child termination, worker/total caps and partial-report failure receipt handling"
+  ],
+  "blockers": [],
+  "synthetic_tests": {
+    "command": ".\\.venv\\Scripts\\python.exe -B experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/test_continuation.py",
+    "tests": 11,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds": 8.394,
+    "backend": "cpu",
+    "python": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+    "packages": {
+      "jax": "0.6.2",
+      "jaxlib": "0.6.2",
+      "numpy": "2.2.6",
+      "flax": "0.10.7",
+      "optax": "0.2.8"
+    },
+    "scope": "Tiny algebraic actor/critic functions and synthetic nonzero optimizer momentum. Actual pinned candidate microstep functions and new adapter; mocked auxiliary fit/refresh callbacks. No native model construction, checkpoint/data load, real fit/calibration, simulator, GPU or WSL.",
+    "contracts": [
+      "Native kappa0 bypasses penalty and matches independently written native loss/actor-gradient expression",
+      "Q1 denominator includes native1e-7 and is detached; kappa3 penalty correctly multiplied by native coefficient",
+      "Live action derivative for distance, mean over4coordinates, exact fixed factor and0.1 coefficient; frozen anchor gradients zero",
+      "Distance and gradient zero at identical starting actor; nonzero when actor moves",
+      "Full synthetic native/target parameters, optimizer moments, held batch, phase and counters preserved at fork",
+      "Declared native/aux keys folded into saved streams; different streams differ and paired arms share every native key, replay batch, fit key and refresh key",
+      "4-step fixture gives4critic/4aux/2actor/2each-target updates and exactly1refresh",
+      "Boundary actor consumes previous reference; next actor consumes new reference; refresh sees completed boundary actor+aux",
+      "Original input state remains unchanged",
+      "Invalid initial reference and invalid/infinite refresh refuse every arm, including shadow controls",
+      "Rejected auxiliary fit preserves last committed state and records attempted work",
+      "Completed budget refuses further dispatch before any update"
+    ]
+  },
+  "static_jax_scan": {
+    "command": ".\\.venv\\Scripts\\python.exe -B C:/Users/David/.codex/skills/jax-transformation-audit/scripts/audit_jax.py experiments/thrusterchain_bca/zeus_20261026_validation/matched_policy_pilot_v1/continuation.py --all-functions",
+    "heuristic_findings": 67,
+    "parse_errors": 0,
+    "confirmed_transformation_defects": 0,
+    "triage": "Host-only initialization/validation/scheduling/receipt code intentionally uses Python branches and NumPy conversions. Transformed finite/equality checks iterate static PyTree structure and inspect static shape/dtype. Distance/BCA width closures preserve live actions and use JAX operations; state mutation uses functional replacements. Candidate jit microsteps exercised by CPU fixtures."
+  },
+  "launcher_fixture_evidence": {
+    "source": "Parent root reported synthetic test_launch.py run; not reexecuted by this reviewer",
+    "tests_passed": 15,
+    "reported_scope": "Reservation/sequence, subprocess outcomes and caps, interruption cleanup, failed-job stop, evaluation only after six successes, malformed/truncated evaluation report still produces terminal receipt"
+  },
+  "resolved_findings": [
+    {
+      "finding": "Final evaluation report read outside exception guard could prevent RUN_RESULT.json when evaluator leaves partial JSON",
+      "resolution": "Root added read_report with OSError/ValueError handling, used for both per-job and terminal evaluation reads; errors recorded and unknown counts preserved. Focused static re-review passed."
+    }
+  ],
+  "fixed_scientific_contract": {
+    "arms": {
+      "native": 0.0,
+      "bca": 3.0,
+      "distance": 0.1
+    },
+    "distance_factor": 19.29619572569095,
+    "critic_updates_per_run": 2000,
+    "actor_updates_per_run": 1000,
+    "auxiliary_updates_per_run": 2000,
+    "calibrations_per_run": 1,
+    "relative_refresh_critic": 1000,
+    "first_actor_using_refreshed_reference_relative_critic": 1002,
+    "runs": 6,
+    "worker_seconds_cap": 600,
+    "evaluation_seconds_cap": 600,
+    "total_seconds_cap": 4200,
+    "original_checkpoint_and_sources_unchanged": true,
+    "failed_one_sided_variant_excluded": true
+  },
+  "limits": [
+    "Synthetic CPU fixtures do not establish actual GPU restoration/training/evaluation integration or scientific benefit.",
+    "The unchanged pinned native candidate was previously validated; these new fixtures independently check its objective/gradient and microstep contracts, not a new full native-training parity study.",
+    "Evaluation worker and its rollout/interval/seed-uniqueness checks are owned by the separate evaluator reviewer and are outside this continuation receipt. EVALUATION_SEEDS.json is hash-bound here, not independently regenerated.",
+    "Two paired continuation streams share one20k checkpoint and are not independent initialization replications. Original calibration episodes are reused; no selected-action or OOD guarantee.",
+    "Actual scientific execution remains pending the permitted manual user launch. WSL access restriction was not retried."
+  ],
+  "real_policy_training_executed": false,
+  "real_auxiliary_fitting_executed": false,
+  "real_calibration_executed": false,
+  "real_simulator_transitions": 0,
+  "full_training_hold": true
+}

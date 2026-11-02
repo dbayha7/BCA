@@ -1,0 +1,68 @@
+<section class="part" id="part-start" data-title="Start here">
+  <header>
+    <p class="eyebrow">ThrusterChain · Bayesian Conformal Aggregation on the Unifloral TD3+BC host</p>
+    <h1>Does calibrated uncertainty make an offline critic choose better?</h1>
+    <p class="lede">ThrusterChain is a small, fully inspectable control task: four thrusters hold five floats still against moving water, and a propeller pushed past 80% throttle stalls. A controller learned only from a fixed recording (offline reinforcement learning) must decide what to do where the recording is thin. This interface collects what the current Unifloral-based experiments have and have not shown about Bayesian Conformal Aggregation (BCA), one claim at a time, with every number traced to its report.</p>
+  </header>
+
+  <section class="sec" id="start-claims">
+    <h2>Five claims, kept apart</h2>
+    <p>BCA subtracts a calibrated uncertainty width <code>U</code> from the critic's value <code>Q1</code> inside the actor's objective. That is one mechanism, but it is tested against five different claims, and passing an earlier one does not establish a later one. Each row links to the evidence section that judges it.</p>
+    <div class="claims">
+      <div class="row"><div><b>1. Lower Q values.</b> Subtracting <code>κ·U</code> lowers the score. This is arithmetic, true by construction.</div><a class="btn" href="#res-error">See error charts</a></div>
+      <div class="row"><div><b>2. Error detection.</b> Is <code>U</code> larger where <code>Q1</code> is actually more wrong against the simulator reference? Requires a per-action association, not a lower average.</div><a class="btn" href="#res-alignment">See alignment</a></div>
+      <div class="row"><div><b>3. Proportional correction.</b> Does subtracting <code>U</code> remove overestimation without pushing values below the reference (overshoot)?</div><a class="btn" href="#res-error">See removed versus added</a></div>
+      <div class="row"><div><b>4. Better action choices.</b> On a fixed bank of candidate actions, does <code>Q1 − κU</code> pick higher-reference actions than raw <code>Q1</code> and than simple controls? Improved and harmed switches are counted separately.</div><a class="btn" href="#res-decisions">See decisions</a></div>
+      <div class="row"><div><b>5. Better policy returns.</b> Does training the actor with the penalty produce a policy that earns more in the simulator, under matched data and budgets, including under controlled shifts?</div><a class="btn" href="#res-policy">See returns</a></div>
+    </div>
+    <div class="callout warn"><p><b>Where things stand on 27 October 2026.</b> Claim 1 holds by construction. Claims 2 and 3 are not supported on the development banks: within a state the width barely tracks the residual it is calibrated to, and that residual barely tracks the signed error against the simulator; raising the strength removes overestimation but adds underestimation. Claim 4 is not established: the penalty changes few choices, helps slightly more than it harms at strength 3, and a cheap actor-distance control does as well. Claim 5 has one positive but limited result: two continuation streams from one checkpoint beat native continuation and a distance control on 32 shared starts; the independent-seed test with a support gap did not complete on this machine. Nothing here tests an out-of-distribution start law yet.</p></div>
+  </section>
+
+  <section class="sec" id="start-status">
+    <h2>Status of every experiment</h2>
+    <p>Counts by status, from the <a href="#part-evidence">evidence manifest</a>. "Unavailable here" marks work the brief describes on Titan whose folders are not present in this checkout; their descriptions are shown as the user's report, never as verified numbers.</p>
+    <p id="status-counts"></p>
+    <ul>
+      <li><b>Completed, positive:</b> the matched-policy continuation pilot (two streams, one checkpoint, nominal starts).</li>
+      <li><b>Completed, descriptive or negative:</b> the two development-bank decision diagnostics, the mechanism audit, the operator-alignment audit, the two privileged cached comparisons.</li>
+      <li><b>Completed, screen failed:</b> the one-sided BCA variant.</li>
+      <li><b>Interrupted or stopped:</b> both Zeus attempts at the fresh-initialization support pilot; two seed-0 warmups are sealed, no BCA branch ran.</li>
+      <li><b>Proposed:</b> the Titan continuation of that pilot.</li>
+      <li><b>Unavailable here:</b> the Titan held-out evaluation, the explicit OOD diagnostic, the adaptive signed-signal screen and the reported Titan completion of the support pilot.</li>
+      <li><b>Prepared, not run:</b> the stall-boundary validity assay.</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="start-conventions">
+    <h2>How to read the numbers</h2>
+    <h3>Less negative is higher</h3>
+    <p>Every return and every Q value on this page is negative, because the reward is minus a cost. A value of −30 is <em>higher</em> than −60. If a critic predicts −30 where the simulator reference is −60, it <em>overestimates</em> by 30. Every chart axis says so again.</p>
+    <h3>Signed error</h3>
+    <p><code>signed error = predicted − reference</code>. Positive means overestimation (too optimistic), negative means underestimation. A penalty that reduces a positive error toward zero is a correction; one that drives it negative has overshot.</p>
+    <h3>Three different "targets"</h3>
+    <ul>
+      <li><b>Simulator reference V.</b> The candidate action once, then <em>that model's own frozen actor</em> for the remaining horizon, discount 0.98, 100 steps in total, no terminal bootstrap. It is a policy-specific value, not the optimal value Q*, and different models have different references because their actors differ.</li>
+      <li><b>Native training target y.</b> One-step bootstrap with target networks, clipped action smoothing and the minimum of two critic heads. BCA's width is calibrated to the absolute residual between y and the twin-min critic at logged actions.</li>
+      <li><b>The earlier gamma-1 oracle.</b> The archived 21 October pages used a 100-step undiscounted continuation on a different host. Those values are not comparable and are not shown here.</li>
+    </ul>
+    <h3>Heads are not draws</h3>
+    <p>The host has <b>two</b> critic heads. BCA's calibration takes <b>1,000</b> Bayesian-bootstrap draws over a threshold. A head-count sweep is deferred and has no receipt.</p>
+    <h3>Forced probes versus chosen actions</h3>
+    <p>The decision diagnostics impose nine candidate actions at a state and ask which one each score would pick. A trained policy chooses freely. Only the policy pilots measure the second.</p>
+    <h3>Strength, not count</h3>
+    <p><code>κ</code> ("kappa") multiplies the width. The trained checkpoint used 0; the pilots used 3; the one-sided pilot's frozen ranking used 1; the development grids swept 0.03 to 10 and selected nothing.</p>
+  </section>
+
+  <section class="sec" id="start-scope">
+    <h2>What this interface covers, and what it leaves out</h2>
+    <p>Everything here runs on the pinned Unifloral standalone TD3+BC (repository revision <code>f2dc127</code>, file hash beginning <code>6f5ab6f9</code>), restored and verified before every run. The repository's earlier CORL-derived host, the 100k-update checkpoints trained with it, the 21 October saved-bank Explorer, the main and weighting tests and the BCA mechanics page all belong to that earlier host. They are preserved on disk unchanged and listed under <a href="#ev-archive">archived pages</a>, but their results are not mixed into any chart or table here.</p>
+    <p>Nothing on this page trains, simulates or fits anything. The episode player replays sequences exported by the benchmark's canonical plant; the one-step worked example recomputes a single transition with the frozen matrices, a formula the build checked against every saved fixture and every exported trajectory step before publishing.</p>
+    <ul class="toc-inline">
+      <li><a href="#part-environment">Environment explorer</a>: watch an episode, step through the arithmetic, see the start laws and the data.</li>
+      <li><a href="#part-bca">BCA explained</a>: the host, each component with inputs, outputs, equations and pseudocode, and the variants kept apart.</li>
+      <li><a href="#part-setup">Experimental setup</a>: each protocol, its budget and its fairness rules.</li>
+      <li><a href="#part-results">Results</a>: side-by-side Q on identical samples, error removed versus added, decisions, returns.</li>
+      <li><a href="#part-evidence">Evidence and downloads</a>: the manifest, every source path, verification commands, gaps.</li>
+    </ul>
+  </section>
+</section>

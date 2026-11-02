@@ -1,0 +1,114 @@
+{
+  "status": "passed_independent_saved_arithmetic_review",
+  "checks": 179,
+  "protocol_sha256": "df37c490612e4d489a27a083305284bd4a244708735e482f0164629936465908",
+  "evaluation_report_sha256": "7ff19d75806cd96edde90966f2edc5efaee427ff751845c9236f4981db9be6ae",
+  "verification_scope": "Only NumPy calculations on already saved rewards, trajectories, returns and protocol; zero model imports, simulator calls, fitting, calibration or confirmation access.",
+  "mean_discounted_returns": {
+    "original": -74.23108943650627,
+    "seed0_bca": -66.7316995196907,
+    "seed0_distance": -69.39903135799884,
+    "seed0_native": -69.32113507919235,
+    "seed1_bca": -67.31960196886492,
+    "seed1_distance": -70.46913711495108,
+    "seed1_native": -69.83026538109672
+  },
+  "paired_comparisons": [
+    {
+      "stream": 0,
+      "control": "native",
+      "mean_gain": 2.5894355595016427,
+      "mean_numerical_band": 7.032113507919233e-05,
+      "positive_screen": true,
+      "improved_episodes": 32,
+      "harmed_episodes": 0,
+      "numerical_ties": 0,
+      "mean_gain_episode_paired_bootstrap_95pct": [
+        2.4014407234189425,
+        2.8082029965559956
+      ]
+    },
+    {
+      "stream": 0,
+      "control": "distance",
+      "mean_gain": 2.667331838308129,
+      "mean_numerical_band": 7.039903135799881e-05,
+      "positive_screen": true,
+      "improved_episodes": 32,
+      "harmed_episodes": 0,
+      "numerical_ties": 0,
+      "mean_gain_episode_paired_bootstrap_95pct": [
+        2.477393559853244,
+        2.865935904521911
+      ]
+    },
+    {
+      "stream": 0,
+      "control": "original",
+      "mean_gain": 7.499389916815557,
+      "mean_numerical_band": 7.523108943650625e-05,
+      "positive_screen": true,
+      "improved_episodes": 32,
+      "harmed_episodes": 0,
+      "numerical_ties": 0,
+      "mean_gain_episode_paired_bootstrap_95pct": [
+        6.0030509044342555,
+        9.079921559206168
+      ]
+    },
+    {
+      "stream": 1,
+      "control": "native",
+      "mean_gain": 2.5106634122318057,
+      "mean_numerical_band": 7.083026538109671e-05,
+      "positive_screen": true,
+      "improved_episodes": 32,
+      "harmed_episodes": 0,
+      "numerical_ties": 0,
+      "mean_gain_episode_paired_bootstrap_95pct": [
+        2.3144568035909816,
+        2.7083182127245418
+      ]
+    },
+    {
+      "stream": 1,
+      "control": "distance",
+      "mean_gain": 3.1495351460861736,
+      "mean_numerical_band": 7.146913711495108e-05,
+      "positive_screen": true,
+      "improved_episodes": 32,
+      "harmed_episodes": 0,
+      "numerical_ties": 0,
+      "mean_gain_episode_paired_bootstrap_95pct": [
+        2.8095634528561577,
+        3.47495528844933
+      ]
+    },
+    {
+      "stream": 1,
+      "control": "original",
+      "mean_gain": 6.911487467641343,
+      "mean_numerical_band": 7.523108943650625e-05,
+      "positive_screen": true,
+      "improved_episodes": 32,
+      "harmed_episodes": 0,
+      "numerical_ties": 0,
+      "mean_gain_episode_paired_bootstrap_95pct": [
+        5.4825899171076475,
+        8.49171370055882
+      ]
+    }
+  ],
+  "primary_screen_passed": true,
+  "equal_stream_means_descriptive": {
+    "native": -69.57570023014453,
+    "bca": -67.02565074427781,
+    "distance": -69.93408423647496
+  },
+  "limitations": [
+    "Two continuation streams share a single trained checkpoint and the same 32 nominal reset seeds; these are not 64 independent starts or independent training initialization replications.",
+    "Episode bootstrap intervals condition on these fixed trained actors; they do not establish training-seed generalization or OOD benefit.",
+    "Current original BCA kappa3 passed a numerical-direction exploratory screen after development selection and adaptive reuse of calibration episodes; no fresh confirmatory guarantee.",
+    "Logged action displacement cannot be independently recomputed without the actor forward outputs, which are not persisted; trajectory displacement was independently verified."
+  ]
+}
