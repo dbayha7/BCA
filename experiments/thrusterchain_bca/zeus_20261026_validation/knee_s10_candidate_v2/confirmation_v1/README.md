@@ -24,7 +24,7 @@ edited into the rule and re-sealed before any run. The sentences are matched exa
 .venv/Scripts/python.exe -c "import json,hashlib;p='experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1/';h=hashlib.sha256(open(p+'CF_MANIFEST.json','rb').read()).hexdigest();open(p+'CF_APPROVAL.json','x').write(json.dumps({'approval':'I approve the confirmation of the OOD-action overestimation comparison on the knee_s10_v2 CUTOFF data, Unifloral TD3+BC host, doses kappa 21, 63 and 189, both worlds, attempt 1. And the BCA arms at kappa 21, 63 and 189 are approved, the confirmation seeds are fresh: no run has used them, and the dose being confirmed is 63; the other doses are a profile.','package_manifest_sha256':h,'attempt':1},indent=2)+chr(10))"
 ```
 
-## Run (PowerShell launches the `Ubuntu` distro; about 4.5 hours; nothing else of yours on the GPU; keep the terminal open)
+## Run (PowerShell launches the `Ubuntu` distro; about 4.5 hours, up to about 8.5 at Zeus's slowest pace; training cap 9 h, amendment A1; nothing else of yours on the GPU; keep the terminal open)
 
 ```bash
 wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1 && PYTHONDONTWRITEBYTECODE=1 /home/david/bca-operator-audit-20261026/bin/python -B -u cf.py --execute 2>&1 | tee cf_console.log"

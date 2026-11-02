@@ -194,6 +194,14 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   was then refused because aabfadc0 was already on the remote. The user chose 14 h. The merge keeps aabfadc0's
   files, removes that `SCREEN_MANIFEST.json` and `SCREEN_APPROVAL.json` (they bind the 12 h files), and the package
   is re-sealed and re-approved under 14 h. Nothing ran under the 12 h seal; no attempt was spent.
+- **Confirmation v1, attempt 1 (2026-11-02 04:08-04:12 UTC, Zeus): INCOMPLETE, interrupted by the user** after 286 s
+  of `warmup_s0_stall3` (no checkpoint, report or evaluation; no number from the fresh seeds exists). It overlapped
+  the r5 screen's attempt 1 on the same GPU. **Amendment A1 (the user's choice, 2026-11-02 ~12:10 UTC, before the
+  attempt-2 approval):** total training cap 5 h -> 9 h, because Zeus's real training jobs have run from about 490 s
+  (overestimation runs) to 880 and 1,286 s (r5 warmups), and 30 jobs at the slow end would hit 5 h on the last
+  allowed attempt. Kill rule only; per-job cap, evaluation caps, doses, seeds, reads, bars and approval words
+  unchanged. Re-sealed (manifest fd65e961...); 11 tests pass; the attempt-2 approval check was rehearsed against a
+  scratch file and passed. Attempt 2 runs on Zeus while Titan runs the r5 screen.
 - **r5 native screen, attempt 2 on Titan (2026-11-02 11:58-12:30 UTC, user-run, manifest 904542fd…, approval
   7e5887b1): INCOMPLETE, killed from outside.** Stage 0 passed (preflight, i0); warmups `s0_cutoff_stall3` (794 s) and
   `s0_random_stall3` (743 s) completed; `s0_cutoff_nostall` stood at 3,500 of 10,000 steps when Windows Update

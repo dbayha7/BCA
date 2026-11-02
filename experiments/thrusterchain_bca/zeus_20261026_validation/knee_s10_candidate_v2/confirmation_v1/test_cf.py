@@ -64,6 +64,9 @@ class Worker(unittest.TestCase):
         finally:
             CW.SW.step03.rerun1, CW.SW.KAPPA = original_rerun1, original_kappa
 
+    def test_caps_amendment_a1(self):
+        self.assertEqual((cf.JOB_SECONDS, cf.TRAIN_SECONDS, cf.EVAL_SECONDS, cf.EVAL_TRANSITIONS), (1_800, 9 * 3_600, 2 * 3_600, 3_000_000))
+
     def test_kinds(self):
         self.assertIs(CW.SW.KINDS["cf_evaluate"], CW.cf_evaluate)
         self.assertTrue({"warmup", "branch", "bca_branch"} <= set(CW.SW.KINDS))
