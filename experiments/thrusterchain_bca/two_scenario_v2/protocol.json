@@ -1,0 +1,148 @@
+{
+  "anchor_time": 25,
+  "anchors_per_seed_condition": 16,
+  "arms": [
+    "native",
+    "bca"
+  ],
+  "batch_size": 256,
+  "bc_coefficient": 1.0,
+  "branch_updates": 10000,
+  "calibration_parent_episodes": 256,
+  "calibration_rows": 128,
+  "calibration_seed": 121312521,
+  "collection": {
+    "action_noise": 0.03,
+    "collection_seed": 1126198317,
+    "current_range": [
+      0.015,
+      0.025
+    ],
+    "parents": 1280,
+    "physical_start_jitter": 0.01,
+    "split_seed": 426939568,
+    "wave_amplitude_range": [
+      0.005,
+      0.015
+    ],
+    "wide_action_noise": 0.15
+  },
+  "collection_seed": 1126198317,
+  "common_action_slots": 3,
+  "common_reference_panel": true,
+  "conditions": [
+    "honeypot",
+    "bottleneck"
+  ],
+  "error_tolerance": 1.0,
+  "evaluation_common_reference_steps": 21600,
+  "evaluation_own_qpi_steps": 57600,
+  "evaluation_prefix_parity_steps": 4800,
+  "evaluation_return_steps": 153600,
+  "evaluation_seeds": [
+    {
+      "anchors": 827749318,
+      "returns": 1023131162
+    },
+    {
+      "anchors": 1634549052,
+      "returns": 1202177850
+    },
+    {
+      "anchors": 1112235423,
+      "returns": 816919785
+    }
+  ],
+  "evaluation_transition_cap": 237600,
+  "fit_parent_episodes": 768,
+  "gamma": 0.98,
+  "geometry_recipe": {
+    "action_weight": 0.3,
+    "b_time": 25,
+    "c_time": 30,
+    "connector_radius_fraction": 0.15,
+    "connector_trim_fraction": 0.2,
+    "danger_radius_fraction": 0.25,
+    "danger_radius_max": 0.1,
+    "goal_radius": 0.1,
+    "goal_time": 75,
+    "initial_state": [
+      0.8,
+      0,
+      0.8,
+      0,
+      0.8,
+      0,
+      0.8,
+      0,
+      0.8,
+      0,
+      0.02,
+      0.01,
+      0
+    ],
+    "minimum_region_radius": 0.01,
+    "physical_weight": 1.0,
+    "terminal_weight_multiplier": 10.0,
+    "tracking_duration": 75
+  },
+  "geometry_seed": 1178850045,
+  "horizon": 100,
+  "include_own_actor_probe": true,
+  "kappa": 3.0,
+  "native_td3_alpha": 2.5,
+  "no_automatic_retry": true,
+  "numerical_tie_tolerance": 1e-10,
+  "parent_episodes": 1280,
+  "practical_return_gain": 5.0,
+  "reserved_parent_episodes": 256,
+  "return_episodes_per_policy": 128,
+  "schema": "thrusterchain.two_scenario.protocol.v1",
+  "scientific_evaluation_authorized": false,
+  "seeds": [
+    {
+      "aux_seed": 985483841,
+      "branch_aux_seed": 390762801,
+      "branch_native_seed": 1112291319,
+      "native_seed": 1971502897
+    },
+    {
+      "aux_seed": 1561265996,
+      "branch_aux_seed": 743444710,
+      "branch_native_seed": 1593250515,
+      "native_seed": 1096750719
+    },
+    {
+      "aux_seed": 965814543,
+      "branch_aux_seed": 771917924,
+      "branch_native_seed": 1837912550,
+      "native_seed": 871467598
+    }
+  ],
+  "setup_rules": {
+    "approach_current_radius": 0.005,
+    "approach_physical_l2_radius": 0.1,
+    "approach_time_match": "exact",
+    "approach_wave_l2_radius": 0.02,
+    "calibration_eligible_parent_minimum": 128,
+    "frozen_before_simulator_outcomes": true,
+    "max_safe_goal_time": 75,
+    "minimum_approach_parents": 8,
+    "minimum_fragment_parents": 8,
+    "minimum_removed_parents": 8,
+    "no_geometry_search": true,
+    "reference_return_advantage": 5.0,
+    "required_connector_traversal_families": 12,
+    "required_danger_entry_families": 12,
+    "required_safe_goal_families": 12,
+    "witness_families": 15
+  },
+  "status": "build_pending_geometry_and_user_review",
+  "total_actor_updates": 90000,
+  "total_auxiliary_updates": 180000,
+  "total_calibrations": 18,
+  "total_critic_updates": 180000,
+  "total_return_episodes": 1536,
+  "training_authorized": false,
+  "warmup_updates": 10000
+}
