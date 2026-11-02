@@ -147,3 +147,15 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   by 0.25, 0.08, 0.32 there too (U is sign- and world-blind: U_W − U_data +0.01 to +0.03 in both worlds) at a
   return cost of −0.3, +3.4, −6.7: one seed past the 2.0 bar, so neither CALIBRATED nor OVER-CORRECTION. Mild
   underestimation signature in no-stall (BCA e_data −0.6, −0.2). Exploratory; three seeds; mechanism untested.
+
+## The confirmation (2026-11-01 22:53 EST, the user: "Yes, confirmation")
+
+- **`../knee_s10_candidate_v2/confirmation_v1/` (rule `CONFIRMATION_RULE.md`, written first).** Pre-registered:
+  fresh training rows from the reserved namespace `knee_s10_candidate_v2/confirmation/` (never drawn from before)
+  plus fresh visited-state and probe-row seeds, audited; doses kappa 21, 63, 189 (63 is the dose being confirmed;
+  the others a profile); both worlds; the exploratory package's data, starts, probes, reference and reads
+  unchanged. C1 (stall3, kappa 63): CONFIRMED if dJ ≥ +2.0 in every fresh seed. C2 (no-stall, kappa 63):
+  CALIBRATED if dJ ≥ −2.0 everywhere; COST BOUNDED if mean dJ ≥ −4.0 and no seed below −8.0; OVER-CORRECTION;
+  PLACEBO WITHOUT STAKE; PLACEBO MIXED. Profile flags: exposure monotone in kappa; honeypot gain monotone. Thirty
+  training jobs (about 4 h) and twenty-four evaluations; caps 1,800 s per job, 5 h training, 2 h evaluation. 10
+  tests pass. Sealed; awaits the user's approval and launch.
