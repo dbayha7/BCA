@@ -21,7 +21,7 @@ One or two lowercase words of status, outlined in the current text color, beside
 - 12px/600, 0.04em tracking, `radius-pill`, a 1px border in `currentColor`.
 - In `ul.g-status` every tag is ink except `.ok`, and each line has a 3px `rule-strong` left edge.
 
-**Do** keep red (`.warn`) for the stall and real warnings. A test that stopped or failed is a decision, so its tag stays neutral and its words say why. **Don't** fill tags or use them as buttons.
+**Do** keep red (`.warn`) for the stall and real warnings. A tag carries a test's verdict, never the whole line: the sentence after it says what the data showed. A test that stopped or failed is a decision about that test, so its tag stays neutral, not red. **Don't** fill tags or use them as buttons.
 
 **React** (`window.BCA`, React 18; hand-written from the page's markup in `page_build/wf7/build/core_v27.html`)
 

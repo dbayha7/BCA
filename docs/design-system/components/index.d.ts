@@ -117,7 +117,9 @@ export interface CalloutProps {
 export interface FindingProps {
   /** The finding as a sentence a reader could repeat. */
   title: ReactNode;
-  /** Usually: The idea · What we tested (and the kill rule) · What happened · Why. */
+  /** The idea · The test and its rule · Verdict · What the data show · Open questions. The verdict is the
+   *  predefined test's outcome under its own rule and nothing else; the reading and the open questions are
+   *  written whatever the verdict. */
   parts: Array<{ label: ReactNode; text: ReactNode }>;
   /** stacked (default): each label over its text. columns: label left, text right. */
   layout?: 'stacked' | 'columns';
