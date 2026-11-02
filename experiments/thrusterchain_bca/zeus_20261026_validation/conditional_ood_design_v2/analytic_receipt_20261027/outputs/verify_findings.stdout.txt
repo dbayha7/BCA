@@ -1,0 +1,56 @@
+=== thrust / cost table ===
+a0=-1.00 thrust=-0.5000 cost=0.3000
+a0=-0.90 thrust=-0.6500 cost=0.2430
+a0=-0.85 thrust=-0.7250 cost=0.2167
+a0=-0.80 thrust=-0.8000 cost=0.1920
+a0=-0.75 thrust=-0.7500 cost=0.1687
+a0=-0.70 thrust=-0.7000 cost=0.1470
+a0=-0.60 thrust=-0.6000 cost=0.1080
+a0=+0.00 thrust=+0.0000 cost=0.0000
+a0=+0.50 thrust=+0.5000 cost=0.0750
+
+=== load probabilities (Monte Carlo, 2e6 draws) ===
+P(g>=0.4 | recorded, t=0) = 0.4998025
+P(c+A<0.4 | recorded) (no high-load row ever) = 0.1113465  closed form 0.02/0.18 = 0.11111111111111112
+P(c-A>=0.4 | recorded) (no low-load row ever) = 0.111392
+P(g>=0.4 | strong) = 0.9948335  low-load share = 0.0051665
+mean fraction high-load steps per episode = 0.50027845
+h=0.025: expected hole rows train=960, per bin=96, calib=160; share of episodes with >=1 hole row = 0.631
+h=0.05: expected hole rows train=1920, per bin=192, calib=320; share of episodes with >=1 hole row = 0.789
+h=0.1: expected hole rows train=3840, per bin=384, calib=640; share of episodes with >=1 hole row = 0.863
+share of (episode,bin) cells with zero high-load rows = 0.228843 ; share of episodes with no high-load rows = 0.11118
+
+=== covariance propagation vs receipt std ===
+Var(thrust) uniform a = 0.2566666710821344
+p1       model std=0.8618 receipt=0.8720 ratio=0.988
+v1       model std=0.7621 receipt=0.7675 ratio=0.993
+p2       model std=0.7997 receipt=0.7972 ratio=1.003
+v2       model std=0.8494 receipt=0.8453 ratio=1.005
+p3       model std=0.7048 receipt=0.7023 ratio=1.004
+v3       model std=0.6931 receipt=0.6917 ratio=1.002
+p4       model std=0.5871 receipt=0.5929 ratio=0.990
+v4       model std=0.5946 receipt=0.6010 ratio=0.989
+p5       model std=0.3860 receipt=0.3864 ratio=0.999
+v5       model std=0.3969 receipt=0.3966 ratio=1.001
+current  model std=0.1732 receipt=0.1767 ratio=0.980
+wave1    model std=0.1871 receipt=0.1886 ratio=0.992
+wave2    model std=0.1871 receipt=0.1885 ratio=0.993
+
+=== P(two same-time states within standardized RMS rho), Gaussian per-time approx ===
+t= 0: P(RMS<=0.5)=5.53e-04; expected other-episode same-time points in 767 = 0.424; radius for E[8 of 767]=0.670; after halving pool (16/767 quantile)=0.723; median pair dist=1.200
+t=25: P(RMS<=0.5)=3.87e-04; expected other-episode same-time points in 767 = 0.297; radius for E[8 of 767]=0.705; after halving pool (16/767 quantile)=0.765; median pair dist=1.336
+t=50: P(RMS<=0.5)=3.15e-04; expected other-episode same-time points in 767 = 0.242; radius for E[8 of 767]=0.713; after halving pool (16/767 quantile)=0.773; median pair dist=1.322
+t=75: P(RMS<=0.5)=3.20e-04; expected other-episode same-time points in 767 = 0.245; radius for E[8 of 767]=0.708; after halving pool (16/767 quantile)=0.767; median pair dist=1.298
+
+=== 4-D action box ===
+P(row in box)= 6.250000000000001e-06  expected in 76,800 = 0.4800000000000001  in bin-and-load cell (3,840) = 0.024000000000000004  side for 8 rows in cell = 0.42728700639623407  expected inside k=64 neighbourhood = 0.0004000000000000001
+a0-marginal: P(|a0-target|<=0.05) = 0.05  expected in k=64 neighbourhood = 3.2
+
+=== value gap under neutral continuations (frozen plant, 100 high-load starts) ===
+zero continuation: v(-0.8)-v(-0.7) mean +0.651 [-1.13,+2.66]; v(-0.8)-v(-0.9) mean +1.116; spread over 5 band/ring values mean 1.47 max 4.13; with a0=0 added mean 8.33; v(-0.8)-v(0.0) mean +6.90; v(-0.8)-v(+0.5) mean +13.16
+load-opposing proportional: v(-0.8)-v(-0.7) mean +0.059 [-1.31,+1.75]; v(-0.8)-v(-0.9) mean +0.227; spread over 5 band/ring values mean 0.86 max 2.77; with a0=0 added mean 4.81; v(-0.8)-v(0.0) mean +2.15; v(-0.8)-v(+0.5) mean +5.46
+
+=== development banks: within-state spread of v and of error q1-v ===
+n states 128  median v spread 5.973124412662813  median within-state std of (q1-v) 1.6124505698908362  median q1 spread 6.262590765953064  25/75 pct within-state error std [1.18159674 2.34226393]
+development_1 mean_absolute_error 36.014647171163475
+development_2 mean_absolute_error 29.442589078989826

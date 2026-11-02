@@ -1,0 +1,191 @@
+{
+  "summary": "Bounded final check of revision 12 of the knee-edge OOD draft: only the eight operative hunks, validity-relevant problems only; skeptic; readiness critic",
+  "agentCount": 3,
+  "logs": [],
+  "result": {
+    "packed": [
+      {
+        "lens": "r12",
+        "verdict": "r12 resolves all 8 must-fix items from round 11 in the protocol text itself. The source facts it adds are correct. The native 20k cells are built through runtime.branch, then restore_snapshot, then FrozenPolicy (evaluate_worker.py 600-601), because their stage is 'native', not 'warmup'. _act at line 351 closes over actor.params. The per-bank loop is at 602-604. The device kind is exactly 'NVIDIA GeForce RTX 5070 Ti Laptop GPU' in all nine runtime_receipts. 99 actor calls is right. All 44 Part 11 hashes match. The K1c noise wording (212, 891, reading 1 at 732), step 0.4's reported counts, and the Stage 2 repair-screen anchor set agree with each other and with the reading rules. The one substantive point is the new 4.8 failures exemption. Its purpose matches 5.0: an environment assertion that fails before anything is computed cannot re-roll GPU nondeterminism. But it is written as a fact, not as a condition. The build path r12 mandates re-asserts runtime_receipt inside runtime.create once per cell, between value computations. 5.0's 'any check' text was not amended. And Review 12 says no label changed, although repeated receipt failures under unchanged code no longer end the step INCONCLUSIVE. This fails closed in practice. It needs one conditional sentence, a cross-reference in 5.0, and an explicit note to the user that it is a narrow exception to the second-failure rule. The other items are low and concern what an implementer needs: the full build path, the actor-identity reference for 4.5, and the scope of the median rule. No r12 sentence changes a gate threshold or the precedence order. r12 remains ready for A1 consideration once finding 1 is reworded.",
+        "low_findings": [
+          {
+            "id": "F2",
+            "severity": "low",
+            "section": "4.8 Compiled function (DRAFT_PROTOCOL.md:485)",
+            "claim": "'Built as recorded: runtime.branch, then restore_snapshot, then FrozenPolicy (600-601)' is accurate for the native 20k specs but leaves out the steps that runtime.branch depends on. One of those omitted steps is where the receipt is asserted.",
+            "evidence": "runtime.branch (runtime.py:217-235) requires a warmup state (critic == 10000, refresh_accepted == 1, reference_ready; line 224) and matching['distance_coefficient']. In rerun1 these come from runtime.create (evaluate_worker.py:587, which calls runtime_receipt at runtime.py:112 and decodes the cell's data) and from restore_snapshot of the __warmup__10000 export with the matching-receipt digest checks (592-595). The snapshot plan (evaluate_worker.py:151-154) confirms that native 20k is stage 'native', so line 600 does take the branch path.",
+            "fix": "Write: 'runtime.create (587), restore of the warmup-10000 export with its matching checks (592-595), then runtime.branch with the recorded distance coefficient, restore_snapshot and FrozenPolicy (600-601).' Note that create asserts the receipt itself, and tie this to F1's preflight rule."
+          },
+          {
+            "id": "F3",
+            "severity": "low",
+            "section": "4.5 What stays independent (DRAFT_PROTOCOL.md:396)",
+            "claim": "'Parameter digest against the frozen cell' does not name any recorded quantity. The frozen native 20k cells record only file hashes, not a parameter-tree digest, so an implementer can compare against the wrong reference.",
+            "evidence": "authorized1/run/seed0_full/native/actor_manifest.json and checkpoints/step_20000/manifest.json record actor_params.sha256, a hash of the msgpack file. The only recorded actor tree digest is matching_receipt.json anchor_actor_digest, which belongs to the warmup-10000 anchor actor, not the 20k actor. rerun1 checks actor identity with assert_exact_state against export['actor_descriptor'] (evaluate_worker.py:337-339). Comparing runtime.tree_digest to a file sha256 always mismatches, a false INCOMPLETE. Using anchor_actor_digest checks the wrong actor.",
+            "fix": "Name the reference: 'actor_params.sha256 in the cell's step_20000 manifest, for the loaded file, plus rerun1's assert_exact_state against the export's actor_descriptor (evaluate_worker.py 337-339)'. Or say the tree digest is computed from that authenticated file and recorded."
+          },
+          {
+            "id": "F4",
+            "severity": "low",
+            "section": "Medians bullet (DRAFT_PROTOCOL.md:675)",
+            "claim": "'Every median in this protocol (step 0.4's forecast, Stage 1 and Stage 2) is over a finite list of anchors' is either false or leaves gated medians without a rule, depending on how the parenthetical is read.",
+            "evidence": "If the parenthetical is a complete list, two gated medians get no even-count rule: step 0.4's L2 items 1-2 (medians >= 0.75, :186-187) and step 0.3's median F among steep probes (:594). If it is only a set of examples, the claim that every median is 'over a finite list of anchors' is false for step 0.3, whose medians are over probes (:565, :594). np.median's default matches the stated rule, so the practical risk is small.",
+            "fix": "Write: 'Every median in this protocol (steps 0.3 and 0.4, Stage 1 and Stage 2) is over a finite list of anchors or probes; for an even count it is the average of the two middle values.'"
+          }
+        ],
+        "verified": [
+          {
+            "id": "F1",
+            "severity": "medium",
+            "section": "4.8 Failures (DRAFT_PROTOCOL.md:489) vs 5.0 (:509-516) and Review 12 (:1240, :1248)",
+            "claim": "The exemption is consistent with 5.0's purpose only if the assertion really precedes every value. The text states 'with no values produced' as a consequence, not as a condition. The build path that r12 mandates re-asserts runtime_receipt once per cell, between value computations. 5.0's 'any check' rule was not amended, and Review 12 says no label changed.",
+            "evidence": "4.8:489: 'A failed receipt or device assertion is an execution INCOMPLETE with no values produced. Because no value was computed ... it does not count as a failure under 5.0's second-failure rule'. In rerun1 the receipt is asserted inside runtime.create (runtime.py:112), which the worker calls once per cell (evaluate_worker.py:587) after earlier cells have already produced and written results (602-618). Any 4.8 code that follows the 'as recorded' build path therefore asserts the receipt between values. A receipt or device failure at cell k > 1, or before the Q^pi part after the critic or slot-0 reproductions in the same unit, would read as exempt while values were already seen. That is a narrow re-roll path of the kind 5.0:515 exists to stop. 5.0:515 still says a second failure 'on *any* check' ends the step, and Review 9 row 11 (:1075) closed exactly this 'different checks' loophole. Under r11, two receipt failures under unchanged code gave INCONCLUSIVE; under r12 they do not. Yet Review 12 (:1240) says 'No threshold, label or precedence changed' and calls the change a clarification.",
+            "fix": "In 4.8 write: 'The receipt and device kind are asserted once, in a preflight, before any value of the 4.8 unit is computed or written. The exemption applies only if the ledger shows zero reproduction values for that attempt. An environment assertion that fails after any value has been computed counts as an ordinary failure under 5.0.' Add a cross-reference at 5.0:515: '(except a pre-computation environment assertion, 4.8 failures)'. In Review 12, call it a narrow exception to 5.0's second-failure rule, and list it among the items the user must explicitly accept at A1.",
+            "check": {
+              "id": "F1",
+              "real": false,
+              "severity_after": "none",
+              "reason": "Refuted as a medium finding. r12 sets the assertion as a condition, not only as a consequence. The Stack bullet (DRAFT_PROTOCOL.md:486) says runtime_receipt 'is asserted before any reproduction value is computed', and the device kind is a required assertion in the same bullet. That covers the whole known-answer reproduction unit: critic, slot 0 and Q^pi. The Failures bullet (:489) gives its reason ('Because no value was computed'), and that reason only holds when the assertion comes first. The source facts are correct. runtime.create calls runtime_receipt (runtime.py:112), and the worker calls create once per cell (evaluate_worker.py:587), after earlier cells' results are written (602-618). So a build that follows rerun1 re-asserts the receipt per cell. But the r12 rule means the first assertion happens before any value. What the receipt checks are process-level constants: package versions, backend, JIT, x64 and matmul precision (runtime.py:47-59), plus the device kind. Once the preflight passes, they cannot change between cells of the same process. A failure at cell k>1 after a pass is therefore not a real way to re-roll GPU nondeterminism. GPU nondeterminism never causes a receipt failure. Reaching that branch would take deliberate tampering with the environment mid-run, which the second-failure rule (5.0:515) is not designed to stop. A false PASS cannot come from this, because values computed after a passing preflight are on the correct stack and still go through 5.0 as written ('A reproduction mismatch on the correct stack is INCOMPLETE ... under 5.0's rules as written', :489). The disclosure point is also refuted. Review 12 (:1240) says outright that row 1 changes how 5.0 treats a pre-computation environment assertion, and row 1 (:1248) states the exemption. Whether to call that a 'clarification' or an 'exception' is a bookkeeping word choice. The missing back-pointer at 5.0:515 does not contradict anything: 4.8 names 5.0's second-failure rule explicitly and carves out only this narrow case. Optional tightening, not a must-fix: add 'the exemption applies only when the ledger shows zero reproduction values for the attempt' to 4.8:489, plus a one-line pointer at 5.0:515."
+            }
+          }
+        ],
+        "checked_ok": [
+          "4.8 build path against the source: snapshot_plan (evaluate_worker.py:151-154) gives native 20k stage='native', so line 600 calls runtime.branch, then restore_snapshot and FrozenPolicy at 601. Warmup specs skip branch, but that does not affect the native 20k cells.",
+          "evaluate_worker.py:344-358 is FrozenPolicy. _act at 351 is jax.jit(lambda obs: actor.apply_fn(actor.params, obs).sample(seed=None)), with the parameters captured by the closure. The per-bank loop at 602-604 iterates over two contexts (evaluation.py:21 CONTEXTS, continuation call at 437), giving 18 calls of 32 anchors.",
+          "Device kind: all 9 entries in run/evaluation/report.json runtime_receipts give device_kinds ['NVIDIA GeForce RTX 5070 Ti Laptop GPU'], backend gpu, executable /home/david/bca-operator-audit-20261026/bin/python (WSL). The string matches r12 exactly.",
+          "runtime_receipt (runtime.py:47-59) pins 11 packages (jax, jaxlib, jax-cuda12-plugin and jax-cuda12-pjrt at 0.6.2, plus numpy, flax, optax, distrax, chex, tfp and scipy) and asserts GPU, JIT on, x64 off and 'highest' precision. It records device kinds but does not assert them, so r12's added device assertion is new and needed.",
+          "99 actor calls: reference.py:255 gives remaining = 100 - t <= 100. Offsets run 0..remaining-1, and offset 0 uses first[active] (265-266). The actor is called at offsets 1..99 at most.",
+          "RUN_RESULT.json reproduction: tier1_exact 143, recorded_contexts 143. The only new context is seed2_random__distance__20000/strong_current, so all 18 native 20k contexts were reproduced byte for byte.",
+          "4.8 failures vs 5.0's purpose: an environment assertion that fails before any computation reveals no outcome, so exempting it from the second-failure rule does not enable a re-roll, provided F1's condition holds. A device that passes the receipt but differs (unpinned driver or cuBLAS wheels) produces an ordinary mismatch INCOMPLETE under 5.0 as written. That fails closed and cannot be exploited, and the operator cannot convert a mismatch into the exemption because the receipt is recorded first. 'One attempt per approval' and the fresh-approval rerun are consistent.",
+          "4.5 (392-396) is coherent and implementable for step 0.4. The new code writes both evaluators. The main evaluator's layout is pinned per world, continuation seed and named anchor set. The raw loop reproduces the full layout and is compared at -KNEE (in S9), s10 and s20. The clip (pi_clip: a0 clipped to ±KNEE, :69), observations and remaining time stay independent. 'Frozen cell' sensibly means the seedN_full native 20k cell for the three step 0.4 continuations (:609), apart from the digest reference in F3.",
+          "K1c noise wording: 212, 891 and reading 1 (732) agree. A FAIL needs a median pushed below its bar; reading 1 needs a K1c FAIL in every seed (FAIL-consistent, with K1c first in the order, :731). M is defined inline. Margin 0.5M - 0.15 >= 0.175 at M >= 0.65, consistent with :216. Noise cannot affect V0(d), which uses only rho_hat, so 'FAIL' is correct when the gate passes.",
+          "Step 0.4 counts (617) agree with the base set at 614 and with V0(d)'s convention. Stage 2 repair-screen set (813) agrees with the 64 new E2 anchors, 48 gated (:761), and with Stage 1's 'valid in every arm compared' definition (:670).",
+          "No r12 sentence changes a gate threshold, the label table or the precedence order. The only label-consequence change is F1's second-failure exemption.",
+          "Part 11: all 44 sha256 rows match, including DRAFT_PROTOCOL_r11.md 4a47e425..., reviews/VERIFY_WORKFLOW_r11.json 76c2e3c3... and reviews/VERIFY_CRITIC_DIGEST_r11.txt 689db62d.... The new code-fact citations (1354-1358) match the source lines.",
+          "Bookkeeping nit, not a finding: the note at :1225 paraphrases Review 11 row 1 as 'a failed receipt assertion ... takes 5.0's one code-only fix', but row 1 (:1210) says 'a mismatch takes 5.0's one code-only fix'. A reproduction mismatch on the correct stack still takes it in r12 (:489), so the note should say the stack-move example was removed."
+        ]
+      }
+    ],
+    "critic": {
+      "verdict": "r12 fixes all 8 round-11 must-fix items in the protocol text, and the source facts it adds check out. Native 20k cells go through runtime.branch, then restore_snapshot, then FrozenPolicy (evaluate_worker.py:600-601). _act (351) closes over actor.params. The per-bank loop is at 602-604, giving 18 calls. The device-kind string matches all nine runtime_receipts. 99 actor calls is right. All 44 Part 11 hashes match. The K1c noise wording at 212, 891 and 732 is consistent, and so are step 0.4's counts (617) and the Stage 2 repair-screen anchor set (813). After verification, no high or medium item survives.\n\nRULING (1), the 4.8 failures rule (DRAFT_PROTOCOL.md:489). Its purpose and effect are sound. The Stack bullet (:486) requires runtime_receipt to be asserted \"before any reproduction value is computed\". The receipt checks only process-level constants (runtime.py:47-59) plus the device kind. So a failure before any computation reveals nothing that could be re-rolled. Values computed after the assertion passes are on the correct stack and remain under 5.0 as written. The rule fails closed and cannot produce a false PASS. Even so, it is formally a narrow exception to 5.0's second-failure rule (:515), not a pure clarification. Under r11, two receipt failures under unchanged code made the step INCONCLUSIVE; under r12 they do not. 5.0's stopping rules are part of what the user approves, so the A1 summary should name this exception for the user to accept explicitly. It is not a blocking defect, and Review 12 (:1240, row 1 :1248) already discloses it.\n\nRULING (2), thresholds, labels and precedence. r12 changes no gate threshold and no precedence order. The label table is unchanged. The only change in a label consequence is that receipt failures no longer end the step INCONCLUSIVE. So Review 12's sentence \"No threshold, label or precedence changed\" (:1240) slightly overstates and should say so.\n\nThe remaining items are low. They are wording and implementer guidance (F1 tightening, F2, F3, F4), and none changes a gate's logic. Bookkeeping nit, not a finding: the note at :1225 paraphrases Review 11 row 1 as \"a failed receipt assertion ... takes 5.0's one code-only fix\", but row 1 (:1210) said a mismatch takes it. The note should say instead that the stack-move example was removed. r12 is ready for A1 consideration.",
+      "ready_for_A1_consideration": true,
+      "must_fix": [
+        {
+          "severity": "low",
+          "section": "4.8 Failures (DRAFT_PROTOCOL.md:489), 5.0 (:515), Review 12 (:1240)",
+          "issue": "Two wording problems. First, the sentence 'with no values produced' reads as a consequence rather than as the condition for the exemption. The 'as recorded' build path calls runtime.create once per cell (evaluate_worker.py:587), and create re-asserts runtime_receipt (runtime.py:112) after earlier cells' values are written (602-618). Second, 5.0:515 ('any check') has no pointer to the carve-out, and Review 12 says no label changed, although two receipt failures under unchanged code no longer give INCONCLUSIVE. This is unreachable in practice because the receipt checks constants of the process, so it fails closed. But an implementer or the user could misread the scope.",
+          "fix": "In 4.8:489 write: 'The receipt and device kind are asserted once, in a preflight, before any value of the unit is computed or written. The exemption applies only when the ledger shows zero reproduction values for that attempt. An environment assertion that fails after any value counts as an ordinary failure under 5.0.' At 5.0:515 add: '(except a pre-computation environment assertion, 4.8 Failures)'. In Review 12 (:1240), replace 'No threshold, label or precedence changed' with 'No threshold or precedence changed; row 1 is a narrow exception to 5.0's second-failure rule, listed for the user's explicit acceptance at A1'."
+        },
+        {
+          "severity": "low",
+          "section": "4.8 Compiled function (DRAFT_PROTOCOL.md:485)",
+          "issue": "The build path 'runtime.branch, then restore_snapshot, then FrozenPolicy (600-601)' is accurate, but it leaves out what branch depends on. branch needs the warmup-10000 state and matching['distance_coefficient'] (runtime.py:217-235). Those come from runtime.create (587), which is also where the receipt is asserted, and from the warmup restore with its matching-digest checks (592-595). An implementer could build branch on the wrong state or skip the digest checks.",
+          "fix": "Write: 'runtime.create (587); restore of the warmup-10000 export with its reference/anchor digest checks (592-595); then runtime.branch with the recorded distance_coefficient, restore_snapshot and FrozenPolicy (600-601). create itself asserts the receipt; the 4.8 preflight assertion comes before it.'"
+        },
+        {
+          "severity": "low",
+          "section": "4.5 What stays independent (DRAFT_PROTOCOL.md:396)",
+          "issue": "'Parameter digest against the frozen cell' names no recorded quantity. The native cells record only file hashes (actor_manifest.json actor_params.sha256 = cc442869... for final_actor.msgpack). The only recorded tree digest, matching_receipt anchor_actor_digest, belongs to the warmup-10000 anchor actor. Comparing runtime.tree_digest to a file sha256 always mismatches, giving a false INCOMPLETE. Using anchor_actor_digest checks the wrong actor.",
+          "fix": "Name the reference: 'the sha256 of the loaded actor file against actor_params.sha256 in the cell's step_20000 or actor manifest, plus rerun1's assert_exact_state of the restored actor params against the export's actor_descriptor (evaluate_worker.py:337-339)'."
+        },
+        {
+          "severity": "low",
+          "section": "Medians bullet (DRAFT_PROTOCOL.md:675)",
+          "issue": "The parenthetical '(step 0.4's forecast, Stage 1 and Stage 2) ... over a finite list of anchors' either leaves gated medians with no even-count rule or misstates their domain. Those medians are step 0.4 L2 items 1-2 (:186-187) and step 0.3's median F over steep probes (:594), which is over probes, not anchors. np.median's default matches the stated rule, so the practical risk is small.",
+          "fix": "Write: 'Every median in this protocol (steps 0.3 and 0.4, Stage 1 and Stage 2) is over a finite list of anchors or probes; for an even count it is the average of the two middle values.'"
+        }
+      ],
+      "residual_risks": [
+        "The 4.8 known-answer check works only on the exact recorded WSL GPU stack, the RTX 5070 Ti Laptop GPU with the pinned JAX 0.6.2 wheels. The receipt does not pin the GPU driver or the cuBLAS/cuDNN builds. If the driver is updated, the receipt still passes but the 99-step continuations may drift past 1e-9. That counts as an ordinary reproduction INCOMPLETE, and a second such failure under unchanged code ends the step INCONCLUSIVE. This fails safe, but it could cost the step.",
+        "The receipt-failure exemption allows repeated environment-failure reruns, each needing a fresh approval. It cannot re-roll results, but in principle it has no attempt limit. The user should knowingly accept this narrow exception to the second-failure rule at A1.",
+        "4.5's cross-check shares the raw actor forward pass between the two evaluators. A bug inside that shared forward pass (wrong parameters loaded under a passing identity check, or a wrong apply function) would not be caught by the cross-check. It relies on the separate actor-identity check, which needs the correct reference (F3).",
+        "The open risks named in earlier rounds remain: whether the knee-edge region is reachable at all, and whether the learner is competent enough to show the effect. r12 does not touch either, and either could end Stage 1 INCONCLUSIVE or as a FAIL that reflects the setup rather than the method.",
+        "Because medians use the even-count average and minus-infinity entries, a few invalid anchors near the middle could, in edge cases, decide a gate. Under the stated V0(c) floor and the 90% validity condition this is bounded at about 4 of 48. If validity is lower, those conditions trigger first."
+      ]
+    }
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Review"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "review:r12",
+      "phaseIndex": 1,
+      "phaseTitle": "Review",
+      "agentId": "a4de35f7e56ca8182",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793368663908,
+      "queuedAt": 1793368663808,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "r12 resolves all 8 must-fix items from round 11 in the prot…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 12 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 11: experiments/thrusterchain_bca/zeus_202610…",
+      "promptFramed": true,
+      "lastProgressAt": 1793369301234,
+      "tokens": 177632,
+      "toolCalls": 20,
+      "durationMs": 637322,
+      "resultPreview": "{\"verdict\":\"r12 resolves all 8 must-fix items from round 11 in the protocol text itself. The source facts it adds are correct. The native 20k cells are built through runtime.branch, then restore_snapshot, then FrozenPolicy (evaluate_worker.py 600-601), because their stage is 'native', not 'warmup'. _act at line 351 closes over actor.params. The per-bank loop is at 602-604. The device kind is exact…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "verify:r12",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "ad63fd991150dad16",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793369302941,
+      "queuedAt": 1793369302913,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 12 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 11: experiments/thrusterchain_bca/zeus_202610…",
+      "promptFramed": true,
+      "lastProgressAt": 1793369386486,
+      "tokens": 108833,
+      "toolCalls": 3,
+      "durationMs": 83544,
+      "resultPreview": "{\"verdicts\":[{\"id\":\"F1\",\"real\":false,\"severity_after\":\"none\",\"reason\":\"Refuted as a medium finding. r12 sets the assertion as a condition, not only as a consequence. The Stack bullet (DRAFT_PROTOCOL.md:486) says runtime_receipt 'is asserted before any reproduction value is computed', and the device kind is a required assertion in the same bullet. That covers the whole known-answer reproduction uni…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "a43625c6cd43463f5",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793369388265,
+      "queuedAt": 1793369388243,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "lastToolSummary": "r12 fixes all 8 round-11 must-fix items in the protocol tex…",
+      "promptPreview": "Repository: C:\\Users\\David\\dev\\BCA (Windows; Bash tool POSIX syntax; Python C:\\Users\\David\\dev\\BCA\\.venv\\Scripts\\python.exe -B).\nDocument: experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_design_v1/DRAFT_PROTOCOL.md, REVISION 12 of a draft OOD-condition protocol (ThrusterChain, Unifloral TD3+BC pinned f2dc1278, method BCA). Revision 11: experiments/thrusterchain_bca/zeus_202610…",
+      "promptFramed": true,
+      "lastProgressAt": 1793369450567,
+      "tokens": 107095,
+      "toolCalls": 3,
+      "durationMs": 62302,
+      "resultPreview": "{\"verdict\":\"r12 fixes all 8 round-11 must-fix items in the protocol text, and the source facts it adds check out. Native 20k cells go through runtime.branch, then restore_snapshot, then FrozenPolicy (evaluate_worker.py:600-601). _act (351) closes over actor.params. The per-bank loop is at 602-604, giving 18 calls. The device-kind string matches all nine runtime_receipts. 99 actor calls is right. A…"
+    }
+  ],
+  "totalTokens": 393560,
+  "totalToolCalls": 26
+}

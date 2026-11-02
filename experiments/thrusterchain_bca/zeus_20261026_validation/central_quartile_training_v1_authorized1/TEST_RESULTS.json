@@ -1,0 +1,16 @@
+{
+  "schema":"bca.central_quartile.amendment_cpu_checks.v1",
+  "date_utc":"2026-10-28",
+  "interpreter":"C:/Users/David/dev/BCA/.venv/Scripts/python.exe",
+  "complete_suite":{"command":"python -B -m unittest discover -s . -p test_*.py -q","tests_passed":129,"tests_failed":0,"elapsed_seconds":33.947},
+  "after_seal_guard_and_public_entry_regressions":{"command":"python -B -m unittest -v test_amendment.py test_validation_supervisor.py","tests_passed":19,"tests_failed":0,"elapsed_seconds":0.728,"new_unique_tests":4,"previously_passed_tests_repeated":15},
+  "unique_tests_passed":133,
+  "scope":["Exact decoded map-order acceptance and strict value/type/shape/dtype/metadata/structure rejection","CPU toy-state optimizer/RNG/full-state restore and exact next-step parity","Actual actor-export restore path accepts key reordering and rejects changed weights","Production branch statically routes through shared tested restore helper; no production dispatch","Actual public launch.main routes to amended supervisor with mocked dependencies","One-shot lineage, timeout, signals, identity changes and cumulative unknown accounting","Existing synthetic data masks, calibration boundaries, pairing, metrics and accounting"],
+  "limitations":["Windows supervisor fixtures substitute ordinary writes for atomic_json because sandbox denies os.replace; production writer unchanged","Inherited evaluation startup fixture also mocks atomic writing","Legacy supervisor tests are inherited coverage; current public route covered separately","No target CUDA/model, real-source initialization or full Gymnasium execution"],
+  "real_data_optimizer_updates":0,
+  "real_simulator_transitions":0,
+  "validation_attempt_3_reserved":false,
+  "production_attempt_reserved":false,
+  "training_hold_remains":true,
+  "prior_test_evidence":"Original central_quartile_training_v1/TEST_RESULTS.json preserved and pinned in AMENDMENT_LINEAGE.json"
+}

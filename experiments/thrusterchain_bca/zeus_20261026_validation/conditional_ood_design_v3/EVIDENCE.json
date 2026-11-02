@@ -1,0 +1,139 @@
+{
+  "schema": "bca.conditional_ood_review_reconciliation.v3",
+  "utc": "2026-10-27T19:43:50.290825+00:00",
+  "decision": "no_go_for_current_band_as_next_policy_efficacy_pilot",
+  "launch_allowed": false,
+  "original_v1_v2_preserved": true,
+  "sources": [
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/conditional_ood_design_v2/REVIEW_20261027.md",
+      "sha256": "c174a923f8c34e6e6ce4991eb174c16f5b014f4f29aa5573035cb0ed66527b69",
+      "bytes": 16718
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_operator_alignment_v1/results_20261026T221700_762125Z/raw_banks.json",
+      "sha256": "2c24e5844d6d38ffd26c1a662b149fb7b453ce8cacce1eb429c008152d6c6e7e",
+      "bytes": 209437
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_operator_alignment_v1/results_20261026T221700_762125Z/raw_banks.npz",
+      "sha256": "cb87c6fe809e94d38715fc45df07605a386222fb9bc2c9a33059c708463d576b",
+      "bytes": 552580
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1/simulation.py",
+      "sha256": "0c78e20eb16884a1868c372e45dcfc2659723058b01d04655f689614ade7d824",
+      "bytes": 25040
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/transfer_bundle/core_v4/thrusterchain/canonical/thrusterchain.py",
+      "sha256": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+      "bytes": 23731
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/transfer_bundle/core_v4/thrusterchain/environment.py",
+      "sha256": "449207098042426ff37a7917a2cca5c8c35f8abdd633badb7b1b3abf0ef8d874",
+      "bytes": 7531
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_checkpoint_v1/data.py",
+      "sha256": "42b442f0080eda8b1c62397a5eaaf22d63de922b3f42c428c86255231184f22d",
+      "bytes": 5399
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/logged_data.py",
+      "sha256": "2f0e7a6507617157ca5c6ebf616041bab0f71c2fb07b3fd84856b6102847fd0f",
+      "bytes": 16339
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/data_receipt.json",
+      "sha256": "4ad0e63219909bd1fa6504395c824794d92fc08fd8fd6678f87ff084d6abf82e",
+      "bytes": 27563
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/bca_one_sided_v1/run/report.json",
+      "sha256": "320113721d15e54bed4047e9574e94fac6d9ed78eca6d140575f386ae065b011",
+      "bytes": 200788
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1/design.py",
+      "sha256": "a6fda51d075e6992ba7a52515d42cc06d2088db72df7468ba2f0223d93e2734d",
+      "bytes": 5683
+    },
+    {
+      "path": "experiments/thrusterchain_bca/zeus_20261026_validation/support_shift_pilot_v1/runtime.py",
+      "sha256": "fcb8bec21365663d108bf73ff60a1f18eb196fae8de75f6a90ad04d876b25c34",
+      "bytes": 18549
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_usefulness_v1_seedfix/results_20261024T234619_729786Z/conditional_values.json",
+      "sha256": "fb391bfd31e2e98fca081bd57a47c136f4f3eeb76e0b0b765aaa4b312e5ebd30",
+      "bytes": 21333
+    },
+    {
+      "path": "experiments/thrusterchain_bca/titan_20261026/payload/unifloral_frozen_scale_comparison_v1/results_20261026T172507_062277Z/conditional_values.json",
+      "sha256": "c7686e6e4c292a0644479e35eb2d607e0b43078a8bd5d1735e460704b7ac6955",
+      "bytes": 21308
+    }
+  ],
+  "cached_development_check": {
+    "provenance": "Independent reviewer performed narrow saved-development-array checks earlier in this turn, before subsequent no-new-counts instruction; no model or simulator execution",
+    "checkpoint_scope": "single penalty-off 20k actor; not all trained actors",
+    "actor_rows": 128,
+    "actor_a0_min": -0.4828205704689026,
+    "actor_a0_max": 0.52145916223526,
+    "actor_in_band": 0,
+    "previously_reported_high_load_actor_rows": 59,
+    "previously_reported_high_load_band_candidates": 25,
+    "previously_reported_high_load_band_states": 21,
+    "reported_signed_error_range_rounded": [
+      -6.5421,
+      81.9592
+    ],
+    "reported_mae_rounded": 47.48894,
+    "isolated_a0_pairs_with_other_three_actions_fixed": 0,
+    "load_coordinate_convention": "Saved float32 observations promoted separately to float64 then summed; matches v2 observed-load definition",
+    "action_band_convention": "abs(actions[:,0] + k) <= h on saved float32 array, without explicit float64 promotion",
+    "exact_v2_action_boundary_equivalence_verified": false
+  },
+  "analytic_scope": {
+    "immediate_reward_spread_upper_bound": 0.0480000007153,
+    "thrust_spread_upper_bound": 0.075,
+    "next_state_l2_spread_upper_bound": 0.0318198052,
+    "full_qpi_bound_verified": false,
+    "radius_gaussian_estimates_measured": false,
+    "continuous_recorded_load_median_symmetry": true,
+    "float32_exact_median_equality_verified": false
+  },
+  "assay_provenance": {
+    "local_execution_receipt_verified": false,
+    "parent_reported_path": "task/thrusterchain_fair_assay_v1/reservation/worker_report.json",
+    "parent_reported_completed_utc": "2026-10-27 12:32 UTC",
+    "parent_reported_seconds": 151,
+    "parent_reported_transitions": 28800,
+    "parent_reported_artifact_id": "libfile_b74a52cccdd08191969e8c4578e1c4a8",
+    "same_version_as_generic_stall_boundary_label_verified": false,
+    "remote_access_attempted": false
+  },
+  "execution": {
+    "new_model_calls": 0,
+    "new_simulator_transitions": 0,
+    "optimizer_updates": 0,
+    "calibration_updates": 0,
+    "training_calibration_coverage_counts_computed": 0,
+    "protected_record_reads": 0,
+    "parameter_sweeps": 0
+  },
+  "documents": [
+    {
+      "path": "AUDIT_ADDENDUM.md",
+      "sha256": "4219a9ec592606c2077e00a194ac2e4063410dc5aad89a57eee6b23e16eb76c0",
+      "bytes": 12215
+    },
+    {
+      "path": "REVIEW_RECONCILIATION.md",
+      "sha256": "432b25464ffe0ba2c14f32120e1d6731d661235d4fe898222256aef53c182768",
+      "bytes": 16390
+    }
+  ]
+}

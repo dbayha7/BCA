@@ -1,0 +1,255 @@
+{
+  "assertions": [
+    {
+      "rows": 47932,
+      "sha256": "2e24aeac40ff7e33db5e808a7f5daa761923f3def7e6efdb8cd3d1b78f375674",
+      "stream": "train",
+      "w_rows": 13883
+    },
+    {
+      "rows": 128,
+      "sha256": "be47c70060eba6ec44af1603f3814ceb62c9c86e0555a7b6d104e1217f594eef",
+      "stream": "heldout",
+      "w_rows": 0
+    },
+    {
+      "rows": 768,
+      "sha256": "4bec1d01a5f8203b9e45a0ba8f23ef6139405e447727d3476592d1b2eacdeff8",
+      "stream": "probe",
+      "w_rows": 212
+    },
+    {
+      "rows": 256,
+      "sha256": "c36952385be72b08214407c1392ca50b92dc79dd2bc3f7ae9e2aa1a62b15a0f3",
+      "stream": "scale_bank",
+      "w_rows": 88
+    },
+    {
+      "rows": 34049,
+      "sha256": "b8a8b635fb046908bce7942a5f5387993faa303ea920118b2abda13332d51b29",
+      "stream": "normalization_fixture",
+      "w_rows": 0
+    }
+  ],
+  "binding": {
+    "arm": "random",
+    "dataset_sha256": "cc4dbb35d06203d72b1cd11a95faa81240cc7dca634ece9a340937665bd33ba7",
+    "streams": {
+      "heldout": {
+        "rows": 128,
+        "sha256": "be47c70060eba6ec44af1603f3814ceb62c9c86e0555a7b6d104e1217f594eef",
+        "w_rows": 0
+      },
+      "normalization_fixture": {
+        "rows": 34049,
+        "sha256": "b8a8b635fb046908bce7942a5f5387993faa303ea920118b2abda13332d51b29",
+        "w_rows": 0
+      },
+      "probe": {
+        "rows": 768,
+        "sha256": "4bec1d01a5f8203b9e45a0ba8f23ef6139405e447727d3476592d1b2eacdeff8",
+        "w_rows": 212
+      },
+      "scale_bank": {
+        "rows": 256,
+        "sha256": "c36952385be72b08214407c1392ca50b92dc79dd2bc3f7ae9e2aa1a62b15a0f3",
+        "w_rows": 88
+      },
+      "train": {
+        "rows": 47932,
+        "sha256": "2e24aeac40ff7e33db5e808a7f5daa761923f3def7e6efdb8cd3d1b78f375674",
+        "w_rows": 13883
+      }
+    },
+    "world": "nostall"
+  },
+  "checkpoints": {
+    "010000": {
+      "actor": {
+        "path": "actor_010000.msgpack",
+        "sha256": "b50b79bdc120a37b02e651e5f9239df50997fffd5fc579d31dae5f1abb018872"
+      },
+      "actor_digest": "d7f06cb7a0c4f7883d2d82567e197f84d08d76c2c2e172354d74c874c2d6118a",
+      "state": {
+        "path": "state_010000.msgpack",
+        "sha256": "0256e144d14a9ac18cf77b24b582e4235afb1eae874b48fc3e373c99dd443293"
+      },
+      "state_digest": "866a28b1938f0b98170542ea3f33646cf08956321ef65a3acbb74fe87a1eafb8"
+    }
+  },
+  "checks": {
+    "duplicate_native_equal": true,
+    "native_and_aux_finite": true,
+    "positive_residual_unit": true,
+    "ready_reference_finite": true,
+    "reference_storage_valid": true,
+    "warmup_reference_shape": false
+  },
+  "counts": {
+    "actor": 5000,
+    "actor_target": 5000,
+    "aux_fit_attempts": 10000,
+    "auxiliary": 10000,
+    "critic": 10000,
+    "critic_budget": 10000,
+    "critic_target": 5000,
+    "last_refresh_critic": 10000,
+    "next_refresh_index": 1,
+    "outer_steps": 5000,
+    "phase": 0,
+    "reference_ready": true,
+    "refresh_accepted": 1,
+    "refresh_attempts": 1
+  },
+  "device_kinds": [
+    "NVIDIA GeForce RTX 5070 Ti Laptop GPU"
+  ],
+  "elapsed_seconds": 525.6173071429998,
+  "finished_utc": "2026-10-31T03:27:28.809434+00:00",
+  "gradient_audits": {
+    "10000": {
+      "path": "gradient_audit_010000.json",
+      "sha256": "6ccd6d9c4586180fc16f4032a272a5e2a56bae296d0617ea24803be7fc259f30",
+      "summary": {
+        "actor_past_knee_minus_high_load": 197,
+        "high_load_rows": 406,
+        "lambda_by_batch": [
+          0.11903813481330872,
+          0.1134171336889267,
+          0.11846216022968292
+        ],
+        "median_reach_radius_high_load": 0.369768994489057,
+        "share_bc_pulls_back_when_past_knee": 0.9593908629441624,
+        "share_dQ1_da0_negative_high_load": 0.49014778325123154
+      }
+    }
+  },
+  "initial_parameter_hashes": {
+    "actor": "20a0209e8d947c5b315b36996a4325ebee51a7df56328c644a324dd068f4f5bd",
+    "auxiliary_scale": "ab1ceb2abf65cd425c040f26d39659b8be5cfe3b512b45838512ca2609388480",
+    "critic": "3f2beb5591b8bea70addc76490848cde7352f2ecfbc60e29f4eb47ab59c3f893"
+  },
+  "job": "warmup_s1_random_nostall",
+  "kind": "warmup",
+  "last_metrics": {
+    "arm": "native",
+    "auxiliary": {
+      "scale_fit_accepted": true,
+      "scale_inputs_valid": true,
+      "scale_loss": 0.011280154809355736
+    },
+    "committed": true,
+    "counts": {
+      "actor": 5000,
+      "actor_target": 5000,
+      "aux_fit_attempts": 10000,
+      "auxiliary": 10000,
+      "critic": 10000,
+      "critic_budget": 10000,
+      "critic_target": 5000,
+      "last_refresh_critic": 10000,
+      "next_refresh_index": 1,
+      "outer_steps": 5000,
+      "phase": 0,
+      "reference_ready": true,
+      "refresh_accepted": 1,
+      "refresh_attempts": 1
+    },
+    "kappa": 0.0,
+    "native": {
+      "actor_loss": 2.763279438018799,
+      "actor_penalty_term": 0.0,
+      "bc_loss": 0.275267094373703,
+      "critic_loss_this_call": 1.5659644603729248,
+      "outer_completed": true,
+      "penalty_mean": 0.0,
+      "q_loss": 1.5828485488891602,
+      "q_mean": -22.787485122680664,
+      "q_scale_coefficient": 0.10918328166007996,
+      "width_mean": 0.0
+    },
+    "refresh": {
+      "diagnostics": {
+        "certified": true,
+        "clamp_binds": false,
+        "lambda_hat": 1.054051201456892,
+        "lambda_hpd": 1.1612539122211163,
+        "n_eff": 128.0,
+        "scores": 128,
+        "sigma_post": 0.11621657261680211,
+        "threshold": 1.1612539122211163
+      },
+      "flags": {
+        "posterior_certified": true,
+        "posterior_inputs_valid": true
+      }
+    },
+    "refresh_due": true
+  },
+  "matching": {
+    "anchor_actor_digest": "d7f06cb7a0c4f7883d2d82567e197f84d08d76c2c2e172354d74c874c2d6118a",
+    "bca_gradient_rms": 0.37515395726269946,
+    "calibration_calls": 0,
+    "distance_action_gradient_at_fork_actor": 0.0,
+    "distance_coefficient": 0.038807501501187586,
+    "distance_gradient_digest": "a23b8c76afe769e22a350d3d3d4373dfd8867c2018b1dc9076e6dc84881f56a0",
+    "distance_gradient_rms": 9.667047419974176,
+    "live_fork_distance_gradient_is_zero": true,
+    "matching_scope": "RMS action gradients at logged training actions only; excludes actor Jacobian and Q normalization",
+    "no_rematch": true,
+    "on_policy_strength_matched": false,
+    "optimizer_updates": 0,
+    "probe_rows": 768,
+    "reference_digest": "ba6117a6cee6f4811005a94626abba5e65e57f39cb562b1ecc970bd4e77c643c",
+    "scope": "RMS action-gradient match on logged training actions only; not on-policy matching",
+    "unscaled_bca_gradient_digest": "da2e04e2b28f1689760066b3c027bd576b89f660516e57891c455918fb41b020"
+  },
+  "minibatches": {
+    "phase0_batches": 5000,
+    "phase0_minibatch_sha256": "125e001553a088536666a02f611f129d4195420859b5aa2ff9b857990b505a51"
+  },
+  "normalization": {
+    "epsilon": 0.001,
+    "fixture_digest": "043cc5ce4119402f7c6556b2ebe57800e3a68bbb456af625bc6e50480a6a4a74",
+    "mean": [
+      -0.10994773358106613,
+      0.027442339807748795,
+      -0.0454583503305912,
+      0.022676408290863037,
+      -0.30203500390052795,
+      0.061381321400403976,
+      -0.1993575096130371,
+      0.06741829961538315,
+      -0.1304422914981842,
+      0.06530863791704178,
+      0.4329783618450165,
+      -0.03631625324487686,
+      0.0014409396098926663,
+      0.5066527128219604
+    ],
+    "rows": 34049,
+    "source": "Common hole/random retained-intersection training observations; identical all conditions",
+    "std": [
+      0.5578786730766296,
+      0.5523585677146912,
+      0.6077678799629211,
+      0.6550422310829163,
+      0.6420128345489502,
+      0.5999646186828613,
+      0.5023207068443298,
+      0.4926507771015167,
+      0.33811643719673157,
+      0.3381301760673523,
+      0.25456100702285767,
+      0.17943795025348663,
+      0.1846870332956314,
+      0.28871309757232666
+    ]
+  },
+  "producer_sha256": "b16d0265628ee4d4aa1ab896fa78fe03c330396aca1f1dadd8510527b2a9eb34",
+  "simulator_steps_exact": 1280,
+  "started_utc": "2026-10-31T03:18:43.192126+00:00",
+  "status": "completed",
+  "unit_label": "COMPLETE",
+  "untrained_actor_digest": "20a0209e8d947c5b315b36996a4325ebee51a7df56328c644a324dd068f4f5bd"
+}

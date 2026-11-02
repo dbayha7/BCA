@@ -1,0 +1,28 @@
+{
+  "config_sha256": "ded5f3c3a775043a6afc7ae5c18d2cc3da546bcd9d3d4a9e23f890481fa26dca",
+  "elapsed_seconds": 6.010485347999996,
+  "error": "KneeDatasetError: Episode 16: initial state lineage differs",
+  "execution_counts_known": true,
+  "finished_utc": "2026-11-01T13:29:05.478656+00:00",
+  "integrity_after": {
+    "changed": [],
+    "verified_files": 154
+  },
+  "integrity_before": {
+    "changed": [],
+    "verified_files": 154
+  },
+  "job": "warmup_s0",
+  "job_sha256": "47d299b24a7a5ea84cfd566cc4de72ecba4fdd070d1defa12ec2cd3826f88928",
+  "kappa": 3.0,
+  "kind": "warmup",
+  "no_automatic_retry": true,
+  "simulator_steps_attempted": 0,
+  "simulator_steps_exact": 0,
+  "started_utc": "2026-11-01T13:28:59.468164+00:00",
+  "status": "failed",
+  "traceback": "Traceback (most recent call last):\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/minimal_comparison/worker.py\", line 237, in run_job\n    value = {\"preflight\": W1.preflight, \"warmup\": W1.warmup, \"branch\": W1.branch}[kind](job, out, deadline)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/stage1_worker.py\", line 213, in warmup\n    dataset, plan = load_world(job, job[\"world\"])\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/minimal_comparison/worker.py\", line 136, in load_world\n    dataset = D.load(path)  # Full exact lineage and dynamics validation; counted by SimulatorCounter.\n              ^^^^^^^^^^^^\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/dataset_knee.py\", line 238, in load\n    return KneeDataset(arrays, envelope[\"metadata\"], expected_digest=envelope[\"sha256\"])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/dataset_knee.py\", line 207, in __init__\n    validate(copied, clean)\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/dataset_knee.py\", line 187, in validate\n    _lineage(arrays, entropy, world)\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/dataset_knee.py\", line 114, in _lineage\n    _check(np.array_equal(info[\"state\"], arrays[\"states\"][e, 0]), f\"Episode {e}: initial state lineage differs\")\n  File \"/mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_edge_ood_v3/dataset_knee.py\", line 46, in _check\n    raise KneeDatasetError(message)\ndataset_knee.KneeDatasetError: Episode 16: initial state lineage differs\n",
+  "transitions": 0,
+  "unit_label": "INCOMPLETE",
+  "worker_sha256": "e275da8bc6e044bc5be46719894d2a0d0eeedcb2e15f6e815d20968c3552f513"
+}

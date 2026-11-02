@@ -1,0 +1,26 @@
+{
+  "boundary_source": "Existing20percent/80percent connector trim; no outcome-driven endpoint search",
+  "data_roles": "Existing768fit/256calibration/256reserved parents, unchanged; bank inspected as development, not untouched confirmation",
+  "dataset_archive_sha256": "0b9d51777803f2c0f5bf003f9b3fd0043427485856ebd33dcae4baecc184f426",
+  "dataset_content_sha256": "194457ae13a172cb7e3af301b17f52abb8f17eb7a8c54cb27cef05064d2794ff",
+  "definition": "q(x)=dot(x[:10]-B[:10],C[:10]-B[:10])/dot(C[:10]-B[:10],C[:10]-B[:10]); remove every original edge whose closed projected interval intersects [0.2,0.8]",
+  "development_informed": true,
+  "failure_rule": "Report insufficient bank evidence or mathematical separation failure; no alternative cut search or threshold change.",
+  "frozen_est": "2026-11-01T22:57:05.825877-05:00",
+  "geometry_sha256": "942271e7ed260356cfc4b4543fa79c585c0e2721bf19514bcbcfa581946c2411",
+  "lower": 0.2,
+  "model_training_authorized": false,
+  "required_checks": {
+    "eligible_independent_calibration_parents_min": 128,
+    "genuine_upstream_and_downstream_goal_fragment_parents_min": 8,
+    "intact_successful_fitting_trajectories": 0,
+    "observed_initial_states_upstream_and_entire_goal_region_downstream": true,
+    "original_schema_and_no_false_joins": true,
+    "retained_fitting_approach_parents_B25_and_C30_min": 8,
+    "source_and_next_crossing_exclusion": true
+  },
+  "schema": "two_scenario.v2.separating_cut.v1",
+  "scope": "One saved-data proposal. No physics/reward/data mutation, model outputs, mask search or simulator calls. All roles exclude the same cut before any learner/normalization/calibration use.",
+  "source_manifest_sha256": "c4e3198289e9ea8b329bbaedbf8cdc5e1c7cea19249beb121ffaa100af53336d",
+  "upper": 0.8
+}

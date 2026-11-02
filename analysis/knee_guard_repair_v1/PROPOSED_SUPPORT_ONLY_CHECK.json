@@ -1,0 +1,49 @@
+{
+  "status": "PROPOSED_ONLY_NOT_AUTHORIZED_NOT_EXECUTABLE",
+  "purpose": "CUTOFF-retained state typicality only; not G2 admission, action-only-shift proof or BCA efficacy",
+  "episodes_per_world": 2048,
+  "worlds": [
+    "stall3",
+    "nostall"
+  ],
+  "fitting_episodes_per_world": 1231,
+  "collection_transitions": 409600,
+  "validation_replay_transitions": 409600,
+  "anchor_prefix_transitions": 1200,
+  "maximum_total_transitions": 820400,
+  "maximum_seconds": 600,
+  "query_starts": 128,
+  "query_anchors": 48,
+  "anchor_times": {
+    "0": 16,
+    "25": 16,
+    "50": 16
+  },
+  "maximum_resets": 4272,
+  "model_calls": 0,
+  "optimizer_updates": 0,
+  "calibration_updates": 0,
+  "proposed_collection_entropy": 424264,
+  "proposed_query_stream": 707070708,
+  "seed_check_scope": "No literal matches in current candidate/v3/definition sources; full derived-seed collision and independent stream checks required before sealing any executable.",
+  "criteria": {
+    "minimum_reference_rows_each_world_each_time": 64,
+    "neighbor_k": 64,
+    "distance": "standardized Euclidean to retained fitting rows; leave own episode out of reference queries",
+    "quantile": 0.99,
+    "start_share_minimum": 0.95,
+    "anchor_share_minimum": 0.9,
+    "invalid_or_insufficient": "INCONCLUSIVE, stop; no sample top-up, band change, radius change or threshold change",
+    "complete_but_below_share": "FAIL, stop; no training admission",
+    "pass": "Retained-state typicality supported on these independent development samples only; no conditional-action density or equality-of-state-distribution claim"
+  },
+  "size_rationale": {
+    "deep_probability": 0.15,
+    "retention_given_deep": 0.506,
+    "expected_reference_rows_each_time": 93.43289999999999,
+    "binomial_probability_below64_each_time": 0.0003503295580464651,
+    "conservative_six_group_union_bound": 0.0021019773482787905,
+    "assumptions": "Episode-independent mixture/action streams and existing independent split; all deep episodes stay at high load. Worlds are paired, not independent replications. Only controls minimum group counts, not probability of passing distances."
+  },
+  "data_policy": "Preserve recorder/physics/mask; persist full arrays, group IDs, CUTOFF masks and query state/time identities; one fixed fresh development attempt. No selection or final-calibration fitting/access for decision. Existing consumed data remains development."
+}
