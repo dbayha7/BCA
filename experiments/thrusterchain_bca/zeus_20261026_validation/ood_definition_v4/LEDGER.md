@@ -196,3 +196,8 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   allowed attempt. Kill rule only; per-job cap, evaluation caps, doses, seeds, reads, bars and approval words
   unchanged. Re-sealed (manifest fd65e961...); 11 tests pass; the attempt-2 approval check was rehearsed against a
   scratch file and passed. Attempt 2 runs on Zeus while Titan runs the r5 screen.
+- **Confirmation v1 amendment A2 (2026-11-02 ~13:40 UTC; the user moved attempt 2 to Titan, after the r5 screen):**
+  change 4 binds the recorded GPU kind to the machine's one allowed kind (Zeus's or Titan's), without which Titan's
+  first training job would refuse and end the last attempt INCOMPLETE; training cap 9 h -> 13 h for Titan's ~1.8x
+  slower jobs. Re-sealed (manifest 920b31c9...; supersedes A1's fd65e961..., never approved); 12 tests pass; the
+  attempt-2 approval check rehearsed; approval helper `approve_confirmation_v1.py` outside the sealed folder.

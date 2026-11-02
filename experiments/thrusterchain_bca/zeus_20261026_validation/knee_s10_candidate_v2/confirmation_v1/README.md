@@ -37,6 +37,27 @@ recomputes the decision from the saved reports without a GPU. After an INCOMPLET
 file, write one naming attempt 2 (same sentences), and launch again: completed training units are reused and every
 evaluation reruns.
 
+## Attempt 2 on Titan (amendments A1 and A2), after the r5 screen finishes
+
+The checkout is `C:\Users\David Bayha\BCA`; the WSL user is `dbayha`; the interpreter is `/home/dbayha/bca-gpu/bin/python`.
+Never run this alongside the r5 screen on Titan's one GPU. In a Titan PowerShell at the checkout, remove the attempt-1
+approval, then write attempt 2's with the helper (`../approve_confirmation_v1.py`, outside the sealed folder):
+
+```powershell
+Remove-Item experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1/CF_APPROVAL.json
+```
+
+```powershell
+wsl -d Ubuntu -- bash -lc "cd '/mnt/c/Users/David Bayha/BCA' && /home/dbayha/bca-gpu/bin/python -B experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/approve_confirmation_v1.py --attempt 2"
+```
+
+Commit it, then start the run in a Titan window that stays open. It waits for the r5 screen to finish, then runs
+(about 7.5 h of training):
+
+```powershell
+wsl -d Ubuntu -- bash -lc "cd '/mnt/c/Users/David Bayha/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1' && while pgrep -f 'screen_r5.py --execute' > /dev/null; do sleep 60; done; PYTHONDONTWRITEBYTECODE=1 /home/dbayha/bca-gpu/bin/python -B -u cf.py --execute 2>&1 | tee cf_console.log"
+```
+
 ## Files
 
 | File | What it is |

@@ -42,7 +42,7 @@ WORDS = (
     "the dose being confirmed is 63; the other doses are a profile",
 )
 INSTRUMENT_CAUSE_REL = 1e-6
-JOB_SECONDS, TRAIN_SECONDS = 1_800, 9 * 3_600                 # amendment A1: 5 h -> 9 h (Zeus's measured job times)
+JOB_SECONDS, TRAIN_SECONDS = 1_800, 13 * 3_600                # amendments A1, A2: 5 h -> 9 h -> 13 h (measured job times; Titan)
 EVAL_JOB_SECONDS, EVAL_JOB_TRANSITIONS = 900, 200_000
 EVAL_SECONDS, EVAL_TRANSITIONS = 2 * 3_600, 3_000_000
 SEEDS, WORLDS, ARM = (0, 1, 2), ("stall3", "nostall"), "cutoff"
