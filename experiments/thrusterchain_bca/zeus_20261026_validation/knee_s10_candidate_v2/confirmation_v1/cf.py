@@ -42,6 +42,7 @@ WORDS = (
     "the dose being confirmed is 63; the other doses are a profile",
 )
 INSTRUMENT_CAUSE_REL = 1e-6
+MAX_ATTEMPTS = 3                                              # amendment A3: 2 -> 3 (attempt 2 ended from outside)
 JOB_SECONDS, TRAIN_SECONDS = 1_800, 13 * 3_600                # amendments A1, A2: 5 h -> 9 h -> 13 h (measured job times; Titan)
 EVAL_JOB_SECONDS, EVAL_JOB_TRANSITIONS = 900, 200_000
 EVAL_SECONDS, EVAL_TRANSITIONS = 2 * 3_600, 3_000_000
@@ -81,7 +82,7 @@ def check_approval(approval_path=None, manifest_path=None, run_dir=None, root=No
         if run_dir.is_dir() else []
     attempt = approval.get("attempt")
     require(type(attempt) is int and attempt == len(previous) + 1, f"Approval must name attempt {len(previous) + 1}")
-    require(attempt <= 2, "There is no attempt 3")
+    require(attempt <= MAX_ATTEMPTS, f"There is no attempt {MAX_ATTEMPTS + 1}")
     text = approval.get("approval", "")
     missing = [w for w in (WORDS[0].format(attempt=attempt),) + WORDS[1:] if w not in text]
     require(not missing, "Approval wording missing: " + " | ".join(missing))
@@ -99,6 +100,7 @@ def check_approval(approval_path=None, manifest_path=None, run_dir=None, root=No
                     "A re-attempt after INCONCLUSIVE needs every evaluation's I1 identity within 1e-6 relative (the named cause)")
         else:
             require(last == "INCOMPLETE", f"No re-attempt after {last}")
+        require(attempt < 3 or last == "INCOMPLETE", "Attempt 3 (amendment A3) follows only an INCOMPLETE attempt 2")
     return {"approval": approval, "attempt": attempt, "manifest_sha256": sha_file(manifest_path),
             "history": history, "previous_attempts": [str(p) for p in previous]}
 

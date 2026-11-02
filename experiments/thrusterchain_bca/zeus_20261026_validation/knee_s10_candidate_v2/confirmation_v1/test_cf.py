@@ -1,7 +1,7 @@
 """Confirmation tests (Windows, CPU): the fresh seeds; the worker's three changes (confirmation rows, the per-job
 dose, the cf_evaluate kind); the pre-registered readings on synthetic reports; the supervisor end to end with a
-fake dispatcher (54 units, INCOMPLETE and reuse by kappa, approval and manifest checks). No GPU, no checkpoint
-opened, no sealed file touched."""
+fake dispatcher (54 units, INCOMPLETE and reuse by kappa, attempt 3 under amendment A3 and no attempt 4, approval
+and manifest checks). No GPU, no checkpoint opened, no sealed file touched."""
 from pathlib import Path
 from types import SimpleNamespace
 import json
@@ -223,6 +223,46 @@ class Supervisor(unittest.TestCase):
         self.write_approval(3)
         with self.assertRaises(ValueError):
             self.execute(fake_dispatch())
+
+    def test_attempt_3_after_two_incomplete_amendment_a3(self):
+        """Amendment A3, the real sequence: attempt 1 ends early, attempt 2 ends at bca_branch_s1_k189_stall3; attempt 3
+        reuses every completed training unit of both, runs the rest and every evaluation, and reads."""
+        self.assertEqual(cf.MAX_ATTEMPTS, 3)
+        out = self.execute(fake_dispatch(fail=("warmup_s1_stall3",)))
+        self.assertEqual(out["reading"], "INCOMPLETE")
+        self.write_approval(2)
+        out = self.execute(fake_dispatch(fail=("bca_branch_s1_k189_stall3",)))
+        self.assertEqual(out["reading"], "INCOMPLETE")
+        self.assertEqual(out["units"]["warmup_s0_stall3"], "reused from attempt_1")
+        self.write_approval(3)
+        out = self.execute(fake_dispatch())
+        self.assertEqual(out["reading"], "CONFIRMED / CALIBRATED", out.get("reasons"))
+        self.assertEqual(out["units"]["warmup_s0_stall3"], "reused from attempt_1")
+        self.assertEqual(out["units"]["warmup_s1_stall3"], "reused from attempt_2")
+        self.assertEqual(out["units"]["bca_branch_s0_k189_stall3"], "reused from attempt_2")
+        self.assertEqual(out["units"]["bca_branch_s1_k189_stall3"], "completed")
+        self.assertEqual(out["units"]["warmup_s0_nostall"], "completed")
+        self.assertTrue(all(v == "completed" for k, v in out["units"].items() if k.startswith("eval_")))
+        self.assertEqual(out["attempt"], 3)
+
+    def test_attempt_3_only_after_incomplete_attempt_2_and_no_attempt_4(self):
+        """A3 opens a third attempt only after an INCOMPLETE second (the INCONCLUSIVE re-attempt stays a second-attempt
+        rule), and there is no attempt 4."""
+        for n, reading in ((1, "INCOMPLETE"), (2, "INCONCLUSIVE")):
+            unit = self.run / f"attempt_{n}" / "eval_native_s0_stall3"
+            unit.mkdir(parents=True)
+            (unit.parent / "CF_RESULT.json").write_text(json.dumps({"reading": reading}))
+            (unit / "report.json").write_text(json.dumps({"status": "completed", "instrument": {"I1_max_rel": 0.0}}))
+        self.write_approval(3)
+        with self.assertRaisesRegex(ValueError, "follows only an INCOMPLETE attempt 2"):
+            cf.check_approval(self.approval, self.manifest, self.run, HERE)
+        (self.run / "attempt_2" / "CF_RESULT.json").write_text(json.dumps({"reading": "INCOMPLETE"}))
+        self.assertEqual(cf.check_approval(self.approval, self.manifest, self.run, HERE)["attempt"], 3)
+        (self.run / "attempt_3").mkdir()
+        (self.run / "attempt_3" / "CF_RESULT.json").write_text(json.dumps({"reading": "INCOMPLETE"}))
+        self.write_approval(4)
+        with self.assertRaisesRegex(ValueError, "There is no attempt 4"):
+            cf.check_approval(self.approval, self.manifest, self.run, HERE)
 
     def test_approval_and_manifest_checks(self):
         self.approval.write_text(json.dumps({"approval": "I approve something else", "package_manifest_sha256": sha_file(self.manifest), "attempt": 1}))
