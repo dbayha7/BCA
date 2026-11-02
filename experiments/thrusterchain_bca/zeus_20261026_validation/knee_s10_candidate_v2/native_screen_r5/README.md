@@ -10,6 +10,18 @@ the dry run (step 2; it must report `device_kind` "NVIDIA GeForce RTX 5070 Ti");
 with `--attempt 2` via `../approve_native_screen_r5.py`; commit and push; the run (step 5). Nothing may run on Zeus
 in the meantime.
 
+**Titan specifics (amendment A3).** The checkout is `C:\Users\David Bayha\BCA` (quote the path in WSL), the WSL user
+is `dbayha`, the interpreter is `/home/dbayha/bca-gpu/bin/python`, and **every** WSL invocation sets
+`OPENBLAS_CORETYPE=Haswell`, or pi_ref's gains pin refuses in stage 0 (nothing spent). The dry run and the run:
+
+```powershell
+wsl -d Ubuntu -- bash -lc "cd '/mnt/c/Users/David Bayha/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/native_screen_r5' && OPENBLAS_CORETYPE=Haswell PYTHONDONTWRITEBYTECODE=1 /home/dbayha/bca-gpu/bin/python -B -u screen_r5.py --dry-run 2>&1 | tee dry_run_console.log"
+```
+
+```powershell
+wsl -d Ubuntu -- bash -lc "cd '/mnt/c/Users/David Bayha/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/native_screen_r5' && OPENBLAS_CORETYPE=Haswell PYTHONDONTWRITEBYTECODE=1 /home/dbayha/bca-gpu/bin/python -B -u screen_r5.py --execute 2>&1 | tee screen_console.log"
+```
+
 The rule is `SCREEN_RULE_r5.md`, written before any screen number exists; the definition is
 `../../ood_definition_v4/REVISION_r5.md`; the reasons are `../../ood_definition_v4/DESIGN_AUDIT_r4_20261101.md`. One
 package, one dry run, one seal, one approval, one run. Everything GPU is user-run in the recorded WSL environment;
