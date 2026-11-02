@@ -188,3 +188,11 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   792 s against 512, 480, 493 s), projecting 31,674 s of training against the 36,000 s cap. **Amendment A4 (the
   user's choice before the seal):** total training cap 10 h -> 14 h; a kill rule only, no read, bar, dose or seed
   changed; `screen_r5.py` is outside the dry-run hashes, so the receipt stands.
+- **Confirmation v1, attempt 1 (2026-11-02 04:08-04:12 UTC, Zeus): INCOMPLETE, interrupted by the user** after 286 s
+  of `warmup_s0_stall3` (no checkpoint, report or evaluation; no number from the fresh seeds exists). It overlapped
+  the r5 screen's attempt 1 on the same GPU. **Amendment A1 (the user's choice, 2026-11-02 ~12:10 UTC, before the
+  attempt-2 approval):** total training cap 5 h -> 9 h, because Zeus's real training jobs have run from about 490 s
+  (overestimation runs) to 880 and 1,286 s (r5 warmups), and 30 jobs at the slow end would hit 5 h on the last
+  allowed attempt. Kill rule only; per-job cap, evaluation caps, doses, seeds, reads, bars and approval words
+  unchanged. Re-sealed (manifest fd65e961...); 11 tests pass; the attempt-2 approval check was rehearsed against a
+  scratch file and passed. Attempt 2 runs on Zeus while Titan runs the r5 screen.
