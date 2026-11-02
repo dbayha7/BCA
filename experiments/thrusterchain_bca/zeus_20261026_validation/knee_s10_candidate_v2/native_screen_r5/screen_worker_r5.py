@@ -11,8 +11,6 @@ through the unpatched loader, which regenerates data collected in the same envir
 Binding 8 (amendment A2): for GPU jobs the recorded device kind (knee_edge_ood_v3 frozen_checks.RECORDED_DEVICE_KIND,
 read by the preflight and by every training bind) becomes the one allowed kind this machine has
 (`device_kinds.ALLOWED_DEVICE_KINDS`: Zeus's laptop GPU or Titan's desktop GPU), and every GPU report records it.
-Binding 9 (amendment A3): pi_ref's LQR gains are loaded from the stored artifact `pi_ref_gains.npy` (bytes pinned
-by pi_ref.GAINS_SHA256) instead of being recomputed, which another CPU does one last bit off.
 """
 from datetime import datetime, timezone
 from pathlib import Path
@@ -61,26 +59,9 @@ try:
     import step03                                            # noqa: E402
     import bindings as B                                     # noqa: E402
     import device_kinds as DK                                # noqa: E402
-    import pi_ref                                            # noqa: E402
     from core import require, sha_file                       # noqa: E402
 finally:
     sys.argv = _argv
-
-
-def bind_pi_ref_gains():
-    """Binding 9 (amendment A3): pi_ref's LQR gains are the stored artifact `pi_ref_gains.npy`, whose bytes hash to
-    pi_ref.GAINS_SHA256, the pin v1 computed on Zeus. pi_ref recomputes the Riccati recursion at first use and
-    refuses on a hash mismatch; another CPU reproduces it one last bit off, so the sealed pin is kept by loading the
-    pinned bytes instead of recomputing them."""
-    import hashlib
-    k = np.ascontiguousarray(np.load(HERE / "pi_ref_gains.npy", allow_pickle=False))
-    require(k.shape == (pi_ref.HORIZON, 4, 13) and k.dtype == np.float64, "Stored pi_ref gains have the wrong shape or dtype")
-    require(hashlib.sha256(k.tobytes()).hexdigest() == pi_ref.GAINS_SHA256, "Stored pi_ref gains do not hash to the pinned GAINS_SHA256")
-    pi_ref._K = k
-    return pi_ref.GAINS_SHA256
-
-
-PI_REF_GAINS_SHA256 = bind_pi_ref_gains()
 
 
 def bind_device_kind():

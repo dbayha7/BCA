@@ -59,7 +59,7 @@ GPU_KINDS = TRAINING_KINDS + ("r0", "evaluate", "evaluate_bca")      # reused on
 STAGE0_KINDS = ("preflight", "i0", "g1")
 REUSE_KEYS = ("id", "kind", "seed_index", "arm", "world")
 DRY_RUN_HASHED = ("screen_worker_r5.py", "screen_math_r5.py", "i0_unit.py", "g1_unit_r5.py", "device_kinds.py",
-                  "pi_ref_gains.npy", "../native_screen/screen_bind.py", "../native_screen/screen_data.py")
+                  "../native_screen/screen_bind.py", "../native_screen/screen_data.py")
 
 
 def name(i, arm, world):
@@ -71,7 +71,7 @@ FORKS = [name(i, a, w) for i in SEEDS for w in WORLDS for a in ARMS]
 
 def manifest_files(root=None):
     root = root or HERE
-    return sorted(p.name for p in root.iterdir() if p.is_file() and p.suffix in (".py", ".md", ".json", ".npy")
+    return sorted(p.name for p in root.iterdir() if p.is_file() and p.suffix in (".py", ".md", ".json")
                   and p.name not in ("SCREEN_MANIFEST.json", "SCREEN_APPROVAL.json"))
 
 
@@ -174,7 +174,7 @@ def integrity_record():
     """The v3 dependency closure plus every file of this package, the r4 modules it imports and the candidate
     folders a job loads by path."""
     files = {str(p): sha_file(p) for p in U.dependency_closure()}
-    extra = [p for p in sorted(HERE.iterdir()) if p.is_file() and p.suffix in (".py", ".json", ".md", ".npy")]
+    extra = [p for p in sorted(HERE.iterdir()) if p.is_file() and p.suffix in (".py", ".json", ".md")]
     extra += [p for p in sorted(NATIVE.iterdir()) if p.is_file() and p.suffix in (".py", ".json", ".md")
               and p.name not in ("SCREEN_APPROVAL.json",)]
     extra += [COLLECTION / "collection.json"]

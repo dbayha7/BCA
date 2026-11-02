@@ -5,8 +5,7 @@ on record under `screen_run/`). Attempt 2 runs on Titan. Because A2 changed the 
 until the dry run is redone **on Titan**; the order below is for Titan, from a pulled clone, with the recorded
 operator environment at the same path. If Titan's interpreter lives elsewhere, substitute its path in every command.
 
-Amendment A3 (binding 9) ships `pi_ref_gains.npy`, the pinned LQR gains, so the worker never recomputes them on a
-CPU that reproduces them one bit off. On Titan, in order: `git pull`; tests (step 1; the WSL interpreter works for them too, with `JAX_PLATFORMS=cpu`);
+On Titan, in order: `git pull`; tests (step 1; the WSL interpreter works for them too, with `JAX_PLATFORMS=cpu`);
 the dry run (step 2; it must report `device_kind` "NVIDIA GeForce RTX 5070 Ti"); the seal (step 3); the approval
 with `--attempt 2` via `../approve_native_screen_r5.py`; commit and push; the run (step 5). Nothing may run on Zeus
 in the meantime.
