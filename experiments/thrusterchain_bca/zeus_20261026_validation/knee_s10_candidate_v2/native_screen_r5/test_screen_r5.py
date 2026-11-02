@@ -136,6 +136,9 @@ class Instrument(unittest.TestCase):
         self.assertFalse(I0.compare(1.0 + 2e-9, 1.0, 0.0)["ok"])
         self.assertFalse(I0.compare(1.0, 1.0, 2e-9)["ok"])
 
+    def test_caps_amendment_a4(self):
+        self.assertEqual((S.JOB_SECONDS, S.TRAIN_SECONDS, S.EVAL_SECONDS, S.EVAL_TRANSITIONS), (1_800, 14 * 3_600, 2 * 3_600, 36_000_000))
+
     def test_worker_kinds(self):
         self.assertEqual(set(SW.KINDS), {"preflight", "warmup", "branch", "bc_only", "r0", "evaluate", "bca_branch", "evaluate_bca", "g1", "i0"})
 
