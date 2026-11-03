@@ -46,6 +46,7 @@ const STATUS_STYLE: Record<SweepRun["status"], { label: string; cls: string }> =
   done: { label: "Done", cls: "bg-success/15 text-success" },
   pruned: { label: "Pruned early", cls: "bg-warning/20 text-warning-foreground dark:text-warning" },
   stopped: { label: "Stopped", cls: "bg-destructive/15 text-destructive" },
+  skipped: { label: "Skipped", cls: "bg-muted text-muted-foreground" },
 };
 
 const f2 = (v: number) => v.toFixed(2);
