@@ -13,6 +13,7 @@ import {
   type ValueTrace,
 } from "@/lib/playback";
 import { PhysicsBench } from "./physics-bench";
+import { SafetyPanel } from "./safety-panel";
 
 type Mode = "policy" | "behavior";
 
@@ -944,6 +945,7 @@ export function EpisodePlayer({ ds, Q, version, trained, gamma = 0.95, renderFra
         )}
       </div>
       {isThruster && <PhysicsBench policy={policy} trained={trained} />}
+      {isThruster && <SafetyPanel policy={policy} trained={trained} />}
     </div>
   );
 }

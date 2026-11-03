@@ -45,6 +45,8 @@ import { checkAlerts, DEFAULT_ALERT_RULES, EMPTY_MEMORY, notifySystem, requestNo
 import { buildModelCard } from "@/lib/model-card";
 import { usePersistentState } from "@/lib/use-persistent-state";
 import { Switch } from "@/components/ui/switch";
+import { DatasetRewardChart, PolicyReturnRisk } from "@/components/lab/risk-charts";
+import { StressOverlay } from "@/components/lab/safety-panel";
 
 export const Route = createFileRoute("/")({
   component: LabPage,
@@ -1131,7 +1133,14 @@ function LabPage() {
                 </div>
 
                 {view === "watch" ? (
-                  <EpisodePlayer ds={ds} Q={qRef.current} version={version} trained={history.length > 0} />
+                  <EpisodePlayer
+                    ds={ds}
+                    Q={qRef.current}
+                    version={version}
+                    trained={history.length > 0}
+                    gamma={hyper.gamma}
+                    renderFrameExtras={(f) => <StressOverlay frame={f} />}
+                  />
                 ) : (
                   <StateGrid ds={ds} mode={view} Q={qRef.current} evalRes={evalRes} heat={heat} version={version} />
                 )}
@@ -1165,6 +1174,27 @@ function LabPage() {
                     </>
                   )}
                 </div>
+
+                {/* Risk views: where the logged rewards fall, and how the learned policy's returns spread across starts. */}
+                {view === "dataset" && (
+                  <div className="mt-4 rounded-lg border border-border bg-surface/40 p-3">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reward distribution in the data</div>
+                    <PanelErrorBoundary name="Reward distribution" resetKey={ds.env.id}>
+                      <DatasetRewardChart ds={ds} />
+                    </PanelErrorBoundary>
+                  </div>
+                )}
+                {view === "policy" && ds.env.id !== "thrusterchain-stall" && (
+                  <div className="mt-4 rounded-lg border border-border bg-surface/40 p-3">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Return risk across start states</div>
+                    <PanelErrorBoundary name="Return risk" resetKey={ds.env.id}>
+                      <PolicyReturnRisk ds={ds} policy={evalRes.policy} gamma={hyper.gamma} />
+                    </PanelErrorBoundary>
+                  </div>
+                )}
+                {view === "policy" && ds.env.id === "thrusterchain-stall" && (
+                  <p className="mt-3 text-[11px] text-muted-foreground">For ThrusterChain, return risk and safety-limit violations are measured on the real 13-dim physics under Watch Episodes → Safety limits.</p>
+                )}
               </>
             )}
             </PanelErrorBoundary>
