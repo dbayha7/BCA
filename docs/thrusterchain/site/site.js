@@ -112,8 +112,9 @@
       for (let i = 0; i < 4; i++) { const x1 = fx(i), y1 = fy(i), x2 = fx(i + 1), y2 = fy(i + 1); const mx = (x1 + x2) / 2, my = (y1 + y2) / 2; const cmd = a[i], th = u[i]; const stalled = stall && Math.abs(cmd) > KNEE;
         s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--rule-strong)" stroke-width="2"/>`;
         s += `<rect class="thruster ${stalled ? 'stalled' : ''}" x="${mx - 12}" y="${my - 14}" width="24" height="28" rx="4"/>`;
-        // thrust arrow: positive thrust pushes its two floats upstream (negative position), i.e. up the screen
-        s += `<line x1="${mx}" y1="${my}" x2="${mx}" y2="${my - 40 * th}" stroke="${stalled ? 'var(--stall)' : 'var(--accent)'}" stroke-width="3"/>`;
+        // thrust arrow: B adds +0.3*thrust to both neighbors' speeds, the same sign as the water push (A[v,current] = +0.3),
+        // so positive thrust pushes downstream (down the screen) and negative thrust pushes upstream (up)
+        s += `<line x1="${mx}" y1="${my}" x2="${mx}" y2="${my + 40 * th}" stroke="${stalled ? 'var(--stall)' : 'var(--accent)'}" stroke-width="3"/>`;
         s += `<text class="svg-label" x="${mx}" y="${H - 46}" text-anchor="middle">a${i + 1} ${cmd.toFixed(2)}${stalled ? ' stall' : ''}</text>`;
         s += `<rect class="bar-bg" x="${mx - 30}" y="${H - 40}" width="60" height="7"/><rect class="bar ${stalled ? 'stalled' : ''}" x="${mx + (cmd < 0 ? 30 * cmd : 0)}" y="${H - 40}" width="${Math.abs(30 * cmd)}" height="7"/>`;
         s += `<rect class="bar-bg" x="${mx - 30}" y="${H - 30}" width="60" height="7"/><rect class="bar ${stalled ? 'stalled' : ''}" x="${mx + (th < 0 ? 30 * th : 0)}" y="${H - 30}" width="${Math.abs(30 * th)}" height="7" opacity=".6"/>`; }
@@ -122,7 +123,7 @@
         s += `<line x1="${cx + 24}" y1="${cy}" x2="${cx + 24}" y2="${cy + 40 * v}" stroke="var(--ink-2)" stroke-width="2"/>`;
         s += `<text class="svg-label" x="${cx}" y="${H - 8}" text-anchor="middle">p ${x[2 * i].toFixed(2)}  v ${v.toFixed(2)}</text>`; }
       s += `<text class="svg-title" x="12" y="22">step ${sim.t} of 100 · remaining fraction ${((100 - sim.t) / 100).toFixed(2)} · ${stall ? 'stalling world' : 'no-stall world'}</text>`;
-      s += `<text class="svg-label" x="12" y="40">floats drift down with the water; a thruster's arrow is its real push (up = upstream); bars at the bottom: command, then effective thrust (orange past the 0.8 knee)</text>`;
+      s += `<text class="svg-label" x="12" y="40">floats drift down with the water; a thruster's arrow is its real push (down = with the water, up = against it); bars at the bottom: command, then effective thrust (orange past the 0.8 knee)</text>`;
       s += '</svg>';
       $('#sim-stage').innerHTML = s;
       const r = sim.t < 100 ? T.rewards[sim.t] : null; let G = 0; for (let k = 0; k < sim.t; k++) G += Math.pow(GAMMA, k) * T.rewards[k];
