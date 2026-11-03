@@ -70,7 +70,7 @@ export function StorageStatus({ state, onNewRun }: { state: SaveState; onNewRun:
           aria-label={`Local saving: ${label}. Open storage settings`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
-          <span className="tabular-nums">{label}</span>
+          <span className="hidden tabular-nums sm:inline">{label}</span>
           {recentCount > 0 && <span className="rounded bg-destructive/15 px-1 font-mono text-[10px] text-destructive">{recentCount}</span>}
         </button>
       </PopoverTrigger>

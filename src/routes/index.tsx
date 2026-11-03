@@ -876,40 +876,46 @@ function LabPage() {
               Offline · no environment interaction
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
             <StorageStatus state={saveState} onNewRun={reset} />
             <Link
               to="/experiments"
+              aria-label="Experiments"
+              title="Experiments: saved runs, search, compare"
               className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3" />
                 <path d="M7 15h10" />
               </svg>
-              Experiments
+              <span className="hidden lg:inline">Experiments</span>
             </Link>
             <Link
               to="/sweep"
+              aria-label="Sweep"
+              title="Hyperparameter sweep"
               className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
                 <path d="M1 14h6M9 8h6M17 16h6" />
               </svg>
-              Sweep
+              <span className="hidden lg:inline">Sweep</span>
             </Link>
             <Link
               to="/compare"
+              aria-label="Compare runs"
+              title="Compare two runs side by side"
               className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="18" rx="1" />
                 <rect x="14" y="3" width="7" height="18" rx="1" />
               </svg>
-              Compare runs
+              <span className="hidden lg:inline">Compare runs</span>
             </Link>
             {ds && (
-              <div className="hidden items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground sm:flex">
+              <div className="hidden items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground xl:flex">
                 <span>{ds.transitions.length.toLocaleString()} transitions</span>
                 <span className="text-border">|</span>
                 <span>{(last?.updates ?? 0).toLocaleString()} updates</span>
@@ -1039,7 +1045,7 @@ function LabPage() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={exportPolicy}
                 disabled={!ds || history.length === 0}
