@@ -91,8 +91,10 @@ e_own is the mean over the 48 visited states of Q1(s, π(s)) − Q^π(s, π(s));
 - **The value of W itself.** At the 192 probe rows, under each native policy's exact continuation, the withheld
   commands (|a0| 0.85, 0.90, 1.00 in the logged command's direction; slots s05, s10, s20) are worth less than the
   logged command in both worlds: at full throttle by 2.3 to 2.6 in stall3 but only 0.38 to 0.44 in no-stall, and W is
-  the better command on 26 to 36% of rows in either. So at typical data states W is a mild cost in no-stall, not a
-  gain. The no-stall loss is not explained by BCA giving up commands that are worth more there.
+  the better command on 26 to 36% of rows in either. Averaged over all rows, W is a mild cost in no-stall.
+  *Revised 2026-11-03 (section 4):* by load band it is not. At deep load W is worth more than the logged command in
+  no-stall, so this readout's first sentence here ("the no-stall loss is not explained by BCA giving up commands that
+  are worth more there") held only for the all-rows average, which the 100 low-load rows dominate.
 - **Gradient audits** (`gradient_audit_020000.json`; 400 fixed high-load probe rows; a training-only diagnostic of the
   direction each loss term pushes, not an executed move). Where the actor sits outside the band, the critic's Q term
   pushes the command outward on most rows in both worlds (198 of 227 rows, stall3 kappa 189 seed 1; 193 of 248,
@@ -116,14 +118,18 @@ confirmatory. Questions 4 and 5 need new runs under a new rule written before th
    the no-stall loss. *Test, saved records:* every evaluation saves W exposure by load band (`rates.by_band`, mid and
    deep; the start bank has no low-load steps). Does the exposure drop concentrate in the deep band in both worlds? A
    per-start pairing of the saved returns (128 per evaluation) with per-start exposure would need the saved checkpoints
-   re-evaluated (git-ignored, on Zeus; about 25 s each; evaluation only).
+   re-evaluated (git-ignored, on Zeus; about 25 s each; evaluation only). *Load-band part answered in section 4; the
+   per-start pairing with exposure remains open.*
 2. **When does leaving W help, and when does it suppress useful behavior?** At typical data states W is a mild cost
    even in no-stall, yet leaving it cost up to 98 points there. Candidate: the loss lives at high-load states, where
    full push matters and no-stall rewards it. *Test, saved records:* the Q^π(W) − Q^π(logged) comparison on high-load
    probe rows only; then the true value of the actor's own command under the native and BCA actors at the same visited
-   states, per world.
+   states, per world. *Answered in part in section 4: in no-stall W is worth more than the logged command at deep load,
+   and the loss is spread over every start. The two actors share visited states only at t = 0, so the per-state
+   comparison is read through the per-start returns instead.*
 3. **Why seed 1?** It is the extreme in both worlds and started with the most W exposure. *Test, saved records:* the
    three native actors' exposure by load band and own-action error. Is seed 1's actor the one nearest the knee?
+   *Section 4: partly; three seeds do not settle why it is the extreme.*
 4. **Can a penalty spare a harmless W?** The band barely separates W from recorded commands, and at kappa 189 its
    gradient opposes the critic's alike in both worlds, so nothing in it knows which world it is in. The overestimation
    rule's own text calls this "the underestimation failure of a sign-blind penalty". *Test, new runs:* a new package
@@ -132,7 +138,84 @@ confirmatory. Questions 4 and 5 need new runs under a new rule written before th
 5. **Does kappa 189's stall3 gain reproduce?** *Test, new runs:* a new package naming kappa 189 as the dose being
    confirmed, with a fresh seed namespace (`knee_s10_candidate_v2/confirmation/` is used), and both the stall3 bar and a
    no-stall cost bar stated before any run. This run's kappa 189 values can inform those bars but cannot count toward
-   them.
+   them. *Taken up by `../confirmation_v2/` (sealed 2026-11-03, manifest 8e4d21b2…, not yet run).*
+
+## 4. Follow-up from saved records (2026-11-03)
+
+Open questions 1 (load-band part), 2 and 3, answered from the saved records alone: nothing was trained, evaluated or
+simulated. Script `analysis/confirmation_v1_kappa_profile/analysis_saved.py`, output `analysis_saved.json` beside it.
+Each probe row's load band is read from the formal G2 v2 datasets the runs used (archives 5f4933fc… stall3, 125131d7…
+no-stall) at its [episode, t] index; the script checks that every probe row's logged command equals the dataset's
+action there exactly. Load g = obs10 + obs11 (`knee_edge_ood_v3/knee_region.py`); bands low g < 0.4, mid 0.4 to 1.0,
+deep g ≥ 1.0. Of the 192 probe rows, 100 are low, 81 mid and 11 deep; every executed step from the 128 starts is mid or
+deep (6,373 and 6,427 of the 12,800 steps). Values are seeds 0 / 1 / 2.
+
+### Where W is worth more (question 2)
+
+Q^π(W at full throttle) − Q^π(logged) at the probe rows, under each native actor's exact continuation, and the share
+of rows on which W is the better command:
+
+| world | low load (100 rows) | mid load (81 rows) | deep load (11 rows) |
+|---|---|---|---|
+| stall3 | −0.18 / −0.12 / −0.01 (W better on 30 to 32%) | −4.45 / −4.93 / −4.61 (22 to 25%) | −10.53 / −6.25 / −6.32 (9 to 18%) |
+| no-stall | −0.79 / −0.72 / −0.74 (29 to 30%) | −0.15 / −0.11 / −0.17 (35 to 36%) | **+0.56 / +0.60 / +0.53 (64 to 73%)** |
+
+- In no-stall, W is worth more than the logged command exactly at deep load, and worse at low load. The deep-load
+  read rests on 11 rows. In stall3, W is worse at every load, most at deep load. This revises section 2's all-rows
+  statement.
+
+### Where BCA gave up W (question 1, load bands)
+
+W exposure among the executed steps, by load band:
+
+| world | arm | mid load | deep load |
+|---|---|---|---|
+| stall3 | native | 0.64 / 0.71 / 0.66 | 0.73 / 0.80 / 0.75 |
+| stall3 | kappa 63 | 0.51 / 0.24 / 0.41 | 0.63 / 0.29 / 0.46 |
+| stall3 | kappa 189 | 0.49 / 0.05 / 0.34 | 0.55 / 0.03 / 0.42 |
+| no-stall | native | 0.65 / 0.68 / 0.64 | 0.95 / 0.98 / 0.96 |
+| no-stall | kappa 63 | 0.42 / 0.06 / 0.09 | 0.92 / 0.16 / 0.29 |
+| no-stall | kappa 189 | 0.25 / 0.11 / 0.17 | 0.87 / 0.16 / 0.26 |
+
+- In no-stall, seeds 1 and 2 gave up deep-load W at kappa 63 and 189 (0.98 to 0.16; 0.96 to 0.29 and 0.26), where W
+  is worth more, and lost at both doses (−39.6 and −98.3; −9.9 and −20.5).
+- Seed 0 kept deep-load W at both doses (0.92, 0.87). At kappa 63 it lost almost nothing (−0.7); at kappa 189 it lost
+  41.4 while its mid-load W fell further (0.42 to 0.25). The deep-load account does not cover seed 0's kappa 189 loss.
+- In stall3 the drop is spread over both bands, not concentrated at deep load.
+
+### Per start (question 2)
+
+The share of the 128 starts on which BCA's return is lower than the native actor's:
+
+| world | kappa 63 | kappa 189 |
+|---|---|---|
+| stall3 | 0.45 / 0.05 / 0.95 | 0.37 / 0.00 / 0.45 |
+| no-stall | 0.59 / 1.00 / 1.00 | **1.00 / 1.00 / 1.00** |
+
+- At kappa 189 BCA's return is lower on every start in all three no-stall seeds, and the worst tenth of starts carries
+  only 12 to 14% of the loss: a shift of the whole policy, not a few bad starts.
+- In stall3 at kappa 189, seed 1 gains on every start (median +117.5). Seeds 0 and 2 gain on 63% and 55% of starts
+  (medians +7.2 and +2.7). At kappa 63, stall3 seed 2 is lower on 95% of starts.
+
+### Seed 1 (question 3)
+
+The native actors at the 48 visited states:
+
+| world | own commands past the knee | own commands at 0.7 to 0.8 | median own abs(a0) | W exposure |
+|---|---|---|---|---|
+| stall3 | 0.56 / 0.69 / 0.60 | 0.02 / 0.04 / 0.00 | 0.87 / 0.97 / 0.95 | 0.68 / 0.76 / 0.70 |
+| no-stall | 0.81 / 0.77 / 0.81 | 0.06 / 0.10 / 0.02 | 0.93 / 0.95 / 0.94 | 0.80 / 0.83 / 0.80 |
+
+- In stall3, seed 1's native actor sits deepest in W (median abs(a0) 0.97, 69% of its commands past the knee). In
+  no-stall it has the most commands just under the knee (10%). Partly "nearest the knee", but three seeds do not
+  settle why it is the extreme in both worlds.
+
+### What remains open
+
+- Question 1's per-start pairing of exposure with return needs the saved checkpoints re-evaluated (on Zeus,
+  git-ignored).
+- Question 4 needs new runs. Question 5 is taken up by `../confirmation_v2/`, which also reports deep-load W exposure
+  and the share of starts lower in every seed and world.
 
 ## Provenance
 
@@ -143,7 +226,9 @@ confirmatory. Questions 4 and 5 need new runs under a new rule written before th
   from `cf_run/attempt_2/`.
 - Definitions follow `CONFIRMATION_RULE.md` and `../overestimation_v1/oe_math.py`. Exposure is
   `knee_edge_ood_v3/stage1_eval.py` `step_rates`; the penalized error is e − κ·U.
-- Figures: `analysis/confirmation_v1_kappa_profile/make_figures.py`, which reads `decision.json` only. The Spearman
+- Figures: `analysis/confirmation_v1_kappa_profile/make_figures.py`, which reads `decision.json` only. Section 4:
+  `analysis/confirmation_v1_kappa_profile/analysis_saved.py` (evaluation reports and the two formal G2 v2 datasets,
+  numpy only), output `analysis_saved.json`. The Spearman
   correlations are over the nine dose × seed cells per world.
 - Nothing was trained, evaluated or simulated for this readout.
 
