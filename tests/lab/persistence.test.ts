@@ -145,3 +145,41 @@ test("evaluate is untouched by the persistence work (smoke)", () => {
   const r = evaluate(createQ(ds), ds, 0.95);
   expect(Number.isFinite(r.trueQ)).toBe(true);
 });
+
+import { buildSnapshot, parseSnapshot, BUILTIN_STATES } from "../../src/lib/snapshot";
+
+test("built-in grid sizes used to validate snapshots match the datasets", () => {
+  for (const id of ["gridworld-random", "halfcheetah-medium"] as const) {
+    const d = generateDataset(id, 7);
+    expect(BUILTIN_STATES[id]).toBe(d.env.width * d.env.height);
+  }
+});
+
+test("snapshot round-trip yields a new paused run with identical Q, history and stream state", () => {
+  const r = rec({ name: "shared", tags: ["x"], rngState: 987654321, q: Float64Array.from({ length: 400 }, (_, i) => i / 7) });
+  const text = JSON.stringify(buildSnapshot(r, undefined, "Priya"));
+  const { run, upload } = parseSnapshot(text, 5, () => "new-id");
+  expect(upload).toBeUndefined();
+  expect(run.id).toBe("new-id");
+  expect(run.name).toBe("shared (imported from Priya)");
+  expect(Array.from(run.q)).toEqual(Array.from(r.q));
+  expect(run.history).toEqual(r.history);
+  expect(run.rngState).toBe(987654321);
+  expect(run.tags).toEqual(["x", "imported"]);
+  expect(run.status).toBe("paused");
+});
+
+test("snapshot import rejects wrong schema, wrong Q size, non-finite values and missing uploads", () => {
+  const good = buildSnapshot(rec({ q: new Float64Array(400) }));
+  const bad = (mut: (s: any) => void) => {
+    const s = JSON.parse(JSON.stringify(good));
+    mut(s);
+    return () => parseSnapshot(JSON.stringify(s), 0, () => "id");
+  };
+  expect(() => parseSnapshot("{not json", 0)).toThrow(/valid JSON/);
+  expect(bad((s) => (s.schema = "other"))).toThrow(/schema/);
+  expect(bad((s) => (s.run.q = s.run.q.slice(0, 8)))).toThrow(/needs 400/);
+  expect(bad((s) => (s.run.history[0].trueQ = "NaN"))).toThrow(/metrics row/);
+  expect(bad((s) => (s.run.datasetId = "custom"))).toThrow(/must include that dataset/);
+  expect(bad((s) => (s.run.datasetId = "evil"))).toThrow(/unknown dataset/);
+});

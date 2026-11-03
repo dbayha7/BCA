@@ -1,14 +1,15 @@
 // Experiments library: every saved run, searchable and filterable, with side-by-side comparison
 // of any selection and per-run audit export. Everything is read from this browser's storage.
 
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/lab/theme-toggle";
 import { MultiLineChart, runStyle, type RunSeries } from "@/components/lab/multi-line-chart";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { buildLogEntries } from "@/components/lab/experiment-log";
-import { experimentsStore, kv } from "@/lib/store";
+import { experimentsStore, kv, uploadsStore } from "@/lib/store";
+import { buildSnapshot, parseSnapshot } from "@/lib/snapshot";
 import {
   allTags,
   DEFAULT_QUERY,
@@ -60,7 +61,35 @@ function exportRun(rec: ExperimentRecord, format: "json" | "csv" | "md") {
   else downloadText(`${base}.md`, auditMarkdown(audit), "text/markdown");
 }
 
+async function sha256Hex(text: string): Promise<string> {
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return `n${text.length}-${text.slice(0, 64).replace(/\W/g, "")}`;
+  }
+}
+
+/** One file a teammate can import to reopen exactly this run (uploads travel inside it). */
+async function exportSnapshot(rec: ExperimentRecord) {
+  let upload: { name: string; text: string } | undefined;
+  if (rec.datasetId === "custom") {
+    const up = rec.uploadKey ? await uploadsStore.get(rec.uploadKey) : undefined;
+    if (!up) {
+      toast.error("The uploaded dataset for this run is not saved here, so the snapshot cannot include it.");
+      return;
+    }
+    upload = { name: up.name, text: up.text };
+  }
+  const me = await kv.get<string>("collab:me").catch(() => undefined);
+  const snap = buildSnapshot(rec, upload, me);
+  downloadText(`${slugify(rec.name)}.lab-snapshot.json`, JSON.stringify(snap), "application/json");
+  toast.success("Snapshot downloaded — send it to a teammate; they import it on their Experiments page.");
+}
+
 function ExperimentsPage() {
+  const navigate = useNavigate();
+  const importRef = useRef<HTMLInputElement>(null);
   const [all, setAll] = useState<ExperimentRecord[] | null>(null);
   const [currentId, setCurrentId] = useState<string | undefined>();
   const [q, setQ] = useState<ExperimentQuery>(DEFAULT_QUERY);
@@ -91,6 +120,23 @@ function ExperimentsPage() {
   const chosen = useMemo(() => selected.map((id) => all?.find((r) => r.id === id)).filter((r): r is ExperimentRecord => !!r), [selected, all]);
   const set = (patch: Partial<ExperimentQuery>) => setQ((cur) => ({ ...cur, ...patch }));
   const filtersActive = JSON.stringify({ ...q, sort: DEFAULT_QUERY.sort, descending: DEFAULT_QUERY.descending }) !== JSON.stringify({ ...DEFAULT_QUERY });
+
+  const importSnapshot = async (f: File) => {
+    try {
+      const { run, upload } = parseSnapshot(await f.text());
+      if (upload) {
+        const key = `upload:${await sha256Hex(upload.text)}`;
+        await uploadsStore.put(key, { name: upload.name, text: upload.text, size: upload.text.length, savedAt: Date.now() });
+        run.uploadKey = key;
+      }
+      await experimentsStore.put(run);
+      setAll((cur) => [run, ...(cur ?? [])]);
+      toast.success(`Imported “${run.name}”`, { action: { label: "Open in lab", onClick: () => void navigate({ to: "/", search: { run: run.id } }) } });
+    } catch (e) {
+      recordError("storage", e, `importing ${f.name}`);
+      toast.error(e instanceof Error ? e.message : "Could not import that snapshot.");
+    }
+  };
 
   const toggle = (id: string) =>
     setSelected((cur) => {
@@ -136,7 +182,27 @@ function ExperimentsPage() {
               <p className="mt-0.5 text-[11px] text-muted-foreground">Every run you train is saved here in this browser · search, filter, compare, export</p>
             </div>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => importRef.current?.click()}
+              className="rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Import snapshot
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void importSnapshot(f);
+                e.target.value = "";
+              }}
+            />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -298,6 +364,7 @@ function ExperimentsPage() {
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => void exportSnapshot(r)}>Share snapshot (teammate can reopen it)</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => exportRun(r, "json")}>Export audit (JSON)</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => exportRun(r, "csv")}>Export metrics (CSV)</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => exportRun(r, "md")}>Export report (Markdown)</DropdownMenuItem>
