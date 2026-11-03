@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SweepRouteImport } from './routes/sweep'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as BenchmarkRouteImport } from './routes/benchmark'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 
@@ -22,6 +23,11 @@ const SweepRoute = SweepRouteImport.update({
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BenchmarkRoute = BenchmarkRouteImport.update({
+  id: '/benchmark',
+  path: '/benchmark',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/benchmark': typeof BenchmarkRoute
   '/compare': typeof CompareRoute
   '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/benchmark': typeof BenchmarkRoute
   '/compare': typeof CompareRoute
   '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -50,20 +58,28 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/benchmark': typeof BenchmarkRoute
   '/compare': typeof CompareRoute
   '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/compare' | '/sweep' | '/checkout/success'
+  fullPaths: '/' | '/benchmark' | '/compare' | '/sweep' | '/checkout/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/compare' | '/sweep' | '/checkout/success'
-  id: '__root__' | '/' | '/compare' | '/sweep' | '/checkout/success'
+  to: '/' | '/benchmark' | '/compare' | '/sweep' | '/checkout/success'
+  id:
+    | '__root__'
+    | '/'
+    | '/benchmark'
+    | '/compare'
+    | '/sweep'
+    | '/checkout/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BenchmarkRoute: typeof BenchmarkRoute
   CompareRoute: typeof CompareRoute
   SweepRoute: typeof SweepRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -85,6 +101,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/benchmark': {
+      id: '/benchmark'
+      path: '/benchmark'
+      fullPath: '/benchmark'
+      preLoaderRoute: typeof BenchmarkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +127,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BenchmarkRoute: BenchmarkRoute,
   CompareRoute: CompareRoute,
   SweepRoute: SweepRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
