@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import type { Dataset, EvalResult } from "@/lib/rl";
+import { changeRecency, createPolicyTracker, ingestPolicy, supportLevel, type PolicyChangeTracker } from "@/lib/playback";
 
 export type HeatMode = "estimate" | "truth" | "error";
 
@@ -55,18 +56,48 @@ export function heatColor(t: number, palette: Palette = "viridis", contrast = 1)
   return heatScale(t, palette, contrast).color;
 }
 
-function Arrow({ x1, y1, x2, y2, color, width, opacity }: { x1: number; y1: number; x2: number; y2: number; color: string; width: number; opacity: number }) {
+function Arrow({ x1, y1, x2, y2, color, width, opacity, dash }: { x1: number; y1: number; x2: number; y2: number; color: string; width: number; opacity: number; dash?: string }) {
   const ang = Math.atan2(y2 - y1, x2 - x1);
   const hl = 4 + width;
   const p1 = `${x2 - hl * Math.cos(ang - 0.45)},${y2 - hl * Math.sin(ang - 0.45)}`;
   const p2 = `${x2 - hl * Math.cos(ang + 0.45)},${y2 - hl * Math.sin(ang + 0.45)}`;
   return (
     <g opacity={opacity}>
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={width} strokeLinecap="round" />
-      <polygon points={`${x2},${y2} ${p1} ${p2}`} fill={color} />
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={width} strokeLinecap="round" strokeDasharray={dash} />
+      <polygon points={`${x2},${y2} ${p1} ${p2}`} fill={dash ? "none" : color} stroke={dash ? color : "none"} strokeWidth={dash ? 1 : 0} />
     </g>
   );
 }
+
+/** Policy-mode overlays. Any combination can be on; all of them follow the live Q-table. */
+export interface PolicyOverlays {
+  /** Greedy action arrows. */
+  arrows: boolean;
+  /** Ring cells whose greedy action changed in the last few training steps (ghost arrow = previous action). */
+  changed: boolean;
+  /** Fog cells by how often the dataset logged the greedy action there (log scale), with the count in the corner. */
+  support: boolean;
+  /** Dashed outline where the greedy action was never logged (out-of-distribution). */
+  ood: boolean;
+}
+
+export const DEFAULT_OVERLAYS: PolicyOverlays = { arrows: true, changed: false, support: false, ood: true };
+
+// Remember the overlay choice for the session so it survives switching to Watch Episodes and back.
+let sessionOverlays: PolicyOverlays = DEFAULT_OVERLAYS;
+
+const OVERLAY_LABELS: { key: keyof PolicyOverlays; label: string; title: string }[] = [
+  { key: "arrows", label: "Greedy arrows", title: "Arrow per state for argmax_a Q(s, a)" },
+  { key: "changed", label: "Changed", title: "Ring states whose greedy action changed since the previous training step (fades over a few steps)" },
+  { key: "support", label: "Data support", title: "Fog states by how many logged samples back the greedy action (log scale)" },
+  { key: "ood", label: "OOD outline", title: "Dashed outline where the greedy action never appears in the data" },
+];
+
+/** Number of training steps over which a "changed" highlight fades out. */
+const CHANGE_FADE = 6;
+
+const DIR_X = [0, 1, 0, -1];
+const DIR_Y = [-1, 0, 1, 0];
 
 interface GridProps {
   ds: Dataset;
@@ -85,12 +116,47 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
   const [hover, setHover] = useState<number | null>(null);
   const [palette, setPalette] = useState<Palette>("viridis");
   const [contrast, setContrast] = useState(1.6);
-  const [showArrows, setShowArrows] = useState(true);
+  const [overlays, setOverlays] = useState<PolicyOverlays>(() => sessionOverlays);
   const [tipPos, setTipPos] = useState<{ x: number; y: number; w: number } | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const S = W * H;
 
   const maxVisit = useMemo(() => Math.max(1, ...Array.from(ds.visits)), [ds]);
+
+  // States that get a policy arrow (logged, not a wall or terminal) — the only ones overlays annotate.
+  const eligible = useMemo(() => {
+    const m = new Uint8Array(S);
+    for (let s = 0; s < S; s++) m[s] = env.blocked.has(s) || env.terminals.has(s) || ds.visits[s] === 0 ? 0 : 1;
+    return m;
+  }, [ds, env, S]);
+
+  const maxCount = useMemo(() => {
+    let m = 0;
+    for (let k = 0; k < ds.counts.length; k++) if (ds.counts[k] > m) m = ds.counts[k];
+    return m;
+  }, [ds]);
+
+  // Previous greedy policy lives in a ref; ingesting is O(S) and idempotent per version, so it is
+  // cheap enough to run on every Auto-train tick and safe under StrictMode double renders.
+  const trackerRef = useRef<PolicyChangeTracker | null>(null);
+  const tracker = useMemo(() => {
+    const prev = trackerRef.current ?? createPolicyTracker(S);
+    const next = ingestPolicy(prev, evalRes.policy, version, eligible);
+    trackerRef.current = next;
+    return next;
+  }, [evalRes.policy, version, eligible, S]);
+
+  const recentChanges = useMemo(() => {
+    let n = 0;
+    for (let s = 0; s < S; s++) if (eligible[s] && changeRecency(tracker, s, version, CHANGE_FADE) > 0) n++;
+    return n;
+  }, [tracker, version, eligible, S]);
+
+  const toggleOverlay = (key: keyof PolicyOverlays) => {
+    const next = { ...overlays, [key]: !overlays[key] };
+    sessionOverlays = next;
+    setOverlays(next);
+  };
 
   const heatVals = useMemo(() => {
     const vals = new Float64Array(S);
@@ -143,10 +209,26 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
             <input type="range" min={1} max={4} step={0.1} value={contrast} onChange={(e) => setContrast(Number(e.target.value))} className="w-24 accent-[var(--primary)]" />
             <span className="w-8 font-mono tabular-nums text-foreground">{contrast.toFixed(1)}×</span>
           </label>
-          <label className="flex cursor-pointer items-center gap-2 text-muted-foreground">
-            <input type="checkbox" checked={showArrows} onChange={(e) => setShowArrows(e.target.checked)} className="accent-[var(--primary)]" />
-            Policy arrows
-          </label>
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground" role="group" aria-label="Policy overlays">
+            Overlays
+            <div className="flex flex-wrap rounded-md border border-border bg-surface p-0.5 text-[11px]">
+              {OVERLAY_LABELS.map(({ key, label, title }) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={title}
+                  aria-pressed={overlays[key]}
+                  onClick={() => toggleOverlay(key)}
+                  className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    overlays[key] ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${overlays[key] ? "bg-primary" : "bg-border"}`} aria-hidden />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="ml-auto flex min-w-[160px] flex-1 items-center gap-2 sm:max-w-[260px]">
             <span className="font-mono tabular-nums text-muted-foreground">{heatVals.lo.toFixed(2)}</span>
             <div
@@ -157,6 +239,26 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
             />
             <span className="font-mono tabular-nums text-muted-foreground">{heatVals.hi.toFixed(2)}</span>
           </div>
+        </div>
+      )}
+      {mode === "policy" && (overlays.changed || overlays.support) && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-1 text-[11px] text-muted-foreground" data-testid="overlay-legend">
+          {overlays.changed && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm border-2" style={{ borderColor: "var(--chart-5)" }} />
+              greedy action changed (fades over {CHANGE_FADE} steps; dashed ghost = previous action) ·{" "}
+              <span className="font-mono tabular-nums text-foreground" data-testid="changed-count">
+                {tracker.changedNow.length}
+              </span>{" "}
+              changed at the last step, <span className="font-mono tabular-nums text-foreground">{recentChanges}</span> in the last {CHANGE_FADE}
+            </span>
+          )}
+          {overlays.support && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-sm border border-border" style={{ background: "repeating-linear-gradient(135deg, var(--card) 0 2px, transparent 2px 4px)" }} />
+              fog = few logged samples of the greedy action (corner = count, log scale up to ×{maxCount.toLocaleString()})
+            </span>
+          )}
         </div>
       )}
       <div ref={boxRef} className="relative overflow-hidden rounded-lg border border-border bg-surface/60 p-3 lab-grid-bg">
@@ -188,6 +290,7 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
             } else if (!unseen) {
               fill = heatColor((heatVals.vals[s] - heatVals.lo) / (heatVals.hi - heatVals.lo), palette, contrast);
             }
+            const supportCount = mode === "policy" && overlays.support && eligible[s] ? ds.counts[s * 4 + evalRes.policy[s]] : -1;
             return (
               <g key={s} onMouseEnter={() => setHover(s)}>
                 <rect
@@ -201,6 +304,34 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
                   strokeWidth={hover === s ? 2 : 1}
                   className="transition-[fill,stroke] duration-500 ease-out"
                 />
+                {supportCount >= 0 && (
+                  <>
+                    <rect
+                      x={x + 2}
+                      y={y + 2}
+                      width={cell - 4}
+                      height={cell - 4}
+                      rx={4.5}
+                      fill="var(--card)"
+                      opacity={0.8 * (1 - supportLevel(supportCount, maxCount))}
+                      className="pointer-events-none transition-opacity duration-300"
+                      data-support={supportCount}
+                    />
+                    <text
+                      x={x + cell - 5}
+                      y={y + cell - 5}
+                      textAnchor="end"
+                      fontSize="8.5"
+                      fontWeight={600}
+                      stroke="var(--card)"
+                      strokeWidth={2.5}
+                      paintOrder="stroke"
+                      className={`pointer-events-none font-mono ${supportCount === 0 ? "fill-[var(--warning)]" : "fill-foreground"}`}
+                    >
+                      {supportCount === 0 ? "0" : `×${supportCount}`}
+                    </text>
+                  </>
+                )}
                 {unseen && !blocked && (
                   <path d={`M${x + 8} ${y + cell - 8} L${x + cell - 8} ${y + 8}`} stroke="var(--border)" strokeWidth="1" />
                 )}
@@ -256,23 +387,46 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
 
           {mode === "policy" &&
             Array.from({ length: S }, (_, s) => {
-              if (!showArrows) return null;
-              if (env.blocked.has(s) || env.terminals.has(s) || ds.visits[s] === 0) return null;
+              if (!eligible[s]) return null;
               const a = evalRes.policy[s];
               const ood = evalRes.oodStates.has(s);
-              const dx = [0, 1, 0, -1][a];
-              const dy = [-1, 0, 1, 0][a];
+              const recency = overlays.changed ? changeRecency(tracker, s, version, CHANGE_FADE) : 0;
+              if (!overlays.arrows && !(overlays.ood && ood) && recency === 0) return null;
+              const dx = DIR_X[a];
+              const dy = DIR_Y[a];
               const L = cell * 0.3;
               const x = (s % W) * cell;
               const y = Math.floor(s / W) * cell;
               const t = (heatVals.vals[s] - heatVals.lo) / (heatVals.hi - heatVals.lo);
               const ink = heatScale(t, palette, contrast).L > 0.6 ? "oklch(0.2 0.03 280)" : "oklch(0.97 0.01 280)";
+              const from = recency > 0 ? tracker.fromAction[s] : -1;
+              const showOod = overlays.ood && ood;
               return (
-                <g key={`p${s}`}>
-                  {ood && (
+                <g key={`p${s}`} className="pointer-events-none">
+                  {showOod && (
                     <rect x={x + 4} y={y + 4} width={cell - 8} height={cell - 8} rx={4} fill="none" stroke="var(--warning)" strokeWidth="1.75" strokeDasharray="3 2" />
                   )}
-                  <Arrow x1={cx(s) - dx * L} y1={cy(s) - dy * L} x2={cx(s) + dx * L} y2={cy(s) + dy * L} color={ood ? "var(--warning)" : ink} width={1.6} opacity={0.95} />
+                  {recency > 0 && (
+                    <g opacity={0.25 + 0.75 * recency} data-changed={tracker.changedNow.includes(s) ? "now" : "recent"}>
+                      <rect x={x + 2} y={y + 2} width={cell - 4} height={cell - 4} rx={4.5} fill="none" stroke="var(--background)" strokeWidth={4.5} />
+                      <rect x={x + 2} y={y + 2} width={cell - 4} height={cell - 4} rx={4.5} fill="none" stroke="var(--chart-5)" strokeWidth={2.25} />
+                      {from >= 0 && from !== a && (
+                        <Arrow
+                          x1={cx(s) - DIR_X[from] * L * 0.8}
+                          y1={cy(s) - DIR_Y[from] * L * 0.8}
+                          x2={cx(s) + DIR_X[from] * L * 0.8}
+                          y2={cy(s) + DIR_Y[from] * L * 0.8}
+                          color="var(--chart-5)"
+                          width={1.2}
+                          opacity={0.85}
+                          dash="2.5 2"
+                        />
+                      )}
+                    </g>
+                  )}
+                  {overlays.arrows && (
+                    <Arrow x1={cx(s) - dx * L} y1={cy(s) - dy * L} x2={cx(s) + dx * L} y2={cy(s) + dy * L} color={showOod ? "var(--warning)" : ink} width={1.6} opacity={0.95} />
+                  )}
                 </g>
               );
             })}
@@ -291,7 +445,7 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
             Hover a state to inspect its logged transitions{mode === "policy" ? ", Q-values and greedy action" : " and rewards"}.
           </p>
         ) : (
-          <CellInspector s={hoverInfo} ds={ds} Q={Q} evalRes={evalRes} mode={mode} />
+          <CellInspector s={hoverInfo} ds={ds} Q={Q} evalRes={evalRes} mode={mode} changeNote={mode === "policy" ? describeChange(tracker, hoverInfo, version, env.actionNames) : null} />
         )}
       </div>
     </div>
@@ -330,7 +484,7 @@ function HoverTip({ s, pos, ds, Q, evalRes, mode }: { s: number; pos: { x: numbe
             {env.actionNames.map((n, a) => (
               <div key={a} className="flex justify-between">
                 <span className="text-muted-foreground">{n}</span>
-                <span>{Q[b + a].toFixed(3)}{!ds.counts[b + a] && <span className="ml-1 text-warning">OOD</span>}</span>
+                <span>{Q[b + a].toFixed(3)}{ds.counts[b + a] ? <span className="ml-1 text-muted-foreground">×{ds.counts[b + a]}</span> : <span className="ml-1 text-warning">OOD</span>}</span>
               </div>
             ))}
           </div>
@@ -349,7 +503,16 @@ function HoverTip({ s, pos, ds, Q, evalRes, mode }: { s: number; pos: { x: numbe
   );
 }
 
-function CellInspector({ s, ds, Q, evalRes, mode }: { s: number; ds: Dataset; Q: Float64Array; evalRes: EvalResult; mode: "dataset" | "policy" }) {
+/** "Greedy changed 2 steps ago (was Up)" for the hovered state, or null when it never changed while tracked. */
+function describeChange(tr: PolicyChangeTracker, s: number, version: number, names: readonly string[]): string | null {
+  const at = tr.lastChanged[s];
+  if (at === undefined || at < 0) return null;
+  const ago = version - at;
+  const was = tr.fromAction[s] >= 0 ? names[tr.fromAction[s]] : "?";
+  return `Greedy action changed ${ago === 0 ? "at the last training step" : `${ago} training step${ago === 1 ? "" : "s"} ago`} (was ${was})`;
+}
+
+function CellInspector({ s, ds, Q, evalRes, mode, changeNote }: { s: number; ds: Dataset; Q: Float64Array; evalRes: EvalResult; mode: "dataset" | "policy"; changeNote?: string | null }) {
   const { env } = ds;
   const x = s % env.width;
   const y = Math.floor(s / env.width);
@@ -363,6 +526,7 @@ function CellInspector({ s, ds, Q, evalRes, mode }: { s: number; ds: Dataset; Q:
           s=({x}, {y}) · n={ds.visits[s]}
         </div>
         <div className="mt-0.5 text-muted-foreground">{blocked ? "Wall" : term === "goal" ? "Goal (terminal)" : term === "hazard" ? "Hazard (terminal)" : ds.visits[s] === 0 ? "Never visited in data" : "Logged state"}</div>
+        {changeNote && <div className="mt-0.5 text-[11px]" style={{ color: "var(--chart-5)" }}>{changeNote}</div>}
       </div>
       {!blocked && !term && (
         <div className="grid flex-1 grid-cols-4 gap-2">
@@ -385,7 +549,7 @@ function CellInspector({ s, ds, Q, evalRes, mode }: { s: number; ds: Dataset; Q:
                   </div>
                 ) : (
                   <div className="font-mono tabular-nums">
-                    Q {Q[k].toFixed(2)} {!c && <span className="text-warning">OOD</span>}
+                    Q {Q[k].toFixed(2)} {c ? <span className="text-muted-foreground">×{c}</span> : <span className="text-warning">OOD</span>}
                   </div>
                 )}
               </div>
