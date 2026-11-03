@@ -343,6 +343,22 @@ export function StateGrid({ ds, mode, Q, evalRes, heat, version }: GridProps) {
                 {s === env.start && !term && (
                   <circle cx={x + cell / 2} cy={y + cell / 2} r={cell / 2 - 6} fill="none" stroke="var(--foreground)" strokeWidth="1.25" strokeDasharray="3 3" />
                 )}
+                {/* Named cells (the route task's A, B, C): a small label in the cell's top-left corner. */}
+                {env.landmarks?.filter((l) => l.cell === s).map((l, i) => (
+                  <text
+                    key={l.label}
+                    x={x + 3 + i * 9}
+                    y={y + 10}
+                    fontSize="9"
+                    fontWeight={700}
+                    stroke="var(--card)"
+                    strokeWidth={2.5}
+                    paintOrder="stroke"
+                    className="pointer-events-none fill-foreground font-mono"
+                  >
+                    {l.label}
+                  </text>
+                ))}
               </g>
             );
           })}
@@ -526,6 +542,11 @@ function CellInspector({ s, ds, Q, evalRes, mode, changeNote }: { s: number; ds:
           s=({x}, {y}) · n={ds.visits[s]}
         </div>
         <div className="mt-0.5 text-muted-foreground">{blocked ? "Wall" : term === "goal" ? "Goal (terminal)" : term === "hazard" ? "Hazard (terminal)" : ds.visits[s] === 0 ? "Never visited in data" : "Logged state"}</div>
+        {env.landmarks?.filter((l) => l.cell === s).map((l) => (
+          <div key={l.label} className="mt-0.5 text-[11px] text-foreground">
+            {l.hint ?? l.label}
+          </div>
+        ))}
         {changeNote && <div className="mt-0.5 text-[11px]" style={{ color: "var(--chart-5)" }}>{changeNote}</div>}
       </div>
       {!blocked && !term && (

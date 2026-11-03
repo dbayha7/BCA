@@ -18,10 +18,12 @@ import {
   UPDATES_PER_STEP,
   type Dataset,
   type DatasetId,
+  type RouteDatasetId,
   type Hyper,
   type Metrics,
 } from "@/lib/rl";
-import { generateThrusterInWorker, parseCustomInWorker } from "@/lib/worker-client";
+import { generateRouteInWorker, generateThrusterInWorker, parseCustomInWorker } from "@/lib/worker-client";
+import { routeConditionOf } from "@/lib/thrusterchain-route";
 import { Progress } from "@/components/ui/progress";
 import { buildPolicyExport, downloadPolicyExport, type ExportTrigger } from "@/lib/export-policy";
 import { ExportPanel } from "@/components/lab/export-panel";
@@ -354,6 +356,7 @@ function LabPage() {
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [activeCheckpointId, setActiveCheckpointId] = useState<string | null>(null);
   const [thrusterDs, setThrusterDs] = useState<Dataset | null>(null);
+  const [routeSets, setRouteSets] = useState<Partial<Record<RouteDatasetId, Dataset>>>({});
   const [working, setWorking] = useState<{ pct: number; label: string } | null>(null);
   const [saveState, setSaveState] = useState<SaveState>(() => (storageSupported() ? { kind: "idle" } : { kind: "unavailable" }));
   const [runInfo, setRunInfo] = useState<{ id: string; name: string; tags: string[]; notes: string; status: ExperimentStatus } | null>(null);
@@ -388,11 +391,37 @@ function LabPage() {
   }, [datasetId, thrusterDs]);
 
   /** The dataset as logged. */
+  // The research route task (three data conditions) is built in a worker on first use: geometry, recorders, reference model.
+  useEffect(() => {
+    const condition = routeConditionOf(datasetId);
+    if (!condition || routeSets[datasetId as RouteDatasetId]) return;
+    let cancelled = false;
+    setWorking({ pct: 0, label: "Starting background worker…" });
+    generateRouteInWorker(condition, 2026, (pct, label) => {
+      if (!cancelled) setWorking({ pct, label });
+    })
+      .then((d) => {
+        if (cancelled) return;
+        setRouteSets((cur) => ({ ...cur, [datasetId]: d }));
+        setWorking(null);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setWorking(null);
+        recordError("worker", e, "ThrusterChain route task build");
+        toast.error(e instanceof Error ? e.message : "Building the ThrusterChain route task failed.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [datasetId, routeSets]);
+
   const baseDs = useMemo<Dataset | null>(() => {
     if (datasetId === "custom") return customDs;
     if (datasetId === "thrusterchain-stall") return thrusterDs;
-    return generateDataset(datasetId, datasetId === "gridworld-random" ? 7 : 11);
-  }, [datasetId, customDs, thrusterDs]);
+    if (routeConditionOf(datasetId)) return routeSets[datasetId as RouteDatasetId] ?? null;
+    return generateDataset(datasetId as "gridworld-random" | "halfcheetah-medium", datasetId === "gridworld-random" ? 7 : 11);
+  }, [datasetId, customDs, thrusterDs, routeSets]);
   // A custom reward function (Reward tab) relabels the logged transitions; training then uses that copy.
   const [relabeled, setRelabeled] = useState<Dataset | null>(null);
   const [rewardInfo, setRewardInfo] = useState<{ name: string; code: string } | null>(null);
@@ -1087,6 +1116,9 @@ function LabPage() {
                   <SelectItem value="halfcheetah-medium">D4RL HalfCheetah-Medium</SelectItem>
                   <SelectItem value="gridworld-random">Gridworld-Random</SelectItem>
                   <SelectItem value="thrusterchain-stall">ThrusterChain v4 (stall)</SelectItem>
+                  <SelectItem value="route-full">ThrusterChain route · full data</SelectItem>
+                  <SelectItem value="route-honeypot">ThrusterChain route · Honeypot</SelectItem>
+                  <SelectItem value="route-bottleneck">ThrusterChain route · Bottleneck</SelectItem>
                   <SelectItem value="custom">Custom Upload (JSON)</SelectItem>
                 </SelectContent>
               </Select>

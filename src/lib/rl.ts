@@ -1,6 +1,8 @@
 // Core Offline RL engine: datasets, tabular conservative Q-learning (CQL-style), evaluation.
 
-export type DatasetId = "halfcheetah-medium" | "gridworld-random" | "thrusterchain-stall" | "custom";
+/** The research goal/danger task on ThrusterChain, under its three data conditions (see thrusterchain-route.ts). */
+export type RouteDatasetId = "route-full" | "route-honeypot" | "route-bottleneck";
+export type DatasetId = "halfcheetah-medium" | "gridworld-random" | "thrusterchain-stall" | "custom" | RouteDatasetId;
 
 export interface StepResult {
   s2: number;
@@ -23,6 +25,10 @@ export interface Env {
   terminals: Map<number, "goal" | "hazard">;
   step: (s: number, a: number) => StepResult;
   groundTruth: "exact" | "empirical";
+  /** Named cells drawn on the grid (e.g. the route task's A, B, C). */
+  landmarks?: { cell: number; label: string; hint?: string }[];
+  /** Reference transition model (when the env's truth is a separate simulation, not the training data). */
+  model?: { counts: Float64Array; modeNext: Int32Array; rewardMean: Float64Array; terminalFrac: Float64Array; rewardMin: number };
 }
 
 export interface Transition {
@@ -229,7 +235,7 @@ export function buildDataset(env: Env, transitions: Transition[], episodes: numb
   };
 }
 
-export function generateDataset(id: Exclude<DatasetId, "custom">, seed: number): Dataset {
+export function generateDataset(id: Exclude<DatasetId, "custom" | RouteDatasetId>, seed: number): Dataset {
   const rng = mulberry32(seed);
   const env = id === "gridworld-random" ? makeGridworld() : makeCheetah();
   const transitions: Transition[] = [];
