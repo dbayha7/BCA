@@ -41,6 +41,10 @@ import { defaultExperimentName, hyperEqual, parseTags, type ExperimentRecord, ty
 import { checkQ, metricsSane } from "@/lib/guards";
 import { recordError, recentErrors } from "@/lib/error-log";
 import { auditMarkdown, buildAuditLog, downloadText, metricsCsv, slugify } from "@/lib/log-export";
+import { checkAlerts, DEFAULT_ALERT_RULES, EMPTY_MEMORY, notifySystem, requestNotifyPermission, type AlertRules } from "@/lib/alerts";
+import { buildModelCard } from "@/lib/model-card";
+import { usePersistentState } from "@/lib/use-persistent-state";
+import { Switch } from "@/components/ui/switch";
 
 export const Route = createFileRoute("/")({
   component: LabPage,
@@ -155,10 +159,12 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "wa
 function RunMetaEditor({
   info,
   updates,
+  computeMs,
   onChange,
 }: {
   info: { id: string; name: string; tags: string[]; notes: string; status: ExperimentStatus };
   updates: number;
+  computeMs: number;
   onChange: (patch: Partial<Pick<ExperimentRecord, "name" | "tags" | "notes">>) => void;
 }) {
   const [name, setName] = useState(info.name);
@@ -202,11 +208,65 @@ function RunMetaEditor({
         />
       </label>
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-        <span className="font-mono tabular-nums">{updates.toLocaleString()} updates</span>
+        <span className="font-mono tabular-nums" title="Time this run has spent computing updates and evaluations">
+          {updates.toLocaleString()} upd · {(computeMs / 1000).toFixed(1)} s{computeMs > 0 ? ` · ${Math.round(updates / (computeMs / 1000)).toLocaleString()}/s` : ""}
+        </span>
         <Link to="/experiments" className="font-medium text-primary hover:underline">
           All experiments →
         </Link>
       </div>
+    </div>
+  );
+}
+
+function AlertsEditor({ rules, onChange }: { rules: AlertRules; onChange: (r: AlertRules) => void }) {
+  const num = "w-20 rounded-md border border-border bg-surface/60 px-2 py-1 text-right font-mono text-[12px] tabular-nums outline-none focus:border-ring";
+  const set = (patch: Partial<AlertRules>) => onChange({ ...rules, ...patch });
+  return (
+    <div className="space-y-2.5 text-[12px]">
+      <label className="flex items-center justify-between gap-2">
+        <span>
+          Plateau after <span className="text-muted-foreground">(steps, 0 = off)</span>
+        </span>
+        <input className={num} type="number" min={0} max={2000} step={5} value={rules.plateauSteps} onChange={(e) => set({ plateauSteps: Math.max(0, Math.round(Number(e.target.value) || 0)) })} />
+      </label>
+      <label className="flex items-center justify-between gap-2">
+        <span>
+          Target true return <span className="text-muted-foreground">(blank = off)</span>
+        </span>
+        <input
+          className={num}
+          type="number"
+          step={0.1}
+          value={rules.targetReturn ?? ""}
+          onChange={(e) => set({ targetReturn: e.target.value === "" ? null : Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center justify-between gap-2">
+        <span>
+          Regression drop <span className="text-muted-foreground">(0 = off)</span>
+        </span>
+        <input className={num} type="number" min={0} step={0.1} value={rules.regressionDrop} onChange={(e) => set({ regressionDrop: Math.max(0, Number(e.target.value) || 0) })} />
+      </label>
+      <div className="flex items-center justify-between gap-2">
+        <span>Pause auto-train on plateau or target</span>
+        <Switch checked={rules.autoPause} onCheckedChange={(v) => set({ autoPause: v })} aria-label="Pause auto-train on plateau or target" />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span>System notification when the tab is hidden</span>
+        <Switch
+          checked={rules.notify}
+          aria-label="System notification when the tab is hidden"
+          onCheckedChange={(v) => {
+            if (!v) return set({ notify: false });
+            void requestNotifyPermission().then((p) => {
+              if (p === "granted") set({ notify: true });
+              else toast.message(p === "unsupported" ? "This browser does not support notifications here." : "Notifications are blocked for this site in your browser settings.");
+            });
+          }}
+        />
+      </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">Pausing when the true return stops improving saves compute: further steps rarely help once a run has plateaued.</p>
     </div>
   );
 }
@@ -229,6 +289,10 @@ function LabPage() {
   const [saveState, setSaveState] = useState<SaveState>(() => (storageSupported() ? { kind: "idle" } : { kind: "unavailable" }));
   const [runInfo, setRunInfo] = useState<{ id: string; name: string; tags: string[]; notes: string; status: ExperimentStatus } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [alertRules, setAlertRules] = usePersistentState<AlertRules>("alerts:rules", DEFAULT_ALERT_RULES);
+  const alertRulesRef = useRef(alertRules);
+  alertRulesRef.current = alertRules;
+  const alertMemoryRef = useRef(EMPTY_MEMORY);
 
   // ThrusterChain's 13-dim float64 simulation runs in a Web Worker so the UI never blocks.
   useEffect(() => {
@@ -381,6 +445,7 @@ function LabPage() {
     fullHistoryRef.current = [];
     const rec = makeRun(ds, hyperRef.current);
     runRef.current = rec;
+    alertMemoryRef.current = EMPTY_MEMORY;
     publishRun(rec);
     setHistory([]);
     setVersion((v) => v + 1);
@@ -398,6 +463,8 @@ function LabPage() {
       qRef.current = new Float64Array(rec.q);
       rngRef.current = resumableRng(rec.rngState);
       fullHistoryRef.current = [...rec.history];
+      // Re-arm alerts as if the reopened run had been watched all along (no replay of old alerts).
+      alertMemoryRef.current = checkAlerts(rec.history, alertRulesRef.current, EMPTY_MEMORY).memory;
       runRef.current = { ...rec, status: rec.status === "diverged" ? "diverged" : "paused" };
       publishRun(runRef.current);
       setHyper({ ...rec.hyper });
@@ -560,6 +627,7 @@ function LabPage() {
     let tdLoss: number;
     let cqlGap: number;
     let r: ReturnType<typeof evaluate>;
+    const t0 = performance.now();
     try {
       ({ tdLoss, cqlGap } = trainUpdates(qRef.current, ds, hyper, rngRef.current, UPDATES_PER_STEP));
       const qc = checkQ(qRef.current, ds.env.width);
@@ -593,6 +661,18 @@ function LabPage() {
     setHistory((h) => [...h.slice(-199), m]);
     setVersion((v) => v + 1);
     const rec = runRef.current;
+    if (rec) rec.computeMs = (rec.computeMs ?? 0) + (performance.now() - t0);
+    // Training alerts: plateau, target, regression (optionally pausing auto-train).
+    const checked = checkAlerts(fullHistoryRef.current, alertRulesRef.current, alertMemoryRef.current);
+    alertMemoryRef.current = checked.memory;
+    for (const a of checked.alerts) {
+      if (a.pause) setAuto(false);
+      const text = a.pause ? `${a.message} Auto-train paused.` : a.message;
+      if (a.kind === "target") toast.success(text);
+      else if (a.kind === "regression") toast.warning(text);
+      else toast.message(text);
+      if (alertRulesRef.current.notify && document.visibilityState === "hidden") notifySystem("Offline Learning Lab", text);
+    }
     if (rec) {
       if (!rec.name) rec.name = defaultExperimentName(ds.env.name, hyper, rec.createdAt);
       rec.optimal = optimal;
@@ -715,6 +795,25 @@ function LabPage() {
     else if (format === "csv") downloadText(`${base}.csv`, metricsCsv(rec.history), "text/csv");
     else downloadText(`${base}.md`, auditMarkdown(audit), "text/markdown");
     toast.success(`Run log exported (${format.toUpperCase()})`);
+  };
+
+  const exportModelCard = () => {
+    const rec = snapshotRun();
+    if (!rec || !ds) {
+      toast.error("Train at least one step to generate a model card.");
+      return;
+    }
+    const entries = buildLogEntries(rec.history, ds, rec.hyper, optimal);
+    const card = buildModelCard({
+      run: rec,
+      dataset: { name: ds.env.name, description: ds.env.description, tag: ds.env.tag, transitions: ds.transitions.length, episodes: ds.episodes, groundTruth: ds.env.groundTruth },
+      updatesPerStep: UPDATES_PER_STEP,
+      anomalies: entries.filter((e) => e.kind === "anomaly").map((e) => `@ ${e.atUpdates.toLocaleString()} updates: ${e.text}`),
+      license,
+      oodRate: evalRes?.oodRate,
+    });
+    downloadText(`model-card-${slugify(rec.name)}.md`, card, "text/markdown");
+    toast.success("Model card downloaded");
   };
 
   const [license, setLicense] = useState<LicenseConfig>(DEFAULT_LICENSE);
@@ -911,10 +1010,14 @@ function LabPage() {
             }
           >
             {runInfo ? (
-              <RunMetaEditor key={runInfo.id} info={runInfo} updates={last?.updates ?? 0} onChange={updateRunMeta} />
+              <RunMetaEditor key={runInfo.id} info={runInfo} updates={last?.updates ?? 0} computeMs={runRef.current?.computeMs ?? 0} onChange={updateRunMeta} />
             ) : (
               <p className="text-[11.5px] text-muted-foreground">Pick a dataset to start a run.</p>
             )}
+          </Panel>
+
+          <Panel title="Training alerts" delay={150} right={<span className="font-mono text-[10px] text-muted-foreground">{alertRules.autoPause ? "auto-pause on" : "notify only"}</span>}>
+            <AlertsEditor rules={alertRules} onChange={setAlertRules} />
           </Panel>
         </aside>
 
@@ -1168,6 +1271,7 @@ function LabPage() {
                   <DropdownMenuItem onSelect={() => exportAudit("json")}>Full audit (JSON) — every step, log, change, error</DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => exportAudit("csv")}>Metrics per step (CSV)</DropdownMenuItem>
                   <DropdownMenuItem onSelect={() => exportAudit("md")}>Readable report (Markdown)</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={exportModelCard}>Model card (Markdown) — what the policy is and where not to trust it</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             }

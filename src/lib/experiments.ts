@@ -40,6 +40,8 @@ export interface ExperimentRecord {
   notes: string;
   /** Count of anomaly entries the experiment log raised. */
   anomalies: number;
+  /** Wall-clock milliseconds spent in training updates and evaluation (compute used by this run). */
+  computeMs?: number;
   /** Training guard events (non-finite values rolled back), newest last. */
   guardEvents: { atUpdates: number; message: string; at: number }[];
 }
