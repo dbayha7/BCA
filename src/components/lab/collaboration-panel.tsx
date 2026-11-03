@@ -3,6 +3,7 @@
 // import to review a run and merge their comments back in.
 
 import { useMemo, useRef, useState } from "react";
+import { usePersistentState } from "@/lib/use-persistent-state";
 import { toast } from "sonner";
 import { buildLogEntries, type LogEntry } from "@/components/lab/experiment-log";
 import {
@@ -42,9 +43,10 @@ function Avatar({ name }: { name: string }) {
 
 export function CollaborationPanel({ history, ds, hyper, optimal }: { history: Metrics[]; ds: Dataset | null; hyper: Hyper; optimal: number }) {
   const [tab, setTab] = useState<Tab>("discuss");
-  const [me, setMe] = useState("");
-  const [threads, setThreads] = useState<Threads>({});
-  const [inbox, setInbox] = useState<SharedRun[]>([]);
+  // Your name, comment threads and imported team runs persist in this browser.
+  const [me, setMe] = usePersistentState("collab:me", "");
+  const [threads, setThreads] = usePersistentState<Threads>("collab:threads", {});
+  const [inbox, setInbox] = usePersistentState<SharedRun[]>("collab:inbox", []);
 
   const entries = useMemo(() => buildLogEntries(history, ds, hyper, optimal), [history, ds, hyper, optimal]);
   const flagged = useMemo(() => entries.filter(isDiscussable), [entries]);

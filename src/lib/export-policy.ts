@@ -231,7 +231,7 @@ export function buildPolicyExport(
       start: cell(env.start),
     },
     hyperparameters: { ...hyper, seed },
-    training: { iterations: history.length, totalUpdates: last?.updates ?? 0 },
+    training: { iterations: last?.iter ?? history.length, totalUpdates: last?.updates ?? 0 },
     finalMetrics:
       last && evalRes
         ? {
