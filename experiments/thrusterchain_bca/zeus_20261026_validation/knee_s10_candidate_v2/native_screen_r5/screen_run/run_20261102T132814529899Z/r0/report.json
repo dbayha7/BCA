@@ -1,0 +1,192 @@
+{
+  "adequacy_ok": true,
+  "bind": {
+    "changes": [
+      "dataset entropy",
+      "data-plan seeds",
+      "training seeds",
+      "E2 bank",
+      "E2 anchors",
+      "bca kappa",
+      "dataset loader"
+    ],
+    "dataset_loader": {
+      "archives": {
+        "nostall": {
+          "archive_sha256": "5f4933fc5d687fc0b6f60e85c96809e7f0ace7023b91209ab89a9e373111b71e",
+          "content_sha256": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+          "file": "knee_s10_v2_nostall.npz"
+        },
+        "stall3": {
+          "archive_sha256": "125131d77f54600497ce4a5d95abff885c1cefbf8ccbafd2d74fd4d52da4bdb2",
+          "content_sha256": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533",
+          "file": "knee_s10_v2_stall3.npz"
+        }
+      },
+      "limitations": [
+        "The producer's validation is established by its sealed, successful run record, not by a standalone receipt.",
+        "The recorded Linux environment's exact reset regeneration failed by one ULP in episode 16; it is not relabeled.",
+        "This loader performs no reset, recorder or dynamics replay; it returns the recorded bytes unchanged."
+      ],
+      "loader": "screen_data.load (authenticated reuse, no regeneration)",
+      "producer": {
+        "collection_sha256": "bb256064091864270e14fb623b710704b0ba14735ad5660cc2a296db7dd7780f",
+        "manifest_sha256": "e7be6e218b77623dd5c4c67791dbb1f000f3c4269f7bf30911d8ab34806de2be",
+        "report_sha256": "a9c99a2067ed2aacfe3848100791e0cadee859d86c7d07e1e901244ddab83efb",
+        "validation_reused": "generate -> KneeDataset.__init__ -> validate(check_dynamics=True), before digest and save",
+        "verified_source_files": 44
+      },
+      "resets": 0,
+      "simulator_steps": 0
+    },
+    "digests": {
+      "nostall": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+      "stall3": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533"
+    },
+    "entropy": 6846509946489100059,
+    "formal_manifest_sha256": "e7be6e218b77623dd5c4c67791dbb1f000f3c4269f7bf30911d8ab34806de2be",
+    "kappa": 63.0
+  },
+  "device_kind": "NVIDIA GeForce RTX 5070 Ti",
+  "elapsed_seconds": 66.13288162999925,
+  "fail_early": false,
+  "finished_utc": "2026-11-02T15:45:35.401087+00:00",
+  "integrity_after": {
+    "changed": [],
+    "verified": 171
+  },
+  "job": "r0",
+  "kappa": 63.0,
+  "kind": "r0",
+  "provenance": "research",
+  "screen": "knee_s10_candidate_v2/native_screen_r5",
+  "seeds": {
+    "0": {
+      "cutoff": {
+        "J_E1_10k": -61.70846466543955,
+        "J_E1_untrained": -276.04738883761536,
+        "gain": 214.3389241721758,
+        "reach": {
+          "a123_in_0p7_knee": 0.0184375,
+          "a123_past_knee": 0.01,
+          "by_band": {
+            "deep": {
+              "r_deep_minus": 0.6810673443456162,
+              "steps": 1574,
+              "w_any_depth": 0.7268106734434562,
+              "w_minus": 0.7268106734434562
+            },
+            "low": {
+              "r_deep_minus": null,
+              "steps": 0,
+              "w_any_depth": null,
+              "w_minus": null
+            },
+            "mid": {
+              "r_deep_minus": 0.6568265682656826,
+              "steps": 1626,
+              "w_any_depth": 0.6980319803198032,
+              "w_minus": 0.6980319803198032
+            }
+          },
+          "r_deep_minus": 0.66875,
+          "steps": 3200,
+          "w_any_depth": 0.7121875,
+          "w_plus": 0.0
+        }
+      },
+      "random": {
+        "J_E1_10k": -61.91714920065533,
+        "J_E1_untrained": -276.04738883761536,
+        "gain": 214.13023963696003
+      }
+    },
+    "1": {
+      "cutoff": {
+        "J_E1_10k": -65.28591920996435,
+        "J_E1_untrained": -268.90547268051137,
+        "gain": 203.61955347054703,
+        "reach": {
+          "a123_in_0p7_knee": 0.01125,
+          "a123_past_knee": 0.0021875,
+          "by_band": {
+            "deep": {
+              "r_deep_minus": 0.6315120711562897,
+              "steps": 1574,
+              "w_any_depth": 0.679161372299873,
+              "w_minus": 0.679161372299873
+            },
+            "low": {
+              "r_deep_minus": null,
+              "steps": 0,
+              "w_any_depth": null,
+              "w_minus": null
+            },
+            "mid": {
+              "r_deep_minus": 0.566420664206642,
+              "steps": 1626,
+              "w_any_depth": 0.5971709717097171,
+              "w_minus": 0.5971709717097171
+            }
+          },
+          "r_deep_minus": 0.5984375,
+          "steps": 3200,
+          "w_any_depth": 0.6375,
+          "w_plus": 0.0
+        }
+      },
+      "random": {
+        "J_E1_10k": -58.296348214135435,
+        "J_E1_untrained": -268.90547268051137,
+        "gain": 210.60912446637593
+      }
+    },
+    "2": {
+      "cutoff": {
+        "J_E1_10k": -64.37571995477131,
+        "J_E1_untrained": -293.08585560693587,
+        "gain": 228.71013565216455,
+        "reach": {
+          "a123_in_0p7_knee": 0.02125,
+          "a123_past_knee": 0.0075,
+          "by_band": {
+            "deep": {
+              "r_deep_minus": 0.636594663278272,
+              "steps": 1574,
+              "w_any_depth": 0.6823379923761118,
+              "w_minus": 0.6823379923761118
+            },
+            "low": {
+              "r_deep_minus": null,
+              "steps": 0,
+              "w_any_depth": null,
+              "w_minus": null
+            },
+            "mid": {
+              "r_deep_minus": 0.5836408364083641,
+              "steps": 1626,
+              "w_any_depth": 0.6088560885608856,
+              "w_minus": 0.6088560885608856
+            }
+          },
+          "r_deep_minus": 0.6096875,
+          "steps": 3200,
+          "w_any_depth": 0.645,
+          "w_plus": 0.0
+        }
+      },
+      "random": {
+        "J_E1_10k": -61.50603715907732,
+        "J_E1_untrained": -293.08585560693587,
+        "gain": 231.57981844785854
+      }
+    }
+  },
+  "simulator_steps_attempted": 48000,
+  "simulator_steps_exact": 48000,
+  "started_utc": "2026-11-02T15:44:29.268204+00:00",
+  "status": "completed",
+  "transitions": 48000,
+  "transitions_prospective": 48000,
+  "unit_label": "COMPLETE"
+}

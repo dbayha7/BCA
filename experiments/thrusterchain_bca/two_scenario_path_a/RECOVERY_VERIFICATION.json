@@ -1,85 +1,47 @@
 {
-  "status": "cpu_verified_recovery_preparation_no_execution",
-  "original_manifest_sha256": "2f10a640684f6ea7040df9fe0388544207e1c4562a547a2ff24a04d31bf1a366",
-  "amendment_manifest_sha256": "ea550df3c1805df38e03e101e007bfbb89df770ffc7a5287f138c1f12bd91549",
-  "original_interruption_result_sha256": "559d1e9ed3a0255904a9b2a1459a5629cac6f45b08b2be6b722570a332aa69a4",
-  "reused_checkpoint_sha256": "5422f85ac77d2a51341bb1154d7ba057a623854fd5ec8232b762bf0443bc218f",
-  "tests": {
-    "command": ".venv/Scripts/python.exe -B -m unittest discover -s experiments/thrusterchain_bca/two_scenario_path_a -p test_*.py",
-    "passed": 78,
+  "status": "implemented_and_cpu_tested_not_sealed_not_executed",
+  "refresh_before_prepare": "Re-run the CPU tests after the Zeus artifacts and dataset are copied (test_binding then runs) and update this file before --prepare pins it.",
+  "cpu_tests": {
+    "command": "py -3.12 -B -m unittest discover -s experiments/thrusterchain_bca/two_scenario_path_a -p test_*.py",
+    "python": "3.12.10 Windows",
+    "numpy": "2.4.2",
+    "recovery_tests_passed": 22,
+    "existing_tests_passed": 58,
+    "existing_tests_blocked": {"test_binding": "9 tests need two_scenario_v2/setup_attempt_1/parent_data.npz, absent on Titan"},
     "failed": 0,
-    "reported_seconds": 12.920,
-    "focused_recovery_tests_passed": 11,
-    "focused_reported_seconds": 0.092,
-    "cli_help_passed": true,
-    "scope": "Windows CPU fixtures, immutable saved-data checks and source/receipt hashing only. No model, calibration or simulator execution."
+    "scope": "Fake Zeus artifacts, fake supervisor and child, plus the real seals and the real saved controller trace; no learner, calibration, GPU or simulator."
   },
-  "independent_review": {
-    "reviewer": "immutable_loader_repair",
-    "remaining_must_fix_findings": 0,
-    "recovery_launch_sha256": "b661ae7a969a166d0647950486d8567c84c945f9b194cd0b4158fbbf787774a6",
-    "test_recovery_launch_sha256": "f3764161630a5c839766b66071a8ed248665210545f90f16e65dc4698bd664ae",
-    "resolved_finding": "Interrupted evaluation now retains a saved completed-transition lower bound and the full declared upper bound, including malformed or missing progress evidence."
+  "titan_runtime_packages": {
+    "interpreter": "/home/dbayha/bca-gpu/bin/python 3.12.3",
+    "matches_frozen_runtime_pins": true,
+    "pinned_in": "zeus_20261026_validation/central_quartile_training_v1_evaluation_rerun1/runtime.py:54"
   },
-  "actual_saved_evidence_verification": {
-    "old_run_files": 17,
-    "old_run_directories": 2,
-    "smoke_files": 441,
-    "warmup_report_checkpoint_normalization_data_and_protocol_links_match": true,
-    "old_native_checkpoint_present": false,
-    "last_native_progress_est": "2026-11-02T04:57:29.577050-05:00",
-    "last_native_local_step": 4200
+  "titan_checkout_against_original_seal": {
+    "manifest_sha256": "2f10a640684f6ea7040df9fe0388544207e1c4562a547a2ff24a04d31bf1a366",
+    "pins_matching": 185,
+    "pins_total": 187,
+    "not_matching": {
+      "experiments/thrusterchain_bca/two_scenario_v2/SETUP_APPROVAL.json": "LF in git; the sealed bytes are the CRLF form (verified: CRLF conversion reproduces 35fac7db...). Copy Zeus's file.",
+      "experiments/thrusterchain_bca/two_scenario_v2/setup_attempt_1/parent_data.npz": "absent; *.npz is gitignored. Copy Zeus's file."
+    },
+    "amendment_manifest_sha256": "ea550df3c1805df38e03e101e007bfbb89df770ffc7a5287f138c1f12bd91549",
+    "amendment_pins_matching": 9
   },
-  "execution_plan": {
-    "reuse": "honeypot_s0_warmup",
-    "new_training_jobs": 17,
-    "final_policies": 12,
-    "new_critic_updates": 170000,
-    "new_actor_updates": 85000,
-    "new_auxiliary_updates": 170000,
-    "new_calibrations": 17,
-    "return_episodes": 1536,
-    "new_simulator_transition_cap": 237600,
-    "cumulative_simulator_maximum": 430575,
-    "smoke_rerun": false,
-    "completed_warmup_rerun": false,
-    "scientific_settings_changed": false
-  },
-  "budget": {
-    "prior_production_elapsed_seconds": 769.481604245,
-    "remaining_before_recovery_overhead_seconds": 10720.518395755,
-    "recovery_preparation_reserved_seconds": 60,
-    "recovery_process_cap_seconds": 10660,
-    "external_timeout_seconds": 10655,
-    "kill_grace_seconds": 5,
-    "charged_and_reserved_total_seconds": 14399.481604245,
-    "original_total_ceiling_seconds": 14400,
-    "cumulative_critic_upper": 190014,
-    "cumulative_actor_upper": 95008,
-    "cumulative_auxiliary_upper": 190014,
-    "cumulative_calibration_upper": 22,
-    "cumulative_exact_optimizer_counts_known": false
-  },
-  "prior_process_evidence": {
-    "source": "User-supplied manual ps output in task history",
-    "reported_observation_est": "November 2, 2026 at 5:15 a.m. EST, minute precision",
-    "pids": [435, 1693],
-    "result": "Header only; neither requested PID was present at that observation",
-    "live_runtime_recheck": "Only the recorded PIDs are checked by the manual POSIX launcher; a present or inaccessible PID blocks execution without termination."
-  },
-  "actual_preparation_work": {
+  "zeus_artifacts_present_on_titan": false,
+  "actual_new_work": {
     "model_initializations": 0,
-    "optimizer_updates": 0,
+    "critic_updates": 0,
+    "actor_updates": 0,
+    "auxiliary_updates": 0,
     "calibrations": 0,
-    "simulator_transitions": 0,
-    "wsl_execution_attempts": 0
+    "simulator_transitions": 0
   },
-  "limitations": [
-    "The original interrupted tail remains unknown within preserved bounds; a completed recovery cannot retroactively make it exact.",
-    "The new orchestration is CPU tested. The already passed GPU smoke and production warmup provide runtime evidence; no new GPU validation was executed during recovery preparation.",
-    "The stopped worker's partial native branch cannot resume mid-job because it has no checkpoint.",
-    "Historical user PID absence is not a global process guarantee or a distributed lock.",
-    "No further retry, added experiment, Path B execution or extension is authorized by this recovery."
-  ],
-  "known_warning": "Unchanged sealed v2 data loader emits an unclosed-reader ResourceWarning; content checks pass and historical source remains preserved."
+  "recovery_manifest_sealed": false,
+  "approval_created": false,
+  "target_runtime_executed": false,
+  "not_established": [
+    "Titan's controller and probe banks reproducing Zeus's bytes (checked inside the Titan smoke)",
+    "Zeus's warmup restoring exactly in Titan's runtime (checked inside the Titan smoke)",
+    "Titan throughput for Path A jobs; the 28800-second ceiling rests on one earlier Titan measurement"
+  ]
 }

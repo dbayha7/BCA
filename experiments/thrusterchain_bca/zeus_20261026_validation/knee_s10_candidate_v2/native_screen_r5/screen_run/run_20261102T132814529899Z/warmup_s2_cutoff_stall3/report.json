@@ -1,0 +1,310 @@
+{
+  "assertions": [
+    {
+      "rows": 47978,
+      "sha256": "b372edd076c378954cb9c971b9b062805d9a36ef3c808f7c0ef46254c2d65037",
+      "stream": "train",
+      "w_rows": 0
+    },
+    {
+      "rows": 128,
+      "sha256": "8afb54e2afb5c124ee6b7d9ecb878d75c482b2bfcf0f551786263970f18b6022",
+      "stream": "heldout",
+      "w_rows": 0
+    },
+    {
+      "rows": 768,
+      "sha256": "3e9db3095a5c5bbfa83d641323253af28f5059f03a475a5d9102daa0210c4e05",
+      "stream": "probe",
+      "w_rows": 0
+    },
+    {
+      "rows": 256,
+      "sha256": "8f4cb3cef5b24a487b7441e155ce8ec7cb56dc26ca69491baefe85b1ce163438",
+      "stream": "scale_bank",
+      "w_rows": 0
+    },
+    {
+      "rows": 34085,
+      "sha256": "436ad86cb26c0bc99a9a2b2e3723644475f9a71f8dfb92088dc9448135530211",
+      "stream": "normalization_fixture",
+      "w_rows": 0
+    }
+  ],
+  "bind": {
+    "changes": [
+      "dataset entropy",
+      "data-plan seeds",
+      "training seeds",
+      "E2 bank",
+      "E2 anchors",
+      "bca kappa",
+      "dataset loader"
+    ],
+    "dataset_loader": {
+      "archives": {
+        "nostall": {
+          "archive_sha256": "5f4933fc5d687fc0b6f60e85c96809e7f0ace7023b91209ab89a9e373111b71e",
+          "content_sha256": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+          "file": "knee_s10_v2_nostall.npz"
+        },
+        "stall3": {
+          "archive_sha256": "125131d77f54600497ce4a5d95abff885c1cefbf8ccbafd2d74fd4d52da4bdb2",
+          "content_sha256": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533",
+          "file": "knee_s10_v2_stall3.npz"
+        }
+      },
+      "limitations": [
+        "The producer's validation is established by its sealed, successful run record, not by a standalone receipt.",
+        "The recorded Linux environment's exact reset regeneration failed by one ULP in episode 16; it is not relabeled.",
+        "This loader performs no reset, recorder or dynamics replay; it returns the recorded bytes unchanged."
+      ],
+      "loader": "screen_data.load (authenticated reuse, no regeneration)",
+      "producer": {
+        "collection_sha256": "bb256064091864270e14fb623b710704b0ba14735ad5660cc2a296db7dd7780f",
+        "manifest_sha256": "e7be6e218b77623dd5c4c67791dbb1f000f3c4269f7bf30911d8ab34806de2be",
+        "report_sha256": "a9c99a2067ed2aacfe3848100791e0cadee859d86c7d07e1e901244ddab83efb",
+        "validation_reused": "generate -> KneeDataset.__init__ -> validate(check_dynamics=True), before digest and save",
+        "verified_source_files": 44
+      },
+      "resets": 0,
+      "simulator_steps": 0
+    },
+    "digests": {
+      "nostall": "e3549869af13b367cd726d008935b3eb466e38c005d1d5b7856faae3397e572a",
+      "stall3": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533"
+    },
+    "entropy": 6846509946489100059,
+    "formal_manifest_sha256": "e7be6e218b77623dd5c4c67791dbb1f000f3c4269f7bf30911d8ab34806de2be",
+    "kappa": 63.0
+  },
+  "binding": {
+    "arm": "cutoff",
+    "dataset_sha256": "c2a6d61665a539ad8740d191424f90aeea9973566f3c6325226d928161fee533",
+    "streams": {
+      "heldout": {
+        "rows": 128,
+        "sha256": "8afb54e2afb5c124ee6b7d9ecb878d75c482b2bfcf0f551786263970f18b6022",
+        "w_rows": 0
+      },
+      "normalization_fixture": {
+        "rows": 34085,
+        "sha256": "436ad86cb26c0bc99a9a2b2e3723644475f9a71f8dfb92088dc9448135530211",
+        "w_rows": 0
+      },
+      "probe": {
+        "rows": 768,
+        "sha256": "3e9db3095a5c5bbfa83d641323253af28f5059f03a475a5d9102daa0210c4e05",
+        "w_rows": 0
+      },
+      "scale_bank": {
+        "rows": 256,
+        "sha256": "8f4cb3cef5b24a487b7441e155ce8ec7cb56dc26ca69491baefe85b1ce163438",
+        "w_rows": 0
+      },
+      "train": {
+        "rows": 47978,
+        "sha256": "b372edd076c378954cb9c971b9b062805d9a36ef3c808f7c0ef46254c2d65037",
+        "w_rows": 0
+      }
+    },
+    "world": "stall3"
+  },
+  "checkpoints": {
+    "010000": {
+      "actor": {
+        "path": "actor_010000.msgpack",
+        "sha256": "2093f1d2ed85a55e68900038c67d7984ae4cd5bbf63b704e8f1fb6ff81526ba8"
+      },
+      "actor_digest": "087a4c8ca177f5709fa255a3a6ad23789e0adc31c5103504914f86ccc4af0228",
+      "state": {
+        "path": "state_010000.msgpack",
+        "sha256": "dbd38c1882364e69bc3dea362d470efa21dadec24b1be05269e1603381bedb96"
+      },
+      "state_digest": "6b777dd73a40c7d8b3614429c22dea074849c92ec237b217cb821deee733cfe4"
+    }
+  },
+  "checks": {
+    "duplicate_native_equal": true,
+    "native_and_aux_finite": true,
+    "positive_residual_unit": true,
+    "ready_reference_finite": true,
+    "reference_storage_valid": true,
+    "warmup_reference_shape": false
+  },
+  "counts": {
+    "actor": 5000,
+    "actor_target": 5000,
+    "aux_fit_attempts": 10000,
+    "auxiliary": 10000,
+    "critic": 10000,
+    "critic_budget": 10000,
+    "critic_target": 5000,
+    "last_refresh_critic": 10000,
+    "next_refresh_index": 1,
+    "outer_steps": 5000,
+    "phase": 0,
+    "reference_ready": true,
+    "refresh_accepted": 1,
+    "refresh_attempts": 1
+  },
+  "device_kind": "NVIDIA GeForce RTX 5070 Ti",
+  "device_kinds": [
+    "NVIDIA GeForce RTX 5070 Ti"
+  ],
+  "elapsed_seconds": 827.3546133230002,
+  "finished_utc": "2026-11-02T15:02:56.050602+00:00",
+  "gradient_audits": {
+    "10000": {
+      "path": "gradient_audit_010000.json",
+      "sha256": "95f8a470ac95738854d89b76582d6604eb410fdd812fda7c67e6a468ea277897",
+      "summary": {
+        "actor_past_knee_minus_high_load": 162,
+        "high_load_rows": 400,
+        "lambda_by_batch": [
+          0.1022891253232956,
+          0.10224427282810211,
+          0.11319509893655777
+        ],
+        "median_reach_radius_high_load": 0.30173914198191376,
+        "share_bc_pulls_back_when_past_knee": 1.0,
+        "share_dQ1_da0_negative_high_load": 0.5575
+      }
+    }
+  },
+  "initial_parameter_hashes": {
+    "actor": "8a0c6284a780d2c1b4e4e046541dbfa058d77b366f1559d2e64e2147c7b398db",
+    "auxiliary_scale": "cd6362ab0dd078787f293d0bbaeb5ca04b17612567493f110b793b167287e122",
+    "critic": "70e222a544e9cbecbcfa459138fdd1153394d6d44c9aa93782c7b76d8dacf12d"
+  },
+  "integrity_after": {
+    "changed": [],
+    "verified": 171
+  },
+  "job": "warmup_s2_cutoff_stall3",
+  "kappa": 63.0,
+  "kind": "warmup",
+  "last_metrics": {
+    "arm": "native",
+    "auxiliary": {
+      "scale_fit_accepted": true,
+      "scale_inputs_valid": true,
+      "scale_loss": 0.009156351909041405
+    },
+    "committed": true,
+    "counts": {
+      "actor": 5000,
+      "actor_target": 5000,
+      "aux_fit_attempts": 10000,
+      "auxiliary": 10000,
+      "critic": 10000,
+      "critic_budget": 10000,
+      "critic_target": 5000,
+      "last_refresh_critic": 10000,
+      "next_refresh_index": 1,
+      "outer_steps": 5000,
+      "phase": 0,
+      "reference_ready": true,
+      "refresh_accepted": 1,
+      "refresh_attempts": 1
+    },
+    "kappa": 0.0,
+    "native": {
+      "actor_loss": 2.745871067047119,
+      "actor_penalty_term": 0.0,
+      "bc_loss": 0.2567955255508423,
+      "critic_loss_this_call": 1.9483519792556763,
+      "outer_completed": true,
+      "penalty_mean": 0.0,
+      "q_loss": 2.118941068649292,
+      "q_mean": -23.459186553955078,
+      "q_scale_coefficient": 0.10610237717628479,
+      "width_mean": 0.0
+    },
+    "refresh": {
+      "diagnostics": {
+        "certified": true,
+        "clamp_binds": false,
+        "lambda_hat": 1.1804061001406327,
+        "lambda_hpd": 1.5033528324546692,
+        "n_eff": 128.0,
+        "scores": 128,
+        "sigma_post": 0.11585020429305572,
+        "threshold": 1.5033528324546692
+      },
+      "flags": {
+        "posterior_certified": true,
+        "posterior_inputs_valid": true
+      }
+    },
+    "refresh_due": true
+  },
+  "matching": {
+    "anchor_actor_digest": "087a4c8ca177f5709fa255a3a6ad23789e0adc31c5103504914f86ccc4af0228",
+    "bca_gradient_rms": 0.585361590945628,
+    "calibration_calls": 0,
+    "distance_action_gradient_at_fork_actor": 0.0,
+    "distance_coefficient": 0.06221118228098844,
+    "distance_gradient_digest": "68a82d163f6bbdbde03825a7cf108958d86bc7227d9e0da0e72b8ff0528d8988",
+    "distance_gradient_rms": 9.409266461160197,
+    "live_fork_distance_gradient_is_zero": true,
+    "matching_scope": "RMS action gradients at logged training actions only; excludes actor Jacobian and Q normalization",
+    "no_rematch": true,
+    "on_policy_strength_matched": false,
+    "optimizer_updates": 0,
+    "probe_rows": 768,
+    "reference_digest": "20fe14a68aa6756de9fc947710d0ce2123aee3ccc52ab54cd167c0627c1b99ce",
+    "scope": "RMS action-gradient match on logged training actions only; not on-policy matching",
+    "unscaled_bca_gradient_digest": "62d92023777ca61f0be891bfe775f07755e1358cb40501602f8bf58d466717b6"
+  },
+  "minibatches": {
+    "phase0_batches": 5000,
+    "phase0_minibatch_sha256": "26683f2de17e05c0ba655501544e876d6cd7e3c862b4b354097a4d20ae031161"
+  },
+  "normalization": {
+    "epsilon": 0.001,
+    "fixture_digest": "d472bdb858e6bc7e5e04dbd551f83edee7f729368522370b2cf1dc8c2f744ed8",
+    "mean": [
+      -0.3829908072948456,
+      0.11714248359203339,
+      -0.21475467085838318,
+      0.03916748985648155,
+      -0.30713680386543274,
+      0.06384430080652237,
+      -0.20402538776397705,
+      0.07067225873470306,
+      -0.13905277848243713,
+      0.06562082469463348,
+      0.4459822177886963,
+      -0.039104487746953964,
+      -0.0018995128339156508,
+      0.504555344581604
+    ],
+    "rows": 34085,
+    "source": "Common hole/random retained-intersection training observations; identical all conditions",
+    "std": [
+      0.5600082874298096,
+      0.5034241676330566,
+      0.5632209181785583,
+      0.5937517881393433,
+      0.6467730402946472,
+      0.6014400124549866,
+      0.4979514479637146,
+      0.4890708923339844,
+      0.3353148400783539,
+      0.33455950021743774,
+      0.25386562943458557,
+      0.18698015809059143,
+      0.19063100218772888,
+      0.287386417388916
+    ]
+  },
+  "provenance": "research",
+  "screen": "knee_s10_candidate_v2/native_screen_r5",
+  "simulator_steps_attempted": 0,
+  "simulator_steps_exact": 0,
+  "started_utc": "2026-11-02T14:49:08.695986+00:00",
+  "status": "completed",
+  "unit_label": "COMPLETE",
+  "untrained_actor_digest": "8a0c6284a780d2c1b4e4e046541dbfa058d77b366f1559d2e64e2147c7b398db"
+}

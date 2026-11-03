@@ -1,11 +1,21 @@
-"""One additive recovery; original source, smoke and interrupted outputs stay sealed."""
+"""Titan recovery of the interrupted Path A production attempt (additive).
+
+Nothing scientific executes on import. The original seal, the smoke amendment,
+Zeus's passed smoke and the interrupted attempt run_amendment_1 are verified
+and never modified. Zeus's completed honeypot_s0_warmup is reused byte for
+byte; the interrupted honeypot_s0_native is discarded, charged at its upper
+bound and re-run from that warmup. Every remaining job, seed, dataset, mask,
+objective and evaluation is the unchanged sealed Path A code.
+"""
 import argparse
 from datetime import datetime
-from decimal import Decimal
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import signal
+import socket
 import subprocess
 import sys
 import time
@@ -17,267 +27,425 @@ sys.path.insert(0, str(HERE))
 import launch as L
 import smoke_launch as S
 
-OLD = HERE / "run_amendment_1"
-OUT = HERE / "run_recovery_1"
+AMENDMENT_MANIFEST_SHA256 = "ea550df3c1805df38e03e101e007bfbb89df770ffc7a5287f138c1f12bd91549"
 REUSED = "honeypot_s0_warmup"
-LOST = "honeypot_s0_native"
-PIDS = (435, 1693)
+INTERRUPTED = "honeypot_s0_native"
 KEYS = ("critic", "actor", "auxiliary", "calibrations")
-JOB_CAPS = dict(zip(KEYS, (10000, 5000, 10000, 1)))
-LOST_LOWER = dict(zip(KEYS, (4200, 2100, 4200, 0)))
-LOST_UPPER = dict(JOB_CAPS)
-SMOKE_COUNTS = dict(zip(KEYS, (14, 8, 14, 3)))
-CUMULATIVE_CAPS = dict(zip(KEYS, (190014, 95008, 190014, 22)))
-APPROVAL_TEXT = ("I approve one Path A recovery preserving the completed Honeypot seed-0 warmup and the passed "
-    "runtime smoke. Restart only the interrupted native continuation from that warmup, then finish the unchanged "
-    "remaining jobs and evaluation. I approve conservative cumulative limits of 190014 critic, 95008 actor, "
-    "190014 auxiliary updates and 22 calibrations, including unknown interrupted work. Reserve 60 seconds for "
-    "recovery preparation and at most 10660 seconds for the recovery process from the original remaining time. "
-    "The original four-hour and 498400-transition ceilings remain. No smoke/warmup rerun, Path B execution, "
-    "scientific changes or automatic retry.")
+JOB_CAPS = {"critic": 10000, "actor": 5000, "auxiliary": 10000, "calibrations": 1}
+TITAN_ENV = {"OPENBLAS_CORETYPE": "Haswell"}
+SMOKE_SECONDS = 900
+PRODUCTION_SECONDS = 28800
+EVALUATION_RESERVE_SECONDS = 3600
+JOB_MARGIN = 1.25
+PRIOR_SIMULATOR_TRANSITIONS = 189655
+EVALUATION_TRANSITION_CAP = 237600
+SIMULATOR_CEILING = 498400
+SAVED_CONTROLLER_ROWS = {"total": 613, "safe": 598}
+# Bank files that depend only on the fixed controller, plant and seeds, never on a learner.
+BANK_FILE = re.compile(r"^(smoke_evaluation_plan|smoke_own_policy_anchor|smoke_(honeypot|bottleneck)_seed[0-2]_.+)\.json$")
+BANK_FILES = 2 + 6 * (1 + 16 + 48 + 1)
+SOURCES = ("recovery_launch.py", "test_recovery_launch.py", "RECOVERY.md", "RECOVERY_VERIFICATION.json")
+
+
+def remaining_jobs():
+    """The unchanged sealed job order without the reused warmup."""
+    return [job for job in L.jobs() if job["id"] != REUSED]
+
+
+def production_caps():
+    training = sum(job["arm"] != "evaluation" for job in remaining_jobs())
+    return {key: training * JOB_CAPS[key] for key in KEYS}
 
 
 def allocation():
-    return {"schema": "two_scenario.path_a.recovery.v1", "old_production_process_cap_seconds": 11490,
-        "old_production_elapsed_seconds": 769.481604245, "remaining_before_recovery_seconds": 10720.518395755,
-        "recovery_preparation_charge_seconds": 60, "recovery_process_cap_seconds": 10660,
-        "internal_seconds": 10645, "external_timeout_seconds": 10655, "kill_grace_seconds": 5,
-        "unallocated_seconds": .518395755, "cumulative_time_ceiling_seconds": 14400,
-        "cumulative_simulator_transition_ceiling": 498400, "new_evaluation_transition_cap": 237600,
-        "new_training_jobs": 17, "new_training_counts": {k: 17*v for k, v in JOB_CAPS.items()},
-        "reused_warmup_counts": JOB_CAPS, "smoke_counts": SMOKE_COUNTS,
-        "old_lost_work_lower": LOST_LOWER, "old_lost_work_upper": LOST_UPPER,
-        "cumulative_optimizer_caps": CUMULATIVE_CAPS, "cumulative_execution_counts_known": False,
-        "scientific_protocol_changed": False, "automatic_retry": False,
-        "inactivity_evidence": {"reported_observation_est": "November 2, 2026 at 5:15 a.m. EST (minute precision)",
-            "requested_pids": list(PIDS), "user_result": "ps returned its header with no entries",
-            "meaning": "Only these recorded supervisor/worker PIDs were absent at that observation; not a global process guarantee"}}
+    return {"schema": "two_scenario.path_a.titan_recovery.v1", "machine": "Titan",
+        "original_manifest_sha256": S.ORIGINAL_MANIFEST, "amendment_manifest_sha256": AMENDMENT_MANIFEST_SHA256,
+        "required_environment": dict(TITAN_ENV), "reused_completed_job": REUSED, "rerun_interrupted_job": INTERRUPTED,
+        "remaining_jobs": [job["id"] for job in remaining_jobs()],
+        "titan_smoke": {"optimizer_caps": dict(S.LEARNING_CAPS), "transition_caps": dict(S.PHYSICAL_CAPS),
+            "transition_cap": sum(S.PHYSICAL_CAPS.values()), "process_seconds": SMOKE_SECONDS,
+            "warmup_restore_model_initializations": 1, "warmup_restore_optimizer_updates": 0,
+            "zeus_equivalence": {"controller_actions": SAVED_CONTROLLER_ROWS["safe"], "controller_simulator_transitions": 0,
+                                 "bank_files": BANK_FILES, "bank_extra_simulator_transitions": 0}},
+        "production": {"training_jobs": len(remaining_jobs()) - 1, "optimizer_caps": production_caps(),
+            "evaluation_transition_cap": EVALUATION_TRANSITION_CAP, "return_episodes": 1536,
+            "process_seconds": PRODUCTION_SECONDS, "evaluation_reserve_seconds": EVALUATION_RESERVE_SECONDS,
+            "job_boundary_margin": JOB_MARGIN},
+        "scientific_protocol_changed": False, "no_automatic_retry": True, "path_b_authorized": False}
 
 
-def jobs():
-    original = L.jobs()
-    L.require(sum(j["id"] == REUSED for j in original) == 1, "Exactly one completed warmup must be reused")
-    result = [dict(j) for j in original if j["id"] != REUSED]
-    L.require(len(result) == 18 and sum(j["arm"] != "evaluation" for j in result) == 17,
-              "Recovery plan must have 17 training jobs and one evaluation")
-    return result
-
-
-def inventory(root):
-    root = Path(root).resolve()
-    L.require(root.is_dir() and not root.is_symlink(), "Missing or linked lineage directory")
-    files, directories = {}, []
-    for path in sorted(root.rglob("*")):
-        L.require(not path.is_symlink() and path.resolve().is_relative_to(root), "Linked lineage entry is not accepted")
-        relative = path.relative_to(root).as_posix()
-        if path.is_file():
-            files[relative] = L.sha(path)
-        elif path.is_dir():
-            directories.append(relative)
-        else:
-            raise ValueError("Unexpected lineage entry: " + relative)
-    return {"files": files, "directories": directories}
-
-
-def verify_inventory(root, expected):
-    L.require(inventory(root) == expected, "Original lineage contents or directory entries changed: " + str(root))
-
-
-def verify_warmup(directory):
-    directory = Path(directory)
-    report = L.accepted_job(directory, 0)
-    receipt = L.read(directory / "checkpoint.json")
-    protocol = L.read(HERE / "protocol.json")
-    binding_metadata = L.read(HERE / "DATA_RECEIPT.json")["conditions"]["honeypot"]["metadata"]
-    # Same canonical JSON digest used by unchanged integration.py, without model imports.
-    canonical = lambda value: __import__("hashlib").sha256(json.dumps(value, sort_keys=True,
-                                  separators=(",", ":"), allow_nan=False).encode()).hexdigest()
-    L.require(report["condition"] == receipt["condition"] == "honeypot" and
-              report["seed_index"] == receipt["seed_index"] == 0 and
-              report["arm"] == receipt["arm"] == "warmup", "Wrong reusable condition/seed/boundary")
-    L.require(report["checkpoint_receipt_sha256"] == L.sha(directory / "checkpoint.json") and
-              report["checkpoint_sha256"] == receipt["checkpoint_sha256"] == L.sha(directory / "full_state.msgpack"),
-              "Warmup checkpoint/report hash chain differs")
-    L.require(receipt["protocol_sha256"] == canonical(protocol) and
-              receipt["prepared_metadata_sha256"] == canonical(binding_metadata) and
-              report["prepared_metadata"] == binding_metadata, "Warmup protocol/data/mask/calibration binding differs")
-    L.require(receipt["dataset_sha256"] == binding_metadata["dataset_sha256"] and
-              receipt["geometry_sha256"] == binding_metadata["geometry_sha256"] and
-              receipt["normalization"] == report["normalization"] and
-              receipt["normalization_sha256"] == canonical(receipt["normalization"]), "Warmup normalization/source binding differs")
-    L.require(receipt["counts"] == report["final_cumulative_counts"] and
-              receipt["counts"]["critic"] == 10000 and receipt["counts"]["refresh_accepted"] == 1 and
-              receipt["counts"]["phase"] == 0 and receipt["counts"]["reference_ready"], "Warmup boundary incomplete")
-    L.require(receipt["state_digest"] == report["final_exact_roundtrip"]["state_digest"], "Warmup exact-state receipt differs")
-    return report
-
-
-def original_evidence():
-    S.check(approval=True)
-    proof = S.smoke_identity()
-    attempt, result = L.read(OLD / "ATTEMPT.json"), L.read(OLD / "RESULT.json")
-    L.require(attempt["mode"] == result["mode"] == "production" and attempt["cap_seconds"] == 11490 and
-              attempt["amendment_manifest_sha256"] == L.sha(HERE / "AMENDMENT_MANIFEST.json"), "Wrong original attempt")
-    L.require(attempt["smoke_proof"] == result["smoke_proof"] == proof, "Original authorizing smoke proof differs")
-    L.require(result["status"] == "incomplete" and result["execution_counts_known"] is False and
-              result["error"] == "InterruptedError: Supervisor signal 2" and
-              result["jobs"] == [{"exit_code": 0, "id": REUSED}], "Original outcome differs; review before recovery")
-    L.require(Decimal(str(result["elapsed_seconds"])) == Decimal("769.481604245") and
-              Decimal(11490) - Decimal(str(result["elapsed_seconds"])) == Decimal("10720.518395755"),
-              "Remaining original process allowance differs")
-    L.require(attempt["supervisor_pid"] == PIDS[0] and L.read(OLD / LOST / "PROCESS.json")["pid"] == PIDS[1],
-              "Recorded old process identities differ")
-    L.require(not any((OLD / LOST / name).exists() for name in
-                     ("full_state.msgpack", "checkpoint.json", "report.json", "WORKER_EXIT.json")),
-              "The interrupted job has newer terminal/checkpoint evidence; do not restart blindly")
-    last = json.loads((OLD / LOST / "progress.jsonl").read_text(encoding="utf-8").splitlines()[-1])
-    L.require(last["local_step"] == 4200 and last["physical_counts"]["attempted"] == LOST_LOWER and
-              last["physical_counts"]["completed"] == LOST_LOWER, "Known interrupted-work lower bound changed")
-    verify_warmup(OLD / REUSED)
-    return {"old_run": inventory(OLD), "smoke_tree": inventory(HERE / "smoke_attempt_1"),
-            "smoke_proof": proof, "last_lost_progress_est": last["observed_est"],
-            "last_lost_progress_counts": LOST_LOWER, "old_result_sha256": L.sha(OLD / "RESULT.json")}
-
-
-def prepare():
-    L.require(not (HERE / "RECOVERY_MANIFEST.json").exists() and not OUT.exists(), "Never reseal/reset a recovery")
-    lineage = original_evidence()
-    names = ("recovery_launch.py", "test_recovery_launch.py", "RECOVERY.md", "RECOVERY_VERIFICATION.json",
-             "MANIFEST.json", "AMENDMENT_MANIFEST.json", "AMENDMENT_APPROVAL.json")
-    L.save(HERE / "RECOVERY_MANIFEST.json", {"allocation": allocation(), "jobs": jobs(), "lineage": lineage,
-        "files": {(HERE / name).relative_to(L.REPO).as_posix(): L.sha(HERE / name) for name in names},
-        "approval_created": False, "execution_started": False})
-    return {"status": "prepared_recovery_not_executed", "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json")}
+def approval_text():
+    a, p = allocation(), allocation()["production"]
+    return ("I approve the Titan recovery of Path A attempt run_amendment_1: reuse Zeus's completed, authenticated "
+        f"{REUSED} checkpoint byte for byte; discard and re-run the interrupted {INTERRUPTED} from it, charging the "
+        "interrupted work at its upper bound. On Titan with OPENBLAS_CORETYPE=Haswell, first one disposable runtime smoke "
+        f"(at most {S.LEARNING_CAPS['critic']} critic, {S.LEARNING_CAPS['actor']} actor, {S.LEARNING_CAPS['auxiliary']} "
+        f"auxiliary updates, {S.LEARNING_CAPS['calibrations']} calibrations, {a['titan_smoke']['transition_cap']} simulator "
+        f"transitions and {SMOKE_SECONDS} seconds) that must reproduce Zeus's controller actions and probe banks exactly and "
+        f"restore the Zeus warmup exactly. Only after it passes, the remaining {p['training_jobs']} unchanged training jobs "
+        f"and the frozen evaluation: at most {p['optimizer_caps']['critic']} critic, {p['optimizer_caps']['actor']} actor, "
+        f"{p['optimizer_caps']['auxiliary']} auxiliary updates, {p['optimizer_caps']['calibrations']} calibrations, "
+        f"{EVALUATION_TRANSITION_CAP} evaluation transitions and {PRODUCTION_SECONDS} seconds, stopping at a job boundary "
+        "when the next job cannot finish. Protocol, data, seeds and evaluation are unchanged; the 498400-transition "
+        "ceiling remains; no Path B execution and no automatic retry.")
 
 
 def approval_expected():
-    return {"approval": APPROVAL_TEXT, "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"),
-            "recovery_process_cap_seconds": 10660, "cumulative_optimizer_caps": CUMULATIVE_CAPS,
-            "reuse_only_completed_warmup": REUSED, "no_automatic_retry": True}
+    return {"approval": approval_text(), "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"),
+            "machine": "Titan", "allow_titan_smoke": True, "allow_production_only_after_passed_titan_smoke": True}
+
+
+def tree_hashes(directory):
+    directory = Path(directory)
+    L.require(directory.is_dir(), "Missing artifact directory: " + str(directory))
+    result = {}
+    for path in sorted(directory.rglob("*")):
+        L.require(not path.is_symlink(), "Linked artifact refused: " + str(path))
+        if path.is_file():
+            result[path.relative_to(directory).as_posix()] = L.sha(path)
+    return result
+
+
+def _progress_records(path):
+    if not path.exists():
+        return [], False
+    lines = path.read_text(encoding="utf-8").split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    records, truncated = [], False
+    for index, line in enumerate(lines):
+        try:
+            records.append(json.loads(line))
+        except json.JSONDecodeError:
+            # Only a final record can be cut by a hard stop; anything earlier is corruption.
+            L.require(index == len(lines) - 1, "Corrupted progress record before the final line: " + str(path))
+            truncated = True
+    return records, truncated
+
+
+def interrupted_bounds(job_dir):
+    """Lower bounds from persisted counts; the planned job caps remain the upper bound unless exactly known."""
+    job_dir = Path(job_dir)
+    records, truncated = _progress_records(job_dir / "progress.jsonl")
+    lower, last = dict.fromkeys(KEYS, 0), None
+    for record in records:
+        completed = record.get("physical_counts", {}).get("completed", {})
+        for key in KEYS:
+            lower[key] = max(lower[key], int(completed.get(key, 0)))
+        last = record.get("observed_est", last)
+    upper, source = dict(JOB_CAPS), "progress_lower_bound_with_planned_job_cap"
+    if (job_dir / "report.json").exists():
+        report = L.read(job_dir / "report.json")
+        L.require(report.get("status") != "completed_training_job", "Interrupted job reports completion; review required")
+        counts = report.get("counts", {})
+        for key in KEYS:
+            lower[key] = max(lower[key], int(counts.get("completed", {}).get(key, 0)))
+        if report.get("execution_counts_known") is True and counts.get("attempted") == counts.get("completed"):
+            upper = {key: int(counts["completed"][key]) for key in KEYS}
+            lower, source = dict(upper), "failed_job_report_exact"
+    L.require(all(0 <= lower[k] <= upper[k] <= JOB_CAPS[k] for k in KEYS), "Inconsistent interrupted-job bounds")
+    return {"lower": lower, "upper": upper, "source": source, "progress_records": len(records),
+            "truncated_final_progress_line": truncated, "last_observed_est": last}
+
+
+def prior_lineage(smoke_dir, run_dir, *, smoke_check, amendment_manifest_sha256):
+    """Authenticate Zeus's smoke and interrupted attempt without changing a byte."""
+    smoke_dir, run_dir = Path(smoke_dir), Path(run_dir)
+    smoke = smoke_check(smoke_dir)
+    proof = {name: L.sha(smoke_dir / name) for name in ("RESULT.json", "WORKER_EXIT.json", "report.json", "ARTIFACTS.json")}
+    attempt = L.read(run_dir / "ATTEMPT.json")
+    L.require(attempt.get("mode") == "production" and attempt.get("smoke_proof") == proof and
+              attempt.get("amendment_manifest_sha256") == amendment_manifest_sha256,
+              "Interrupted attempt is not bound to this smoke and amendment")
+    entries = sorted(p.name for p in run_dir.iterdir() if p.is_dir())
+    L.require(entries == sorted((REUSED, INTERRUPTED)),
+              "Prior attempt differs from one completed warmup and one interrupted native job: " + ", ".join(entries))
+
+    def bound_job(directory, arm):
+        job = L.read(directory / "JOB.json")
+        expected = {"id": "honeypot_s0_" + arm, "condition": "honeypot", "seed_index": 0, "arm": arm,
+                    "amendment_manifest_sha256": amendment_manifest_sha256, "smoke_proof": proof}
+        L.require(all(job.get(k) == v for k, v in expected.items()), "Prior job reservation differs: " + directory.name)
+        return job
+
+    warm = run_dir / REUSED
+    bound_job(warm, "warmup")
+    report = L.accepted_job(warm, 0)
+    supervisor = L.read(warm / "SUPERVISOR.json")
+    L.require(supervisor.get("status") == "accepted" and supervisor.get("exit_code") == 0, "Warmup was not accepted by its supervisor")
+    receipt = L.read(warm / "checkpoint.json")
+    raw_sha = L.sha(warm / "full_state.msgpack")
+    L.require(report.get("condition") == "honeypot" and report.get("seed_index") == 0 and report.get("arm") == "warmup" and
+              report.get("checkpoint_sha256") == raw_sha == receipt.get("checkpoint_sha256") and
+              report.get("checkpoint_receipt_sha256") == L.sha(warm / "checkpoint.json") and
+              receipt.get("arm") == "warmup" and receipt.get("condition") == "honeypot" and receipt.get("seed_index") == 0 and
+              receipt.get("counts", {}).get("critic") == 10000, "Warmup checkpoint chain differs")
+
+    native = run_dir / INTERRUPTED
+    bound_job(native, "native")
+    L.require(not (native / "SUPERVISOR.json").exists() and not (native / "full_state.msgpack").exists() and
+              not (native / "checkpoint.json").exists(), "Interrupted job has acceptance or a final checkpoint; review required")
+    if (native / "WORKER_EXIT.json").exists():
+        L.require(L.read(native / "WORKER_EXIT.json").get("status") != "completed", "Interrupted worker reports completion")
+    terminal = L.read(run_dir / "RESULT.json") if (run_dir / "RESULT.json").exists() else None
+    L.require(terminal is None or terminal.get("status") != "completed_path_a_study", "Prior attempt reports a completed study")
+    smoke_terminal = L.read(smoke_dir / "RESULT.json")
+    return {"zeus_smoke_proof": proof, "zeus_smoke_elapsed_seconds": smoke_terminal.get("elapsed_seconds"),
+        "zeus_smoke_counts": {"learning": smoke["learning"]["counts"]["completed"],
+                              "physical": smoke["physical"]["counts"]["completed"]},
+        "zeus_runtime": smoke.get("runtime"),
+        "attempt": {"started_est": attempt.get("started_est"), "terminal_receipt_present": terminal is not None,
+                    "terminal_status": None if terminal is None else terminal.get("status"),
+                    "terminal_error": None if terminal is None else terminal.get("error"),
+                    "elapsed_seconds": None if terminal is None else terminal.get("elapsed_seconds")},
+        "reused_warmup": {"job": REUSED, "report_sha256": L.sha(warm / "report.json"), "checkpoint_sha256": raw_sha,
+                          "checkpoint_receipt_sha256": L.sha(warm / "checkpoint.json"),
+                          "state_digest": receipt.get("state_digest"), "elapsed_seconds": report.get("elapsed_seconds"),
+                          "counts": {k: report["counts"]["completed"][k] for k in KEYS}, "files": tree_hashes(warm)},
+        "interrupted": {"job": INTERRUPTED, **interrupted_bounds(native), "files": tree_hashes(native)}}
+
+
+def accounting(lineage):
+    a = allocation()
+    zeus, warm = lineage["zeus_smoke_counts"]["learning"], lineage["reused_warmup"]["counts"]
+    low, high = lineage["interrupted"]["lower"], lineage["interrupted"]["upper"]
+    new = {k: a["titan_smoke"]["optimizer_caps"][k] + a["production"]["optimizer_caps"][k] for k in KEYS}
+    prior_low = {k: zeus[k] + warm[k] + low[k] for k in KEYS}
+    prior_high = {k: zeus[k] + warm[k] + high[k] for k in KEYS}
+    zeus_transitions = sum(lineage["zeus_smoke_counts"]["physical"].values())
+    maximum = PRIOR_SIMULATOR_TRANSITIONS + zeus_transitions + a["titan_smoke"]["transition_cap"] + EVALUATION_TRANSITION_CAP
+    L.require(maximum <= SIMULATOR_CEILING, "Recovery would exceed the cumulative simulator ceiling")
+    return {"prior_optimizer_lower": prior_low, "prior_optimizer_upper": prior_high, "new_optimizer_caps": new,
+        "cumulative_optimizer_upper": {k: prior_high[k] + new[k] for k in KEYS},
+        "discarded_interrupted_work_upper": dict(high),
+        "prior_simulator_transitions": PRIOR_SIMULATOR_TRANSITIONS, "zeus_smoke_transitions": zeus_transitions,
+        "titan_smoke_transition_cap": a["titan_smoke"]["transition_cap"], "evaluation_transition_cap": EVALUATION_TRANSITION_CAP,
+        "cumulative_simulator_maximum": maximum, "cumulative_simulator_ceiling": SIMULATOR_CEILING,
+        "time": {"original_four_hour_allowance_exhausted": True, "zeus_smoke_elapsed_seconds": lineage["zeus_smoke_elapsed_seconds"],
+                 "zeus_production_elapsed_seconds": lineage["attempt"]["elapsed_seconds"],
+                 "new_titan_seconds": SMOKE_SECONDS + PRODUCTION_SECONDS}}
+
+
+def controller_equivalence(control, rows):
+    """Recompute Zeus's saved fixed-controller actions; no plant transition is executed."""
+    import numpy as np
+    safe = [row for row in rows if row.get("variant") == "safe"]
+    L.require(len(rows) == SAVED_CONTROLLER_ROWS["total"] and len(safe) == SAVED_CONTROLLER_ROWS["safe"],
+              "Saved Zeus controller trace count differs")
+    mismatched = []
+    for index, row in enumerate(safe):
+        state = np.asarray(row["state"], np.float64)
+        L.require(state.shape == (13,), "Saved controller state is not the complete 13-state vector")
+        action = np.asarray(control(state.copy(), int(row["time"])))
+        L.require(action.dtype == np.float32 and action.shape == (4,), "Controller must return one float32 action")
+        if action.tobytes() != np.asarray(row["action"], np.float32).tobytes():
+            mismatched.append(index)
+    return {"compared_controller_actions": len(safe), "mismatched": len(mismatched),
+            "first_mismatched_rows": mismatched[:10], "identical": not mismatched, "simulator_transitions": 0}
+
+
+def bank_equivalence(zeus_physical, titan_physical):
+    """Byte comparison of every controller/plant-only smoke file; learner-dependent files are excluded."""
+    def names(directory):
+        return sorted(p.name for p in Path(directory).iterdir() if p.is_file() and BANK_FILE.match(p.name))
+    zeus, titan = names(zeus_physical), names(titan_physical)
+    L.require(len(zeus) == BANK_FILES and zeus == titan, "Titan and Zeus bank file sets differ")
+    differing = [n for n in zeus if (Path(zeus_physical) / n).read_bytes() != (Path(titan_physical) / n).read_bytes()]
+    return {"files_compared": len(zeus), "differing": differing, "identical": not differing,
+            "excluded": "learner-dependent forced-action, free-return and summary files"}
+
+
+def install_reused_warmup(source, target, expected):
+    """Byte-identical copy so the unchanged sealed evaluator finds every job as a sibling."""
+    source, target = Path(source), Path(target)
+    L.require(tree_hashes(source) == expected, "Zeus warmup bytes changed before reuse")
+    target.mkdir(exist_ok=False)
+    for relative in sorted(expected):
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with (source / relative).open("rb") as reader, destination.open("xb") as writer:
+            shutil.copyfileobj(reader, writer)
+            writer.flush()
+            os.fsync(writer.fileno())
+    L.require(tree_hashes(target) == expected, "Reused warmup copy differs from the authenticated original")
+    return {"source": source.name, "target": target.name, "files": expected, "byte_identical": True}
+
+
+def next_job_fits(arm, remaining, durations):
+    """Stop between jobs instead of losing a job to the deadline; the evaluation reserve stays protected."""
+    if arm == "evaluation":
+        return remaining >= EVALUATION_RESERVE_SECONDS
+    estimate = JOB_MARGIN * max(durations) if durations else 0.
+    return remaining >= estimate + EVALUATION_RESERVE_SECONDS
+
+
+def require_wsl():
+    L.require(os.name == "posix", "Manual existing WSL runtime only")
+
+
+def require_titan_environment():
+    L.require(all(os.environ.get(k) == v for k, v in TITAN_ENV.items()),
+              "Titan recovery requires OPENBLAS_CORETYPE=Haswell in the launching environment")
+
+
+def _lineage_now():
+    return prior_lineage(HERE / "smoke_attempt_1", HERE / "run_amendment_1", smoke_check=S.smoke_passed,
+                         amendment_manifest_sha256=AMENDMENT_MANIFEST_SHA256)
+
+
+def prepare():
+    L.require(not any((HERE / n).exists() for n in ("RECOVERY_MANIFEST.json", "titan_smoke_1", "run_recovery_1")),
+              "Never reseal or reset the recovery")
+    L.require(L.sha(HERE / "AMENDMENT_MANIFEST.json") == AMENDMENT_MANIFEST_SHA256, "Amendment seal differs")
+    S.check(approval=True)
+    lineage = _lineage_now()
+    files = {(HERE / n).relative_to(L.REPO).as_posix(): L.sha(HERE / n) for n in SOURCES}
+    files[(HERE / "AMENDMENT_APPROVAL.json").relative_to(L.REPO).as_posix()] = L.sha(HERE / "AMENDMENT_APPROVAL.json")
+    for folder in ("smoke_attempt_1", "run_amendment_1"):
+        files.update({(HERE / folder / r).relative_to(L.REPO).as_posix(): h for r, h in tree_hashes(HERE / folder).items()})
+    L.save(HERE / "RECOVERY_MANIFEST.json", {"allocation": allocation(), "prior": lineage, "accounting": accounting(lineage),
+           "files": files, "approval_created": False, "runtime_executed": False})
+    return {"status": "recovery_sealed_not_approved", "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json")}
 
 
 def check(approval=False):
     protocol = S.check(approval=True)
     manifest = L.read(HERE / "RECOVERY_MANIFEST.json")
+    L.require(manifest["allocation"] == allocation(), "Recovery budget changed")
     L.verify_pins(manifest["files"])
-    L.require(manifest["allocation"] == allocation() and manifest["jobs"] == jobs(), "Recovery plan/budget changed")
-    L.require(original_evidence() == manifest["lineage"], "Original outputs or smoke evidence changed")
     if approval:
-        L.require(L.read(HERE / "RECOVERY_APPROVAL.json") == approval_expected(), "Explicit recovery approval absent or mismatched")
+        L.require(L.read(HERE / "RECOVERY_APPROVAL.json") == approval_expected(), "Explicit Titan recovery approval missing or mismatched")
     return protocol
 
 
-def old_processes_absent():
-    L.require(os.name == "posix", "Recorded PID check is for the existing Linux runtime only")
-    for pid in PIDS:
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            continue
-        except PermissionError as exc:
-            raise RuntimeError("Cannot establish old PID inactivity: " + str(pid)) from exc
-        raise RuntimeError("Recorded old PID is present (possibly reused): %d; inspect it, do not terminate it automatically" % pid)
+def titan_smoke_passed(directory=None, *, require_supervisor=True):
+    """The sealed smoke's own acceptance rule, plus every Titan-specific equivalence check."""
+    directory = HERE / "titan_smoke_1" if directory is None else Path(directory)
+    report = S.smoke_passed(directory, require_supervisor=require_supervisor)
+    checks = report.get("titan_checks", {})
+    L.require(report.get("recovery_manifest_sha256") == L.sha(HERE / "RECOVERY_MANIFEST.json") and checks.get("passed") is True and
+              checks.get("environment") == TITAN_ENV and checks["controller"]["identical"] is True and
+              checks["banks"]["identical"] is True and checks["banks"]["files_compared"] == BANK_FILES and
+              checks["warmup_restore"]["exact"] is True, "Titan-specific smoke checks incomplete")
+    return report
 
 
-def mirror_expected(manifest):
-    prefix = REUSED + "/"
-    old = manifest["lineage"]["old_run"]
-    return {"files": {name[len(prefix):]: sha for name, sha in old["files"].items() if name.startswith(prefix)},
-            "directories": [name[len(prefix):] for name in old["directories"] if name.startswith(prefix)]}
+def titan_smoke_identity():
+    titan_smoke_passed()
+    return {name: L.sha(HERE / "titan_smoke_1" / name) for name in ("RESULT.json", "WORKER_EXIT.json", "report.json", "ARTIFACTS.json")}
 
 
-def reuse_receipt(manifest):
-    return {"source": str((OLD / REUSED).relative_to(L.REPO)), "source_inventory": mirror_expected(manifest),
-            "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"),
-            "training_updates_in_copy": 0, "reused_prior_training_counts": JOB_CAPS}
+def _canonical(protocol):
+    sys.path.insert(0, str(L.REPO))
+    binding = L.load("_path_a_binding", HERE / "binding.py")
+    core = L.PAYLOAD / "transfer_bundle/core_v4"
+    sys.path.insert(0, str(core))
+    from thrusterchain import environment as canonical
+    L.require(Path(canonical.__file__).resolve() == core / "thrusterchain/environment.py", "Wrong canonical plant")
+    physics = canonical.Physics(stall=True, stall_slope=3.)
+    original = L.read(L.V2 / "setup_attempt_1/RESULT.json")
+    L.require(physics.as_dict() == original["physics"] and canonical.provenance() == original["runtime"]["canonical"],
+              "Changed physical runtime")
+    A, B = canonical.matrices(physics)
+    return binding.D.T.tracking_controller(A, B, protocol["geometry_recipe"])
 
 
-def verify_mirror():
-    manifest = L.read(HERE / "RECOVERY_MANIFEST.json")
-    directory = OUT / REUSED
-    expected = mirror_expected(manifest)
-    actual = inventory(directory)
-    L.require(set(actual["files"]) == set(expected["files"]) | {"REUSED_FROM.json"} and
-              actual["directories"] == expected["directories"] and
-              all(actual["files"][name] == value for name, value in expected["files"].items()),
-              "Recovery warmup mirror is missing, altered or has unexpected entries")
-    L.require(L.read(directory / "REUSED_FROM.json") == reuse_receipt(manifest), "Warmup reuse lineage changed")
-    verify_warmup(directory)
+def warmup_restore_check(protocol, warmup_dir):
+    """Zero updates: Zeus's warmup must restore and fork exactly in Titan's runtime."""
+    _, train, services, review = S._services(protocol)
+    receipt = L.read(Path(warmup_dir) / "checkpoint.json")
+    prepared, adapter, state = train._prepare(protocol, "honeypot", 0, services, review)
+    adapter, state, lineage = train._branch_start(services, prepared, adapter, state, protocol, "honeypot", 0, "native", Path(warmup_dir))
+    exact = lineage["warmup_state_digest"] == receipt["state_digest"] and lineage["checkpoint_sha256"] == receipt["checkpoint_sha256"]
+    L.require(exact, "Zeus warmup does not restore exactly in Titan's runtime")
+    return {**lineage, "zeus_state_digest": receipt["state_digest"], "exact": True,
+            "model_initializations": 1, "optimizer_updates": 0, "simulator_transitions": 0}
 
 
-def copy_warmup():
-    manifest = L.read(HERE / "RECOVERY_MANIFEST.json")
-    verify_inventory(OLD, manifest["lineage"]["old_run"])
-    verify_warmup(OLD / REUSED)
-    expected = mirror_expected(manifest)
-    destination = OUT / REUSED
-    destination.mkdir(exist_ok=False)
-    for relative in expected["directories"]:
-        (destination / relative).mkdir(exist_ok=False)
-    for relative, digest in expected["files"].items():
-        raw = (OLD / REUSED / relative).read_bytes()
-        L.require(__import__("hashlib").sha256(raw).hexdigest() == digest, "Warmup changed while copying")
-        with (destination / relative).open("xb") as stream:
-            stream.write(raw); stream.flush(); os.fsync(stream.fileno())
-    L.save(destination / "REUSED_FROM.json", reuse_receipt(manifest))
-    verify_mirror()
+def run_titan_smoke(protocol, output, deadline):
+    control = _canonical(protocol)
+    rows = [json.loads(line) for line in (L.REPAIR / "danger_attempt_1/transitions.jsonl").read_text(encoding="utf-8").splitlines() if line]
+    controller = controller_equivalence(control, rows)
+    L.save(output / "titan_controller_equivalence.json", controller)
+    L.require(controller["identical"], "Titan controller differs from Zeus's saved actions; no learner was initialized")
+    deadline()
+    report = S.run_smoke(protocol, output, deadline)
+    banks = bank_equivalence(HERE / "smoke_attempt_1/physical", output / "physical")
+    L.save(output / "titan_bank_equivalence.json", banks)
+    L.require(banks["identical"], "Titan probe banks differ from Zeus's: " + ", ".join(banks["differing"][:5]))
+    deadline()
+    restore = warmup_restore_check(protocol, HERE / "run_amendment_1" / REUSED)
+    L.save(output / "titan_warmup_restore.json", restore)
+    return {**report, "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"),
+            "titan_checks": {"passed": True, "environment": {k: os.environ[k] for k in TITAN_ENV},
+                             "hostname": socket.gethostname(), "controller": controller, "banks": banks, "warmup_restore": restore}}
 
 
 def worker_main(job_id):
-    L.require(os.name == "posix", "Manual existing WSL runtime only")
+    require_wsl()
+    require_titan_environment()
     started = time.monotonic()
     protocol = check(approval=True)
-    old_processes_absent()
-    verify_mirror()
-    expected = next((job for job in jobs() if job["id"] == job_id), None)
-    L.require(expected is not None, "Unknown recovery job; reused warmup must not run")
-    output = OUT / job_id
-    job, attempt = L.read(output / "JOB.json"), L.read(OUT / "ATTEMPT.json")
-    proof = S.smoke_identity()
-    digest = L.sha(HERE / "RECOVERY_MANIFEST.json")
-    L.require(all(job[k] == v for k, v in expected.items()) and
-              job["recovery_manifest_sha256"] == attempt["recovery_manifest_sha256"] == digest and
-              job["smoke_proof"] == attempt["smoke_proof"] == proof, "Recovery job/attempt/proof differs")
-    end = started + min(float(job["remaining_seconds"]), 10645)
+    is_smoke = job_id == "smoke"
+    output = HERE / "titan_smoke_1" if is_smoke else HERE / "run_recovery_1" / job_id
+    job = L.read(output / "JOB.json")
+    L.require(job["id"] == job_id and job["recovery_manifest_sha256"] == L.sha(HERE / "RECOVERY_MANIFEST.json"), "Wrong recovery job")
+    if not is_smoke:
+        proof = titan_smoke_identity()
+        L.require(job["titan_smoke_proof"] == proof == L.read(HERE / "run_recovery_1/ATTEMPT.json")["titan_smoke_proof"],
+                  "Recovery job's authorizing Titan smoke changed")
+        expected = next((j for j in remaining_jobs() if j["id"] == job_id), None)
+        L.require(expected is not None and all(job[k] == v for k, v in expected.items()), "Wrong recovery job")
+    end = started + min(job["remaining_seconds"], SMOKE_SECONDS - 15 if is_smoke else PRODUCTION_SECONDS - 15)
+
     def deadline():
         if time.monotonic() >= end:
-            raise TimeoutError("Recovery remaining deadline reached")
-    final = {"status": "failed", "identity_unchanged": False, "error": None, "no_automatic_retry": True}
+            raise TimeoutError("Recovery shared deadline reached")
+    result = {"status": "failed", "identity_unchanged": False, "error": None, "no_automatic_retry": True}
     try:
-        deadline()
-        binding, train, services, review = S._services(protocol)
-        review["recovery_approval_sha256"] = L.sha(HERE / "RECOVERY_APPROVAL.json")
-        if job["arm"] == "evaluation":
-            worker = L.load("_path_a_worker", HERE / "worker.py")
-            report = worker.evaluate_job(protocol, output, deadline, binding, train, services, review)
+        if is_smoke:
+            report = run_titan_smoke(protocol, output, deadline)
+            L.save(output / "report.json", report)
+            paths = [output / "report.json"] + sorted(output.glob("titan_*.json"))
+            for folder in ("learning", "physical"):
+                paths.extend(p for p in (output / folder).rglob("*") if p.is_file())
+            L.save(output / "ARTIFACTS.json", {p.relative_to(output).as_posix(): L.sha(p) for p in paths})
+            result["artifacts_sha256"] = L.sha(output / "ARTIFACTS.json")
         else:
-            warmup = None if job["arm"] == "warmup" else OUT / f"{job['condition']}_s{job['seed_index']}_warmup"
-            if warmup is not None:
-                L.accepted_job(warmup, 0)
-            report = train.run_job(protocol, job["condition"], job["seed_index"], job["arm"], output,
-                warmup_dir=warmup, deadline=deadline, services=services, training_review=review)
-            L.require(report["status"] == "completed_training_job", "Recovery training job incomplete")
-        deadline()
+            binding, train, services, review = S._services(protocol)
+            review["recovery_approval_sha256"] = L.sha(HERE / "RECOVERY_APPROVAL.json")
+            smoke_runtime = titan_smoke_passed()["runtime"]
+            runtime = services.runtime.runtime_receipt(services.native)
+            L.require(runtime["device_kinds"] == smoke_runtime["device_kinds"] and runtime["packages"] == smoke_runtime["packages"],
+                      "Production runtime differs from the passed Titan smoke")
+            if job["arm"] == "evaluation":
+                W = L.load("_path_a_worker", HERE / "worker.py")
+                report = W.evaluate_job(protocol, output, deadline, binding, train, services, review)
+            else:
+                warmup = None if job["arm"] == "warmup" else output.parent / f"{job['condition']}_s{job['seed_index']}_warmup"
+                if warmup is not None:
+                    L.accepted_job(warmup, 0)
+                report = train.run_job(protocol, job["condition"], job["seed_index"], job["arm"], output,
+                                       warmup_dir=warmup, deadline=deadline, services=services, training_review=review)
+                L.require(report["status"] == "completed_training_job", "Recovery training job incomplete")
         check(approval=True)
-        verify_mirror()
-        final.update(status="completed", identity_unchanged=True, report_sha256=L.sha(output / "report.json"))
+        result.update(status="completed", identity_unchanged=True, report_sha256=L.sha(output / "report.json"))
     except BaseException as exc:
-        final.update(error=type(exc).__name__ + ": " + str(exc), traceback=traceback.format_exc())
-    final.update(elapsed_seconds=time.monotonic()-started, finished_est=datetime.now(L.EST).isoformat())
-    L.save(output / "WORKER_EXIT.json", final)
-    print(json.dumps(final), flush=True)
-    return final
+        result.update(error=type(exc).__name__ + ": " + str(exc), traceback=traceback.format_exc())
+    result.update(elapsed_seconds=time.monotonic() - started, finished_est=datetime.now(L.EST).isoformat())
+    L.save(output / "WORKER_EXIT.json", result)
+    print(json.dumps(result), flush=True)
+    return result
 
 
 def run_child(spec, job_dir, deadline, log):
-    """Retain child ownership through receipt write, wait, timeout and cleanup."""
+    """Own the child through receipt persistence and every failure path."""
     child = None
     try:
-        L.require(time.monotonic() < deadline, "Recovery deadline exhausted before child dispatch")
         child = subprocess.Popen([sys.executable, "-B", "-u", str(HERE / "recovery_launch.py"), "--worker", spec["id"]],
                                  stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        L.save(job_dir / "PROCESS.json", {"pid": child.pid})
-        return child.wait(timeout=max(.001, deadline-time.monotonic()))
+        L.save(job_dir / "PROCESS.json", {"pid": child.pid, "started_est": datetime.now(L.EST).isoformat()})
+        return child.wait(timeout=max(.001, deadline - time.monotonic()))
     except BaseException:
         if child is not None:
             if child.poll() is None:
@@ -298,132 +466,121 @@ def run_child(spec, job_dir, deadline, log):
         raise
 
 
-def evaluation_bounds(accepted, current, output):
-    reports = [r for r in accepted if r.get("status") == "completed_frozen_evaluation"]
-    if reports:
-        exact = sum(reports[-1]["physical_counts"]["completed"].values())
-        return {"lower": exact, "upper": exact, "execution_counts_known": True, "progress_read_error": None}
-    if current is None or current["arm"] != "evaluation":
-        return {"lower": 0, "upper": 0, "execution_counts_known": True, "progress_read_error": None}
-    lower, error = 0, None
-    caps = {"returns": 153600, "own_qpi": 57600, "common_reference": 21600, "prefix_parity": 4800}
-    try:
-        lines = (Path(output) / "progress.jsonl").read_text(encoding="utf-8").splitlines()
-        for line in reversed(lines):
-            try:
-                row = json.loads(line)
-                counts = row["completed"]
-                L.require(set(counts) == set(caps) and all(type(counts[k]) is int and 0 <= counts[k] <= caps[k] for k in caps),
-                          "Invalid evaluation progress counts")
-                lower = sum(counts.values())
-                break
-            except Exception as exc:
-                error = "Ignored incomplete/invalid trailing progress: " + str(exc)
-    except Exception as exc:
-        error = type(exc).__name__ + ": " + str(exc)
-    return {"lower": lower, "upper": 237600, "execution_counts_known": False, "progress_read_error": error,
-            "note": "Saved completed calls are a lower bound only; zero lower bound does not mean zero actual work."}
+class StopAtBoundary(Exception):
+    pass
 
 
-def accounting(accepted, current=None, *, prior_simulator_steps, evaluation_output=None):
-    completed = {k: sum(r["counts"]["completed"][k] for r in accepted if r.get("status") == "completed_training_job") for k in KEYS}
-    upper = {k: completed[k] + (JOB_CAPS[k] if current is not None and current["arm"] != "evaluation" else 0) for k in KEYS}
-    lower_total = {k: SMOKE_COUNTS[k] + JOB_CAPS[k] + LOST_LOWER[k] + completed[k] for k in KEYS}
-    upper_total = {k: SMOKE_COUNTS[k] + JOB_CAPS[k] + LOST_UPPER[k] + upper[k] for k in KEYS}
-    L.require(all(upper_total[k] <= CUMULATIVE_CAPS[k] for k in KEYS), "Recovery cumulative physical upper bound exceeds approval")
-    evaluation = evaluation_bounds(accepted, current, evaluation_output)
-    return {"new_verified_completed_training_counts": completed, "new_training_upper_bounds": upper,
-        "reused_warmup_counts": JOB_CAPS, "smoke_counts": SMOKE_COUNTS,
-        "prior_lost_work_lower": LOST_LOWER, "prior_lost_work_upper": LOST_UPPER,
-        "cumulative_physical_lower": lower_total, "cumulative_physical_upper": upper_total,
-        "cumulative_execution_counts_known": False, "new_evaluation_transition_bounds": evaluation,
-        "cumulative_simulator_transition_lower": prior_simulator_steps + evaluation["lower"],
-        "cumulative_simulator_transition_upper": prior_simulator_steps + evaluation["upper"],
-        "note": "Reused warmup is not new work. Original interrupted native tail is bounded, never assumed zero. Pending undispatched jobs consume no work."}
-
-
-def execute():
-    L.require(os.name == "posix", "Manual existing WSL runtime only; no assistant launch")
+def supervise(mode):
+    require_wsl()
+    require_titan_environment()
     started = time.monotonic()
     check(approval=True)
-    old_processes_absent()
-    proof = S.smoke_identity()
-    prior_simulator_steps = 189655 + sum(S.smoke_passed()["physical"]["counts"]["completed"].values())
-    OUT.mkdir(exist_ok=False)
-    deadline = started + 10645
-    L.save(OUT / "ATTEMPT.json", {"started_est": datetime.now(L.EST).isoformat(), "supervisor_pid": os.getpid(),
-        "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"), "smoke_proof": proof,
-        "process_cap_seconds": 10660, "no_automatic_retry": True,
-        "missing_terminal_receipt": "Incomplete: use persisted progress lower bounds and declared job upper bounds, never assume zero."})
-    result = {"status": "incomplete_recovery", "jobs": [], "error": None, "no_automatic_retry": True,
-              "training_hold_remains": True, "reused_job": REUSED, "smoke_rerun": False}
-    accepted, current = [], None
-    old_handlers = {}
+    is_smoke = mode == "smoke"
+    # This gate runs before any recovery reservation, copy, child or learner.
+    proof = None if is_smoke else titan_smoke_identity()
+    out = HERE / ("titan_smoke_1" if is_smoke else "run_recovery_1")
+    out.mkdir(exist_ok=False)
+    cap = SMOKE_SECONDS if is_smoke else PRODUCTION_SECONDS
+    deadline = started + cap - 15
+    L.save(out / "ATTEMPT.json", {"mode": mode, "machine": "Titan", "hostname": socket.gethostname(),
+           "started_est": datetime.now(L.EST).isoformat(), "supervisor_pid": os.getpid(), "cap_seconds": cap,
+           "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"), "titan_smoke_proof": proof,
+           "environment": {k: os.environ[k] for k in TITAN_ENV}, "no_automatic_retry": True})
+    result = {"status": "incomplete", "mode": mode, "jobs": [], "error": None, "no_automatic_retry": True, "titan_smoke_proof": proof}
+    accepted, durations = [], []
+
     def stop(signum, frame):
-        raise InterruptedError("Recovery supervisor signal " + str(signum))
+        raise InterruptedError("Supervisor signal " + str(signum))
     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
-        old_handlers[sig] = signal.getsignal(sig)
         signal.signal(sig, stop)
     try:
-        copy_warmup()
-        for spec in jobs():
+        if not is_smoke:
+            expected = L.read(HERE / "RECOVERY_MANIFEST.json")["prior"]["reused_warmup"]["files"]
+            L.save(out / "REUSED_WARMUP.json", install_reused_warmup(HERE / "run_amendment_1" / REUSED, out / REUSED, expected))
+        for spec in ([{"id": "smoke", "arm": "smoke"}] if is_smoke else remaining_jobs()):
             check(approval=True)
-            verify_mirror()
-            L.require(S.smoke_identity() == proof, "Recovery smoke proof changed")
-            remaining = deadline-time.monotonic()
-            L.require(remaining > 0, "Recovery shared process deadline exhausted")
-            job_dir = OUT / spec["id"]
-            job_dir.mkdir(exist_ok=False)
+            if not is_smoke:
+                L.require(titan_smoke_identity() == proof, "Authorizing Titan smoke changed")
+            remaining = deadline - time.monotonic()
+            L.require(remaining > 0, "Recovery process deadline exhausted")
+            if not is_smoke and not next_job_fits(spec["arm"], remaining, durations):
+                raise StopAtBoundary(f"{spec['id']} cannot finish in {remaining:.0f} remaining seconds")
+            job_dir = out if is_smoke else out / spec["id"]
+            if not is_smoke:
+                job_dir.mkdir(exist_ok=False)
             L.save(job_dir / "JOB.json", {**spec, "remaining_seconds": remaining,
-                "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"), "smoke_proof": proof})
-            current = spec
-            print(json.dumps({"status": "starting_recovery_job", "id": spec["id"], "remaining_seconds": remaining}), flush=True)
+                   "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json"), "titan_smoke_proof": proof})
+            begun = time.monotonic()
             with (job_dir / "worker.log").open("x", encoding="utf-8") as log:
                 rc = run_child(spec, job_dir, deadline, log)
-            result["jobs"].append({"id": spec["id"], "exit_code": rc})
-            report = L.accepted_job(job_dir, rc)
+            result["jobs"].append({"id": spec["id"], "exit_code": rc, "seconds": time.monotonic() - begun})
+            L.require(rc == 0, "Recovery worker failed: " + spec["id"])
+            report = titan_smoke_passed(out, require_supervisor=False) if is_smoke else L.accepted_job(job_dir, rc)
+            if not is_smoke and spec["arm"] != "evaluation":
+                durations.append(time.monotonic() - begun)
             accepted.append(report)
-            current = None
-            L.save(job_dir / "SUPERVISOR.json", {"status": "accepted", "exit_code": rc,
-                                               "finished_est": datetime.now(L.EST).isoformat()})
-            print(json.dumps({"status": "accepted_recovery_job", "id": spec["id"], "exit_code": rc}), flush=True)
+            L.save(job_dir / "SUPERVISOR.json", {"status": "accepted", "exit_code": rc, "finished_est": datetime.now(L.EST).isoformat()})
         check(approval=True)
-        verify_mirror()
-        L.require(S.smoke_identity() == proof and time.monotonic() < deadline, "Final recovery proof/deadline failed")
-        result.update(status="completed_path_a_recovery", new_execution_counts_known=True,
-            completed_evaluation_transitions=sum(accepted[-1]["physical_counts"]["completed"].values()),
-            evaluation_report=str((OUT / "evaluation/report.json").relative_to(L.REPO)))
+        if is_smoke:
+            result.update(status="passed_runtime_smoke", execution_counts_known=True,
+                          smoke_optimizer_counts=accepted[0]["learning"]["counts"], smoke_physical_counts=accepted[0]["physical"]["counts"])
+        else:
+            L.require(titan_smoke_identity() == proof, "Authorizing Titan smoke changed before final acceptance")
+            result.update(status="completed_path_a_study", execution_counts_known=True,
+                recovery_training_counts={k: sum(r["counts"]["completed"][k] for r in accepted[:-1]) for k in KEYS},
+                evaluation_transitions=sum(accepted[-1]["physical_counts"]["completed"].values()),
+                evaluation_report=str((out / "evaluation/report.json").relative_to(L.REPO)))
+    except StopAtBoundary as exc:
+        result.update(status="stopped_at_job_boundary", error=str(exc), execution_counts_known=True,
+            accepted_jobs=[row["id"] for row in result["jobs"]],
+            recovery_training_counts={k: sum(r["counts"]["completed"][k] for r in accepted) for k in KEYS},
+            note="Every accepted job keeps its authenticated checkpoint; continuing needs a new explicit approval.")
     except BaseException as exc:
-        result.update(error=type(exc).__name__ + ": " + str(exc), new_execution_counts_known=False)
-    finally:
-        for sig, handler in old_handlers.items():
-            signal.signal(sig, handler)
-    result.update(accounting(accepted, current, prior_simulator_steps=prior_simulator_steps, evaluation_output=OUT / "evaluation"),
-                  all_declared_new_jobs_completed=result["status"] == "completed_path_a_recovery",
-                  elapsed_seconds=time.monotonic()-started, finished_est=datetime.now(L.EST).isoformat())
-    if result["status"] == "completed_path_a_recovery":
-        result["cumulative_simulator_transitions"] = prior_simulator_steps + result["completed_evaluation_transitions"]
-        L.require(result["cumulative_simulator_transitions"] <= 498400, "Original simulator ceiling exceeded")
-    L.save(OUT / "RESULT.json", result)
+        result.update(error=type(exc).__name__ + ": " + str(exc), execution_counts_known=False,
+                      accounting_note="Accepted jobs are exact; the unfinished job keeps its planned upper bound, never zero; no retry.")
+    result.update(elapsed_seconds=time.monotonic() - started, finished_est=datetime.now(L.EST).isoformat())
+    L.save(out / "RESULT.json", result)
     print(json.dumps(result), flush=True)
     return result
+
+
+def approve():
+    """Only the user runs this: it records their explicit approval of the sealed recovery."""
+    check(approval=False)
+    print(approval_text(), flush=True)
+    L.save(HERE / "RECOVERY_APPROVAL.json", approval_expected())
+    return {"status": "approval_recorded", "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json")}
+
+
+def status():
+    state = {name: (HERE / name).exists() for name in ("RECOVERY_MANIFEST.json", "RECOVERY_APPROVAL.json", "titan_smoke_1", "run_recovery_1")}
+    if not state["RECOVERY_MANIFEST.json"]:
+        S.check(approval=True)
+        lineage = _lineage_now()
+        return {"status": "ready_to_prepare", **state, "interrupted_bounds": {k: lineage["interrupted"][k] for k in ("lower", "upper", "source")},
+                "accounting": accounting(lineage)}
+    check(approval=False)
+    return {"status": "source_checked_not_executed", **state}
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group(required=True)
-    modes.add_argument("--prepare", action="store_true")
-    modes.add_argument("--check", action="store_true")
+    modes.add_argument("--check", action="store_true", help="verify copied Zeus artifacts or the sealed recovery; no execution")
+    modes.add_argument("--prepare", action="store_true", help="seal RECOVERY_MANIFEST.json once")
+    modes.add_argument("--approve", action="store_true", help="user only: record explicit approval of the sealed recovery")
+    modes.add_argument("--smoke", action="store_true")
     modes.add_argument("--execute", action="store_true")
     modes.add_argument("--worker")
     args = parser.parse_args()
-    if args.prepare:
+    if args.check:
+        print(json.dumps(status(), indent=2, default=str))
+    elif args.prepare:
         print(json.dumps(prepare()))
-    elif args.check:
-        check()
-        print(json.dumps({"status": "checked_recovery_not_executed", "approval_present": (HERE / "RECOVERY_APPROVAL.json").exists(),
-                          "attempt_exists": OUT.exists(), "recovery_manifest_sha256": L.sha(HERE / "RECOVERY_MANIFEST.json")}))
+    elif args.approve:
+        print(json.dumps(approve()))
     elif args.worker:
         raise SystemExit(0 if worker_main(args.worker)["status"] == "completed" else 1)
     else:
-        raise SystemExit(0 if execute()["status"] == "completed_path_a_recovery" else 1)
+        result = supervise("smoke" if args.smoke else "production")
+        raise SystemExit(0 if result["status"] in ("passed_runtime_smoke", "completed_path_a_study") else 1)
