@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { mulberry32, type Dataset } from "@/lib/rl";
 import { KNEE, rolloutThruster, thrustStall, type ThrusterFrame } from "@/lib/thrusterchain";
+import { PhysicsBench } from "./physics-bench";
 
 type Mode = "policy" | "behavior";
 
@@ -426,6 +427,7 @@ export function EpisodePlayer({ ds, Q, version, trained }: { ds: Dataset; Q: Flo
       {gf?.done && safeIdx === total - 1 && (
         <p className="text-[11.5px] text-muted-foreground">Episode terminated after {total} steps.</p>
       )}
+      {isThruster && <PhysicsBench policy={policy} trained={trained} />}
     </div>
   );
 }

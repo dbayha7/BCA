@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SweepRouteImport } from './routes/sweep'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 
+const SweepRoute = SweepRouteImport.update({
+  id: '/sweep',
+  path: '/sweep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
@@ -32,35 +38,46 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/compare': typeof CompareRoute
+  '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/compare': typeof CompareRoute
+  '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/compare': typeof CompareRoute
+  '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/compare' | '/checkout/success'
+  fullPaths: '/' | '/compare' | '/sweep' | '/checkout/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/compare' | '/checkout/success'
-  id: '__root__' | '/' | '/compare' | '/checkout/success'
+  to: '/' | '/compare' | '/sweep' | '/checkout/success'
+  id: '__root__' | '/' | '/compare' | '/sweep' | '/checkout/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CompareRoute: typeof CompareRoute
+  SweepRoute: typeof SweepRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sweep': {
+      id: '/sweep'
+      path: '/sweep'
+      fullPath: '/sweep'
+      preLoaderRoute: typeof SweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compare': {
       id: '/compare'
       path: '/compare'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CompareRoute: CompareRoute,
+  SweepRoute: SweepRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
 }
 export const routeTree = rootRouteImport

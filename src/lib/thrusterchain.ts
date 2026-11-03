@@ -151,6 +151,27 @@ const P_HI = 2.4;
 const V_LO = -1.6;
 const V_HI = 1.6;
 
+/** Everything an external simulator needs to map the full 13-dim state onto the tabular grid and decode actions. */
+export const THRUSTER_PROJECTION = {
+  stateDims: 13,
+  commandDims: 4,
+  xAxis: { stateIndex: 0, name: "p1 (link-1 position)", lo: P_LO, hi: P_HI, bins: W },
+  yAxis: { stateIndex: 1, name: "v1 (link-1 velocity)", lo: V_LO, hi: V_HI, bins: H, inverted: true },
+  cellFormula:
+    "xi = clamp(floor((x[0] - xLo) / (xHi - xLo) * xBins), 0, xBins-1); yi = clamp(floor((yHi - x[1]) / (yHi - yLo) * yBins), 0, yBins-1); cell = yi * xBins + xi",
+  actionCommands: [
+    [0.95, 0, 0, 0],
+    [0.5, 0, 0, 0],
+    [0, 0, 0, 0],
+    [-0.5, 0, 0, 0],
+  ] as number[][],
+  stallKnee: KNEE,
+  stallSlope: STALL_SLOPE,
+  horizon: HORIZON,
+  specGamma: SPEC_GAMMA,
+  note: "Commands are clipped to [-1, 1] and cast to float32 before the stall nonlinearity (|a| > knee → slope applied). Dynamics: x' = A·x + B·stall(cmd) in float64.",
+};
+
 function toCell(x: Float64Array): number {
   const xi = clamp(Math.floor(((x[0] - P_LO) / (P_HI - P_LO)) * W), 0, W - 1);
   const yi = clamp(Math.floor(((V_HI - x[1]) / (V_HI - V_LO)) * H), 0, H - 1);
@@ -231,4 +252,129 @@ export function generateThrusterDataset(seed: number, onProgress?: (pct: number,
     return { s2: ds.modeNext[k], r: ds.rewardMean[k], done: false };
   };
   return ds;
+}
+
+/* ---------------- Physics test bench ---------------- */
+
+export interface PhysicsOverrides {
+  /** Stall knee |a| above which thrust degrades (spec: 0.8). */
+  knee: number;
+  /** Stall slope (spec: 1.5). */
+  slope: number;
+  /** Multiplier on the initial ocean current x[10] (spec: 1). */
+  currentScale: number;
+  /** Multiplier on the initial wave amplitude x[11..12] (spec: 1). */
+  waveScale: number;
+  /** Weight on the state-energy term of the reward (spec: 1). */
+  energyWeight: number;
+  /** Weight on the ‖command‖² effort term of the reward (spec: 0.3). */
+  cmdWeight: number;
+  /** Extra per-step penalty whenever thruster 1 exceeds the stall knee (spec: 0). */
+  stallPenalty: number;
+  /** Success criterion: an episode succeeds if final oscillator energy Σx[0..9]² is below this (does not affect reward). */
+  successEnergy: number;
+}
+
+export const SPEC_PHYSICS: PhysicsOverrides = {
+  knee: KNEE,
+  slope: STALL_SLOPE,
+  currentScale: 1,
+  waveScale: 1,
+  energyWeight: 1,
+  cmdWeight: 0.3,
+  stallPenalty: 0,
+  successEnergy: 1,
+};
+
+export type BenchMode = { mode: "behavior" } | { mode: "policy"; policy: (cell: number) => number } | { mode: "coast" };
+
+export interface BenchStats {
+  episodes: number;
+  meanReturn: number;
+  stdReturn: number;
+  minReturn: number;
+  maxReturn: number;
+  /** Fraction of steps where thruster 0 exceeded the stall knee. */
+  stallRate: number;
+  /** Fraction of episodes ending with final oscillator energy below the success threshold. */
+  successRate: number;
+  /** Mean |p1| over all steps (lower = link 1 better stabilized). */
+  meanAbsP1: number;
+  /** Mean oscillator energy Σx[0..9]² at the final step. */
+  finalEnergy: number;
+  /** Per-episode returns (for the distribution strip). */
+  returns: number[];
+}
+
+function stepWith(x: Float64Array, cmd: number[], ph: PhysicsOverrides): { nx: Float64Array; r: number } {
+  const th = cmd.map((a) => clamp(a, -ph.knee, ph.knee) - ph.slope * Math.sign(a) * Math.max(Math.abs(a) - ph.knee, 0));
+  const nx = new Float64Array(13);
+  for (let i = 0; i < 13; i++) {
+    let v = 0;
+    for (let j = 0; j < 13; j++) v += A[i][j] * x[j];
+    v += B[i][0] * th[0] + B[i][1] * th[1] + B[i][2] * th[2] + B[i][3] * th[3];
+    nx[i] = v;
+  }
+  let energy = 0;
+  for (let j = 0; j < 10; j++) energy += x[j] * x[j];
+  let effort = 0;
+  for (let k = 0; k < 4; k++) effort += cmd[k] * cmd[k];
+  let cost = ph.energyWeight * energy + ph.cmdWeight * effort;
+  if (Math.abs(cmd[0]) > ph.knee) cost += ph.stallPenalty;
+  return { nx, r: -cost };
+}
+
+/**
+ * Evaluate a controller over many real 13-dim episodes of the stall-world physics,
+ * optionally under perturbed physics (knee, slope, current, waves) to stress-test
+ * whether the learned tabular policy transfers beyond the exact spec.
+ * Same seeds are used for every mode so comparisons are paired.
+ */
+export function benchmarkThruster(opts: BenchMode, episodes: number, ph: PhysicsOverrides = SPEC_PHYSICS, baseSeed = 1000): BenchStats {
+  const returns: number[] = [];
+  let stalls = 0;
+  let steps = 0;
+  let absP1 = 0;
+  let finalE = 0;
+  let successes = 0;
+  for (let e = 0; e < episodes; e++) {
+    const rng = mulberry32((baseSeed + e) * 104729 + 1);
+    let x = resetRecorded(rng);
+    x[10] *= ph.currentScale;
+    x[11] *= ph.waveScale;
+    x[12] *= ph.waveScale;
+    let cum = 0;
+    for (let t = 0; t < HORIZON; t++) {
+      let cmd: number[];
+      if (opts.mode === "behavior") cmd = executedCommand(recordCommand(rng, 0.25));
+      else if (opts.mode === "coast") cmd = [0, 0, 0, 0];
+      else cmd = executedCommand(actionToCommand(opts.policy(toCell(x))));
+      if (Math.abs(cmd[0]) > ph.knee) stalls++;
+      absP1 += Math.abs(x[0]);
+      steps++;
+      const { nx, r } = stepWith(x, cmd, ph);
+      cum += r;
+      x = nx;
+    }
+    let en = 0;
+    for (let j = 0; j < 10; j++) en += x[j] * x[j];
+    finalE += en;
+    if (en < ph.successEnergy) successes++;
+    returns.push(cum);
+  }
+  const n = Math.max(1, returns.length);
+  const mean = returns.reduce((a, b) => a + b, 0) / n;
+  const variance = returns.reduce((a, b) => a + (b - mean) * (b - mean), 0) / n;
+  return {
+    episodes,
+    meanReturn: mean,
+    stdReturn: Math.sqrt(variance),
+    minReturn: returns.length ? Math.min(...returns) : 0,
+    maxReturn: returns.length ? Math.max(...returns) : 0,
+    stallRate: steps ? stalls / steps : 0,
+    successRate: successes / n,
+    meanAbsP1: steps ? absP1 / steps : 0,
+    finalEnergy: finalE / n,
+    returns,
+  };
 }

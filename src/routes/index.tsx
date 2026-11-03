@@ -23,9 +23,14 @@ import {
 } from "@/lib/rl";
 import { generateThrusterInWorker, parseCustomInWorker } from "@/lib/worker-client";
 import { Progress } from "@/components/ui/progress";
-import { buildPolicyExport, downloadPolicyExport } from "@/lib/export-policy";
+import { buildPolicyExport, downloadPolicyExport, type ExportTrigger } from "@/lib/export-policy";
+import { ExportPanel } from "@/components/lab/export-panel";
 import { CheckpointHistory, type Checkpoint } from "@/components/lab/checkpoint-history";
 import { EpisodePlayer } from "@/components/lab/episode-player";
+import { ExperimentLog } from "@/components/lab/experiment-log";
+import { LicensePanel } from "@/components/lab/license-panel";
+import { CollaborationPanel } from "@/components/lab/collaboration-panel";
+import { buildLicenseBlock, isExpired, signLicenseBlock, DEFAULT_LICENSE, type LicenseConfig, type SigningKey } from "@/lib/licensing";
 
 export const Route = createFileRoute("/")({ component: LabPage });
 
@@ -285,12 +290,46 @@ function LabPage() {
     if (activeCheckpointId === id) setActiveCheckpointId(null);
   };
 
-  const exportPolicy = () => {
-    if (!ds || history.length === 0) return;
-    const exp = buildPolicyExport(qRef.current, ds, hyper, history, evalRes, 1234, UPDATES_PER_STEP);
+  const [license, setLicense] = useState<LicenseConfig>(DEFAULT_LICENSE);
+  const [signingKey, setSigningKey] = useState<SigningKey | null>(null);
+
+  const exportRef = useRef({ ds, hyper, history, evalRes, license, signingKey });
+  exportRef.current = { ds, hyper, history, evalRes, license, signingKey };
+  const exportModel = useCallback(async (trigger: ExportTrigger) => {
+    const { ds: d, hyper: h, history: hist, evalRes: ev, license: lic, signingKey: key } = exportRef.current;
+    if (!d || hist.length === 0) return;
+    if (isExpired(lic)) {
+      toast.error("License has expired — extend or clear the expiry date to export.");
+      return;
+    }
+    if (lic.exportLock && lic.accessKey.length >= 4) {
+      const entered = window.prompt("This export is access-controlled. Enter the access key to download:");
+      if (entered === null) return;
+      if (entered !== lic.accessKey) {
+        toast.error("Wrong access key — export blocked.");
+        return;
+      }
+    }
+    const exp = buildPolicyExport(qRef.current, d, h, hist, ev, 1234, UPDATES_PER_STEP, trigger);
+    const checksum = exp.reconstruction.checksum.value;
+    let block = buildLicenseBlock(lic, checksum);
+    if (key) {
+      try {
+        block = await signLicenseBlock(block, checksum, key);
+      } catch {
+        toast.error("Signing failed — export cancelled. Reload your key backup and try again.");
+        return;
+      }
+    }
+    (exp as unknown as Record<string, unknown>).license = block;
     downloadPolicyExport(exp);
-    toast.success(`Exported policy after ${exp.training.totalUpdates.toLocaleString()} updates`);
-  };
+    toast.success(
+      trigger.kind === "manual"
+        ? `Exported policy after ${exp.training.totalUpdates.toLocaleString()} updates`
+        : `Threshold ${trigger.threshold.toFixed(2)} reached — exported model at ${exp.training.totalUpdates.toLocaleString()} updates`,
+    );
+  }, []);
+  const exportPolicy = () => void exportModel({ kind: "manual" });
 
   const last = history[history.length - 1];
   const xs = history.map((h) => h.updates);
@@ -309,6 +348,16 @@ function LabPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              to="/sweep"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
+                <path d="M1 14h6M9 8h6M17 16h6" />
+              </svg>
+              Sweep
+            </Link>
             <Link
               to="/compare"
               className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -628,6 +677,22 @@ function LabPage() {
                     : "Estimates stay close to the true return of the learned policy: the conservative penalty is keeping the policy in-distribution."}
               </p>
             </div>
+          </Panel>
+
+          <Panel title="Model Export" delay={310} right={<span className="font-mono text-[10px] text-muted-foreground">reward-gated</span>}>
+            <ExportPanel ds={ds} history={history} optimal={optimal} onExport={exportModel} />
+          </Panel>
+
+          <Panel title="Licensing & Access Control" delay={315} right={<span className="font-mono text-[10px] text-muted-foreground">{license.exportLock && license.accessKey.length >= 4 ? "locked" : "open"}{signingKey ? " · signed" : ""}</span>}>
+            <LicensePanel cfg={license} onChange={setLicense} signingKey={signingKey} onSigningKeyChange={setSigningKey} />
+          </Panel>
+
+          <Panel title="Experiment Log" delay={320} right={<span className="font-mono text-[10px] text-muted-foreground">auto-generated</span>}>
+            <ExperimentLog history={history} ds={ds} hyper={hyper} optimal={optimal} />
+          </Panel>
+
+          <Panel title="Researcher Collaboration" delay={325} right={<span className="font-mono text-[10px] text-muted-foreground">threads · share</span>}>
+            <CollaborationPanel history={history} ds={ds} hyper={hyper} optimal={optimal} />
           </Panel>
 
           <Panel title="Checkpoint History" delay={330} right={<span className="font-mono text-[10px] text-muted-foreground">{checkpoints.length}/20 saved</span>}>
