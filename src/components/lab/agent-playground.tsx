@@ -67,9 +67,9 @@ type Results =
 
 function Panel({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="min-w-0 rounded-xl border border-border bg-card shadow-sm">
+    <section className="min-w-0 bca-panel">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+        <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />{title}</h2>
         {right}
       </header>
       <div className="p-4">{children}</div>

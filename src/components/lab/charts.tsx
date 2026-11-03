@@ -14,7 +14,14 @@ function fmt(v: number) {
   return v.toFixed(2);
 }
 
-export function LineChart({ series, xs, height = 150, empty }: { series: Series[]; xs: number[]; height?: number; empty: string }) {
+/** Optional band: the area between two series, tinted — e.g. the gap between an estimate and the truth. */
+export interface ChartBand {
+  from: number;
+  to: number;
+  color: string;
+}
+
+export function LineChart({ series, xs, height = 150, empty, band }: { series: Series[]; xs: number[]; height?: number; empty: string; band?: ChartBand }) {
   const W = 320;
   const H = height;
   const pad = { l: 34, r: 8, t: 8, b: 18 };
@@ -73,13 +80,29 @@ export function LineChart({ series, xs, height = 150, empty }: { series: Series[
       <text x={W - pad.r} y={H - 4} textAnchor="end" className="fill-muted-foreground font-mono" fontSize="8.5">
         {geo.x1} upd
       </text>
+      {band && series[band.from] && series[band.to] && (
+        <path
+          d={
+            series[band.from].values.map((v, i) => `${i ? "L" : "M"}${geo.px(xs[i]).toFixed(1)},${geo.py(v).toFixed(1)}`).join(" ") +
+            " " +
+            series[band.to].values
+              .map((v, i) => [i, v] as const)
+              .reverse()
+              .map(([i, v]) => `L${geo.px(xs[i]).toFixed(1)},${geo.py(v).toFixed(1)}`)
+              .join(" ") +
+            " Z"
+          }
+          fill={band.color}
+          opacity="0.16"
+        />
+      )}
       {series.map((s) => {
         const d = s.values.map((v, i) => `${i ? "L" : "M"}${geo.px(xs[i]).toFixed(1)},${geo.py(v).toFixed(1)}`).join(" ");
         const last = s.values[s.values.length - 1];
         return (
           <g key={s.name}>
-            <path d={d} fill="none" stroke={s.color} strokeWidth="1.75" strokeDasharray={s.dashed ? "4 3" : undefined} strokeLinejoin="round" strokeLinecap="round" />
-            <circle cx={geo.px(xs[n - 1])} cy={geo.py(last)} r="2.5" fill={s.color} />
+            <path d={d} fill="none" stroke={s.color} strokeWidth={s.dashed ? 1.8 : 2.2} strokeDasharray={s.dashed ? "5 3" : undefined} strokeLinejoin="round" strokeLinecap="round" />
+            <circle cx={geo.px(xs[n - 1])} cy={geo.py(last)} r="3" fill={s.color} stroke="var(--card)" strokeWidth="1.5" />
           </g>
         );
       })}

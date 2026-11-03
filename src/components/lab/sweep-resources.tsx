@@ -254,9 +254,9 @@ export function ResourceMonitor({
   const perRun = snap.runsFinished > 0 ? snap.cpuMs / snap.runsFinished : 0;
 
   return (
-    <section className="rounded-xl border border-border bg-card shadow-sm" aria-label="Resource monitor">
+    <section className="bca-panel" aria-label="Resource monitor">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Resource monitor</h2>
+        <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Resource monitor</h2>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
             {poolSize} worker{poolSize === 1 ? "" : "s"}

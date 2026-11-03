@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* BCA type: Bricolage Grotesque (display), Source Sans 3 (reading), JetBrains Mono (every compared number). */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Source+Sans+3:ital,wght@0,400..700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss" source("../src");
 
 @plugin "tailwindcss-animate";
@@ -81,13 +82,13 @@
     }
   }
 
-  --font-sans: Inter, sans-serif;
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
 
-  --font-mono: JetBrains Mono, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
-  --font-serif: Source Serif 4, serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
 
-  --font-display: Space Grotesk, Inter, sans-serif;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
 
   --radius: 0.5rem;
 
@@ -138,50 +139,106 @@
   --color-destructive-foreground: var(--destructive-foreground)
 }
 
+/* ==========================================================================
+   BCA Lab theme — the BCA design system, with a "spice" layer for the app.
+
+   Base (from the BCA design system): warm gray-green paper, near-black ink,
+   one blue for the interface, and colors that each mean one thing:
+     blue  (k-learn)   the learned parts: the critic's estimate, the trained policy
+     ink   (k-ref)     the reference: ground truth, the optimal policy
+     green (sit-rec)   the recorded data and the behavior policy that made it
+     orange(sit-strong) overestimation and other shifts away from the data
+     amber (region)    outside the data's support (OOD), always as an area/edge
+     red   (k-stall)   harm: the stall, a hazard, a diverged run, a destructive action
+     green (ok)        pass, goal, success
+   Text stays in the ink tokens on every ground.
+
+   Spice (the lab's additions, used sparingly):
+     - The band: BCA's confidence band — two lines with the tint between — is the
+       lab's signature mark (logo, header edge, active tab).
+     - Paper: a faint dot grid and, at the top of the page, a soft wash of the
+       interface blue. No other gradients or glows.
+     - Display type set larger and heavier for titles; panel titles in the display
+       face with a small band tick.
+     - Raised panels (BCA's shadow-raised), 12px radius, accent border on hover.
+     - Motion: 150–200ms on hover, focus and selection; none under reduced motion.
+   ========================================================================== */
+
 :root {
-  --radius: 0.5rem;
-  --background: oklch(0.975 0.004 275);
-  --foreground: oklch(0.22 0.02 275);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 275);
-  --surface: oklch(0.955 0.006 275);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 275);
-  --primary: oklch(0.55 0.23 285);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.95 0.008 275);
-  --secondary-foreground: oklch(0.32 0.03 275);
-  --muted: oklch(0.955 0.006 275);
-  --muted-foreground: oklch(0.5 0.02 275);
-  --accent: oklch(0.94 0.03 285);
-  --accent-foreground: oklch(0.38 0.17 285);
-  --destructive: oklch(0.58 0.21 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.56 0.13 170);
-  --success-foreground: oklch(0.99 0 0);
-  --warning: oklch(0.68 0.17 55);
-  --warning-foreground: oklch(0.2 0.03 55);
-  --info: oklch(0.6 0.14 235);
-  --info-foreground: oklch(0.99 0 0);
-  --border: oklch(0.905 0.008 275);
-  --input: oklch(0.89 0.01 275);
-  --ring: oklch(0.55 0.23 285);
-  --chart-1: oklch(0.55 0.23 285);
-  --chart-2: oklch(0.6 0.13 190);
-  --chart-3: oklch(0.68 0.17 55);
-  --chart-4: oklch(0.6 0.14 235);
-  --chart-5: oklch(0.58 0.21 25);
-  --sidebar: oklch(0.985 0.003 275);
-  --sidebar-foreground: oklch(0.22 0.02 275);
-  --sidebar-primary: oklch(0.55 0.23 285);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.94 0.03 285);
-  --sidebar-accent-foreground: oklch(0.38 0.17 285);
-  --sidebar-border: oklch(0.905 0.008 275);
-  --sidebar-ring: oklch(0.55 0.23 285);
-  --font-sans: Inter, sans-serif;
-  --font-serif: Source Serif 4, serif;
-  --font-mono: JetBrains Mono, monospace;
+  /* BCA tokens (light) */
+  --bca-bg: #f4f5f1;
+  --bca-surface: #ffffff;
+  --bca-surface-2: #eceee8;
+  --bca-ink: #1a201e;
+  --bca-ink-2: #2b3330;
+  --bca-muted: #4f5853;
+  --bca-rule: #d6dad2;
+  --bca-rule-strong: #b3b9b0;
+  --bca-accent: #2346b8;
+  --bca-accent-ink: #1b3a9c;
+  --bca-accent-soft: #e3e8f7;
+  --bca-k-learn: #1e4592;
+  --bca-k-ref: #2b3330;
+  --bca-k-stall: #9f2818;
+  --bca-warn-soft: #f3e3e1;
+  --bca-ok: #217447;
+  --bca-ok-soft: #dcefe3;
+  --bca-region: #c6b042;
+  --bca-region-ink: #735d10;
+  --bca-region-soft: #f0eace;
+  --bca-sit-rec: #00714f;
+  --bca-sit-strong: #d56c00;
+  /* Spice: a text-safe orange for overestimation numbers (sit-strong is a mark color, 3.5:1). */
+  --bca-strong-ink: #a65300;
+  --bca-sit-waves: #0092c1;
+  --bca-sit-kicks: #ce4c8e;
+  --bca-water-ink: #44708a;
+  --bca-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 14px rgba(0, 0, 0, 0.05);
+  --bca-wash: color-mix(in srgb, var(--bca-accent) 9%, transparent);
+
+  --radius: 0.625rem;
+  --background: var(--bca-bg);
+  --foreground: var(--bca-ink);
+  --card: var(--bca-surface);
+  --card-foreground: var(--bca-ink);
+  --surface: var(--bca-surface-2);
+  --popover: var(--bca-surface);
+  --popover-foreground: var(--bca-ink);
+  --primary: var(--bca-accent);
+  --primary-foreground: var(--bca-surface);
+  --secondary: var(--bca-surface-2);
+  --secondary-foreground: var(--bca-ink-2);
+  --muted: var(--bca-surface-2);
+  --muted-foreground: var(--bca-muted);
+  --accent: var(--bca-accent-soft);
+  --accent-foreground: var(--bca-accent-ink);
+  --destructive: var(--bca-k-stall);
+  --destructive-foreground: var(--bca-surface);
+  --success: var(--bca-ok);
+  --success-foreground: var(--bca-surface);
+  --warning: var(--bca-region-ink);
+  --warning-foreground: var(--bca-surface);
+  --info: var(--bca-water-ink);
+  --info-foreground: var(--bca-surface);
+  --border: var(--bca-rule);
+  --input: var(--bca-rule-strong);
+  --ring: var(--bca-accent);
+  --chart-1: var(--bca-k-learn);
+  --chart-2: var(--bca-k-ref);
+  --chart-3: var(--bca-sit-rec);
+  --chart-4: var(--bca-sit-strong);
+  --chart-5: var(--bca-sit-kicks);
+  --sidebar: var(--bca-surface);
+  --sidebar-foreground: var(--bca-ink);
+  --sidebar-primary: var(--bca-accent);
+  --sidebar-primary-foreground: var(--bca-surface);
+  --sidebar-accent: var(--bca-accent-soft);
+  --sidebar-accent-foreground: var(--bca-accent-ink);
+  --sidebar-border: var(--bca-rule);
+  --sidebar-ring: var(--bca-accent);
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
   --shadow-blur: 3px;
@@ -190,61 +247,91 @@
   --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --spacing: 0.25rem;
-  --shadow-2xs: 0 1px 2px 0px hsl(240 20% 10% / 0.04);
-  --shadow-xs: 0 1px 2px 0px hsl(240 20% 10% / 0.05);
-  --shadow-sm: 0 1px 2px 0px hsl(240 20% 10% / 0.06), 0 1px 3px -1px hsl(240 20% 10% / 0.06);
-  --shadow: 0 1px 3px 0px hsl(240 20% 10% / 0.08), 0 1px 2px -1px hsl(240 20% 10% / 0.08);
-  --shadow-md: 0 2px 6px -1px hsl(240 20% 10% / 0.08), 0 2px 4px -2px hsl(240 20% 10% / 0.06);
-  --shadow-lg: 0 8px 24px -6px hsl(240 20% 10% / 0.14), 0 2px 6px -2px hsl(240 20% 10% / 0.08);
-  --shadow-xl: 0 16px 40px -10px hsl(240 20% 10% / 0.2);
-  --shadow-2xl: 0 24px 60px -12px hsl(240 20% 10% / 0.28);
+  --shadow-2xs: 0 1px 2px 0px rgb(0 0 0 / 0.04);
+  --shadow-xs: 0 1px 2px 0px rgb(0 0 0 / 0.05);
+  --shadow-sm: var(--bca-shadow-raised);
+  --shadow: var(--bca-shadow-raised);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 0.06), 0 8px 20px rgb(0 0 0 / 0.07);
+  --shadow-lg: 0 6px 22px rgb(0 0 0 / 0.12);
+  --shadow-xl: 0 6px 22px rgba(0, 0, 0, 0.22);
+  --shadow-2xl: 0 18px 50px rgb(0 0 0 / 0.24);
   --tracking-normal: 0em;
 }
 
 .dark {
-  --background: oklch(0.15 0.012 275);
-  --foreground: oklch(0.94 0.006 275);
-  --card: oklch(0.19 0.014 275);
-  --card-foreground: oklch(0.94 0.006 275);
-  --surface: oklch(0.225 0.016 275);
-  --popover: oklch(0.21 0.016 275);
-  --popover-foreground: oklch(0.94 0.006 275);
-  --primary: oklch(0.7 0.19 288);
-  --primary-foreground: oklch(0.16 0.03 285);
-  --secondary: oklch(0.24 0.016 275);
-  --secondary-foreground: oklch(0.9 0.008 275);
-  --muted: oklch(0.225 0.016 275);
-  --muted-foreground: oklch(0.7 0.016 275);
-  --accent: oklch(0.28 0.06 285);
-  --accent-foreground: oklch(0.88 0.08 288);
-  --destructive: oklch(0.65 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.74 0.13 170);
-  --success-foreground: oklch(0.18 0.03 170);
-  --warning: oklch(0.78 0.15 60);
-  --warning-foreground: oklch(0.2 0.03 55);
-  --info: oklch(0.74 0.12 235);
-  --info-foreground: oklch(0.18 0.03 235);
-  --border: oklch(0.29 0.016 275);
-  --input: oklch(0.32 0.018 275);
-  --ring: oklch(0.7 0.19 288);
-  --chart-1: oklch(0.7 0.19 288);
-  --chart-2: oklch(0.78 0.12 190);
-  --chart-3: oklch(0.78 0.15 60);
-  --chart-4: oklch(0.74 0.12 235);
-  --chart-5: oklch(0.68 0.2 25);
-  --sidebar: oklch(0.17 0.013 275);
-  --sidebar-foreground: oklch(0.94 0.006 275);
-  --sidebar-primary: oklch(0.7 0.19 288);
-  --sidebar-primary-foreground: oklch(0.16 0.03 285);
-  --sidebar-accent: oklch(0.28 0.06 285);
-  --sidebar-accent-foreground: oklch(0.88 0.08 288);
-  --sidebar-border: oklch(0.29 0.016 275);
-  --sidebar-ring: oklch(0.7 0.19 288);
-  --radius: 0.5rem;
-  --font-sans: Inter, sans-serif;
-  --font-serif: Source Serif 4, serif;
-  --font-mono: JetBrains Mono, monospace;
+  /* BCA tokens (dark): chosen for the dark surface, not inverted */
+  --bca-bg: #111412;
+  --bca-surface: #191d1b;
+  --bca-surface-2: #222724;
+  --bca-ink: #e7ebe8;
+  --bca-ink-2: #d5dbd7;
+  --bca-muted: #a9b2ad;
+  --bca-rule: #2e3431;
+  --bca-rule-strong: #4a524e;
+  --bca-accent: #8199ec;
+  --bca-accent-ink: #aabcf3;
+  --bca-accent-soft: #1e2640;
+  --bca-k-learn: #6797ff;
+  --bca-k-ref: #e7ebe8;
+  --bca-k-stall: #dc6e76;
+  --bca-warn-soft: #442f2f;
+  --bca-ok: #6cc795;
+  --bca-ok-soft: #163024;
+  --bca-region: #ac9202;
+  --bca-region-ink: #c9b23a;
+  --bca-region-soft: #3c3915;
+  --bca-sit-rec: #10a07b;
+  --bca-sit-strong: #e0862c;
+  --bca-strong-ink: #f0a060;
+  --bca-sit-waves: #2a9fd0;
+  --bca-sit-kicks: #d0579b;
+  --bca-water-ink: #7fb0c9;
+  --bca-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
+  --bca-wash: color-mix(in srgb, var(--bca-accent) 13%, transparent);
+
+  --background: var(--bca-bg);
+  --foreground: var(--bca-ink);
+  --card: var(--bca-surface);
+  --card-foreground: var(--bca-ink);
+  --surface: var(--bca-surface-2);
+  --popover: var(--bca-surface);
+  --popover-foreground: var(--bca-ink);
+  --primary: var(--bca-accent);
+  --primary-foreground: var(--bca-bg);
+  --secondary: var(--bca-surface-2);
+  --secondary-foreground: var(--bca-ink-2);
+  --muted: var(--bca-surface-2);
+  --muted-foreground: var(--bca-muted);
+  --accent: var(--bca-accent-soft);
+  --accent-foreground: var(--bca-accent-ink);
+  --destructive: var(--bca-k-stall);
+  --destructive-foreground: var(--bca-bg);
+  --success: var(--bca-ok);
+  --success-foreground: var(--bca-bg);
+  --warning: var(--bca-region-ink);
+  --warning-foreground: var(--bca-bg);
+  --info: var(--bca-water-ink);
+  --info-foreground: var(--bca-bg);
+  --border: var(--bca-rule);
+  --input: var(--bca-rule-strong);
+  --ring: var(--bca-accent);
+  --chart-1: var(--bca-k-learn);
+  --chart-2: var(--bca-k-ref);
+  --chart-3: var(--bca-sit-rec);
+  --chart-4: var(--bca-sit-strong);
+  --chart-5: var(--bca-sit-kicks);
+  --sidebar: var(--bca-surface);
+  --sidebar-foreground: var(--bca-ink);
+  --sidebar-primary: var(--bca-accent);
+  --sidebar-primary-foreground: var(--bca-bg);
+  --sidebar-accent: var(--bca-accent-soft);
+  --sidebar-accent-foreground: var(--bca-accent-ink);
+  --sidebar-border: var(--bca-rule);
+  --sidebar-ring: var(--bca-accent);
+  --radius: 0.625rem;
+  --font-sans: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
   --shadow-color: oklch(0 0 0);
   --shadow-opacity: 0.1;
   --shadow-blur: 3px;
@@ -253,24 +340,162 @@
   --shadow-offset-y: 1px;
   --letter-spacing: 0em;
   --spacing: 0.25rem;
-  --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.2);
-  --shadow-xs: 0 1px 2px 0px hsl(0 0% 0% / 0.25);
-  --shadow-sm: 0 1px 2px 0px hsl(0 0% 0% / 0.3), 0 1px 3px -1px hsl(0 0% 0% / 0.3);
-  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.35), 0 1px 2px -1px hsl(0 0% 0% / 0.3);
-  --shadow-md: 0 2px 6px -1px hsl(0 0% 0% / 0.4);
-  --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.5);
-  --shadow-xl: 0 16px 40px -10px hsl(0 0% 0% / 0.55);
-  --shadow-2xl: 0 24px 60px -12px hsl(0 0% 0% / 0.6);
+  --shadow-2xs: 0 1px 2px 0px rgb(0 0 0 / 0.2);
+  --shadow-xs: 0 1px 2px 0px rgb(0 0 0 / 0.25);
+  --shadow-sm: var(--bca-shadow-raised);
+  --shadow: var(--bca-shadow-raised);
+  --shadow-md: 0 2px 6px rgb(0 0 0 / 0.4), 0 8px 20px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 6px 22px rgba(0, 0, 0, 0.55);
+  --shadow-2xl: 0 24px 60px rgb(0 0 0 / 0.6);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    font-optical-sizing: auto;
+  }
   body {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
-    font-feature-settings: "cv11", "ss01";
+    -webkit-font-smoothing: antialiased;
+    /* Spice — paper: a soft wash of the interface blue at the top, and a faint dot grid. */
+    background-image:
+      radial-gradient(1100px 360px at 50% -160px, var(--bca-wash), transparent 72%),
+      radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--bca-ink) 5%, transparent) 1px, transparent 0);
+    background-size: 100% 100%, 22px 22px;
+    background-attachment: fixed, fixed;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  .font-display {
+    letter-spacing: -0.01em;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--bca-accent) 26%, transparent);
+    color: var(--bca-ink);
+  }
+}
+
+/* ---------- Spice layer utilities ---------- */
+
+/* The band: BCA's confidence band — two lines with the tint between — as the lab's signature. */
+.bca-band {
+  background:
+    linear-gradient(var(--bca-accent), var(--bca-accent)) top / 100% 1.5px no-repeat,
+    linear-gradient(var(--bca-k-learn), var(--bca-k-learn)) bottom / 100% 1.5px no-repeat,
+    color-mix(in srgb, var(--bca-accent) 15%, transparent);
+}
+
+/* Every page's sticky top bar ends in the band instead of a plain hairline. */
+header.sticky.top-0 {
+  border-bottom-color: transparent;
+}
+header.sticky.top-0::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -5px 0;
+  height: 5px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--bca-accent), var(--bca-accent)) top / 100% 1px no-repeat,
+    linear-gradient(var(--bca-k-learn), var(--bca-k-learn)) bottom / 100% 1px no-repeat,
+    color-mix(in srgb, var(--bca-accent) 12%, var(--background));
+}
+
+/* Panel title tick: the band stood upright. */
+.bca-tick {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 12px;
+  border-left: 2px solid var(--bca-accent);
+  border-right: 2px solid var(--bca-k-learn);
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--bca-accent) 24%, transparent);
+}
+
+.bca-panel {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--bca-shadow-raised);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.bca-panel:hover {
+  border-color: color-mix(in srgb, var(--bca-accent) 32%, var(--border));
+}
+.bca-panel-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--foreground);
+}
+
+/* Small mono kicker above a title or beside a value. */
+.bca-kicker {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bca-accent-ink);
+}
+
+/* The primary action: interface blue with a lit top edge; lifts on hover, settles on press. */
+.bca-primary {
+  background: var(--bca-accent);
+  color: var(--primary-foreground);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 1px 2px rgb(0 0 0 / 0.12), 0 4px 12px color-mix(in srgb, var(--bca-accent) 28%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.bca-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 2px 4px rgb(0 0 0 / 0.14), 0 8px 18px color-mix(in srgb, var(--bca-accent) 34%, transparent);
+}
+.bca-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Selected tab: tinted, with the band's lower line under it. */
+.bca-tab-active {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: inset 0 -2px 0 var(--bca-accent), var(--shadow-xs);
+}
+
+/* Live indicator: the band, breathing while auto-train runs. */
+@keyframes bca-breathe {
+  0%, 100% { opacity: 0.45; transform: scaleY(0.7); }
+  50% { opacity: 1; transform: scaleY(1); }
+}
+.bca-live {
+  display: inline-block;
+  width: 8px;
+  height: 10px;
+  border-left: 2px solid var(--bca-accent);
+  border-right: 2px solid var(--bca-k-learn);
+  background: color-mix(in srgb, var(--bca-accent) 30%, transparent);
+  animation: bca-breathe 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bca-live {
+    animation: none;
+  }
+  .bca-panel,
+  .bca-primary {
+    transition: none;
+  }
+  .bca-primary:hover:not(:disabled) {
+    transform: none;
   }
 }
 

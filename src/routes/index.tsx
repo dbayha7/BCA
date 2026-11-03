@@ -83,17 +83,18 @@ async function sha256Hex(text: string): Promise<string> {
 function Logo() {
   return (
     <div className="flex items-center gap-2.5">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" className="text-primary" role="img" aria-label="Offline Learning Lab">
-        {/* A frozen "replay buffer" stack with a learning curve escaping it */}
-        <rect x="2.5" y="15" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.6" />
-        <rect x="2.5" y="20" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.6" opacity="0.55" />
-        <path d="M3 11.5 C 8 11.5, 10 4, 16 4 S 22 6, 23.5 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-        <circle cx="23.5" cy="3" r="1.6" fill="currentColor" />
-        <path d="M18 14v9M18 23l-2.5-2.5M18 23l2.5-2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
+      {/* The band: BCA's confidence band (two lines with the tint between) wrapping a data point. */}
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" role="img" aria-label="Offline Learning Lab">
+        <path d="M2 19 C 8 19, 10 7, 17 7 S 25 9, 28 5 L 28 12 C 25 16, 21 14, 17 14 S 8 26, 2 26 Z" fill="var(--bca-accent)" opacity="0.18" />
+        <path d="M2 19 C 8 19, 10 7, 17 7 S 25 9, 28 5" stroke="var(--bca-accent)" strokeWidth="2" strokeLinecap="round" />
+        <path d="M2 26 C 8 26, 10 14, 17 14 S 25 16, 28 12" stroke="var(--bca-k-learn)" strokeWidth="2" strokeLinecap="round" />
+        <circle cx="17" cy="10.5" r="2.4" fill="var(--bca-ink)" />
       </svg>
-      <div className="hidden items-baseline gap-1 leading-none sm:flex">
-        <span className="font-display text-[15px] font-bold tracking-tight">Offline</span>
-        <span className="font-display text-[15px] font-light tracking-wide text-muted-foreground">Learning Lab</span>
+      <div className="hidden flex-col leading-none sm:flex">
+        <span className="font-display text-[16px] font-extrabold tracking-tight">
+          Offline <span className="font-semibold text-muted-foreground">Learning Lab</span>
+        </span>
+        <span className="bca-kicker mt-1 text-[9px]">BCA · offline RL</span>
       </div>
     </div>
   );
@@ -124,9 +125,12 @@ function ThemeToggle() {
 
 function Panel({ title, right, children, className = "", delay = 0 }: { title: string; right?: React.ReactNode; children: React.ReactNode; className?: string; delay?: number }) {
   return (
-    <section className={`lab-rise rounded-xl border border-border bg-card shadow-sm ${className}`} style={{ animationDelay: `${delay}ms` }}>
+    <section className={`lab-rise bca-panel ${className}`} style={{ animationDelay: `${delay}ms` }}>
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
+        <h2 className="bca-panel-title flex items-center gap-2">
+          <span className="bca-tick" aria-hidden />
+          {title}
+        </h2>
         {right}
       </header>
       <div className="p-4">
@@ -154,10 +158,70 @@ function HyperSlider({ label, hint, value, min, max, step, onChange, format }: {
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "warn" | "ok" | "bad" }) {
   const c = tone === "warn" ? "text-warning" : tone === "bad" ? "text-destructive" : tone === "ok" ? "text-success" : "text-foreground";
   return (
-    <div className="rounded-lg border border-border bg-surface/60 px-3 py-2">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 font-mono text-[15px] font-medium tabular-nums ${c}`}>{value}</div>
+    <div className="rounded-lg border border-border bg-background/70 px-3 py-2">
+      <div className="font-mono text-[9.5px] font-medium uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className={`mt-0.5 font-mono text-[17px] font-semibold tabular-nums ${c}`}>{value}</div>
     </div>
+  );
+}
+
+/** Spice: a readout strip for the run — its name in the display face, the numbers that matter in mono. */
+function RunStrip({
+  name,
+  status,
+  dataset,
+  reward,
+  last,
+  optimal,
+}: {
+  name: string;
+  status: ExperimentStatus;
+  dataset: string;
+  reward: string | null;
+  last: Metrics | null;
+  optimal: number;
+}) {
+  const gap = last ? last.estQ - last.trueQ : null;
+  const pill =
+    status === "training"
+      ? "border-primary/50 bg-accent text-accent-foreground"
+      : status === "diverged"
+        ? "border-destructive/50 bg-destructive/10 text-destructive"
+        : "border-border bg-background text-muted-foreground";
+  const read = (label: string, value: string, tone?: string, title?: string) => (
+    <div className="min-w-[78px]" title={title}>
+      <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+      <div className={`font-mono text-[19px] font-semibold leading-tight tabular-nums ${tone ?? "text-foreground"}`}>{value}</div>
+    </div>
+  );
+  return (
+    <section className="lab-rise bca-panel relative overflow-hidden px-4 py-3 lg:col-span-2 xl:col-span-3" aria-label="Current run summary">
+      <div className="bca-band absolute inset-y-0 left-0 w-[7px]" aria-hidden />
+      <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 pl-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="bca-kicker">Current run</span>
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider ${pill}`}>
+              {status === "training" && <span className="bca-live" aria-hidden />}
+              {status}
+            </span>
+            {reward && <span className="rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 font-mono text-[10px] text-foreground">reward: {reward}</span>}
+          </div>
+          <div className="mt-1 truncate font-display text-[20px] font-bold leading-tight tracking-tight" title={name}>
+            {name}
+          </div>
+          <div className="mt-0.5 truncate text-[12px] text-muted-foreground">{dataset}</div>
+        </div>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          {read("updates", (last?.updates ?? 0).toLocaleString())}
+          {read("true return", last ? last.trueQ.toFixed(2) : "—", undefined, "Exact return of the greedy policy, averaged over data-visited states")}
+          {read("estimate", last ? last.estQ.toFixed(2) : "—", "text-[var(--chart-1)]", "The critic's own estimate of that return")}
+          {read("gap", gap === null ? "—" : `${gap >= 0 ? "+" : ""}${gap.toFixed(2)}`, gap !== null && gap > 1 ? "text-[var(--bca-strong-ink)]" : undefined, "Estimate minus true return: overestimation when positive")}
+          {read("OOD", last ? `${(last.oodRate * 100).toFixed(1)}%` : "—", last && last.oodRate > 0.15 ? "text-warning" : undefined, "Share of states where the greedy action never appears in the data")}
+          {read("V*(start)", optimal.toFixed(2), undefined, "Optimal value from the start state, for scale")}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -988,19 +1052,20 @@ function LabPage() {
               </svg>
               <span className="hidden lg:inline">Compare runs</span>
             </Link>
-            {ds && (
-              <div className="hidden items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground xl:flex">
-                <span>{ds.transitions.length.toLocaleString()} transitions</span>
-                <span className="text-border">|</span>
-                <span>{(last?.updates ?? 0).toLocaleString()} updates</span>
-              </div>
-            )}
             <ThemeToggle />
           </div>
         </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:p-5 xl:grid-cols-[288px_minmax(0,1fr)_360px]">
+      <main className="grid flex-1 grid-cols-1 gap-4 p-4 pt-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:p-5 lg:pt-7 xl:grid-cols-[288px_minmax(0,1fr)_360px]">
+        <RunStrip
+          name={runInfo?.name || (ds ? `New run on ${ds.env.name}` : "No dataset")}
+          status={auto ? "training" : (runInfo?.status ?? "paused")}
+          dataset={ds ? `${ds.env.name} · ${ds.transitions.length.toLocaleString()} transitions` : "—"}
+          reward={activeReward?.name ?? null}
+          last={last ?? null}
+          optimal={optimal}
+        />
         {/* LEFT: configuration */}
         <aside className="space-y-4">
           <Panel title="Dataset" delay={60}>
@@ -1104,7 +1169,7 @@ function LabPage() {
         </aside>
 
         {/* CENTER: visual workspace */}
-        <section className="lab-rise min-w-0 rounded-xl border border-border bg-card shadow-sm" style={{ animationDelay: "160ms" }}>
+        <section className="lab-rise bca-panel min-w-0" style={{ animationDelay: "160ms" }}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div role="tablist" aria-label="Workspace view" className="flex max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-0.5">
               {(["dataset", "policy", "watch", "reward"] as const).map((v) => (
@@ -1113,7 +1178,7 @@ function LabPage() {
                   role="tab"
                   aria-selected={view === v}
                   onClick={() => setView(v)}
-                  className={`shrink-0 whitespace-nowrap rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`shrink-0 whitespace-nowrap rounded-md px-3.5 py-1.5 text-[13px] font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bca-tab-active" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {v === "dataset" ? "Dataset Visualization" : v === "policy" ? "Policy Evaluation" : v === "watch" ? "Watch Episodes" : activeReward ? `Reward · ${activeReward.name}` : "Reward function"}
                 </button>
@@ -1149,7 +1214,7 @@ function LabPage() {
               <button onClick={() => setAuto((a) => !a)} disabled={!ds} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${auto ? "border-primary bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:bg-surface hover:text-foreground"}`}>
                 {auto ? "Pause" : "Auto-train"}
               </button>
-              <button onClick={step} disabled={!ds} className="flex items-center gap-2 rounded-md bg-primary px-4 py-1.5 text-[13px] font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card">
+              <button onClick={step} disabled={!ds} className="bca-primary flex items-center gap-2 rounded-md px-4 py-1.5 text-[13px] font-semibold disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card">
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M2 1.5v9l6-4.5zM9 1.5h1.5v9H9z" /></svg>
                 Step Training
               </button>
@@ -1190,7 +1255,7 @@ function LabPage() {
               <>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h1 className="font-display text-lg font-semibold tracking-tight">
+                    <h1 className="font-display text-[22px] font-bold leading-tight tracking-tight">
                       {view === "dataset" ? "Logged transitions (S, A, R, S′)" : view === "policy" ? "Learned value function Q(s, a)" : view === "watch" ? "Episode playback" : "Reward function"}
                     </h1>
                     <p className="text-xs text-muted-foreground">
@@ -1303,10 +1368,11 @@ function LabPage() {
 
         {/* RIGHT: performance dashboard */}
         <aside className="space-y-4 lg:col-span-2 xl:col-span-1">
-          <Panel title="Estimated Q vs. Ground Truth" delay={210} right={<span className="font-mono text-[10px] text-muted-foreground">avg over data states</span>}>
+          <Panel title="Estimated Q vs. ground truth" delay={210} right={<span className="font-mono text-[10px] text-muted-foreground">avg over data states</span>}>
             <LineChart
               xs={xs}
               empty="Press Step Training to start plotting value estimates."
+              band={{ from: 0, to: 1, color: "var(--chart-4)" }}
               series={[
                 { name: "Estimated Q", color: "var(--chart-1)", values: history.map((h) => h.estQ) },
                 { name: "Ground truth", color: "var(--chart-2)", values: history.map((h) => h.trueQ), dashed: true },
@@ -1317,12 +1383,13 @@ function LabPage() {
                 items={[
                   { name: "Estimated Q", color: "var(--chart-1)", value: last?.estQ.toFixed(2) },
                   { name: "Ground truth V^π", color: "var(--chart-2)", value: last?.trueQ.toFixed(2), dashed: true },
+                  { name: "Gap (shaded)", color: "var(--chart-4)", value: last ? `${gap >= 0 ? "+" : ""}${gap.toFixed(2)}` : undefined },
                 ]}
               />
             </div>
           </Panel>
 
-          <Panel title="Policy Loss" delay={250} right={<span className="font-mono text-[10px] text-muted-foreground">TD + α·CQL</span>}>
+          <Panel title="Policy loss" delay={250} right={<span className="font-mono text-[10px] text-muted-foreground">TD + α·CQL</span>}>
             <LineChart
               xs={xs}
               height={120}
@@ -1337,7 +1404,7 @@ function LabPage() {
             </div>
           </Panel>
 
-          <Panel title="Distributional Shift" delay={290}>
+          <Panel title="Distributional shift" delay={290}>
             <div className="grid grid-cols-2 gap-2">
               <Stat label="Overestimation" value={last ? `${gap >= 0 ? "+" : ""}${gap.toFixed(2)}` : "—"} tone={last ? (gap > 1 ? "bad" : gap > 0.25 ? "warn" : "ok") : undefined} />
               <Stat label="OOD actions" value={last ? `${(last.oodRate * 100).toFixed(1)}%` : "—"} tone={last ? (last.oodRate > 0.15 ? "warn" : "ok") : undefined} />
@@ -1374,16 +1441,16 @@ function LabPage() {
             </div>
           </Panel>
 
-          <Panel title="Model Export" delay={310} right={<span className="font-mono text-[10px] text-muted-foreground">reward-gated</span>}>
+          <Panel title="Model export" delay={310} right={<span className="font-mono text-[10px] text-muted-foreground">reward-gated</span>}>
             <ExportPanel ds={ds} history={history} optimal={optimal} onExport={exportModel} />
           </Panel>
 
-          <Panel title="Licensing & Access Control" delay={315} right={<span className="font-mono text-[10px] text-muted-foreground">{license.exportLock && license.accessKey.length >= 4 ? "locked" : "open"}{signingKey ? " · signed" : ""}</span>}>
+          <Panel title="Licensing and access control" delay={315} right={<span className="font-mono text-[10px] text-muted-foreground">{license.exportLock && license.accessKey.length >= 4 ? "locked" : "open"}{signingKey ? " · signed" : ""}</span>}>
             <LicensePanel cfg={license} onChange={setLicense} signingKey={signingKey} onSigningKeyChange={setSigningKey} />
           </Panel>
 
           <Panel
-            title="Experiment Log"
+            title="Experiment log"
             delay={320}
             right={
               <DropdownMenu>
@@ -1409,11 +1476,11 @@ function LabPage() {
             <ExperimentLog history={history} ds={ds} hyper={hyper} optimal={optimal} />
           </Panel>
 
-          <Panel title="Researcher Collaboration" delay={325} right={<span className="font-mono text-[10px] text-muted-foreground">threads · share</span>}>
+          <Panel title="Researcher collaboration" delay={325} right={<span className="font-mono text-[10px] text-muted-foreground">threads · share</span>}>
             <CollaborationPanel history={history} ds={ds} hyper={hyper} optimal={optimal} />
           </Panel>
 
-          <Panel title="Checkpoint History" delay={330} right={<span className="font-mono text-[10px] text-muted-foreground">{checkpoints.length}/20 saved</span>}>
+          <Panel title="Checkpoint history" delay={330} right={<span className="font-mono text-[10px] text-muted-foreground">{checkpoints.length}/20 saved</span>}>
             <CheckpointHistory
               checkpoints={checkpoints}
               activeId={activeCheckpointId}
