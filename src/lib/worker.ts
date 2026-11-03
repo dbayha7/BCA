@@ -8,10 +8,12 @@
 
 import { parseCustomDataset, type Dataset, type Env } from "./rl";
 import { generateThrusterDataset } from "./thrusterchain";
+import { generateRouteDataset, type RouteCondition } from "./thrusterchain-route";
 
 export type LabWorkerRequest =
   | { id: number; type: "generate-thruster"; seed: number }
-  | { id: number; type: "parse-custom"; text: string };
+  | { id: number; type: "parse-custom"; text: string }
+  | { id: number; type: "generate-route"; condition: RouteCondition; seed: number };
 
 export interface SerializedDataset extends Omit<Dataset, "env"> {
   env: Omit<Env, "step">;
@@ -36,6 +38,8 @@ self.onmessage = (e: MessageEvent<LabWorkerRequest>) => {
     let ds: Dataset;
     if (msg.type === "generate-thruster") {
       ds = generateThrusterDataset(msg.seed, progress);
+    } else if (msg.type === "generate-route") {
+      ds = generateRouteDataset(msg.condition, msg.seed, progress).dataset;
     } else {
       progress(5, "Parsing JSON…");
       const raw = JSON.parse(msg.text) as unknown;

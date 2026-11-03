@@ -13,6 +13,10 @@ export const BUILTIN_STATES: Partial<Record<DatasetId, number>> = {
   "gridworld-random": 100,
   "halfcheetah-medium": 108,
   "thrusterchain-stall": 99,
+  // The route task's 23 × 15 projection grid (checked against buildProjection in the tests).
+  "route-full": 345,
+  "route-honeypot": 345,
+  "route-bottleneck": 345,
 };
 
 export interface RunSnapshot {
@@ -60,7 +64,7 @@ export function parseSnapshot(raw: string, now = Date.now(), newId: () => string
   const r = s.run as Record<string, unknown> | undefined;
   if (!r || typeof r !== "object") throw new Error("Snapshot has no run.");
   const datasetId = r.datasetId as DatasetId;
-  if (!["gridworld-random", "halfcheetah-medium", "thrusterchain-stall", "custom"].includes(datasetId)) throw new Error("Snapshot names an unknown dataset.");
+  if (!["gridworld-random", "halfcheetah-medium", "thrusterchain-stall", "route-full", "route-honeypot", "route-bottleneck", "custom"].includes(datasetId)) throw new Error("Snapshot names an unknown dataset.");
   if (!Array.isArray(r.q) || !r.q.every(isNum)) throw new Error("Snapshot Q-table is missing or has non-finite values.");
   const states = BUILTIN_STATES[datasetId];
   if (states !== undefined && r.q.length !== states * 4) throw new Error(`Snapshot Q-table has ${r.q.length} values; ${datasetId} needs ${states * 4}.`);

@@ -32,6 +32,9 @@ const DATASETS: { id: ExperimentQuery["datasetId"]; label: string }[] = [
   { id: "gridworld-random", label: "Gridworld-Random" },
   { id: "halfcheetah-medium", label: "HalfCheetah-Medium" },
   { id: "thrusterchain-stall", label: "ThrusterChain v4" },
+  { id: "route-full", label: "ThrusterChain route · full" },
+  { id: "route-honeypot", label: "ThrusterChain route · Honeypot" },
+  { id: "route-bottleneck", label: "ThrusterChain route · Bottleneck" },
   { id: "custom", label: "Custom uploads" },
 ];
 const SORTS: { id: SortKey; label: string }[] = [

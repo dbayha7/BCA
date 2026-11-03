@@ -5,6 +5,7 @@
 
 import { parseCustomDataset, type Dataset, type Env } from "./rl";
 import { generateThrusterDataset } from "./thrusterchain";
+import { generateRouteDataset, stepFromModel, type RouteCondition } from "./thrusterchain-route";
 import type { LabWorkerRequest, LabWorkerResponse, SerializedDataset } from "./worker";
 
 export type ProgressFn = (pct: number, label: string) => void;
@@ -15,6 +16,11 @@ let seq = 0;
 function rehydrate(s: SerializedDataset): Dataset {
   const env = s.env as Env;
   const ds = { ...s, env } as Dataset;
+  // Environments with a reference model (the route task) keep their truth separate from the training data.
+  if (env.model) {
+    env.step = stepFromModel(env.model, env.terminals);
+    return ds;
+  }
   const rMin = ds.rewardMin;
   const terminals = env.terminals;
   const isCustom = env.id === "custom";
@@ -28,7 +34,7 @@ function rehydrate(s: SerializedDataset): Dataset {
   return ds;
 }
 
-type TaskRequest = { type: "generate-thruster"; seed: number } | { type: "parse-custom"; text: string };
+type TaskRequest = { type: "generate-thruster"; seed: number } | { type: "parse-custom"; text: string } | { type: "generate-route"; condition: RouteCondition; seed: number };
 
 function runTask(req: TaskRequest, onProgress: ProgressFn | undefined, fallback: () => Dataset): Promise<Dataset> {
   if (typeof window === "undefined" || typeof Worker === "undefined") {
@@ -81,4 +87,9 @@ export function generateThrusterInWorker(seed: number, onProgress?: ProgressFn):
 /** Parse + validate a large custom JSON upload in a background worker. */
 export function parseCustomInWorker(text: string, onProgress?: ProgressFn): Promise<Dataset> {
   return runTask({ type: "parse-custom", text }, onProgress, () => parseCustomDataset(JSON.parse(text) as unknown));
+}
+
+/** Build the research route task (geometry, recorders, condition mask, reference model) in a background worker. */
+export function generateRouteInWorker(condition: RouteCondition, seed: number, onProgress?: ProgressFn): Promise<Dataset> {
+  return runTask({ type: "generate-route", condition, seed }, onProgress, () => generateRouteDataset(condition, seed).dataset);
 }

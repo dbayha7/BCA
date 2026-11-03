@@ -45,6 +45,10 @@ const B: number[][] = [
   [0, 0, 0, 0],
 ];
 
+/** The plant's matrices (read-only): x' = A·x + B·thrust(cmd). Shared with the route task. */
+export const PLANT_A: readonly (readonly number[])[] = A;
+export const PLANT_B: readonly (readonly number[])[] = B;
+
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /** Requested float64 command → executed float32 command (clip then cast), per spec. */
