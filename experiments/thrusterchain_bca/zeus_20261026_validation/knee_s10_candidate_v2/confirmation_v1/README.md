@@ -4,6 +4,10 @@ The rule is `CONFIRMATION_RULE.md`, written before any fresh-seed number exists.
 one run: thirty GPU training jobs (about 4 hours) and twenty-four evaluations, user-run in the recorded WSL
 environment. Agents never run the worker and never open a checkpoint.
 
+**State after attempt 3 (2026-11-02, 21:49 UTC): the package is closed.** Attempt 3 ran on Zeus and completed every
+unit; reading INCONCLUSIVE (two of 24 evaluations missed the I1 bar), computed labels C1 NOT CONFIRMED and C2
+OVER-CORRECTION. No attempt 4 (A3). The readout is `CF_READOUT_attempt3_20261102.md`; the record is `cf_run/attempt_3/`.
+
 **State after amendment A3 (2026-11-02):** attempt 2 ran on Zeus and ended INCOMPLETE when a GitHub Desktop branch
 switch stashed its record files mid-run (13 stall3 training units completed, no evaluation; the records are restored).
 Attempt 3, the last, runs on Zeus and reuses those 13 units: see "Attempt 3 on Zeus" below.

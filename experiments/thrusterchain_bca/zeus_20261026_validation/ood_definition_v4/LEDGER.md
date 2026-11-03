@@ -236,3 +236,16 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   evaluations. Caps, doses, seeds, reads, bars, readings and approval words are unchanged. The attempt-2 approval is
   removed because it binds the pre-A3 manifest. The package is re-sealed, and attempt 3 needs the user's approval at
   Zeus. Rule added: no GitHub Desktop branch switch, stash or pull in a checkout while a run is live there.
+- **Confirmation v1, attempt 3 on Zeus (2026-11-02 19:08-21:49 UTC, user-run, manifest 6a524bf8…, approval
+  d7033a81): INCONCLUSIVE, by the instrument check alone.** All 54 units completed (13 stall3 training units reused
+  from attempt 2, 17 trained, 24 evaluations; 9,061 s training, 636 s and 1,313,952 transitions of evaluation). I1
+  missed the 1e-6 bar on two of 24 evaluations (`eval_native_s2_stall3` 1.86e-6, `eval_bca_s0_k21_stall3` 1.11e-6;
+  the other 22 at 2.5e-8 to 3.9e-7); I2 held everywhere. Computed labels, on record beside the reading: C1 NOT
+  CONFIRMED (stall3 kappa 63 dJ +3.9 / +42.5 / −27.0 against ≥ +2.0 every seed), C2 OVER-CORRECTION (no-stall kappa
+  63 dJ −0.7 / −39.6 / −9.9, dEXPO −0.13 / −0.72 / −0.61; mean cost −16.7 against the −4.0 bound). Profile: neither
+  monotonicity flag; kappa 189 stall3 dJ +11.2 / +121.5 / +9.8 against no-stall −41.4 / −98.3 / −20.5. Attempts are
+  closed (A3), and the rule's condition for a repeat after INCONCLUSIVE is not met: the package's final record.
+  Readout, baseline first, with the component attribution, the hypotheses (H1 float32 cause of the I1 miss, H2 what
+  drives the pull, H3 seed-level dose, H4 retreat-action quality) and the dataset indistinguishability check, each
+  with its smallest test: `knee_s10_candidate_v2/confirmation_v1/CF_READOUT_attempt3_20261102.md`. The record was
+  committed on Zeus (dcd0f331) and merged with Titan's screen snapshot here.
