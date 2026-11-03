@@ -172,14 +172,14 @@ export const THRUSTER_PROJECTION = {
   note: "Commands are clipped to [-1, 1] and cast to float32 before the stall nonlinearity (|a| > knee → slope applied). Dynamics: x' = A·x + B·stall(cmd) in float64.",
 };
 
-function toCell(x: Float64Array): number {
+export function toCell(x: Float64Array): number {
   const xi = clamp(Math.floor(((x[0] - P_LO) / (P_HI - P_LO)) * W), 0, W - 1);
   const yi = clamp(Math.floor(((V_HI - x[1]) / (V_HI - V_LO)) * H), 0, H - 1);
   return yi * W + xi;
 }
 
 /** Discrete action label from the executed a0 command, teaching the stall knee. */
-function toAction(a0: number): number {
+export function toAction(a0: number): number {
   if (a0 > KNEE) return 0; // Burst — over the knee, thrust stalls
   if (a0 > 0.15) return 1; // Thrust +
   if (a0 < -0.15) return 3; // Reverse
@@ -187,7 +187,7 @@ function toAction(a0: number): number {
 }
 
 /** Spec behavior recorder ("broad", ε = 0.25): state-independent random commands. */
-function recordCommand(rng: () => number, epsilon: number): number[] {
+export function recordCommand(rng: () => number, epsilon: number): number[] {
   const a0 = rng() < epsilon ? 0.5 + rng() * 0.5 : -1 + rng() * 1.5;
   return [a0, -1 + rng() * 2, -1 + rng() * 2, -1 + rng() * 2];
 }
@@ -198,7 +198,7 @@ function gaussian(rng: () => number): number {
 }
 
 /** Spec "recorded" reset law: kick 0.5·N(0,1) on oscillators; current ~U[0.1,0.7]; wave amp ~U[0.1,0.4]. */
-function resetRecorded(rng: () => number): Float64Array {
+export function resetRecorded(rng: () => number): Float64Array {
   const x = new Float64Array(13);
   for (let i = 0; i < 10; i++) x[i] = 0.5 * gaussian(rng);
   x[10] = 0.1 + rng() * 0.6;
