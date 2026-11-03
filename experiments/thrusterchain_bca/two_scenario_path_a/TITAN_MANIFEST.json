@@ -1,0 +1,163 @@
+{
+  "allocation": {
+    "automatic_retry": false,
+    "cross_machine_exclusion": "Operational handoff to Titan only; no distributed lock or guarantee against manual clones",
+    "cumulative_optimizer_caps": {
+      "actor": 95008,
+      "auxiliary": 190014,
+      "calibrations": 22,
+      "critic": 190014
+    },
+    "cumulative_simulator_ceiling": 498400,
+    "cumulative_time_ceiling_seconds": 14400,
+    "kill_grace_seconds": 5,
+    "new_evaluation_transition_cap": 237600,
+    "preparation_allowance_is_measured_runtime": false,
+    "preparation_and_unmeasured_source_check_allowance_seconds": 60,
+    "prior_pid_handling": "Zeus435/1693 absence was user-observed before migration; never query those numbers in Titan's PID namespace",
+    "production_cap_seconds": 10480,
+    "production_external_timeout_seconds": 10475,
+    "production_internal_seconds": 10465,
+    "schema": "two_scenario.path_a.titan_migration.v1",
+    "scientific_functions_changed": false,
+    "shared_remaining_seconds": 10660,
+    "source_hold": "Exclusive source run_recovery_1/HANDOFF_HOLD.json; archive omits this directory",
+    "target_machine": "Titan",
+    "target_python": "/home/dbayha/bca-gpu/bin/python",
+    "target_repository": "/mnt/c/Users/David Bayha/BCA-PathA",
+    "validation_cap_seconds": 120,
+    "validation_external_timeout_seconds": 115,
+    "validation_internal_seconds": 105,
+    "validation_new_work": {
+      "actor": 0,
+      "auxiliary": 0,
+      "calibrations": 0,
+      "critic": 0,
+      "reset_calls": 0,
+      "simulator_steps": 0
+    }
+  },
+  "approval_created": false,
+  "files": {
+    "experiments/thrusterchain_bca/two_scenario_path_a/RECOVERY_APPROVAL.json": "074311c4a42311797a8eff3bb47d4a254297698183b7ff4d849481ddc563e2a1",
+    "experiments/thrusterchain_bca/two_scenario_path_a/RECOVERY_MANIFEST.json": "29cf769f73b1921ac19a119e548ea06778d7e256d358da5a96d1f207b8d66142",
+    "experiments/thrusterchain_bca/two_scenario_path_a/TITAN_HANDOFF.md": "230dcbace3ee4c09a4ee750a7e7f0c2c3f62c850e399d003d788d9788dce3256",
+    "experiments/thrusterchain_bca/two_scenario_path_a/TITAN_SOURCE_HOLD.json": "dac2b1482410b3c99d4d3963fed86a4bdd9cc0501f37c67fd722811d326c1753",
+    "experiments/thrusterchain_bca/two_scenario_path_a/TITAN_VERIFICATION.json": "d92107255f05e07c2b0dedbd87c31a3268392b388ba2685e2f7c8677a04b648c",
+    "experiments/thrusterchain_bca/two_scenario_path_a/test_titan_compatibility.py": "c66daad1196753598d107b9ca567bc0b1f005e210ba1f9a37f19f5dc61a871d2",
+    "experiments/thrusterchain_bca/two_scenario_path_a/test_titan_launch.py": "980c8ce849505a4bd313920c3f831e3fa557462da10ec71e9d1bfb2de9d3df2e",
+    "experiments/thrusterchain_bca/two_scenario_path_a/titan_compatibility.py": "0818ef91cbb58b30b4bcebf65f505c391dbd2e211f2eba6e9d1bb6ae97681e47",
+    "experiments/thrusterchain_bca/two_scenario_path_a/titan_launch.py": "d3063e8e49dbdc41373f79e8bcd237d10f22e3b9af159c1dbf9ce80c02a61538"
+  },
+  "jobs": [
+    {
+      "arm": "native",
+      "condition": "honeypot",
+      "id": "honeypot_s0_native",
+      "seed_index": 0
+    },
+    {
+      "arm": "bca",
+      "condition": "honeypot",
+      "id": "honeypot_s0_bca",
+      "seed_index": 0
+    },
+    {
+      "arm": "warmup",
+      "condition": "honeypot",
+      "id": "honeypot_s1_warmup",
+      "seed_index": 1
+    },
+    {
+      "arm": "native",
+      "condition": "honeypot",
+      "id": "honeypot_s1_native",
+      "seed_index": 1
+    },
+    {
+      "arm": "bca",
+      "condition": "honeypot",
+      "id": "honeypot_s1_bca",
+      "seed_index": 1
+    },
+    {
+      "arm": "warmup",
+      "condition": "honeypot",
+      "id": "honeypot_s2_warmup",
+      "seed_index": 2
+    },
+    {
+      "arm": "native",
+      "condition": "honeypot",
+      "id": "honeypot_s2_native",
+      "seed_index": 2
+    },
+    {
+      "arm": "bca",
+      "condition": "honeypot",
+      "id": "honeypot_s2_bca",
+      "seed_index": 2
+    },
+    {
+      "arm": "warmup",
+      "condition": "bottleneck",
+      "id": "bottleneck_s0_warmup",
+      "seed_index": 0
+    },
+    {
+      "arm": "native",
+      "condition": "bottleneck",
+      "id": "bottleneck_s0_native",
+      "seed_index": 0
+    },
+    {
+      "arm": "bca",
+      "condition": "bottleneck",
+      "id": "bottleneck_s0_bca",
+      "seed_index": 0
+    },
+    {
+      "arm": "warmup",
+      "condition": "bottleneck",
+      "id": "bottleneck_s1_warmup",
+      "seed_index": 1
+    },
+    {
+      "arm": "native",
+      "condition": "bottleneck",
+      "id": "bottleneck_s1_native",
+      "seed_index": 1
+    },
+    {
+      "arm": "bca",
+      "condition": "bottleneck",
+      "id": "bottleneck_s1_bca",
+      "seed_index": 1
+    },
+    {
+      "arm": "warmup",
+      "condition": "bottleneck",
+      "id": "bottleneck_s2_warmup",
+      "seed_index": 2
+    },
+    {
+      "arm": "native",
+      "condition": "bottleneck",
+      "id": "bottleneck_s2_native",
+      "seed_index": 2
+    },
+    {
+      "arm": "bca",
+      "condition": "bottleneck",
+      "id": "bottleneck_s2_bca",
+      "seed_index": 2
+    },
+    {
+      "arm": "evaluation",
+      "id": "evaluation"
+    }
+  ],
+  "recovery_sources_and_original_outputs_verified_transitively": true,
+  "source_hold_sha256": "dac2b1482410b3c99d4d3963fed86a4bdd9cc0501f37c67fd722811d326c1753",
+  "target_runtime_verified": false
+}
