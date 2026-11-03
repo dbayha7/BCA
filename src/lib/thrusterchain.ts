@@ -179,7 +179,7 @@ export function toCell(x: Float64Array): number {
 }
 
 /** Discrete action label from the executed a0 command, teaching the stall knee. */
-function toAction(a0: number): number {
+export function toAction(a0: number): number {
   if (a0 > KNEE) return 0; // Burst — over the knee, thrust stalls
   if (a0 > 0.15) return 1; // Thrust +
   if (a0 < -0.15) return 3; // Reverse
