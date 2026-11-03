@@ -333,7 +333,10 @@ function summarize(rep: SensitivityReport, runs: SensitivityRun[]): Insight[] {
       text: `Raising α shrinks overestimation (ρ ${fmtRho(aGap)}): the mean gap between estimated and true value goes from ${signed(lo.meanGap)} at α=${lo.value} to ${signed(hi.meanGap)} at α=${hi.value}.`,
     });
   } else if (aGap != null && aGap >= 0.3) {
-    out.push({ tone: "warn", text: `Overestimation grows with α here (ρ ${fmtRho(aGap)}) — unusual for CQL; check that α is not so large that the penalty dominates the TD error.` });
+    out.push({
+      tone: "warn",
+      text: `Overestimation grows with α here (ρ ${fmtRho(aGap)}): on this dataset the conservative penalty does not close the gap between estimated and true value, so very large α may be over-regularising.`,
+    });
   }
   const gr = rep.overall.rhoGapReturn;
   if (gr != null && gr <= -0.3) {
@@ -362,11 +365,18 @@ function describeShape(p: ParamSensitivity): Insight | null {
   const name = SHORT[p.key];
   const r = p.rho.trueQ;
   const st = strength(r);
+  const first = p.levels[0];
+  const last = p.levels[p.levels.length - 1];
+  const trend = `mean true return goes from ${fmtV(first.meanTrueQ)} at ${fmtLevel(p.key, first.value)} to ${fmtV(last.meanTrueQ)} at ${fmtLevel(p.key, last.value)}`;
+  // Level means and per-run ranks can disagree (interactions, pruned runs): only quote ρ as support when it agrees.
+  const support = (dir: number) =>
+    r != null && Math.sign(r) === dir && st !== "weak" ? `Spearman ρ ${fmtRho(r)}, ${st}` : `though individual runs follow it only loosely, ρ ${fmtRho(r)}`;
+  const peakNote = (edge: LevelStat) => (p.bestLevel !== edge.value ? `; the best level is ${fmtLevel(p.key, p.bestLevel)}` : "");
   switch (p.shape) {
     case "increasing":
-      return { tone: "info", text: `Higher ${name} tends to raise true return (Spearman ρ ${fmtRho(r)}, ${st}); best level ${fmtLevel(p.key, p.bestLevel)}.` };
+      return { tone: "info", text: `Higher ${name} helps on average: ${trend} (${support(1)})${peakNote(last)}.` };
     case "decreasing":
-      return { tone: "info", text: `Lower ${name} tends to raise true return (Spearman ρ ${fmtRho(r)}, ${st}); best level ${fmtLevel(p.key, p.bestLevel)}.` };
+      return { tone: "info", text: `Lower ${name} helps on average: ${trend} (${support(-1)})${peakNote(first)}.` };
     case "peak":
       return { tone: "info", text: `${cap(name)} has a sweet spot near ${fmtLevel(p.key, p.bestLevel)}: both lower and higher values do worse on average (ρ ${fmtRho(r)} misses this because it only measures monotone trends).` };
     case "valley":
