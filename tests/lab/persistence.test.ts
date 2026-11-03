@@ -183,3 +183,13 @@ test("snapshot import rejects wrong schema, wrong Q size, non-finite values and 
   expect(bad((s) => (s.run.datasetId = "custom"))).toThrow(/must include that dataset/);
   expect(bad((s) => (s.run.datasetId = "evil"))).toThrow(/unknown dataset/);
 });
+
+test("a custom reward travels with a snapshot and reaches the audit", () => {
+  const code = "function reward(s, a, s2, ctx) { return ctx.original * 2; }";
+  const r = rec({ q: new Float64Array(400), reward: { name: "Doubled", code } });
+  const { run } = parseSnapshot(JSON.stringify(buildSnapshot(r)), 0, () => "id");
+  expect(run.reward).toEqual({ name: "Doubled", code });
+  const md = auditMarkdown(buildAuditLog({ ...run, transitions: 10 }, [], [], 20));
+  expect(md).toContain("custom function “Doubled”");
+  expect(md).toContain(code);
+});

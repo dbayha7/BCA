@@ -10,7 +10,7 @@ export const AUDIT_SCHEMA = "offline-learning-lab.audit.v1";
 
 export type AuditInput = Pick<
   ExperimentRecord,
-  "id" | "name" | "datasetId" | "datasetName" | "seed" | "hyper" | "hyperLog" | "history" | "optimal" | "status" | "tags" | "notes" | "guardEvents" | "createdAt" | "updatedAt"
+  "id" | "name" | "datasetId" | "datasetName" | "seed" | "hyper" | "hyperLog" | "history" | "optimal" | "status" | "tags" | "notes" | "guardEvents" | "createdAt" | "updatedAt" | "reward"
 > & { transitions: number };
 
 export interface AuditLog {
@@ -26,7 +26,7 @@ export interface AuditLog {
     updatedAt: string;
   };
   dataset: { id: string; name: string; transitions: number };
-  training: { seed: number; updatesPerStep: number; hyper: AuditInput["hyper"]; hyperLog: AuditInput["hyperLog"] };
+  training: { seed: number; updatesPerStep: number; hyper: AuditInput["hyper"]; hyperLog: AuditInput["hyperLog"]; reward: { name: string; code: string } | null };
   summary: ReturnType<typeof summarize> & { optimal: number };
   metrics: AuditInput["history"];
   logEntries: LogEntry[];
@@ -48,7 +48,7 @@ export function buildAuditLog(run: AuditInput, logEntries: LogEntry[], errors: E
       updatedAt: new Date(run.updatedAt).toISOString(),
     },
     dataset: { id: run.datasetId, name: run.datasetName, transitions: run.transitions },
-    training: { seed: run.seed, updatesPerStep, hyper: run.hyper, hyperLog: run.hyperLog },
+    training: { seed: run.seed, updatesPerStep, hyper: run.hyper, hyperLog: run.hyperLog, reward: run.reward ?? null },
     summary: { ...summarize(run), optimal: run.optimal },
     metrics: run.history,
     // Oldest first reads like a timeline.
@@ -81,6 +81,7 @@ export function auditMarkdown(log: AuditLog): string {
     "",
     `- Dataset: ${log.dataset.name} (${log.dataset.transitions.toLocaleString()} offline transitions)`,
     `- Seed ${log.training.seed}, ${log.training.updatesPerStep} updates per step`,
+    `- Reward: ${log.training.reward ? `custom function “${log.training.reward.name}” applied to the logged transitions` : "as logged"}`,
     `- Final: ${s.updates.toLocaleString()} updates, true return ${f(s.trueQ)}, estimate ${f(s.estQ)} (gap ${f(s.gap)}), OOD rate ${s.oodRate === null ? "—" : (s.oodRate * 100).toFixed(1) + "%"}, best true return ${f(s.bestTrueQ)}, optimal V*(start) ${f(s.optimal)}`,
     "",
     "## Hyperparameters over time",
@@ -102,6 +103,7 @@ export function auditMarkdown(log: AuditLog): string {
         ]
       : ["- none"]),
     "",
+    log.training.reward ? `## Reward function\n\n\`\`\`js\n${log.training.reward.code}\n\`\`\`\n` : "",
     log.experiment.notes ? `## Notes\n\n${log.experiment.notes}\n` : "",
   ];
   return lines.join("\n");

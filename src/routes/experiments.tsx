@@ -332,6 +332,7 @@ function ExperimentsPage() {
                       <span className="text-[13px] font-medium">{r.name || "Untitled run"}</span>
                       {r.id === currentId && <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">open in lab</span>}
                       {r.status === "diverged" && <span className="rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive">diverged</span>}
+                      {r.reward && <span className="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-foreground" title="Trained on rewards relabeled by a custom function">reward: {r.reward.name}</span>}
                       {r.tags.map((t) => (
                         <button key={t} type="button" onClick={() => set({ tag: t })} className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground hover:text-foreground">
                           {t}

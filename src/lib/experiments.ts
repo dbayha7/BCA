@@ -23,6 +23,8 @@ export interface ExperimentRecord {
   uploadKey?: string;
   /** Number of offline transitions in the dataset. */
   transitions?: number;
+  /** Custom reward function the logged transitions were relabeled with (absent = logged rewards). */
+  reward?: { name: string; code: string };
   /** Seed the minibatch stream started from. */
   seed: number;
   /** Internal state of the minibatch stream after the last saved update. */

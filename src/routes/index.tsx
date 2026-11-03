@@ -47,6 +47,9 @@ import { usePersistentState } from "@/lib/use-persistent-state";
 import { Switch } from "@/components/ui/switch";
 import { DatasetRewardChart, PolicyReturnRisk } from "@/components/lab/risk-charts";
 import { StressOverlay } from "@/components/lab/safety-panel";
+import { RewardEditor } from "@/components/lab/reward-editor";
+import { buildRewardJob, originalDataset, relabelDataset, REWARD_PRESETS } from "@/lib/sandbox/reward";
+import { runRewardSandbox } from "@/lib/sandbox/client";
 
 export const Route = createFileRoute("/")({
   component: LabPage,
@@ -279,7 +282,7 @@ function LabPage() {
   const [datasetId, setDatasetId] = useState<DatasetId>("gridworld-random");
   const [customDs, setCustomDs] = useState<Dataset | null>(null);
   const [hyper, setHyper] = useState<Hyper>(DEFAULT_HYPER);
-  const [view, setView] = useState<"dataset" | "policy" | "watch">("dataset");
+  const [view, setView] = useState<"dataset" | "policy" | "watch" | "reward">("dataset");
   const [heat, setHeat] = useState<HeatMode>("estimate");
   const [history, setHistory] = useState<Metrics[]>([]);
   const [version, setVersion] = useState(0);
@@ -320,11 +323,22 @@ function LabPage() {
     };
   }, [datasetId, thrusterDs]);
 
-  const ds = useMemo<Dataset | null>(() => {
+  /** The dataset as logged. */
+  const baseDs = useMemo<Dataset | null>(() => {
     if (datasetId === "custom") return customDs;
     if (datasetId === "thrusterchain-stall") return thrusterDs;
     return generateDataset(datasetId, datasetId === "gridworld-random" ? 7 : 11);
   }, [datasetId, customDs, thrusterDs]);
+  // A custom reward function (Reward tab) relabels the logged transitions; training then uses that copy.
+  const [relabeled, setRelabeled] = useState<Dataset | null>(null);
+  const [rewardInfo, setRewardInfo] = useState<{ name: string; code: string } | null>(null);
+  const ds = relabeled && baseDs && originalDataset(relabeled) === baseDs ? relabeled : baseDs;
+  const activeReward = ds && ds !== baseDs ? rewardInfo : null;
+  const rewardRef = useRef(activeReward);
+  rewardRef.current = activeReward;
+  /** Reward a run being reopened needs re-applied (in the sandbox) before it can be restored. */
+  const pendingRewardRef = useRef<{ name: string; code: string } | null>(null);
+  const [rewardRequest, setRewardRequest] = useState(0);
 
   const qRef = useRef<Float64Array>(new Float64Array(0));
   const rngRef = useRef<ResumableRng>(resumableRng(TRAIN_SEED));
@@ -423,6 +437,7 @@ function LabPage() {
       datasetName: d.env.name,
       uploadKey: d.env.id === "custom" ? uploadKeyRef.current : undefined,
       transitions: d.transitions.length,
+      reward: rewardRef.current ?? undefined,
       seed: TRAIN_SEED,
       rngState: TRAIN_SEED,
       hyper: { ...h },
@@ -485,7 +500,7 @@ function LabPage() {
   useEffect(() => {
     if (!ds) return;
     const pending = pendingRestoreRef.current;
-    if (pending && pending.datasetId === ds.env.id) {
+    if (pending && pending.datasetId === ds.env.id && (pending.reward?.code ?? null) === (rewardRef.current?.code ?? null)) {
       pendingRestoreRef.current = null;
       if (applyRestore(pending, ds)) return;
     }
@@ -496,6 +511,8 @@ function LabPage() {
   /** Reopens a saved run: switches to its dataset (re-parsing a saved upload) and restores Q, stream and history. */
   const openRun = useCallback(
     async (rec: ExperimentRecord) => {
+      // A run trained on a custom reward is restored only after that reward is re-applied.
+      pendingRewardRef.current = rec.reward ?? null;
       if (rec.datasetId === "custom") {
         const up = rec.uploadKey ? await uploadsStore.get(rec.uploadKey) : undefined;
         if (!up) {
@@ -507,8 +524,10 @@ function LabPage() {
           const parsed = await parseCustomInWorker(up.text, (pct, label) => setWorking({ pct, label }));
           uploadKeyRef.current = rec.uploadKey;
           pendingRestoreRef.current = rec;
+          setRelabeled(null);
           setCustomDs(parsed);
           setDatasetId("custom");
+          if (rec.reward) setRewardRequest((n) => n + 1);
         } catch (e) {
           recordError("worker", e, `re-parsing ${up.name}`);
           toast.error(e instanceof Error ? e.message : "Could not re-parse the saved upload.");
@@ -518,14 +537,46 @@ function LabPage() {
         return;
       }
       const d = dsRef.current;
-      if (d && d.env.id === rec.datasetId) applyRestore(rec, d);
-      else {
-        pendingRestoreRef.current = rec;
-        setDatasetId(rec.datasetId);
+      if (d && d.env.id === rec.datasetId && (rec.reward?.code ?? null) === (rewardRef.current?.code ?? null)) {
+        pendingRewardRef.current = null;
+        applyRestore(rec, d);
+        return;
       }
+      pendingRestoreRef.current = rec;
+      if (rec.reward) setRewardRequest((n) => n + 1);
+      else setRelabeled(null);
+      setDatasetId(rec.datasetId);
     },
     [applyRestore],
   );
+
+  // Re-apply a reopened run's custom reward to its logged dataset (in the sandbox), then the
+  // pending restore lands on the relabeled copy. Runs again if StrictMode/re-renders cancel it.
+  useEffect(() => {
+    const want = pendingRewardRef.current;
+    const pending = pendingRestoreRef.current;
+    if (!want || !baseDs || !pending || pending.datasetId !== baseDs.env.id) return;
+    let alive = true;
+    setWorking({ pct: 40, label: `Re-applying the reward “${want.name}” in the sandbox…` });
+    runRewardSandbox(want.code, buildRewardJob(baseDs))
+      .then((run) => {
+        if (!alive || pendingRewardRef.current !== want) return;
+        pendingRewardRef.current = null;
+        setRewardInfo(want);
+        setRelabeled(relabelDataset(baseDs, run.rewards, want.name));
+      })
+      .catch((e) => {
+        if (!alive) return;
+        pendingRewardRef.current = null;
+        pendingRestoreRef.current = null;
+        recordError("worker", e, `re-applying reward “${want.name}”`);
+        toast.error(`Could not re-apply the custom reward “${want.name}” (${e instanceof Error ? e.message : "sandbox error"}), so the run was not reopened.`);
+      })
+      .finally(() => alive && setWorking(null));
+    return () => {
+      alive = false;
+    };
+  }, [baseDs, rewardRequest]);
 
   // Load saved checkpoints and reopen the last run (or the one named in ?run=).
   useEffect(() => {
@@ -903,6 +954,29 @@ function LabPage() {
               <span className="hidden lg:inline">Sweep</span>
             </Link>
             <Link
+              to="/benchmark"
+              aria-label="Benchmark"
+              title="Benchmark suite: fixed configs across datasets"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" />
+                <path d="M17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3" />
+              </svg>
+              <span className="hidden lg:inline">Benchmark</span>
+            </Link>
+            <Link
+              to="/playground"
+              aria-label="Agent playground"
+              title="Agent playground: write an agent in code and run it"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+              <span className="hidden lg:inline">Playground</span>
+            </Link>
+            <Link
               to="/compare"
               aria-label="Compare runs"
               title="Compare two runs side by side"
@@ -1033,7 +1107,7 @@ function LabPage() {
         <section className="lab-rise min-w-0 rounded-xl border border-border bg-card shadow-sm" style={{ animationDelay: "160ms" }}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
             <div role="tablist" aria-label="Workspace view" className="flex rounded-lg border border-border bg-surface p-0.5">
-              {(["dataset", "policy", "watch"] as const).map((v) => (
+              {(["dataset", "policy", "watch", "reward"] as const).map((v) => (
                 <button
                   key={v}
                   role="tab"
@@ -1041,7 +1115,7 @@ function LabPage() {
                   onClick={() => setView(v)}
                   className={`rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  {v === "dataset" ? "Dataset Visualization" : v === "policy" ? "Policy Evaluation" : "Watch Episodes"}
+                  {v === "dataset" ? "Dataset Visualization" : v === "policy" ? "Policy Evaluation" : v === "watch" ? "Watch Episodes" : activeReward ? `Reward · ${activeReward.name}` : "Reward function"}
                 </button>
               ))}
             </div>
@@ -1117,14 +1191,16 @@ function LabPage() {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h1 className="font-display text-lg font-semibold tracking-tight">
-                      {view === "dataset" ? "Logged transitions (S, A, R, S′)" : view === "policy" ? "Learned value function Q(s, a)" : "Episode playback"}
+                      {view === "dataset" ? "Logged transitions (S, A, R, S′)" : view === "policy" ? "Learned value function Q(s, a)" : view === "watch" ? "Episode playback" : "Reward function"}
                     </h1>
                     <p className="text-xs text-muted-foreground">
                       {view === "dataset"
                         ? "Arrows are the transitions the behavior policy recorded. Color = mean reward, thickness = frequency."
                         : view === "policy"
                           ? `Heatmap of max_a Q(s,a) · arrows show the greedy policy · dashed outline = action never seen in data.`
-                          : "Fresh rollouts of the real environment — watch the trained policy act, or replay the behavior recorder that produced the dataset."}
+                          : view === "watch"
+                            ? "Fresh rollouts of the real environment — watch the trained policy act, or replay the behavior recorder that produced the dataset."
+                            : "Write the reward the agent should optimize. It relabels every logged transition in a sandbox; applying it starts a new run on the relabeled data."}
                     </p>
                   </div>
                   {view === "policy" && (
@@ -1147,10 +1223,27 @@ function LabPage() {
                     gamma={hyper.gamma}
                     renderFrameExtras={(f) => <StressOverlay frame={f} />}
                   />
+                ) : view === "reward" ? (
+                  <RewardEditor
+                    ds={ds}
+                    onApply={(d, info) => {
+                      // The "Original (logged)" preset reproduces the logged rewards: treat it as a restore.
+                      if (d === baseDs || info.code === REWARD_PRESETS[0].code) {
+                        setRelabeled(null);
+                        setRewardInfo(null);
+                        toast.success("Logged rewards restored — a new run starts on the original data.");
+                      } else {
+                        setRewardInfo(info);
+                        setRelabeled(d);
+                        toast.success(`Reward “${info.name}” applied — a new run starts on the relabeled data.`);
+                      }
+                    }}
+                  />
                 ) : (
                   <StateGrid ds={ds} mode={view} Q={qRef.current} evalRes={evalRes} heat={heat} version={version} />
                 )}
 
+                {view !== "reward" && (
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
                   {view === "watch" ? (
                     <span>
@@ -1180,6 +1273,7 @@ function LabPage() {
                     </>
                   )}
                 </div>
+                )}
 
                 {/* Risk views: where the logged rewards fall, and how the learned policy's returns spread across starts. */}
                 {view === "dataset" && (

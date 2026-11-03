@@ -105,6 +105,11 @@ export function parseSnapshot(raw: string, now = Date.now(), newId: () => string
           .map((g) => ({ atUpdates: g.atUpdates, message: g.message.slice(0, 500), at: isNum(g.at) ? g.at : now }))
       : [],
     computeMs: isNum(r.computeMs) ? r.computeMs : undefined,
+    // A custom reward travels as code; it only ever runs inside the sandbox when the run is opened.
+    reward:
+      r.reward && typeof r.reward === "object" && isStr((r.reward as Record<string, unknown>).code) && isStr((r.reward as Record<string, unknown>).name)
+        ? { name: String((r.reward as Record<string, unknown>).name).slice(0, 120), code: String((r.reward as Record<string, unknown>).code).slice(0, 20_000) }
+        : undefined,
   };
   return { run, upload };
 }

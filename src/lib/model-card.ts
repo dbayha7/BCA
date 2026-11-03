@@ -44,6 +44,7 @@ export function buildModelCard(i: ModelCardInput): string {
     "",
     `- ${dataset.name} (${dataset.tag}): ${dataset.description}`,
     `- ${dataset.transitions.toLocaleString()} logged transitions from ${dataset.episodes.toLocaleString()} episodes.`,
+    run.reward ? `- Rewards were relabeled by a custom function (“${run.reward.name}”); the policy optimizes that reward, not the logged one. The function's code is in the audit log.` : "",
     "",
     "## Evaluation",
     "",
