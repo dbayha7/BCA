@@ -83,7 +83,7 @@ async function sha256Hex(text: string): Promise<string> {
 function Logo() {
   return (
     <div className="flex items-center gap-2.5">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" className="text-primary" aria-hidden>
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" className="text-primary" role="img" aria-label="Offline Learning Lab">
         {/* A frozen "replay buffer" stack with a learning curve escaping it */}
         <rect x="2.5" y="15" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.6" />
         <rect x="2.5" y="20" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.6" opacity="0.55" />
@@ -91,7 +91,7 @@ function Logo() {
         <circle cx="23.5" cy="3" r="1.6" fill="currentColor" />
         <path d="M18 14v9M18 23l-2.5-2.5M18 23l2.5-2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
       </svg>
-      <div className="flex items-baseline gap-1 leading-none">
+      <div className="hidden items-baseline gap-1 leading-none sm:flex">
         <span className="font-display text-[15px] font-bold tracking-tight">Offline</span>
         <span className="font-display text-[15px] font-light tracking-wide text-muted-foreground">Learning Lab</span>
       </div>
@@ -919,7 +919,7 @@ function LabPage() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top bar */}
       <header className="lab-rise sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="flex h-14 items-center justify-between gap-4 px-4 lg:px-6">
+        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 lg:px-6">
           <div className="flex items-center gap-5">
             <Logo />
             <div className="hidden items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] text-muted-foreground md:flex">
@@ -933,7 +933,7 @@ function LabPage() {
               to="/experiments"
               aria-label="Experiments"
               title="Experiments: saved runs, search, compare"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3" />
@@ -945,7 +945,7 @@ function LabPage() {
               to="/sweep"
               aria-label="Sweep"
               title="Hyperparameter sweep"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
@@ -957,7 +957,7 @@ function LabPage() {
               to="/benchmark"
               aria-label="Benchmark"
               title="Benchmark suite: fixed configs across datasets"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" />
@@ -969,7 +969,7 @@ function LabPage() {
               to="/playground"
               aria-label="Agent playground"
               title="Agent playground: write an agent in code and run it"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
@@ -980,7 +980,7 @@ function LabPage() {
               to="/compare"
               aria-label="Compare runs"
               title="Compare two runs side by side"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="18" rx="1" />
@@ -1106,14 +1106,14 @@ function LabPage() {
         {/* CENTER: visual workspace */}
         <section className="lab-rise min-w-0 rounded-xl border border-border bg-card shadow-sm" style={{ animationDelay: "160ms" }}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div role="tablist" aria-label="Workspace view" className="flex rounded-lg border border-border bg-surface p-0.5">
+            <div role="tablist" aria-label="Workspace view" className="flex max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-0.5">
               {(["dataset", "policy", "watch", "reward"] as const).map((v) => (
                 <button
                   key={v}
                   role="tab"
                   aria-selected={view === v}
                   onClick={() => setView(v)}
-                  className={`rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`shrink-0 whitespace-nowrap rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {v === "dataset" ? "Dataset Visualization" : v === "policy" ? "Policy Evaluation" : v === "watch" ? "Watch Episodes" : activeReward ? `Reward · ${activeReward.name}` : "Reward function"}
                 </button>
