@@ -1,0 +1,30 @@
+<!-- @dsCard group="Data" height=380 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SymbolLegend</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+function Demo() {
+  var i = function (s) { return h('i', null, s); };
+  return h(B.SymbolLegend, { collapsible: true, groups: [
+    { items: [
+      { symbol: h(React.Fragment, null, i('d'), h('sub', null, i('j'))), meaning: "float j's distance from rest, the length of the line from the center of its map to its point" },
+      { symbol: h(React.Fragment, null, i('p'), h('sub', null, i('j')), ', ', i('v'), h('sub', null, i('j'))), meaning: "float j's position number and speed number; both are 0 when the float is at rest" },
+      { symbol: i('j'), meaning: 'a float, numbered 1 to 5' }] },
+    { title: 'Also new in this step', items: [
+      { symbol: 'start 0', meaning: 'the first of the 1,000 fixed starting states of the recorded-conditions evaluation bank (index 0)' },
+      { symbol: 'recorded', key: { shape: 'dot', sit: 'recorded' }, meaning: 'the recorded conditions, in distribution' }] }],
+    example: h(React.Fragment, null, 'At start 0, float 1 has ', i('p'), h('sub', null, '1'), ' = \u22120.3216 and ', i('v'), h('sub', null, '1'), ' = 0.0686.') });
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>

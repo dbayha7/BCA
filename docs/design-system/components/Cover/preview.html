@@ -1,0 +1,86 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BCA</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); overflow: hidden; padding: 0; }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; }
+  .art { position: absolute; top: 0; left: 480px; width: 480px; height: 288px; overflow: hidden; }
+  .art svg { display: block; width: 480px; height: 288px; }
+  .rec { fill: var(--sit-rec); }
+  .cut { fill: var(--bg); }
+  .gold { fill: var(--k-region); stroke: var(--k-region-ink); stroke-width: 1; }
+  .hatch { stroke: var(--ink-2); stroke-width: 1.4; }
+  .learn { fill: var(--k-learn); }
+  .soft { fill: var(--k-learn-soft); }
+  .ref { fill: var(--ink); }
+  .slab { rx: var(--radius-8); }
+  .words { position: absolute; left: var(--space-24); bottom: var(--space-24); max-width: 440px; }
+  .name { margin: 0; font-family: var(--font-display); font-size: 120px; line-height: .92; font-weight: 700;
+    letter-spacing: -0.01em; color: var(--ink); padding: 0; border: 0; }
+  .tagline { margin: var(--space-8) 0 0 4px; font-size: 14px; line-height: 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      sit-rec 72x272 · k-region 120x208 with its 1px k-region-ink edge · k-learn 104x272 · ink 144x96 · k-learn-soft 144x168 between two 8-tall k-learn bars (BCA's band) — about 41% of 960x288
+  arrangement the pipeline strip stood upright: collect, remove, train and band from left to right, the reference in ink above the band; bottoms on one line space-24 above the edge, space-8 gutters, slabs bleeding off the top, the band and the ink off the right edge
+  pattern     "the shape says the kind": dots (a recorded row) cut out of the recorded-data slab at a space-24 pitch, and the hatch of "removed from the data" across the gold tile at a space-24 pitch
+  scales      gutters space-8, pitch space-24, band bars space-8 tall, slab corners radius-8, dots r = space-4
+-->
+<defs>
+  <clipPath id="gold-clip"><rect x="96" y="56" width="120" height="208" rx="8"/></clipPath>
+  <clipPath id="band-clip"><rect x="336" y="96" width="160" height="168" rx="8"/></clipPath>
+</defs>
+<rect class="rec slab" x="16" y="-8" width="72" height="272" rx="8"/>
+<g class="cut">
+  <circle cx="36" cy="24" r="4"/><circle cx="68" cy="24" r="4"/>
+  <circle cx="36" cy="48" r="4"/><circle cx="68" cy="48" r="4"/>
+  <circle cx="36" cy="72" r="4"/><circle cx="68" cy="72" r="4"/>
+  <circle cx="36" cy="96" r="4"/><circle cx="68" cy="96" r="4"/>
+  <circle cx="36" cy="120" r="4"/><circle cx="68" cy="120" r="4"/>
+  <circle cx="36" cy="144" r="4"/><circle cx="68" cy="144" r="4"/>
+  <circle cx="36" cy="168" r="4"/><circle cx="68" cy="168" r="4"/>
+  <circle cx="36" cy="192" r="4"/><circle cx="68" cy="192" r="4"/>
+  <circle cx="36" cy="216" r="4"/>
+  <circle cx="36" cy="240" r="4"/>
+</g>
+<rect class="gold slab" x="96" y="56" width="120" height="208" rx="8"/>
+<g class="hatch" clip-path="url(#gold-clip)">
+  <line x1="96" y1="88" x2="128" y2="56"/>
+  <line x1="96" y1="112" x2="152" y2="56"/>
+  <line x1="96" y1="136" x2="176" y2="56"/>
+  <line x1="96" y1="160" x2="200" y2="56"/>
+  <line x1="96" y1="184" x2="224" y2="56"/>
+  <line x1="96" y1="208" x2="248" y2="56"/>
+  <line x1="96" y1="232" x2="272" y2="56"/>
+  <line x1="96" y1="256" x2="296" y2="56"/>
+  <line x1="96" y1="280" x2="320" y2="56"/>
+  <line x1="96" y1="304" x2="344" y2="56"/>
+  <line x1="96" y1="328" x2="368" y2="56"/>
+  <line x1="96" y1="352" x2="392" y2="56"/>
+  <line x1="96" y1="376" x2="416" y2="56"/>
+</g>
+<rect class="gold" x="96.5" y="56.5" width="119" height="207" rx="8" style="fill:none"/>
+<rect class="learn slab" x="224" y="-8" width="104" height="272" rx="8"/>
+<rect class="ref slab" x="336" y="-8" width="160" height="96" rx="8"/>
+<g clip-path="url(#band-clip)">
+  <rect class="soft" x="336" y="96" width="160" height="168"/>
+  <rect class="learn" x="336" y="96" width="160" height="8"/>
+  <rect class="learn" x="336" y="256" width="160" height="8"/>
+</g>
+</svg>
+</div>
+<div class="words">
+  <h1 class="name">BCA</h1>
+  <p class="tagline">One meaning per color, and never a color without its label.</p>
+</div>
+</div>
+</body>
+</html>

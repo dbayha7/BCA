@@ -1,0 +1,27 @@
+<!-- @dsCard group="Navigation" height=560 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PipelineStrip</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+var STEPS = [{"step": "collect", "title": "Collect the data", "short": "Collect", "href": "#dataset", "go": "The recorded data", "text": "The recording controller, a fixed controller, drives 100-step episodes in the recorded conditions of the stalling world. Each step becomes one row of the data."}, {"step": "remove", "title": "Remove commands", "short": "Remove", "href": "#shift", "go": "The distribution shift", "text": "Main test: the densest-15% removal deletes the 15% of recorded commands that sit closest together, which here is the recording controller's full-throttle cluster."}, {"step": "train", "title": "Train TD3+BC", "short": "Train", "href": "#methods", "go": "Methods", "text": "On the rows that are left, TD3+BC trains a critic, which scores every command in every state, and with it an actor, the learned controller."}, {"step": "band", "title": "Add BCA's band", "short": "Band", "href": "#bca-test", "go": "The BCA test", "text": "BCA builds a band, a range around the critic's estimate, sized on recorded rows kept out of training."}, {"step": "test", "title": "Test the actor", "short": "Test", "href": "#starting-state", "go": "Starting State", "text": "Every actor is scored exactly on each situation's 1,000 fixed starts: in the recorded conditions and in three shifted situations."}];
+function Demo() {
+  var s = useState(['train']), here = s[0];
+  var cur = STEPS.filter(function (x) { return x.step === here[0]; })[0];
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '18px' } },
+    h(B.PipelineStrip, { steps: STEPS }),
+    h(B.PipelineStrip, { steps: STEPS, compact: true, selectable: true, here: here, onHereChange: s[1] }),
+    h('p', { className: 'stepnote' }, h(B.StepChip, { step: cur.step }), cur.title, ': ', cur.text));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!-- @dsCard group="Data" height=540 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chart</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+var pct = function (v) { return Math.round(v * 100) + '%'; };
+var num = B.format.num;
+function Demo() {
+  return h(B.Chart, {
+    ariaLabel: 'Push of one thruster by throttle in the two worlds, and the throttle cost',
+    x: { min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1], label: 'Throttle of one thruster', format: pct, readFormat: function (v) { return 'Throttle ' + pct(v); } },
+    y: { min: 0, max: 1, ticks: [0, 0.2, 0.4, 0.6, 0.8, 1], label: 'Push', format: function (v) { return num(v, 2); }, tickFormat: function (v) { return String(v); } },
+    step: 0.01,
+    series: [
+      { id: 'nostall', label: 'No-stall world', className: 'ln-nostall', color: 'k-rise', points: [[0, 0], [1, 1]] },
+      { id: 'stall', label: 'Stalling world', className: 'ln-stall', color: 'k-stall', points: [[0, 0], [0.8, 0.8], [1, 0.5]] },
+      { id: 'cost', label: 'Throttle cost', className: 'ln-cost', color: 'ink-2', points: [[0.0, 0.0], [0.05, 0.00075], [0.1, 0.003], [0.15, 0.00675], [0.2, 0.012], [0.25, 0.01875], [0.3, 0.027], [0.35, 0.03675], [0.4, 0.048], [0.45, 0.06075], [0.5, 0.075], [0.55, 0.09075], [0.6, 0.108], [0.65, 0.12675], [0.7, 0.147], [0.75, 0.16875], [0.8, 0.192], [0.85, 0.21675], [0.9, 0.243], [0.95, 0.27075], [1.0, 0.3]], format: function (v) { return num(v, 3); } }
+    ],
+    guides: [{ x: 0.8, className: 'knee k80' }],
+    marks: [{ x: 0.9, y: 0.65, className: 'pt-stall' }, { x: 1, y: 0.5, className: 'pt-stall' }],
+    labels: [
+      { x: 0.78, y: 0.94, text: 'No-stall world: push keeps rising', anchor: 'end' },
+      { x: 0.985, y: 0.4, text: 'Stalling world: 0.65 at 90%, 0.5 at full', anchor: 'end' },
+      { x: 0.41, y: 0.125, text: 'throttle cost 0.3 \u00d7 throttle\u00b2', anchor: 'middle' },
+      { x: 0.812, y: 0.04, text: '80%: the knee', className: 'ann' }
+    ],
+    legend: [{ shape: 'line', world: 'stall', label: 'Stalling world' }, { shape: 'line', world: 'no_stall', label: 'No-stall world' }, { shape: 'dots', label: 'Throttle cost' }],
+    caption: "Push of one thruster by throttle. At or below 80% the two worlds are identical; past it the stalling world's push falls by 1.5 for every unit of throttle."
+  });
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>

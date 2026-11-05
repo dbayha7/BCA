@@ -1,0 +1,33 @@
+<!-- @dsCard group="Actions" height=520 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Option</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+var SITS = [{"value": "recorded", "name": "Recorded conditions", "description": "In distribution: where the data come from."}, {"value": "strong_current", "name": "Strong current", "description": "Dynamics extrapolation."}, {"value": "big_waves", "name": "Big waves", "description": "Disturbance shift."}, {"value": "big_kicks", "name": "Big starting pushes", "description": "Initial-state shift."}], WORLDS = [{"value": "stall", "name": "Stalling world", "description": "Past 80% throttle the propeller stalls: push 0.65 at 90%, 0.5 at full throttle. The data were recorded here."}, {"value": "no_stall", "name": "No-stall comparison world", "description": "Push keeps rising to 100% throttle. Identical to the stalling world at or below 80%."}], CTRLS = [{"value": "recording", "name": "Recording controller", "description": "Made the data. Sometimes gives the full-throttle command."}, {"value": "stall_aware", "name": "Stall-aware controller", "description": "The textbook command, capped at 80%. Never stalls."}, {"value": "rising_thrust", "name": "Rising-thrust controller", "description": "The same textbook command, up to 100%. Assumes push keeps rising."}, {"value": "no_throttle", "name": "No throttle", "description": "All thrusters off: the water acting alone.", "dash": true}];
+function nameOf(list, v) { for (var i = 0; i < list.length; i++) if (list[i].value === v) return list[i].name; return v; }
+function Demo() {
+  var a = useState('recorded'), b = useState('stall'), c = useState('stall_aware');
+  return h(B.Panel, null,
+    h('div', { className: 'opts' },
+      h(B.OptionGroup, { n: 1, question: 'Which situation?', hint: 'Each actor is scored on 1,000 fixed starts per situation.', group: 'sit', options: SITS, value: a[0], onChange: a[1] }),
+      h(B.OptionGroup, { n: 2, question: 'Which world?', group: 'world', options: WORLDS, value: b[0], onChange: b[1] }),
+      h(B.OptionGroup, { n: 3, question: 'Who drives?', group: 'ctrl', options: CTRLS, value: c[0], onChange: c[1] })),
+    h(B.KeyValue, { items: [
+      { label: 'Situation', value: h(B.Mention, { sit: a[0] }, nameOf(SITS, a[0])) },
+      { label: 'World', value: h(B.Mention, { world: b[0] }, nameOf(WORLDS, b[0])) },
+      { label: 'Who drives', value: h(B.Mention, { k: c[0] }, nameOf(CTRLS, c[0])) }
+    ] }));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>

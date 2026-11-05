@@ -1,0 +1,36 @@
+<!-- @dsCard group="Data" height=300 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Readout</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+var WORLDS = [{"value": "stall", "name": "Stalling world", "description": "Past 80% throttle the propeller stalls: push 0.65 at 90%, 0.5 at full throttle. The data were recorded here."}, {"value": "no_stall", "name": "No-stall comparison world", "description": "Push keeps rising to 100% throttle. Identical to the stalling world at or below 80%."}];
+var num = B.format.num;
+function push(a, world) { return world === 'stall' && a > 0.8 ? 0.8 - 1.5 * (a - 0.8) : a; }
+function Demo() {
+  var th = useState(90), w = useState('stall');
+  var a = th[0] / 100, p = push(a, w[0]), stalled = w[0] === 'stall' && a > 0.8;
+  return h(B.Panel, null,
+    h(B.OptionGroup, { question: 'Which world?', group: 'world', options: WORLDS, value: w[0], onChange: w[1] }),
+    h('div', { className: 'transport' },
+      h('input', { type: 'range', min: 0, max: 100, value: th[0], 'aria-label': 'Throttle of thruster 1', onChange: function (e) { th[1](Number(e.target.value)); } }),
+      h('span', { className: 'tlabel' }, th[0] + '%')),
+    h(B.Readout, { items: [
+      { name: 'thruster 1 throttle', value: th[0] + '%' },
+      { name: 'thruster 1 push', value: num(p, 2) + (stalled ? ' STALLED' : ''), tone: stalled ? 'stall' : undefined },
+      { name: 'throttle cost (0.3 \u00d7 throttle\u00b2)', value: num(0.3 * a * a, 3) },
+      { name: 'push lost to the stall', value: num(a - p, 2) }
+    ] }));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>

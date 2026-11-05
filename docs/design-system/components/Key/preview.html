@@ -1,0 +1,35 @@
+<!-- @dsCard group="Labels" height=220 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Key</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+function Demo() {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+    h(B.Legend, { items: [
+      { shape: 'dot', sit: 'recorded', label: 'Recorded conditions' }, { shape: 'dot', sit: 'strong_current', label: 'Strong current' },
+      { shape: 'dot', sit: 'big_waves', label: 'Big waves' }, { shape: 'dot', sit: 'big_kicks', label: 'Big starting pushes' },
+      { shape: 'sitall', label: 'The situation you picked' }] }),
+    h(B.Legend, { items: [
+      { shape: 'line', world: 'stall', label: 'Stalling world' }, { shape: 'line', world: 'no_stall', label: 'No-stall world' },
+      { shape: 'line', k: 'learn', label: 'Critic, actor and band' }, { shape: 'line', k: 'stall_aware', label: 'Stall-aware controller' },
+      { shape: 'dash', k: 'no_throttle', label: 'No throttle' }, { shape: 'dots', label: 'Throttle cost' }] }),
+    h(B.Legend, { items: [
+      { shape: 'tile', k: 'region', label: 'Full-throttle region' }, { shape: 'removed', k: 'region', label: 'Removed: the densest 15%' },
+      { shape: 'removed', k: 'hold', label: 'Removed: the 80% hold' }, { shape: 'ring', label: 'A float' }] }),
+    h('p', { className: 'note' }, 'The ', h(B.Mention, { k: 'recording' }, 'recording controller'), ' drives in the ',
+      h(B.Mention, { sit: 'recorded' }, 'recorded conditions'), ' of the ', h(B.Mention, { world: 'stall' }, 'stalling world'),
+      '; its most common command, the ', h(B.Mention, { k: 'region' }, 'full-throttle command'), ', puts thruster 1 past 80%.'));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>

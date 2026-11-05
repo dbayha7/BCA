@@ -1,0 +1,28 @@
+<!-- @dsCard group="Data" height=700 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DotRange</title>
+<style>
+  body { margin: 0; padding: 16px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+var B = window.BCA, h = React.createElement, useState = React.useState;
+function Demo() {
+  return h(B.DotRange, { min: -40, max: 100, ticks: [-40, -20, 0, 20, 40, 60, 80, 100], rows: [{"group": "Starting points"}, {"name": "Cloned actor (the start of every arm)", "mean": 54.4, "lo": 47.6, "hi": 61.8, "kind": "ref"}, {"name": "No extra caution (the return-cost check's actor on this critic)", "mean": -14.3, "lo": -21.5, "hi": -10.7, "kind": "ref"}, {"group": "Penalty from the critic's exact error at the actor's own command"}, {"name": "Oracle penalty at the actor's command", "note": "(main arm)", "label": "Oracle penalty at the actor's command (main arm)", "strong": true, "mean": 79.7, "lo": 72.7, "hi": 83.5, "kind": "hi"}, {"name": "Oracle, half strength", "mean": 75.5, "lo": 67.4, "hi": 83.0, "kind": "hi"}, {"name": "Oracle, two-sided form", "mean": 75.7, "lo": 69.6, "hi": 83.1, "kind": "hi"}, {"name": "Oracle, the plan's literal form (size of the error)", "mean": 77.5, "lo": 66.0, "hi": 82.8, "kind": "hi"}, {"name": "Oracle, the plan's literal overrating side", "mean": 74.1, "lo": 64.9, "hi": 81.3, "kind": "hi"}, {"name": "Exact long-run harm as the penalty", "mean": 82.2, "lo": 71.0, "hi": 88.5, "kind": "hi"}, {"group": "The same information, misplaced or on the wrong side"}, {"name": "Oracle taken from another training state", "mean": -0.3, "lo": -7.1, "hi": 5.7, "kind": "lo"}, {"name": "The underrating side of the error (wrong side)", "mean": -17.0, "lo": -22.2, "hi": -13.1, "kind": "lo"}, {"group": "Untargeted penalties of matched strength"}, {"name": "Even extra pull, matched strength", "mean": -12.7, "lo": -17.4, "hi": -4.1, "kind": "lo"}, {"name": "Push less everywhere, matched", "mean": -9.7, "lo": -18.4, "hi": 2.6, "kind": "lo"}, {"name": "Random penalty surface 1, matched", "mean": -19.4, "lo": -32.7, "hi": -11.8, "kind": "lo"}, {"name": "Random penalty surface 2, matched", "mean": -14.5, "lo": -16.9, "hi": -12.2, "kind": "lo"}, {"group": "No signal"}, {"name": "Clip to the recorded range (no signal)", "mean": 93.1, "lo": 89.8, "hi": 95.7, "kind": "ref"}],
+    axisLabel: 'Points in strong current, stalling world (0 = recording controller, 100 = stall-aware controller)',
+    legend: [
+      { swatch: 'dr-hi', label: "penalty from the critic's exact error at the actor's own command" },
+      { swatch: 'dr-lo', label: 'untargeted or misplaced penalty' },
+      { ring: true, label: 'no signal, or a starting point' },
+      { line: 'ink-2', label: 'lowest to highest seed' }],
+    caption: 'Dot: mean over seeds 0\u20134. Hover over or focus a row for its seed range.' });
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(Demo));
+</script>
+</body>
+</html>
