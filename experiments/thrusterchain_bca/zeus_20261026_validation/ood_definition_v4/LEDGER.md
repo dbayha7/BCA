@@ -219,3 +219,20 @@ A formal G2 runs once on fresh sealed streams under a rule written first.
   first training job would refuse and end the last attempt INCOMPLETE; training cap 9 h -> 13 h for Titan's ~1.8x
   slower jobs. Re-sealed (manifest 920b31c9...; supersedes A1's fd65e961..., never approved); 12 tests pass; the
   attempt-2 approval check rehearsed; approval helper `approve_confirmation_v1.py` outside the sealed folder.
+- **Confirmation v1, attempt 2 on Zeus (2026-11-02 16:15:59-18:22:36 UTC, user-run, manifest 920b31c9…, approval
+  403ed57d): INCOMPLETE, ended from outside.** At 18:18:30 UTC GitHub Desktop switched Zeus's checkout from
+  `codex/thrusterchain-bca-handoff-titan` to `claude/bca-mechanics` and pulled. To do so it stashed 100 files
+  (`!!GitHub_Desktop<codex/thrusterchain-bca-handoff-titan>`), among them every untracked record file of the running
+  attempt: the 13 completed units' `job.json`, `report.json` and `SUPERVISOR_RESULT.json`. `bca_branch_s1_k189_stall3`
+  finished its 10,000 updates, then failed reading `branch_s1_stall3/report.json` (FileNotFoundError, exit 1). The
+  13 completed units are the three stall3 warmups, the three stall3 native branches, and the BCA branches at kappa
+  21 and 63 for all seeds plus kappa 189 for seed 0. Training was 7,597 s; no evaluation ran, so no read, reading or
+  outcome value from the fresh seeds exists. Checkpoints (git-ignored) stayed on disk. The 77 missing attempt-2
+  files were restored from the stash byte for byte (git object ids checked). Zeus's branch was not switched back and
+  the stash was kept: it also holds uncommitted Path A work.
+- **Confirmation v1 amendment A3 (2026-11-02 ~18:50 UTC, the user's decision after attempt 2):** attempt limit 2 -> 3,
+  the third only after an INCOMPLETE attempt 2, no attempt 4 (`cf.py` `MAX_ATTEMPTS`). Attempt 3 runs on Zeus. It
+  reuses the 13 completed units under the existing reuse rule and runs the other 17 training jobs and all 24
+  evaluations. Caps, doses, seeds, reads, bars, readings and approval words are unchanged. The attempt-2 approval is
+  removed because it binds the pre-A3 manifest. The package is re-sealed, and attempt 3 needs the user's approval at
+  Zeus. Rule added: no GitHub Desktop branch switch, stash or pull in a checkout while a run is live there.

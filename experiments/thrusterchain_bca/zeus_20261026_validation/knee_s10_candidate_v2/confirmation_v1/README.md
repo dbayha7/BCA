@@ -4,6 +4,10 @@ The rule is `CONFIRMATION_RULE.md`, written before any fresh-seed number exists.
 one run: thirty GPU training jobs (about 4 hours) and twenty-four evaluations, user-run in the recorded WSL
 environment. Agents never run the worker and never open a checkpoint.
 
+**State after amendment A3 (2026-11-02):** attempt 2 ran on Zeus and ended INCOMPLETE when a GitHub Desktop branch
+switch stashed its record files mid-run (13 stall3 training units completed, no evaluation; the records are restored).
+Attempt 3, the last, runs on Zeus and reuses those 13 units: see "Attempt 3 on Zeus" below.
+
 ## Before the run (done by the agent, on Windows)
 
 - `cf_seeds.json` written and audited (`cf_seeds.py`): fresh training rows from the reserved confirmation namespace.
@@ -37,7 +41,40 @@ recomputes the decision from the saved reports without a GPU. After an INCOMPLET
 file, write one naming attempt 2 (same sentences), and launch again: completed training units are reused and every
 evaluation reruns.
 
-## Attempt 2 on Titan (amendments A1 and A2), after the r5 screen finishes
+## Attempt 3 on Zeus (amendment A3)
+
+In a Zeus PowerShell. Use these commands, not GitHub Desktop: its branch switch stashes the run's untracked record
+files, which is what ended attempt 2, and its "Restore" of that stash would clash with the restored records. Put the
+checkout back on the handoff branch and pull the amendment (the pull also removes the attempt-2 approval):
+
+```powershell
+cd C:\Users\David\dev\BCA
+git switch codex/thrusterchain-bca-handoff-titan
+git pull
+```
+
+Write attempt 3's approval with the helper (outside the sealed folder; refuses to overwrite):
+
+```powershell
+wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/David/dev/BCA && /home/david/bca-operator-audit-20261026/bin/python -B experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/approve_confirmation_v1.py --attempt 3"
+```
+
+Commit the approval with attempt 2's record (checkpoints and logs are git-ignored), and push:
+
+```powershell
+git add experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1/CF_APPROVAL.json experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1/cf_run/attempt_2
+git commit -m "Approve confirmation v1 attempt 3 on Zeus (amendment A3); record attempt 2 (INCOMPLETE)"
+git push origin HEAD:codex/thrusterchain-bca-handoff-20261026
+```
+
+Run, in a window that stays open (17 training jobs and 24 evaluations, about 2.5 to 3 h; close GitHub Desktop
+first and leave the checkout alone until it prints the reading):
+
+```powershell
+wsl -d Ubuntu -- bash -lc "cd /mnt/c/Users/David/dev/BCA/experiments/thrusterchain_bca/zeus_20261026_validation/knee_s10_candidate_v2/confirmation_v1 && PYTHONDONTWRITEBYTECODE=1 /home/david/bca-operator-audit-20261026/bin/python -B -u cf.py --execute 2>&1 | tee cf_console_attempt3.log"
+```
+
+## Attempt 2 on Titan (amendments A1 and A2), after the r5 screen finishes (not used: attempt 2 ran on Zeus, approval 403ed57d)
 
 The checkout is `C:\Users\David Bayha\BCA`; the WSL user is `dbayha`; the interpreter is `/home/dbayha/bca-gpu/bin/python`.
 Never run this alongside the r5 screen on Titan's one GPU. In a Titan PowerShell at the checkout, remove the attempt-1
