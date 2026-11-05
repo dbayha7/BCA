@@ -91,7 +91,7 @@ export function SweepConfig({
 
       <fieldset className="space-y-3 rounded-lg border border-border bg-card/50 p-3.5">
         <legend className="px-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Conservative weight α range (linear)
+          Conservative weight <span className="normal-case">α</span> range (linear)
         </legend>
         <div className="grid grid-cols-3 gap-2.5">
           <Num label="Min" value={settings.alphaMin} min={0} max={settings.alphaMax} step={0.25} onChange={(v) => set({ alphaMin: v })} disabled={disabled} />
@@ -100,9 +100,10 @@ export function SweepConfig({
         </div>
       </fieldset>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-3 gap-2.5">
         <Num label="Updates per run" value={settings.totalUpdates} min={200} max={6000} step={100} onChange={(v) => set({ totalUpdates: Math.round(v) })} disabled={disabled} />
         <Num label="Discount γ" value={settings.gamma} min={0.5} max={0.999} step={0.01} onChange={(v) => set({ gamma: v })} disabled={disabled} />
+        <Num label="Sweep seed" value={settings.seed} min={0} max={2147483647} step={1} onChange={(v) => set({ seed: Math.round(v) })} disabled={disabled} />
       </div>
 
       <fieldset className="space-y-3 rounded-lg border border-border bg-card/50 p-3.5">
@@ -138,7 +139,7 @@ export function SweepConfig({
           />
         </div>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
-          After the grace period, a run is stopped early if its true return trails the best run seen at the same training checkpoint by more than the prune gap.
+          After the grace period, a run is stopped early if its true return trails the best <em>lower-numbered</em> run at the same training checkpoint by more than the prune gap. Comparing by run number instead of finishing order gives the same decisions for any number of workers.
         </p>
       </fieldset>
 

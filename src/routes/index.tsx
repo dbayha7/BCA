@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Slider } from "@/components/ui/slider";
@@ -31,15 +31,59 @@ import { ExperimentLog } from "@/components/lab/experiment-log";
 import { LicensePanel } from "@/components/lab/license-panel";
 import { CollaborationPanel } from "@/components/lab/collaboration-panel";
 import { buildLicenseBlock, isExpired, signLicenseBlock, DEFAULT_LICENSE, type LicenseConfig, type SigningKey } from "@/lib/licensing";
+import { buildLogEntries } from "@/components/lab/experiment-log";
+import { PanelErrorBoundary } from "@/components/lab/error-boundary";
+import { StorageStatus, type SaveState } from "@/components/lab/storage-status";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { resumableRng, type ResumableRng } from "@/lib/rng";
+import { checkpointsStore, experimentsStore, kv, storageSupported, uploadsStore } from "@/lib/store";
+import { defaultExperimentName, hyperEqual, parseTags, type ExperimentRecord, type ExperimentStatus } from "@/lib/experiments";
+import { checkQ, metricsSane } from "@/lib/guards";
+import { recordError, recentErrors } from "@/lib/error-log";
+import { auditMarkdown, buildAuditLog, downloadText, metricsCsv, slugify } from "@/lib/log-export";
+import { checkAlerts, DEFAULT_ALERT_RULES, EMPTY_MEMORY, notifySystem, requestNotifyPermission, type AlertRules } from "@/lib/alerts";
+import { buildModelCard } from "@/lib/model-card";
+import { usePersistentState } from "@/lib/use-persistent-state";
+import { Switch } from "@/components/ui/switch";
+import { DatasetRewardChart, PolicyReturnRisk } from "@/components/lab/risk-charts";
+import { StressOverlay } from "@/components/lab/safety-panel";
+import { RewardEditor } from "@/components/lab/reward-editor";
+import { buildRewardJob, originalDataset, relabelDataset, REWARD_PRESETS } from "@/lib/sandbox/reward";
+import { runRewardSandbox } from "@/lib/sandbox/client";
 
-export const Route = createFileRoute("/")({ component: LabPage });
+export const Route = createFileRoute("/")({
+  component: LabPage,
+  // `?run=<id>` opens a saved run (used by the Experiments page).
+  validateSearch: (s: Record<string, unknown>): { run?: string } => (typeof s.run === "string" ? { run: s.run } : {}),
+});
 
 const DEFAULT_HYPER: Hyper = { alpha: 1.0, gamma: 0.95, lr: 0.3, batch: 64 };
+/** Seed of every run's minibatch stream (unchanged from before saving existed). */
+const TRAIN_SEED = 1234;
+const MAX_CHECKPOINTS = 20;
+
+function newId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    // Non-secure contexts lack crypto.subtle; a length+prefix key still separates uploads.
+    return `n${text.length}-${text.slice(0, 64).replace(/\W/g, "")}`;
+  }
+}
 
 function Logo() {
   return (
     <div className="flex items-center gap-2.5">
-      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" className="text-primary" aria-hidden>
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none" className="text-primary" role="img" aria-label="Offline Learning Lab">
         {/* A frozen "replay buffer" stack with a learning curve escaping it */}
         <rect x="2.5" y="15" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.6" />
         <rect x="2.5" y="20" width="12" height="3" rx="1" stroke="currentColor" strokeWidth="1.6" opacity="0.55" />
@@ -47,7 +91,7 @@ function Logo() {
         <circle cx="23.5" cy="3" r="1.6" fill="currentColor" />
         <path d="M18 14v9M18 23l-2.5-2.5M18 23l2.5-2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" opacity="0.55" />
       </svg>
-      <div className="flex items-baseline gap-1 leading-none">
+      <div className="hidden items-baseline gap-1 leading-none sm:flex">
         <span className="font-display text-[15px] font-bold tracking-tight">Offline</span>
         <span className="font-display text-[15px] font-light tracking-wide text-muted-foreground">Learning Lab</span>
       </div>
@@ -85,7 +129,9 @@ function Panel({ title, right, children, className = "", delay = 0 }: { title: s
         <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
         {right}
       </header>
-      <div className="p-4">{children}</div>
+      <div className="p-4">
+        <PanelErrorBoundary name={title}>{children}</PanelErrorBoundary>
+      </div>
     </section>
   );
 }
@@ -115,11 +161,128 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "wa
   );
 }
 
+function RunMetaEditor({
+  info,
+  updates,
+  computeMs,
+  onChange,
+}: {
+  info: { id: string; name: string; tags: string[]; notes: string; status: ExperimentStatus };
+  updates: number;
+  computeMs: number;
+  onChange: (patch: Partial<Pick<ExperimentRecord, "name" | "tags" | "notes">>) => void;
+}) {
+  const [name, setName] = useState(info.name);
+  const [tags, setTags] = useState(info.tags.join(", "));
+  const [notes, setNotes] = useState(info.notes);
+  // The run is named automatically at its first step; follow that unless the user is typing.
+  useEffect(() => setName((n) => (n === "" ? info.name : n)), [info.name]);
+  const field = "w-full rounded-md border border-border bg-surface/60 px-2.5 py-1.5 text-[12px] outline-none transition-colors focus:border-ring focus-visible:ring-2 focus-visible:ring-ring/40";
+  return (
+    <div className="space-y-2.5">
+      <label className="block">
+        <span className="text-[11px] text-muted-foreground">Name</span>
+        <input
+          className={`${field} mt-1`}
+          value={name}
+          placeholder="Named at the first training step"
+          maxLength={120}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => name.trim() && name.trim() !== info.name && onChange({ name: name.trim() })}
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] text-muted-foreground">Tags (comma-separated)</span>
+        <input
+          className={`${field} mt-1`}
+          value={tags}
+          placeholder="baseline, high-alpha"
+          onChange={(e) => setTags(e.target.value)}
+          onBlur={() => onChange({ tags: parseTags(tags) })}
+        />
+      </label>
+      <label className="block">
+        <span className="text-[11px] text-muted-foreground">Notes</span>
+        <textarea
+          className={`${field} mt-1 min-h-[56px] resize-y`}
+          value={notes}
+          maxLength={4000}
+          placeholder="What are you testing?"
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() => notes !== info.notes && onChange({ notes })}
+        />
+      </label>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span className="font-mono tabular-nums" title="Time this run has spent computing updates and evaluations">
+          {updates.toLocaleString()} upd · {(computeMs / 1000).toFixed(1)} s{computeMs > 0 ? ` · ${Math.round(updates / (computeMs / 1000)).toLocaleString()}/s` : ""}
+        </span>
+        <Link to="/experiments" className="font-medium text-primary hover:underline">
+          All experiments →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function AlertsEditor({ rules, onChange }: { rules: AlertRules; onChange: (r: AlertRules) => void }) {
+  const num = "w-20 rounded-md border border-border bg-surface/60 px-2 py-1 text-right font-mono text-[12px] tabular-nums outline-none focus:border-ring";
+  const set = (patch: Partial<AlertRules>) => onChange({ ...rules, ...patch });
+  return (
+    <div className="space-y-2.5 text-[12px]">
+      <label className="flex items-center justify-between gap-2">
+        <span>
+          Plateau after <span className="text-muted-foreground">(steps, 0 = off)</span>
+        </span>
+        <input className={num} type="number" min={0} max={2000} step={5} value={rules.plateauSteps} onChange={(e) => set({ plateauSteps: Math.max(0, Math.round(Number(e.target.value) || 0)) })} />
+      </label>
+      <label className="flex items-center justify-between gap-2">
+        <span>
+          Target true return <span className="text-muted-foreground">(blank = off)</span>
+        </span>
+        <input
+          className={num}
+          type="number"
+          step={0.1}
+          value={rules.targetReturn ?? ""}
+          onChange={(e) => set({ targetReturn: e.target.value === "" ? null : Number(e.target.value) })}
+        />
+      </label>
+      <label className="flex items-center justify-between gap-2">
+        <span>
+          Regression drop <span className="text-muted-foreground">(0 = off)</span>
+        </span>
+        <input className={num} type="number" min={0} step={0.1} value={rules.regressionDrop} onChange={(e) => set({ regressionDrop: Math.max(0, Number(e.target.value) || 0) })} />
+      </label>
+      <div className="flex items-center justify-between gap-2">
+        <span>Pause auto-train on plateau or target</span>
+        <Switch checked={rules.autoPause} onCheckedChange={(v) => set({ autoPause: v })} aria-label="Pause auto-train on plateau or target" />
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <span>System notification when the tab is hidden</span>
+        <Switch
+          checked={rules.notify}
+          aria-label="System notification when the tab is hidden"
+          onCheckedChange={(v) => {
+            if (!v) return set({ notify: false });
+            void requestNotifyPermission().then((p) => {
+              if (p === "granted") set({ notify: true });
+              else toast.message(p === "unsupported" ? "This browser does not support notifications here." : "Notifications are blocked for this site in your browser settings.");
+            });
+          }}
+        />
+      </div>
+      <p className="text-[11px] leading-relaxed text-muted-foreground">Pausing when the true return stops improving saves compute: further steps rarely help once a run has plateaued.</p>
+    </div>
+  );
+}
+
 function LabPage() {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
   const [datasetId, setDatasetId] = useState<DatasetId>("gridworld-random");
   const [customDs, setCustomDs] = useState<Dataset | null>(null);
   const [hyper, setHyper] = useState<Hyper>(DEFAULT_HYPER);
-  const [view, setView] = useState<"dataset" | "policy" | "watch">("dataset");
+  const [view, setView] = useState<"dataset" | "policy" | "watch" | "reward">("dataset");
   const [heat, setHeat] = useState<HeatMode>("estimate");
   const [history, setHistory] = useState<Metrics[]>([]);
   const [version, setVersion] = useState(0);
@@ -128,7 +291,13 @@ function LabPage() {
   const [activeCheckpointId, setActiveCheckpointId] = useState<string | null>(null);
   const [thrusterDs, setThrusterDs] = useState<Dataset | null>(null);
   const [working, setWorking] = useState<{ pct: number; label: string } | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>(() => (storageSupported() ? { kind: "idle" } : { kind: "unavailable" }));
+  const [runInfo, setRunInfo] = useState<{ id: string; name: string; tags: string[]; notes: string; status: ExperimentStatus } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [alertRules, setAlertRules] = usePersistentState<AlertRules>("alerts:rules", DEFAULT_ALERT_RULES);
+  const alertRulesRef = useRef(alertRules);
+  alertRulesRef.current = alertRules;
+  const alertMemoryRef = useRef(EMPTY_MEMORY);
 
   // ThrusterChain's 13-dim float64 simulation runs in a Web Worker so the UI never blocks.
   useEffect(() => {
@@ -146,6 +315,7 @@ function LabPage() {
       .catch((e) => {
         if (cancelled) return;
         setWorking(null);
+        recordError("worker", e, "ThrusterChain dataset simulation");
         toast.error(e instanceof Error ? e.message : "ThrusterChain simulation failed.");
       });
     return () => {
@@ -153,29 +323,324 @@ function LabPage() {
     };
   }, [datasetId, thrusterDs]);
 
-  const ds = useMemo<Dataset | null>(() => {
+  /** The dataset as logged. */
+  const baseDs = useMemo<Dataset | null>(() => {
     if (datasetId === "custom") return customDs;
     if (datasetId === "thrusterchain-stall") return thrusterDs;
     return generateDataset(datasetId, datasetId === "gridworld-random" ? 7 : 11);
   }, [datasetId, customDs, thrusterDs]);
+  // A custom reward function (Reward tab) relabels the logged transitions; training then uses that copy.
+  const [relabeled, setRelabeled] = useState<Dataset | null>(null);
+  const [rewardInfo, setRewardInfo] = useState<{ name: string; code: string } | null>(null);
+  const ds = relabeled && baseDs && originalDataset(relabeled) === baseDs ? relabeled : baseDs;
+  const activeReward = ds && ds !== baseDs ? rewardInfo : null;
+  const rewardRef = useRef(activeReward);
+  rewardRef.current = activeReward;
+  /** Reward a run being reopened needs re-applied (in the sandbox) before it can be restored. */
+  const pendingRewardRef = useRef<{ name: string; code: string } | null>(null);
+  const [rewardRequest, setRewardRequest] = useState(0);
 
   const qRef = useRef<Float64Array>(new Float64Array(0));
-  const rngRef = useRef(mulberry32(1));
+  const rngRef = useRef<ResumableRng>(resumableRng(TRAIN_SEED));
 
+  /* ---------- Runs: every training run is recorded and saved locally as it trains ---------- */
+  const runRef = useRef<ExperimentRecord | null>(null);
+  /** Full metrics history of the current run (the charts show the latest 200 steps). */
+  const fullHistoryRef = useRef<Metrics[]>([]);
+  const pendingRestoreRef = useRef<ExperimentRecord | null>(null);
+  const uploadKeyRef = useRef<string | undefined>(undefined);
+  const hydratedRef = useRef(false);
+  const saveTimer = useRef<number | null>(null);
+  const dsRef = useRef(ds);
+  dsRef.current = ds;
+  const hyperRef = useRef(hyper);
+  hyperRef.current = hyper;
+
+  const publishRun = useCallback((rec: ExperimentRecord | null) => {
+    setRunInfo(rec ? { id: rec.id, name: rec.name, tags: rec.tags, notes: rec.notes, status: rec.status } : null);
+  }, []);
+
+  /** A consistent copy of the current run, or null before its first training step. */
+  const snapshotRun = useCallback((): ExperimentRecord | null => {
+    const rec = runRef.current;
+    const d = dsRef.current;
+    if (!rec || !d || fullHistoryRef.current.length === 0) return null;
+    const hist = [...fullHistoryRef.current];
+    // Use the run's own hyperparameters and optimum: the page may already show a different dataset.
+    return {
+      ...rec,
+      hyper: { ...rec.hyper },
+      hyperLog: rec.hyperLog.map((h) => ({ ...h, hyper: { ...h.hyper } })),
+      guardEvents: [...rec.guardEvents],
+      history: hist,
+      q: new Float64Array(qRef.current),
+      rngState: rngRef.current.state(),
+      anomalies: buildLogEntries(hist, d, rec.hyper, rec.optimal).filter((e) => e.kind === "anomaly").length,
+      updatedAt: Date.now(),
+    };
+  }, []);
+
+  const persist = useCallback((snap: ExperimentRecord) => {
+    setSaveState({ kind: "saving" });
+    experimentsStore
+      .put(snap)
+      .then(() => kv.set("currentExperimentId", snap.id))
+      .then(() => setSaveState({ kind: "saved", at: Date.now() }))
+      .catch((e) => {
+        const message = e instanceof Error ? e.message : "Local storage write failed.";
+        setSaveState(storageSupported() ? { kind: "failed", message } : { kind: "unavailable" });
+        recordError("storage", e, `saving run “${snap.name}”`);
+      });
+  }, []);
+
+  /** Saves at most once a second while training (trailing edge), so auto-train stays fast. */
+  const scheduleSave = useCallback(() => {
+    if (!hydratedRef.current || saveTimer.current !== null) return;
+    saveTimer.current = window.setTimeout(() => {
+      saveTimer.current = null;
+      const snap = snapshotRun();
+      if (snap) persist(snap);
+    }, 1000);
+  }, [snapshotRun, persist]);
+
+  const flushSave = useCallback(() => {
+    if (saveTimer.current !== null) {
+      window.clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+    }
+    const snap = snapshotRun();
+    if (snap) persist(snap);
+  }, [snapshotRun, persist]);
+
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") flushSave();
+    };
+    window.addEventListener("pagehide", flushSave);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("pagehide", flushSave);
+      document.removeEventListener("visibilitychange", onHide);
+      // Leaving the lab for another page (Experiments, Sweep…) saves the run first.
+      flushSave();
+    };
+  }, [flushSave]);
+
+  const makeRun = useCallback((d: Dataset, h: Hyper): ExperimentRecord => {
+    const now = Date.now();
+    return {
+      id: newId(),
+      name: "",
+      createdAt: now,
+      updatedAt: now,
+      datasetId: d.env.id,
+      datasetName: d.env.name,
+      uploadKey: d.env.id === "custom" ? uploadKeyRef.current : undefined,
+      transitions: d.transitions.length,
+      reward: rewardRef.current ?? undefined,
+      seed: TRAIN_SEED,
+      rngState: TRAIN_SEED,
+      hyper: { ...h },
+      hyperLog: [{ atUpdates: 0, hyper: { ...h } }],
+      history: [],
+      q: new Float64Array(0),
+      optimal: 0,
+      status: "paused",
+      tags: [],
+      notes: "",
+      anomalies: 0,
+      guardEvents: [],
+    };
+  }, []);
+
+  /** Starts a new run on the current dataset; the previous run stays saved in Experiments. */
   const reset = useCallback(() => {
     if (!ds) return;
+    flushSave();
     qRef.current = createQ(ds);
-    rngRef.current = mulberry32(1234);
+    rngRef.current = resumableRng(TRAIN_SEED);
+    fullHistoryRef.current = [];
+    const rec = makeRun(ds, hyperRef.current);
+    runRef.current = rec;
+    alertMemoryRef.current = EMPTY_MEMORY;
+    publishRun(rec);
     setHistory([]);
     setVersion((v) => v + 1);
     setAuto(false);
     setActiveCheckpointId(null);
-  }, [ds]);
+  }, [ds, flushSave, makeRun, publishRun]);
 
+  const applyRestore = useCallback(
+    (rec: ExperimentRecord, d: Dataset): boolean => {
+      if (rec.q.length !== d.env.width * d.env.height * 4) {
+        recordError("storage", `Saved Q-table for “${rec.name}” does not fit ${d.env.name}`, "restoring a run");
+        toast.error(`Could not reopen “${rec.name || "run"}”: its saved Q-table does not match ${d.env.name}.`);
+        return false;
+      }
+      qRef.current = new Float64Array(rec.q);
+      rngRef.current = resumableRng(rec.rngState);
+      fullHistoryRef.current = [...rec.history];
+      // Re-arm alerts as if the reopened run had been watched all along (no replay of old alerts).
+      alertMemoryRef.current = checkAlerts(rec.history, alertRulesRef.current, EMPTY_MEMORY).memory;
+      runRef.current = { ...rec, status: rec.status === "diverged" ? "diverged" : "paused" };
+      publishRun(runRef.current);
+      setHyper({ ...rec.hyper });
+      setHistory(rec.history.slice(-200));
+      setVersion((v) => v + 1);
+      setAuto(false);
+      setActiveCheckpointId(null);
+      const last = rec.history[rec.history.length - 1];
+      toast.success(`Reopened “${rec.name}” at ${(last?.updates ?? 0).toLocaleString()} updates`);
+      return true;
+    },
+    [publishRun],
+  );
+
+  // A new dataset either receives the run waiting to be reopened on it, or starts a new run.
   useEffect(() => {
+    if (!ds) return;
+    const pending = pendingRestoreRef.current;
+    if (pending && pending.datasetId === ds.env.id && (pending.reward?.code ?? null) === (rewardRef.current?.code ?? null)) {
+      pendingRestoreRef.current = null;
+      if (applyRestore(pending, ds)) return;
+    }
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ds]);
+
+  /** Reopens a saved run: switches to its dataset (re-parsing a saved upload) and restores Q, stream and history. */
+  const openRun = useCallback(
+    async (rec: ExperimentRecord) => {
+      // A run trained on a custom reward is restored only after that reward is re-applied.
+      pendingRewardRef.current = rec.reward ?? null;
+      if (rec.datasetId === "custom") {
+        const up = rec.uploadKey ? await uploadsStore.get(rec.uploadKey) : undefined;
+        if (!up) {
+          toast.error(`The uploaded dataset for “${rec.name}” is not saved in this browser, so the run cannot be reopened.`);
+          return;
+        }
+        setWorking({ pct: 2, label: `Reopening ${up.name}…` });
+        try {
+          const parsed = await parseCustomInWorker(up.text, (pct, label) => setWorking({ pct, label }));
+          uploadKeyRef.current = rec.uploadKey;
+          pendingRestoreRef.current = rec;
+          setRelabeled(null);
+          setCustomDs(parsed);
+          setDatasetId("custom");
+          if (rec.reward) setRewardRequest((n) => n + 1);
+        } catch (e) {
+          recordError("worker", e, `re-parsing ${up.name}`);
+          toast.error(e instanceof Error ? e.message : "Could not re-parse the saved upload.");
+        } finally {
+          setWorking(null);
+        }
+        return;
+      }
+      const d = dsRef.current;
+      if (d && d.env.id === rec.datasetId && (rec.reward?.code ?? null) === (rewardRef.current?.code ?? null)) {
+        pendingRewardRef.current = null;
+        applyRestore(rec, d);
+        return;
+      }
+      pendingRestoreRef.current = rec;
+      if (rec.reward) setRewardRequest((n) => n + 1);
+      else setRelabeled(null);
+      setDatasetId(rec.datasetId);
+    },
+    [applyRestore],
+  );
+
+  // Re-apply a reopened run's custom reward to its logged dataset (in the sandbox), then the
+  // pending restore lands on the relabeled copy. Runs again if StrictMode/re-renders cancel it.
+  useEffect(() => {
+    const want = pendingRewardRef.current;
+    const pending = pendingRestoreRef.current;
+    if (!want || !baseDs || !pending || pending.datasetId !== baseDs.env.id) return;
+    let alive = true;
+    setWorking({ pct: 40, label: `Re-applying the reward “${want.name}” in the sandbox…` });
+    runRewardSandbox(want.code, buildRewardJob(baseDs))
+      .then((run) => {
+        if (!alive || pendingRewardRef.current !== want) return;
+        pendingRewardRef.current = null;
+        setRewardInfo(want);
+        setRelabeled(relabelDataset(baseDs, run.rewards, want.name));
+      })
+      .catch((e) => {
+        if (!alive) return;
+        pendingRewardRef.current = null;
+        pendingRestoreRef.current = null;
+        recordError("worker", e, `re-applying reward “${want.name}”`);
+        toast.error(`Could not re-apply the custom reward “${want.name}” (${e instanceof Error ? e.message : "sandbox error"}), so the run was not reopened.`);
+      })
+      .finally(() => alive && setWorking(null));
+    return () => {
+      alive = false;
+    };
+  }, [baseDs, rewardRequest]);
+
+  // Load saved checkpoints and reopen the last run (or the one named in ?run=).
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const cps = await checkpointsStore.all();
+        if (alive) setCheckpoints(cps.slice(0, MAX_CHECKPOINTS));
+        const id = search.run ?? (await kv.get<string>("currentExperimentId"));
+        if (!alive || !id) return;
+        const rec = await experimentsStore.get(id);
+        if (!alive) return;
+        if (!rec) {
+          if (search.run) toast.error("That run is no longer saved in this browser.");
+          return;
+        }
+        // Don't overwrite a run the user already started training while storage was loading.
+        if (fullHistoryRef.current.length > 0 && !search.run) return;
+        await openRun(rec);
+      } catch (e) {
+        if (!storageSupported()) setSaveState({ kind: "unavailable" });
+        recordError("storage", e, "loading saved lab state");
+      } finally {
+        if (alive) {
+          hydratedRef.current = true;
+          if (search.run) void navigate({ to: "/", search: {}, replace: true });
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Record every hyperparameter change against the update count it took effect at.
+  useEffect(() => {
+    const rec = runRef.current;
+    if (!rec) return;
+    const lastH = rec.hyperLog[rec.hyperLog.length - 1]?.hyper;
+    if (lastH && hyperEqual(lastH, hyper)) return;
+    const at = fullHistoryRef.current[fullHistoryRef.current.length - 1]?.updates ?? 0;
+    // Several slider nudges between two training steps are one change, effective at `at`.
+    const prior = rec.hyperLog.length > 1 && rec.hyperLog[rec.hyperLog.length - 1].atUpdates === at ? rec.hyperLog.slice(0, -1) : rec.hyperLog;
+    rec.hyperLog = at === 0 ? [{ atUpdates: 0, hyper: { ...hyper } }] : [...prior, { atUpdates: at, hyper: { ...hyper } }];
+    rec.hyper = { ...hyper };
+    scheduleSave();
+  }, [hyper, scheduleSave]);
+
+  useEffect(() => {
+    const rec = runRef.current;
+    if (!rec || rec.status === "diverged") return;
+    rec.status = auto ? "training" : "paused";
+    publishRun(rec);
+    scheduleSave();
+  }, [auto, publishRun, scheduleSave]);
+
+  const updateRunMeta = (patch: Partial<Pick<ExperimentRecord, "name" | "tags" | "notes">>) => {
+    const rec = runRef.current;
+    if (!rec) return;
+    Object.assign(rec, patch);
+    publishRun(rec);
+    scheduleSave();
+  };
 
   const evalRes = useMemo(() => {
     if (!ds || qRef.current.length !== ds.env.width * ds.env.height * 4) return null;
@@ -192,27 +657,83 @@ function LabPage() {
 
   const step = useCallback(() => {
     if (!ds) return;
-    const { tdLoss, cqlGap } = trainUpdates(qRef.current, ds, hyper, rngRef.current, UPDATES_PER_STEP);
-    const r = evaluate(qRef.current, ds, hyper.gamma);
-    setHistory((h) => {
-      const iter = h.length + 1;
-      return [
-        ...h.slice(-199),
-        {
-          iter,
-          updates: iter * UPDATES_PER_STEP,
-          estQ: r.estQ,
-          trueQ: r.trueQ,
-          loss: tdLoss + hyper.alpha * cqlGap,
-          tdLoss,
-          cqlGap,
-          oodRate: r.oodRate,
-          divergence: r.divergence,
-        },
-      ];
-    });
+    // Training guard: keep the last finite state so a diverged step can be rolled back.
+    const backupQ = new Float64Array(qRef.current);
+    const backupRng = rngRef.current.state();
+    const rollback = (reason: string) => {
+      qRef.current = backupQ;
+      rngRef.current = resumableRng(backupRng);
+      setAuto(false);
+      const at = fullHistoryRef.current[fullHistoryRef.current.length - 1]?.updates ?? 0;
+      const message = `Training diverged after ${at.toLocaleString()} updates: ${reason}. Rolled back to the last finite Q-table and paused — try a lower learning rate or α.`;
+      const rec = runRef.current;
+      if (rec) {
+        rec.guardEvents = [...rec.guardEvents, { atUpdates: at, message, at: Date.now() }];
+        rec.status = "diverged";
+        publishRun(rec);
+      }
+      recordError("training", message, `${ds.env.name} · α ${hyper.alpha} · γ ${hyper.gamma} · lr ${hyper.lr} · batch ${hyper.batch}`);
+      toast.error(message);
+      setVersion((v) => v + 1);
+      scheduleSave();
+    };
+    let tdLoss: number;
+    let cqlGap: number;
+    let r: ReturnType<typeof evaluate>;
+    const t0 = performance.now();
+    try {
+      ({ tdLoss, cqlGap } = trainUpdates(qRef.current, ds, hyper, rngRef.current, UPDATES_PER_STEP));
+      const qc = checkQ(qRef.current, ds.env.width);
+      if (!qc.ok) {
+        rollback(qc.reason ?? "non-finite Q-value");
+        return;
+      }
+      r = evaluate(qRef.current, ds, hyper.gamma);
+    } catch (e) {
+      rollback(e instanceof Error ? e.message : "training step threw");
+      return;
+    }
+    const prev = fullHistoryRef.current[fullHistoryRef.current.length - 1];
+    const iter = (prev?.iter ?? 0) + 1;
+    const m: Metrics = {
+      iter,
+      updates: iter * UPDATES_PER_STEP,
+      estQ: r.estQ,
+      trueQ: r.trueQ,
+      loss: tdLoss + hyper.alpha * cqlGap,
+      tdLoss,
+      cqlGap,
+      oodRate: r.oodRate,
+      divergence: r.divergence,
+    };
+    if (!metricsSane(m)) {
+      rollback("a training metric became non-finite");
+      return;
+    }
+    fullHistoryRef.current.push(m);
+    setHistory((h) => [...h.slice(-199), m]);
     setVersion((v) => v + 1);
-  }, [ds, hyper]);
+    const rec = runRef.current;
+    if (rec) rec.computeMs = (rec.computeMs ?? 0) + (performance.now() - t0);
+    // Training alerts: plateau, target, regression (optionally pausing auto-train).
+    const checked = checkAlerts(fullHistoryRef.current, alertRulesRef.current, alertMemoryRef.current);
+    alertMemoryRef.current = checked.memory;
+    for (const a of checked.alerts) {
+      if (a.pause) setAuto(false);
+      const text = a.pause ? `${a.message} Auto-train paused.` : a.message;
+      if (a.kind === "target") toast.success(text);
+      else if (a.kind === "regression") toast.warning(text);
+      else toast.message(text);
+      if (alertRulesRef.current.notify && document.visibilityState === "hidden") notifySystem("Offline Learning Lab", text);
+    }
+    if (rec) {
+      if (!rec.name) rec.name = defaultExperimentName(ds.env.name, hyper, rec.createdAt);
+      rec.optimal = optimal;
+      if (rec.status === "diverged") rec.status = "paused";
+      if (iter === 1 || rec.status !== runInfo?.status) publishRun(rec);
+    }
+    scheduleSave();
+  }, [ds, hyper, optimal, scheduleSave, publishRun, runInfo?.status]);
 
   useEffect(() => {
     if (!auto) return;
@@ -227,11 +748,19 @@ function LabPage() {
       // Heavy parse/validation/aggregation runs in the Web Worker; UI only renders progress.
       const parsed = await parseCustomInWorker(text, (pct, label) => setWorking({ pct, label }));
       setWorking(null);
+      // Keep the raw upload so runs on it can be reopened after a reload.
+      const key = `upload:${await sha256Hex(text)}`;
+      uploadKeyRef.current = key;
+      uploadsStore.put(key, { name: f.name, text, size: text.length, savedAt: Date.now() }).catch((e) => {
+        recordError("storage", e, `saving upload ${f.name}`);
+        toast.message(`${f.name} could not be saved locally (${e instanceof Error ? e.message : "storage error"}); runs on it will not reopen after a reload.`);
+      });
       setCustomDs(parsed);
       setDatasetId("custom");
       toast.success(`Loaded ${parsed.transitions.length.toLocaleString()} transitions from ${f.name}`);
     } catch (e) {
       setWorking(null);
+      recordError("worker", e, `parsing upload ${f.name}`);
       toast.error(e instanceof Error ? e.message : "Could not parse that file.");
     }
   };
@@ -251,23 +780,34 @@ function LabPage() {
     const last = history[history.length - 1];
     const n = checkpoints.filter((c) => c.datasetId === ds.env.id).length + 1;
     const cp: Checkpoint = {
-      id: crypto.randomUUID(),
+      id: newId(),
       label: `Checkpoint ${n} — ${ds.env.name}`,
       createdAt: Date.now(),
       datasetId: ds.env.id,
       datasetName: ds.env.name,
       hyper: { ...hyper },
-      iterations: history.length,
+      iterations: last.iter,
       updates: last.updates,
       estQ: last.estQ,
       trueQ: last.trueQ,
       oodRate: last.oodRate,
       loss: last.loss,
       q: new Float64Array(qRef.current),
-      history: [...history],
+      history: [...fullHistoryRef.current],
+      rngState: rngRef.current.state(),
+      experimentId: runRef.current?.id,
     };
-    setCheckpoints((cs) => [cp, ...cs].slice(0, 20));
+    const next = [cp, ...checkpoints];
+    const dropped = next.slice(MAX_CHECKPOINTS);
+    setCheckpoints(next.slice(0, MAX_CHECKPOINTS));
     setActiveCheckpointId(cp.id);
+    checkpointsStore
+      .put(cp)
+      .then(() => Promise.all(dropped.map((d) => checkpointsStore.delete(d.id))))
+      .catch((e) => {
+        recordError("storage", e, `saving ${cp.label}`);
+        toast.message("Checkpoint kept for this session only — it could not be saved locally.");
+      });
     toast.success(`Saved checkpoint at ${last.updates.toLocaleString()} updates`);
   };
 
@@ -278,16 +818,55 @@ function LabPage() {
     }
     setAuto(false);
     qRef.current = new Float64Array(c.q);
+    if (c.rngState !== undefined) rngRef.current = resumableRng(c.rngState);
+    fullHistoryRef.current = [...c.history];
     setHyper({ ...c.hyper });
-    setHistory([...c.history]);
+    setHistory(c.history.slice(-200));
     setActiveCheckpointId(c.id);
     setVersion((v) => v + 1);
-    toast.success(`Restored \"${c.label}\" — training continues from ${c.updates.toLocaleString()} updates`);
+    scheduleSave();
+    toast.success(`Restored "${c.label}" — training continues from ${c.updates.toLocaleString()} updates`);
   };
 
   const deleteCheckpoint = (id: string) => {
     setCheckpoints((cs) => cs.filter((c) => c.id !== id));
     if (activeCheckpointId === id) setActiveCheckpointId(null);
+    checkpointsStore.delete(id).catch((e) => recordError("storage", e, "deleting a checkpoint"));
+  };
+
+  /** Audit log of the current run: every metric step, log entry, hyperparameter change and guard/crash event. */
+  const exportAudit = (format: "json" | "csv" | "md") => {
+    const rec = snapshotRun();
+    if (!rec || !ds) {
+      toast.error("Train at least one step to export the run log.");
+      return;
+    }
+    const entries = buildLogEntries(rec.history, ds, rec.hyper, optimal);
+    const audit = buildAuditLog({ ...rec, transitions: ds.transitions.length }, entries, recentErrors(), UPDATES_PER_STEP);
+    const base = `audit-${slugify(rec.name)}-${rec.history[rec.history.length - 1].updates}u`;
+    if (format === "json") downloadText(`${base}.json`, JSON.stringify(audit, null, 2), "application/json");
+    else if (format === "csv") downloadText(`${base}.csv`, metricsCsv(rec.history), "text/csv");
+    else downloadText(`${base}.md`, auditMarkdown(audit), "text/markdown");
+    toast.success(`Run log exported (${format.toUpperCase()})`);
+  };
+
+  const exportModelCard = () => {
+    const rec = snapshotRun();
+    if (!rec || !ds) {
+      toast.error("Train at least one step to generate a model card.");
+      return;
+    }
+    const entries = buildLogEntries(rec.history, ds, rec.hyper, optimal);
+    const card = buildModelCard({
+      run: rec,
+      dataset: { name: ds.env.name, description: ds.env.description, tag: ds.env.tag, transitions: ds.transitions.length, episodes: ds.episodes, groundTruth: ds.env.groundTruth },
+      updatesPerStep: UPDATES_PER_STEP,
+      anomalies: entries.filter((e) => e.kind === "anomaly").map((e) => `@ ${e.atUpdates.toLocaleString()} updates: ${e.text}`),
+      license,
+      oodRate: evalRes?.oodRate,
+    });
+    downloadText(`model-card-${slugify(rec.name)}.md`, card, "text/markdown");
+    toast.success("Model card downloaded");
   };
 
   const [license, setLicense] = useState<LicenseConfig>(DEFAULT_LICENSE);
@@ -296,7 +875,8 @@ function LabPage() {
   const exportRef = useRef({ ds, hyper, history, evalRes, license, signingKey });
   exportRef.current = { ds, hyper, history, evalRes, license, signingKey };
   const exportModel = useCallback(async (trigger: ExportTrigger) => {
-    const { ds: d, hyper: h, history: hist, evalRes: ev, license: lic, signingKey: key } = exportRef.current;
+    const { ds: d, hyper: h, evalRes: ev, license: lic, signingKey: key } = exportRef.current;
+    const hist = fullHistoryRef.current;
     if (!d || hist.length === 0) return;
     if (isExpired(lic)) {
       toast.error("License has expired — extend or clear the expiry date to export.");
@@ -310,7 +890,7 @@ function LabPage() {
         return;
       }
     }
-    const exp = buildPolicyExport(qRef.current, d, h, hist, ev, 1234, UPDATES_PER_STEP, trigger);
+    const exp = buildPolicyExport(qRef.current, d, h, hist, ev, TRAIN_SEED, UPDATES_PER_STEP, trigger);
     const checksum = exp.reconstruction.checksum.value;
     let block = buildLicenseBlock(lic, checksum);
     if (key) {
@@ -339,7 +919,7 @@ function LabPage() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top bar */}
       <header className="lab-rise sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="flex h-14 items-center justify-between gap-4 px-4 lg:px-6">
+        <div className="flex h-14 items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4 lg:px-6">
           <div className="flex items-center gap-5">
             <Logo />
             <div className="hidden items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1 text-[11px] text-muted-foreground md:flex">
@@ -347,29 +927,69 @@ function LabPage() {
               Offline · no environment interaction
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+            <StorageStatus state={saveState} onNewRun={reset} />
+            <Link
+              to="/experiments"
+              aria-label="Experiments"
+              title="Experiments: saved runs, search, compare"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3" />
+                <path d="M7 15h10" />
+              </svg>
+              <span className="hidden lg:inline">Experiments</span>
+            </Link>
             <Link
               to="/sweep"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Sweep"
+              title="Hyperparameter sweep"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
                 <path d="M1 14h6M9 8h6M17 16h6" />
               </svg>
-              Sweep
+              <span className="hidden lg:inline">Sweep</span>
+            </Link>
+            <Link
+              to="/benchmark"
+              aria-label="Benchmark"
+              title="Benchmark suite: fixed configs across datasets"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z" />
+                <path d="M17 6h3v2a3 3 0 0 1-3 3M7 6H4v2a3 3 0 0 0 3 3" />
+              </svg>
+              <span className="hidden lg:inline">Benchmark</span>
+            </Link>
+            <Link
+              to="/playground"
+              aria-label="Agent playground"
+              title="Agent playground: write an agent in code and run it"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 18l6-6-6-6M8 6l-6 6 6 6" />
+              </svg>
+              <span className="hidden lg:inline">Playground</span>
             </Link>
             <Link
               to="/compare"
-              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Compare runs"
+              title="Compare two runs side by side"
+              className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2 py-1.5 text-xs font-medium text-muted-foreground sm:px-3 transition-colors duration-200 hover:bg-surface hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="7" height="18" rx="1" />
                 <rect x="14" y="3" width="7" height="18" rx="1" />
               </svg>
-              Compare runs
+              <span className="hidden lg:inline">Compare runs</span>
             </Link>
             {ds && (
-              <div className="hidden items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground sm:flex">
+              <div className="hidden items-center gap-3 font-mono text-[11px] tabular-nums text-muted-foreground xl:flex">
                 <span>{ds.transitions.length.toLocaleString()} transitions</span>
                 <span className="text-border">|</span>
                 <span>{(last?.updates ?? 0).toLocaleString()} updates</span>
@@ -461,25 +1081,45 @@ function LabPage() {
                 : `CQL loss = TD error + ${hyper.alpha.toFixed(1)} · (logsumexp Q(s,·) − Q(s, a_data)). Higher α pushes down actions the data never tried.`}
             </div>
           </Panel>
+
+          <Panel
+            title="Current run"
+            delay={130}
+            right={
+              <span className={`font-mono text-[10px] ${runInfo?.status === "diverged" ? "text-destructive" : runInfo?.status === "training" ? "text-primary" : "text-muted-foreground"}`}>
+                {runInfo?.status ?? "—"}
+              </span>
+            }
+          >
+            {runInfo ? (
+              <RunMetaEditor key={runInfo.id} info={runInfo} updates={last?.updates ?? 0} computeMs={runRef.current?.computeMs ?? 0} onChange={updateRunMeta} />
+            ) : (
+              <p className="text-[11.5px] text-muted-foreground">Pick a dataset to start a run.</p>
+            )}
+          </Panel>
+
+          <Panel title="Training alerts" delay={150} right={<span className="font-mono text-[10px] text-muted-foreground">{alertRules.autoPause ? "auto-pause on" : "notify only"}</span>}>
+            <AlertsEditor rules={alertRules} onChange={setAlertRules} />
+          </Panel>
         </aside>
 
         {/* CENTER: visual workspace */}
         <section className="lab-rise min-w-0 rounded-xl border border-border bg-card shadow-sm" style={{ animationDelay: "160ms" }}>
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div role="tablist" aria-label="Workspace view" className="flex rounded-lg border border-border bg-surface p-0.5">
-              {(["dataset", "policy", "watch"] as const).map((v) => (
+            <div role="tablist" aria-label="Workspace view" className="flex max-w-full overflow-x-auto rounded-lg border border-border bg-surface p-0.5">
+              {(["dataset", "policy", "watch", "reward"] as const).map((v) => (
                 <button
                   key={v}
                   role="tab"
                   aria-selected={view === v}
                   onClick={() => setView(v)}
-                  className={`rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`shrink-0 whitespace-nowrap rounded-md px-3.5 py-1.5 text-[13px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
-                  {v === "dataset" ? "Dataset Visualization" : v === "policy" ? "Policy Evaluation" : "Watch Episodes"}
+                  {v === "dataset" ? "Dataset Visualization" : v === "policy" ? "Policy Evaluation" : v === "watch" ? "Watch Episodes" : activeReward ? `Reward · ${activeReward.name}` : "Reward function"}
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={exportPolicy}
                 disabled={!ds || history.length === 0}
@@ -498,8 +1138,13 @@ function LabPage() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><path d="M17 21v-8H7v8M7 3v5h8" /></svg>
                 Save checkpoint
               </button>
-              <button onClick={reset} disabled={!ds || history.length === 0} className="rounded-md border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground disabled:pointer-events-none disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                Reset Q
+              <button
+                onClick={reset}
+                disabled={!ds || history.length === 0}
+                title="Start a new run from Q = 0. This run stays saved in Experiments."
+                className="rounded-md border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-surface hover:text-foreground disabled:pointer-events-none disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                New run
               </button>
               <button onClick={() => setAuto((a) => !a)} disabled={!ds} className={`rounded-md border px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${auto ? "border-primary bg-accent text-accent-foreground" : "border-border bg-card text-muted-foreground hover:bg-surface hover:text-foreground"}`}>
                 {auto ? "Pause" : "Auto-train"}
@@ -512,6 +1157,7 @@ function LabPage() {
           </div>
 
           <div className="p-4">
+            <PanelErrorBoundary name="Workspace" resetKey={`${ds?.env.id ?? ""}:${view}`}>
             {working ? (
               <div className="flex min-h-[420px] flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface/50 text-center lab-grid-bg" role="status" aria-live="polite">
                 <div className="w-full max-w-sm px-6">
@@ -545,14 +1191,16 @@ function LabPage() {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h1 className="font-display text-lg font-semibold tracking-tight">
-                      {view === "dataset" ? "Logged transitions (S, A, R, S′)" : view === "policy" ? "Learned value function Q(s, a)" : "Episode playback"}
+                      {view === "dataset" ? "Logged transitions (S, A, R, S′)" : view === "policy" ? "Learned value function Q(s, a)" : view === "watch" ? "Episode playback" : "Reward function"}
                     </h1>
                     <p className="text-xs text-muted-foreground">
                       {view === "dataset"
                         ? "Arrows are the transitions the behavior policy recorded. Color = mean reward, thickness = frequency."
                         : view === "policy"
                           ? `Heatmap of max_a Q(s,a) · arrows show the greedy policy · dashed outline = action never seen in data.`
-                          : "Fresh rollouts of the real environment — watch the trained policy act, or replay the behavior recorder that produced the dataset."}
+                          : view === "watch"
+                            ? "Fresh rollouts of the real environment — watch the trained policy act, or replay the behavior recorder that produced the dataset."
+                            : "Write the reward the agent should optimize. It relabels every logged transition in a sandbox; applying it starts a new run on the relabeled data."}
                     </p>
                   </div>
                   {view === "policy" && (
@@ -567,11 +1215,35 @@ function LabPage() {
                 </div>
 
                 {view === "watch" ? (
-                  <EpisodePlayer ds={ds} Q={qRef.current} version={version} trained={history.length > 0} />
+                  <EpisodePlayer
+                    ds={ds}
+                    Q={qRef.current}
+                    version={version}
+                    trained={history.length > 0}
+                    gamma={hyper.gamma}
+                    renderFrameExtras={(f) => <StressOverlay frame={f} />}
+                  />
+                ) : view === "reward" ? (
+                  <RewardEditor
+                    ds={ds}
+                    onApply={(d, info) => {
+                      // The "Original (logged)" preset reproduces the logged rewards: treat it as a restore.
+                      if (d === baseDs || info.code === REWARD_PRESETS[0].code) {
+                        setRelabeled(null);
+                        setRewardInfo(null);
+                        toast.success("Logged rewards restored — a new run starts on the original data.");
+                      } else {
+                        setRewardInfo(info);
+                        setRelabeled(d);
+                        toast.success(`Reward “${info.name}” applied — a new run starts on the relabeled data.`);
+                      }
+                    }}
+                  />
                 ) : (
                   <StateGrid ds={ds} mode={view} Q={qRef.current} evalRes={evalRes} heat={heat} version={version} />
                 )}
 
+                {view !== "reward" && (
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
                   {view === "watch" ? (
                     <span>
@@ -601,8 +1273,31 @@ function LabPage() {
                     </>
                   )}
                 </div>
+                )}
+
+                {/* Risk views: where the logged rewards fall, and how the learned policy's returns spread across starts. */}
+                {view === "dataset" && (
+                  <div className="mt-4 rounded-lg border border-border bg-surface/40 p-3">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Reward distribution in the data</div>
+                    <PanelErrorBoundary name="Reward distribution" resetKey={ds.env.id}>
+                      <DatasetRewardChart ds={ds} />
+                    </PanelErrorBoundary>
+                  </div>
+                )}
+                {view === "policy" && ds.env.id !== "thrusterchain-stall" && (
+                  <div className="mt-4 rounded-lg border border-border bg-surface/40 p-3">
+                    <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Return risk across start states</div>
+                    <PanelErrorBoundary name="Return risk" resetKey={ds.env.id}>
+                      <PolicyReturnRisk ds={ds} policy={evalRes.policy} gamma={hyper.gamma} />
+                    </PanelErrorBoundary>
+                  </div>
+                )}
+                {view === "policy" && ds.env.id === "thrusterchain-stall" && (
+                  <p className="mt-3 text-[11px] text-muted-foreground">For ThrusterChain, return risk and safety-limit violations are measured on the real 13-dim physics under Watch Episodes → Safety limits.</p>
+                )}
               </>
             )}
+            </PanelErrorBoundary>
           </div>
         </section>
 
@@ -687,7 +1382,30 @@ function LabPage() {
             <LicensePanel cfg={license} onChange={setLicense} signingKey={signingKey} onSigningKeyChange={setSigningKey} />
           </Panel>
 
-          <Panel title="Experiment Log" delay={320} right={<span className="font-mono text-[10px] text-muted-foreground">auto-generated</span>}>
+          <Panel
+            title="Experiment Log"
+            delay={320}
+            right={
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={history.length === 0}
+                    className="rounded border border-border bg-card px-2 py-0.5 text-[10.5px] font-medium text-muted-foreground transition-colors hover:bg-surface hover:text-foreground disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    title={history.length === 0 ? "Train at least one step to export the run log" : "Download the full run log for auditing"}
+                  >
+                    Export log
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuItem onSelect={() => exportAudit("json")}>Full audit (JSON) — every step, log, change, error</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => exportAudit("csv")}>Metrics per step (CSV)</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => exportAudit("md")}>Readable report (Markdown)</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={exportModelCard}>Model card (Markdown) — what the policy is and where not to trust it</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            }
+          >
             <ExperimentLog history={history} ds={ds} hyper={hyper} optimal={optimal} />
           </Panel>
 

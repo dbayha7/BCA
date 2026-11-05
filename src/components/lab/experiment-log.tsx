@@ -50,10 +50,21 @@ export function buildLogEntries(history: Metrics[], ds: Dataset | null, hyper: H
         push(m, "anomaly", "warn", `Loss spiked to ${m.loss.toFixed(2)} — ${(m.loss / lossBase).toFixed(1)}× the recent average. Likely a batch heavy in rarely-visited (s,a) pairs; expect it to settle unless the learning rate is too high.`);
         lastAnomalyIter = i;
       } else if (gap > 1 && gap > prevGap + 0.4) {
-        push(m, "anomaly", "bad", `Overestimation jumped to +${gap.toFixed(2)}. The critic is inflating values on actions the dataset never tried — classic extrapolation error. Raising α would push those estimates back down.`);
+        push(
+          m,
+          "anomaly",
+          "bad",
+          m.oodRate > 0
+            ? `Overestimation jumped to +${gap.toFixed(2)} while ${(m.oodRate * 100).toFixed(0)}% of greedy actions are ones the dataset never tried — extrapolation error is a likely cause. Raising α would push those estimates back down.`
+            : `Overestimation jumped to +${gap.toFixed(2)}, yet every greedy action is one the dataset contains (OOD 0%). The error comes from supported actions — few samples per (s,a) and bootstrapped targets — not from extrapolation, so α alone may not fix it; a lower learning rate or more data would.`,
+        );
         lastAnomalyIter = i;
       } else if (m.oodRate > 0.2 && m.oodRate > history[i - 1].oodRate + 0.05) {
         push(m, "anomaly", "warn", `Out-of-distribution action rate surged to ${(m.oodRate * 100).toFixed(0)}% — the greedy policy is drifting away from the behavior data's support.`);
+        lastAnomalyIter = i;
+      } else if (i >= 8 && m.divergence > mean(prevWindow.map((p) => p.divergence)) + 0.35) {
+        // Drift monitor: the greedy policy is moving away from what the behavior data did.
+        push(m, "anomaly", "warn", `Policy drift: the policy↔data NLL rose to ${m.divergence.toFixed(2)} from a recent average of ${mean(prevWindow.map((p) => p.divergence)).toFixed(2)}. The learned policy is choosing actions the logger rarely took, so its value estimates rest on thinner data.`);
         lastAnomalyIter = i;
       } else if (m.trueQ < bestTrue - Math.max(0.5, Math.abs(bestTrue) * 0.15)) {
         push(m, "anomaly", "bad", `True return regressed to ${m.trueQ.toFixed(2)} from a best of ${bestTrue.toFixed(2)}. The policy got worse while the estimate ${m.estQ > m.trueQ ? "stayed optimistic" : "tracked it"} — a sign of unstable targets.`);

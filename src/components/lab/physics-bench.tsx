@@ -3,7 +3,10 @@
 // (stall knee, slope, current, waves) to stress-test transfer beyond the frozen spec.
 
 import { useEffect, useRef, useState } from "react";
-import { benchmarkThruster, SPEC_PHYSICS, type BenchStats, type PhysicsOverrides } from "@/lib/thrusterchain";
+import { toast } from "sonner";
+import { benchmarkThruster, SPEC_PHYSICS, type BenchMode, type BenchStats, type PhysicsOverrides } from "@/lib/thrusterchain";
+import { guardPhysics } from "@/lib/guards";
+import { recordError } from "@/lib/error-log";
 
 type Row = { key: string; label: string; hint: string; stats: BenchStats };
 
@@ -73,14 +76,23 @@ export function PhysicsBench({ policy, trained }: { policy: (cell: number) => nu
     setBusy(true);
     const snapshot = { ...ph };
     window.setTimeout(() => {
-      const out: Row[] = [
-        { key: "policy", label: "Trained policy", hint: "greedy tabular action per (p₁,v₁) cell", stats: benchmarkThruster({ mode: "policy", policy }, episodes, snapshot) },
-        { key: "behavior", label: "Behavior recorder", hint: "ε=0.25 random commands that made the data", stats: benchmarkThruster({ mode: "behavior" }, episodes, snapshot) },
-        { key: "coast", label: "Coast baseline", hint: "all thrusters off — passive physics", stats: benchmarkThruster({ mode: "coast" }, episodes, snapshot) },
-      ];
-      setRows(out);
-      setRanWith(snapshot);
-      setBusy(false);
+      // Physics guard: a throw or a non-finite result reports a clear error instead of a broken table.
+      const bench = (mode: BenchMode, label: string) =>
+        guardPhysics(`Physics bench (${label})`, () => benchmarkThruster(mode, episodes, snapshot), (st) => [st.meanReturn, st.stdReturn, st.finalEnergy, ...st.returns]);
+      try {
+        const out: Row[] = [
+          { key: "policy", label: "Trained policy", hint: "greedy tabular action per (p₁,v₁) cell", stats: bench({ mode: "policy", policy }, "trained policy") },
+          { key: "behavior", label: "Behavior recorder", hint: "ε=0.25 random commands that made the data", stats: bench({ mode: "behavior" }, "behavior recorder") },
+          { key: "coast", label: "Coast baseline", hint: "all thrusters off — passive physics", stats: bench({ mode: "coast" }, "coast") },
+        ];
+        setRows(out);
+        setRanWith(snapshot);
+      } catch (e) {
+        recordError("physics", e, `knee ${snapshot.knee} · slope ${snapshot.slope} · current ×${snapshot.currentScale} · waves ×${snapshot.waveScale}`);
+        toast.error(e instanceof Error ? e.message : "The physics bench failed.");
+      } finally {
+        setBusy(false);
+      }
     }, 20);
   };
 

@@ -20,6 +20,10 @@ export interface Checkpoint {
   q: Float64Array;
   /** Metrics history up to the checkpoint, so charts restore too. */
   history: Metrics[];
+  /** Minibatch stream state at save time, so training resumes the exact same stream. */
+  rngState?: number;
+  /** Run the checkpoint was taken from. */
+  experimentId?: string;
 }
 
 function timeAgo(ts: number) {

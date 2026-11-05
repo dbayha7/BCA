@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SweepRouteImport } from './routes/sweep'
+import { Route as PlaygroundRouteImport } from './routes/playground'
+import { Route as ExperimentsRouteImport } from './routes/experiments'
 import { Route as CompareRouteImport } from './routes/compare'
+import { Route as BenchmarkRouteImport } from './routes/benchmark'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout/success'
 
@@ -19,9 +22,24 @@ const SweepRoute = SweepRouteImport.update({
   path: '/sweep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlaygroundRoute = PlaygroundRouteImport.update({
+  id: '/playground',
+  path: '/playground',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExperimentsRoute = ExperimentsRouteImport.update({
+  id: '/experiments',
+  path: '/experiments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CompareRoute = CompareRouteImport.update({
   id: '/compare',
   path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BenchmarkRoute = BenchmarkRouteImport.update({
+  id: '/benchmark',
+  path: '/benchmark',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,34 +55,68 @@ const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/benchmark': typeof BenchmarkRoute
   '/compare': typeof CompareRoute
+  '/experiments': typeof ExperimentsRoute
+  '/playground': typeof PlaygroundRoute
   '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/benchmark': typeof BenchmarkRoute
   '/compare': typeof CompareRoute
+  '/experiments': typeof ExperimentsRoute
+  '/playground': typeof PlaygroundRoute
   '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/benchmark': typeof BenchmarkRoute
   '/compare': typeof CompareRoute
+  '/experiments': typeof ExperimentsRoute
+  '/playground': typeof PlaygroundRoute
   '/sweep': typeof SweepRoute
   '/checkout/success': typeof CheckoutSuccessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/compare' | '/sweep' | '/checkout/success'
+  fullPaths:
+    | '/'
+    | '/benchmark'
+    | '/compare'
+    | '/experiments'
+    | '/playground'
+    | '/sweep'
+    | '/checkout/success'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/compare' | '/sweep' | '/checkout/success'
-  id: '__root__' | '/' | '/compare' | '/sweep' | '/checkout/success'
+  to:
+    | '/'
+    | '/benchmark'
+    | '/compare'
+    | '/experiments'
+    | '/playground'
+    | '/sweep'
+    | '/checkout/success'
+  id:
+    | '__root__'
+    | '/'
+    | '/benchmark'
+    | '/compare'
+    | '/experiments'
+    | '/playground'
+    | '/sweep'
+    | '/checkout/success'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BenchmarkRoute: typeof BenchmarkRoute
   CompareRoute: typeof CompareRoute
+  ExperimentsRoute: typeof ExperimentsRoute
+  PlaygroundRoute: typeof PlaygroundRoute
   SweepRoute: typeof SweepRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
 }
@@ -78,11 +130,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SweepRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/playground': {
+      id: '/playground'
+      path: '/playground'
+      fullPath: '/playground'
+      preLoaderRoute: typeof PlaygroundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/experiments': {
+      id: '/experiments'
+      path: '/experiments'
+      fullPath: '/experiments'
+      preLoaderRoute: typeof ExperimentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compare': {
       id: '/compare'
       path: '/compare'
       fullPath: '/compare'
       preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/benchmark': {
+      id: '/benchmark'
+      path: '/benchmark'
+      fullPath: '/benchmark'
+      preLoaderRoute: typeof BenchmarkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,7 +177,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BenchmarkRoute: BenchmarkRoute,
   CompareRoute: CompareRoute,
+  ExperimentsRoute: ExperimentsRoute,
+  PlaygroundRoute: PlaygroundRoute,
   SweepRoute: SweepRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
 }
