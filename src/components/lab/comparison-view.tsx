@@ -377,7 +377,7 @@ export function ComparisonView() {
     <div className="space-y-4">
       {/* configs */}
       <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Run configurations · both runs train {STEPS * UPDATES_PER_STEP} updates with a fixed seed</h2>
+        <h2 className="mb-3 bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Run configurations · both runs train {STEPS * UPDATES_PER_STEP} updates with a fixed seed</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <ConfigEditor label="Run A" accent={ACCENT_A} config={configA} onChange={setConfigA} />
           <ConfigEditor label="Run B" accent={ACCENT_B} config={configB} onChange={setConfigB} />
@@ -385,9 +385,9 @@ export function ComparisonView() {
       </section>
 
       {/* split screen */}
-      <section className="rounded-xl border border-border bg-card shadow-sm">
+      <section className="bca-panel">
         <header className="border-b border-border px-4 py-2.5">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Side-by-side · drag the divider to resize</h2>
+          <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Side-by-side · drag the divider to resize</h2>
         </header>
         <div className="hidden md:block">
           <ResizablePanelGroup direction="horizontal" className="min-h-[520px]">
@@ -408,9 +408,9 @@ export function ComparisonView() {
       </section>
 
       {/* delta view */}
-      <section className="rounded-xl border border-border bg-card shadow-sm">
+      <section className="bca-panel">
         <header className="border-b border-border px-4 py-2.5">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Delta view · Run A → Run B</h2>
+          <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Delta view · Run A → Run B</h2>
         </header>
         <div className="grid gap-4 p-4 lg:grid-cols-[1fr_320px]">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

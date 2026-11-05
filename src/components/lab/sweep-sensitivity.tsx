@@ -207,9 +207,9 @@ export function SweepSensitivity({ runs, version }: { runs: SensitivityRun[]; ve
   const lo = Math.min(...rep.params.flatMap((p) => p.levels.map((l) => l.minTrueQ)));
   const hi = Math.max(...rep.params.flatMap((p) => p.levels.map((l) => l.maxTrueQ)));
   return (
-    <section className="lab-rise rounded-xl border border-border bg-card shadow-sm" aria-label="Win drivers">
+    <section className="lab-rise bca-panel" aria-label="Win drivers">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Win drivers · sensitivity analysis</h2>
+        <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Win drivers · sensitivity analysis</h2>
         <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
           {rep.n} runs analysed{rep.excluded > 0 ? ` · ${rep.excluded} excluded` : ""}
         </span>

@@ -221,7 +221,7 @@ function BenchmarkPage() {
       <main className="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-5 p-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:p-6">
         <aside className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Suite (fixed)</h2>
+            <h2 className="mb-3 bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Suite (fixed)</h2>
             <dl className="space-y-2.5 text-[12px]">
               <div>
                 <dt className="text-muted-foreground">Datasets · data seed</dt>
@@ -255,7 +255,7 @@ function BenchmarkPage() {
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Compute</h2>
+            <h2 className="mb-3 bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Compute</h2>
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] font-medium text-muted-foreground">Parallel workers ({cores} logical cores detected)</span>
               <WorkerCountSelect value={poolSize} onChange={setPoolSize} cores={cores} disabled={running} />
@@ -291,9 +291,9 @@ function BenchmarkPage() {
 
         <section className="min-w-0 space-y-4">
           {phase !== "idle" && (
-            <div className="rounded-xl border border-border bg-card shadow-sm">
+            <div className="bca-panel">
               <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Progress</h2>
+                <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Progress</h2>
                 <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                   {timing.current.workers} worker{timing.current.workers === 1 ? "" : "s"}
                 </span>
@@ -319,9 +319,9 @@ function BenchmarkPage() {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="overflow-hidden bca-panel">
             <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-              <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Leaderboard</h2>
+              <h2 className="bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Leaderboard</h2>
               <div className="flex items-center gap-2">
                 <button
                   type="button"

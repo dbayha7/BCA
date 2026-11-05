@@ -279,11 +279,11 @@ function SweepPage() {
         {/* Config column */}
         <aside className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Sweep configuration</h2>
+            <h2 className="mb-4 bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Sweep configuration</h2>
             <SweepConfig settings={settings} onChange={setSettings} disabled={busy} />
           </div>
           <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-            <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Compute resources</h2>
+            <h2 className="mb-4 bca-panel-title flex items-center gap-2"><span className="bca-tick" aria-hidden />Compute resources</h2>
             <ComputeSettings
               poolSize={poolSize}
               onPoolSize={setPoolSize}
@@ -356,7 +356,7 @@ function SweepPage() {
             </div>
           )}
 
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="overflow-hidden bca-panel">
             {ranked.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground">
