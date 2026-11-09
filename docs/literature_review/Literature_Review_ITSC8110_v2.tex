@@ -26,7 +26,7 @@
 
 \section*{Part A: Research Papers}
 
-Papers 1--8 carry over from Version 1, with each paper's themes narrowed to its three most central. Papers 9--12 are new in Version 2.
+Papers 1--8 carry over from Version 1, with each paper's themes narrowed to its three most central. Papers 9--18 are new in Version 2.
 
 
 
@@ -328,7 +328,7 @@ UNIQ gives a standard offline learner (IQL) a per-state caution dial driven by c
 Upadhyay, A. (2026, July 11). \emph{UNIQ: Conformal calibration for adaptive conservatism in offline reinforcement learning} [Poster presentation]. ICML 2026 Workshop on Decision-Making from Offline Datasets to Online Adaptation: Black-Box Optimization to Reinforcement Learning, Seoul, South Korea. Version reviewed: arXiv:2606.07592v1. \url{https://doi.org/10.48550/arXiv.2606.07592}
 
 \q{What is the research area?}
-Offline RL, built on IQL. The problem family is pessimism under distribution shift: deciding how much to distrust value estimates in poorly covered situations. Unlike global-knob methods (CQL, IQL, TD3+BC), huge-ensemble methods (SAC-N, EDAC), or learned-model penalties (MOPO), UNIQ pairs a small ensemble of value heads with conformal calibration, a statistics recipe that turns held-out prediction errors into a unit-free uncertainty scale.
+Offline RL, built on IQL. The problem family is pessimism under distribution shift: deciding how much to distrust value estimates in poorly covered situations. Unlike global-knob methods (CQL, IQL, TD3+BC), huge-ensemble methods (SAC-N, EDAC; Paper 17), or learned-model penalties (MOPO), UNIQ pairs a small ensemble of value heads with conformal calibration, a statistics recipe that turns held-out prediction errors into a unit-free uncertainty scale.
 
 \q{What is the research question?}
 Can IQL's single global optimism setting be replaced by a per-state setting driven by conformally normalized ensemble disagreement, with tighter caution where data are sparse and looser caution where data are dense, without the memory cost of large ensembles?
@@ -492,7 +492,7 @@ WBCP gives a conformal threshold its own error bar: alongside each prediction in
 Lou, X., \& Luo, P. (2026). \emph{Weighted Bayesian conformal prediction} (arXiv:2604.06464v2) [Preprint]. arXiv. \url{https://doi.org/10.48550/arXiv.2604.06464}
 
 \q{What is the research area?}
-Statistical machine learning rather than RL: conformal prediction, at the meeting point of weighted conformal methods, which reweight calibration scores under covariate shift (test inputs distributed differently from the calibration inputs), and Bayesian quadrature conformal prediction (BQ-CP), which places a posterior over the threshold. Its applications are spatial. The link to offline RL runs through BCA, which borrows its calibration step from this paper.
+Statistical machine learning rather than RL: conformal prediction, at the meeting point of weighted conformal methods, which reweight calibration scores under covariate shift (test inputs distributed differently from the calibration inputs), and Bayesian quadrature conformal prediction (BQ-CP, Paper 18), which places a posterior over the threshold. Its applications are spatial. The link to offline RL runs through BCA, which borrows its calibration step from this paper.
 
 \q{What is the research question?}
 Can the posterior over the conformal threshold that BQ-CP provides for i.i.d.\ data be extended to weighted conformal prediction, so that one procedure stays valid under covariate shift or local weighting and also reports how reliable its own threshold is?
@@ -524,6 +524,252 @@ There is no ethics statement. The applications tested (house prices, disease pre
 \end{qna}
 \tiein{WBCP is the calibration procedure BCA runs, although BCA's code follows the paper's later v3 revision rather than the v2 reviewed here. BCA uses it with uniform weights, which makes it essentially BQ-CP, so the calibrated width inherits an exchangeability assumption that policy-induced shift and correlated transitions can break. With uniform weights WBCP also yields one global threshold, so BCA's per-sample adaptivity comes from its fitted scale model, not from WBCP.}
 
+% ============================ PAPER 13 ============================
+\paper{Paper 13: Off-Policy Deep Reinforcement Learning without Exploration (BCQ)}
+BCQ shows that standard deep RL algorithms can fail badly when they must learn from a fixed dataset, and repairs them by letting the policy choose only among actions that resemble the recorded ones.
+\begin{qna}
+
+\q{What is the citation?}
+Fujimoto, S., Meger, D., \& Precup, D. (2019). Off-policy deep reinforcement learning without exploration. In \emph{Proceedings of the 36th International Conference on Machine Learning} (Proceedings of Machine Learning Research, Vol.\ 97, pp.\ 2052--2062). PMLR. Version reviewed: arXiv:1812.02900v3. \url{https://doi.org/10.48550/arXiv.1812.02900}
+
+\q{What is the research area?}
+Offline RL, which this paper calls batch RL (learning from a fixed dataset with no further interaction), for continuous control. BCQ is an early policy-constraint method: where CQL makes the critic pessimistic, BCQ restricts the policy to actions close to those in the data. It sits between imitation learning (copying the data) and off-policy value learning.
+
+\q{What is the research question?}
+Why do off-policy deep RL algorithms such as DDPG and DQN, which in principle can learn from data gathered by any policy, fail when trained on a fixed dataset they did not collect themselves, and can restricting the policy to actions similar to the recorded ones make learning from such data work in continuous control?
+
+\q{What is the significance of the question?}
+Learning from a fixed dataset is what RL needs wherever collecting data is costly, risky, or slow, or is best left to a human operator or a monitored program. Imitation learning works when the demonstrations are good but tends to fail on suboptimal ones. Off-policy algorithms seemed to fill that gap, but in practice they train on replay data closely tied to their own current policy, which hides how they behave on data they did not collect.
+
+\q{What are the contributions reported in this paper?}
+Four. A diagnosis, \emph{extrapolation error}: the critic assigns unrealistic values to state-action pairs the dataset lacks, and without new data these are never corrected. A theory for finite (tabular) problems: in a deterministic environment a policy confined to recorded state-action pairs can be evaluated without this error, and a constrained Q-learning (BCQL) converges to the best such policy. The BCQ algorithm, presented as the first deep continuous-control method that learns from arbitrary fixed data. And four fixed-data test settings (final buffer, concurrent, imitation, imperfect demonstrations) with public code.
+
+\q{What is the research method?}
+Diagnostic experiments, tabular proofs, and benchmarking. BCQ fits a generative model (a conditional variational auto-encoder) to the recorded actions, samples 10 candidates per state, lets a perturbation network shift each by at most $\Phi$, and picks the one the critic scores highest; training targets weight the lower of two critics' estimates by 0.75. Tests use three simulated locomotion tasks (HalfCheetah, Hopper, Walker2d) and four datasets from DDPG agents: a full replay buffer, a buffer shared with the collecting agent, expert data, and noisy expert data. Baselines are DDPG, a discretized DQN, and two behavior-cloning (pure imitation) variants.
+
+\q{What are the results?}
+DDPG trained on fixed data does markedly worse than the agent that collected it, even when both learn from the same replay buffer, and its value estimates are unstable or diverge; BCQ's stay stable. Read off the learning curves (no result tables are given), BCQ far exceeds the data's average return on noisy demonstrations (about 2,300 vs.\ 450 on Hopper, 6,100 vs.\ 2,550 on HalfCheetah) and on final-buffer data (8,300 vs.\ 6,000 on HalfCheetah). On clean expert data behavior cloning is best on two of three tasks, where BCQ ends slightly below the expert; on two toy tasks with random data, plain DDPG also learns.
+
+\q{What are the impacts and limitations of the contributions?}
+The paper names the core failure of offline value learning and shows one algorithm, with one set of hyperparameters, both imitating expert data and improving on noisy data; the survey in Literature Review 1 cites it for the extrapolation-error observation and as a policy-constraint method. Limitations: the guarantees cover tabular, deterministic problems, not the deep algorithm; the authors report instability on one task under slightly different hyperparameters; on expert data, returns fall sharply as $\Phi$ grows, yet $\Phi$ is hand-set; $\Phi$ and $n$ are the same in every state, whatever the data coverage; and the benchmark data all come from DDPG agents in simulation.
+
+\q{How were the results evaluated or validated?}
+Five seeds; evaluations every 5,000 steps averaging 10 noise-free episodes; learning curves with half-standard-deviation bands, set against the dataset's average episode return. Value estimates are compared with Monte Carlo returns, and appendix studies vary $\Phi$, try critic-ensemble uncertainty in place of the generative model, and use random-policy data on two toy tasks. Weaknesses: no result tables or significance tests; no earlier batch RL method among the baselines; the $\Phi$ used in the main runs is not stated in the text; and the appendix compares $\Phi$ settings by simulator returns, which a purely offline user would lack.
+
+\q{What are the ethical implications? How are they addressed?}
+The paper contains no ethics or broader-impact discussion; the nearest remarks are that fixed-data learning suits settings where data collection is costly or risky, and a closing reference to systematic risks in Q-learning. Implications: a policy held close to logged behavior reproduces the biases and unsafe habits in the log; the guarantee of at least matching the behavior policy is proved only for tabular, deterministic problems, so the deep algorithm carries no safety assurance; and all evidence is simulated. Public code and candor about instability help, but deployment risks go undiscussed.
+
+\q{What themes are suggested by this research? (minimum 3)}
+\emph{Distribution shift}: values for actions the data do not contain can be badly wrong and cannot be corrected offline (the paper's extrapolation error). \emph{Behavior regularization}: the remedy is to keep the policy's actions close to recorded ones, here with a generative model and a bounded perturbation. \emph{The conservatism--improvement trade-off}: $\Phi$ and $n$ slide the method between pure imitation and unconstrained Q-learning.
+
+\end{qna}
+\tiein{BCQ introduces the ``stay near the data'' policy-constraint idea (batch-constrained RL, in its terms) that two of BCA's hosts, TD3+BC (same first author) and ReBRAC, carry on as a plain penalty. Its constraint ($\Phi$, $n$) has one strength for every state; BCA keeps a host's global coefficient but modulates the regularization per sample with a calibrated width. BCQ's appendix also finds that uncertainty from ensembles of 4 or 10 critics did not by itself keep the policy on expert data (one Hopper test), a caution for any method that leans on an uncertainty signal, BCA included.}
+
+% ============================ PAPER 14 ============================
+\paper{Paper 14: Stabilizing Off-Policy Q-Learning via Bootstrapping Error Reduction (BEAR)}
+BEAR traces the failure of Q-learning on fixed datasets to value targets computed at actions the data do not contain, and counters it by keeping the policy within the actions the data support without forcing it to copy how often each was taken.
+\begin{qna}
+
+\q{What is the citation?}
+Kumar, A., Fu, J., Soh, M., Tucker, G., \& Levine, S. (2019). Stabilizing off-policy Q-learning via bootstrapping error reduction. \emph{Advances in Neural Information Processing Systems, 32}. Version reviewed: arXiv:1906.00949v2. \url{https://doi.org/10.48550/arXiv.1906.00949}
+
+\q{What is the research area?}
+Offline RL for continuous control, which the paper calls off-policy RL from a static dataset. BEAR belongs to the policy-constraint family alongside BCQ (Paper 13): it restricts which actions the policy and the value targets may use, where CQL (Paper 1) instead lowers the critic's scores. Its distinguishing position is support matching (stay within the set of recorded actions), not distribution matching (also copy how often each was taken). The analysis draws on error-propagation theory from approximate dynamic programming.
+
+\q{What is the research question?}
+Why do standard Q-learning and actor-critic methods become unstable on a fixed dataset, even a large or expert one, and can restricting the actions used in value updates to the data's support, instead of to the behavior policy's exact distribution, remove that instability while still letting the policy improve on the data?
+
+\q{What is the significance of the question?}
+Logged data are plentiful in areas such as driving and recommendation, where fresh trial and error is costly, yet off-policy methods of the time could fail on a fixed dataset even when an expert collected it. The failure does not behave like ordinary overfitting: growing the dataset from a thousand to a million samples does not cure it. A closely related earlier fix, BCQ, stays so near the recorded behavior that it gains little over imitation on the mediocre data the authors consider the common practical case.
+
+\q{What are the contributions reported in this paper?}
+Four. A diagnosis: ``bootstrapping error,'' which enters when a value target is computed at an out-of-distribution (OOD) action, one the data do not cover, and then accumulates through repeated backups. An analysis of a backup restricted to a chosen set of policies, with a bound that splits the final error into a distribution-shift term and a suboptimality term. The BEAR algorithm, whose actor is kept approximately within the data's support by a limit on the maximum mean discrepancy (MMD, a distance between distributions computed from samples alone). And a comparison across random, medium-quality, and expert data, with ablations.
+
+\q{What is the research method?}
+Theory, algorithm design, and benchmarking. The theory adapts known error-propagation bounds and is illustrated on a small gridworld. The actor maximizes the lowest of several critics' scores subject to an MMD limit ($\varepsilon = 0.05$), enforced by a self-adjusting penalty weight (a Lagrange multiplier). Experiments cover five MuJoCo tasks with one-million-transition datasets from a uniformly random policy, a partially trained SAC policy, or a converged one (Humanoid: random and medium only). Baselines are naive off-policy RL (TD3), BCQ, KL-control, a static variant of DQfD, and behavior cloning.
+
+\q{What are the results?}
+All numbers are approximate readings of learning curves. On medium-quality data BEAR ends ahead on Walker2d (about 1,800 vs.\ 800 for BCQ), Hopper, and Humanoid, narrowly ahead on HalfCheetah, and near 700 on Ant, just under the dataset's average return. There, a KL constraint in place of MMD collapses on Hopper and Walker2d and trails MMD even when heavily tuned. On random data BEAR beats the dataset average on all five tasks, yet naive RL scores higher on HalfCheetah (about 3,300 vs.\ 2,900) and Hopper. On expert data BEAR, BCQ, and behavior cloning are roughly level.
+
+\q{What are the impacts and limitations of the contributions?}
+The paper names the instability, explains its mechanism, and separates matching the data's support from matching its distribution; CQL (Paper 1) later uses BEAR as a baseline. The authors admit that performance can still decay over long runs with no stopping rule, that action constraints can be too conservative, especially on mixed-policy data, and that support matching in high-dimensional action spaces still lacks a theoretically robust method. Beyond these, the bound assumes policies that truly stay in the support, which a sampled, state-averaged MMD only approximates, and one threshold serves all states however well each is covered.
+
+\q{How were the results evaluated or validated?}
+By appendix proofs, a gridworld illustration, and learning curves averaged over five seeds, with 10 evaluation episodes every 1,000 gradient steps and shaded bands for spread. All methods share the same datasets, and BCQ and TD3 run from their authors' code. Weaknesses: no tables or significance tests; the claim to match or exceed the state of the art in all cases outruns the random-data figures, where naive RL averages higher on two tasks; ensemble size and other settings go unreported; and the first term of Theorem 4.1's bound is half what its proof derives.
+
+\q{What are the ethical implications? How are they addressed?}
+The paper has no ethics or broader-impact discussion; the nearest content is its motivation (driving, recommendation, robotics) and a hope of training on static data before real-world deployment. A policy confined to the data's support inherits the biases of the logged behavior; the bound concerns value error, not safe behavior; and since performance can decay late in training with no offline stopping rule, a policy's quality cannot be confirmed without live trials. All evidence is simulated. The authors are candid about the decay, but bias, safeguards, and misuse go unaddressed.
+
+\q{What themes are suggested by this research? (minimum 3)}
+\emph{Distribution shift}: value targets at unseen actions cannot be corrected offline, and backups spread the error. \emph{The conservatism--improvement trade-off}: a wider allowed policy set means more shift error but less suboptimality. \emph{Behavior regularization}: the policy is held to the actions the data contain, not to how often each was taken.
+
+\end{qna}
+\tiein{BEAR formalizes the trade-off any caution mechanism, BCA's included, must strike: admit too many actions and errors from unsupported ones spread through backups; admit too few and the policy cannot improve. It settles this with one threshold ($\varepsilon = 0.05$) and one learned penalty weight, enforced on average over states, whereas BCA varies each host's regularization per sample by a calibrated width while keeping the host's global coefficient. BEAR is not one of BCA's four hosts.}
+
+% ============================ PAPER 15 ============================
+\paper{Paper 15: Addressing Extrapolation Error in Deep Offline Reinforcement Learning (BRr)}
+BRr learns the value of the policy that recorded the data rather than of the best possible policy, so its training targets use only recorded actions; it makes its one improvement step at deployment, with a ranking penalty meant to keep unseen actions from looking attractive.
+\begin{qna}
+
+\q{What is the citation?}
+Gulcehre, C., G\'{o}mez Colmenarejo, S., Wang, Z., Sygnowski, J., Paine, T., \.{Z}o{\l}na, K., Chen, Y., Hoffman, M., Pascanu, R., \& de Freitas, N. (2020). Addressing extrapolation error in deep offline reinforcement learning. In \emph{Offline Reinforcement Learning Workshop at NeurIPS 2020}. Version reviewed: the workshop paper. \url{https://offline-rl-neurips.github.io/pdf/41.pdf} Also available at \url{https://openreview.net/forum?id=OCRKCul3eKN}; a later version appears as \emph{Regularized behavior value estimation} (arXiv:2103.09575).
+
+\q{What is the research area?}
+Offline RL for problems with a finite set of actions (Atari games, partially observable DeepMind Lab levels, small bsuite control tasks). Its target is extrapolation error (the term used in BCQ, Paper 13): the mistakes a neural critic makes when scoring state-action pairs the data barely cover. The remedy combines evaluating only the behavior policy (the policy that recorded the data), which resembles the in-sample idea of Paper 3, with pushing down the scores of unseen actions, which the paper groups with BCQ and CQL as behavior constraining.
+
+\q{What is the research question?}
+Can offline value learning avoid runaway overestimation on poorly covered state-action pairs by estimating the value of the behavior policy instead of the optimal one and taking a single greedy improvement step only at deployment, and, with suitable regularization, does this match or beat existing offline methods as data coverage varies?
+
+\q{What is the significance of the question?}
+Offline RL is aimed at settings such as healthcare and self-driving cars, where repeated interaction is costly or unsafe while logs are plentiful. But the max over actions in Q-learning includes actions the data lack; the critic's guesses for them are sometimes too high, bootstrapping (building targets from the critic's own predictions) spreads the error, and with no new data nothing corrects it. The paper adds that Double DQN, a standard fix for overestimation, targets a different cause and does not help here.
+
+\q{What are the contributions reported in this paper?}
+Three techniques, plus datasets and analysis. Behavior value estimation (B): a SARSA-style update whose target uses the next action actually recorded, followed by a greedy policy at test time. A ranking regularizer (R): a hinge penalty asking the recorded action to outscore every other action, weighted toward high-return trajectories. A reparametrized critic (r): a bounded output times one learned scale, penalized when values exceed observed returns. The paper also provides new low-coverage bsuite and DeepMind Lab datasets (release promised) and a constructed divergence example; the later arXiv version names the approach R-BVE.
+
+\q{What is the research method?}
+Algorithm design plus benchmarking, all simulated and discrete-action; the main formal result is a hand-built four-state example in which offline Q-learning diverges. Three testbeds: bsuite tasks with random actions injected at five noise levels and only 10\% of the data kept; RL Unplugged Atari, tuned on one set of games and reported on another; and four partially observable DeepMind Lab levels, plus one level recorded at four noise levels. Baselines include DDQN, BCQ, REM, CQL, IQN, offline R2D2, and behavior cloning (BC, pure imitation). Ablations vary the backup (Q-learning or B), toggle each regularizer, and shrink the Atari data to 10\% and 1\%.
+
+\q{What are the results?}
+On the held-out Atari games the top score belongs to QRr, Q-learning with both regularizers (median normalized score 108.2; IQN 104.8, CQL 98.9), which also edges BRr on the tuning games (113.4 vs.\ 110.7). Behavior value estimation pays off when coverage is thin: on 10\% of the Atari tuning-game data B scores 58.6 against DDQN's 14.0, though DDQN leads on the full data (94.1 vs.\ 88.2). BRr leads at all five cartpole noise levels (933.8 vs.\ 383.7 for the best baseline at zero noise), and BR beats CQL and offline R2D2 on all four DeepMind Lab levels. BR loses to BC on data recorded with little or no noise (17.1 vs.\ 28.0 with none).
+
+\q{What are the impacts and limitations of the contributions?}
+Impact: evidence that one greedy step on a behavior-policy critic can compete with dedicated offline methods when coverage is thin. Limitations: the authors concede that one step can be too conservative in data-rich settings; the headline Atari number comes from QRr, which reinstates the max operator, and no BRr score is given for the held-out games; and the featured variant changes by domain (QRr on Atari, BR on DeepMind Lab after preliminary live results). All tests use discrete actions. The greedy step still relies on scores of untested actions, guarded by a heuristic penalty with no guarantee. On the single-level noise datasets BR's return at each noise level (17.1--31.8) is below that dataset's average recorded return (29.7--40.4), so improvement over the behavior policy is not shown there.
+
+\q{How were the results evaluated or validated?}
+Stated protocol: sweep 5--10 hyperparameter settings per method, train on five datasets from five behavior seeds, evaluate in the real environment, and report each method's best setting. Atari scores are medians with bootstrapped 25--75 percentile bars on games held out from tuning; DeepMind Lab results carry standard deviations. Weaknesses: best settings are picked by live evaluation (per level on DeepMind Lab); most Atari baselines are taken from the benchmark paper; there are no significance tests, and spreads sometimes overlap (BR 13.4 $\pm$ 11.8 vs.\ CQL 9.3 $\pm$ 2.5); and Figure 7 and Table 8 disagree (swapped level labels, and an untabulated BRr bar above the BR bar the caption calls best).
+
+\q{What are the ethical implications? How are they addressed?}
+The paper has no ethics or broader-impact section; it only motivates offline RL with healthcare and self-driving cars, where live trial and error is costly, unsafe, or unethical. Implications: the deployed policy is greedy over scores that include actions the data never tested, with a heuristic penalty as the safeguard; the ranking term favors whatever was done in high-return episodes, so biases in those logs are reinforced; and settings were chosen by live evaluation, which the motivating domains do not allow. The paper treats test-time extrapolation as a technical problem but does not discuss bias or deployment safeguards; all evidence is simulated.
+
+\q{What themes are suggested by this research? (minimum 3)}
+\emph{Avoiding distribution shift by design}: the training target bootstraps only from recorded actions, with improvement left to one greedy step at deployment. \emph{The conservatism--improvement trade-off}: one step is the safer choice when coverage is thin but too cautious when data are rich, where regularized Q-learning wins. \emph{Dataset composition}: the ranking of methods flips with coverage, noise, and data size, from BC on near-deterministic data to QRr on full Atari.
+
+\end{qna}
+\tiein{This workshop paper predates IQL (Paper 3, one of BCA's hosts) and shares its in-sample principle: the bootstrap target is built only from recorded actions, though the ranking penalty does score unseen actions in order to push them down. It differs by improving in a single step at deployment, the kind of one-step method Paper 3 contrasts IQL with. Its penalty has one global coefficient, weighted per sample only by trajectory return (data quality, not critic uncertainty); BCA instead draws its per-sample signal from the size of Bellman residuals and keeps each host's global coefficient.}
+
+% ============================ PAPER 16 ============================
+\paper{Paper 16: Uncertainty Weighted Actor-Critic for Offline Reinforcement Learning (UWAC)}
+UWAC estimates how uncertain the critic is about each training sample and gives uncertain samples less weight in the critic and actor losses, so that value guesses about situations the data do not cover stop destabilizing training.
+\begin{qna}
+
+\q{What is the citation?}
+Wu, Y., Zhai, S., Srivastava, N., Susskind, J., Zhang, J., Salakhutdinov, R., \& Goh, H. (2021). Uncertainty weighted actor-critic for offline reinforcement learning. In \emph{Proceedings of the 38th International Conference on Machine Learning} (Proceedings of Machine Learning Research, Vol.\ 139, pp.\ 11319--11328). PMLR. Version reviewed: arXiv:2105.08140v1. \url{https://doi.org/10.48550/arXiv.2105.08140}
+
+\q{What is the research area?}
+Offline RL with actor-critic methods, in the uncertainty-based branch: methods that estimate how unreliable the critic is and act on that estimate. UWAC is model-free (it learns no model of the environment) and is built on BEAR (Paper 14), a policy-constraint method that keeps the policy's actions within the support of the data. Its uncertainty tool comes from Bayesian deep learning: Monte Carlo dropout, which leaves dropout's random masking switched on at prediction time and measures how much repeated predictions disagree.
+
+\q{What is the research question?}
+Can a critic's own dropout-based uncertainty identify out-of-distribution (OOD) state-action pairs, meaning ones the dataset does not cover, and does down-weighting those pairs in the critic and actor losses stabilize offline training and raise returns without adding new loss terms or a learned environment model?
+
+\q{What is the significance of the question?}
+When training bootstraps (builds value targets from the critic's own predictions) from an action or state the data do not cover, the value there can be arbitrary, and the error spreads to other states through the Bellman backup. The authors argue that the usual remedy, strong constraints or penalties that hold the policy to the data, avoids unseen actions even when the critic could score them accurately, so policies turn out pessimistic and suboptimal. They cite human-demonstration benchmarks where the best offline methods did no better than a random agent.
+
+\q{What are the contributions reported in this paper?}
+The core idea is a reweighting of the two training losses: each critic update is scaled by the inverse of the estimated variance of its target value, and the actor's objective by the inverse variance of the critic's value for the proposed action, so uncertain samples count for less. Around this the paper provides a low-overhead variance estimate from Monte Carlo dropout, an appendix convergence argument, evidence that dropout variance flags OOD samples, and a diagnosis of why the BEAR baseline's values diverge. The reviewed version links the baseline's code but not UWAC's.
+
+\q{What is the research method?}
+Algorithm design with a short convergence argument, then experiments. UWAC is BEAR with dropout in its critics: the variance across 100 stochastic forward passes of the target critics is the uncertainty, and each sample's weight is $\beta$ times the inverse variance (clipped at 1.5). BEAR's settings are otherwise kept, with spectral normalization (a weight constraint the authors use to keep the critic's values bounded) added on Adroit. Tests cover LunarLander data with a region of states deleted, fifteen D4RL locomotion datasets, twelve Adroit hand-manipulation datasets, and ablations, with five seeds on the benchmarks.
+
+\q{What are the results?}
+Dropout uncertainty is higher in LunarLander's deleted regions and separates recorded from random actions on walker2d-expert with an AUC of 0.845 (0.5 is chance). On Adroit, UWAC has the best mean on 8 of 12 datasets and lifts BEAR on human demonstrations (pen-human 65.0 vs.\ $-1.0$), while BEAR's value targets climb to the order of $10^{12}$. On locomotion it leads on 6 of 15 datasets, mostly medium-expert and expert (halfcheetah-medium-expert 127.4 vs.\ 64.7 for the runner-up). It trails model-based methods on medium-replay data (hopper 39.4 vs.\ MOReL's 93.6) and falls below BEAR on halfcheetah-random (14.5 vs.\ 25.1).
+
+\q{What are the impacts and limitations of the contributions?}
+UWAC shows that per-sample uncertainty weighting can be added to an existing actor-critic cheaply (under 1.5 times BEAR's training time) and can stop value estimates from diverging on narrow data. Limitations: the dropout variance is never calibrated and is scaled by a swept $\beta$ and a clip; the convergence argument, as the authors note, covers inverse standard deviation, not the clipped inverse variance actually used; only one host algorithm is benchmarked; several human and cloned scores stay near zero (relocate-human $0.5 \pm 0.6$); and UWAC's pen-human return itself decays from about 1,700 to about 700 during training.
+
+\q{How were the results evaluated or validated?}
+By five-seed D4RL means and standard deviations beside ten baseline columns per table, training curves against BEAR, and Adroit ablations (spectral normalization alone, ensembles for dropout, standard deviation for variance, and dropout without weighting, which does sharply worse on most tasks). Weaknesses: baseline scores appear quoted from published tables, mostly without spreads; evaluation episodes, dropout rate, and the scored checkpoint are unstated; BEAR is listed at a normalized 98.6 on relocate-expert although Figure 1 shows its average return collapsing to near zero; and the text claims state-of-the-art results on every non-human Adroit dataset, yet other methods lead on three cloned ones.
+
+\q{What are the ethical implications? How are they addressed?}
+The paper has no ethics or broader-impact statement and no limitations section; it motivates offline RL by the cost of real-world data collection, yet all evidence is simulated. Down-weighting poorly covered samples lets well-covered behavior shape the policy, so biases in the log carry over. An uncertainty score could also be read as a safety signal although it is uncalibrated and imperfect by the paper's own test (AUC 0.845), so some unsupported samples may keep high weight. None of this is discussed; more stable training is at most an indirect benefit.
+
+\q{What themes are suggested by this research? (minimum 3)}
+\emph{Distribution shift}: value targets built on unsupported actions are blamed for BEAR's diverging critic on narrow data. \emph{Adaptive, state-dependent caution}: each sample's weight shrinks with its own estimated uncertainty, in place of one uniform penalty. \emph{Uncertainty quantification without calibration}: dropout variance is checked as an OOD detector (heat maps, one AUC) but never calibrated or compared with actual value error.
+
+\end{qna}
+\tiein{UWAC is an earlier instance of BCA's central move: modulating an existing algorithm's training objective per sample by an uncertainty signal. It scales the critic and actor losses of one host (BEAR) by an inverse Monte Carlo dropout variance that is never calibrated; BCA instead derives a conformally calibrated width from Bellman residuals and uses it to modulate one loss term in each of four hosts. Unlike BCA's current design, UWAC has completed D4RL results.}
+
+% ============================ PAPER 17 ============================
+\paper{Paper 17: Uncertainty-Based Offline Reinforcement Learning with Diversified Q-Ensemble (EDAC)}
+This paper shows that a standard online learner (SAC) becomes a strong offline method when it trusts only the lowest score among many critics, and then adds a diversity term (EDAC) so that tens of critics can do the work of hundreds.
+\begin{qna}
+
+\q{What is the citation?}
+An, G., Moon, S., Kim, J.-H., \& Song, H. O. (2021). Uncertainty-based offline reinforcement learning with diversified Q-ensemble. \emph{Advances in Neural Information Processing Systems, 34}, 7436--7447. Version reviewed: arXiv:2110.01548v2. \url{https://doi.org/10.48550/arXiv.2110.01548}
+
+\q{What is the research area?}
+Offline RL for continuous control, in the model-free, uncertainty-based family: caution comes from disagreement among an ensemble of critics (several value networks trained side by side), not from tying the policy to the recorded behavior (BCQ, BEAR, BRAC) or marking down unseen actions directly (CQL). It builds on soft actor-critic (SAC), a standard online algorithm, and on clipped Q-learning, the online habit of trusting the lower of two critics.
+
+\q{What is the research question?}
+Can the disagreement within an ensemble of critics, applied through clipped Q-learning's take-the-minimum rule, supply on its own the pessimism offline RL needs, with no model of the behavior policy and no sampling of unseen actions? And can the number of critics this requires be cut to a practical size?
+
+\q{What is the significance of the question?}
+Earlier methods need either an accurate estimate of the behavior policy (the one that collected the data) or samples of out-of-distribution (OOD) actions, meaning actions the data do not contain; each is a hard problem in itself. They also discourage unseen actions wholesale, whether or not the critic can score them reliably, which can hold the policy too close to mediocre data. A penalty tied to the critics' own confidence could be selective, but the plain ensemble version can demand hundreds of networks.
+
+\q{What are the contributions reported in this paper?}
+Three. First, SAC-$N$: SAC with $N$ critics instead of two, all trained toward a target built from the lowest of their predictions, plus evidence that this minimum acts like a lower confidence bound (the ensemble average minus a multiple of its spread). Second, a diagnosis of why some datasets need hundreds of critics: when the critics' slopes with respect to the action line up, nearby unseen actions can escape the penalty. Third, EDAC (Ensemble-Diversified Actor Critic), which adds a term, weighted by $\eta$, that pushes those slopes apart at dataset actions. The reviewed version links no code of its own.
+
+\q{What is the research method?}
+Algorithm design with a short supporting analysis under simplifying assumptions, then benchmarking. Tests cover 18 D4RL Gym locomotion datasets (halfcheetah, hopper, and walker2d, six data types each, 3 million training steps) and eight Adroit robotic-hand datasets (200{,}000 steps), all with four seeds. Baselines are behavior cloning (BC, pure imitation), plain SAC, REM (an earlier critic-ensemble method), and CQL, with five more in an appendix. Diagnostics compare the penalty on dataset vs.\ random actions, find the smallest workable ensemble per dataset, and measure runtime and memory.
+
+\q{What are the results?}
+On the 18 Gym datasets EDAC averages 85.2 and SAC-$N$ 84.5, against 73.7 for the rerun CQL, with the largest gains on the medium datasets (hopper-medium: 101.6 vs.\ 61.9). On Gym the two score alike and EDAC's gain is cost: 50 critics instead of 500 on hopper-medium (where 50 undiversified critics score 7.3) and 1.8 GB of GPU memory instead of 5.1 GB. Losses: CQL wins halfcheetah-random (31.3 vs.\ 28.4), and EDAC trails SAC-$N$ on hopper-random and walker2d-random. On Adroit, EDAC does well on the pen tasks (pen-cloned: 68.2 vs.\ CQL's published 40.3) but stays near 10 on door and below 1 on hammer and relocate.
+
+\q{What are the impacts and limitations of the contributions?}
+The paper shows that critic disagreement alone can supply pessimism, and that diversity can stand in for sheer ensemble size. Limitations: the authors concede that SAC-$N$ can need 500 critics and that a large $\eta$ can hurt on suboptimal data. Beyond that, $N$ and $\eta$ are still chosen per environment or dataset (the chosen $\eta$ runs from 0, i.e., off, to 1{,}000); the tenfold saving holds on only a few datasets, with none on halfcheetah; the spread is not checked against actual value errors; the analysis gives no performance guarantee; and no maze or kitchen tasks are tested.
+
+\q{How were the results evaluated or validated?}
+By D4RL normalized scores averaged over four seeds, with a $\pm$ spread the paper does not define and no stated number of test episodes. CQL is rerun from official code beside its published scores, and appendix ablations test rival fixes. EDAC's Gym settings come from small grids ($N$ of 10, 20, or 50 per environment; $\eta$ of 0, 1, or 5 per dataset) by an unstated criterion, presumably test returns, which a true offline user lacks. Other weaknesses: no significance tests, an Adroit stopping point read off evaluation curves, and a rerun CQL far below its published score on some tasks (hopper-medium: 61.9 vs.\ 86.6).
+
+\q{What are the ethical implications? How are they addressed?}
+The reviewed version has no ethics, broader-impact, or limitations section; its introduction merely cites autonomous driving and healthcare as settings where exploration can do damage. The method's selling point is also its risk: it lets the policy leave the data wherever the critics agree, yet agreement is not correctness, since critics trained on the same data can share an error. Settings also appear to be tuned on test rollouts, and all evidence is simulated. Pessimism is an indirect step toward safer learning, but none of these risks is discussed.
+
+\q{What themes are suggested by this research? (minimum 3)}
+\emph{Uncertainty quantification without calibration}: critic disagreement is the uncertainty signal, and its scale is not checked against real errors. \emph{Adaptive, state-dependent caution}: the penalty grows with disagreement at each state-action pair instead of treating every unseen action alike. \emph{Computational efficiency}: pessimism is bought with more networks, and EDAC exists to cut that bill.
+
+\end{qna}
+\tiein{EDAC is not a BCA host, though it is among the baselines in the Unifloral codebase bundled with BCA's repository. It stands for the ensemble route to per-sample caution, the ``huge-ensemble'' family named in Paper 8: uncalibrated critic spread, tens to hundreds of networks, and settings tuned per dataset. BCA seeks the same selectivity from a conformally calibrated width on Bellman-residual size, with no extra critics, though unlike EDAC its current design has no completed D4RL results yet.}
+
+% ============================ PAPER 18 ============================
+\paper{Paper 18: Conformal Prediction as Bayesian Quadrature (BQ-CP)}
+BQ-CP rereads conformal prediction as Bayesian numerical integration, so that a calibration set yields a whole distribution bounding a black-box model's expected loss instead of a single point estimate.
+\begin{qna}
+
+\q{What is the citation?}
+Snell, J. C., \& Griffiths, T. L. (2025). Conformal prediction as Bayesian quadrature. In \emph{Proceedings of the 42nd International Conference on Machine Learning} (Proceedings of Machine Learning Research, Vol.\ 267, pp.\ 56068--56084). PMLR. Version reviewed: arXiv:2502.13228v2. \url{https://doi.org/10.48550/arXiv.2502.13228}
+
+\q{What is the research area?}
+Statistical machine learning, not RL: distribution-free uncertainty quantification (guarantees on a black-box model's errors that assume no particular data distribution). The paper re-derives two popular tools, split conformal prediction (a threshold set from held-out scores) and conformal risk control (its extension to other bounded, monotone losses), from Bayesian decision theory and Bayesian quadrature (numerical integration treated as inference, so the integral gets a posterior). Its link to offline RL in this review is BCA, which runs its successor WBCP (Paper 12).
+
+\q{What is the research question?}
+Can split conformal prediction and conformal risk control be recovered as special cases of a Bayesian procedure that needs no hand-picked prior, and can that procedure give guarantees conditioned on the calibration data actually observed, instead of averaged over calibration sets that were never drawn?
+
+\q{What is the significance of the question?}
+Black-box predictors are used in high-stakes settings such as medical diagnosis and finance, and a deployment decision rests on the one calibration set in hand. Standard conformal guarantees are marginal: they hold on average over hypothetical calibration sets, so a particular set can still produce a threshold whose real risk is too high. Being frequentist, they also make it hard to use prior knowledge about deployment conditions.
+
+\q{What are the contributions reported in this paper?}
+Four. A decision-theoretic framing in which split conformal prediction and conformal risk control both keep worst-case risk below a target $\alpha$. A view of the expected loss as the area under the loss's quantile function (its value at each percentile), handled like Bayesian quadrature but without a prior: take the worst-case function through the observed losses, and use a classical result that gaps between the quantile levels of i.i.d.\ samples follow a flat Dirichlet distribution. A random variable $L^+$ whose distribution upper-bounds the posterior of the expected loss, with both conformal methods recovered by using only its mean. And experiments with public code.
+
+\q{What is the research method?}
+Theory, then simulation. The appendix proofs yield a decision rule: sample the Dirichlet gaps 1,000 times and choose the smallest threshold $\lambda$ for which $L^+$ stays below the target risk $\alpha$ with probability $\beta = 0.95$. It is tested over 10,000 random splits in each of three settings: a synthetic binomial loss (10 calibration points), a synthetic regression whose noise grows with the input (200), and false-negative-rate control for multilabel classification on MS-COCO (1,000). Baselines are conformal risk control (CRC) and risk-controlling prediction sets (RCPS) built on a Hoeffding confidence bound.
+
+\q{What are the results?}
+In theory, given the calibration losses, the expected loss is at most $b$ with posterior probability at least $\Pr(L^+ \le b)$ under any prior compatible with them. Empirically, CRC's threshold exceeds the target risk in 21.20\%, 46.19\%, and 45.05\% of trials across the three settings; BQ-CP cuts this to 0.03\%, 3.42\%, and 5.43\%, the last just above its 5\% allowance. RCPS records no failures but is widest (mean interval length 14.29 vs.\ 9.50 for BQ-CP and 7.99 for CRC; set size 3.57 vs.\ 3.04 and 2.92). At $n=10$ BQ-CP is very cautious (mean risk 0.1758 against a 0.4 target).
+
+\q{What are the impacts and limitations of the contributions?}
+BQ-CP shows that a conformal threshold can carry a full posterior without a hand-chosen prior; it received an outstanding paper award at ICML 2025 and is the base WBCP (Paper 12) extends. The authors' stated limits: deployment data must be i.i.d.\ with the calibration data, losses need a known upper bound, and bounds valid for any prior can be loose. Further limits: the advertised use of prior knowledge is left to future work; the rule returns one global threshold with no per-input guarantee; and no theorem bounds how often it fails over repeated calibration sets.
+
+\q{How were the results evaluated or validated?}
+By proofs and repeated sampling. The proofs assume i.i.d.\ continuous losses bounded by $B$; discrete losses, such as the binomial and 0--1 miscoverage losses of the two synthetic experiments, get only an unproved footnote. One step takes the Dirichlet law of the gaps, a sampling result, as their posterior once the losses are seen, without arguing this for every prior. Strengths: 10,000 splits, a synthetic loss with known true risk, and 95\% Clopper--Pearson intervals in two of three tables. Weaknesses: one real dataset, a single $\beta$, and an MS-COCO table with no intervals or stated $\alpha$, whose 5.43\% the text calls within the 5\% limit.
+
+\q{What are the ethical implications? How are they addressed?}
+A short impact statement says the method is meant to inform deployment of black-box models in safety-critical applications, that its guarantees may fail if its assumptions are violated, and that deployments should be monitored for distribution shift. Further implications: a posterior bound can be mistaken for a safety certificate when the i.i.d.\ assumption goes unchecked, and a bound on average loss can hide high loss for a subgroup, though the introduction names fairness as a goal. The statement is candid about the main risk but offers no monitoring method or subgroup analysis; public code is a positive.
+
+\q{What themes are suggested by this research? (minimum 3)}
+\emph{Uncertainty quantification and calibration}: a calibration set yields a distribution over the expected loss, not one point estimate. \emph{Conformal guarantees and their limits}: a marginal guarantee can hold while 21--46\% of individual calibration sets exceed the target risk. \emph{The conservatism--improvement trade-off}: here caution vs.\ tightness, since RCPS records no failures but is widest, CRC is tightest but often exceeds the target, and BQ-CP sits between.
+
+\end{qna}
+\tiein{BQ-CP is, in effect, the threshold rule BCA runs: WBCP (Paper 12) with uniform weights is the exchangeable case that recovers it, and BCA sets the credibility level to $\beta = 0.95$, the value this paper uses. BCA thus inherits its guarantee, a posterior bound, given the calibration scores, on how often new scores from the same distribution exceed the threshold; this is neither a per-sample nor, as BCA's own documentation says, a policy-performance guarantee. It also inherits the i.i.d.\ assumption, which same-episode, policy-dependent Bellman residuals strain even after BCA thins its calibration set.}
+
 \section*{Part A: Literature Reviews}
 
 The three literature reviews are new in Version 2. Each is reviewed against the eleven literature-review questions.
@@ -543,7 +789,7 @@ Offline RL as a whole: learning a policy from a fixed dataset collected by a pos
 What prevents current RL algorithms from turning a fixed, previously collected dataset into the best policy the data can support, and which ideas have been proposed to overcome those obstacles?
 
 \q{What is the significance of the survey?}
-It appeared in May 2020, when offline RL had just become an active topic (BCQ, BEAR, BRAC) but still went by competing names and lacked settled evaluation practice. It gave newcomers one entry point, placing older statistical work on importance sampling beside recent deep methods under one notation and one diagnosis: distribution shift created by counterfactual (what-if) queries. The later survey by Figueiredo Prudencio et al.\ treats it as the main predecessor and presents its own open-problems section as an update of this one.
+It appeared in May 2020, when offline RL had just become an active topic (BCQ and BEAR, Papers 13 and 14, and BRAC) but still went by competing names and lacked settled evaluation practice. It gave newcomers one entry point, placing older statistical work on importance sampling beside recent deep methods under one notation and one diagnosis: distribution shift created by counterfactual (what-if) queries. The later survey by Figueiredo Prudencio et al.\ treats it as the main predecessor and presents its own open-problems section as an update of this one.
 
 \q{What are the themes?}
 \emph{Distribution shift as the core obstacle}: learning offline means answering what-if questions about actions the data never contained. \emph{Policy constraints and penalties}: keep the learned policy near the data, preferably within its support rather than matching it exactly. \emph{Uncertainty estimation and conservative critics}: make the critic itself cautious, with or without an explicit uncertainty model.
@@ -653,8 +899,8 @@ No section is devoted to ethics. Safety appears as a motivation (testing a polic
 
 \section*{Part B: Themes and Observations}
 
-Narrowing every work to its three most central themes leaves a compact set across the fifteen works (twelve research papers and three literature reviews), and they group into three meta-themes. The first, caution toward unsupported actions, covers distribution shift, the conservatism--improvement trade-off, and behavior regularization. It appears in seven works, including all three surveys, and is significant because every offline learner must decide how far to trust values its data cannot verify. The second, calibrated and adaptive caution, was the minority theme of Version 1 and is now the most developed: uncertainty quantification and calibration is the single most prevalent theme (eight works), adaptive per-sample caution appears in six, and conformal guarantees in three. It matters because the surveys find existing uncertainty estimates unreliable or hard to calibrate, and several newer papers respond by calibrating them. The third, credibility of evidence, gathers hidden implementation details and hyperparameter sensitivity, evaluation rigor, live tuning, minimalism, and the gap between theory and practice. It is the broadest meta-theme, touching eleven works, and matters because scores that depend on engineering choices and live tuning overstate what a truly offline user can expect.
+With every work narrowed to its three most central themes, the twenty-one works (eighteen research papers and three literature reviews) share themes that group into three meta-themes. The first, caution toward unsupported actions, covers distribution shift, the conservatism--improvement trade-off, and behavior regularization. It appears in twelve works, including all three surveys, and is significant because every offline learner must decide how far to trust values its data cannot verify. The second, calibrated and adaptive caution, also spans twelve works and holds the single most prevalent theme, uncertainty quantification (eleven works); adaptive per-sample caution appears in eight and conformal guarantees in four. It matters because the surveys find uncertainty estimates unreliable or hard to calibrate: UWAC and EDAC act on uncalibrated signals, and several newer papers respond by calibrating them. The third, credibility of evidence, gathers hidden implementation details, hyperparameter sensitivity, evaluation rigor, live tuning, minimalism, and the gap between theory and practice. It touches eleven works and matters because scores that depend on engineering choices and live tuning overstate what an offline user can expect.
 
-Three less prevalent themes carry outsized weight. Conformal guarantees (three works) offer the only uncertainty estimates calibrated to a stated coverage level, yet all three papers document limits on what that guarantee covers. Guarantees under partial data coverage (A-Crab alone) give the theoretical case for weighting errors per sample. Generative sequence models (BFN-RL alone) plan without a critic and so mark the boundary of BCA's approach, since they leave no Bellman residual to calibrate. Together these themes motivate, and bound, BCA's calibrated per-sample conservatism.
+Several less prevalent themes carry outsized weight. Conformal guarantees (four works) offer the only uncertainty estimates calibrated to a stated level, yet all four papers document limits on what that guarantee covers. Guarantees under partial data coverage (A-Crab alone) give the theoretical case for weighting errors per sample. Dataset composition (Paper 15 alone) shows that the right amount of caution changes with data coverage, the practical case for adapting it. Computational efficiency (EDAC alone) exposes the cost of ensemble uncertainty, up to hundreds of critics. Generative sequence models (BFN-RL alone) plan without a critic and so mark the boundary of BCA's approach, since they leave no Bellman residual to calibrate. Together these themes motivate, and bound, BCA's calibrated per-sample conservatism.
 
 \end{document}
