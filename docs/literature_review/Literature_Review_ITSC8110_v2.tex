@@ -26,8 +26,6 @@
 
 \section*{Part A: Research Papers}
 
-Papers 1--8 carry over from Version 1; Papers 9--18 are new in Version 2. Every work is described with the same four themes, of which each paper names its three most central: distribution shift, the conservatism--improvement trade-off, uncertainty quantification and calibration, and theory vs.\ practice.
-
 
 
 % ============================ PAPER 1 ============================
@@ -772,8 +770,6 @@ A short impact statement says that the method's guarantees may fail if its assum
 
 \section*{Part A: Literature Reviews}
 
-The three literature reviews are new in Version 2. Each is reviewed against the eleven literature-review questions, and their themes and meta-themes are drawn from the same four themes.
-
 % ====================== LITERATURE REVIEW 1 ======================
 \paper{Literature Review 1: Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems (Levine et al., 2020)}
 This early tutorial explains why learning from a fixed dataset is hard, groups early methods by how they cope, and lists open problems.
@@ -899,15 +895,15 @@ The survey has no ethics section. Safety appears as a motivation and as an open 
 
 \section*{Part B: Themes and Observations}
 
-All twenty-one works (eighteen research papers and three literature reviews) are described with the same four themes. Each paper names three, and for a review I count its themes and meta-themes together.
+The themes and meta-themes of the eighteen research papers and three literature reviews collect into four. Each paper carries three of them, and a literature review's themes and meta-themes are counted together.
 
-\emph{Theory vs.\ practice} is the most common (19 works). What is proved or reported often differs from what an offline user gets: in several papers the guarantees assume conditions the tested algorithm does not meet, and scores depend on implementation details and live tuning.
+\emph{Theory vs.\ practice} is the most prevalent theme (19 works). Its significance is that what is proved or reported often differs from what an offline user gets: in several papers the guarantees assume conditions the tested algorithm does not meet, and scores depend on implementation details and live tuning.
 
-\emph{The conservatism--improvement trade-off} comes next (18 works). An offline method has to decide how far to distrust values its data cannot verify, and many methods set that caution with one hand-chosen number.
+\emph{The conservatism--improvement trade-off} is nearly as prevalent (18 works). It is significant because an offline method has to decide how far to distrust values its data cannot verify, and many methods set that caution with one hand-chosen number.
 
-\emph{Distribution shift} (16 works) is the problem the other themes respond to: values for actions the data do not contain cannot be corrected offline.
+\emph{Distribution shift} (16 works) is significant as the problem the other themes respond to: values for actions the data do not contain cannot be corrected offline.
 
-\emph{Uncertainty quantification and calibration} is the least common theme (12 works) but the most relevant to this project, because it offers a way to make caution vary per sample. The three surveys describe uncertainty estimates as hard to obtain or often unreliable. Five works add a calibration step (Papers 8, 10, 11, 12, and 18), and this review notes limits on each guarantee.
+\emph{Uncertainty quantification and calibration} is the least prevalent theme (12 works), yet it appears very significant, because it offers a way to make caution vary per sample. The three surveys describe uncertainty estimates as hard to obtain or often unreliable. Five works add a calibration step (Papers 8, 10, 11, 12, and 18), and Part A notes limits on each guarantee.
 
 These themes motivate BCA and also bound it. BCA is designed to set caution per sample using calibrated uncertainty, but a calibration guarantee is not a policy-performance guarantee, and BCA's benefit has not yet been shown on benchmarks.
 
