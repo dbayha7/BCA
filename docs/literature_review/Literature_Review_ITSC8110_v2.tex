@@ -26,7 +26,7 @@
 
 \section*{Part A: Research Papers}
 
-Papers 1--8 carry over from Version 1; Papers 9--18 are new in Version 2. Every work is described with the same four themes, of which each entry names its three most central: distribution shift, the conservatism--improvement trade-off, uncertainty quantification and calibration, and theory vs.\ practice.
+Papers 1--8 carry over from Version 1; Papers 9--18 are new in Version 2. Every work is described with the same four themes, of which each paper names its three most central: distribution shift, the conservatism--improvement trade-off, uncertainty quantification and calibration, and theory vs.\ practice.
 
 
 
@@ -772,7 +772,7 @@ A short impact statement says the method is meant to inform deployment of black-
 
 \section*{Part A: Literature Reviews}
 
-The three literature reviews are new in Version 2. Each is reviewed against the eleven literature-review questions, and their meta-themes are drawn from the same four themes.
+The three literature reviews are new in Version 2. Each is reviewed against the eleven literature-review questions, and their themes and meta-themes are drawn from the same four themes.
 
 % ====================== LITERATURE REVIEW 1 ======================
 \paper{Literature Review 1: Offline Reinforcement Learning: Tutorial, Review, and Perspectives on Open Problems (Levine et al., 2020)}
@@ -792,7 +792,7 @@ What prevents current RL algorithms from turning a fixed, previously collected d
 It appeared in May 2020, when offline RL had just become an active topic (BCQ and BEAR, Papers 13 and 14, and BRAC) but still went by competing names and lacked settled evaluation practice. It gave newcomers one entry point, placing older statistical work on importance sampling beside recent deep methods under one notation and one diagnosis: distribution shift created by counterfactual (what-if) queries. The later survey by Figueiredo Prudencio et al.\ treats it as the main predecessor and presents its own open-problems section as an update of this one.
 
 \q{What are the themes?}
-\emph{Distribution shift as the core obstacle}: learning offline means answering what-if questions about actions the data never contained. \emph{Policy constraints and penalties}: keep the learned policy near the data, preferably within its support rather than matching it exactly. \emph{Uncertainty estimation and conservative critics}: make the critic itself cautious, with or without an explicit uncertainty model.
+\emph{Distribution shift}: the core obstacle; learning offline means answering what-if questions about actions the data never contained. \emph{The conservatism--improvement trade-off}: policy constraints keep the learned policy near the data, preferably within its support rather than matching it exactly, and conservative critics make the critic itself cautious. \emph{Uncertainty quantification and calibration}: uncertainty-based methods make the critic cautious through an explicit uncertainty model.
 
 \q{What is the survey method?}
 An expert narrative written as a tutorial, not a systematic review: no search databases, keywords, or inclusion criteria are reported. The material is organized by algorithmic principle rather than chronology, in one shared notation. The authors restate and explain results from the literature but prove no new theorems, run no experiments, and give no benchmark tables; their own critical view appears mainly in the challenges subsections that close each method section.
@@ -833,7 +833,7 @@ How have recent offline model-based methods coped with the distribution shift th
 By May 2023, uncertainty-penalized models had been a main route to offline RL for about three years, yet the general surveys gave model-based methods only a few pages and went no further than COMBO. He's paper is a dedicated, recent, and very short treatment that adds adversarial-model methods and sample-complexity theory. It is a single-author preprint with no peer-reviewed version, so its value is as a quick map rather than an authoritative reference.
 
 \q{What are the themes?}
-\emph{Model exploitation as the core obstacle}: a policy optimized inside a learned model drifts to regions where the model is wrong but looks rewarding. \emph{Uncertainty-penalized models}: MOReL and MOPO turn ensemble uncertainty into a reward penalty. \emph{Alternatives to uncertainty penalties}: COMBO's conservative critic and the adversarially trained models of RAMBO and ARMOR.
+\emph{Distribution shift}: here as model exploitation, the core obstacle; a policy optimized inside a learned model drifts to regions where the model is wrong but looks rewarding. \emph{The conservatism--improvement trade-off}: caution by means other than uncertainty penalties, through COMBO's conservative critic and the adversarially trained models of RAMBO and ARMOR. \emph{Uncertainty quantification and calibration}: MOReL and MOPO turn ensemble uncertainty into a reward penalty.
 
 \q{What is the survey method?}
 A personal, narrative selection: no databases, search terms, or inclusion criteria are named, and the choice of these seven methods is not explained. Each profile gives the core idea, the key equations in the notation of whichever source it follows, and the original authors' claims. There are no figures, tables, experiments, or new results, and no unifying notation; some passages follow Figueiredo Prudencio et al.\ closely.
@@ -874,7 +874,7 @@ How can the fast-growing body of offline RL algorithms be placed in one framewor
 When it appeared on arXiv in March 2022, the main broad review was the 2020 tutorial, and many newer methods (TD3+BC, IQL, COMBO, the Decision Transformer) had since been published, several relying on strategies the tutorial never discussed. The survey supplies an updated review in a single notation, a taxonomy that lets methods be read as combinations of reusable parts, and a mapping from dataset properties to the algorithm classes that handle them, which helps practitioners match methods to their data.
 
 \q{What are the themes?}
-\emph{Distribution shift as the central difficulty}: most classes are introduced as ways to prevent, penalize, or sidestep it. \emph{Policy constraints and behavior regularization}: direct constraints that estimate the behavior policy versus implicit ones that use only dataset samples. \emph{Evaluating policies without deployment}: off-policy evaluation tied to hyperparameter selection and early stopping.
+\emph{Distribution shift}: the central difficulty; most classes are introduced as ways to prevent, penalize, or sidestep it. \emph{The conservatism--improvement trade-off}: policy constraints and behavior regularization, with direct constraints that estimate the behavior policy set against implicit ones that use only dataset samples. \emph{Theory vs.\ practice}: evaluating policies without deployment, with off-policy evaluation tied to hyperparameter selection and early stopping.
 
 \q{What is the survey method?}
 An expert survey whose selection process goes unreported: it names no databases, search strings, or inclusion criteria, and the authors concede that their method table is far from complete. The organizing device is the taxonomy, with every method restated in a shared notation and a timeline ordered by preprint date. The only quantitative analysis is secondary: a heatmap built from D4RL scores collected from the literature, rescaled per dataset and averaged by dataset property. No new experiments are run.
@@ -899,13 +899,13 @@ No section is devoted to ethics. Safety appears as a motivation (testing a polic
 
 \section*{Part B: Themes and Observations}
 
-The twenty-one works (eighteen research papers and three literature reviews) are described with four themes, three per work.
+The twenty-one works (eighteen research papers and three literature reviews) are described with four themes: three per research paper, and for each literature review its themes and meta-themes combined.
 
 \emph{Theory vs.\ practice} is the most prevalent (19 works). It matters because what is proved or reported often differs from what an offline user gets: guarantees assume conditions the tested algorithm breaks, and scores depend on implementation details and live tuning.
 
 \emph{The conservatism--improvement trade-off} follows (18 works). Every method must decide how far to distrust values its data cannot verify: too little caution lets errors spread, and too much ties the policy to mediocre data. Many methods set that caution with one global number, which is too careful where data are dense and too lax where they are sparse.
 
-\emph{Distribution shift} (14 works) is the root problem the other themes answer: values for actions the data do not contain cannot be corrected offline.
+\emph{Distribution shift} (16 works) is the root problem the other themes answer: values for actions the data do not contain cannot be corrected offline.
 
 \emph{Uncertainty quantification and calibration} is the least prevalent theme (12 works) yet, for this project, the most significant. It is the route from one global dose of caution to caution that varies per sample. The surveys find uncertainty estimates unreliable or hard to calibrate, and QQL, UWAC, and EDAC act on uncertainty signals that carry no calibration guarantee. Only five of the twelve calibrate their uncertainty (Papers 8, 10, 11, 12, and 18), and each documents limits on what its guarantee covers.
 
