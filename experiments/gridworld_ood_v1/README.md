@@ -1,6 +1,6 @@
 # GridWorld out-of-distribution-action testbed, revision 1
 
-Built November 9 2026 for David. **Status: environment, data collector, checks and development datasets are built and tested. Nothing has been trained.** No learner code is in this folder.
+Built November 9 2026 for David. **Status: the environments are built, tested, and validated with baseline runs; a first development study of BCA has been run on them, and then a second one testing three changes to the method.** Read in this order: this file for the design, [PROTOCOL.md](PROTOCOL.md) for the study plan and its five amendments, [VALIDATION.md](VALIDATION.md) for the environment checks, [RESULTS.md](RESULTS.md) for how BCA did, [RESULTS_METHOD_CHANGES.md](RESULTS_METHOD_CHANGES.md) for what the three changes did and for the two follow-up arms (the calibrated width removed, then blindfolded).
 
 Quick navigation: [What "out of distribution" means here](#1-what-out-of-distribution-means-here) · [What changed and why](#2-what-changed-from-the-archived-environment-and-why) · [The two tasks](#3-the-two-tasks) · [How the data are made](#4-how-the-data-are-made) · [The checks and their results](#5-the-checks-and-their-results) · [Tests](#6-tests) · [What is not established](#7-what-is-not-established) · [Choices that are yours](#8-choices-that-are-yours) · [Files and commands](#9-files-and-commands)
 
@@ -48,7 +48,16 @@ Entering cell 44 ends the episode with a small reward: 4.5, 3.5 or 2.5 (the goal
 - **Why directly above B.** The choice is then made at one cell: at B, "up" is a small sure reward and "right" is the long road to the large one. Everything upstream is shared.
 - **Why those three values.** Crossing is worth 5.563 from B. The three exit values make crossing better by 1.06, 2.06 and 3.06. An exit worth more than 4.83 would become the better choice from cells in row 4 beside it, so 4.5 is the largest value at which crossing is still best from every cell on the left. A test verifies that for all three.
 
-### 2.4 What did not change
+### 2.4 Bottleneck revision 2: two more changes, made after baseline runs exposed two faults
+
+Revision 2 is the validated Bottleneck. Revision 1 (sections 2.2 and 2.3 as first built) is kept in the code so its datasets stay checkable.
+
+- **Hazard 58 is removed from the Bottleneck.** It sat on the opening's row, two cells past C. With coordinate inputs, 65% to 75% of baseline episodes starting at C ended in it.
+- **A move blocked by a wall costs 1.0 in the Bottleneck instead of 0.1.** Priced like a step, a blocked move was worth only 0.23 to 0.60 less than the best move, and under the cutoff rule a chosen blocked move never ends. The gap is now 1.13 to 1.50.
+
+The evidence, the pilot and the reasoning are in Amendment 2 of [PROTOCOL.md](PROTOCOL.md); the checks it then passed are in [VALIDATION.md](VALIDATION.md). The Honeypot is unchanged.
+
+### 2.5 What did not change
 
 Grid size, the six shared walls, the four hazards, the goal, rewards (-0.1 per step, +10 goal, -5 hazard), discount 0.95, the sharpness of 2 inside the softmax, the 200-step evaluation cutoff, command validation (rejected, never clipped), and both learner input encodings. The Honeypot map is identical to the archive.
 
@@ -69,7 +78,7 @@ y 0   .........G               y 0   .....#...G
   9   A.........                 9   A....#....
 ```
 
-`#` wall, `H` hazard, `G` goal, `A` far start (cell 90). Honeypot: `X` is hazard 34, `d` its four neighbors. Bottleneck: `B` cell 54, `=` the opening 55, `C` cell 56, `E` the low-yield exit 44.
+`#` wall, `H` hazard, `G` goal, `A` far start (cell 90). Honeypot: `X` is hazard 34, `d` its four neighbors. Bottleneck: `B` cell 54, `=` the opening 55, `C` cell 56, `E` the low-yield exit 44. The Bottleneck map shown is revision 1; in revision 2 the `H` on row 5 (cell 58) is an ordinary cell.
 
 | | Honeypot | Bottleneck |
 |---|---|---|
@@ -110,7 +119,7 @@ What the gap costs: about 85% of the uniform commands at a decision cell are red
 | Commands redrawn only at decision cells | The gap is where it is claimed to be |
 | Complete and placebo arms do show the target move | The contrast between arms is real |
 
-Development datasets: 3 seeds (5101, 5102, 5103) x 4 task settings x 3 arms = 36 datasets, 751,104 rows. **All 36 pass**, and pass again when re-read from disk with content hashes verified. I also recounted the key numbers with separately written code from the earlier analysis folder.
+Development datasets: 3 seeds (5101, 5102, 5103) x 4 task settings x 3 arms = 36 datasets, 751,104 rows. **All 36 pass**, and pass again when re-read from disk with content hashes verified. I also recounted the key numbers with separately written code from the earlier analysis folder. The table below is for these datasets, which use Bottleneck revision 1. The 27 revision 2 datasets (seeds 5201 to 5203, label `dev2`) also all pass; their counts are in [VALIDATION.md](VALIDATION.md).
 
 | Task | Arm | Target move executed, per decision cell | Commands that could execute it | Rows at the cell | Second most used other direction |
 |---|---|---:|---:|---:|---:|
@@ -125,15 +134,15 @@ Development datasets: 3 seeds (5101, 5102, 5103) x 4 task settings x 3 arms = 36
 
 ## 6 Tests
 
-33 tests, all passing. `test_environment.py` covers the execution rule, the layout, every move at every cell, the best possible policy, the exit margins and parity with the archived file. `test_datasets.py` covers the collector, then tests the checks themselves:
+41 tests of the environments and datasets, all passing (27 and 14); the learner and the evaluator have 45 and 6 more, listed in section 9. `test_environment.py` covers the execution rule, the layout, every move at every cell, the best possible policy, the exit margins and parity with the archived file. `test_datasets.py` covers the collector, then tests the checks themselves:
 
 - One planted entry into the hazard, one planted command that could enter it, one deleted row, one edit far from the decision cells and one fabricated reward each make the dataset fail the right check.
 - The archived targeted Honeypot dataset shows the "missing" move 17 times, and the archived fragment dataset has zero rows at B.
 
 ## 7 What is not established
 
-- **Whether the baseline learns under the cutoff rule.** This is the first gate before any BCA arm: with complete data, the plain TD3+BC baseline must meet the existing competence thresholds at the primary starts in every run. It needs a PyTorch runtime, which Zeus did not have on November 9, and your go-ahead.
-- **Whether the gap misleads the baseline.** Building a truly unseen move does not guarantee the baseline will choose it in the Honeypot or avoid it in the Bottleneck. That is the second gate and it is an empirical question.
+- **Whether the baseline learns under the cutoff rule, and whether the gap misleads it.** These were open when the testbed was built. The first training study has since been run; see [PROTOCOL.md](PROTOCOL.md) for the plan and [RESULTS.md](RESULTS.md) for what happened.
+- **A layout fault found after the build.** With the opening on row 5, hazard 58 sits on the same row two cells past C. A network that reads coordinates carries "step right" one cell too far and walks into it. The layout check in section 2.2 only looked at cells next to B, the opening and C. See Amendment 1 in the protocol.
 - **The 5% cutoff** was sized on the archived Bottleneck's demonstrator rows. It held with no exceptions in the development data here, but it is a design choice, not a derived constant.
 - **These seeds are development only.** Confirmation datasets are not generated and should not be until the design is frozen.
 
@@ -159,6 +168,18 @@ Each is one constant or one small function, and the tests will tell you what a c
 | `collect.py` | Demonstrator with a gap, the three arms, per-cell random streams. |
 | `unseen_move_checks.py` | The acceptance checks. Also re-checks saved datasets against the manifest. |
 | `build_datasets.py` | Generates, checks and saves a labeled set. Refuses to overwrite a label. |
+| `PROTOCOL.md` | The training study's plan, gates and kill rules, written before training, with five amendments. Amendment 3 defines the three method changes; Amendment 4 the arm that drops the calibrated width; Amendment 5 the arm that reads it at a wrong state. |
+| `learner.py` | JAX re-implementation of the archived TD3+BC host with the width penalty, and the changes as switches (fourteen arms). Needs JAX; everything above does not. |
+| `run_study.py` | Trains a study on the GPU and saves policies. `--study v3` is the method-change study; `--study v4` and `--study v5` are the two follow-up arms. |
+| `evaluation.py`, `evaluate_study.py` | Exact evaluation of saved policies and the gate verdicts, one set per method. NumPy only. |
+| `summarize_study.py` | Compact tables from an evaluated study: outcomes, values, gates, and what the width and the support score did. |
+| `sharpen_after_training.py` | Exploratory, no training: scales the support-only policies' commands after training and re-evaluates them. |
+| `test_learner.py`, `test_evaluation.py` | 45 tests of the learner's equations, gradients and update order; 6 tests of the evaluator. |
+| `test_learner_regression.json` | Outputs of the learner as it stood before Amendment 3. A test checks the original arms still reproduce them. |
+| `RESULTS.md`, `results/dev_v1/`, `results/dev_v2/` | What the first studies found, with their records, gate verdicts and tables. |
+| `RESULTS_METHOD_CHANGES.md`, `results/dev_v3/`, `results/dev_v4/`, `results/dev_v5/` | What the three method changes and the two follow-up arms did, with records, gate verdicts, tables and summaries. |
+| `results/confirm_v1/`, `data/confirm_h/`, `data/confirm_b/` | The confirmation on untouched datasets (seeds 7101 to 7103): Version A and Version B against the TD3+BC baseline. Written up in section 13 of `RESULTS_METHOD_CHANGES.md`. |
+| `compare_versions.py`, `results/confirm_v2/`, `data/confirm2_h/`, `data/confirm2_b/` | The second fresh-data block (seeds 7201 to 7203) and the script that compares Version A with Version B readout by readout (PROTOCOL.md Amendment 7). |
 | `receipts/dev_manifest.json` | Source hashes, settings, every dataset's content hash and how it was made. |
 | `receipts/dev_unseen_move_checks.json` | Every check result with counts. |
 | `data/dev/` | The 36 datasets (11 MB). Ignored by git; reproducible from the seeds, and the manifest's content hashes verify a regeneration. |

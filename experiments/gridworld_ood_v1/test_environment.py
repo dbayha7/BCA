@@ -25,7 +25,8 @@ def archived_module():
 
 
 def all_tasks():
-    return [env.honeypot()] + [env.bottleneck(r) for r in env.LOW_EXIT_REWARDS]
+    return ([env.honeypot()] + [env.bottleneck(r) for r in env.LOW_EXIT_REWARDS]
+            + [env.bottleneck_r2(r) for r in env.LOW_EXIT_REWARDS])
 
 
 class ExecutionRule(unittest.TestCase):
@@ -146,8 +147,9 @@ class Layout(unittest.TestCase):
                     else:
                         self.assertEqual(nxt, intended)
                     self.assertEqual(done, nxt in task.terminals)
-                    expected = (env.GOAL_REWARD if nxt == env.GOAL else env.HAZARD_REWARD if nxt in env.HAZARDS
-                                else task.low_exit_reward if nxt == task.low_exit else env.STEP_REWARD)
+                    expected = (env.GOAL_REWARD if nxt == env.GOAL else env.HAZARD_REWARD if nxt in task.hazards
+                                else task.low_exit_reward if nxt == task.low_exit
+                                else task.bump_reward if nxt == cell else env.STEP_REWARD)
                     self.assertEqual(reward, expected)
             for terminal in task.terminals:
                 for direction in range(4):
@@ -202,6 +204,91 @@ class BestPossiblePolicy(unittest.TestCase):
             value = task.value(commands)
             P, reward, _ = task.chain(commands)
             np.testing.assert_allclose(value, reward + env.GAMMA * P @ value, atol=1e-10)
+
+
+class BottleneckRevisionTwo(unittest.TestCase):
+    """The fixed layout: hazard 58 removed, and a blocked move costs 1.0 instead of 0.1."""
+
+    def setUp(self):
+        self.old, self.new = env.bottleneck(3.5), env.bottleneck_r2(3.5)
+
+    def test_it_differs_from_revision_one_only_in_hazard_58_and_the_cost_of_a_blocked_move(self):
+        self.assertEqual(self.new.hazards, self.old.hazards - {58})
+        self.assertEqual((self.new.walls, self.new.low_exit, self.new.low_exit_reward, self.new.cutoff, self.new.beta),
+                         (self.old.walls, self.old.low_exit, self.old.low_exit_reward, self.old.cutoff, self.old.beta))
+        self.assertEqual(self.new.bump_reward, -1.0)
+        self.assertEqual(sorted(set(self.new.free_cells()) - set(self.old.free_cells())), [58])
+        for cell in self.old.free_cells():
+            for direction in range(4):
+                was, now = self.old.move(cell, direction), self.new.move(cell, direction)
+                if was[0] == 58:
+                    self.assertEqual(now, (58, env.STEP_REWARD, False))      # an ordinary step now
+                elif was[0] == cell:
+                    self.assertEqual(now, (cell, -1.0, False))                # a blocked move costs more
+                else:
+                    self.assertEqual(now, was)
+
+    def test_no_hazard_on_the_opening_row_or_beside_b_the_opening_or_c(self):
+        row = [10 * env.OPENING_ROW + x for x in range(10)]
+        self.assertFalse(set(row) & self.new.hazards)
+        for cell in (env.B, env.GATE, env.C):
+            self.assertNotIn("hazard", [self.new.role(cell, d) for d in range(4)])
+
+    def test_stepping_right_from_c_until_blocked_never_enters_a_hazard(self):
+        cell, visited = env.C, []
+        while True:
+            nxt, _, done = self.new.move(cell, env.RIGHT)
+            self.assertNotIn(nxt, self.new.hazards)
+            if nxt == cell or done:
+                break
+            cell = nxt
+            visited.append(cell)
+        self.assertEqual(visited, [57, 58, 59])
+        self.assertIn(58, env.bottleneck(3.5).hazards)       # revision 1 fails this same walk
+
+    def test_the_best_route_from_b_never_passes_beside_a_hazard(self):
+        commands, _ = env.best_policy(self.new)
+        cell, route = env.B, [env.B]
+        for _ in range(30):
+            direction = int(np.argmax(self.new.probabilities(commands[cell])))
+            cell, _, done = self.new.move(cell, direction)
+            route.append(cell)
+            if done:
+                break
+        self.assertEqual(route[-1], env.GOAL)
+        self.assertEqual(len(route) - 1, 10)                 # ten moves, as in revision 1
+        for cell in route[:-1]:
+            self.assertNotIn("hazard", [self.new.role(cell, d) for d in range(4)])
+
+    def test_crossing_is_still_worth_the_same_and_beats_the_low_exit(self):
+        crossing = -0.1 * (1 - env.GAMMA ** 9) / (1 - env.GAMMA) + 10 * env.GAMMA ** 9
+        for reward in env.LOW_EXIT_REWARDS:
+            task = env.bottleneck_r2(reward)
+            _, value = env.best_policy(task)
+            per_direction = task.direction_values(value)[env.B]
+            self.assertAlmostEqual(per_direction[env.RIGHT], crossing, places=9)
+            self.assertGreater(per_direction[env.RIGHT] - per_direction[env.UP], 1.0)
+            self.assertEqual(task.move(env.B, env.DOWN), (env.B, -1.0, False))
+
+    def test_a_blocked_move_is_now_clearly_worse_than_the_best_move(self):
+        gaps = {}
+        for name, task in (("old", self.old), ("new", self.new)):
+            _, value = env.best_policy(task)
+            per_direction = task.direction_values(value)
+            gaps[name] = min(per_direction[c].max() - per_direction[c, d]
+                             for c in task.free_cells() for d in range(4) if task.role(c, d) == "blocked")
+        self.assertLess(gaps["old"], 0.35)
+        self.assertGreater(gaps["new"], 1.0)
+
+    def test_a_demonstrator_who_never_crosses_still_takes_the_low_exit(self):
+        commands, _ = env.best_policy(self.new, forbidden={env.B: (env.RIGHT,)})
+        reached = self.new.outcomes(commands)
+        left = [c for c in self.new.free_cells() if c % 10 < 5]
+        np.testing.assert_allclose(reached["low_exit"][left], 1.0, atol=1e-12)
+
+    def test_the_honeypot_is_untouched_by_the_revision(self):
+        task = env.honeypot()
+        self.assertEqual((task.hazards, task.bump_reward), (env.HAZARDS, env.STEP_REWARD))
 
 
 if __name__ == "__main__":

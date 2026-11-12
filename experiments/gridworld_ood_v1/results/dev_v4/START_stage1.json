@@ -1,0 +1,70 @@
+{
+ "stage": "stage1",
+ "study": "v4",
+ "started_unix": 1794281100.0388472,
+ "python": "3.10.12",
+ "jax": "0.6.2",
+ "devices": [
+  "cuda:0"
+ ],
+ "matmul_precision": "float32",
+ "source_sha256": {
+  "PROTOCOL.md": "01632ef4bb7c51750781c605a6d137c2847cfa665dd63762289d3e0799e03525",
+  "learner.py": "bac0cdb1f0e1431ad274d1a59e09d38fc46f213a0b30b2f833b4c0e871a01e41",
+  "run_study.py": "e1d1584859e652182abf0632b60b3446850066bdf6029be4f581c2f35eb4e63f",
+  "environment.py": "d46df4867b9d46c1128c8a884046febf7c5fce9309cd9a85211f5001ccf6e1c7",
+  "collect.py": "2b6f57c5acf830f6791e1742b10da1a13868b028ae755b8e4ce39c0ccd519d5a",
+  "unseen_move_checks.py": "f03b4c2954327697192b9a5aa1fde84512c3bd0684271bd6d134624923bc9d32"
+ },
+ "calibration_sha256": {
+  "network.py": "cfde14313cc13cfe96225234c81a8546121ff50f3daf789717ac14c7720f354c",
+  "reference.py": "f26273784c458f058c9ebd9b4ebe1e3e7e20c1fc05abfc3297aead724e3b6b1b",
+  "wbcp.py": "fdd36b42a1d2c440cfa5e4df4b59c421c8fca477f8b3ffc5e7d9f095e889c023"
+ },
+ "data_seeds": null,
+ "group_data": {
+  "honeypot": [
+   "dev",
+   [
+    5101,
+    5102,
+    5103
+   ]
+  ],
+  "bottleneck_r2_one_hot": [
+   "dev2",
+   [
+    5201,
+    5202,
+    5203
+   ]
+  ]
+ },
+ "train_seeds": [
+  20,
+  21,
+  22
+ ],
+ "arms": [
+  "complete",
+  "targeted",
+  "placebo"
+ ],
+ "method_chunks": [
+  [
+   "support",
+   "support_shuffled"
+  ],
+  [
+   "support_only",
+   "support_only_shuffled"
+  ]
+ ],
+ "settings_of_the_changes": {
+  "support_quantile": 0.01,
+  "ramp": "cap reached one decade below the floor, not saturated",
+  "width_reference_quantile": 0.9,
+  "kappa": 3.0,
+  "support_learning_rate": 0.001
+ }
+}

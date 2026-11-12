@@ -1,0 +1,932 @@
+{
+  "label": "confirm2_b",
+  "purpose": "second fresh-data block (PROTOCOL.md Amendment 7): untouched seeds, spent by that run",
+  "training_updates": 0,
+  "python": "3.10.11",
+  "numpy": "2.2.6",
+  "source_sha256": {
+    "environment.py": "d46df4867b9d46c1128c8a884046febf7c5fce9309cd9a85211f5001ccf6e1c7",
+    "collect.py": "2b6f57c5acf830f6791e1742b10da1a13868b028ae755b8e4ce39c0ccd519d5a",
+    "unseen_move_checks.py": "f03b4c2954327697192b9a5aa1fde84512c3bd0684271bd6d134624923bc9d32",
+    "build_datasets.py": "5bcbb94c39c712dc2634af1235bff262d76b649030c614d216ccc0a0325bd17b"
+  },
+  "execution": {
+    "beta": 2.0,
+    "cutoff": 0.05
+  },
+  "collection": {
+    "rows_per_cell": 256,
+    "uniform_rows": 128,
+    "demonstrator_noise_sd": 0.1
+  },
+  "minimum_executions_for_a_supported_move": 16,
+  "seeds": [
+    7201,
+    7202,
+    7203
+  ],
+  "tasks": {
+    "bottleneck_r2_exit45": {
+      "walls": [
+        5,
+        15,
+        16,
+        25,
+        26,
+        35,
+        36,
+        45,
+        62,
+        63,
+        64,
+        65,
+        75,
+        85,
+        95
+      ],
+      "hazards": [
+        21,
+        34,
+        86
+      ],
+      "bump_reward": -1.0,
+      "goal": 9,
+      "free_cells": 80,
+      "targeted_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "placebo_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "best_policy_value_from_A": 3.0174440226301265,
+      "low_exit_cell": 44,
+      "low_exit_reward": 4.5,
+      "value_of_crossing_at_B": 5.562992916695312,
+      "true_margin_at_B_crossing_minus_low_exit": 1.062992916695312
+    },
+    "bottleneck_r2_exit35": {
+      "walls": [
+        5,
+        15,
+        16,
+        25,
+        26,
+        35,
+        36,
+        45,
+        62,
+        63,
+        64,
+        65,
+        75,
+        85,
+        95
+      ],
+      "hazards": [
+        21,
+        34,
+        86
+      ],
+      "bump_reward": -1.0,
+      "goal": 9,
+      "free_cells": 80,
+      "targeted_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "placebo_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "best_policy_value_from_A": 3.0174440226301265,
+      "low_exit_cell": 44,
+      "low_exit_reward": 3.5,
+      "value_of_crossing_at_B": 5.562992916695312,
+      "true_margin_at_B_crossing_minus_low_exit": 2.062992916695312
+    },
+    "bottleneck_r2_exit25": {
+      "walls": [
+        5,
+        15,
+        16,
+        25,
+        26,
+        35,
+        36,
+        45,
+        62,
+        63,
+        64,
+        65,
+        75,
+        85,
+        95
+      ],
+      "hazards": [
+        21,
+        34,
+        86
+      ],
+      "bump_reward": -1.0,
+      "goal": 9,
+      "free_cells": 80,
+      "targeted_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "placebo_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "best_policy_value_from_A": 3.0174440226301265,
+      "low_exit_cell": 44,
+      "low_exit_reward": 2.5,
+      "value_of_crossing_at_B": 5.562992916695312,
+      "true_margin_at_B_crossing_minus_low_exit": 3.062992916695312
+    }
+  },
+  "datasets": [
+    {
+      "file": "bottleneck_r2_exit45_complete_seed7201.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "complete",
+      "seed": 7201,
+      "array_sha256": "2744477550d08869f554ebd5faa51b8e8404e73c1271fe99ff8cea457811a420",
+      "file_sha256": "a3fe8ad735ba3d5c26003baa58ec0b9e5587e95bdb096fec5b7d7c861e6138a3",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit45_targeted_seed7201.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "targeted",
+      "seed": 7201,
+      "array_sha256": "491e0db8d8f38da7a81dbf554b5757bcd71eac464fe4fd0c267d4fad9661ef77",
+      "file_sha256": "86b7f2a2f17d3a91659defd980feac1cac1928c54175c7a0d2f2c369466e71ca",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 715,
+      "rows_with_a_redraw": 104
+    },
+    {
+      "file": "bottleneck_r2_exit45_placebo_seed7201.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "placebo",
+      "seed": 7201,
+      "array_sha256": "ba16cd9cf3b16eb0f179442c9ff701178b72276042e1dab90a202c7b7619c742",
+      "file_sha256": "cc29572be9e8766138caa57d646cd058b07f480027fea86e4abbd52e0cbb976e",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 572,
+      "rows_with_a_redraw": 112
+    },
+    {
+      "file": "bottleneck_r2_exit45_complete_seed7202.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "complete",
+      "seed": 7202,
+      "array_sha256": "a9d6e28cb0b0a26d5c1aa4f23f5e21698269224d441bd1e2dfe2525ba3465610",
+      "file_sha256": "0acba0d322a76330acb6fcf4bdd5378294eeb6263013fc41dc1589eddeed32c0",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit45_targeted_seed7202.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "targeted",
+      "seed": 7202,
+      "array_sha256": "16cb6cd4bbec0b8208ff95752d388debdfb335fd0f61e1d37dfe2f18e80e3bfc",
+      "file_sha256": "66155d9b975811c98620a1956ced594b33c9edc1ae37b04f96e940775536ab95",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 559,
+      "rows_with_a_redraw": 106
+    },
+    {
+      "file": "bottleneck_r2_exit45_placebo_seed7202.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "placebo",
+      "seed": 7202,
+      "array_sha256": "32a209739fa6e595489d33941ea6de7db52618bc1f1040b5264c28abfcaa730d",
+      "file_sha256": "d617ec84839ccd298a561d0faded3378585fe830fbf4142c57da79f2c6b834ec",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 704,
+      "rows_with_a_redraw": 110
+    },
+    {
+      "file": "bottleneck_r2_exit45_complete_seed7203.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "complete",
+      "seed": 7203,
+      "array_sha256": "bd3affe75ae299462d0c9f75d1219201833605b18098f1eba4c72ef35f95fcf9",
+      "file_sha256": "f65dba57385d0a27b8e5a62b4cd0f926a70a78ae1fc16f692f8b4bfa300201c6",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit45_targeted_seed7203.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "targeted",
+      "seed": 7203,
+      "array_sha256": "5b8c6a6582b392468e81ac118ca7b278cb91e839ab9aab964f3ed68fcc475960",
+      "file_sha256": "bfc84de233bc992c96ea850757386a722f3e557de4930d33a91ff3457d476804",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 609,
+      "rows_with_a_redraw": 107
+    },
+    {
+      "file": "bottleneck_r2_exit45_placebo_seed7203.npz",
+      "task": "bottleneck_r2_exit45",
+      "arm": "placebo",
+      "seed": 7203,
+      "array_sha256": "8cd2f4e5eae78858276d940db9149e3e7423888ba3ac9ed72804689adbbf41aa",
+      "file_sha256": "3eaca747b5cb0f128b380ab52cfadd1025195df44d7d8e4afc04a050c95eba7d",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 620,
+      "rows_with_a_redraw": 103
+    },
+    {
+      "file": "bottleneck_r2_exit35_complete_seed7201.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "complete",
+      "seed": 7201,
+      "array_sha256": "d64b2248e0cc984f53d67a2a4b3e71ccc52e40d85e6fdf5cd7cc4fa0630d2c96",
+      "file_sha256": "fbbef68447d070deb5efdba3e6a903dd159cb9d3a8d084d2da9cdc2b60357bde",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit35_targeted_seed7201.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "targeted",
+      "seed": 7201,
+      "array_sha256": "dea85047793b41bad244b3e4c45f4c790ca16a4156c59114f4b1f1ed3b611f26",
+      "file_sha256": "2b751345faf962267ef6a6f80f88e9c4c81e1a825eb1cbdf0ea22653bc1fbd70",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 715,
+      "rows_with_a_redraw": 104
+    },
+    {
+      "file": "bottleneck_r2_exit35_placebo_seed7201.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "placebo",
+      "seed": 7201,
+      "array_sha256": "18fe90c203c7f9ea0847cb028e8856c3fd45f035b6a27168acdd001d38c2058f",
+      "file_sha256": "bc8cd27a3cd31c1172bf221d340e1520360e91459b3e37d64774f63ebd456f6c",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 572,
+      "rows_with_a_redraw": 112
+    },
+    {
+      "file": "bottleneck_r2_exit35_complete_seed7202.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "complete",
+      "seed": 7202,
+      "array_sha256": "5d28a30eb356da65a3d690674541b146c7434db787096a523658163e85269a2c",
+      "file_sha256": "cff7b7bc36ea97e1327c08a4c9325b54bb447006521c6da9fba73cebd74bd5a5",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit35_targeted_seed7202.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "targeted",
+      "seed": 7202,
+      "array_sha256": "2c59f82c96eafa8ffe81997efc5bd3de6346f0c0a8a22b5f66e5de607ccde8df",
+      "file_sha256": "ecf3ed61c53b291d2dd254874ae238dcf25b63383ad63604c79865941689afbe",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 559,
+      "rows_with_a_redraw": 106
+    },
+    {
+      "file": "bottleneck_r2_exit35_placebo_seed7202.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "placebo",
+      "seed": 7202,
+      "array_sha256": "2ca02bd2b1088230d51997469deb157e7166fc49b467ae5911262e31785f7f57",
+      "file_sha256": "f930ace04354c8b61f4769a02ebc2b263c0d5fe9b48344f8b230212bec38f0ff",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 704,
+      "rows_with_a_redraw": 110
+    },
+    {
+      "file": "bottleneck_r2_exit35_complete_seed7203.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "complete",
+      "seed": 7203,
+      "array_sha256": "eb04aa5631cdc3b47f33e23459b2b25d1f47fe34670106a47294f7415785fee2",
+      "file_sha256": "77f1a7adbcacf0546f2f988bfabb619791409035d14d001bd898bb0952107115",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit35_targeted_seed7203.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "targeted",
+      "seed": 7203,
+      "array_sha256": "1506647bcad726b3449d5fb54e8d63adac46b47476161d356e6699007143039a",
+      "file_sha256": "530cc0a5a4fd61d7b02eaa37890692f5c426a7cff9c8556ab7a0ffaae8ecc523",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 609,
+      "rows_with_a_redraw": 107
+    },
+    {
+      "file": "bottleneck_r2_exit35_placebo_seed7203.npz",
+      "task": "bottleneck_r2_exit35",
+      "arm": "placebo",
+      "seed": 7203,
+      "array_sha256": "e20de11263dd73aabf5b56c8eb25436f2fbb6e2d5d5ccab7d997607e1e77e30a",
+      "file_sha256": "80b2c264c43a4dba13f7d18085e7cc8a059cb908ead8ce560302b8d71d3f4f04",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 620,
+      "rows_with_a_redraw": 103
+    },
+    {
+      "file": "bottleneck_r2_exit25_complete_seed7201.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "complete",
+      "seed": 7201,
+      "array_sha256": "6626d57748fdeea3615ba859508c6be7c432d1a6f13c0e457543b5fd60d161ef",
+      "file_sha256": "22f4a0095fa2ba3c25f1cd52e6deb5d2f1b9631644a1968430ef725cac47297a",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit25_targeted_seed7201.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "targeted",
+      "seed": 7201,
+      "array_sha256": "efb4095ea394863ba25914ddc883a61e403899d978d2e52ec20c210c4bfd6303",
+      "file_sha256": "99932d7e6f86b97612cc553e04912140968ccac5959ad7b917bcf4bc8f1ce5b1",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 715,
+      "rows_with_a_redraw": 104
+    },
+    {
+      "file": "bottleneck_r2_exit25_placebo_seed7201.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "placebo",
+      "seed": 7201,
+      "array_sha256": "6f37f9cb0ceb3e545dfb2dc802dd9f2682103f5e876b22a2a3c356f51f84b35f",
+      "file_sha256": "d0d80e099d7cbbf076a066b7a04927a87364b8ce88cd7a6d940226dff25c0690",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 572,
+      "rows_with_a_redraw": 112
+    },
+    {
+      "file": "bottleneck_r2_exit25_complete_seed7202.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "complete",
+      "seed": 7202,
+      "array_sha256": "62a5638497f3c9e5d97b24b19ea1e4eb2efb11f061cfa4d86d852d080fc55044",
+      "file_sha256": "e8a1483dde7f8d941624b8629456a7b9512c0ca139815e75e4ca3fee94b1c864",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit25_targeted_seed7202.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "targeted",
+      "seed": 7202,
+      "array_sha256": "e35b1ed77e985aa9e5caa49600d655cdbeb30197113c0f57eb13ae119d71a14b",
+      "file_sha256": "d7495269ea8a05decee7225550cfc049c6c7b0311b9396d6450a3ae78b3352d5",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 559,
+      "rows_with_a_redraw": 106
+    },
+    {
+      "file": "bottleneck_r2_exit25_placebo_seed7202.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "placebo",
+      "seed": 7202,
+      "array_sha256": "47193da089c80be11f65beefd31ca77947d250c55626de68e6b18c86dee776c8",
+      "file_sha256": "5bcb332a7db6e54b5fd79fba60410dd9d0a0dd279ab1a747484393ed3f4789a4",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 704,
+      "rows_with_a_redraw": 110
+    },
+    {
+      "file": "bottleneck_r2_exit25_complete_seed7203.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "complete",
+      "seed": 7203,
+      "array_sha256": "9e89b167e9580287ab7bf752fcc28194514f916be28540b04d1038c93af40cea",
+      "file_sha256": "acb860e6797df11f0bacc72a44156aabe757c0eaf43ba9ad8fdf0104576ba8a8",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "bottleneck_r2_exit25_targeted_seed7203.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "targeted",
+      "seed": 7203,
+      "array_sha256": "9a6c64e79fc326b773ea31e03ca5511f8b8b43591fc65d07dae1d53bbe5cc94f",
+      "file_sha256": "0c5e1b26dcfbff7771292f5f64c7867594d4741626fcd541a41ebd081639505a",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "right"
+        ]
+      },
+      "demonstrator_commands_replaced": {
+        "54": {
+          "from": [
+            -1.0,
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          "to": [
+            1.0,
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        }
+      },
+      "rows": 20480,
+      "commands_redrawn": 609,
+      "rows_with_a_redraw": 107
+    },
+    {
+      "file": "bottleneck_r2_exit25_placebo_seed7203.npz",
+      "task": "bottleneck_r2_exit25",
+      "arm": "placebo",
+      "seed": 7203,
+      "array_sha256": "6065f7110b18567a2d2e0e574e40bf837fa142e792602abed6cddc69bf2d3143",
+      "file_sha256": "a13e59562cf01a49a6b3cb9d28c639cb861800efef4c11353047136b72a9ac41",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "54": [
+          "left"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 20480,
+      "commands_redrawn": 620,
+      "rows_with_a_redraw": 103
+    }
+  ]
+}

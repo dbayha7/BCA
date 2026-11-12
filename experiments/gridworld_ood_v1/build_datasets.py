@@ -29,7 +29,8 @@ def sha256(path):
 def describe(task):
     commands, value = env.best_policy(task)
     names = env.DIRECTION_NAMES
-    entry = {"walls": sorted(task.walls), "hazards": sorted(env.HAZARDS), "goal": env.GOAL,
+    entry = {"walls": sorted(task.walls), "hazards": sorted(task.hazards), "bump_reward": task.bump_reward,
+             "goal": env.GOAL,
              "free_cells": len(task.free_cells()),
              "targeted_moves": {str(c): [names[d] for d in ds] for c, ds in collect.targeted_moves(task).items()},
              "placebo_moves": {str(c): [names[d] for d in ds] for c, ds in collect.placebo_moves(task).items()},
@@ -47,7 +48,11 @@ def main():
     parser.add_argument("--label", default="dev")
     parser.add_argument("--seeds", type=int, nargs="+", default=[5101, 5102, 5103])
     parser.add_argument("--purpose", default="development: design shakedown only, never confirmation")
+    parser.add_argument("--tasks", default="", help="only task settings whose name starts with this text")
     args = parser.parse_args()
+    tasks = {name: task for name, task in checks.TASKS.items() if name.startswith(args.tasks)}
+    if not tasks:
+        sys.exit(f"no task setting starts with '{args.tasks}'")
 
     folder = HERE / "data" / args.label
     receipts = HERE / "receipts"
@@ -66,10 +71,10 @@ def main():
                                "demonstrator_noise_sd": collect.NOISE_SD},
                 "minimum_executions_for_a_supported_move": checks.MIN_SUPPORT,
                 "seeds": args.seeds,
-                "tasks": {name: describe(task) for name, task in checks.TASKS.items()},
+                "tasks": {name: describe(task) for name, task in tasks.items()},
                 "datasets": []}
     reports = []
-    for name, task in checks.TASKS.items():
+    for name, task in tasks.items():
         for seed in args.seeds:
             complete = None
             for arm in collect.ARMS:

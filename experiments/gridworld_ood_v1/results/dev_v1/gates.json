@@ -1,0 +1,695 @@
+{
+ "honeypot": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "higher in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.0,
+     "targeted": 0.03177315498613157,
+     "placebo": 0.0,
+     "targeted_minus_placebo": 0.03177315498613157,
+     "complete_vs_placebo_spread": 0.0,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.0,
+     "targeted": 0.031750986334223234,
+     "placebo": 0.011056452844292007,
+     "targeted_minus_placebo": 0.020694533489931225,
+     "complete_vs_placebo_spread": 0.011056452844292007,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.010758196130048683,
+     "targeted": 0.06523641456853034,
+     "placebo": 0.0,
+     "targeted_minus_placebo": 0.06523641456853034,
+     "complete_vs_placebo_spread": 0.010758196130048683,
+     "passed": true
+    }
+   ]
+  },
+  "G2_width_responds": {
+   "required_ratio": 1.25,
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "targeted": 0.7599908221280565,
+     "complete": 0.34828122592880967,
+     "placebo": 0.5235514845782069,
+     "ratio_targeted_to_complete": 2.1821182583163474,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "targeted": 0.7623583734024205,
+     "complete": 0.4877985038953154,
+     "placebo": 0.49410030650489173,
+     "ratio_targeted_to_complete": 1.5628550873252112,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "targeted": 0.7384362707273028,
+     "complete": 0.3353873841313068,
+     "placebo": 0.46809713524052626,
+     "ratio_targeted_to_complete": 2.2017413464729465,
+     "passed": true
+    }
+   ]
+  },
+  "G3_more_than_decisiveness": {
+   "datasets_passing": 1,
+   "passed": false,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "baseline": 0.044098955044989584,
+     "bca": 0.0064426218638981665,
+     "shuffled_width": 0.006572634838029033,
+     "sharpened_baseline": 0.007675476905232265,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "baseline": 0.042676786101300886,
+     "bca": 0.0,
+     "shuffled_width": 0.0,
+     "sharpened_baseline": 0.004791453560197144,
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "baseline": 0.08409579108110066,
+     "bca": 0.0558689862789149,
+     "shuffled_width": 0.052872511153534064,
+     "sharpened_baseline": 0.0608816523039458,
+     "passed": false
+    }
+   ]
+  },
+  "G4_specific_to_the_gap": {
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "bca_minus_baseline": {
+      "complete": 0.0,
+      "targeted": -0.03765633318109142,
+      "placebo": 0.0
+     },
+     "targeted_minus_placebo": -0.03765633318109142,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "bca_minus_baseline": {
+      "complete": 0.0,
+      "targeted": -0.042676786101300886,
+      "placebo": -0.01359258405124289
+     },
+     "targeted_minus_placebo": -0.029084202050057996,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "bca_minus_baseline": {
+      "complete": -0.015139273198859155,
+      "targeted": -0.028226804802185767,
+      "placebo": 0.0
+     },
+     "targeted_minus_placebo": -0.028226804802185767,
+     "passed": true
+    }
+   ]
+  },
+  "G5_no_wider_harm": {
+   "datasets_passing": 0,
+   "passed": false,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "start_cells_made_worse": {
+      "bca": 2.3333333333333335,
+      "shuffled_width": 0.0,
+      "sharpened_baseline": 1.3333333333333333
+     },
+     "passed": false
+    },
+    {
+     "data_seed": 5102,
+     "start_cells_made_worse": {
+      "bca": 0.6666666666666666,
+      "shuffled_width": 0.3333333333333333,
+      "sharpened_baseline": 0.3333333333333333
+     },
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "start_cells_made_worse": {
+      "bca": 3.6666666666666665,
+      "shuffled_width": 3.0,
+      "sharpened_baseline": 1.6666666666666667
+     },
+     "passed": false
+    }
+   ],
+   "mean_start_cells_made_worse_by_arm": {
+    "complete": {
+     "bca": 4.111111111111111,
+     "shuffled_width": 0.5555555555555556,
+     "sharpened_baseline": 1.6666666666666667
+    },
+    "targeted": {
+     "bca": 2.2222222222222223,
+     "shuffled_width": 1.1111111111111112,
+     "sharpened_baseline": 1.1111111111111112
+    },
+    "placebo": {
+     "bca": 0.2222222222222222,
+     "shuffled_width": 0.8888888888888888,
+     "sharpened_baseline": 0.0
+    }
+   }
+  }
+ },
+ "bottleneck_exit25_coordinates": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "lower in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.8159695299916515,
+     "targeted": 0.21750836694162892,
+     "placebo": 0.8618203070064904,
+     "targeted_minus_placebo": -0.6443119400648615,
+     "complete_vs_placebo_spread": 0.11016601521645349,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.753514711353865,
+     "targeted": 0.25383402998528853,
+     "placebo": 0.8044638736770908,
+     "targeted_minus_placebo": -0.5506298436918023,
+     "complete_vs_placebo_spread": 0.17566645042639517,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.8891991893847062,
+     "targeted": 0.4029242115784908,
+     "placebo": 0.8869200921649679,
+     "targeted_minus_placebo": -0.4839958805864771,
+     "complete_vs_placebo_spread": 0.078312817056439,
+     "passed": true
+    }
+   ]
+  }
+ },
+ "bottleneck_exit25_one_hot": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "lower in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.8819960550751883,
+     "targeted": 0.06244328771220229,
+     "placebo": 0.7095598770531998,
+     "targeted_minus_placebo": -0.6471165893409975,
+     "complete_vs_placebo_spread": 0.17758378868007052,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.879171670998188,
+     "targeted": 0.046367544690207325,
+     "placebo": 0.8520909842254317,
+     "targeted_minus_placebo": -0.8057234395352245,
+     "complete_vs_placebo_spread": 0.027080686772756286,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.7602373091350807,
+     "targeted": 0.11233968788687598,
+     "placebo": 0.8094554366090687,
+     "targeted_minus_placebo": -0.6971157487221927,
+     "complete_vs_placebo_spread": 0.04921812747398787,
+     "passed": true
+    }
+   ]
+  },
+  "G2_width_responds": {
+   "required_ratio": 1.25,
+   "datasets_passing": 1,
+   "passed": false,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "targeted": 0.8356906448973817,
+     "complete": 0.6229052316973059,
+     "placebo": 0.6761290363579109,
+     "ratio_targeted_to_complete": 1.3416015829892347,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "targeted": 0.628016939251851,
+     "complete": 0.6172427253246492,
+     "placebo": 0.5492946706406562,
+     "ratio_targeted_to_complete": 1.0174553923199903,
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "targeted": 0.7192306306908316,
+     "complete": 0.6331797340009865,
+     "placebo": 0.6567405862085637,
+     "ratio_targeted_to_complete": 1.1359027967400344,
+     "passed": false
+    }
+   ]
+  },
+  "G3_more_than_decisiveness": {
+   "datasets_passing": 2,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "baseline": 0.06244328771220225,
+     "bca": 0.05093192550247053,
+     "shuffled_width": 0.05840069625485525,
+     "sharpened_baseline": 0.074824537134046,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "baseline": 0.05225081416040811,
+     "bca": 0.026442868879115056,
+     "shuffled_width": 0.0388318076544801,
+     "sharpened_baseline": 0.0,
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "baseline": 0.14163344557148863,
+     "bca": 0.0,
+     "shuffled_width": 0.04673227300303803,
+     "sharpened_baseline": 0.08000182324439026,
+     "passed": true
+    }
+   ]
+  },
+  "G4_specific_to_the_gap": {
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "bca_minus_baseline": {
+      "complete": 2.6358364037822508e-05,
+      "targeted": -0.01151136220973171,
+      "placebo": 0.05458180003100618
+     },
+     "targeted_minus_placebo": -0.06609316224073788,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "bca_minus_baseline": {
+      "complete": -0.004812588131449247,
+      "targeted": -0.025807945281293057,
+      "placebo": 0.031354558958951194
+     },
+     "targeted_minus_placebo": -0.05716250424024425,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "bca_minus_baseline": {
+      "complete": 0.0434172278929178,
+      "targeted": -0.14163344557148863,
+      "placebo": 0.05520349430614776
+     },
+     "targeted_minus_placebo": -0.1968369398776364,
+     "passed": true
+    }
+   ]
+  },
+  "G5_no_wider_harm": {
+   "datasets_passing": 2,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "start_cells_made_worse": {
+      "bca": 12.333333333333334,
+      "shuffled_width": 12.0,
+      "sharpened_baseline": 14.333333333333334
+     },
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "start_cells_made_worse": {
+      "bca": 6.666666666666667,
+      "shuffled_width": 2.0,
+      "sharpened_baseline": 4.333333333333333
+     },
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "start_cells_made_worse": {
+      "bca": 8.0,
+      "shuffled_width": 14.666666666666666,
+      "sharpened_baseline": 25.333333333333332
+     },
+     "passed": true
+    }
+   ],
+   "mean_start_cells_made_worse_by_arm": {
+    "complete": {
+     "bca": 16.0,
+     "shuffled_width": 5.555555555555555,
+     "sharpened_baseline": 3.2222222222222223
+    },
+    "targeted": {
+     "bca": 9.0,
+     "shuffled_width": 9.555555555555555,
+     "sharpened_baseline": 14.666666666666666
+    },
+    "placebo": {
+     "bca": 18.555555555555557,
+     "shuffled_width": 4.111111111111111,
+     "sharpened_baseline": 5.0
+    }
+   }
+  }
+ },
+ "bottleneck_exit35_coordinates": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "lower in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.7716300834623736,
+     "targeted": 0.15632851171456721,
+     "placebo": 0.8419702878786235,
+     "targeted_minus_placebo": -0.6856417761640562,
+     "complete_vs_placebo_spread": 0.0737796490735055,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.6840380816394224,
+     "targeted": 0.06490975455803188,
+     "placebo": 0.45049844243732623,
+     "targeted_minus_placebo": -0.3855886878792944,
+     "complete_vs_placebo_spread": 0.3093351612930828,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.6951626359829928,
+     "targeted": 0.21936576878156736,
+     "placebo": 0.8681164494747745,
+     "targeted_minus_placebo": -0.6487506806932072,
+     "complete_vs_placebo_spread": 0.21898263924838657,
+     "passed": true
+    }
+   ]
+  }
+ },
+ "bottleneck_exit35_one_hot": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "lower in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.6800802048695388,
+     "targeted": 0.10825166842723381,
+     "placebo": 0.8156447071717894,
+     "targeted_minus_placebo": -0.7073930387445557,
+     "complete_vs_placebo_spread": 0.13556450230225073,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.621082671534729,
+     "targeted": 0.15065307341713144,
+     "placebo": 0.8264313822977621,
+     "targeted_minus_placebo": -0.6757783088806306,
+     "complete_vs_placebo_spread": 0.21317898399992583,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.8214647389187522,
+     "targeted": 0.04280434509039349,
+     "placebo": 0.7631214677168588,
+     "targeted_minus_placebo": -0.7203171226264654,
+     "complete_vs_placebo_spread": 0.09522667865377683,
+     "passed": true
+    }
+   ]
+  }
+ },
+ "bottleneck_exit45_coordinates": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "lower in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.6958934273254654,
+     "targeted": 0.1708372019985739,
+     "placebo": 0.8331682358934046,
+     "targeted_minus_placebo": -0.6623310338948308,
+     "complete_vs_placebo_spread": 0.26687891510755096,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.5050234014180107,
+     "targeted": 0.0,
+     "placebo": 0.4513609859387125,
+     "targeted_minus_placebo": -0.4513609859387125,
+     "complete_vs_placebo_spread": 0.09436928498360579,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.7447230294837155,
+     "targeted": 0.21451254199449524,
+     "placebo": 0.7371778925481118,
+     "targeted_minus_placebo": -0.5226653505536166,
+     "complete_vs_placebo_spread": 0.21066969394011126,
+     "passed": true
+    }
+   ]
+  }
+ },
+ "bottleneck_exit45_one_hot": {
+  "G1_gap_misleads_the_baseline": {
+   "predicted_direction": "lower in the targeted arm",
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "complete": 0.8391852075029235,
+     "targeted": 0.029545896372177066,
+     "placebo": 0.5572018439843034,
+     "targeted_minus_placebo": -0.5276559476121263,
+     "complete_vs_placebo_spread": 0.3214332378693839,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "complete": 0.6235007455098208,
+     "targeted": 0.1478336864907015,
+     "placebo": 0.6583368282938684,
+     "targeted_minus_placebo": -0.510503141803167,
+     "complete_vs_placebo_spread": 0.44650309073634586,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "complete": 0.5903726763738312,
+     "targeted": 0.05463571820838048,
+     "placebo": 0.6267209557727234,
+     "targeted_minus_placebo": -0.5720852375643429,
+     "complete_vs_placebo_spread": 0.07039115975065029,
+     "passed": true
+    }
+   ]
+  },
+  "G2_width_responds": {
+   "required_ratio": 1.25,
+   "datasets_passing": 0,
+   "passed": false,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "targeted": 0.8157947350774503,
+     "complete": 0.6801304846025844,
+     "placebo": 0.6207620142943852,
+     "ratio_targeted_to_complete": 1.1994679749638595,
+     "passed": false
+    },
+    {
+     "data_seed": 5102,
+     "targeted": 0.8210964460178475,
+     "complete": 0.6695464113193861,
+     "placebo": 0.6611470985045044,
+     "ratio_targeted_to_complete": 1.2263473183282723,
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "targeted": 0.7295316784795878,
+     "complete": 0.5846233554430716,
+     "placebo": 0.638001888845547,
+     "ratio_targeted_to_complete": 1.2478661204472299,
+     "passed": false
+    }
+   ]
+  },
+  "G3_more_than_decisiveness": {
+   "datasets_passing": 1,
+   "passed": false,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "baseline": 0.03026475297415322,
+     "bca": 0.01846123739574011,
+     "shuffled_width": 0.021002391811650294,
+     "sharpened_baseline": 0.025605337821492963,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "baseline": 0.1661734328140427,
+     "bca": 0.06050843060562754,
+     "shuffled_width": 0.05371197302185088,
+     "sharpened_baseline": 0.08368001046522792,
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "baseline": 0.060685409405891844,
+     "bca": 0.0,
+     "shuffled_width": 0.0,
+     "sharpened_baseline": 0.030744375275351305,
+     "passed": false
+    }
+   ]
+  },
+  "G4_specific_to_the_gap": {
+   "datasets_passing": 3,
+   "passed": true,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "bca_minus_baseline": {
+      "complete": 0.06422814532103782,
+      "targeted": -0.011803515578413108,
+      "placebo": 0.2890318712454309
+     },
+     "targeted_minus_placebo": -0.300835386823844,
+     "passed": true
+    },
+    {
+     "data_seed": 5102,
+     "bca_minus_baseline": {
+      "complete": 0.25923601246569333,
+      "targeted": -0.10566500220841514,
+      "placebo": 0.15128166958692787
+     },
+     "targeted_minus_placebo": -0.25694667179534303,
+     "passed": true
+    },
+    {
+     "data_seed": 5103,
+     "bca_minus_baseline": {
+      "complete": 0.10746966055780997,
+      "targeted": -0.060685409405891844,
+      "placebo": 0.2610357081744353
+     },
+     "targeted_minus_placebo": -0.3217211175803271,
+     "passed": true
+    }
+   ]
+  },
+  "G5_no_wider_harm": {
+   "datasets_passing": 1,
+   "passed": false,
+   "per_dataset": [
+    {
+     "data_seed": 5101,
+     "start_cells_made_worse": {
+      "bca": 7.666666666666667,
+      "shuffled_width": 3.0,
+      "sharpened_baseline": 1.3333333333333333
+     },
+     "passed": false
+    },
+    {
+     "data_seed": 5102,
+     "start_cells_made_worse": {
+      "bca": 2.3333333333333335,
+      "shuffled_width": 0.6666666666666666,
+      "sharpened_baseline": 2.0
+     },
+     "passed": false
+    },
+    {
+     "data_seed": 5103,
+     "start_cells_made_worse": {
+      "bca": 2.3333333333333335,
+      "shuffled_width": 0.0,
+      "sharpened_baseline": 5.333333333333333
+     },
+     "passed": true
+    }
+   ],
+   "mean_start_cells_made_worse_by_arm": {
+    "complete": {
+     "bca": 6.444444444444445,
+     "shuffled_width": 0.7777777777777778,
+     "sharpened_baseline": 0.8888888888888888
+    },
+    "targeted": {
+     "bca": 4.111111111111111,
+     "shuffled_width": 1.2222222222222223,
+     "sharpened_baseline": 2.888888888888889
+    },
+    "placebo": {
+     "bca": 12.0,
+     "shuffled_width": 3.0,
+     "sharpened_baseline": 0.8888888888888888
+    }
+   }
+  }
+ }
+}

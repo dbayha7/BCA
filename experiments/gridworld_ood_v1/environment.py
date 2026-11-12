@@ -61,12 +61,14 @@ class Task:
     low_exit_reward: float | None = None
     beta: float = BETA
     cutoff: float = CUTOFF
+    hazards: frozenset = HAZARDS
+    bump_reward: float = STEP_REWARD      # reward for a move that is blocked by a wall or the grid edge
 
     # ---- layout -------------------------------------------------------------------
     @property
     def terminals(self):
         extra = frozenset() if self.low_exit is None else frozenset({self.low_exit})
-        return HAZARDS | {GOAL} | extra
+        return self.hazards | {GOAL} | extra
 
     def free_cells(self):
         """Cells an agent can stand on and act from."""
@@ -84,10 +86,12 @@ class Task:
             nxt = cell
         if nxt == GOAL:
             return nxt, GOAL_REWARD, True
-        if nxt in HAZARDS:
+        if nxt in self.hazards:
             return nxt, HAZARD_REWARD, True
         if nxt == self.low_exit:
             return nxt, float(self.low_exit_reward), True
+        if nxt == cell:
+            return nxt, self.bump_reward, False
         return nxt, STEP_REWARD, False
 
     def role(self, cell, direction):
@@ -95,7 +99,7 @@ class Task:
         nxt, _, _ = self.move(cell, direction)
         if nxt == GOAL:
             return "goal"
-        if nxt in HAZARDS:
+        if nxt in self.hazards:
             return "hazard"
         if nxt == self.low_exit:
             return "low_exit"
@@ -205,13 +209,32 @@ def honeypot(cutoff=CUTOFF):
     return Task("honeypot", SHARED_WALLS, cutoff=cutoff)
 
 
-def bottleneck(low_exit_reward=LOW_EXIT_REWARDS[1], cutoff=CUTOFF, opening_row=OPENING_ROW, low_exit=LOW_EXIT):
-    """Dividing wall in column 5 with one opening. Pass low_exit=None for no low exit."""
+def bottleneck(low_exit_reward=LOW_EXIT_REWARDS[1], cutoff=CUTOFF, opening_row=OPENING_ROW, low_exit=LOW_EXIT,
+               hazards=HAZARDS, bump_reward=STEP_REWARD, prefix="bottleneck"):
+    """Dividing wall in column 5 with one opening. Pass low_exit=None for no low exit.
+
+    The defaults are revision 1, kept so its datasets and receipts stay checkable.
+    """
     walls = SHARED_WALLS | {10 * y + 5 for y in range(SIZE) if y != opening_row}
     if low_exit is None:
-        return Task(f"bottleneck_row{opening_row}", frozenset(walls), cutoff=cutoff)
-    name = f"bottleneck_exit{int(round(10 * low_exit_reward)):02d}"
-    return Task(name, frozenset(walls), low_exit, float(low_exit_reward), cutoff=cutoff)
+        return Task(f"{prefix}_row{opening_row}", frozenset(walls), cutoff=cutoff, hazards=frozenset(hazards),
+                    bump_reward=bump_reward)
+    name = f"{prefix}_exit{int(round(10 * low_exit_reward)):02d}"
+    return Task(name, frozenset(walls), low_exit, float(low_exit_reward), cutoff=cutoff,
+                hazards=frozenset(hazards), bump_reward=bump_reward)
+
+
+# Bottleneck revision 2. Two faults found with baseline-only runs are fixed (see PROTOCOL.md, Amendment 2):
+#   hazard 58 sat on the opening's row, two cells past C, so policies that kept stepping right walked into it;
+#   a move blocked by a wall cost the same as a step, so stalling against a wall looked almost as good as
+#   the best move, and under the cutoff rule a chosen stall never ends.
+BOTTLENECK_R2_HAZARDS = HAZARDS - {58}
+BOTTLENECK_R2_BUMP_REWARD = -1.0
+
+
+def bottleneck_r2(low_exit_reward=LOW_EXIT_REWARDS[1], cutoff=CUTOFF):
+    return bottleneck(low_exit_reward, cutoff=cutoff, hazards=BOTTLENECK_R2_HAZARDS,
+                      bump_reward=BOTTLENECK_R2_BUMP_REWARD, prefix="bottleneck_r2")
 
 
 # ---- what a learner is given ---------------------------------------------------------------

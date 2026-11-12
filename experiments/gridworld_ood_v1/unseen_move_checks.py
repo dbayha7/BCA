@@ -23,7 +23,9 @@ import environment as env  # noqa: E402
 
 MIN_SUPPORT = 16    # a move counts as supported at a cell if executed in at least 16 of its 256 rows
 HERE = Path(__file__).resolve().parent
-TASKS = {task.name: task for task in [env.honeypot()] + [env.bottleneck(r) for r in env.LOW_EXIT_REWARDS]}
+TASKS = {task.name: task for task in [env.honeypot()]
+         + [env.bottleneck(r) for r in env.LOW_EXIT_REWARDS]          # revision 1, kept for its records
+         + [env.bottleneck_r2(r) for r in env.LOW_EXIT_REWARDS]}      # revision 2, the fixed layout
 
 
 def destination_count(data, cell, destination):
