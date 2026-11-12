@@ -265,7 +265,11 @@ def main():
     seeds = {task: sorted({k[1] for k in records if k[0] == task}) for task in tasks}
     train_seeds = sorted({k[3] for k in records})
     arms = sorted({k[2] for k in records})
-    variants = {task: [v for v in ev.CONTROL_OF if (task, seeds[task][0], "complete", train_seeds[0], v) in records]
+    # Amendment 9: when datasets were dropped before stage 2, G1 to G5 are judged on the datasets that have
+    # method policies. G0 is still reported for every candidate. With nothing dropped this is every dataset.
+    judged = {task: sorted({k[1] for k in records if k[0] == task and k[4] in ev.CONTROL_OF}) or seeds[task]
+              for task in tasks}
+    variants = {task: [v for v in ev.CONTROL_OF if (task, judged[task][0], "complete", train_seeds[0], v) in records]
                 for task in tasks}
 
     # A sharpened baseline per method: the baseline's own commands, scaled to that method's saturation.
@@ -286,24 +290,29 @@ def main():
     for task in tasks:
         if not complete_design:
             continue
-        gates[task] = {"G1_gap_misleads_the_baseline": judge_g1(records, task, seeds[task], train_seeds),
-                       "methods": {v: judge_later_gates(records, task, seeds[task], train_seeds, v)
+        gates[task] = {"G1_gap_misleads_the_baseline": judge_g1(records, task, judged[task], train_seeds),
+                       "methods": {v: judge_later_gates(records, task, judged[task], train_seeds, v)
                                    for v in variants[task]}}
     (folder / "gates.json").write_text(json.dumps(gates, indent=1))
-    serial = [dict(v) for _, v in sorted(records.items(), key=lambda kv: tuple(map(str, kv[0])))]
+    ordered = sorted(records.items(), key=lambda kv: tuple(map(str, kv[0])))
+    serial = [dict(v) for k, v in ordered if k[1] in judged[k[0]]]
     (folder / "records.json").write_text(json.dumps(serial, indent=1))
+    dropped = [dict(v) for k, v in ordered if k[1] not in judged[k[0]]]
+    if dropped:     # baselines of datasets that were dropped before stage 2: kept, and kept apart
+        (folder / "records_dropped.json").write_text(json.dumps(dropped, indent=1))
     if complete_design:
-        (folder / "tables.md").write_text(render(records, tasks, seeds, train_seeds, g0, gates, variants),
+        (folder / "tables.md").write_text(render(records, tasks, judged, train_seeds, g0, gates, variants),
                                           encoding="utf-8")
     for task in tasks:
+        count = len(judged[task])
         line = f"{task}: G0 {'PASS' if g0[task]['passed'] else 'FAIL'} ({g0[task]['runs_passing']}/{g0[task]['runs']})"
         if task in gates:
             g1 = gates[task]["G1_gap_misleads_the_baseline"]
-            line += f" | G1 {'PASS' if g1['passed'] else 'FAIL'} ({g1['datasets_passing']}/3)"
+            line += f" | G1 {'PASS' if g1['passed'] else 'FAIL'} ({g1['datasets_passing']}/{count})"
         print(line)
         for variant, verdicts in gates.get(task, {}).get("methods", {}).items():
             print(f"    {variant:18s} " + " | ".join(
-                f"{name.split('_')[0]} {'PASS' if v['passed'] else 'FAIL'} ({v['datasets_passing']}/3)"
+                f"{name.split('_')[0]} {'PASS' if v['passed'] else 'FAIL'} ({v['datasets_passing']}/{count})"
                 for name, v in verdicts.items()))
 
 

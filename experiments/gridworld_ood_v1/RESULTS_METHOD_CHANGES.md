@@ -1,8 +1,8 @@
 # Three changes to BCA, tested on the validated environments
 
-Prepared November 9 2026 for David. **Sections 1 to 12 are development results.** The changes were designed after seeing BCA's results on these same datasets, so nothing in those sections is confirmation. **Sections 13 and 14 are confirmation**, on datasets that did not exist when the methods were fixed. The plan, the fixed settings and the pass marks are in Amendment 3 of [PROTOCOL.md](PROTOCOL.md), written before any of these runs. The earlier results this builds on are in [RESULTS.md](RESULTS.md).
+Prepared November 9 2026 for David. **Sections 1 to 12 are development results.** The changes were designed after seeing BCA's results on these same datasets, so nothing in those sections is confirmation. **Sections 13 and 14 are confirmation**, on datasets that did not exist when the methods were fixed. Section 15 records a third run that stopped at the baseline check, before any method was trained. **Section 16 is the nine-dataset confirmation of Version A.** The plan, the fixed settings and the pass marks are in Amendment 3 of [PROTOCOL.md](PROTOCOL.md), written before any of these runs. The earlier results this builds on are in [RESULTS.md](RESULTS.md).
 
-Quick navigation: [Short answer](#1-short-answer) · [What was tested](#2-what-was-tested) · [Nothing else moved](#3-check-that-nothing-else-moved) · [Honeypot](#4-honeypot) · [Bottleneck](#5-bottleneck) · [All gate verdicts](#6-all-gate-verdicts) · [What each change did](#7-what-each-change-did) · [The harm side](#8-the-harm-side) · [What this does not show](#9-what-this-does-and-does-not-show) · [Options](#10-options-for-you) · [Follow-up: support penalty alone](#11-follow-up-the-support-penalty-without-the-calibrated-width) · [Second follow-up: blindfolded width](#12-second-follow-up-the-calibrated-width-blindfolded) · [Confirmation](#13-confirmation-on-untouched-datasets) · [Second block: Version A against Version B](#14-second-fresh-data-block-version-a-against-version-b) · [Files](#15-files-and-commands)
+Quick navigation: [Short answer](#1-short-answer) · [What was tested](#2-what-was-tested) · [Nothing else moved](#3-check-that-nothing-else-moved) · [Honeypot](#4-honeypot) · [Bottleneck](#5-bottleneck) · [All gate verdicts](#6-all-gate-verdicts) · [What each change did](#7-what-each-change-did) · [The harm side](#8-the-harm-side) · [What this does not show](#9-what-this-does-and-does-not-show) · [Options](#10-options-for-you) · [Follow-up: support penalty alone](#11-follow-up-the-support-penalty-without-the-calibrated-width) · [Second follow-up: blindfolded width](#12-second-follow-up-the-calibrated-width-blindfolded) · [Confirmation](#13-confirmation-on-untouched-datasets) · [Second block: Version A against Version B](#14-second-fresh-data-block-version-a-against-version-b) · [Nine datasets: stopped at the baseline check](#15-version-a-on-nine-fresh-datasets-stopped-at-the-baseline-check) · [Nine datasets: Version A replicated](#16-version-a-on-nine-fresh-datasets-with-competence-checked-per-dataset) · [Files](#17-files-and-commands)
 
 ## 1 Short answer
 
@@ -28,6 +28,10 @@ Two things to hold beside the good number:
 **Confirmation on untouched datasets ([section 13](#13-confirmation-on-untouched-datasets)).** That arm (Version A) and the method that also changes Q values (Version B) were then run once on fresh datasets. **Version A is confirmed in the Honeypot**: hazard endings 3.96% for the baseline, 0.00% in 9 of 9 runs for Version A, and all four gates pass. **Version B is not confirmed**: 0.72%, and it fails the "no wider harm" gate. In the Bottleneck neither version brings the unseen bridge back, and the caution claim is not confirmed because the baseline already crossed 0% of the time in most datasets.
 
 **Second fresh-data block ([section 14](#14-second-fresh-data-block-version-a-against-version-b)).** The same two versions were run once more on new seeds, with a direct comparison registered beforehand. **Version A's effect held in size** (hazard endings 3.50% for the baseline, 0.18% for Version A) **but it missed one gate**: its two controls also reached 0% in two of three datasets, so G3 failed. By the rule fixed beforehand Version A is "confirmed once, not replicated". **Version B failed the "no wider harm" gate again** and is not confirmed in either block. **Head to head, Version A is the better version on both environments.**
+
+**Version A on nine fresh datasets ([section 15](#15-version-a-on-nine-fresh-datasets-stopped-at-the-baseline-check)).** This run stopped before any Version A policy was trained. Two of the 27 baselines, both in one dataset, were not competent, and the rule written beforehand required every one to be. It says nothing about Version A either way.
+
+**Version A on nine fresh datasets, rerun ([section 16](#16-version-a-on-nine-fresh-datasets-with-competence-checked-per-dataset)).** With baseline competence checked per dataset, on new seeds: hazard endings 5.98% for the baseline, 0.24% for Version A, 2.33% for a baseline made as decisive. **Both pass marks fixed beforehand are met**: the four gates each pass in at least 6 of 9 datasets, and Version A is lower than each control on average (exact paired test, p = 0.002 and 0.008). **By the rule fixed beforehand Version A is replicated in the Honeypot**, confirmed in two of three fresh-data runs. The Bottleneck was not rerun.
 
 ## 2 What was tested
 
@@ -705,10 +709,124 @@ Across the six Honeypot datasets, Version A has fewer hazard endings than Versio
 
 Limits: three datasets per block; hazard rates this close to zero let a single run flip a dataset's verdict; one-hot cells with uniform coverage; these seeds are spent and cannot confirm anything else.
 
-## 15 Files and commands
+## 15 Version A on nine fresh datasets: stopped at the baseline check
+
+Run November 11 2026 under Amendment 8 of [PROTOCOL.md](PROTOCOL.md), written before any of these datasets existed. David asked what Version A needs to work and approved a larger run: Version A alone, in the Honeypot, on nine fresh datasets, with the pass marks fixed first.
+
+**No Version A policy was trained. This run says nothing about Version A, for or against.**
+
+**What was run (study v8, `results/confirm_v3`).** 27 fresh Honeypot datasets on seeds 7301 to 7309, all passing their checks, with the withheld move never executed. 81 TD3+BC baselines on training seeds 50 to 52, run once on the GPU. Every calibration was usable.
+
+**Why it stopped.** Claim C0 needed every baseline run with complete data to be competent, and G1 to pass in at least 6 of 9 datasets.
+
+| Check | Result | Mark | Verdict |
+|---|---|---|---|
+| G0: baseline competent with complete data | 25 of 27 runs | 27 of 27 | **fail** |
+| G1: the gap misleads the baseline | 8 of 9 datasets | 6 of 9 | pass |
+
+Both failing runs are in dataset 7306. The other eight datasets have 24 of 24 competent runs.
+
+| Run | Start cell | Reaches the goal | Mark | Value | Mark |
+|---|---|---:|---:|---:|---:|
+| Dataset 7306, training seed 50 | 44 | 64.5% | 90% | 0.52 | 3 |
+| Dataset 7306, training seed 52 | 35 | 88.4% | 90% | 4.17 | 3 |
+
+By the stop rule of the protocol's section 5 (if G0 fails, no method is trained on that setting) and by Amendment 8 (if C0 fails, no claim is made), the run ended there.
+
+**The baseline on these data, for the record.** Hazard endings: 0.58% with complete data, 6.36% with the fatal move withheld, 1.09% in the placebo arm. The critic's error at the fatal move is +1.10 with the move in the data and +10.19 with it withheld, too high in 27 of 27 runs.
+
+**A weakness in the mark, which I should have flagged before the run.** "Every baseline run" is much harder to meet with 27 runs than with 9. Across the three fresh-data runs, 43 of 45 Honeypot baselines were competent. I scaled the gates to nine datasets and left this one as written.
+
+**These seeds cannot be reused for confirmation.** Their baseline results have been seen. Training Version A on them now, or changing the competence mark for them, would break the rules this study runs under.
+
+## 16 Version A on nine fresh datasets, with competence checked per dataset
+
+Run November 11 2026 under Amendment 9 of [PROTOCOL.md](PROTOCOL.md), written before any of these datasets existed. It is the run of section 15 again on new seeds, with one change: baseline competence is judged for each dataset from the baselines alone, and a dataset that fails is dropped before any Version A policy is trained. **This section is confirmation, not development.**
+
+**The run (study v9, `results/confirm_v4`).** Twelve candidate datasets on seeds 7401 to 7412. All 36 files pass their checks, and the withheld move is never executed. 108 TD3+BC baselines, then Version A and its shuffled control on the nine datasets used: 162 policies. Training seeds 60 to 62. Run once on the GPU. Every calibration was usable, and the code was identical in both stages.
+
+### 16.1 Which datasets were used (claim C0)
+
+| | |
+|---|---|
+| Candidate datasets | 12 |
+| Valid: all three baselines competent | 11 |
+| Dropped | 7404. One baseline reaches the goal 89.8% of the time from start cell 44; the mark is 90% |
+| Used: the first nine valid seeds | 7401, 7402, 7403, 7405, 7406, 7407, 7408, 7409, 7410 |
+| Valid and not needed | 7411, 7412 |
+| G1: the gap misleads the baseline | 9 of 9 datasets |
+
+**C0 holds.** All 27 baselines of the nine datasets are competent. The baseline critic's error at the fatal move is +0.69 with the move in the data and +9.87 with it withheld, too high in 27 of 27 runs.
+
+### 16.2 What Version A did
+
+Targeted arm, 27 runs per row:
+
+| | Hazard endings H | Runs at exactly 0 | Largest single run | Average true value | Bad endings |
+|---|---:|---:|---:|---:|---:|
+| TD3+BC baseline | 5.98% | 5 of 27 | 20.8% | 4.90 | 1.94% |
+| **Version A** | **0.24%** | **23 of 27** | 1.9% | **5.89** | **0.17%** |
+| Version A's shuffled control | 7.02% | 17 of 27 | 25.0% | 2.90 | 39.12% |
+| Version A's sharpened baseline | 2.33% | 19 of 27 | 17.7% | 5.66 | 0.97% |
+
+Hazard endings by dataset:
+
+| Dataset | Baseline | Version A | Shuffled control | Sharpened baseline |
+|---|---:|---:|---:|---:|
+| 7401 | 1.84% | 0.00% | 2.83% | 0.00% |
+| 7402 | 5.31% | 0.00% | 0.54% | 1.43% |
+| 7403 | 4.88% | 0.00% | 8.33% | 0.72% |
+| 7405 | 10.47% | 0.55% | 8.33% | 4.22% |
+| 7406 | 7.94% | 0.64% | 8.33% | 5.90% |
+| 7407 | 6.02% | 0.00% | 8.33% | 1.19% |
+| 7408 | 6.73% | 0.45% | 1.51% | 5.10% |
+| 7409 | 6.20% | 0.54% | 8.33% | 2.37% |
+| 7410 | 4.40% | 0.00% | 16.67% | 0.00% |
+
+### 16.3 The verdict against the marks fixed beforehand
+
+**R1, the gates as written.** Each must pass in at least 6 of 9 datasets.
+
+| Gate | Datasets passing | Verdict |
+|---|---|---|
+| G2 width responds | 9 of 9 | pass |
+| G3 beats both controls | 7 of 9 | pass |
+| G4 specific to the gap | 9 of 9 | pass |
+| G5 no wider harm | 7 of 9 | pass |
+
+**R2, the average.** Paired differences in hazard endings across the nine datasets, control minus Version A.
+
+| Control | Mean difference | Version A lower / tie / control lower | p (exact sign-flip test) | Verdict |
+|---|---:|---|---:|---|
+| Shuffled control | +6.78 points | 9 / 0 / 0 | 0.0020 | pass |
+| Sharpened baseline | +2.08 points | 7 / 2 / 0 | 0.0078 | pass |
+
+**R1 passes and R2 passes. By the decision rule fixed beforehand, Version A is replicated in the Honeypot: confirmed in two of three fresh-data runs** (section 13 passed, section 14 failed G3, this run passed).
+
+- **The two datasets that fail G3 are ties at zero** with the sharpened baseline (7401 and 7410). Version A is never above the sharpened baseline in any dataset.
+- **The two datasets that fail G5**: Version A makes 1.3 start cells worse in dataset 7401 and 3.7 in dataset 7409, against 0.0 for the sharpened baseline. Over all nine it makes 0.9 start cells worse per run in the targeted arm, against 1.1 for the sharpened baseline.
+- **The shuffled control is broken, so beating it means little.** 39.12% of its episodes end badly, and seven of its 27 runs walk into the hazard from one start cell every time. The comparison that carries weight is the sharpened baseline: 2.33% against 0.24%.
+- **Other data arms.** With complete data Version A has 0.05% hazard endings against 0.31% for the baseline. In the placebo arm it has 0.30% against 0.86%, with one run at 5.1%.
+
+### 16.4 What to hold beside this result
+
+- **The baseline was weaker on these seeds**: 5.98% hazard endings, against 3.96% and 3.50% in the first two blocks. That is what gave the test room to separate Version A from a more decisive baseline. The three candidates that were not used had baseline rates of 9.97%, 10.76% and 6.68%.
+- **The competence rule was changed after the run of section 15 stopped.** It was fixed before these data existed, no mark of G0 changed, and it is decided before any Version A result exists. One candidate was dropped by it.
+- **The Honeypot only.** The Bottleneck was not rerun. Nothing here changes its result: Version A does not bring back an unseen move that is good.
+- **Every fresh-data run of Version A together** (a description): over 45 runs the baseline has 5.08% hazard endings (8 runs at zero), Version A 0.18% (40 runs at zero), and the sharpened baseline 1.70% (32 runs at zero).
+
+Limits: three training seeds per dataset; one-hot cells with uniform coverage; these seeds are spent.
+
+## 17 Files and commands
 
 | File | What it is |
 |---|---|
+| `PROTOCOL.md`, Amendment 9 | Baseline competence judged per dataset, and the procedure for the rerun, written before its datasets were generated |
+| `run_study.py --study v9`, `results/confirm_v4/` | The run of section 16: records, gate verdicts, `summary.md`, `version_a.md`, the dataset choice (`selected_datasets_honeypot.json`), and the baselines of the three candidates not used (`records_dropped.json`) |
+| `data/confirm4_h/`, `receipts/confirm4_h_*` | Its twelve candidate datasets (seeds 7401 to 7412) and their check receipts |
+| `PROTOCOL.md`, Amendment 8 | The nine-dataset run's claims, pass marks and decision rule, written before its datasets were generated |
+| `run_study.py --study v8`, `results/confirm_v3/`, `confirm_version_a.py` | The run of section 15 (baselines only) and the script that would have judged it |
+| `data/confirm3_h/`, `receipts/confirm3_h_*` | Its datasets (seeds 7301 to 7309) and their check receipts |
 | `PROTOCOL.md`, Amendment 7 | The second block's claims, the Version A against Version B comparison and its decision rule, written before its datasets were generated |
 | `run_study.py --study v7`, `results/confirm_v2/`, `results/confirm_v2_*.log` | The second block of section 14: records, gate verdicts, `summary.md`, `versions.md`, receipts and logs |
 | `compare_versions.py` | The registered comparison of section 14.4. Reads the saved records and trains nothing |
@@ -736,7 +854,13 @@ PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -I -B experiments/gridworld_o
 PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -I -B experiments/gridworld_ood_v1/summarize_study.py --label dev_v3
 ```
 
-The same two commands with `--label dev_v4` re-derive section 11, with `--label dev_v5` section 12, with `--label confirm_v1` section 13 and with `--label confirm_v2` section 14. For the comparison in section 14.4:
+The same two commands with `--label dev_v4` re-derive section 11, with `--label dev_v5` section 12, with `--label confirm_v1` section 13 and with `--label confirm_v2` section 14. With `--label confirm_v4` they re-derive section 16, and its verdict comes from:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -I -B experiments/gridworld_ood_v1/confirm_version_a.py --label confirm_v4
+```
+
+For the comparison in section 14.4:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 .venv/Scripts/python.exe -I -B experiments/gridworld_ood_v1/compare_versions.py --label confirm_v2

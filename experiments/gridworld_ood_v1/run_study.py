@@ -8,6 +8,8 @@
     python -B run_study.py --label dev_v5 --study v5 --stage stage1     (Amendment 5: state-blind calibrated width)
     python -B run_study.py --label confirm_v1 --study v6 --stage stage1 (Amendment 6: confirmation on untouched data)
     python -B run_study.py --label confirm_v2 --study v7 --stage stage1 (Amendment 7: second fresh-data block)
+    python -B run_study.py --label confirm_v3 --study v8 --stage stage1 (Amendment 8: Version A on nine datasets)
+    python -B run_study.py --label confirm_v4 --study v9 --stage stage1 (Amendment 9: competence checked per dataset)
 
 Stage 1 trains every baseline (10,000 shared updates, snapshot, 15,000 more).
 Stage 2 restores the snapshots and trains each method together with its own shuffled control.
@@ -89,6 +91,15 @@ STUDIES = {
     "v7": {**VALIDATED, "method_chunks": CONFIRM, "train_seeds": (40, 41, 42),
            "group_data": {"honeypot": ("confirm2_h", (7201, 7202, 7203)),
                           "bottleneck_r2_one_hot": ("confirm2_b", (7201, 7202, 7203))}},
+    # Amendment 8: Version A alone on nine fresh Honeypot datasets.
+    "v8": {**VALIDATED, "groups": {"honeypot": ("one_hot", ["honeypot"])},
+           "method_chunks": (("support_blind_width", "support_shuffled"),), "train_seeds": (50, 51, 52),
+           "group_data": {"honeypot": ("confirm3_h", (7301, 7302, 7303, 7304, 7305, 7306, 7307, 7308, 7309))}},
+    # Amendment 9: the same, with baseline competence checked per dataset. Twelve candidates, nine used.
+    "v9": {**VALIDATED, "groups": {"honeypot": ("one_hot", ["honeypot"])},
+           "method_chunks": (("support_blind_width", "support_shuffled"),), "train_seeds": (60, 61, 62),
+           "datasets_wanted": 9,
+           "group_data": {"honeypot": ("confirm4_h", tuple(range(7401, 7413)))}},
 }
 SMOKE = {"data_seeds": (7,), "train_seeds": (0, 1), "arms": ("complete", "targeted"), "data_label": None,
          "group_data": {}, "smoke": True}
@@ -294,6 +305,19 @@ def build_group(group, config):
             "n_rows": int(datasets[0]["s"].shape[0])}
 
 
+def select_datasets(verdict, wanted):
+    """Amendment 9. A dataset is valid if every one of its complete-data baseline runs is competent (G0).
+    The study uses the first `wanted` valid dataset seeds in increasing order; with fewer, it uses none."""
+    by_seed = {}
+    for row in verdict["per_run"]:
+        by_seed.setdefault(row["data_seed"], []).append(bool(row["passed"]))
+    valid = [seed for seed in sorted(by_seed) if all(by_seed[seed])]
+    enough = len(valid) >= wanted
+    return {"candidates": sorted(by_seed), "dropped_not_competent": [s for s in sorted(by_seed) if s not in valid],
+            "selected": valid[:wanted] if enough else [], "valid_not_needed": valid[wanted:] if enough else [],
+            "enough_valid_datasets": enough, "wanted": wanted}
+
+
 def initial_states(group):
     obs_dim = L.OBSERVATIONS[group["observation"]][1]
     return L.stack([L.init_state(run["train_seed"], obs_dim) for run in group["runs"]])
@@ -348,7 +372,14 @@ def main():
         if args.stage in ("smoke", "stage2"):
             if args.stage == "stage2":
                 verdicts = json.loads((out / "g0.json").read_text())
-                keep = [i for i, run in enumerate(runs) if verdicts[run["setting"]]["passed"]]
+                wanted = config.get("datasets_wanted")
+                if wanted is None:
+                    keep = [i for i, run in enumerate(runs) if verdicts[run["setting"]]["passed"]]
+                else:   # Amendment 9: baseline competence is judged per dataset, from the baselines alone
+                    choice = {setting: select_datasets(verdicts[setting], wanted)
+                              for setting in sorted({run["setting"] for run in runs})}
+                    (out / f"selected_datasets_{group_name}.json").write_text(json.dumps(choice, indent=1))
+                    keep = [i for i, run in enumerate(runs) if run["data_seed"] in choice[run["setting"]]["selected"]]
             else:
                 keep = list(range(n))
             if not keep:

@@ -179,6 +179,7 @@ Each is one constant or one small function, and the tests will tell you what a c
 | `RESULTS.md`, `results/dev_v1/`, `results/dev_v2/` | What the first studies found, with their records, gate verdicts and tables. |
 | `RESULTS_METHOD_CHANGES.md`, `results/dev_v3/`, `results/dev_v4/`, `results/dev_v5/` | What the three method changes and the two follow-up arms did, with records, gate verdicts, tables and summaries. |
 | `results/confirm_v1/`, `data/confirm_h/`, `data/confirm_b/` | The confirmation on untouched datasets (seeds 7101 to 7103): Version A and Version B against the TD3+BC baseline. Written up in section 13 of `RESULTS_METHOD_CHANGES.md`. |
+| `confirm_version_a.py`, `results/confirm_v3/`, `results/confirm_v4/`, `data/confirm3_h/`, `data/confirm4_h/` | Version A alone on nine fresh Honeypot datasets (PROTOCOL.md Amendments 8 and 9). `confirm_v3` stopped at the baseline check; `confirm_v4` is the rerun with competence checked per dataset, written up in section 16 of `RESULTS_METHOD_CHANGES.md`. |
 | `compare_versions.py`, `results/confirm_v2/`, `data/confirm2_h/`, `data/confirm2_b/` | The second fresh-data block (seeds 7201 to 7203) and the script that compares Version A with Version B readout by readout (PROTOCOL.md Amendment 7). |
 | `receipts/dev_manifest.json` | Source hashes, settings, every dataset's content hash and how it was made. |
 | `receipts/dev_unseen_move_checks.json` | Every check result with counts. |

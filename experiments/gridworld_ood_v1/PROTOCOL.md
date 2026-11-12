@@ -2,7 +2,7 @@
 
 Written November 9 2026, before any policy was trained on the study datasets. David asked for the experiments to be run on this machine's GPU. **This is a development study.** Dataset seeds 5101 to 5103 were used to shake down the design, so nothing here can be confirmation.
 
-Quick navigation: [Question](#1-question) · [What is trained](#2-what-is-trained) · [The learner](#3-the-learner-and-how-it-differs-from-the-archive) · [What is measured](#4-what-is-measured) · [Gates and kill rules](#5-gates-and-kill-rules) · [Rules for running](#6-rules-for-running) · [Amendment 1](#amendment-1-made-before-any-study-dataset-was-used) · [Amendment 2](#amendment-2-bottleneck-revision-2-written-before-any-policy-was-trained-on-its-datasets) · [Amendment 3: the three method changes](#amendment-3-three-changes-to-the-method-written-before-any-policy-was-trained-with-them) · [Amendment 4: support penalty alone](#amendment-4-does-the-calibrated-width-add-anything-to-the-support-penalty-written-before-any-run-of-the-new-arm) · [Amendment 5: blindfolded calibrated width](#amendment-5-is-the-calibrated-widths-knowledge-of-the-state-used-written-before-any-run-of-the-new-arm) · [Amendment 6: confirmation](#amendment-6-confirmation-on-untouched-datasets-written-before-any-confirmation-dataset-was-generated) · [Amendment 7: Version A against Version B](#amendment-7-second-fresh-data-block-version-a-against-version-b-written-before-any-of-its-datasets-was-generated) · [Limits](#7-limits-known-in-advance)
+Quick navigation: [Question](#1-question) · [What is trained](#2-what-is-trained) · [The learner](#3-the-learner-and-how-it-differs-from-the-archive) · [What is measured](#4-what-is-measured) · [Gates and kill rules](#5-gates-and-kill-rules) · [Rules for running](#6-rules-for-running) · [Amendment 1](#amendment-1-made-before-any-study-dataset-was-used) · [Amendment 2](#amendment-2-bottleneck-revision-2-written-before-any-policy-was-trained-on-its-datasets) · [Amendment 3: the three method changes](#amendment-3-three-changes-to-the-method-written-before-any-policy-was-trained-with-them) · [Amendment 4: support penalty alone](#amendment-4-does-the-calibrated-width-add-anything-to-the-support-penalty-written-before-any-run-of-the-new-arm) · [Amendment 5: blindfolded calibrated width](#amendment-5-is-the-calibrated-widths-knowledge-of-the-state-used-written-before-any-run-of-the-new-arm) · [Amendment 6: confirmation](#amendment-6-confirmation-on-untouched-datasets-written-before-any-confirmation-dataset-was-generated) · [Amendment 7: Version A against Version B](#amendment-7-second-fresh-data-block-version-a-against-version-b-written-before-any-of-its-datasets-was-generated) · [Amendment 8: Version A on nine datasets](#amendment-8-version-a-on-nine-fresh-datasets-written-before-any-of-its-datasets-was-generated) · [Amendment 9: competence per dataset](#amendment-9-baseline-competence-checked-per-dataset-written-before-any-of-its-datasets-was-generated) · [Limits](#7-limits-known-in-advance)
 
 ## 1 Question
 
@@ -409,6 +409,83 @@ B1 and B2 are judged at each exit value. A version wins B1 or B2 overall if it w
 - These datasets are spent by this run.
 - If any dataset of a seed fails the acceptance checks, that seed is dropped whole and the next unused seed (7204, then 7205) takes its place. The checks alone decide this, before any training.
 - `compare_versions.py` computes Part 2 from the saved records. It is written before this block's data exist and tried only on the first block.
+
+## Amendment 8: Version A on nine fresh datasets. Written before any of its datasets was generated
+
+Written November 11 2026, after the second block (`results/confirm_v2`) was known. David asked what Version A needs to work, and approved this run ("Yes, run it": Version A on 9 fresh datasets, with the pass mark fixed first).
+
+**Why.** In the second block Version A cut hazard endings from 3.50% to 0.18% but failed G3. The baseline ends in the hazard only about 3.5% of the time, so its controls often land at zero too. Three datasets at a time cannot tell Version A apart from them reliably.
+
+**What I told David, and a correction.** I said more datasets would settle it. Under G3 as written that is not assured. In the first two blocks the sharpened baseline reached exactly 0% in 3 of 6 datasets, and a tie fails G3 however many datasets there are. Claim R2 below is added for that reason. It is a second claim, not a replacement for the gates.
+
+**What is tested.** Version A only (`support_blind_width`), unchanged, beside its own shuffled control (`support_shuffled`), its sharpened baseline and the plain TD3+BC baseline. Version B is not run.
+
+**Data.** The Honeypot only. Fresh datasets on seeds 7301 to 7309 (label `confirm3_h`), training seeds 50, 51, 52. 81 baselines and 162 further policies. Study `v8`, results label `confirm_v3`. The Bottleneck is not rerun; its two blocks stand as reported.
+
+**Frozen.** The environment, the data recipe, the learner, every setting and every gate's definition, as in Amendments 6 and 7. A "dataset" is still the mean over its three training seeds. Only the seeds and the number of datasets differ.
+
+### Claims, fixed before the data
+
+| Claim | Confirmed if | If not |
+|---|---|---|
+| **C0** The environment is valid on these data | G0 as written (every baseline run with complete data is competent, 27 of 27) and G1 in at least 6 of 9 datasets | **No claim is made** |
+| **R1** The gates as written, on nine datasets | G2, G3, G4 and G5 each pass in at least 6 of 9 datasets. Each gate's per-dataset test is unchanged; 6 of 9 is the same two-thirds share as 2 of 3 | Version A is **not replicated**. I report which gate failed |
+| **R2** Better than both controls on average | For each control (shuffled control, sharpened baseline) take the nine paired differences in hazard endings H, control minus Version A, one per dataset. The mean difference must be positive, and an exact one-sided sign-flip test over the nine datasets (all 512 sign patterns) must give p of 0.05 or less. This must hold for both controls | No average advantage over the controls is shown |
+
+Terms. *Sign-flip test*: if Version A were no better than a control, each dataset's difference would be as likely to be negative as positive. The test counts how many of the 512 ways of flipping the nine signs give a mean at least as large as the one observed; p is that count divided by 512. A difference of exactly zero is unchanged by a flip, so ties add nothing either way.
+
+### Decision rule, fixed before the data
+
+- **R1 passes.** Version A is reported as replicated in the Honeypot (confirmed in two of three fresh-data runs).
+- **R1 fails and R2 passes.** Reported in exactly these words: Version A has fewer hazard endings than both controls on average, and the per-dataset gates did not pass. It is not called confirmed or replicated.
+- **R1 fails and R2 fails.** On this testbed Version A's protection is not shown to be more than a more decisive baseline. I stop claiming it for the Honeypot.
+- R2 cannot rescue R1, and no result from the earlier blocks is pooled in to pass either claim.
+
+### Rules
+
+- Run once. No pass mark, setting or gate is changed after an outcome is seen.
+- Every run is kept and reported, including any whose calibration fails.
+- A smoke test on dataset seed 7 checks only that this study's setup runs.
+- These datasets are spent by this run.
+- If any dataset of a seed fails the acceptance checks, that seed is dropped whole and the next unused seed (7310, then 7311) takes its place. The checks alone decide this, before any training.
+- `confirm_version_a.py` computes C0, R1 and R2 from the saved records. It is written before these data exist and tried only on the first two blocks. The pass or fail printed by `evaluate_study.py` uses the three-dataset mark and is not this study's verdict.
+
+Limits known before the run: R2 has little power if most datasets tie at zero; three training seeds per dataset, as before; one-hot cells with uniform coverage; the Honeypot only.
+
+## Amendment 9: baseline competence checked per dataset. Written before any of its datasets was generated
+
+Written November 11 2026, after the run of Amendment 8 stopped at C0 (`results/confirm_v3`): 25 of 27 baselines were competent, both failures were in dataset 7306, and no Version A policy was trained. David approved a rerun on fresh seeds with baseline competence checked per dataset first ("Yes, run it").
+
+**The one change.** G0 asks that the baseline be competent before any method is judged. Until now one run that was not competent stopped the whole setting. From this run on G0 is applied to each dataset. A dataset is **valid** if all three of its baseline runs with complete data are competent, by G0's marks exactly as written (section 5 and Amendment 1). A dataset that is not valid is dropped whole, the same way a dataset that fails its acceptance checks is dropped. This is decided from the baselines alone, before any Version A policy is trained.
+
+**What does not change.** No mark of G0. Every dataset that is used still has every baseline run competent. The check never sees a Version A result. What changes is only that one dataset no longer discards the rest.
+
+**Why the old form was wrong for this size.** "Every baseline run" is far harder to meet with 27 runs than with 9. Across the three fresh-data runs 43 of 45 Honeypot baselines were competent. I should have raised this before Amendment 8's data existed.
+
+**Procedure.**
+
+1. Twelve candidate datasets on seeds 7401 to 7412 (label `confirm4_h`), training seeds 60, 61, 62. None used before.
+2. All 108 baselines are trained first, and G0 is judged for each dataset.
+3. The study's datasets are the first nine valid seeds in increasing order. Valid seeds beyond the ninth are not used.
+4. **If fewer than nine are valid, the run stops and no claim is made.** There is no further replacement.
+5. Version A and its shuffled control are trained on the nine: 162 policies. Study `v9`, results label `confirm_v4`.
+
+**Everything else is Amendment 8.** Version A only, the Honeypot only, the same learner, settings and gates.
+
+| Claim | Confirmed if | If not |
+|---|---|---|
+| **C0** The environment is valid on these data | At least nine of the twelve candidates are valid, and G1 passes in at least 6 of the nine used | **No claim is made** |
+| **R1**, **R2** | Exactly as in Amendment 8, judged on the nine datasets | As in Amendment 8 |
+
+The decision rule is Amendment 8's, unchanged.
+
+**Also reported.** Which candidates were dropped and their baseline results. Version A is not trained on a dropped dataset, so no result of Version A exists for it.
+
+**Code, changed before the data.** `run_study.py` chooses the datasets by this rule at the start of stage 2 and writes the choice to `selected_datasets_honeypot.json`. `evaluate_study.py` judges G1 to G5 on the datasets that have method policies and writes the dropped datasets' baseline records to `records_dropped.json`. `confirm_version_a.py` reads the choice for C0. For every earlier study the first two behave exactly as before: re-evaluating `confirm_v2` reproduces its saved files byte for byte.
+
+**Rules.** As in Amendment 8: run once; no pass mark, setting or gate is changed after an outcome is seen; every run is kept and reported; the smoke test on dataset seed 7 checks only that the setup runs; these datasets are spent by this run. If a candidate dataset fails its acceptance checks, that seed is dropped whole before training and counts as not valid.
+
+Limits known before the run: the result describes datasets on which the baseline is competent, which is what G0 always required; R2 has little power if most datasets tie at zero; three training seeds per dataset; one-hot cells with uniform coverage; the Honeypot only.
 
 ## 7 Limits known in advance
 
