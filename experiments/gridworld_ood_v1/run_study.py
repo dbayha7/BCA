@@ -10,6 +10,7 @@
     python -B run_study.py --label confirm_v2 --study v7 --stage stage1 (Amendment 7: second fresh-data block)
     python -B run_study.py --label confirm_v3 --study v8 --stage stage1 (Amendment 8: Version A on nine datasets)
     python -B run_study.py --label confirm_v4 --study v9 --stage stage1 (Amendment 9: competence checked per dataset)
+    python -B run_study.py --label confirm_v5 --study v10 --stage stage1 (Amendment 10: both environments)
 
 Stage 1 trains every baseline (10,000 shared updates, snapshot, 15,000 more).
 Stage 2 restores the snapshots and trains each method together with its own shuffled control.
@@ -100,6 +101,11 @@ STUDIES = {
            "method_chunks": (("support_blind_width", "support_shuffled"),), "train_seeds": (60, 61, 62),
            "datasets_wanted": 9,
            "group_data": {"honeypot": ("confirm4_h", tuple(range(7401, 7413)))}},
+    # Amendment 10: the procedure of Amendment 9 in both environments.
+    "v10": {**VALIDATED, "method_chunks": (("support_blind_width", "support_shuffled"),),
+            "train_seeds": (70, 71, 72), "datasets_wanted": 9,
+            "group_data": {"honeypot": ("confirm5_h", tuple(range(7501, 7513))),
+                           "bottleneck_r2_one_hot": ("confirm5_b", tuple(range(7501, 7513)))}},
 }
 SMOKE = {"data_seeds": (7,), "train_seeds": (0, 1), "arms": ("complete", "targeted"), "data_label": None,
          "group_data": {}, "smoke": True}
@@ -199,7 +205,9 @@ def refresh(states, banks, keys, modes, runs, step, readouts):
     frozen["support_floor"][:] = -1e9
     ready, events = np.zeros(len(runs), bool), []
     for i, run in enumerate(runs):
-        seed_words = np.array([run["train_seed"], run["data_seed"], collect.ARMS.index(run["arm"]), step], np.uint32)
+        # A run may carry its own arm number (the thin arms of Amendment 11). The three original arms keep 0, 1, 2.
+        arm_number = run["arm_number"] if "arm_number" in run else collect.ARMS.index(run["arm"])
+        seed_words = np.array([run["train_seed"], run["data_seed"], arm_number, step], np.uint32)
         reference, valid, diagnostics = freeze_reference(L.take(host_scale, i), units[i], eta[i], residual[i],
                                                         seed_words, WBCPConfig())
         usable = bool(valid and diagnostics.get("certified") and np.isfinite(float(reference.threshold)))

@@ -324,13 +324,15 @@ class Equations(unittest.TestCase):
         expected = {"baseline": "", "bca": "p", "shuffled_width": "ps", "support": "pa", "support_shuffled": "pas",
                     "support_onesided": "pao", "support_onesided_shuffled": "paos", "full": "paoc",
                     "full_shuffled": "paocs", "onesided": "po", "onesided_shuffled": "pos",
-                    "support_only": "paz", "support_only_shuffled": "pazs", "support_blind_width": "pab"}
+                    "support_only": "paz", "support_only_shuffled": "pazs", "support_blind_width": "pab",
+                    "permit": "pabg", "permit_plain": "pabgn"}
         self.assertEqual(set(L.ARM_NAMES.values()), set(expected))
         for number, name in L.ARM_NAMES.items():
             arm = L.switches(number)
             got = ("p" * (float(arm["kappa"]) == 3.0) + "a" * bool(arm["support"]) + "z" * bool(arm["no_base"])
                    + "b" * bool(arm["blind_base"])
-                   + "o" * bool(arm["one_sided"]) + "c" * bool(arm["critic"]) + "s" * bool(arm["shuffled"]))
+                   + "o" * bool(arm["one_sided"]) + "c" * bool(arm["critic"]) + "s" * bool(arm["shuffled"])
+                   + "g" * bool(arm["gate"]) + "n" * bool(arm["gate_no_base"]))
             self.assertEqual(got, expected[name], name)
             self.assertIn(float(arm["kappa"]), (0.0, 3.0))
         for variant, control in L.CONTROL_OF.items():       # a control differs from its variant only by the shuffle
@@ -538,7 +540,9 @@ class UpdateSchedule(unittest.TestCase):
             a = self.step(a, self.data, self.key, L.NATIVE, t)
             b = self.step(b, self.data, self.key, L.NATIVE, t)
         for name in a:
-            if name != "reference":
+            # The proposal network (Amendment 12) is fitted with the reference's width. The baseline never
+            # reads it: Permission.test_every_arm_fits_the_proposal_network_alike_and_no_other_arm_reads_it.
+            if name not in ("reference", "proposal", "proposal_opt"):
                 self.assertTrue(leaves_equal(a[name], b[name]), name)
 
     def test_bca_and_shuffled_arms_differ_from_the_baseline_only_through_the_actor(self):
@@ -597,7 +601,9 @@ class UpdateSchedule(unittest.TestCase):
         ready = dict(self.state, reference=active_reference(self.state, L.calibrator(100), ALL_CELLS))
         out = {mode: self.step(self.step(ready, self.data, self.key, mode, 1), self.data, self.key, mode, 2)
                for mode in L.ARM_NAMES}
-        modes = sorted(L.ARM_NAMES)
+        # The two permission arms are Version A whenever no permission is given, which this reference
+        # does not guarantee. The Permission tests below cover them.
+        modes = sorted(mode for mode in L.ARM_NAMES if mode not in (L.PERMIT, L.PERMIT_PLAIN))
         for i, a in enumerate(modes):
             for b in modes[i + 1:]:
                 self.assertFalse(leaves_equal(out[a]["actor"], out[b]["actor"]), (L.ARM_NAMES[a], L.ARM_NAMES[b]))
@@ -609,7 +615,7 @@ class UpdateSchedule(unittest.TestCase):
             a = self.step(a, self.data, self.key, L.NATIVE, t)
             b = self.step(b, self.data, self.key, L.NATIVE, t)
         for name in a:
-            if name != "reference":
+            if name not in ("reference", "proposal", "proposal_opt"):      # see the test above
                 self.assertTrue(leaves_equal(a[name], b[name]), name)
 
     def test_blind_width_arm_reduces_to_known_arms_when_one_part_of_its_width_is_switched_off(self):
@@ -657,6 +663,197 @@ class UpdateSchedule(unittest.TestCase):
                 alone = self.step(alone, L.take(data, i), keys[i], modes[i], t)
             for got, exp in zip(jax.tree_util.tree_leaves(L.take(together, i)), jax.tree_util.tree_leaves(alone)):
                 np.testing.assert_allclose(got, exp, rtol=2e-4, atol=2e-6)
+
+
+class Permission(unittest.TestCase):
+    """Amendment 12: the proposal network, and the permission to leave a recorded command."""
+    @classmethod
+    def setUpClass(cls):
+        cls.data = tiny_data()
+        cls.step = staticmethod(jax.jit(L.make_step("one_hot", 96)))
+        cls.key = jax.random.PRNGKey(11)
+        cls.state = L.init_state(5, 100)
+        cls.cal = L.calibrator(100)
+
+    def setUp(self):
+        self.small = L.init_state(3, 2)
+        self.small_cal = L.calibrator(2)
+        self.b = make_batch(2)
+
+    def two_updates(self, reference, mode, state=None):
+        s = dict(self.state if state is None else state, reference=reference)
+        for t in (1, 2):
+            s = self.step(s, self.data, self.key, mode, t)
+        return s
+
+    def test_proposal_objective_matches_numpy(self):
+        b, s = self.b, self.small
+        mu = np_actor(s["proposal"], b["obs"])
+        floor = float(np.median(np_critic(s["support"], b["obs"], mu)))
+        ref = ready_reference(s, floor=floor, cap=9.0)
+        q = np_critic(s["q1"], b["obs"], mu)
+        c = 2.5 / (np.mean(np.abs(q)) + 1e-7)
+        want = -c * np.mean(q) + c * 3.0 * np.mean(np_raised(s, b["obs"], mu, floor, 9.0))
+        got = L.proposal_objective(s["proposal"], s["q1"], self.small_cal, ref, b["obs"])
+        np.testing.assert_allclose(got, want, rtol=5e-5)
+        # The support raise is part of what is being compared: it is not zero in this batch.
+        self.assertGreater(float(np.mean(np_raised(s, b["obs"], mu, floor, 9.0) - np_width(s, b["obs"], mu))), 0.01)
+
+    def test_permission_matches_numpy_with_and_without_the_calibrated_width(self):
+        b, s = self.b, self.small
+        mu = np_actor(s["proposal"], b["obs"])
+        logit = np_critic(s["support"], b["obs"], mu)
+        floor = float(np.median(logit))
+        ref = ready_reference(s, threshold=0.05, floor=floor, cap=9.0)
+        q_mu, q_a = np_critic(s["q1"], b["obs"], mu), np_critic(s["q1"], b["obs"], b["action"])
+        with_base = np_raised(s, b["obs"], mu, floor, 9.0, threshold=0.05)
+        raise_only = np.maximum(floor - logit, 0.0) / np.log(10.0) * 9.0
+        seen = set()
+        for drop_base, width in ((False, with_base), (True, raise_only)):
+            lower = q_mu - 1.0 * width
+            got = np.asarray(L.permission(s["proposal"], s["q1"], self.small_cal, ref, b["obs"], b["action"], drop_base))
+            clear = np.abs(q_a - lower) > 1e-4          # float32 against float64 at the threshold itself
+            np.testing.assert_array_equal(got[clear], (q_a >= lower).astype(np.float32)[clear])
+            seen |= set(np.unique(got).tolist())
+        self.assertEqual(seen, {0.0, 1.0})                # some rows keep their cloning, some lose it
+        self.assertEqual(L.PERMIT_MARGIN, 1.0)
+
+    def test_leaving_the_calibrated_width_out_never_keeps_a_row_that_the_full_margin_drops(self):
+        b, s = self.b, self.small
+        logit = np_critic(s["support"], b["obs"], np_actor(s["proposal"], b["obs"]))
+        for threshold in (0.05, 0.5, 5.0):
+            ref = ready_reference(s, threshold=threshold, floor=float(np.median(logit)), cap=9.0)
+            full = np.asarray(L.permission(s["proposal"], s["q1"], self.small_cal, ref, b["obs"], b["action"], False))
+            plain = np.asarray(L.permission(s["proposal"], s["q1"], self.small_cal, ref, b["obs"], b["action"], True))
+            self.assertTrue(np.all(full >= plain), threshold)
+
+    def test_no_permission_before_a_reference_is_ready(self):
+        b, s = self.b, self.small
+        for drop_base in (False, True):
+            keep = np.asarray(L.permission(s["proposal"], s["q1"], self.small_cal, s["reference"], b["obs"],
+                                           b["action"], drop_base))
+            np.testing.assert_array_equal(keep, np.ones(len(b["obs"]), np.float32))
+
+    def test_actor_objective_with_the_permission_matches_numpy(self):
+        b, s = self.b, self.small
+        ref = ready_reference(s)
+        keep = (np.random.default_rng(4).random(len(b["obs"])) < 0.5).astype(np.float32)
+        pi = np_actor(s["actor"], b["obs"])
+        q = np_critic(s["q1"], b["obs"], pi)
+        c = 2.5 / (np.mean(np.abs(q)) + 1e-7)
+        rest = -c * np.mean(q) + c * 3.0 * np.mean(np_width(s, b["obs"], pi))
+        squares = (pi - b["action"]) ** 2
+
+        def objective(keep_rows, gated):
+            return L.actor_objective(s["actor"], s["q1"], self.small_cal, ref, b["obs"], b["obs"], b["action"], 3.0,
+                                     keep=jnp.asarray(keep_rows), gated=gated)
+
+        np.testing.assert_allclose(objective(keep, True), rest + np.mean(keep[:, None] * squares), rtol=5e-5)
+        np.testing.assert_allclose(objective(keep, False), rest + np.mean(squares), rtol=5e-5)   # the gate is off
+        self.assertEqual(float(objective(np.ones_like(keep), True)), float(objective(keep, False)))
+        self.assertGreater(float(objective(keep, False)), float(objective(keep, True)))
+
+    def test_a_row_without_permission_gives_no_cloning_gradient(self):
+        b, s = self.b, self.small
+        ref = ready_reference(s)
+        nothing_kept = jnp.zeros(len(b["obs"]), jnp.float32)
+        gated = jax.grad(L.actor_objective)(s["actor"], s["q1"], self.small_cal, ref, b["obs"], b["obs"], b["action"],
+                                            3.0, keep=nothing_kept, gated=True)
+        # The same objective with a cloning term that is zero and flat: clone the policy's own command.
+        own = jax.lax.stop_gradient(L.actor_apply(s["actor"], jnp.asarray(b["obs"])))
+        no_cloning = jax.grad(L.actor_objective)(s["actor"], s["q1"], self.small_cal, ref, b["obs"], b["obs"], own, 3.0)
+        for got, want in zip(jax.tree_util.tree_leaves(gated), jax.tree_util.tree_leaves(no_cloning)):
+            np.testing.assert_allclose(got, want, rtol=1e-5, atol=1e-7)
+        ungated = jax.grad(L.actor_objective)(s["actor"], s["q1"], self.small_cal, ref, b["obs"], b["obs"],
+                                              b["action"], 3.0)
+        self.assertFalse(leaves_equal(gated, ungated))
+
+    def test_permit_is_version_a_exactly_when_no_permission_is_given(self):
+        """With every command far below the support floor the proposal's lower bound is far below any
+        recorded command's score, so no row loses its cloning."""
+        active = active_reference(self.state, self.cal, ALL_CELLS)
+        nothing_permitted = dict(active, support_floor=jnp.float32(50.0))
+        version_a = self.two_updates(nothing_permitted, L.SUPPORT_BLIND_WIDTH)
+        for mode in (L.PERMIT, L.PERMIT_PLAIN):
+            mine = self.two_updates(nothing_permitted, mode)
+            for name in ("actor", "actor_t", "q1", "q2", "scale", "support", "proposal"):
+                self.assertTrue(leaves_equal(mine[name], version_a[name]), (L.ARM_NAMES[mode], name))
+
+    def test_permit_differs_from_version_a_when_a_permission_is_given(self):
+        """With no width and no unsupported command the lower bound is the proposal's own score, so every
+        recorded command the critic scores below it loses its cloning."""
+        active = active_reference(self.state, self.cal, ALL_CELLS)
+        open_gate = dict(active, threshold=jnp.float32(0.0), support_floor=jnp.float32(-1e9))
+        version_a = self.two_updates(open_gate, L.SUPPORT_BLIND_WIDTH)
+        permit, plain = self.two_updates(open_gate, L.PERMIT), self.two_updates(open_gate, L.PERMIT_PLAIN)
+        self.assertFalse(leaves_equal(permit["actor"], version_a["actor"]))
+        self.assertTrue(leaves_equal(permit["actor"], plain["actor"]))       # no calibrated width: the same margin
+        for name in ("q1", "q2", "scale", "support", "proposal"):            # only the actor is touched
+            self.assertTrue(leaves_equal(permit[name], version_a[name]), name)
+
+    def test_the_calibrated_width_separates_the_two_permission_arms(self):
+        """A width large enough to refuse every permission in "permit", none of it in "permit_plain"."""
+        active = active_reference(self.state, self.cal, ALL_CELLS)
+        wide = dict(active, threshold=jnp.float32(500.0), support_floor=jnp.float32(-1e9))
+        version_a = self.two_updates(wide, L.SUPPORT_BLIND_WIDTH)
+        self.assertTrue(leaves_equal(self.two_updates(wide, L.PERMIT)["actor"], version_a["actor"]))
+        self.assertFalse(leaves_equal(self.two_updates(wide, L.PERMIT_PLAIN)["actor"], version_a["actor"]))
+
+    def test_every_arm_fits_the_proposal_network_alike_and_no_other_arm_reads_it(self):
+        active = active_reference(self.state, self.cal, ALL_CELLS)
+        out = {mode: self.two_updates(active, mode) for mode in L.ARM_NAMES}
+        for mode in L.ARM_NAMES:
+            same = mode not in (L.FULL, L.FULL_SHUFFLED)        # their critic differs, so their proposal does
+            self.assertEqual(leaves_equal(out[L.NATIVE]["proposal"], out[mode]["proposal"]), same, L.ARM_NAMES[mode])
+        self.assertFalse(leaves_equal(self.state["proposal"], out[L.NATIVE]["proposal"]))
+        # Give every arm a different proposal network. Only the permission arms may change.
+        other = dict(self.state, proposal=L.init_state(77, 100)["proposal"])
+        for mode in L.ARM_NAMES:
+            if mode in (L.PERMIT, L.PERMIT_PLAIN):
+                continue
+            swapped = self.two_updates(active, mode, other)
+            for name in ("actor", "actor_t", "q1", "q2", "scale", "support", "unit"):
+                self.assertTrue(leaves_equal(swapped[name], out[mode][name]), (L.ARM_NAMES[mode], name))
+
+    def test_the_new_network_leaves_every_older_network_where_it_started(self):
+        state = L.init_state(5, 100)
+        ka, k1, k2 = jax.random.split(jax.random.PRNGKey(5), 3)
+        self.assertTrue(leaves_equal(state["actor"], L.init_mlp(ka, (100, 64, 64, 4))))
+        self.assertTrue(leaves_equal(state["q1"], L.init_mlp(k1, (104, 64, 64, 1))))
+        self.assertTrue(leaves_equal(state["q2"], L.init_mlp(k2, (104, 64, 64, 1))))
+        self.assertTrue(leaves_equal(state["support"], L.init_mlp(jax.random.PRNGKey(800_005), (104, 64, 64, 1))))
+        self.assertEqual(state["proposal"][-1]["w"].shape, (64, 4))
+        self.assertFalse(leaves_equal(state["proposal"], state["actor"]))
+
+    def test_vmapped_segment_equals_running_each_permission_run_alone(self):
+        segment = L.make_segment("one_hot", 96)
+        singles = [L.init_state(seed, 100) for seed in (5, 6, 7)]
+        references = [dict(active_reference(s, self.cal, ALL_CELLS), threshold=jnp.float32(0.0),
+                           support_floor=jnp.float32(-1e9)) for s in singles]
+        states = L.stack([dict(s, reference=r) for s, r in zip(singles, references)])
+        data = L.stack([self.data, tiny_data(seed=1), tiny_data(seed=2)])
+        keys = jnp.stack([jax.random.PRNGKey(k) for k in (1, 2, 3)])
+        modes = jnp.asarray([L.PERMIT, L.PERMIT_PLAIN, L.SUPPORT_BLIND_WIDTH])
+        together = segment(states, data, keys, modes, jnp.arange(1, 7))
+        for i in range(3):
+            alone = L.take(states, i)
+            for t in range(1, 7):
+                alone = self.step(alone, L.take(data, i), keys[i], modes[i], t)
+            for got, exp in zip(jax.tree_util.tree_leaves(L.take(together, i)), jax.tree_util.tree_leaves(alone)):
+                np.testing.assert_allclose(got, exp, rtol=2e-4, atol=2e-6)
+
+    def test_proposal_readout_reports_the_move_and_its_two_widths(self):
+        singles = [L.init_state(seed, 100) for seed in (5, 6)]
+        states = L.stack([dict(s, reference=active_reference(s, self.cal, ALL_CELLS)) for s in singles])
+        move, q, width, raise_only = (np.asarray(x) for x in
+                                      L.make_readouts("one_hot")["proposal"](states, jnp.arange(100, dtype=jnp.int32)))
+        self.assertEqual(move.shape, (2, 100, 4))
+        for array in (q, width, raise_only):
+            self.assertEqual(array.shape, (2, 100))
+            self.assertTrue(np.all(np.isfinite(array)))
+        self.assertTrue(np.all(np.abs(move) <= 1.0) and np.all(width >= raise_only) and np.all(raise_only >= 0))
+        for run, single in enumerate(singles):
+            np.testing.assert_allclose(move[run], L.actor_apply(single["proposal"], ALL_CELLS), atol=1e-6)
 
 
 class Readouts(unittest.TestCase):

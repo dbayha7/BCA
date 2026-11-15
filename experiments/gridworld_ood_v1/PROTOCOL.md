@@ -2,7 +2,7 @@
 
 Written November 9 2026, before any policy was trained on the study datasets. David asked for the experiments to be run on this machine's GPU. **This is a development study.** Dataset seeds 5101 to 5103 were used to shake down the design, so nothing here can be confirmation.
 
-Quick navigation: [Question](#1-question) · [What is trained](#2-what-is-trained) · [The learner](#3-the-learner-and-how-it-differs-from-the-archive) · [What is measured](#4-what-is-measured) · [Gates and kill rules](#5-gates-and-kill-rules) · [Rules for running](#6-rules-for-running) · [Amendment 1](#amendment-1-made-before-any-study-dataset-was-used) · [Amendment 2](#amendment-2-bottleneck-revision-2-written-before-any-policy-was-trained-on-its-datasets) · [Amendment 3: the three method changes](#amendment-3-three-changes-to-the-method-written-before-any-policy-was-trained-with-them) · [Amendment 4: support penalty alone](#amendment-4-does-the-calibrated-width-add-anything-to-the-support-penalty-written-before-any-run-of-the-new-arm) · [Amendment 5: blindfolded calibrated width](#amendment-5-is-the-calibrated-widths-knowledge-of-the-state-used-written-before-any-run-of-the-new-arm) · [Amendment 6: confirmation](#amendment-6-confirmation-on-untouched-datasets-written-before-any-confirmation-dataset-was-generated) · [Amendment 7: Version A against Version B](#amendment-7-second-fresh-data-block-version-a-against-version-b-written-before-any-of-its-datasets-was-generated) · [Amendment 8: Version A on nine datasets](#amendment-8-version-a-on-nine-fresh-datasets-written-before-any-of-its-datasets-was-generated) · [Amendment 9: competence per dataset](#amendment-9-baseline-competence-checked-per-dataset-written-before-any-of-its-datasets-was-generated) · [Limits](#7-limits-known-in-advance)
+Quick navigation: [Question](#1-question) · [What is trained](#2-what-is-trained) · [The learner](#3-the-learner-and-how-it-differs-from-the-archive) · [What is measured](#4-what-is-measured) · [Gates and kill rules](#5-gates-and-kill-rules) · [Rules for running](#6-rules-for-running) · [Amendment 1](#amendment-1-made-before-any-study-dataset-was-used) · [Amendment 2](#amendment-2-bottleneck-revision-2-written-before-any-policy-was-trained-on-its-datasets) · [Amendment 3: the three method changes](#amendment-3-three-changes-to-the-method-written-before-any-policy-was-trained-with-them) · [Amendment 4: support penalty alone](#amendment-4-does-the-calibrated-width-add-anything-to-the-support-penalty-written-before-any-run-of-the-new-arm) · [Amendment 5: blindfolded calibrated width](#amendment-5-is-the-calibrated-widths-knowledge-of-the-state-used-written-before-any-run-of-the-new-arm) · [Amendment 6: confirmation](#amendment-6-confirmation-on-untouched-datasets-written-before-any-confirmation-dataset-was-generated) · [Amendment 7: Version A against Version B](#amendment-7-second-fresh-data-block-version-a-against-version-b-written-before-any-of-its-datasets-was-generated) · [Amendment 8: Version A on nine datasets](#amendment-8-version-a-on-nine-fresh-datasets-written-before-any-of-its-datasets-was-generated) · [Amendment 9: competence per dataset](#amendment-9-baseline-competence-checked-per-dataset-written-before-any-of-its-datasets-was-generated) · [Amendment 10: both environments, nine datasets](#amendment-10-version-a-on-nine-fresh-datasets-in-both-environments-written-before-any-of-its-datasets-was-generated) · [Amendment 11: thin data](#amendment-11-thin-data-and-a-baseline-only-check-of-it-written-before-any-thin-dataset-was-generated) · [Amendment 12: calibrated permission](#amendment-12-a-calibrated-permission-to-leave-the-demonstrators-move-written-before-any-policy-was-trained-with-it) · [Limits](#7-limits-known-in-advance)
 
 ## 1 Question
 
@@ -486,6 +486,133 @@ The decision rule is Amendment 8's, unchanged.
 **Rules.** As in Amendment 8: run once; no pass mark, setting or gate is changed after an outcome is seen; every run is kept and reported; the smoke test on dataset seed 7 checks only that the setup runs; these datasets are spent by this run. If a candidate dataset fails its acceptance checks, that seed is dropped whole before training and counts as not valid.
 
 Limits known before the run: the result describes datasets on which the baseline is competent, which is what G0 always required; R2 has little power if most datasets tie at zero; three training seeds per dataset; one-hot cells with uniform coverage; the Honeypot only.
+
+## Amendment 10: Version A on nine fresh datasets in both environments. Written before any of its datasets was generated
+
+Written November 12 2026, after the audit of Version A (`VERSION_A_AUDIT.md`). David asked to keep running experiments on the GridWorld and chose "honeypot and bottleneck".
+
+**What is tested.** Version A only (`support_blind_width`), unchanged, beside its shuffled control, its sharpened baseline and the plain TD3+BC baseline. Nothing new is designed: this is the procedure of Amendment 9 applied to both environments. The Bottleneck has not yet been run at this sample size.
+
+**Data.** Twelve candidate datasets per environment on seeds 7501 to 7512 (labels `confirm5_h` and `confirm5_b`), training seeds 70, 71, 72. The Honeypot, and the Bottleneck revision 2 with one-hot input at exit values 4.5, 3.5 and 2.5. Study `v10`, results label `confirm_v5`.
+
+**Procedure.** As in Amendment 9, separately for each of the four settings: all baselines first; a dataset is valid in a setting if its three baselines with complete data are competent there (G0 as written, with Amendment 1 for the Bottleneck's B); the first nine valid seeds in increasing order are used; with fewer than nine valid, that setting stops and no claim is made for it. Then Version A and its shuffled control are trained on the datasets used.
+
+**Frozen.** The environments, the data recipe, the learner, every setting and every gate's definition.
+
+### Claims for the Honeypot, fixed before the data
+
+C0, R1 and R2 exactly as in Amendment 9.
+
+### Claims for the Bottleneck, fixed before the data
+
+In the Bottleneck the withheld move is the best one, so avoiding it is caution, not help. X is the chance that an episode from B crosses the unseen bridge. Each claim is judged at each of the three exit values and holds only if it holds at all three.
+
+| Claim | Confirmed if | If not |
+|---|---|---|
+| **C0** The environment is valid on these data | At least nine of the twelve candidates are valid in the setting, and G1 passes in at least 6 of the nine used | **No claim is made for that setting** |
+| **U1** Cautious about the unseen bridge | The mean over the nine datasets of (baseline's X minus Version A's X) is positive, and an exact one-sided sign-flip test gives p of 0.05 or less | Caution is not shown |
+| **U2** No wider harm | G5 passes in at least 6 of the nine datasets | Reported as harm |
+| **U3** Brings the bridge back | The mean of (Version A's X minus the baseline's X) is positive, with p of 0.05 or less by the same test | **Version A does not relieve the underestimation** |
+
+U1 and U3 cannot both hold. U3 is what relieving underestimation would mean.
+
+**Also reported, without a pass mark.** How many datasets have X strictly lower than the baseline's (the old form of the caution claim, which failed twice on ties at zero); G2, G3 and G4; the return from all start cells and from B; bad endings; and X with the bridge in the data.
+
+### Predictions, written before the run
+
+- **Honeypot.** R1 and R2 pass if the baseline ends in the hazard about 5% of the time or more. If it is nearer 3.5%, G3 may fail on ties at zero, as in the second block.
+- **Bottleneck.** Version A crosses 0% of the time in every run. So U1 passes wherever the baseline still crosses in several datasets, and U3 fails. U2 may fail at one or more exit values, because some Version A runs stalled there before.
+
+### Decision rule, fixed before the data
+
+- **Honeypot.** R1 passes: reported as passing again, three of four fresh-data runs. R1 fails: reported as failing in this run, with the gate that failed. The earlier runs are not pooled in either way.
+- **Bottleneck.** U3 holds: Version A relieves the underestimation (not expected). U3 fails and U1 holds: Version A is cautious about an unseen move whether the move is bad or good. U2 fails at any exit value: the caution is reported with its harm.
+
+### Rules
+
+- Run once. No pass mark, setting or gate is changed after an outcome is seen.
+- Every run is kept and reported, including any whose calibration fails.
+- A smoke test on dataset seed 7 checks only that this study's setup runs.
+- These datasets are spent by this run.
+- If a candidate dataset fails its acceptance checks, that seed is dropped whole before training and counts as not valid.
+- `confirm_both.py` computes every claim from the saved records. It is written before these data exist and tried only on runs whose outcomes are already known.
+
+Limits known before the run: three training seeds per dataset; one-hot cells with uniform coverage; a move that is entirely absent from the data; at exit 4.5 the critic's underestimate was small in the second block, so that setting may be a weak underestimation test again.
+
+## Amendment 11: thin data, and a baseline-only check of it. Written before any thin dataset was generated
+
+Written November 12 2026, after the both-environments run (`results/confirm_v5`). David asked how to make BCA address both overestimation and underestimation, and approved building a two-sided BCA and a thin-data test ("Yes, build it"). **This is development, not confirmation.**
+
+**Why thin data.** Every test so far withholds a move entirely. A move with no rows gives calibration nothing to fit, and nothing in the data can tell a good unseen move from a bad one. Thin data puts the move back a few times, so there is something to learn its direction from.
+
+**The thin arm.** `collect_thin.py`, without changing `collect.py`. A thin dataset is the targeted dataset of the same task and seed, except that at each decision cell the first k uniformly random commands that could execute the withheld move are kept instead of redrawn. The demonstrator's rows are unchanged. No outcome decides what is kept. Dose 0 is the targeted dataset exactly, and doses are nested. Doses: 0, 2, 8 and 32 kept commands per decision cell. With complete data about 108 such commands are present per decision cell.
+
+**Step 1, registered here: baselines only.** No BCA policy is trained in this step. It asks one question: at which doses is the plain baseline still wrong?
+
+- Tasks: the Honeypot, and the Bottleneck revision 2 with one-hot input at exits 3.5 and 2.5. Exit 4.5 is left out because the critic did not underestimate there in the last run.
+- Data arms: complete, and thin at doses 0, 2, 8, 32. Development seeds 5301, 5302, 5303. Training seeds 20, 21, 22. 135 baselines. Results label `thin_pilot`.
+- Reference and audit banks as before: 1,280 fresh rows drawn with the same dose.
+
+**A dose has room for a method** if the baseline, on the mean of its nine runs, is still wrong there in both ways:
+
+| Environment | Behavior | Critic |
+|---|---|---|
+| Honeypot | hazard endings H at least twice the complete-data value, and at least 1 point above it | error at the withheld move above +2 |
+| Bottleneck, each exit value | crossings X below half the complete-data value | error at the withheld move below -0.5 |
+
+**Stop rule.** If no dose above 0 has room in an environment, thin data alone fixes the baseline there, and no method is trained on thin data in that environment. I report that as the answer.
+
+**Step 2, not yet registered.** The two-sided BCA arm and its controls are specified in a further amendment, written after this step's results and before any method policy is trained. One control is already fixed: a baseline that is given the same rows the two-sided arm calibrates on. Without it, a gain could simply be the effect of more data.
+
+**Verification before the run.** `test_thin.py`, 10 tests: dose 0 equals the targeted arm; exactly the dose is kept at every decision cell; kept rows are never the demonstrator's; nothing changes outside the decision cells; doses are nested; outcomes follow each row's own draw; generation is repeatable.
+
+Limits known before the run: development seeds; three datasets; the kept commands are random ones, so the move is actually executed in only about a third of them; one-hot cells with uniform coverage.
+
+## Amendment 12: a calibrated permission to leave the demonstrator's move. Written before any policy was trained with it
+
+Written November 12 2026, after step 1 of Amendment 11 (`results/thin_pilot`). **Development, not confirmation.**
+
+**What step 1 showed.** A few kept commands fix the Honeypot's overestimation for the plain baseline, so by the stop rule no method is trained on thin Honeypot data. In the Bottleneck the critic already rates the crossing above the low exit in most runs at every dose above 0, and the policy still takes the low exit, because TD3+BC pulls it toward the demonstrator's recorded move. Correcting the critic would not change that. David approved the following instead ("Yes, build it").
+
+**The new arm, `permit`: Version A plus one rule.** Stop copying a recorded command when a move inside the data's support is better even after subtracting BCA's width.
+
+1. **A proposal network** is trained beside the actor. It minimizes `-c * mean(Q1(s, mu(s))) + c * 3 * mean(W(s, mu(s)))`, with no cloning term. W is the support-aware width read at the true state: the calibrated width plus the raise where the support score is below its floor. So mu(s) is the best move the critic knows inside the data's support. It is used only in the rule below.
+2. **The permission.** For a recorded row (s, a), the lower bound of the proposal is `Q1(s, mu(s)) - 1 * W(s, mu(s))`. If the critic's score of the recorded command, `Q1(s, a)`, is below that lower bound, the row is left out of the cloning term of the actor's objective. Otherwise it is cloned as before. The permission carries no gradient and is never given before a reference is ready.
+3. **Everything else is Version A**: the same width penalty in the actor, the same critic, the same schedule.
+
+The margin is 1 times the width, the calibrated interval's own lower bound. It is fixed here and not tuned. Where a move has no data the raise makes W very large, the lower bound very low, and the permission is never given.
+
+**Controls.**
+
+| Arm | What it is | What it isolates |
+|---|---|---|
+| `support_blind_width` (Version A) | no permission | the effect of the permission |
+| `permit_plain` | the same permission, but the margin uses only the support raise and leaves the calibrated width out | whether BCA's calibrated width does any work in the permission |
+
+Amendment 11 fixed a control in advance: a baseline given the same rows the new arm calibrates on. It is not needed. The new arm uses no rows beyond the reference bank that every arm already has.
+
+**What is trained.** On the thin development datasets of Amendment 11 (seeds 5301 to 5303, training seeds 20 to 22). The learner's state gains a network, so the baselines are trained again under the new code, label `thin_dev2`, and must reproduce `thin_pilot`'s baseline policies. Then Version A, `permit` and `permit_plain`:
+
+- Bottleneck at exits 3.5 and 2.5: doses 0, 2, 8, 32 and complete data.
+- Honeypot: dose 0 and complete data only. By the stop rule of Amendment 11 nothing is trained on thin Honeypot data.
+
+**Marks, fixed before the run.** A "dataset" is the mean over its three training seeds. Means are over the nine runs.
+
+| Mark | Passes if |
+|---|---|
+| **P1** Brings the bridge back where the data support it | At dose 32, `permit` crosses more than Version A and more than the baseline in at least 2 of 3 datasets, at each exit value |
+| **P2** Stays cautious without data | At dose 0, `permit`'s mean crossings are no more than 1 point above Version A's, at each exit value |
+| **P3** Keeps the protection against overestimation | Honeypot, dose 0: `permit`'s mean hazard endings are no more than 0.5 points above Version A's, and at most half the baseline's |
+| **P4** No wider harm | In every setting trained: `permit`'s mean bad endings over all start cells are no more than 0.5 points above Version A's, and its mean return over all start cells is no more than 0.1 below Version A's |
+| **P5** The calibrated width earns its place | `permit` passes P3 and P4 where `permit_plain` fails one of them. Otherwise the calibrated width is reported as not needed for the permission |
+
+**Kill rules.** If P1 fails at both exit values, the permission does not bring the bridge back, and I report that. If P3 fails, the arm is rejected whatever P1 says: it would have traded the overestimation result away.
+
+**Predictions, written before the run.** P1 passes at exit 2.5, where the critic's lead for the crossing (about 2.0) is well above the width (about 0.5). At exit 3.5 the lead is about 1.0; I expect P1 to pass there too, but less clearly. At doses 2 and 8 the support score still flags the crossing, so `permit` crosses little. P2, P3 and P4 pass. P5: I expect `permit_plain` to do about as well as `permit`, which would mean the calibrated width is not needed.
+
+**Verification before the run.** New tests in `test_learner.py`: the permission and the proposal objective against independent NumPy versions; no permission before a reference is ready; a row without permission is cloned exactly as before; `permit` is Version A exactly when no permission is given; `permit` and `permit_plain` are the same when the calibrated width is zero; every earlier arm still reproduces its pinned outputs.
+
+Limits known before the run: development seeds, three datasets, large run-to-run variation in the Bottleneck; the design was made after seeing the baselines on these same datasets; one-hot cells with uniform coverage.
 
 ## 7 Limits known in advance
 

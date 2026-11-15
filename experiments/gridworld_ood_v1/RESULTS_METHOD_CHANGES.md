@@ -1,8 +1,8 @@
 # Three changes to BCA, tested on the validated environments
 
-Prepared November 9 2026 for David. **Sections 1 to 12 are development results.** The changes were designed after seeing BCA's results on these same datasets, so nothing in those sections is confirmation. **Sections 13 and 14 are confirmation**, on datasets that did not exist when the methods were fixed. Section 15 records a third run that stopped at the baseline check, before any method was trained. **Section 16 is the nine-dataset confirmation of Version A.** The plan, the fixed settings and the pass marks are in Amendment 3 of [PROTOCOL.md](PROTOCOL.md), written before any of these runs. The earlier results this builds on are in [RESULTS.md](RESULTS.md).
+Prepared November 9 2026 for David. **Sections 1 to 12 are development results.** The changes were designed after seeing BCA's results on these same datasets, so nothing in those sections is confirmation. **Sections 13 and 14 are confirmation**, on datasets that did not exist when the methods were fixed. Section 15 records a third run that stopped at the baseline check, before any method was trained. **Section 16 is the nine-dataset confirmation of Version A.** **Section 17 runs Version A in both environments on nine fresh datasets each.** Sections 18 and 19 are development again: what the plain baseline does when the withheld move is put back into the data a few times, and a permission rule added to Version A that did not pass its marks. The plan, the fixed settings and the pass marks are in Amendment 3 of [PROTOCOL.md](PROTOCOL.md), written before any of these runs. The earlier results this builds on are in [RESULTS.md](RESULTS.md).
 
-Quick navigation: [Short answer](#1-short-answer) · [What was tested](#2-what-was-tested) · [Nothing else moved](#3-check-that-nothing-else-moved) · [Honeypot](#4-honeypot) · [Bottleneck](#5-bottleneck) · [All gate verdicts](#6-all-gate-verdicts) · [What each change did](#7-what-each-change-did) · [The harm side](#8-the-harm-side) · [What this does not show](#9-what-this-does-and-does-not-show) · [Options](#10-options-for-you) · [Follow-up: support penalty alone](#11-follow-up-the-support-penalty-without-the-calibrated-width) · [Second follow-up: blindfolded width](#12-second-follow-up-the-calibrated-width-blindfolded) · [Confirmation](#13-confirmation-on-untouched-datasets) · [Second block: Version A against Version B](#14-second-fresh-data-block-version-a-against-version-b) · [Nine datasets: stopped at the baseline check](#15-version-a-on-nine-fresh-datasets-stopped-at-the-baseline-check) · [Nine datasets: Version A replicated](#16-version-a-on-nine-fresh-datasets-with-competence-checked-per-dataset) · [Files](#17-files-and-commands)
+Quick navigation: [Short answer](#1-short-answer) · [What was tested](#2-what-was-tested) · [Nothing else moved](#3-check-that-nothing-else-moved) · [Honeypot](#4-honeypot) · [Bottleneck](#5-bottleneck) · [All gate verdicts](#6-all-gate-verdicts) · [What each change did](#7-what-each-change-did) · [The harm side](#8-the-harm-side) · [What this does not show](#9-what-this-does-and-does-not-show) · [Options](#10-options-for-you) · [Follow-up: support penalty alone](#11-follow-up-the-support-penalty-without-the-calibrated-width) · [Second follow-up: blindfolded width](#12-second-follow-up-the-calibrated-width-blindfolded) · [Confirmation](#13-confirmation-on-untouched-datasets) · [Second block: Version A against Version B](#14-second-fresh-data-block-version-a-against-version-b) · [Nine datasets: stopped at the baseline check](#15-version-a-on-nine-fresh-datasets-stopped-at-the-baseline-check) · [Nine datasets: Version A replicated](#16-version-a-on-nine-fresh-datasets-with-competence-checked-per-dataset) · [Both environments, nine datasets](#17-version-a-in-both-environments-on-nine-fresh-datasets) · [Thin data: the baseline](#18-thin-data-what-the-baseline-does) · [The permission arm](#19-a-permission-to-leave-the-demonstrators-move-it-does-not-bring-the-bridge-back) · [Files](#20-files-and-commands)
 
 ## 1 Short answer
 
@@ -32,6 +32,12 @@ Two things to hold beside the good number:
 **Version A on nine fresh datasets ([section 15](#15-version-a-on-nine-fresh-datasets-stopped-at-the-baseline-check)).** This run stopped before any Version A policy was trained. Two of the 27 baselines, both in one dataset, were not competent, and the rule written beforehand required every one to be. It says nothing about Version A either way.
 
 **Version A on nine fresh datasets, rerun ([section 16](#16-version-a-on-nine-fresh-datasets-with-competence-checked-per-dataset)).** With baseline competence checked per dataset, on new seeds: hazard endings 5.98% for the baseline, 0.24% for Version A, 2.33% for a baseline made as decisive. **Both pass marks fixed beforehand are met**: the four gates each pass in at least 6 of 9 datasets, and Version A is lower than each control on average (exact paired test, p = 0.002 and 0.008). **By the rule fixed beforehand Version A is replicated in the Honeypot**, confirmed in two of three fresh-data runs. The Bottleneck was not rerun.
+
+**Both environments on nine fresh datasets each ([section 17](#17-version-a-in-both-environments-on-nine-fresh-datasets)).** In the Honeypot Version A has its lowest hazard rate yet: 0.06%, against 6.65% for the baseline, with 26 of 27 runs at zero. It passes the average test against both controls and **fails the per-dataset gate G3 (5 of 9) on ties at zero**, so by the rule fixed beforehand this run counts as a failure of R1. **In the Bottleneck Version A does not relieve the underestimation**: it crosses the unseen bridge less than the baseline at every exit value, not more.
+
+**Thin data, baselines only ([section 18](#18-thin-data-what-the-baseline-does), development).** When the withheld move is put back into the data a few times, **the plain baseline fixes the overestimation by itself**: with two kept commands per cell its hazard endings fall from 3.3% to 0.2%. **The underestimation is more stubborn, and at the largest dose the critic is no longer what holds the policy back.** There the critic rates the bridge correctly and the policy still crosses only 12% to 40% of the time, because behavior cloning keeps it at the demonstrator's move.
+
+**A permission to leave the demonstrator's move ([section 19](#19-a-permission-to-leave-the-demonstrators-move-it-does-not-bring-the-bridge-back), development).** Version A was given a rule that stops copying a recorded command when a supported move is better even after subtracting BCA's width. **It does not bring the bridge back**: it fails that mark at both exit values, and it adds bad endings elsewhere in the Bottleneck. **Version A's protection in the Honeypot is unchanged by it** (0.00% hazard endings in 9 of 9 runs, against 3.33% for the baseline). By the kill rule written beforehand the arm is not taken further.
 
 ## 2 What was tested
 
@@ -817,10 +823,297 @@ Hazard endings by dataset:
 
 Limits: three training seeds per dataset; one-hot cells with uniform coverage; these seeds are spent.
 
-## 17 Files and commands
+## 17 Version A in both environments on nine fresh datasets
+
+Run November 12 2026 under Amendment 10 of [PROTOCOL.md](PROTOCOL.md), written before any of these datasets existed. David asked to keep running experiments and chose both environments. It is the procedure of section 16 applied to the Honeypot and the Bottleneck. **This section is confirmation, not development.**
+
+**The run (study v10, `results/confirm_v5`).** Twelve candidate datasets per environment on seeds 7501 to 7512, 144 files, all passing their checks, with the withheld move never executed. 432 TD3+BC baselines, then Version A and its shuffled control on the nine datasets used in each setting: 648 policies. Training seeds 70 to 72. On the GPU. Every calibration was usable, and the code was identical in both stages.
+
+**One incident.** Version A's training was started, then stopped by hand four minutes later because the laptop had to be closed. No policy file had been written and nothing had been evaluated. It was run again in full from the saved baselines. The first attempt's receipts are kept in `results/confirm_v5/interrupted_stage2/`.
+
+### 17.1 The environments on these data (claim C0)
+
+Every one of the twelve candidates was valid in every setting, so the first nine (7501 to 7509) were used throughout. G1 passes in 9 of 9 datasets in all four settings. **C0 holds everywhere.**
+
+The baseline critic's error at the withheld move, means of 27 runs:
+
+| Setting | Move in the data | Move withheld | Direction when withheld |
+|---|---:|---:|---|
+| Honeypot, the fatal move | +1.48 | **+10.03** | too high in 27 of 27 runs |
+| Bottleneck 4.5, the best move | +0.16 | +0.03 | too low in 14 of 27 runs |
+| Bottleneck 3.5, the best move | +0.08 | **-0.84** | too low in 27 of 27 runs |
+| Bottleneck 2.5, the best move | +0.10 | **-1.63** | too low in 27 of 27 runs |
+
+**Exit 4.5 is not an underestimation test in this run.** The critic's error there is essentially zero. Exits 3.5 and 2.5 underestimate in every run.
+
+### 17.2 Honeypot
+
+Targeted arm, 27 runs per row:
+
+| | Hazard endings H | Runs at exactly 0 | Average true value | Bad endings |
+|---|---:|---:|---:|---:|
+| TD3+BC baseline | 6.65% | 4 of 27 | 4.97 | 1.89% |
+| **Version A** | **0.06%** | **26 of 27** | **5.93** | **0.13%** |
+| Version A's shuffled control | 5.48% | 17 of 27 | 3.02 | 34.49% |
+| Version A's sharpened baseline | 3.18% | 16 of 27 | 5.74 | 0.88% |
+
+Hazard endings by dataset:
+
+| Dataset | Baseline | Version A | Shuffled control | Sharpened baseline | G3 |
+|---|---:|---:|---:|---:|---|
+| 7501 | 10.04% | 0.52% | 8.98% | 6.19% | pass |
+| 7502 | 2.06% | 0.00% | 14.02% | 0.00% | fail, a tie at zero |
+| 7503 | 3.01% | 0.00% | 0.00% | 0.00% | fail, a tie at zero |
+| 7504 | 13.56% | 0.00% | 8.33% | 7.38% | pass |
+| 7505 | 6.47% | 0.00% | 9.34% | 1.47% | pass |
+| 7506 | 2.49% | 0.00% | 0.00% | 0.55% | fail, a tie at zero |
+| 7507 | 8.73% | 0.00% | 1.05% | 3.78% | pass |
+| 7508 | 10.67% | 0.00% | 7.61% | 8.31% | pass |
+| 7509 | 2.78% | 0.00% | 0.00% | 0.91% | fail, a tie at zero |
+
+**R1, the gates as written** (each must pass in at least 6 of 9 datasets):
+
+| Gate | Datasets passing | Verdict |
+|---|---|---|
+| G2 width responds | 9 of 9 | pass |
+| G3 beats both controls | 5 of 9 | **fail** |
+| G4 specific to the gap | 9 of 9 | pass |
+| G5 no wider harm | 8 of 9 | pass |
+
+**R2, the average:**
+
+| Control | Mean difference | Version A lower / tie / control lower | p | Verdict |
+|---|---:|---|---:|---|
+| Shuffled control | +5.42 points | 6 / 3 / 0 | 0.0156 | pass |
+| Sharpened baseline | +3.12 points | 7 / 2 / 0 | 0.0078 | pass |
+
+**R1 fails and R2 passes.** In the words fixed beforehand: Version A has fewer hazard endings than both controls on average, and the per-dataset gates did not pass. By the decision rule this run is reported as a failure of R1, on G3.
+
+- **This is Version A's lowest hazard rate in any run**: 0.06%, with one run of 27 above zero (1.6%).
+- **Every G3 failure is a tie at zero.** Version A is at 0.00% in 8 of 9 datasets. In four of them a control is at 0.00% too, and the protocol counts a tie as failing a strict comparison.
+- **Version A is never above either control in any dataset.**
+- **With complete data and in the placebo arm** Version A has no hazard-34 ending in any of 54 runs.
+
+### 17.3 Bottleneck
+
+X is the chance that an episode from B crosses the unseen bridge. Targeted arm, 27 runs per cell.
+
+| Low exit pays | Metric | Baseline | Sharpened baseline | Version A |
+|---|---|---:|---:|---:|
+| 4.5 | Crossings X | 1.72% | 0.55% | 0.31% |
+| | Return, all start cells | 4.02 | 4.65 | 4.81 |
+| | Return from B | 4.38 | 4.47 | 4.50 |
+| | Bad endings, all start cells | 0.20% | 0.08% | 0.01% |
+| 3.5 | Crossings X | 5.78% | 4.31% | 0.28% |
+| | Return, all start cells | 3.67 | 4.23 | 4.40 |
+| | Return from B | 3.45 | 3.56 | 3.50 |
+| | Bad endings, all start cells | 0.33% | 0.14% | 0.09% |
+| 2.5 | Crossings X | 8.83% | 6.95% | 0.00% |
+| | Return, all start cells | 3.26 | 3.77 | 3.91 |
+| | Return from B | 2.57 | 2.65 | 2.49 |
+| | Bad endings, all start cells | 0.42% | 0.17% | 0.22% |
+
+The claims, judged at each exit value:
+
+| Low exit pays | U1 cautious | U2 no wider harm | U3 brings the bridge back |
+|---|---|---|---|
+| 4.5 | 1.40 points fewer crossings, 4 lower / 5 ties / 0 higher, p = 0.0625: **not shown** | G5 in 9 of 9: pass | 1.40 points fewer, p = 1.00: **fail** |
+| 3.5 | 5.50 points fewer, 6 / 3 / 0, p = 0.0156: pass | G5 in 7 of 9: pass | **fail** |
+| 2.5 | 8.83 points fewer, 8 / 1 / 0, p = 0.0039: pass | G5 in 5 of 9: **fail** | **fail** |
+
+**U3 fails at every exit value: Version A does not relieve the underestimation.** U1 holds at exits 3.5 and 2.5 and is not shown at 4.5, so by the rule it is not shown at every exit value. U2 fails at exit 2.5.
+
+- **Version A crosses less than the baseline, never more.** In no dataset at any exit value does it cross more.
+- **At exit 4.5 the baseline already crossed 0% of the time in 5 of 9 datasets**, which leaves too few datasets for the test.
+- **Version A crossed in 2 of its 81 runs**: 8.5% in one run at exit 4.5 and 7.6% in one at exit 3.5.
+- **Its return over all start cells is the highest of the three at every exit value.** That comes from decisive commands across the map, not from the bridge.
+- **At the decision cell the caution costs a little where crossing matters most**: at exit 2.5 the return from B is 2.49 for Version A, against 2.57 for the baseline and 2.65 for the sharpened baseline.
+- **Harm was small this time.** Bad endings are 0.01% to 0.22%, at or below the baseline's. U2 fails at exit 2.5 because Version A makes 0.8 start cells worse per run there against 0.0 for the sharpened baseline.
+- **With the bridge in the data Version A crosses more than the baseline**: 96.58%, 99.77% and 100.00%, against 77.07%, 92.01% and 97.14%.
+
+### 17.4 The predictions, scored
+
+| Prediction written before the run | What happened |
+|---|---|
+| Honeypot: R1 and R2 pass if the baseline is near 5% or above | **Wrong on R1.** The baseline was at 6.65% and G3 still failed on ties. R2 passed |
+| Bottleneck: Version A crosses 0% of the time in every run | **Wrong for 2 of 81 runs** |
+| U1 passes where the baseline still crosses in several datasets | Right: passed at 3.5 and 2.5, not shown at 4.5 |
+| U3 fails | Right, at every exit value |
+| U2 may fail at one or more exit values | Right: failed at 2.5 |
+
+### 17.5 What this run says
+
+- **Overestimation.** Version A's effect is the largest it has been, and it is better than both controls on average. Under the per-dataset gates it has now passed in two fresh-data runs and failed in two, each time on G3. In this run every failing dataset is a tie at zero.
+- **Underestimation.** Now tested with a claim written for it: Version A does not bring back an unseen good move. It avoids it.
+- **The same behavior explains both.** Version A stays away from a move that is not in the data, whether that move is bad or good.
+
+Limits: three training seeds per dataset; one-hot cells with uniform coverage; a move that is entirely absent from the data; exit 4.5 was not an underestimation test in this run; these seeds are spent.
+
+## 18 Thin data: what the baseline does
+
+Run November 12 2026 under Amendment 11 of [PROTOCOL.md](PROTOCOL.md), written before any thin dataset existed. David asked how to make BCA address both overestimation and underestimation and approved building a two-sided BCA and a thin-data test. This is its first step: **baselines only, on development seeds. No BCA policy was trained. These are development results.**
+
+**Why.** Every earlier test withholds a move entirely, so nothing in the data can say whether it is good or bad. Thin data puts the move back a few times.
+
+**The thin arm (`collect_thin.py`).** The targeted dataset, except that at each decision cell the first k random commands that could execute the withheld move are kept. Doses k of 0, 2, 8 and 32; with complete data about 108 such commands are present per cell. A kept command executes the move only about a third of the time. No outcome decides what is kept, dose 0 is the targeted data exactly, and doses are nested.
+
+**The run (`results/thin_pilot`).** 45 datasets on development seeds 5301 to 5303, all passing their checks. 135 TD3+BC baselines on training seeds 20 to 22, on the GPU, every calibration usable. Tasks: the Honeypot, and the Bottleneck at exits 3.5 and 2.5.
+
+**Two incidents, both before any result existed.** The first launch failed at an import. The second crashed at its first calibration refresh, because the shared training loop only knew the three original data arms. `run_study.py` now accepts a run's own arm number, with the original arms unchanged, and a smoke test was added. The crashed attempt's receipt is kept in `results/thin_pilot/crashed_attempt_1/`. `thin_study.py` was edited after the datasets were built, in its imports and training code only.
+
+### 18.1 Honeypot: a few rows fix the overestimation
+
+Means of nine baseline runs per column.
+
+| Kept commands per decision cell | 0 | 2 | 8 | 32 | complete |
+|---|---:|---:|---:|---:|---:|
+| Times the fatal move is executed in a dataset | 0 | 3 to 5 | 9 to 14 | 26 to 48 | |
+| Hazard endings H | 3.3% | 0.2% | 0.0% | 0.2% | 0.6% |
+| Critic's score for the fatal move (true value -5.00) | +4.92 | +0.89 | -2.24 | -1.83 | -3.18 |
+| Critic error at the fatal move | +9.92 | +5.89 | +2.76 | +3.17 | +1.82 |
+| Cases where the critic scores it above the best move | 44% | 0% | 0% | 0% | 0% |
+| Return, all start cells | 4.95 | 5.07 | 5.03 | 5.09 | 4.91 |
+
+- **Two kept commands per cell are enough.** The fatal move is then executed 3 to 5 times in the whole dataset, and hazard endings fall from 3.3% to 0.2%, below the complete-data value.
+- **The critic does not need to be right, only right enough.** At dose 2 it is still 5.89 too high, but it no longer scores the fatal move above the best move in any case.
+
+### 18.2 Bottleneck: the underestimation is more stubborn
+
+Means of nine baseline runs per column.
+
+| Low exit pays | Kept commands at B | 0 | 2 | 8 | 32 | complete |
+|---|---|---:|---:|---:|---:|---:|
+| | Times the crossing is executed in a dataset | 0 | 0 to 1 | 0 to 2 | 9 to 12 | |
+| 3.5 | Crossings X | 8.2% | 18.1% | 5.6% | 12.0% | 93.7% |
+| | Critic error at the crossing | -0.86 | -0.68 | -0.79 | -0.25 | -0.29 |
+| | Return from B | 3.38 | 3.46 | 3.42 | 3.42 | 4.44 |
+| 2.5 | Crossings X | 14.6% | 8.0% | 10.6% | 39.9% | 100.0% |
+| | Critic error at the crossing | -2.13 | -1.49 | -1.67 | -0.20 | -0.18 |
+| | Return from B | 2.61 | 2.54 | 2.59 | 3.09 | 4.53 |
+
+- **At doses 2 and 8 the crossing is executed 0 to 2 times in a dataset**, so the critic has almost nothing to learn its value from and still rates it too low.
+- **At dose 32 the critic is right**: its error is the same as with complete data. **The policy still crosses only 12.0% and 39.9% of the time.**
+- **The runs vary a great deal**: at dose 32 and exit 2.5 single runs cross between 0% and 78% of the time.
+
+What the critic and the policy each say at B, the cell before the bridge:
+
+| Low exit pays | Kept commands | Critic's score: crossing / low exit | Runs where the critic rates the crossing higher | Policy's chance per step: low exit / crossing | Runs whose likeliest move is the crossing |
+|---|---|---|---|---|---|
+| 2.5 | 2 | 3.23 / 2.49 | 6 of 9 | 80% / 6% | 0 of 9 |
+| 2.5 | 8 | 3.14 / 2.50 | 8 of 9 | 74% / 9% | 0 of 9 |
+| 2.5 | 32 | 4.44 / 2.46 | 9 of 9 | 48% / 32% | 5 of 9 |
+| 2.5 | complete | 4.44 / 2.83 | 9 of 9 | 0% / 92% | 9 of 9 |
+| 3.5 | 2 | 3.90 / 3.49 | 6 of 9 | 67% / 14% | 0 of 9 |
+| 3.5 | 8 | 3.83 / 3.48 | 6 of 9 | 83% / 5% | 0 of 9 |
+| 3.5 | 32 | 4.43 / 3.47 | 9 of 9 | 72% / 10% | 0 of 9 |
+| 3.5 | complete | 4.34 / 3.74 | 8 of 9 | 5% / 84% | 9 of 9 |
+
+- **The critic already prefers the crossing in most runs at every dose above 0, and the policy still takes the low exit.** At exit 3.5 with 32 kept commands the critic prefers the crossing in 9 of 9 runs, by 4.43 to 3.47, and the policy's likeliest move is the crossing in none.
+- **So the critic is not what holds the policy back. Behavior cloning is.** In thin data the demonstrator's 128 rows at B all take the low exit, and TD3+BC pulls the policy toward recorded commands. With complete data the demonstrator itself crosses, and so does the policy.
+
+### 18.3 Does any dose leave room for a method?
+
+By the rule written beforehand a dose has room only if the baseline is still wrong there in both behavior and critic.
+
+| Environment | Dose 0 | Dose 2 | Dose 8 | Dose 32 |
+|---|---|---|---|---|
+| Honeypot | room | no: behavior is already right | no | no |
+| Bottleneck 3.5 | room | room | room | no: the critic is already right |
+| Bottleneck 2.5 | room | room | room | no: the critic is already right |
+
+- **Honeypot: the stop rule applies.** Thin data alone fixes the baseline, so no method is trained on thin Honeypot data.
+- **Bottleneck: room at doses 2 and 8.** But section 18.2 shows the limit: the critic already prefers the crossing in most of those runs, and the policy does not follow it.
+
+### 18.4 What this means for a two-sided BCA
+
+- **Overestimation needs no new method once the move appears at all.** Version A covers the case where it never appears.
+- **Correcting the critic's sign would not bring the bridge back.** The critic is mostly right about which move is better, and the policy stays with the demonstrator anyway.
+- **What is missing is permission to leave the demonstrator's move where the data support it.** In this testbed the "underestimation" in behavior is mostly the cloning pull of TD3+BC, not an error in the critic.
+
+Limits: development seeds; three datasets; large run-to-run variation in the Bottleneck; the kept commands are random, so at low doses the move is often never executed; one-hot cells with uniform coverage.
+
+## 19 A permission to leave the demonstrator's move: it does not bring the bridge back
+
+Run November 12 2026 under Amendment 12 of [PROTOCOL.md](PROTOCOL.md), written before any policy was trained with it. David approved building it. **Development results, on the thin development datasets of section 18.**
+
+**The arm, `permit`.** Version A plus one rule. A second network, the proposal, looks for the best move the critic knows inside the data's support. A recorded command is left out of the cloning term when the critic scores it below the proposal's lower bound, which is the proposal's score minus BCA's width. The control `permit_plain` is the same with the calibrated width left out of that margin.
+
+**The run (`results/thin_dev2`).** The 135 baselines were trained again under the new code. Then Version A, `permit` and `permit_plain`: 18 Honeypot runs and 90 Bottleneck runs each. All on the GPU, every calibration usable. **The baselines are bit for bit the same as section 18's**, in every saved array of all 135 runs, so the new network changed nothing in the existing arms.
+
+### 19.1 The marks, fixed before the run
+
+| Mark | Result | Verdict |
+|---|---|---|
+| P1 Brings the bridge back where the data support it (32 kept commands) | Exit 2.5: `permit` crosses 40.2%, Version A 40.8%, baseline 39.9%. More than both in 0 of 3 datasets. Exit 3.5: 10.4%, 1.7%, 12.0%. More than both in 1 of 3 | **FAIL at both exits** |
+| P2 Stays cautious without data (0 kept commands) | 0.0% crossings at both exits, the same as Version A | pass |
+| P3 Keeps the protection against overestimation (Honeypot, 0 kept commands) | Hazard endings: baseline 3.33%, Version A 0.41%, `permit` 0.00% | pass |
+| P4 No wider harm | Bottleneck: bad endings more than half a point above Version A's in 8 of 10 settings, by up to 4.1 points. Returns are within 0.04. Honeypot: no harm | **FAIL** |
+| P5 The calibrated width earns its place | `permit_plain` has the same four verdicts | not shown |
+
+**By the kill rule written beforehand, the permission does not bring the bridge back.** P1 fails at both exit values. I predicted it would pass; that prediction was wrong.
+
+### 19.2 Crossings
+
+Share of episodes from B that cross the bridge. Means of nine runs.
+
+| Low exit pays | Kept commands at B | 0 | 2 | 8 | 32 | complete |
+|---|---|---:|---:|---:|---:|---:|
+| 3.5 | Baseline | 8.2% | 18.1% | 5.6% | 12.0% | 93.7% |
+| | Version A | 0.0% | 0.0% | 0.7% | 1.7% | 100.0% |
+| | `permit` | 0.0% | 0.0% | 0.8% | 10.4% | 100.0% |
+| | `permit_plain` | 0.0% | 2.0% | 1.1% | 13.3% | 100.0% |
+| 2.5 | Baseline | 14.6% | 8.0% | 10.6% | 39.9% | 100.0% |
+| | Version A | 0.0% | 0.0% | 0.0% | 40.8% | 100.0% |
+| | `permit` | 0.0% | 0.0% | 0.6% | 40.2% | 100.0% |
+| | `permit_plain` | 0.0% | 0.0% | 2.2% | 44.8% | 100.0% |
+
+- **At exit 3.5 with 32 kept commands `permit` crosses 10.4% against Version A's 1.7%.** All of it comes from one dataset (31.2%; the other two are at 0.0%), and the plain baseline crosses 12.0%.
+- **At exit 2.5 it changes nothing**: 40.2% against 40.8%.
+- **Version A itself no longer holds the bridge back at exit 2.5 once 32 commands are kept.** It crosses as often as the baseline.
+
+### 19.3 Why it does not work
+
+Read at B, the cell before the bridge, for `permit`. Means of nine runs.
+
+| Low exit pays | Kept commands | Proposal's chance per step of crossing | Proposal's lead over the demonstrator's command, by the critic | Proposal's width | Runs where the permission is given at B at the end of training |
+|---|---|---:|---:|---:|---|
+| 2.5 | 2 | 2.9% | 0.07 | 0.39 | 1 of 9 |
+| 2.5 | 8 | 0.6% | 0.02 | 0.38 | 0 of 9 |
+| 2.5 | 32 | 1.8% | 0.13 | 0.42 | 1 of 9 |
+| 3.5 | 2 | 0.0% | 0.00 | 0.37 | 0 of 9 |
+| 3.5 | 8 | 1.0% | 0.09 | 0.37 | 1 of 9 |
+| 3.5 | 32 | 0.9% | 0.04 | 0.39 | 0 of 9 |
+
+- **The proposal almost never proposes the crossing.** Its chance per step of crossing is under 3% at every dose. So it sits next to the demonstrator's command, and its lead by the critic is 0.00 to 0.13.
+- **So the permission has nothing to permit.** The lead is smaller than the width of about 0.4, the lower bound falls below the recorded command's score, and the row is cloned as before.
+- **My reading of the cause.** The proposal is trained on the critic's score minus three times the width, and that width includes the support raise. With 32 kept commands the crossing is still 0.29 factors of ten below the support floor. Three times that raise is about as large as the critic's lead for the crossing. This is read from the averages, not measured separately.
+- **Where the permission is given, it is given at other cells, and it adds bad endings.** A test shows `permit` is Version A exactly when no permission is given, so every difference from Version A comes from permitted rows. At B that is at most 1 run in 9. Over all start cells in the Bottleneck, `permit`'s bad endings are 0.5% to 4.4% against 0.0% to 2.2% for Version A.
+
+### 19.4 What stays true
+
+- **Version A's protection against overestimation is intact with the extra rule.** In the Honeypot with the fatal move withheld, `permit` has 0.00% hazard endings in 9 of 9 runs, against 3.33% for the baseline. Return over all start cells is 5.93 against 4.95.
+- **Version A still raises the return over all start cells in every Bottleneck setting**, for example 4.31 against 3.72 at exit 3.5 with nothing kept.
+- **The underestimation side is not solved.** Three things have now been tried in this testbed: the one-sided penalty, the width in the critic's target, and this permission. None brings the bridge back when the data leave it out or barely contain it.
+
+The arm is not taken further. The next work is on the published map in `experiments/gridworld_critical_v1`, at David's direction.
+
+Limits: development seeds; three datasets; large run-to-run variation in the Bottleneck; the design was made after seeing the baselines on these same datasets; one-hot cells with uniform coverage.
+
+## 20 Files and commands
 
 | File | What it is |
 |---|---|
+| `PROTOCOL.md`, Amendment 12 | The permission arm, its control, the marks P1 to P5, the kill rules and the predictions, written before any policy was trained with it |
+| `learner.py` (arms `permit`, `permit_plain`), `test_learner.py` | The proposal network and the permission, with 13 new tests |
+| `thin_study.py --stage methods`, `results/thin_dev2/`, `results/thin_smoke_2/` | The run of section 19: the retrained baselines, Version A and the two permission arms, and `thin.json` with every metric and the marks |
+| `PROTOCOL.md`, Amendment 11 | Thin data and the baseline-only check, with the "room for a method" rule and the stop rule, written before any thin dataset was generated |
+| `collect_thin.py`, `test_thin.py` | The thin-data arm and its 10 tests |
+| `thin_study.py`, `thin_evaluate.py`, `results/thin_pilot/`, `results/thin_smoke_1/` | The runner and evaluator for section 18, and their results (`thin.json`) |
+| `data/thin_dev/`, `receipts/thin_dev_*` | The 45 thin development datasets (seeds 5301 to 5303) and their check receipts |
+| `PROTOCOL.md`, Amendment 10 | The claims for both environments, the predictions and the decision rule, written before the datasets were generated |
+| `run_study.py --study v10`, `results/confirm_v5/` | The run of section 17: records, gate verdicts, `summary.md`, `both.md`, the dataset choices, the baselines of the three candidates not used, and the interrupted attempt's receipts |
+| `confirm_both.py` | Computes every claim of section 17 from the saved records |
+| `data/confirm5_h/`, `data/confirm5_b/`, `receipts/confirm5_*` | Its candidate datasets (seeds 7501 to 7512) and their check receipts |
 | `PROTOCOL.md`, Amendment 9 | Baseline competence judged per dataset, and the procedure for the rerun, written before its datasets were generated |
 | `run_study.py --study v9`, `results/confirm_v4/` | The run of section 16: records, gate verdicts, `summary.md`, `version_a.md`, the dataset choice (`selected_datasets_honeypot.json`), and the baselines of the three candidates not used (`records_dropped.json`) |
 | `data/confirm4_h/`, `receipts/confirm4_h_*` | Its twelve candidate datasets (seeds 7401 to 7412) and their check receipts |
@@ -835,8 +1128,8 @@ Limits: three training seeds per dataset; one-hot cells with uniform coverage; t
 | `PROTOCOL.md`, Amendment 6 | The confirmation's claims and pass marks, written before its datasets were generated |
 | `run_study.py --study v6`, `results/confirm_v1/`, `results/confirm_v1_stage*.log` | The confirmation run of section 13: records, gate verdicts, summary, receipts and logs |
 | `data/confirm_h/`, `data/confirm_b/`, `receipts/confirm_*` | The confirmation datasets (seeds 7101 to 7103) and their check receipts |
-| `learner.py` | All fourteen arms, selected by one switch table |
-| `test_learner.py`, `test_learner_regression.json` | 45 tests; the regression file pins the learner's outputs from before the changes |
+| `learner.py` | All sixteen arms, selected by one switch table |
+| `test_learner.py`, `test_learner_regression.json` | 58 tests; the regression file pins the learner's outputs from before the changes |
 | `run_study.py --study v3`, `--study v4`, `--study v5` | Train the three studies |
 | `evaluate_study.py`, `summarize_study.py` | Gate verdicts per method; compact tables |
 | `sharpen_after_training.py` | The exploratory analysis of section 11.3 |

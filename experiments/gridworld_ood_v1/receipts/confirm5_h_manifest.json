@@ -1,0 +1,1157 @@
+{
+  "label": "confirm5_h",
+  "purpose": "Version A in both environments (PROTOCOL.md Amendment 10): untouched seeds, spent by that run",
+  "training_updates": 0,
+  "python": "3.10.11",
+  "numpy": "2.2.6",
+  "source_sha256": {
+    "environment.py": "d46df4867b9d46c1128c8a884046febf7c5fce9309cd9a85211f5001ccf6e1c7",
+    "collect.py": "2b6f57c5acf830f6791e1742b10da1a13868b028ae755b8e4ce39c0ccd519d5a",
+    "unseen_move_checks.py": "f03b4c2954327697192b9a5aa1fde84512c3bd0684271bd6d134624923bc9d32",
+    "build_datasets.py": "5bcbb94c39c712dc2634af1235bff262d76b649030c614d216ccc0a0325bd17b"
+  },
+  "execution": {
+    "beta": 2.0,
+    "cutoff": 0.05
+  },
+  "collection": {
+    "rows_per_cell": 256,
+    "uniform_rows": 128,
+    "demonstrator_noise_sd": 0.1
+  },
+  "minimum_executions_for_a_supported_move": 16,
+  "seeds": [
+    7501,
+    7502,
+    7503,
+    7504,
+    7505,
+    7506,
+    7507,
+    7508,
+    7509,
+    7510,
+    7511,
+    7512
+  ],
+  "tasks": {
+    "honeypot": {
+      "walls": [
+        16,
+        26,
+        36,
+        62,
+        63,
+        64
+      ],
+      "hazards": [
+        21,
+        34,
+        58,
+        86
+      ],
+      "bump_reward": -0.1,
+      "goal": 9,
+      "free_cells": 89,
+      "targeted_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "placebo_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "best_policy_value_from_A": 3.017444022630127
+    }
+  },
+  "datasets": [
+    {
+      "file": "honeypot_complete_seed7501.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7501,
+      "array_sha256": "5e518859a5a700baa776514accf367f1d49d1d8b1cdaff26991517445df1ed86",
+      "file_sha256": "baac8e7ed78ee4e73b99f7ac1d2416d7cd7f0e141f1c8ecf7193b52451d94d82",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7501.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7501,
+      "array_sha256": "fca7e7bd7311c05e1de638c7fff156c35a3408ec56b7d0555a639fb1f14ee3fa",
+      "file_sha256": "f71118bbf772c005efcc325066236261ece36afb211d6057aa0b41d5ab27dc0a",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2693,
+      "rows_with_a_redraw": 416
+    },
+    {
+      "file": "honeypot_placebo_seed7501.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7501,
+      "array_sha256": "23d8313105b781b6d75a439492ee3b75429747331c84717316be80b8a2f0809b",
+      "file_sha256": "e341268a7cc8fc681aaa47a99065cc691048108db19e493088b79c004ac8a5b4",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2799,
+      "rows_with_a_redraw": 436
+    },
+    {
+      "file": "honeypot_complete_seed7502.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7502,
+      "array_sha256": "abb7dd41a66626fc0ab29fde9800009bdc3b79c30cf058cf990b630ed0b95b1b",
+      "file_sha256": "31b8eae7dc0b2f335db32248ed5cde6076ee7c4b9c4639c2cf48d1059d8b1a63",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7502.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7502,
+      "array_sha256": "c4614d1b1f7e07509c692703cae87e91ef63899143621672cddd8a90be9f053c",
+      "file_sha256": "5ee3fe68f1124f4a2f6134ece0f0b1d81e58136912a7baff6ba9dad54130dc81",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2491,
+      "rows_with_a_redraw": 422
+    },
+    {
+      "file": "honeypot_placebo_seed7502.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7502,
+      "array_sha256": "984e69143d499a2ea77b2670c00ebed862551e63ea3f10e24a13494dfe5965aa",
+      "file_sha256": "87446251effd37edfc8db432cc36244176e23c58c7fc6e564d56873d619cd484",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2631,
+      "rows_with_a_redraw": 425
+    },
+    {
+      "file": "honeypot_complete_seed7503.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7503,
+      "array_sha256": "c5b189509cce40660f50405d9da754311df40db294a8edb90bd8c67892949b04",
+      "file_sha256": "74e26685fc863f4645f32c964652de8acff9668b1360efc108d5f152c810036f",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7503.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7503,
+      "array_sha256": "5bfe1745faff931fa90f5661276d641e4da2caf26a78163554ddfa8a1125b8bb",
+      "file_sha256": "de26568076a83ecf04e0cf4462b4c51a140c85eec87e1f04afc590b7be50a4f5",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2751,
+      "rows_with_a_redraw": 423
+    },
+    {
+      "file": "honeypot_placebo_seed7503.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7503,
+      "array_sha256": "e3bf31303c648514dc8d7a09778b8370d13ed339fbcce3a6a5956d4cf9d8e66f",
+      "file_sha256": "de44ed45ef6bfaa5998c27f4a8494bbaa9b881a11cbe992d9d543188795cccb2",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2683,
+      "rows_with_a_redraw": 416
+    },
+    {
+      "file": "honeypot_complete_seed7504.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7504,
+      "array_sha256": "fe5073acaed83720792c8528a5a37a79a87764772b87e0e14dd69ba6d0a45add",
+      "file_sha256": "7f45b4f77c4348762e726c540f5894b98eb62ad09506976dd5f51a19b7a4a521",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7504.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7504,
+      "array_sha256": "f8afab64da86043556be6d310bc617851112bddab7f0a7682ae5031868cb2a36",
+      "file_sha256": "c582e9deffa1864b6b7449044a64b6ba9c1cf230797e68fb0f5e145b8e71e2b9",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2529,
+      "rows_with_a_redraw": 439
+    },
+    {
+      "file": "honeypot_placebo_seed7504.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7504,
+      "array_sha256": "a22c0d678bdf10448cff62536d5aab058168d51cd6da1db254919f809733da6c",
+      "file_sha256": "3fdc7a46938a694d955f66c0d4f01cc072656bf3737aa02774d540fea3eced68",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2691,
+      "rows_with_a_redraw": 425
+    },
+    {
+      "file": "honeypot_complete_seed7505.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7505,
+      "array_sha256": "fae97c5980a50c0ffe389147cd4d0b4a53df312e50ebe9703da531f5584b4b0f",
+      "file_sha256": "ccc212303689596b27d6a633e4004b5846c5c1fa3224c111bd4bbdb7a5c29fe0",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7505.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7505,
+      "array_sha256": "2c1417cad6110c32371042b7e125aba1c840d56355976c9940bf16ca9e103eae",
+      "file_sha256": "10b0ade6bf44ddd022f35980ed0014b1e09610e4197130f55ce1a316e08b57aa",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2422,
+      "rows_with_a_redraw": 423
+    },
+    {
+      "file": "honeypot_placebo_seed7505.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7505,
+      "array_sha256": "07823764582bbae2db05c4be0674250510433848472872142cd60fb8f61ba4b6",
+      "file_sha256": "4bd439910be347dc0b31738d7270a4c696bf979dbb108a3858207c05ba98e134",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2645,
+      "rows_with_a_redraw": 426
+    },
+    {
+      "file": "honeypot_complete_seed7506.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7506,
+      "array_sha256": "82f55f687d75f7bbbe64b929f82f4838344e063c9ecbd5f99a30e8ec982ce287",
+      "file_sha256": "c6d2871d6fdc518fbf6b3e1193f4ceb3af99f06400d4f5ebfddf648469722f1f",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7506.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7506,
+      "array_sha256": "6aab2c08f2db8548c5082e40b04472f9cc50527fc224c9bdb181a6a8f21d08bf",
+      "file_sha256": "4a94a2d2504cdc2d79991ae87e726df0a36a9429a657d9cb84623a9d2ed84d58",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2472,
+      "rows_with_a_redraw": 412
+    },
+    {
+      "file": "honeypot_placebo_seed7506.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7506,
+      "array_sha256": "210b2ff7be9fe88c6a881ebcf300a4e43f5ba36b7c8189443daa62549fad5d4a",
+      "file_sha256": "aac7dbffccfc17a1a550c70c4dfbda626ded529dc8a45569714bb9407c0c39e1",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2532,
+      "rows_with_a_redraw": 433
+    },
+    {
+      "file": "honeypot_complete_seed7507.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7507,
+      "array_sha256": "7c32fdbc45662c5919325a53a34a57dc1d1a781140bc526cb2236a8b3a83a31f",
+      "file_sha256": "4877c3bd6b8c0db3c1194997819c641bdef320d9e7098084ba9ddb7046ca19c9",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7507.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7507,
+      "array_sha256": "106c8fda94efb8713cb9cb739f3126cc35420342ddb56f0b99588a556167af2d",
+      "file_sha256": "69adcc66da5f18b43ed506f2be93dc1da231f8a9c2a101de5c9227a8cbe5bbf5",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2556,
+      "rows_with_a_redraw": 414
+    },
+    {
+      "file": "honeypot_placebo_seed7507.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7507,
+      "array_sha256": "29fc2b9e2e76bfa2d1401e3db494468fa21e71da73894d6dfe27ed2389175700",
+      "file_sha256": "3ccde17c92b1411c31d8262248b01e37d9f62e22412b2dce7e700f48c4394ea1",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2651,
+      "rows_with_a_redraw": 436
+    },
+    {
+      "file": "honeypot_complete_seed7508.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7508,
+      "array_sha256": "f800ec36be4b5c66fcc20db3458ee2430f9946cd22e556ff24888ce321b9b294",
+      "file_sha256": "4074eaf9b16e8f82c50c360fd663d28f7e8ff1a52e8e7950500a140b361fd883",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7508.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7508,
+      "array_sha256": "79bf65434e6bba59cd8047c25d50a6d392d4d4769c3dc9a663210b292a414204",
+      "file_sha256": "2eaa287168f59cb095fd1f137c3423f056930e73bdee04937d54c43f63066fd1",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2738,
+      "rows_with_a_redraw": 440
+    },
+    {
+      "file": "honeypot_placebo_seed7508.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7508,
+      "array_sha256": "6cf2190c093bb336a7d5fc66e495a98f00ec3455844f5ea790139164458627a3",
+      "file_sha256": "9ef111c1795e30ffc5351b6390a6477d379c7d2627a41e300a58b1794924ea0e",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2397,
+      "rows_with_a_redraw": 425
+    },
+    {
+      "file": "honeypot_complete_seed7509.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7509,
+      "array_sha256": "2c5655b5c4f4b00062c9e32b271766ae377b8bd8bea6cd638099eac033af4f65",
+      "file_sha256": "843359e8e3a5afd37bce5025ff68b97350524ae8ac6ffef50d91dbf67fa480c8",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7509.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7509,
+      "array_sha256": "d505b8247bdacb80d1b5a2e2f00dd46e5bd61c41c0890489db7e7b076825d5fe",
+      "file_sha256": "f2dec46629e180091c4718210ef45cf0537983c151e101aa7b83b346d974b9fb",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2802,
+      "rows_with_a_redraw": 438
+    },
+    {
+      "file": "honeypot_placebo_seed7509.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7509,
+      "array_sha256": "27ae4c69217a4d266bcf89bd3555f064e9d9544ff7a53d777d63d4d1c6e08a9f",
+      "file_sha256": "dedadbe2be5a934d6031a2320acd3b2a2ea79985f00b5962630a11a5087f82ec",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2744,
+      "rows_with_a_redraw": 427
+    },
+    {
+      "file": "honeypot_complete_seed7510.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7510,
+      "array_sha256": "da3d33c202255f2e00a2c57d7e1198ab7883b806241bded589d51321fe6865a2",
+      "file_sha256": "529af46d7e7b3d22ec47435622147bca3a35ccc74a5554031b5920c131555746",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7510.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7510,
+      "array_sha256": "9f19176e2b9a1c79c0bf4554704e4d8a58b0287ea34eeae52cc024e18c479664",
+      "file_sha256": "2b8258ec0574475c76d98c9959c477fcfd717db4fb11327743d572ce01533287",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2527,
+      "rows_with_a_redraw": 420
+    },
+    {
+      "file": "honeypot_placebo_seed7510.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7510,
+      "array_sha256": "935e63745d39ff415bea0891354cb1944134131be6862d00209df576640935b2",
+      "file_sha256": "46735a2a5028b0adebeea349666434c204c34b7727ca1cbee82bf97e0628499b",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2838,
+      "rows_with_a_redraw": 429
+    },
+    {
+      "file": "honeypot_complete_seed7511.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7511,
+      "array_sha256": "6443df54a4f27fd252a08bc68359951d2e51832c0ae5f5764fdc1c2b5e17e1b2",
+      "file_sha256": "84b91ec2510ea81301b7d69140b90efe90fb024cc03f45e182eb7dfc6615a0e8",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7511.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7511,
+      "array_sha256": "746f74fe8e3666cd55eafd9a118aca6db746eec4d5c4586cb1e449b4394bcab0",
+      "file_sha256": "a146a9fa4b026743e87273849d7b573c223679414665bd18dab4920a349cb560",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2686,
+      "rows_with_a_redraw": 440
+    },
+    {
+      "file": "honeypot_placebo_seed7511.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7511,
+      "array_sha256": "3a2113d23c56e4bf3f51820ce0bfff1c6403d9354e199c523c42a74cf632b90d",
+      "file_sha256": "80f3a31766f93a9b21ebdcecd19355220a149d06992a14e7d27fe3187d9e8667",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2799,
+      "rows_with_a_redraw": 430
+    },
+    {
+      "file": "honeypot_complete_seed7512.npz",
+      "task": "honeypot",
+      "arm": "complete",
+      "seed": 7512,
+      "array_sha256": "d4f1a10aa30877a386ab81f616153d416c8131886d71719a9c9ff4275a6bf5e4",
+      "file_sha256": "f87ecd94fabb0433f043d3e18a681165a6e8efa7816621fd66dfbb8874b45d7d",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {},
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 0,
+      "rows_with_a_redraw": 0
+    },
+    {
+      "file": "honeypot_targeted_seed7512.npz",
+      "task": "honeypot",
+      "arm": "targeted",
+      "seed": 7512,
+      "array_sha256": "fd0def4adae38ae48619ff6d44fedd739a5536a12b153975b2a3081a2dcdb12e",
+      "file_sha256": "4487a69fd7a4ed5cdb9736ecb01143d6dde7fa081a053c4e52550a14689241e4",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "down"
+        ],
+        "33": [
+          "right"
+        ],
+        "35": [
+          "left"
+        ],
+        "44": [
+          "up"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2612,
+      "rows_with_a_redraw": 416
+    },
+    {
+      "file": "honeypot_placebo_seed7512.npz",
+      "task": "honeypot",
+      "arm": "placebo",
+      "seed": 7512,
+      "array_sha256": "a786f0c81607f16b70f4875e3a494306d0055c208790188d482d59b2764813ef",
+      "file_sha256": "44e93bc119abd28072beb2eccc61f06b0d5ed4ca47d9d9d8752ca3ebe351fe0b",
+      "learner_fields": [
+        "s",
+        "a",
+        "r",
+        "s2",
+        "done"
+      ],
+      "checks_passed": true,
+      "withheld_moves": {
+        "24": [
+          "left"
+        ],
+        "33": [
+          "left"
+        ],
+        "35": [
+          "down"
+        ],
+        "44": [
+          "down"
+        ]
+      },
+      "demonstrator_commands_replaced": {},
+      "rows": 22784,
+      "commands_redrawn": 2694,
+      "rows_with_a_redraw": 434
+    }
+  ]
+}

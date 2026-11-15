@@ -36,6 +36,8 @@ Arms. Every arm runs the same code on the same random draws; only these switches
   support_only                on             yes, and the calibrated width is dropped (Amendment 4)
   support_only_shuffled       on             the same                                     yes
   support_blind_width         on             yes; the calibrated part alone is read at shuffled states (Amendment 5)
+  permit                      on             as support_blind_width, plus the permission of Amendment 12
+  permit_plain                on             the same, with the calibrated width left out of the permission's margin
 
 The three changes:
   support-aware  The width is raised where a learned support score says the data hold no
@@ -54,6 +56,13 @@ so it is exactly zero at every supported command.
 
 Amendment 5 adds the last switch: read the calibrated width at shuffled states while the support
 score is still read at the true state. That arm is change 1 with the calibrated width blindfolded.
+
+Amendment 12 adds a permission to leave a recorded command. A proposal network, trained in every arm
+with no cloning term, holds the best move the critic knows inside the data's support. In the two
+"permit" arms a recorded row is left out of the actor's cloning term when the critic scores its
+command below the proposal's lower bound, Q1 minus the support-aware width at the true state.
+"permit_plain" leaves the calibrated part of that width out of the margin. No other arm reads the
+proposal network, and no arm's critic does.
 """
 import jax
 import jax.numpy as jnp
@@ -83,39 +92,45 @@ SUPPORT_QUANTILE = 0.01             # a command is "unsupported" if it scores be
 WIDTH_REFERENCE_QUANTILE = 0.90     # one-sided penalty: only width above this quantile of held-out widths counts
 LN10 = float(np.log(10.0))          # the width reaches its cap one decade of density below the support floor
 
+PERMIT_MARGIN = 1.0                 # the permission's margin, in widths: the calibrated interval's own lower bound
+
 (NATIVE, BCA, SHUFFLED, SUPPORT, SUPPORT_SHUFFLED, SUPPORT_ONESIDED, SUPPORT_ONESIDED_SHUFFLED,
  FULL, FULL_SHUFFLED, ONESIDED, ONESIDED_SHUFFLED, SUPPORT_ONLY, SUPPORT_ONLY_SHUFFLED,
- SUPPORT_BLIND_WIDTH) = range(14)
+ SUPPORT_BLIND_WIDTH, PERMIT, PERMIT_PLAIN) = range(16)
 ARM_NAMES = {NATIVE: "baseline", BCA: "bca", SHUFFLED: "shuffled_width", SUPPORT: "support",
              SUPPORT_SHUFFLED: "support_shuffled", SUPPORT_ONESIDED: "support_onesided",
              SUPPORT_ONESIDED_SHUFFLED: "support_onesided_shuffled", FULL: "full",
              FULL_SHUFFLED: "full_shuffled", ONESIDED: "onesided", ONESIDED_SHUFFLED: "onesided_shuffled",
              SUPPORT_ONLY: "support_only", SUPPORT_ONLY_SHUFFLED: "support_only_shuffled",
-             SUPPORT_BLIND_WIDTH: "support_blind_width"}
+             SUPPORT_BLIND_WIDTH: "support_blind_width", PERMIT: "permit", PERMIT_PLAIN: "permit_plain"}
 ARM_NUMBERS = {name: number for number, name in ARM_NAMES.items()}
 # Each variant's own state-blind control.
 CONTROL_OF = {"bca": "shuffled_width", "support": "support_shuffled",
               "support_onesided": "support_onesided_shuffled", "full": "full_shuffled",
               "onesided": "onesided_shuffled", "support_only": "support_only_shuffled",
               "support_blind_width": "support_shuffled"}     # shuffling everything gives the same control as change 1
-_PENALIZED = jnp.asarray([0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], bool)
-_SHUFFLED = jnp.asarray([0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0], bool)
-_SUPPORT = jnp.asarray([0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1], bool)
-_ONE_SIDED = jnp.asarray([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0], bool)
-_CRITIC = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0], bool)
-_NO_BASE = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0], bool)
-_BLIND_BASE = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], bool)
+_PENALIZED = jnp.asarray([0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], bool)
+_SHUFFLED = jnp.asarray([0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0], bool)
+_SUPPORT = jnp.asarray([0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1], bool)
+_ONE_SIDED = jnp.asarray([0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0], bool)
+_CRITIC = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0], bool)
+_NO_BASE = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0], bool)
+_BLIND_BASE = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1], bool)
+_GATE = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1], bool)            # Amendment 12
+_GATE_NO_BASE = jnp.asarray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], bool)
 
 _host_opt = optax.adam(HOST_LR)     # optax.adam's eps=1e-8 sits outside the square root, as in PyTorch
 _scale_opt = optax.adam(SCALE_LR)
 _support_opt = optax.adam(SUPPORT_LR)
+_proposal_opt = optax.adam(HOST_LR)
 
 
 def switches(mode):
-    """The seven switches of an arm, as arrays so that runs with different arms can share a batch."""
+    """The switches of an arm, as arrays so that runs with different arms can share a batch."""
     return {"kappa": jnp.where(_PENALIZED[mode], KAPPA, 0.0), "shuffled": _SHUFFLED[mode],
             "support": _SUPPORT[mode], "one_sided": _ONE_SIDED[mode], "critic": _CRITIC[mode],
-            "no_base": _NO_BASE[mode], "blind_base": _BLIND_BASE[mode]}
+            "no_base": _NO_BASE[mode], "blind_base": _BLIND_BASE[mode],
+            "gate": _GATE[mode], "gate_no_base": _GATE_NO_BASE[mode]}
 
 
 # ---- observations ----------------------------------------------------------------------------
@@ -236,15 +251,46 @@ def trained_target(cal, arm, reference, actor_t, q1_t, q2_t, next_obs, width_nex
 
 
 def actor_objective(actor, q1, cal, reference, obs, width_obs, recorded_action, kappa,
-                    use_support=False, one_sided=False, drop_base=False, support_obs=None):
-    """-c*mean(Q1(s, pi)) + mean((pi - a)^2) + c*kappa*mean(penalty(s_w, pi)), with c detached."""
+                    use_support=False, one_sided=False, drop_base=False, support_obs=None, keep=None, gated=False):
+    """-c*mean(Q1(s, pi)) + mean((pi - a)^2) + c*kappa*mean(penalty(s_w, pi)), with c detached.
+
+    `keep` holds one weight per recorded row, 1 or 0 (Amendment 12). With `gated`, a row whose weight is 0
+    is left out of the cloning term; the mean is still over every row, so leaving rows out weakens the pull."""
     policy_action = actor_apply(actor, obs)
     q = critic_apply(q1, obs, policy_action)
     coefficient = jax.lax.stop_gradient(ALPHA / (jnp.mean(jnp.abs(q)) + 1e-7))
     cloning = jnp.mean(jnp.square(policy_action - recorded_action))
+    if keep is not None:
+        permitted = jnp.mean(keep[:, None] * jnp.square(policy_action - recorded_action))
+        cloning = jnp.where(gated, permitted, cloning)
     cost = jnp.mean(penalty(cal, reference, width_obs, policy_action, use_support, one_sided, drop_base,
                             support_obs))
     return -coefficient * jnp.mean(q) + cloning + coefficient * kappa * cost
+
+
+def proposal_objective(proposal, q1, cal, reference, obs):
+    """-c*mean(Q1(s, mu)) + c*KAPPA*mean(support-aware width at the true state), with c detached.
+
+    No cloning term. Its minimizer is the best move the critic knows inside the data's support."""
+    action = actor_apply(proposal, obs)
+    q = critic_apply(q1, obs, action)
+    coefficient = jax.lax.stop_gradient(ALPHA / (jnp.mean(jnp.abs(q)) + 1e-7))
+    cost = jnp.mean(consumed_width(cal, reference, obs, action, True))
+    return -coefficient * jnp.mean(q) + coefficient * KAPPA * cost
+
+
+def permission(proposal, q1, cal, reference, obs, recorded_action, drop_base=False):
+    """One weight per recorded row: 1 if the row is still cloned, 0 if the proposal's move is better
+    even after its width is subtracted (Amendment 12).
+
+    The proposal's lower bound is Q1(s, mu(s)) - PERMIT_MARGIN * W(s, mu(s)), where W is the support-aware
+    width read at the true state. With drop_base the calibrated part of W is left out, so only the support
+    raise remains. Every row is kept until a reference is ready. The result carries no gradient."""
+    proposed = actor_apply(proposal, obs)
+    lower = (critic_apply(q1, obs, proposed)
+             - PERMIT_MARGIN * consumed_width(cal, reference, obs, proposed, True, drop_base))
+    keep = critic_apply(q1, obs, recorded_action) >= lower
+    return jax.lax.stop_gradient(jnp.where(reference["ready"], keep, True).astype(jnp.float32))
 
 
 def scale_objective(scale, cal, obs, action, target, q, unit, prior):
@@ -292,10 +338,13 @@ def init_state(train_seed, obs_dim, action_dim=4):
         jax.random.fold_in(jax.random.PRNGKey(700_000 + train_seed), SCALE_INIT_FOLD),
         jnp.zeros((1, obs_dim)), jnp.zeros((1, action_dim)))
     support = init_mlp(jax.random.PRNGKey(800_000 + train_seed), (obs_dim + action_dim, HIDDEN, HIDDEN, 1))
+    # Amendment 12. Its own key, so every other network starts exactly where it did before.
+    proposal = init_mlp(jax.random.PRNGKey(900_000 + train_seed), (obs_dim, HIDDEN, HIDDEN, action_dim))
     return {"actor": actor, "q1": q1, "q2": q2, "actor_t": actor, "q1_t": q1, "q2_t": q2,
             "actor_opt": _host_opt.init(actor), "critic_opt": _host_opt.init((q1, q2)),
             "scale": scale, "scale_opt": _scale_opt.init(scale), "unit": jnp.float32(1.0),
             "support": support, "support_opt": _support_opt.init(support),
+            "proposal": proposal, "proposal_opt": _proposal_opt.init(proposal),
             "reference": blank_reference(scale, support),
             "step": jnp.int32(0)}
 
@@ -357,11 +406,18 @@ def make_step(observation, n_rows):
         updates, critic_opt = _host_opt.update(critic_grad, state["critic_opt"], critics)
         q1, q2 = optax.apply_updates(critics, updates)
 
+        # 2b. Fit the proposal network on the critic just updated. Every arm does this identical work;
+        #     only the permission arms consume it, and only in the actor's cloning term.
+        proposal_grad = jax.grad(proposal_objective)(state["proposal"], q1, cal, reference, obs)
+        updates, proposal_opt = _proposal_opt.update(proposal_grad, state["proposal_opt"], state["proposal"])
+        proposal = optax.apply_updates(state["proposal"], updates)
+        keep = permission(proposal, q1, cal, reference, obs, action, arm["gate_no_base"])
+
         # 3. Actor and target networks, every second update, using the critic just updated
         #    and the reference frozen at the last refresh.
         actor_grad = jax.grad(actor_objective)(state["actor"], q1, cal, reference, obs, width_obs, action,
                                                arm["kappa"], arm["support"], arm["one_sided"], arm["no_base"],
-                                               support_obs)
+                                               support_obs, keep, arm["gate"])
         updates, actor_opt_new = _host_opt.update(actor_grad, state["actor_opt"], state["actor"])
         actor_new = optax.apply_updates(state["actor"], updates)
         due = (t % POLICY_DELAY) == 0
@@ -377,6 +433,7 @@ def make_step(observation, n_rows):
                 "actor_opt": choose(actor_opt_new, state["actor_opt"]), "critic_opt": critic_opt,
                 "scale": scale, "scale_opt": scale_opt, "unit": unit,
                 "support": support, "support_opt": support_opt,
+                "proposal": proposal, "proposal_opt": proposal_opt,
                 "reference": reference, "step": jnp.int32(t)}
 
     return step
@@ -436,10 +493,19 @@ def make_readouts(observation):
                 consumed_width(cal, reference, flat_obs, flat_act, arm["support"], arm["no_base"]).reshape(shape),
                 support_logit(reference["support"], flat_obs, flat_act).reshape(shape))
 
+    def proposal(state, cells):
+        """Per cell (Amendment 12): the proposal's move, Q1 there, the support-aware width at the true
+        state there, and that width without its calibrated part. Reporting only."""
+        obs, reference = obs_fn(cells), state["reference"]
+        move = actor_apply(state["proposal"], obs)
+        return (move, critic_apply(state["q1"], obs, move), consumed_width(cal, reference, obs, move, True),
+                consumed_width(cal, reference, obs, move, True, True))
+
     return {"heldout": jax.jit(jax.vmap(heldout, in_axes=(0, 0, 0, 0))),
             "audit": jax.jit(jax.vmap(audit, in_axes=(0, 0, 0, 0))),
             "policy": jax.jit(jax.vmap(policy, in_axes=(0, None))),
-            "probe": jax.jit(jax.vmap(probe, in_axes=(0, None, None, 0)))}
+            "probe": jax.jit(jax.vmap(probe, in_axes=(0, None, None, 0))),
+            "proposal": jax.jit(jax.vmap(proposal, in_axes=(0, None)))}
 
 
 # ---- helpers for stacks of runs -------------------------------------------------------------------------

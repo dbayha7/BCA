@@ -169,16 +169,18 @@ Each is one constant or one small function, and the tests will tell you what a c
 | `unseen_move_checks.py` | The acceptance checks. Also re-checks saved datasets against the manifest. |
 | `build_datasets.py` | Generates, checks and saves a labeled set. Refuses to overwrite a label. |
 | `PROTOCOL.md` | The training study's plan, gates and kill rules, written before training, with five amendments. Amendment 3 defines the three method changes; Amendment 4 the arm that drops the calibrated width; Amendment 5 the arm that reads it at a wrong state. |
-| `learner.py` | JAX re-implementation of the archived TD3+BC host with the width penalty, and the changes as switches (fourteen arms). Needs JAX; everything above does not. |
+| `learner.py` | JAX re-implementation of the archived TD3+BC host with the width penalty, and the changes as switches (sixteen arms). Needs JAX; everything above does not. |
 | `run_study.py` | Trains a study on the GPU and saves policies. `--study v3` is the method-change study; `--study v4` and `--study v5` are the two follow-up arms. |
 | `evaluation.py`, `evaluate_study.py` | Exact evaluation of saved policies and the gate verdicts, one set per method. NumPy only. |
 | `summarize_study.py` | Compact tables from an evaluated study: outcomes, values, gates, and what the width and the support score did. |
 | `sharpen_after_training.py` | Exploratory, no training: scales the support-only policies' commands after training and re-evaluates them. |
-| `test_learner.py`, `test_evaluation.py` | 45 tests of the learner's equations, gradients and update order; 6 tests of the evaluator. |
+| `test_learner.py`, `test_evaluation.py` | 58 tests of the learner's equations, gradients and update order; 6 tests of the evaluator. |
 | `test_learner_regression.json` | Outputs of the learner as it stood before Amendment 3. A test checks the original arms still reproduce them. |
 | `RESULTS.md`, `results/dev_v1/`, `results/dev_v2/` | What the first studies found, with their records, gate verdicts and tables. |
 | `RESULTS_METHOD_CHANGES.md`, `results/dev_v3/`, `results/dev_v4/`, `results/dev_v5/` | What the three method changes and the two follow-up arms did, with records, gate verdicts, tables and summaries. |
 | `results/confirm_v1/`, `data/confirm_h/`, `data/confirm_b/` | The confirmation on untouched datasets (seeds 7101 to 7103): Version A and Version B against the TD3+BC baseline. Written up in section 13 of `RESULTS_METHOD_CHANGES.md`. |
+| `collect_thin.py`, `thin_study.py`, `thin_evaluate.py`, `test_thin.py`, `results/thin_pilot/`, `results/thin_dev2/`, `data/thin_dev/` | Thin data: the withheld move put back a few times (PROTOCOL.md Amendment 11), and a permission rule added to Version A (Amendment 12). Development. The baseline fixes the overestimation with a few rows; the permission does not bring the bridge back. Sections 18 and 19 of `RESULTS_METHOD_CHANGES.md`. |
+| `confirm_both.py`, `results/confirm_v5/`, `data/confirm5_h/`, `data/confirm5_b/` | Version A in both environments on nine fresh datasets each (PROTOCOL.md Amendment 10), written up in section 17 of `RESULTS_METHOD_CHANGES.md`. |
 | `VERSION_A_AUDIT.md`, `audit_version_a.py`, `results/version_a_audit.json` | A read-only audit of every saved Version A policy from the fresh-data runs: every metric, the environment check, and what each part of the penalty contributes. Trains nothing. |
 | `confirm_version_a.py`, `results/confirm_v3/`, `results/confirm_v4/`, `data/confirm3_h/`, `data/confirm4_h/` | Version A alone on nine fresh Honeypot datasets (PROTOCOL.md Amendments 8 and 9). `confirm_v3` stopped at the baseline check; `confirm_v4` is the rerun with competence checked per dataset, written up in section 16 of `RESULTS_METHOD_CHANGES.md`. |
 | `compare_versions.py`, `results/confirm_v2/`, `data/confirm2_h/`, `data/confirm2_b/` | The second fresh-data block (seeds 7201 to 7203) and the script that compares Version A with Version B readout by readout (PROTOCOL.md Amendment 7). |

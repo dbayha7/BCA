@@ -12,7 +12,7 @@ CONTROL_OF = {"bca": "shuffled_width", "support": "support_shuffled",
               "onesided": "onesided_shuffled", "support_only": "support_only_shuffled",
               "support_blind_width": "support_shuffled"}
 SUPPORT_AWARE = {"support", "support_shuffled", "support_onesided", "support_onesided_shuffled", "full", "full_shuffled",
-                 "support_only", "support_only_shuffled", "support_blind_width"}
+                 "support_only", "support_only_shuffled", "support_blind_width", "permit", "permit_plain"}
 # Methods whose width is zero at every supported command (Amendment 4). "Relative to the model's
 # average width" has no stable meaning for them, so G2 reads their width in absolute units.
 NO_CALIBRATED_WIDTH = {"support_only", "support_only_shuffled"}
