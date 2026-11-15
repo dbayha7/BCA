@@ -1,0 +1,405 @@
+{
+ "baselines": "published_validation_2",
+ "alpha": 1.0,
+ "data_seeds": [
+  6401,
+  6402,
+  6403
+ ],
+ "train_seeds": [
+  20,
+  21,
+  22
+ ],
+ "devices": [
+  "cuda:0"
+ ],
+ "marks": {
+  "K1_helps_where_there_is_room": {
+   "per_dataset": {
+    "6401": {
+     "Version A": 0.9826079186954884,
+     "Baseline": 0.7708373633547955,
+     "higher": true
+    },
+    "6402": {
+     "Version A": 0.9720855543006265,
+     "Baseline": 0.8794958700394897,
+     "higher": true
+    },
+    "6403": {
+     "Version A": 0.6707255791052585,
+     "Baseline": 0.7519528242549081,
+     "higher": false
+    }
+   },
+   "datasets_higher": 2,
+   "mean_gain": 0.07437766481739327,
+   "passed": true
+  },
+  "K2_not_a_side_effect": {
+   "passed": true,
+   "Shuffled control": {
+    "per_dataset": {
+     "6401": {
+      "Version A": 0.9826079186954884,
+      "Shuffled control": 0.9798994718797726
+     },
+     "6402": {
+      "Version A": 0.9720855543006265,
+      "Shuffled control": 0.975051846829397
+     },
+     "6403": {
+      "Version A": 0.6707255791052585,
+      "Shuffled control": 0.6646555444924419
+     }
+    },
+    "datasets_higher": 2,
+    "passed": true
+   },
+   "Decisive baseline": {
+    "per_dataset": {
+     "6401": {
+      "Version A": 0.9826079186954884,
+      "Decisive baseline": 0.647692000601993
+     },
+     "6402": {
+      "Version A": 0.9720855543006265,
+      "Decisive baseline": 0.9894234259765375
+     },
+     "6403": {
+      "Version A": 0.6707255791052585,
+      "Decisive baseline": 0.6607669532775227
+     }
+    },
+    "datasets_higher": 2,
+    "passed": true
+   }
+  },
+  "K3_no_harm_where_the_baseline_is_good": {
+   "passed": true,
+   "optimal": {
+    "score_change": 0.04679577765763532,
+    "lava_change": -0.027243933534409938,
+    "passed": true
+   },
+   "other_starts": {
+    "score_change": 0.0003567787910812026,
+    "lava_change": -0.00039425941600703535,
+    "passed": true
+   }
+  },
+  "version_a_helps_on_the_published_map": true
+ },
+ "continued_baseline_reproduces_the_saved_one": {
+  "runs": 27,
+  "largest_difference_in_any_preference": 0.0,
+  "runs_identical": 27,
+  "largest_difference_in_score": 0.0
+ },
+ "summary": {
+  "optimal": {
+   "baseline": {
+    "runs": 9,
+    "score": 0.9420017585180323,
+    "lowest": 0.9037903125877157,
+    "lava": 0.08577616212974948,
+    "timeout": 0.018017905047556192,
+    "command_strength": 0.9303224740733563,
+    "per_dataset": {
+     "6401": 0.9377707742513208,
+     "6402": 0.9493255737813175,
+     "6403": 0.938908927521458
+    },
+    "critical_fatal_command": 0.006277880564629661,
+    "critical_width_fatal": 0.05701644532382488,
+    "critical_width_through": 0.05966030226813422,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05561141876710786,
+    "second_critical_width_through": 0.06383968434400028,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "decisive_baseline": {
+    "runs": 9,
+    "score": 0.970109884964555,
+    "lowest": 0.9554805320964335,
+    "lava": 0.074777538029944,
+    "timeout": 0.002274891508028153,
+    "command_strength": 1.0,
+    "per_dataset": {
+     "6401": 0.969852686384995,
+     "6402": 0.9714095616571049,
+     "6403": 0.9690674068515651
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "scaled_baseline": {
+    "runs": 9,
+    "score": 0.9451694130643635,
+    "lowest": 0.9011756458169671,
+    "lava": 0.08279943205936842,
+    "timeout": 0.017980977476765702,
+    "command_strength": 0.9347488652222099,
+    "per_dataset": {
+     "6401": 0.9440831215231729,
+     "6402": 0.9549532286751489,
+     "6403": 0.9364718889947685
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "support_shuffled": {
+    "runs": 9,
+    "score": 0.9825913689640335,
+    "lowest": 0.9577869384212213,
+    "lava": 0.06469638199480403,
+    "timeout": 0.00048135632352328195,
+    "command_strength": 0.9911796391575783,
+    "per_dataset": {
+     "6401": 0.9856110350334312,
+     "6402": 0.97660959873687,
+     "6403": 0.9855534731217993
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 10.391100389469,
+    "critical_width_through": 0.06721601428257094,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 12.605932083394793,
+    "second_critical_width_through": 0.06099580849210421,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "support_blind_width": {
+    "runs": 9,
+    "score": 0.9887975361756676,
+    "lowest": 0.9748031228408472,
+    "lava": 0.05853222859533954,
+    "timeout": 0.0007410580328908891,
+    "command_strength": 0.9347488652222101,
+    "per_dataset": {
+     "6401": 0.9900404640819315,
+     "6402": 0.9902255303754988,
+     "6403": 0.9861266140695725
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 10.259004211467174,
+    "critical_width_through": 0.06708491676383549,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 12.507434805234274,
+    "second_critical_width_through": 0.06182337014211549,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   }
+  },
+  "other_starts": {
+   "baseline": {
+    "runs": 9,
+    "score": 0.9864469022836553,
+    "lowest": 0.9765915975750985,
+    "lava": 0.061509643427443174,
+    "timeout": 2.529442838520092e-12,
+    "command_strength": 0.9431418207702874,
+    "per_dataset": {
+     "6401": 0.9865855384443866,
+     "6402": 0.9861236670838007,
+     "6403": 0.9866315013227781
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 0.05424449323780007,
+    "critical_width_through": 0.060625921520921916,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05286481955813037,
+    "second_critical_width_through": 0.058795771251122154,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "decisive_baseline": {
+    "runs": 9,
+    "score": 0.9724248100705322,
+    "lowest": 0.9580362294536242,
+    "lava": 0.07468556883201792,
+    "timeout": 0.00016447669206369055,
+    "command_strength": 1.0,
+    "per_dataset": {
+     "6401": 0.972424810070532,
+     "6402": 0.972424810070532,
+     "6403": 0.972424810070532
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "scaled_baseline": {
+    "runs": 9,
+    "score": 0.9901239165232022,
+    "lowest": 0.9836886031246577,
+    "lava": 0.05801138883885869,
+    "timeout": 1.8910468327545615e-14,
+    "command_strength": 0.9789702907974172,
+    "per_dataset": {
+     "6401": 0.9902392006861468,
+     "6402": 0.990140715950472,
+     "6403": 0.9899918329329878
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "support_shuffled": {
+    "runs": 9,
+    "score": 0.973613018581128,
+    "lowest": 0.9580362294536242,
+    "lava": 0.07333557982972606,
+    "timeout": 0.0003840224579209357,
+    "command_strength": 0.9999995336659452,
+    "per_dataset": {
+     "6401": 0.9767466595151251,
+     "6402": 0.9674371522556154,
+     "6403": 0.9766552439726436
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 8.038966682222155,
+    "critical_width_through": 0.0628202652765645,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 10.564598129855263,
+    "second_critical_width_through": 0.05985892108745045,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "support_blind_width": {
+    "runs": 9,
+    "score": 0.9868036810747365,
+    "lowest": 0.9580362294536242,
+    "lava": 0.06111538401143614,
+    "timeout": 5.482558374712827e-05,
+    "command_strength": 0.9789702907974172,
+    "per_dataset": {
+     "6401": 0.981850146703323,
+     "6402": 0.98719915265167,
+     "6403": 0.9913617438692164
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 8.048618714014689,
+    "critical_width_through": 0.06151014400853051,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 10.5712059073978,
+    "second_critical_width_through": 0.05922527197334501,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   }
+  },
+  "mixed": {
+   "baseline": {
+    "runs": 9,
+    "score": 0.8007620192163978,
+    "lowest": 0.5861510363156719,
+    "lava": 0.14533685031618454,
+    "timeout": 0.09283052473221783,
+    "command_strength": 0.8858332359905359,
+    "per_dataset": {
+     "6401": 0.7708373633547955,
+     "6402": 0.8794958700394897,
+     "6403": 0.7519528242549081
+    },
+    "critical_fatal_command": 0.06896448733261312,
+    "critical_width_fatal": 0.27669913611478275,
+    "critical_width_through": 0.2856985342999299,
+    "critical_critic_rates_fatal_above": 5,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.2618524431147509,
+    "second_critical_width_through": 0.2527422449655003,
+    "second_critical_critic_rates_fatal_above": 3,
+    "critic_out_of_range": 6,
+    "calibrations_usable": 9
+   },
+   "decisive_baseline": {
+    "runs": 9,
+    "score": 0.765960793285351,
+    "lowest": 0.03064754928271056,
+    "lava": 0.041114982849928206,
+    "timeout": 0.23016174137630735,
+    "command_strength": 1.0,
+    "per_dataset": {
+     "6401": 0.647692000601993,
+     "6402": 0.9894234259765375,
+     "6403": 0.6607669532775227
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "scaled_baseline": {
+    "runs": 9,
+    "score": 0.8309986014220873,
+    "lowest": 0.7002434781428438,
+    "lava": 0.12690476433669984,
+    "timeout": 0.0824959931167956,
+    "command_strength": 0.9615769572567677,
+    "per_dataset": {
+     "6401": 0.8206118359004115,
+     "6402": 0.8704035431389502,
+     "6403": 0.8019804252268999
+    },
+    "critical_fatal_command": 0.05548383412054652,
+    "second_critical_fatal_command": 0.0
+   },
+   "support_shuffled": {
+    "runs": 9,
+    "score": 0.8732022877338704,
+    "lowest": 0.05438645028685931,
+    "lava": 0.06005257006250534,
+    "timeout": 0.10919625166730766,
+    "command_strength": 0.9984364925369226,
+    "per_dataset": {
+     "6401": 0.9798994718797726,
+     "6402": 0.975051846829397,
+     "6403": 0.6646555444924419
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 0.04386493149730894,
+    "critical_width_through": 0.04783690720796585,
+    "critical_critic_rates_fatal_above": 0,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.26848468246559304,
+    "second_critical_width_through": 0.060347996238205165,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "support_blind_width": {
+    "runs": 9,
+    "score": 0.875139684033791,
+    "lowest": 0.08388338677290624,
+    "lava": 0.06272710433808668,
+    "timeout": 0.10467850845658658,
+    "command_strength": 0.961576957256768,
+    "per_dataset": {
+     "6401": 0.9826079186954884,
+     "6402": 0.9720855543006265,
+     "6403": 0.6707255791052585
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 0.045331003040903144,
+    "critical_width_through": 0.0522819927169217,
+    "critical_critic_rates_fatal_above": 0,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.27920922657681835,
+    "second_critical_width_through": 0.06081377590696017,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   }
+  }
+ }
+}

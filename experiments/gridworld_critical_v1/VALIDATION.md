@@ -1,5 +1,7 @@
 # Validation of the two tests on the published map
 
+**A second validation, with the paper's own data recipes, is in [VALIDATION_PUBLISHED.md](VALIDATION_PUBLISHED.md) (November 12 2026).**
+
 Prepared November 10 2026 for David. Plain baselines only; no BCA policy or control was trained. The pass marks are in [PROTOCOL.md](PROTOCOL.md) and were written before any training. The validation was run once.
 
 Quick navigation: [Verdict](#1-verdict) · [What was run](#2-what-was-run) · [Competence](#3-competence-fails) · [The critic's errors](#4-the-critics-errors-are-as-intended) · [Behavior](#5-does-the-gap-change-what-the-baseline-does) · [The paper's noise](#6-the-papers-noise-makes-little-difference) · [Options](#7-options-for-you) · [Files](#8-files-and-commands)

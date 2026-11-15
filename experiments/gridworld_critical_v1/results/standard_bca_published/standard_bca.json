@@ -1,0 +1,405 @@
+{
+ "baselines": "published_validation_2",
+ "alpha": 1.0,
+ "data_seeds": [
+  6401,
+  6402,
+  6403
+ ],
+ "train_seeds": [
+  20,
+  21,
+  22
+ ],
+ "devices": [
+  "cuda:0"
+ ],
+ "marks": {
+  "K1_helps_where_there_is_room": {
+   "per_dataset": {
+    "6401": {
+     "Standard BCA": 0.7984513053877796,
+     "Baseline": 0.7708373633547955,
+     "higher": true
+    },
+    "6402": {
+     "Standard BCA": 0.893813442291644,
+     "Baseline": 0.8794958700394897,
+     "higher": true
+    },
+    "6403": {
+     "Standard BCA": 0.7600125843043958,
+     "Baseline": 0.7519528242549081,
+     "higher": true
+    }
+   },
+   "datasets_higher": 3,
+   "mean_gain": 0.01666375811154197,
+   "passed": false
+  },
+  "K2_not_a_side_effect": {
+   "passed": true,
+   "Shuffled control": {
+    "per_dataset": {
+     "6401": {
+      "Standard BCA": 0.7984513053877796,
+      "Shuffled control": 0.7724274306604727
+     },
+     "6402": {
+      "Standard BCA": 0.893813442291644,
+      "Shuffled control": 0.8892673141493752
+     },
+     "6403": {
+      "Standard BCA": 0.7600125843043958,
+      "Shuffled control": 0.7631082810446074
+     }
+    },
+    "datasets_higher": 2,
+    "passed": true
+   },
+   "Decisive baseline": {
+    "per_dataset": {
+     "6401": {
+      "Standard BCA": 0.7984513053877796,
+      "Decisive baseline": 0.647692000601993
+     },
+     "6402": {
+      "Standard BCA": 0.893813442291644,
+      "Decisive baseline": 0.9894234259765375
+     },
+     "6403": {
+      "Standard BCA": 0.7600125843043958,
+      "Decisive baseline": 0.6607669532775227
+     }
+    },
+    "datasets_higher": 2,
+    "passed": true
+   }
+  },
+  "K3_no_harm_where_the_baseline_is_good": {
+   "passed": true,
+   "optimal": {
+    "score_change": 0.0011837136104734247,
+    "lava_change": -0.0005634831032624021,
+    "passed": true
+   },
+   "other_starts": {
+    "score_change": -5.8161513559085165e-05,
+    "lava_change": 5.533396279516073e-05,
+    "passed": true
+   }
+  },
+  "standard_bca_helps_on_the_published_map": false
+ },
+ "continued_baseline_reproduces_the_saved_one": {
+  "runs": 27,
+  "largest_difference_in_any_preference": 0.0,
+  "runs_identical": 27,
+  "largest_difference_in_score": 0.0
+ },
+ "summary": {
+  "optimal": {
+   "baseline": {
+    "runs": 9,
+    "score": 0.9420017585180323,
+    "lowest": 0.9037903125877157,
+    "lava": 0.08577616212974948,
+    "timeout": 0.018017905047556192,
+    "command_strength": 0.9303224740733563,
+    "per_dataset": {
+     "6401": 0.9377707742513208,
+     "6402": 0.9493255737813175,
+     "6403": 0.938908927521458
+    },
+    "critical_fatal_command": 0.006277880564629661,
+    "critical_width_fatal": 0.05701644532382488,
+    "critical_width_through": 0.05966030226813422,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05561141876710786,
+    "second_critical_width_through": 0.06383968434400028,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "decisive_baseline": {
+    "runs": 9,
+    "score": 0.970109884964555,
+    "lowest": 0.9554805320964335,
+    "lava": 0.074777538029944,
+    "timeout": 0.002274891508028153,
+    "command_strength": 1.0,
+    "per_dataset": {
+     "6401": 0.969852686384995,
+     "6402": 0.9714095616571049,
+     "6403": 0.9690674068515651
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "scaled_baseline": {
+    "runs": 9,
+    "score": 0.9436397215527221,
+    "lowest": 0.9034624977785246,
+    "lava": 0.08451786715125859,
+    "timeout": 0.017717867277557277,
+    "command_strength": 0.9305238055604536,
+    "per_dataset": {
+     "6401": 0.9366474742600017,
+     "6402": 0.9535688682371397,
+     "6403": 0.9407028221610253
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "shuffled_width": {
+    "runs": 9,
+    "score": 0.9432428362660646,
+    "lowest": 0.9075286672544741,
+    "lava": 0.0852944334310682,
+    "timeout": 0.017318891533366243,
+    "command_strength": 0.9304264708863736,
+    "per_dataset": {
+     "6401": 0.9391285784044244,
+     "6402": 0.9488943697385562,
+     "6403": 0.9417055606552139
+    },
+    "critical_fatal_command": 0.006271294513538092,
+    "critical_width_fatal": 0.0565379804207219,
+    "critical_width_through": 0.05892253087626563,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05556066003110674,
+    "second_critical_width_through": 0.06340012947718303,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "bca": {
+    "runs": 9,
+    "score": 0.9431854721285057,
+    "lowest": 0.906826765445548,
+    "lava": 0.08521267902648708,
+    "timeout": 0.017455221292979398,
+    "command_strength": 0.9305238055604538,
+    "per_dataset": {
+     "6401": 0.9434048934949986,
+     "6402": 0.9463427388869081,
+     "6403": 0.9398087840036103
+    },
+    "critical_fatal_command": 0.012816443674575255,
+    "critical_width_fatal": 0.05739188235667017,
+    "critical_width_through": 0.05933106607860989,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05608647275302145,
+    "second_critical_width_through": 0.06357262863053216,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   }
+  },
+  "other_starts": {
+   "baseline": {
+    "runs": 9,
+    "score": 0.9864469022836553,
+    "lowest": 0.9765915975750985,
+    "lava": 0.061509643427443174,
+    "timeout": 2.529442838520092e-12,
+    "command_strength": 0.9431418207702874,
+    "per_dataset": {
+     "6401": 0.9865855384443866,
+     "6402": 0.9861236670838007,
+     "6403": 0.9866315013227781
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 0.05424449323780007,
+    "critical_width_through": 0.060625921520921916,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05286481955813037,
+    "second_critical_width_through": 0.058795771251122154,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "decisive_baseline": {
+    "runs": 9,
+    "score": 0.9724248100705322,
+    "lowest": 0.9580362294536242,
+    "lava": 0.07468556883201792,
+    "timeout": 0.00016447669206369055,
+    "command_strength": 1.0,
+    "per_dataset": {
+     "6401": 0.972424810070532,
+     "6402": 0.972424810070532,
+     "6403": 0.972424810070532
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "scaled_baseline": {
+    "runs": 9,
+    "score": 0.9864354845232728,
+    "lowest": 0.9769275713120311,
+    "lava": 0.06152050610858965,
+    "timeout": 2.3725480062057284e-12,
+    "command_strength": 0.9425737639268239,
+    "per_dataset": {
+     "6401": 0.9864332121492975,
+     "6402": 0.986243994968234,
+     "6403": 0.9866292464522868
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "shuffled_width": {
+    "runs": 9,
+    "score": 0.9859646286389605,
+    "lowest": 0.9745450049302796,
+    "lava": 0.0619684711281403,
+    "timeout": 3.2788025654913743e-12,
+    "command_strength": 0.9418880401083002,
+    "per_dataset": {
+     "6401": 0.9856733107482913,
+     "6402": 0.9857980924764583,
+     "6403": 0.9864224826921321
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 0.05441712732944223,
+    "critical_width_through": 0.0608493292497264,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05335771313144101,
+    "second_critical_width_through": 0.05908264095584551,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   },
+   "bca": {
+    "runs": 9,
+    "score": 0.9863887407700962,
+    "lowest": 0.9760346458610385,
+    "lava": 0.061564977390238335,
+    "timeout": 5.98471960573481e-12,
+    "command_strength": 0.942573763926824,
+    "per_dataset": {
+     "6401": 0.9867769991742102,
+     "6402": 0.9859655845463596,
+     "6403": 0.9864236385897183
+    },
+    "critical_fatal_command": 0.0,
+    "critical_width_fatal": 0.054465960504280195,
+    "critical_width_through": 0.06082742992374632,
+    "critical_critic_rates_fatal_above": 9,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.05276347820957502,
+    "second_critical_width_through": 0.05940458675225576,
+    "second_critical_critic_rates_fatal_above": 0,
+    "critic_out_of_range": 0,
+    "calibrations_usable": 9
+   }
+  },
+  "mixed": {
+   "baseline": {
+    "runs": 9,
+    "score": 0.8007620192163978,
+    "lowest": 0.5861510363156719,
+    "lava": 0.14533685031618454,
+    "timeout": 0.09283052473221783,
+    "command_strength": 0.8858332359905359,
+    "per_dataset": {
+     "6401": 0.7708373633547955,
+     "6402": 0.8794958700394897,
+     "6403": 0.7519528242549081
+    },
+    "critical_fatal_command": 0.06896448733261312,
+    "critical_width_fatal": 0.27669913611478275,
+    "critical_width_through": 0.2856985342999299,
+    "critical_critic_rates_fatal_above": 5,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.2618524431147509,
+    "second_critical_width_through": 0.2527422449655003,
+    "second_critical_critic_rates_fatal_above": 3,
+    "critic_out_of_range": 6,
+    "calibrations_usable": 9
+   },
+   "decisive_baseline": {
+    "runs": 9,
+    "score": 0.765960793285351,
+    "lowest": 0.03064754928271056,
+    "lava": 0.041114982849928206,
+    "timeout": 0.23016174137630735,
+    "command_strength": 1.0,
+    "per_dataset": {
+     "6401": 0.647692000601993,
+     "6402": 0.9894234259765375,
+     "6403": 0.6607669532775227
+    },
+    "critical_fatal_command": 0.0,
+    "second_critical_fatal_command": 0.0
+   },
+   "scaled_baseline": {
+    "runs": 9,
+    "score": 0.7996199150113146,
+    "lowest": 0.5937250240241075,
+    "lava": 0.14653968704921577,
+    "timeout": 0.09271426831099816,
+    "command_strength": 0.8753838302327117,
+    "per_dataset": {
+     "6401": 0.7724974624606521,
+     "6402": 0.8756515671972925,
+     "6403": 0.7507107153759991
+    },
+    "critical_fatal_command": 0.07056592068309064,
+    "second_critical_fatal_command": 0.0
+   },
+   "shuffled_width": {
+    "runs": 9,
+    "score": 0.8082676752848185,
+    "lowest": 0.602323913989254,
+    "lava": 0.13931295525500834,
+    "timeout": 0.09171365446315925,
+    "command_strength": 0.8916081933727334,
+    "per_dataset": {
+     "6401": 0.7724274306604727,
+     "6402": 0.8892673141493752,
+     "6403": 0.7631082810446074
+    },
+    "critical_fatal_command": 0.059052291797219825,
+    "critical_width_fatal": 0.2590876474148697,
+    "critical_width_through": 0.2763574806352456,
+    "critical_critic_rates_fatal_above": 4,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.25485934503376484,
+    "second_critical_width_through": 0.23853915805617967,
+    "second_critical_critic_rates_fatal_above": 3,
+    "critic_out_of_range": 5,
+    "calibrations_usable": 9
+   },
+   "bca": {
+    "runs": 9,
+    "score": 0.8174257773279398,
+    "lowest": 0.6249114553080375,
+    "lava": 0.1365748540062047,
+    "timeout": 0.08573887878766284,
+    "command_strength": 0.8753838302327118,
+    "per_dataset": {
+     "6401": 0.7984513053877796,
+     "6402": 0.893813442291644,
+     "6403": 0.7600125843043958
+    },
+    "critical_fatal_command": 0.06628383917701458,
+    "critical_width_fatal": 0.27759362529549336,
+    "critical_width_through": 0.2991720363497734,
+    "critical_critic_rates_fatal_above": 4,
+    "second_critical_fatal_command": 0.0,
+    "second_critical_width_fatal": 0.2776172598823905,
+    "second_critical_width_through": 0.2557573641339938,
+    "second_critical_critic_rates_fatal_above": 3,
+    "critic_out_of_range": 7,
+    "calibrations_usable": 9
+   }
+  }
+ }
+}

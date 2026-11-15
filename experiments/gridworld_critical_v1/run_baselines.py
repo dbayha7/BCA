@@ -102,7 +102,9 @@ def refresh(states, banks, keys, modes, runs, step, readouts):
     frozen["support_floor"][:] = -1e9
     ready, events = np.zeros(len(runs), bool), []
     for i, run in enumerate(runs):
-        seed_words = np.array([run["train_seed"], run["data_seed"], C.ARMS.index(run["arm"]), step], np.uint32)
+        # A run may carry its own number (run_published.py's recipes are not in C.ARMS).
+        arm_number = run["arm_number"] if "arm_number" in run else C.ARMS.index(run["arm"])
+        seed_words = np.array([run["train_seed"], run["data_seed"], arm_number, step], np.uint32)
         reference, valid, diagnostics = freeze_reference(L.take(host_scale, i), units[i], eta[i], residual[i],
                                                         seed_words, WBCPConfig())
         usable = bool(valid and diagnostics.get("certified") and np.isfinite(float(reference.threshold)))
