@@ -1,0 +1,68 @@
+wrote fig_honeypot_trajectories.png
+wrote fig_bottleneck_trajectories.png
+wrote fig_published_trajectories.png
+
+PLOTTED VALUES
+    close-up, best other move chosen (cell, move): count: {(24, 'up'): 18, (33, 'up'): 26, (35, 'up'): 27, (44, 'right'): 27, (24, 'right'): 9, (33, 'down'): 1}
+  Honeypot close-up: true, critic at the withheld move: [-5.0, 5.029]
+  Honeypot close-up: true, critic at the best other move: [5.395, 5.512]
+  Honeypot runs drawn, baseline: Drawn runs. reached the goal: 302 · ended in hazard 34: 22.
+  Honeypot runs drawn, support_blind_width: Drawn runs. reached the goal: 324.
+  Honeypot outcome, "The data's own policy\n(the demonstrator)": 0.0
+  Honeypot outcome, 'Standard\nlearner': 6.645
+  Honeypot outcome, 'BCA\npolicy guard': 0.058
+  Honeypot outcome, 'Shuffled\ncontrol': 5.481
+  Honeypot outcome, 'Standard learner when\nthe move is in the data': 0.207
+    close-up, best other move chosen (cell, move): count: {(54, 'up'): 27}
+  Bottleneck close-up: true, critic at the bridge: [4.527, 3.683]
+  Bottleneck close-up: true, critic at the best other move: [3.5, 3.535]
+  Bottleneck runs drawn, baseline: Drawn runs. crossed and reached the goal: 12 · took the low exit: 312.
+  Bottleneck runs drawn, support_blind_width: Drawn runs. crossed and reached the goal: 2 · took the low exit: 322.
+  Bottleneck outcome, low exit 4.5, "The data's own policy (the demonstrator)": 0.0
+  Bottleneck outcome, low exit 4.5, 'Standard learner': 1.717
+  Bottleneck outcome, low exit 4.5, 'BCA policy guard': 0.314
+  Bottleneck outcome, low exit 4.5, 'Shuffled control': 0.47
+  Bottleneck outcome, low exit 4.5, 'Standard learner when the bridge is in the data': 77.067
+  Bottleneck outcome, low exit 3.5, "The data's own policy (the demonstrator)": 0.0
+  Bottleneck outcome, low exit 3.5, 'Standard learner': 5.777
+  Bottleneck outcome, low exit 3.5, 'BCA policy guard': 0.281
+  Bottleneck outcome, low exit 3.5, 'Shuffled control': 0.408
+  Bottleneck outcome, low exit 3.5, 'Standard learner when the bridge is in the data': 92.006
+  Bottleneck outcome, low exit 2.5, "The data's own policy (the demonstrator)": 0.0
+  Bottleneck outcome, low exit 2.5, 'Standard learner': 8.827
+  Bottleneck outcome, low exit 2.5, 'BCA policy guard': 0.0
+  Bottleneck outcome, low exit 2.5, 'Shuffled control': 3.729
+  Bottleneck outcome, low exit 2.5, 'Standard learner when the bridge is in the data': 97.137
+  Published map: the goal is reachable with cell 67 shut, with cell 83 shut, with both shut: [True, True, False]
+  Published recorded runs drawn: Drawn runs. reached the goal: 313 (via cell 83: 304, via cell 67: 9) · ended in lava: 11.
+  Published close-up, cells 72 and 92: lava move commanded per dataset: {72: 0.0, 92: 0.0}
+  Published close-up, cells 72 and 92: lava move happened per dataset: {72: 3.44, 92: 0.44}
+  Published close-up, cells 72 and 92: best command issued per dataset: {72: 155.3, 92: 27.3}
+  Published close-up: true, critic at the lava move: [0.038, 0.669]
+  Published close-up: true, critic at the best policy's move: [0.577, 0.372]
+  Published close-up: policies whose critic prefers the lava move, at cell 72 and at cell 92: [27, 27]
+  Published close-up: % of decisions at the two cells that command the lava move: {'baseline': np.float64(7.89), 'support_blind_width': np.float64(0.32), 'support_shuffled': np.float64(0.43)}
+  Published runs drawn, baseline: Drawn runs. reached the goal: 293 (via cell 83: 259, via cell 67: 34) · ended in lava: 31.
+  Published runs drawn, support_blind_width: Drawn runs. reached the goal: 304 (via cell 83: 295, via cell 67: 9) · ended in lava: 19 · ran out of time: 1.
+  Published outcome, "The data's own policy\n(the best policy)": 1.0
+  Published outcome, 'Standard\nlearner': 0.9527
+  Published outcome, 'BCA\npolicy guard': 0.9903
+  Published outcome, 'Shuffled\ncontrol': 0.9836
+
+CHECKS (value, expected, allowed gap)
+  ok   Honeypot: critic's error at the withheld move: 10.0294 vs 9.88 (+-0.4)
+  ok   Honeypot: per-dataset hazard endings match the saved table, baseline: 1.77636e-15 vs 0 (+-1e-09)
+  ok   Honeypot: per-dataset hazard endings match the saved table, support_blind_width: 0 vs 0 (+-1e-09)
+  ok   Honeypot: per-dataset hazard endings match the saved table, support_shuffled: 1.77636e-15 vs 0 (+-1e-09)
+  ok   Bottleneck: per-dataset crossings match the saved table, exit 4.5, baseline: 8.88178e-16 vs 0 (+-1e-09)
+  ok   Bottleneck: per-dataset crossings match the saved table, exit 4.5, support_blind_width: 4.44089e-16 vs 0 (+-1e-09)
+  ok   Bottleneck: per-dataset crossings match the saved table, exit 3.5, baseline: 1.77636e-15 vs 0 (+-1e-09)
+  ok   Bottleneck: per-dataset crossings match the saved table, exit 3.5, support_blind_width: 4.44089e-16 vs 0 (+-1e-09)
+  ok   Bottleneck: per-dataset crossings match the saved table, exit 2.5, baseline: 4.44089e-16 vs 0 (+-1e-09)
+  ok   Bottleneck: per-dataset crossings match the saved table, exit 2.5, support_blind_width: 0 vs 0 (+-1e-09)
+  ok   Published: every run's score matches the saved record, baseline: 0 vs 0 (+-1e-09)
+  ok   Published: mean score, baseline: 0.952716 vs 0.953 (+-0.0006)
+  ok   Published: every run's score matches the saved record, support_blind_width: 0 vs 0 (+-1e-09)
+  ok   Published: mean score, support_blind_width: 0.990254 vs 0.99 (+-0.0006)
+  ok   Published: every run's score matches the saved record, support_shuffled: 0 vs 0 (+-1e-09)
+  ok   Published: mean score, support_shuffled: 0.983566 vs 0.984 (+-0.0006)

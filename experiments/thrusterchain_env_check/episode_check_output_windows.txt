@@ -1,0 +1,42 @@
+  fixed commands, stalling world:     49 s
+  fixed commands, no-stall comparison world:     74 s
+  reference controllers, bank none:     85 s
+  reference controllers, bank mild:     95 s
+  reference controllers, bank strong:    107 s
+  reference controllers, bank recorded:    118 s
+  reference controllers, bank strong_current:    129 s
+  reference controllers, bank big_waves:    142 s
+  reference controllers, bank big_kicks:    157 s
+
+bank              T3a zero T3b scoring T3c env pts T4 commands T4 float32  T4 start    T5 pts
+none              0.00e+00    2.56e-13    1.51e-06    1.02e-04   1.66e-07  2.52e-04  9.29e-16
+mild              0.00e+00    3.41e-13    1.19e-06    9.33e-05   1.23e-07  2.30e-04  0.00e+00
+strong            0.00e+00    5.12e-13    1.02e-06    7.27e-05   1.27e-07  2.51e-04  0.00e+00
+recorded          0.00e+00    9.95e-14    2.76e-06    2.61e-04   1.03e-06  3.34e-04  0.00e+00
+strong_current    0.00e+00    3.98e-13    7.86e-06    5.95e-04   1.40e-06  1.47e-03  0.00e+00
+big_waves         0.00e+00    1.85e-13    4.17e-06    3.28e-04   8.38e-07  6.40e-04  0.00e+00
+big_kicks         0.00e+00    9.09e-13    8.48e-06    6.71e-04   2.67e-06  2.12e-03  0.00e+00
+
+gain (reported, not judged)   commands    float32      start
+none                              4.69       0.16      10.36
+mild                              4.66       0.15      14.66
+strong                            4.58       0.16      18.40
+recorded                          2.54       0.22       4.90
+strong_current                    4.96       0.25      13.73
+big_waves                         3.30       0.13       7.08
+big_kicks                         2.50       0.19       4.79
+
+T1: 16500 episodes on fixed commands, 0 differ
+T2: 30500 episodes in all, 0 bookkeeping violations
+T6 recorded: 100000 states, next state gap 0.00e+00, reward gap 0.00e+00
+T6 strong_current: 100000 states, next state gap 0.00e+00, reward gap 0.00e+00
+T6 big_waves: 100000 states, next state gap 0.00e+00, reward gap 0.00e+00
+T6 big_kicks: 100000 states, next state gap 0.00e+00, reward gap 0.00e+00
+  T1 same commands, same episode                     pass
+  T2 episode bookkeeping                             pass
+  T3 pinned references reproduce                     pass
+  T4 the environment does not magnify small errors   FAIL
+  T5 same numbers on both setups                     pass
+  T6 the JAX twin agrees                             pass
+VERDICT (windows): FAIL   (157 s)
+wrote episode_check_result_windows.json

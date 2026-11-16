@@ -1,0 +1,65 @@
+  fixed commands, stalling world:     42 s
+  fixed commands, no-stall comparison world:     65 s
+  reference controllers, bank none:     75 s
+  reference controllers, bank mild:     85 s
+  reference controllers, bank strong:     94 s
+  reference controllers, bank recorded:    104 s
+  reference controllers, bank strong_current:    113 s
+  reference controllers, bank big_waves:    123 s
+  reference controllers, bank big_kicks:    133 s
+
+bank              T3a zero T3b scoring T3c env pts T4 commands T4 float32  T4 start    T5 pts
+none              0.00e+00    5.68e-14    1.51e-06    1.02e-04   1.66e-07  2.52e-04         -
+mild              0.00e+00    1.14e-13    1.19e-06    9.33e-05   1.23e-07  2.30e-04         -
+strong            0.00e+00    1.42e-13    1.02e-06    7.27e-05   1.27e-07  2.51e-04         -
+recorded          0.00e+00    2.84e-14    2.76e-06    2.61e-04   1.03e-06  3.34e-04         -
+strong_current    0.00e+00    1.71e-13    7.86e-06    5.95e-04   1.40e-06  1.47e-03         -
+big_waves         0.00e+00    2.84e-14    4.17e-06    3.28e-04   8.38e-07  6.40e-04         -
+big_kicks         0.00e+00    2.27e-13    8.48e-06    6.71e-04   2.67e-06  2.12e-03         -
+
+gain (reported, not judged)   commands    float32      start
+none                              4.69       0.16      10.36
+mild                              4.66       0.15      14.66
+strong                            4.58       0.16      18.40
+recorded                          2.54       0.22       4.90
+strong_current                    4.96       0.25      13.73
+big_waves                         3.30       0.13       7.08
+big_kicks                         2.50       0.19       4.79
+
+T1: 16500 episodes on fixed commands, 0 differ
+T2: 30500 episodes in all, 0 bookkeeping violations
+  T1 same commands, same episode                     pass
+  T2 episode bookkeeping                             pass
+  T3 pinned references reproduce                     pass
+  T4 the environment does not magnify small errors   FAIL
+  T5 regenerated starts equal the pinned ones        pass
+VERDICT (wsl): FAIL   (133 s)
+
+Recorded by the host study for trained policies (read, not played): final actors, closed loop
+quality / setup                    policies within 0.05 largest per start            bank largest bank mean
+medium / cql-alone                        1           1            0.0001  strong_current           0.00001
+medium / cql-iw                           1           1            0.0000  strong_current           0.00001
+medium / cql-standard                     1           1            0.0002  strong_current           0.00001
+medium / iql-alone                        5           0           14.3182  strong_current           0.11091
+medium / iql-iw                           5           0            5.7916  strong_current           0.08391
+medium / iql-standard                     5           0            9.9286        recorded           0.08747
+medium / rebrac-alone                     1           1            0.0000       big_waves           0.00000
+medium / rebrac-iw                        1           1            0.0000        recorded           0.00000
+medium / rebrac-standard                  1           1            0.0000       big_waves           0.00000
+medium / td3_bc-alone                     5           0           22.6809        recorded           0.08974
+medium / td3_bc-iw                        5           0           21.8744        recorded           0.24296
+medium / td3_bc-standard                  5           0           35.5975        recorded           0.27224
+medium-expert / cql-alone                 1           1            0.0000       big_kicks           0.00001
+medium-expert / cql-iw                    1           1            0.0000       big_kicks           0.00001
+medium-expert / cql-standard              1           1            0.0000       big_kicks           0.00001
+medium-expert / iql-alone                 5           0            0.5281            none           0.00305
+medium-expert / iql-iw                    5           0            0.9633            mild           0.00338
+medium-expert / iql-standard              5           1            1.5911  strong_current           0.00693
+medium-expert / rebrac-alone              5           2            2.5029  strong_current           0.06348
+medium-expert / rebrac-iw                 5           2            1.8054  strong_current           0.01245
+medium-expert / rebrac-standard           5           1            2.2049  strong_current           0.02648
+medium-expert / td3_bc-alone              5           5            0.0183       big_kicks           0.00020
+medium-expert / td3_bc-iw                 5           2            0.2821       big_kicks           0.00102
+medium-expert / td3_bc-standard           5           3            0.1255       big_kicks           0.00071
+wrote pinned_reference.npz
+wrote episode_check_result_wsl.json

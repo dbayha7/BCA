@@ -1,0 +1,260 @@
+{
+ "written": "2026-11-15T18:46:55-05:00",
+ "plan": "EPISODE_CHECK.md",
+ "setup": "windows",
+ "seed": 2026111511,
+ "code_root": "C:\\Users\\David\\dev\\BCA",
+ "interpreter": "3.10.11",
+ "numpy": "2.2.6",
+ "gymnasium": "1.0.0",
+ "imported_files_sha256": {
+  "experiments/shift/thruster_chain.py": "f22f2e214ad9231bee4ce60ef55e64409534c2654c4e184406553ba8ed67dde1",
+  "experiments/shift/truth.py": "b498c5ee37b9c7f7fe441390c8f8476d2bf151da24bc4f1a6ae3d6f631d5750c",
+  "experiments/shift/recorder.py": "3928cad36566a9680a0017bc51825ed6e8a8aaaece3c46d0e762993db367ac0d",
+  "experiments/shift/__init__.py": "2c7ef472e6263ecaf9481ef7aab73a5cb0b64d0370f8fca7ae368cda4794f2f8",
+  "experiments/signal/gapped_lq.py": "f8ec7cc6c7d9d013d3e509cd3aba0a6dedf1f371480b4e1977f51e2b5dd923aa",
+  "experiments/signal/lq_harness.py": "78a29cd86377d270d9d6e7986014870bbbbd826915d72a01c0c769050239474b"
+ },
+ "tolerances": {
+  "exact_return": 1e-09,
+  "points": 0.001,
+  "platform_points": 1e-06,
+  "starts": 1e-12,
+  "jax": 1e-12,
+  "identity": 1e-09,
+  "disturbance": 1e-06
+ },
+ "marks": {
+  "T1 same commands, same episode": true,
+  "T2 episode bookkeeping": true,
+  "T3 pinned references reproduce": true,
+  "T4 the environment does not magnify small errors": false,
+  "T5 same numbers on both setups": true,
+  "T6 the JAX twin agrees": true
+ },
+ "verdict": "FAIL",
+ "measurements": {
+  "T1": {
+   "episodes": 16500,
+   "episodes_that_differ": 0
+  },
+  "T2": {
+   "episodes": 30500,
+   "violations": 0
+  },
+  "T3": {
+   "none": {
+    "points_per_return_unit": 0.13070265733795416,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 2.5579538487363607e-13,
+    "c_public_environment_points_gap": 1.505036171191442e-06,
+    "c_public_environment_return_gap": 1.1514962295677833e-05,
+    "c_public_environment_mean_points_gap": 8.157368346496468e-08
+   },
+   "mild": {
+    "points_per_return_unit": 0.09932838555557945,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 3.410605131648481e-13,
+    "c_public_environment_points_gap": 1.1867813613197766e-06,
+    "c_public_environment_return_gap": 1.1948058499910985e-05,
+    "c_public_environment_mean_points_gap": 1.4862959658614698e-07
+   },
+   "strong": {
+    "points_per_return_unit": 0.07869073133656784,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 5.115907697472721e-13,
+    "c_public_environment_points_gap": 1.0166355968708146e-06,
+    "c_public_environment_return_gap": 1.2919381731535395e-05,
+    "c_public_environment_mean_points_gap": 2.2151206833045142e-07
+   },
+   "recorded": {
+    "points_per_return_unit": 1.8712691701999087,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 9.947598300641403e-14,
+    "c_public_environment_points_gap": 2.758953328531005e-06,
+    "c_public_environment_return_gap": 1.4743754519486174e-06,
+    "c_public_environment_mean_points_gap": 1.5564998244221275e-07
+   },
+   "strong_current": {
+    "points_per_return_unit": 0.6660030319600578,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 3.979039320256561e-13,
+    "c_public_environment_points_gap": 7.861221796190151e-06,
+    "c_public_environment_return_gap": 1.1803582594893669e-05,
+    "c_public_environment_mean_points_gap": 2.625093329696717e-06
+   },
+   "big_waves": {
+    "points_per_return_unit": 1.4161115703390177,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 1.8474111129762605e-13,
+    "c_public_environment_points_gap": 4.169848238817834e-06,
+    "c_public_environment_return_gap": 2.944576067420712e-06,
+    "c_public_environment_mean_points_gap": 5.684053944633964e-07
+   },
+   "big_kicks": {
+    "points_per_return_unit": 1.0026237548655632,
+    "starts": 1000,
+    "a_zero_command_return_gap": 0.0,
+    "b_scoring_code_return_gap": 9.094947017729282e-13,
+    "c_public_environment_points_gap": 8.48033969621157e-06,
+    "c_public_environment_return_gap": 8.458147590317822e-06,
+    "c_public_environment_mean_points_gap": 1.147834886944377e-06
+   }
+  },
+  "T4": {
+   "none": {
+    "commands": 0.00010218172130051853,
+    "state read as float32": 1.6568908221010359e-07,
+    "start": 0.0002522187788246829
+   },
+   "mild": {
+    "commands": 9.325670072844732e-05,
+    "state read as float32": 1.2303690890645596e-07,
+    "start": 0.00022952963395657597
+   },
+   "strong": {
+    "commands": 7.272634968779804e-05,
+    "state read as float32": 1.2746212408579965e-07,
+    "start": 0.0002514931175902613
+   },
+   "recorded": {
+    "commands": 0.0002611291974604846,
+    "state read as float32": 1.0325384849521208e-06,
+    "start": 0.0003344487220248711
+   },
+   "strong_current": {
+    "commands": 0.0005948995324153652,
+    "state read as float32": 1.3995460115407668e-06,
+    "start": 0.0014729394371584715
+   },
+   "big_waves": {
+    "commands": 0.00032770128478144984,
+    "state read as float32": 8.38103088989668e-07,
+    "start": 0.0006396853245904036
+   },
+   "big_kicks": {
+    "commands": 0.0006711792845962406,
+    "state read as float32": 2.6705673896017234e-06,
+    "start": 0.0021178945892134627
+   }
+  },
+  "T4_gain": {
+   "none": {
+    "commands": 4.690997325701014,
+    "state read as float32": 0.1620567077023356,
+    "start": 10.359996448338627
+   },
+   "mild": {
+    "commands": 4.660145715802863,
+    "state read as float32": 0.14666310346935424,
+    "start": 14.662329726682078
+   },
+   "strong": {
+    "commands": 4.58321907137975,
+    "state read as float32": 0.1601512246624394,
+    "start": 18.403013309150072
+   },
+   "recorded": {
+    "commands": 2.5378934248062994,
+    "state read as float32": 0.21585154236914203,
+    "start": 4.9012630862223
+   },
+   "strong_current": {
+    "commands": 4.96093982827418,
+    "state read as float32": 0.25273916396151547,
+    "start": 13.726965257710006
+   },
+   "big_waves": {
+    "commands": 3.3041721534634036,
+    "state read as float32": 0.13301267879604764,
+    "start": 7.076678040473803
+   },
+   "big_kicks": {
+    "commands": 2.5030113577263284,
+    "state read as float32": 0.19016377159579026,
+    "start": 4.785933603713269
+   }
+  },
+  "T5": {
+   "none": {
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 9.286982371602489e-16,
+    "stall_aware_starts_bit_for_bit": 999
+   },
+   "mild": {
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 0.0,
+    "stall_aware_starts_bit_for_bit": 1000
+   },
+   "strong": {
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 0.0,
+    "stall_aware_starts_bit_for_bit": 1000
+   },
+   "recorded": {
+    "starts_gap": 5.551115123125783e-17,
+    "starts_bit_for_bit": false,
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 0.0,
+    "stall_aware_starts_bit_for_bit": 1000
+   },
+   "strong_current": {
+    "starts_gap": 5.551115123125783e-17,
+    "starts_bit_for_bit": false,
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 0.0,
+    "stall_aware_starts_bit_for_bit": 1000
+   },
+   "big_waves": {
+    "starts_gap": 1.1102230246251565e-16,
+    "starts_bit_for_bit": false,
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 0.0,
+    "stall_aware_starts_bit_for_bit": 1000
+   },
+   "big_kicks": {
+    "starts_gap": 5.551115123125783e-17,
+    "starts_bit_for_bit": false,
+    "zero_points_gap": 0.0,
+    "zero_starts_bit_for_bit": 1000,
+    "stall_aware_points_gap": 0.0,
+    "stall_aware_starts_bit_for_bit": 1000
+   }
+  },
+  "T6": {
+   "recorded": {
+    "states": 100000,
+    "next_state_gap": 0.0,
+    "reward_gap": 0.0
+   },
+   "strong_current": {
+    "states": 100000,
+    "next_state_gap": 0.0,
+    "reward_gap": 0.0
+   },
+   "big_waves": {
+    "states": 100000,
+    "next_state_gap": 0.0,
+    "reward_gap": 0.0
+   },
+   "big_kicks": {
+    "states": 100000,
+    "next_state_gap": 0.0,
+    "reward_gap": 0.0
+   }
+  }
+ },
+ "recorded_precision_of_trained_policies": null
+}

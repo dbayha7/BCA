@@ -1,0 +1,47 @@
+Published gridworld, best-policy data, datasets 6501 to 6509, 27 policies per method. Exact, from the start.
+
+policy                                   reaches 83 decisions  commands lava risk lava from all lava
+                                                        at 83   up/down  per dec.   cell 83         
+The data's own policy (the best policy)       95.8%     1.018     0.00%     4.00%     4.07%    4.86%
+Standard learner                              82.7%     0.879     0.00%     4.00%     3.51%    8.63%
+BCA policy guard                              95.0%     1.009     0.00%     4.00%     4.04%    5.78%
+Shuffled control                              94.3%     1.002     0.00%     4.00%     4.01%    6.40%
+
+What is commanded at cell 83 (average chance of each command)
+policy                                      stay      up    down    left   right   policies whose likeliest command is right
+The data's own policy (the best policy)    0.00%   0.00%   0.00%   0.00% 100.00%   1 of 1
+Standard learner                           0.00%   0.00%   0.00%   0.00% 100.00%   27 of 27
+BCA policy guard                           0.00%   0.00%   0.00%   0.00% 100.00%   27 of 27
+Shuffled control                           0.00%   0.00%   0.00%   0.00% 100.00%   27 of 27
+largest chance of commanding up or down at cell 83 in any one policy: The data's own policy (the best policy): 0.00%; Standard learner: 0.00%; BCA policy guard: 0.00%; Shuffled control: 0.00%
+
+Where the lava endings come from (% of episodes; the columns add up to all lava)
+policy                                                  cell 83   cells 72, 74, 92, 94                cell 67   cells 56, 58, 76, 78              elsewhere  all lava
+The data's own policy (the best policy)                   4.07%                  0.48%                  0.16%                  0.15%                 -0.00%     4.86%
+Standard learner                                          3.51%                  3.62%                  0.53%                  0.97%                 -0.00%     8.63%
+BCA policy guard                                          4.04%                  1.30%                  0.16%                  0.28%                  0.00%     5.78%
+Shuffled control                                          4.01%                  1.94%                  0.15%                  0.29%                  0.00%     6.40%
+
+Route or choice, by group of cells: decisions per episode made there, and the lava risk of one decision there
+(a safe command risks 2% to 4% through the noise; a lava-directed command risks 92% to 94%)
+policy                                                          cell 83           cells 72, 74, 92, 94                        cell 67           cells 56, 58, 76, 78
+The data's own policy (the best policy)        1.018 decisions x  4.00%       0.223 decisions x  2.15%       0.040 decisions x  4.00%       0.065 decisions x  2.33%
+Standard learner                               0.879 decisions x  4.00%       0.422 decisions x  8.57%       0.133 decisions x  4.00%       0.266 decisions x  3.64%
+BCA policy guard                               1.009 decisions x  4.00%       0.500 decisions x  2.61%       0.039 decisions x  4.00%       0.077 decisions x  3.65%
+Shuffled control                               1.002 decisions x  4.00%       0.705 decisions x  2.76%       0.039 decisions x  4.00%       0.079 decisions x  3.67%
+
+At cells 72, 74, 92 and 94: decisions per episode, and how many of them command the move into the lava
+  The data's own policy (the best policy)  0.223 decisions, 0.0000 of them lava-directed (0.0%)
+  Standard learner                         0.422 decisions, 0.0304 of them lava-directed (7.2%)
+  BCA policy guard                         0.500 decisions, 0.0015 of them lava-directed (0.3%)
+  Shuffled control                         0.705 decisions, 0.0029 of them lava-directed (0.4%)
+  cell 83: lava 3.51% -> 4.04%; from the number of decisions (route) +0.52 points, from the risk per decision (choice) +0.00 points
+  cells 72, 74, 92, 94: lava 3.62% -> 1.30%; from the number of decisions (route) +0.43 points, from the risk per decision (choice) -2.75 points
+  cell 67: lava 0.53% -> 0.16%; from the number of decisions (route) -0.38 points, from the risk per decision (choice) +0.00 points
+  cells 56, 58, 76, 78: lava 0.97% -> 0.28%; from the number of decisions (route) -0.69 points, from the risk per decision (choice) +0.00 points
+
+Standard learner to BCA policy guard, at cell 83
+  decisions at cell 83 per episode: 0.879 -> 1.009; lava risk per decision: 4.00% -> 4.00%
+  lava endings from cell 83: 3.51% -> 4.04% of episodes
+  change from the number of decisions (route): +0.52 points; from the risk per decision (choice): +0.00 points (from the averages above; the two add up to the change in the product of the averages)
+  all lava endings: 8.63% -> 5.78%; goal: 90.64% -> 94.21%
