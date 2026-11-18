@@ -1,0 +1,27 @@
+# Frozen paths: CI fails any change that edits, moves or deletes a file listed here.
+# Adding new files under a frozen folder is allowed. A line ending in "/" freezes a whole folder;
+# any other line freezes one file. Paths are relative to the repository root.
+#
+# Checked by .github/scripts/check_frozen.py. The check reads this list from the base branch as
+# well as from the change, so removing an entry only takes effect after that removal is merged.
+# Only the repository owner unfreezes a path.
+
+# The complete original Unifloral tree, preserved at a pinned revision (README, NOTICE).
+baselines/unifloral/
+
+# Hashed into the stage 2 pre-registrations; never edit, move or delete
+# (standing rules, docs/session-history/2026-10-14_cloud_session_01Ro4BnWxcsoeFi9CGcTQ5bx.md).
+outputs/shift/beyond-the-data/stage2/
+outputs/shift/beyond-the-data/stage2_gpu/
+experiments/shift/
+
+# Byte-pinned snapshots, receipts and frozen execution files (.gitattributes).
+outputs/advisor_progress/2026-09-29/
+outputs/standard_bca/cql/hopper/host/s202609171/recovery-v1/
+experiments/standard_bca/cql_validation_recovery/
+
+# The known-shift weighting test: approval.json binds the bytes of its code, spec and records
+# (.gitattributes).
+experiments/shift_iw/
+experiments/iw/
+outputs/shift_iw/

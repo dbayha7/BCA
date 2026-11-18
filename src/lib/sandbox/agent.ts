@@ -4,8 +4,8 @@
 // and REPLAYS them on the trusted simulators (`replayGridActions` / `replayThrusterCommands`), so
 // every number shown in the UI is computed by trusted code.
 
-import { generateDataset, greedy, mulberry32, qStar, type Env } from "../rl";
-import { executedCommand, HORIZON, KNEE, STALL_SLOPE, recordCommand, resetRecorded, stepContinuous, toCell } from "../thrusterchain";
+import { generateDataset, greedy, mulberry32, qStar, type Env } from "@/lib/rl";
+import { executedCommand, HORIZON, KNEE, STALL_SLOPE, recordCommand, resetRecorded, stepContinuous, toCell } from "@/lib/thrusterchain";
 import { UserCodeFailure, describeValue, type GridPlaygroundEnv, type PlaygroundEnvId } from "./protocol";
 import type { CodePreset } from "./reward";
 
