@@ -56,21 +56,31 @@ class WorkTree:
 
 
 class GitTree:
-    """Files as committed at a revision; works on sparse and blob-less checkouts."""
+    """Files as committed at a revision; works on sparse and blob-less checkouts.
+
+    Any git failure raises, so a blob that cannot be fetched fails the check instead of
+    counting as zero lines.
+    """
 
     def __init__(self, rev, root):
-        self.rev, self.root = rev, Path(root)
+        self.root = Path(root)
+        self.rev = self._git("rev-parse", "--verify", "--end-of-options", f"{rev}^{{commit}}").strip()
 
     def _git(self, *args):
-        return subprocess.run(["git", *args], cwd=self.root, capture_output=True)
+        result = subprocess.run(["git", *args], cwd=self.root, capture_output=True)
+        if result.returncode:
+            raise RuntimeError(f"git {' '.join(args)} failed: {result.stderr.decode('utf8').strip()}")
+        return result.stdout.decode("utf8")
 
     def read(self, path):
-        result = self._git("cat-file", "blob", f"{self.rev}:{path}")
-        return result.stdout.decode("utf8") if result.returncode == 0 else None
+        # ls-tree needs only tree objects, so "absent" is told apart from "blob not fetched".
+        entry = self._git("ls-tree", self.rev, "--", path).split()
+        if len(entry) < 2 or entry[1] != "blob" or not entry[0].startswith("100"):
+            return None
+        return self._git("cat-file", "blob", f"{self.rev}:{path}")
 
     def files(self, folder):
-        result = self._git("ls-tree", "-r", "--name-only", self.rev, "--", folder)
-        return sorted(result.stdout.decode("utf8").splitlines()) if result.returncode == 0 else []
+        return sorted(self._git("ls-tree", "-r", "--name-only", self.rev, "--", folder).splitlines())
 
 
 def split_frontmatter(text):
@@ -154,8 +164,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--rev", help="read files from this git revision instead of the working tree")
     opt = parser.parse_args(argv)
-    tree = GitTree(opt.rev, ROOT) if opt.rev else WorkTree(ROOT)
-    total, loaded, notes = measure(tree)
+    try:
+        tree = GitTree(opt.rev, ROOT) if opt.rev else WorkTree(ROOT)
+        total, loaded, notes = measure(tree)
+    except RuntimeError as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 2
     for path, lines in loaded.items():
         print(f"{lines:5d}  {path}")
     for note in notes:

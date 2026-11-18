@@ -123,19 +123,38 @@ class ClaudeMdTest(unittest.TestCase):
         total, _, _ = claude_md.measure(claude_md.GitTree("HEAD", self.repo.root))
         self.assertEqual(total, 6)
 
+    def test_git_tree_skips_folders_and_missing_paths(self):
+        self.repo.write("CLAUDE.md", "@docs @nothing.md\n")
+        self.repo.write("docs/a.md", lines(5))
+        self.repo.commit()
+        total, loaded, _ = claude_md.measure(claude_md.GitTree("HEAD", self.repo.root))
+        self.assertEqual((total, list(loaded)), (1, ["CLAUDE.md"]))
+
+    def test_git_errors_fail_loudly_instead_of_counting_zero(self):
+        self.repo.write("CLAUDE.md", lines(5))
+        self.repo.commit()
+        with self.assertRaises(RuntimeError):
+            claude_md.GitTree("no-such-revision", self.repo.root)
+        tree = claude_md.GitTree("HEAD", self.repo.root)
+        tree._git = lambda *args: (_ for _ in ()).throw(RuntimeError("blob not fetched"))
+        with self.assertRaises(RuntimeError):
+            claude_md.measure(tree)
+        self.assertEqual(self.run_main(["--rev", "no-such-revision"]), 2)
+
     def test_main_fails_over_the_limit(self):
         self.repo.write("CLAUDE.md", lines(250))
+        self.assertEqual(self.run_main([]), 1)
+
+    def run_main(self, argv):
         original = claude_md.ROOT
         claude_md.ROOT = self.repo.root
+        stdout, stderr = sys.stdout, sys.stderr
         try:
             with open(os.devnull, "w") as sink:
-                stdout, stderr = sys.stdout, sys.stderr
                 sys.stdout = sys.stderr = sink
-                try:
-                    self.assertEqual(claude_md.main([]), 1)
-                finally:
-                    sys.stdout, sys.stderr = stdout, stderr
+                return claude_md.main(argv)
         finally:
+            sys.stdout, sys.stderr = stdout, stderr
             claude_md.ROOT = original
 
 
@@ -184,6 +203,17 @@ class FrozenTest(unittest.TestCase):
     def test_uncommitted_edits_in_the_working_tree_fail(self):
         self.repo.write("single.txt", "b\n")
         self.assertEqual(self.check(), [("M", "single.txt")])
+
+    def test_a_base_without_the_list_checks_against_the_head_list(self):
+        self.repo.git("rm", "-q", frozen.LIST)
+        self.base = self.repo.commit("before the list existed")
+        self.repo.write(frozen.LIST, "single.txt\n")
+        self.repo.write("single.txt", "b\n")
+        self.assertEqual(self.check(self.repo.commit()), [("M", "single.txt")])
+
+    def test_a_bad_revision_raises_instead_of_passing(self):
+        with self.assertRaises(RuntimeError):
+            frozen.violations("no-such-revision", "HEAD", cwd=self.repo.root)
 
     def test_a_prefix_is_not_a_folder_match(self):
         self.repo.write("pinned_other/file.txt", "a\n")

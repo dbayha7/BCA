@@ -41,8 +41,11 @@ def read_list(rev, cwd):
     if rev is None:
         file = Path(cwd) / LIST
         return file.read_text(encoding="utf8") if file.is_file() else ""
-    result = subprocess.run(["git", "cat-file", "blob", f"{rev}:{LIST}"], cwd=cwd, capture_output=True, text=True)
-    return result.stdout if result.returncode == 0 else ""
+    # ls-tree needs only tree objects, so "no list yet" is told apart from "blob not fetched",
+    # which raises instead of silently checking against an empty list.
+    if not git("ls-tree", rev, "--", LIST, cwd=cwd).strip():
+        return ""
+    return git("cat-file", "blob", f"{rev}:{LIST}", cwd=cwd)
 
 
 def is_frozen(path, frozen):

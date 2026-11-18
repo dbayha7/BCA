@@ -20,7 +20,7 @@ jobs:
     steps:
       # The working tree is about 2 GB. These checks read git objects, so fetch trees for the PR's
       # merge commit and its first parent (the base branch tip), and only the blobs they read.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2
           filter: blob:none
@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 15
     steps:
       # Only the web app; root files (package.json, bun.lock, configs) come with cone mode.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: |
             src
