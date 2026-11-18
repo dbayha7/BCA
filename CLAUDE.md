@@ -8,8 +8,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 bun run dev      # Start development server
 bun run build    # TypeScript check + Vite build
 bun run lint     # ESLint
+bun test         # Web app tests in tests/lab
 bun run preview  # Preview production build
 ```
+
+CI (`.github/workflows/checks.yml`) runs on every PR. Run the same checks before you say a change is done:
+
+```bash
+bun run lint && bun test && bun run build
+python3 .github/scripts/check_claude_md.py   # Session-start instructions stay under 200 lines
+python3 .github/scripts/check_frozen.py      # No edit, move or delete under .github/frozen-paths.txt
+python3 -m unittest discover -s .github/scripts
+```
+
+## Fixing a repeat mistake
+
+Everything this file loads is in context for every session, and longer files reduce adherence, so CI
+keeps it under 200 lines. For each repeat mistake, use the strongest fix that works:
+
+1. Make it impossible: a type, a schema, an API that can't be misused.
+2. Catch it automatically: a lint rule or a CI check.
+3. Make the agent prove it: a test it runs before it says "done".
+4. Write a rule here, with its scope and reason, only when 1 to 3 can't.
+5. Keep a person on it, for judgment calls.
+
+If code can check it, code does it. When a check replaces a rule, delete the rule.
 
 ## Architecture
 
@@ -29,7 +52,7 @@ This is a React + TypeScript + Vite template using:
 
 ### Path Alias
 
-Use `@/` to import from `src/`:
+Use `@/` to import from `src/` (ESLint rejects `../` imports inside `src/`):
 ```tsx
 import { Button } from "@/components/ui/button";
 ```

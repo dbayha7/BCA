@@ -2,7 +2,7 @@
 // the per-state reward heatmap. `relabelRows` is the only function that calls user code and it is
 // only ever invoked inside the sandbox worker; everything else here is trusted main-thread code.
 
-import { buildDataset, type Dataset, type Env, type StepResult, type Transition } from "../rl";
+import { buildDataset, type Dataset, type Env, type StepResult, type Transition } from "@/lib/rl";
 import { UserCodeFailure, describeValue } from "./protocol";
 
 export interface CodePreset {

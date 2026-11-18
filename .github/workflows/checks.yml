@@ -1,0 +1,54 @@
+name: PR checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repo-rules:
+    name: CLAUDE.md size and frozen files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      # The working tree is about 2 GB. These checks read git objects, so fetch trees for the PR's
+      # merge commit and its first parent (the base branch tip), and only the blobs they read.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: .github
+      - name: Test the checks
+        run: python3 -m unittest discover -s .github/scripts
+      - name: Session-start instructions stay under 200 lines
+        run: python3 .github/scripts/check_claude_md.py --rev HEAD
+      - name: No frozen file is edited, moved or deleted
+        run: python3 .github/scripts/check_frozen.py --base HEAD^1 --head HEAD
+
+  web:
+    name: Web app lint, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      # Only the web app; root files (package.json, bun.lock, configs) come with cone mode.
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            src
+            tests
+            plugins
+            public
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun test
+      - run: bun run build

@@ -171,6 +171,8 @@ test("snapshot round-trip yields a new paused run with identical Q, history and 
 
 test("snapshot import rejects wrong schema, wrong Q size, non-finite values and missing uploads", () => {
   const good = buildSnapshot(rec({ q: new Float64Array(400) }));
+  // The test corrupts parsed JSON on purpose (wrong types included), so it stays untyped.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bad = (mut: (s: any) => void) => {
     const s = JSON.parse(JSON.stringify(good));
     mut(s);
